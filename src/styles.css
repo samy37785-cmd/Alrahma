@@ -74,7 +74,8 @@ h2 { font-size: clamp(1.7rem, 3.5vw, 2.4rem); color: var(--green-deep); }
 .topbar__inner { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; flex-wrap: wrap; gap: 8px; }
 .topbar__contact a { margin-right: 18px; opacity: .9; }
 .topbar__contact a:hover, .topbar__social a:hover { color: var(--gold); }
-.topbar__social a { margin-left: 12px; font-weight: 600; }
+.topbar__social a { margin-left: 12px; font-size: 1rem; }
+.topbar__social a i { vertical-align: middle; }
 
 /* Header */
 .header { position: sticky; top: 0; z-index: 50; background: rgba(255,255,255,.95); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }

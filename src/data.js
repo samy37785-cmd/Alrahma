@@ -20,10 +20,10 @@ export const navLinks = [
 ];
 
 export const socials = [
-  { label: 'Facebook', short: 'Fb', href: 'https://facebook.com/alrahmaacademy' },
-  { label: 'Instagram', short: 'Ig', href: 'https://instagram.com/alrahmaacademy' },
-  { label: 'Twitter', short: 'Tw', href: 'https://twitter.com/alrahmaacademy' },
-  { label: 'YouTube', short: 'Yt', href: 'https://youtube.com/@alrahmaacademy' },
+  { label: 'Facebook', icon: 'fa-brands fa-facebook-f', href: 'https://facebook.com/alrahmaacademy' },
+  { label: 'Instagram', icon: 'fa-brands fa-instagram', href: 'https://instagram.com/alrahmaacademy' },
+  { label: 'Twitter', icon: 'fa-brands fa-x-twitter', href: 'https://twitter.com/alrahmaacademy' },
+  { label: 'YouTube', icon: 'fa-brands fa-youtube', href: 'https://youtube.com/@alrahmaacademy' },
 ];
 
 export const features = [

@@ -11,7 +11,7 @@ export default function TopBar() {
         <div className="topbar__social">
           {socials.map((s) => (
             <a key={s.label} href={s.href} aria-label={s.label} target="_blank" rel="noopener noreferrer">
-              {s.short}
+              <i className={s.icon}></i>
             </a>
           ))}
         </div>

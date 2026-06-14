@@ -20,6 +20,8 @@ export const getCourses = () => api.get('/courses').then((r) => r.data);
 export const submitTrial = (data) => api.post('/trials', data).then((r) => r.data);
 export const registerUser = (data) => api.post('/auth/register', data).then((r) => r.data);
 export const loginUser = (data) => api.post('/auth/login', data).then((r) => r.data);
+export const getMe = () => api.get('/auth/me').then((r) => r.data);
+export const updateMe = (data) => api.put('/auth/me', data).then((r) => r.data);
 
 // --- Payments ---
 // PayMob: returns { type: 'iframe' | 'redirect', url, orderId }
@@ -40,7 +42,11 @@ export const reviewManualPayment = (id, data) => api.patch(`/payments/manual/${i
 // --- Invoices (require login) ---
 export const getInvoices = () => api.get('/invoices').then((r) => r.data);
 
+// --- Newsletter ---
+export const subscribeNewsletter = (email) => api.post('/newsletter', { email }).then((r) => r.data);
+
 // --- Admin helpers (require a valid admin token) ---
 export const createCourse = (data) => api.post('/courses', data).then((r) => r.data);
+export const updateCourse = (id, data) => api.put(`/courses/${id}`, data).then((r) => r.data);
 export const deleteCourse = (id) => api.delete(`/courses/${id}`).then((r) => r.data);
 export const getTrials = () => api.get('/trials').then((r) => r.data);

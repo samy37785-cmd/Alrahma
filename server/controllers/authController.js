@@ -70,3 +70,34 @@ export async function login(req, res, next) {
 export async function getMe(req, res) {
   res.json(req.user); // set by the `protect` middleware
 }
+
+// @desc   Update profile (name, email, password)
+// @route  PUT /api/auth/me
+// @access Private
+export async function updateMe(req, res, next) {
+  try {
+    const { name, email, currentPassword, newPassword } = req.body;
+    const user = await User.findById(req.user._id).select('+password');
+
+    if (name)  user.name  = name;
+    if (email) user.email = email;
+
+    if (newPassword) {
+      if (!currentPassword) {
+        res.status(400);
+        throw new Error('Please provide your current password');
+      }
+      const match = await user.matchPassword(currentPassword);
+      if (!match) {
+        res.status(401);
+        throw new Error('Current password is incorrect');
+      }
+      user.password = newPassword;
+    }
+
+    await user.save();
+    res.json({ _id: user._id, name: user.name, email: user.email, role: user.role });
+  } catch (err) {
+    next(err);
+  }
+}

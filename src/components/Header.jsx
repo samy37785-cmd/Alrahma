@@ -28,9 +28,11 @@ export default function Header() {
           {user && !isAdmin && (
             <Link to="/billing" onClick={close}>My Invoices</Link>
           )}
-          <Link to={user ? '/' : '/login'} onClick={close}>
-            {user ? user.name.split(' ')[0] : 'Login'}
-          </Link>
+          {user ? (
+            <Link to="/profile" onClick={close}>{user.name.split(' ')[0]}</Link>
+          ) : (
+            <Link to="/login" onClick={close}>Login</Link>
+          )}
           <a href="#trial" className="nav__cta" onClick={close}>
             Free Trial
           </a>

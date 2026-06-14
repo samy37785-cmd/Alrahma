@@ -7,10 +7,12 @@ import Register from './pages/Register';
 import AdminDashboard from './pages/AdminDashboard';
 import Quran from './pages/Quran';
 import Blog from './pages/Blog';
+import BlogPost from './pages/BlogPost';
 import FAQ from './pages/FAQ';
 import Privacy from './pages/Privacy';
 import PaymentResult from './pages/PaymentResult';
 import Billing from './pages/Billing';
+import Profile from './pages/Profile';
 
 export default function App() {
   return (
@@ -20,11 +22,13 @@ export default function App() {
           <Route path="/" element={<Home />} />
           <Route path="/quran" element={<Quran />} />
           <Route path="/blog" element={<Blog />} />
+          <Route path="/blog/:slug" element={<BlogPost />} />
           <Route path="/faq" element={<FAQ />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/payment/success" element={<PaymentResult />} />
           <Route path="/payment/cancel" element={<PaymentResult cancelled />} />
           <Route path="/billing" element={<ProtectedRoute><Billing /></ProtectedRoute>} />
+          <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route

@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useCallback } from 'react';
-import { loginUser, registerUser } from '../api/client';
+import { loginUser, registerUser, updateMe } from '../api/client';
 
 const AuthContext = createContext(null);
 
@@ -33,7 +33,13 @@ export function AuthProvider({ children }) {
     setUser(null);
   }, []);
 
-  const value = { user, login, register, logout, isAdmin: user?.role === 'admin' };
+  const updateProfile = useCallback(async (data) => {
+    const updated = await updateMe(data);
+    localStorage.setItem('user', JSON.stringify(updated));
+    setUser(updated);
+  }, []);
+
+  const value = { user, login, register, logout, updateProfile, isAdmin: user?.role === 'admin' };
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 

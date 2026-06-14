@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import Brand from '../components/Brand';
 import { getChapters, getVerses, getChapterAudio, RECITERS } from '../api/quran';
+import AlphabetLearner from '../components/AlphabetLearner';
 
 // Strip footnote tags from translation HTML.
 const clean = (html = '') => html.replace(/<[^>]+>/g, '');
@@ -42,6 +43,8 @@ export default function Quran() {
     };
   }, [activeId, reciterId]);
 
+  const [showAlphabet, setShowAlphabet] = useState(false);
+
   const activeChapter = chapters.find((c) => c.id === activeId);
   const filtered = chapters.filter(
     (c) =>
@@ -54,7 +57,15 @@ export default function Quran() {
       <header className="quran__bar">
         <div className="container quran__bar-inner">
           <Brand />
-          <Link to="/" className="btn btn--ghost btn--sm">← Back to site</Link>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+              className="btn btn--gold btn--sm"
+              onClick={() => setShowAlphabet(true)}
+            >
+              🔤 Arabic Alphabet
+            </button>
+            <Link to="/" className="btn btn--ghost btn--sm">← Back to site</Link>
+          </div>
         </div>
       </header>
 
@@ -136,6 +147,13 @@ export default function Quran() {
           )}
         </main>
       </div>
+      {showAlphabet && (
+        <div className="alphabet-overlay" onClick={() => setShowAlphabet(false)}>
+          <div className="alphabet-overlay__box" onClick={(e) => e.stopPropagation()}>
+            <AlphabetLearner onClose={() => setShowAlphabet(false)} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

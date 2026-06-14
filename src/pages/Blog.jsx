@@ -1,58 +1,6 @@
 import { Link } from 'react-router-dom';
 import Brand from '../components/Brand';
-
-const posts = [
-  {
-    slug: 'how-to-start-learning-quran',
-    title: 'How to Start Learning the Quran as an Adult with No Arabic Background',
-    date: 'June 2025',
-    category: 'Beginners',
-    excerpt: 'Many adults feel it is too late to start. It is not. Here is the step-by-step path from zero Arabic knowledge to fluent Quran reading.',
-  },
-  {
-    slug: 'what-is-tajweed',
-    title: 'What is Tajweed? A Complete Beginner Guide for English Speakers',
-    date: 'May 2025',
-    category: 'Tajweed',
-    excerpt: 'Tajweed is the set of rules governing correct Quranic pronunciation. This guide explains the basics in plain English with real examples.',
-  },
-  {
-    slug: 'noorani-qaida-explained',
-    title: 'Noorani Qaida Explained: The First Step to Reading the Quran',
-    date: 'May 2025',
-    category: 'Beginners',
-    excerpt: 'Noorani Qaida is the universally recommended starting point for Quran reading. Learn what it covers and how long it takes.',
-  },
-  {
-    slug: 'how-long-to-memorise-quran',
-    title: 'How Long Does It Take to Memorise the Entire Quran?',
-    date: 'April 2025',
-    category: 'Hifz',
-    excerpt: 'The answer depends on age, daily commitment, and method. We break down realistic timelines for children and adults.',
-  },
-  {
-    slug: 'online-vs-in-person-quran',
-    title: 'Online vs In-Person Quran Classes: Which is Better for Kids?',
-    date: 'April 2025',
-    category: 'Parents',
-    excerpt: 'Both options have clear advantages. We compare them honestly so you can make the right decision for your child.',
-  },
-  {
-    slug: 'impara-corano-online-italiano',
-    title: 'Come imparare il Corano a casa: guida per principianti italiani',
-    date: 'March 2025',
-    category: 'Italiano',
-    excerpt: 'Una guida pratica per i musulmani in Italia che vogliono iniziare a studiare il Corano online senza esperienza pregressa.',
-  },
-];
-
-const CATEGORY_COLORS = {
-  Beginners: '#0b6e4f',
-  Tajweed:   '#6b3fa0',
-  Hifz:      '#c9662c',
-  Parents:   '#1a6aa5',
-  Italiano:  '#b8342a',
-};
+import { posts, CATEGORY_COLORS } from '../data/blogPosts';
 
 export default function Blog() {
   return (
@@ -73,7 +21,7 @@ export default function Blog() {
 
         <div className="blog-grid">
           {posts.map((p) => (
-            <article className="blog-card" key={p.slug}>
+            <Link to={`/blog/${p.slug}`} className="blog-card" key={p.slug} style={{ textDecoration: 'none' }}>
               <span
                 className="blog-card__cat"
                 style={{ background: CATEGORY_COLORS[p.category] || '#0b6e4f' }}
@@ -84,9 +32,9 @@ export default function Blog() {
               <p className="blog-card__excerpt">{p.excerpt}</p>
               <div className="blog-card__footer">
                 <span className="blog-card__date">{p.date}</span>
-                <span className="blog-card__coming">Coming soon</span>
+                <span className="blog-card__read">Read article →</span>
               </div>
-            </article>
+            </Link>
           ))}
         </div>
       </main>

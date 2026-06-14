@@ -814,3 +814,79 @@ h2 { font-size: clamp(1.7rem, 3.5vw, 2.4rem); color: var(--green-deep); }
 @media (min-width: 769px) and (max-width: 1024px) {
   .obj__grid { grid-template-columns: 1fr 1fr; }
 }
+/* ─────────────────────────────────────────────────────────────────
+   Video Reviews
+   ───────────────────────────────────────────────────────────────── */
+.video-reviews { margin-top: 56px; }
+.video-reviews__label { text-align: center; font-weight: 600; color: var(--green-deep); margin-bottom: 24px; font-size: 1rem; }
+.video-reviews__grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+.video-card { border-radius: 14px; overflow: hidden; border: 1px solid #e5f5eb; background: #fff; }
+.video-card__thumb { position: relative; aspect-ratio: 16/9; overflow: hidden; }
+.video-card__thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.video-card__play {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  background: rgba(6,55,42,.45); color: #fff; font-size: 2.4rem;
+  transition: background .2s;
+}
+.video-card__play:hover { background: rgba(11,110,79,.7); }
+.video-card__info { padding: 14px 16px; }
+.video-card__info strong { display: block; color: var(--green-deep); font-size: .95rem; }
+.video-card__info span { font-size: .82rem; color: var(--muted); }
+
+/* ─────────────────────────────────────────────────────────────────
+   Blog Page
+   ───────────────────────────────────────────────────────────────── */
+.blog-page__main { padding: 60px 0 80px; }
+.blog-page__header { text-align: center; margin-bottom: 52px; }
+.blog-page__header h1 { font-size: clamp(2rem, 4vw, 2.8rem); color: var(--green-deep); margin: 8px 0 12px; }
+.blog-page__sub { color: var(--muted); max-width: 540px; margin: 0 auto; }
+.blog-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; }
+.blog-card {
+  background: #fff; border-radius: 16px; padding: 28px 24px;
+  border: 1px solid #e5f5eb; display: flex; flex-direction: column;
+  transition: box-shadow .2s, transform .2s;
+}
+.blog-card:hover { box-shadow: 0 8px 28px rgba(11,110,79,.12); transform: translateY(-2px); }
+.blog-card__cat {
+  display: inline-block; color: #fff; font-size: .72rem; font-weight: 700;
+  padding: 3px 10px; border-radius: 20px; margin-bottom: 14px; width: fit-content;
+}
+.blog-card__title { font-size: 1rem; font-weight: 700; color: var(--green-deep); line-height: 1.45; margin-bottom: 12px; }
+.blog-card__excerpt { font-size: .88rem; color: var(--muted); line-height: 1.65; flex: 1; margin-bottom: 18px; }
+.blog-card__footer { display: flex; justify-content: space-between; align-items: center; font-size: .78rem; }
+.blog-card__date { color: var(--muted); }
+.blog-card__coming { background: #f0f0f0; color: #888; padding: 3px 10px; border-radius: 20px; }
+
+/* ─────────────────────────────────────────────────────────────────
+   FAQ Page
+   ───────────────────────────────────────────────────────────────── */
+.faq-page__main { padding: 60px 0 80px; max-width: 760px; }
+.faq-page__header { margin-bottom: 48px; }
+.faq-page__header h1 { font-size: clamp(1.8rem, 4vw, 2.6rem); color: var(--green-deep); margin: 8px 0 12px; }
+.faq-page__sub { color: var(--muted); }
+.faq-list { display: flex; flex-direction: column; gap: 12px; }
+.faq-item { border: 1px solid #e0ede6; border-radius: 12px; overflow: hidden; }
+.faq-item--open { border-color: var(--green); }
+.faq-item__q {
+  width: 100%; display: flex; justify-content: space-between; align-items: center;
+  gap: 16px; padding: 18px 20px; background: #fff; border: none; cursor: pointer;
+  font-family: inherit; font-size: .95rem; font-weight: 600; color: var(--green-deep);
+  text-align: left; transition: background .15s;
+}
+.faq-item__q:hover { background: #f5fbf7; }
+.faq-item--open .faq-item__q { background: #f5fbf7; color: var(--green); }
+.faq-item__icon { flex-shrink: 0; font-size: 1.3rem; font-weight: 300; color: var(--green); }
+.faq-item__a { padding: 0 20px 18px; background: #f5fbf7; }
+.faq-item__a p { font-size: .9rem; color: var(--muted); line-height: 1.7; }
+.faq-cta { margin-top: 48px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.faq-cta p { font-weight: 600; color: var(--green-deep); margin-right: 4px; }
+
+/* ─────────────────────────────────────────────────────────────────
+   Responsive additions
+   ───────────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .video-reviews__grid, .blog-grid { grid-template-columns: 1fr; }
+}
+@media (min-width: 769px) and (max-width: 1024px) {
+  .video-reviews__grid, .blog-grid { grid-template-columns: 1fr 1fr; }
+}

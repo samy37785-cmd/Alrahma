@@ -6,6 +6,8 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import AdminDashboard from './pages/AdminDashboard';
 import Quran from './pages/Quran';
+import Blog from './pages/Blog';
+import FAQ from './pages/FAQ';
 import Privacy from './pages/Privacy';
 import PaymentResult from './pages/PaymentResult';
 
@@ -16,6 +18,8 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/quran" element={<Quran />} />
+          <Route path="/blog" element={<Blog />} />
+          <Route path="/faq" element={<FAQ />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/payment/success" element={<PaymentResult />} />
           <Route path="/payment/cancel" element={<PaymentResult cancelled />} />

@@ -1,0 +1,19 @@
+User-agent: *
+Allow: /
+
+# Sitemaps
+Sitemap: https://alrahmaacademy.com/sitemap.xml
+
+# Block admin routes from indexing
+Disallow: /admin
+Disallow: /login
+Disallow: /register
+Disallow: /payment/
+
+# Allow important pages
+Allow: /en/
+Allow: /it/
+Allow: /fr/
+Allow: /quran
+Allow: /blog
+Allow: /faq

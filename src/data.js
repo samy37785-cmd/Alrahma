@@ -33,6 +33,11 @@ export const features = [
     text: 'Start with two complimentary trial lessons — no commitment, no payment required.',
   },
   {
+    icon: '🕌',
+    title: 'Al-Azhar Certified Tutors',
+    text: 'All tutors are graduates of Al-Azhar University and hold a verified Ijazah with an authentic chain of knowledge.',
+  },
+  {
     icon: '🕒',
     title: 'Flexible Schedule',
     text: 'Classes available 24 hours a day, 7 days a week to fit any time zone.',
@@ -41,6 +46,16 @@ export const features = [
     icon: '👩‍🏫',
     title: 'Female Tutors Available',
     text: 'Professional, qualified female instructors for sisters and children.',
+  },
+  {
+    icon: '🌍',
+    title: 'Multilingual Instruction',
+    text: 'Lessons delivered in English, Italian or French — maximum understanding for every European student.',
+  },
+  {
+    icon: '👤',
+    title: 'One-to-One Only',
+    text: 'Every class is exclusively between you and your tutor — no group sessions, full personal attention.',
   },
 ];
 

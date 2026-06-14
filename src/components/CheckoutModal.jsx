@@ -1,58 +1,69 @@
-import { useState } from 'react';
-import { startPaymobPayment, startPaypalPayment } from '../api/client';
+import { useState, useEffect } from 'react';
+import { startPaymobPayment, startPaypalPayment, getManualMethods, submitManualPayment } from '../api/client';
 
-// Secure checkout modal. `plan` = the selected plan object (with name + price)
-// or null (hidden). `onClose` closes the modal.
-//
-// IMPORTANT (PCI): we never collect raw card numbers ourselves. For card
-// payments we open PayMob's secure iframe (it handles the card form). For
-// wallets / PayPal we redirect to the gateway. We only collect billing info.
-
-const METHODS = [
-  { id: 'card', group: 'card', label: 'Visa / Mastercard', sub: 'Secure card payment', icon: '💳' },
-  { id: 'vodafone', group: 'wallet', label: 'Vodafone Cash', sub: 'المحافظ الإلكترونية', icon: '📱' },
-  { id: 'fawry', group: 'wallet', label: 'Fawry', sub: 'فوري', icon: '🏪' },
-  { id: 'instapay', group: 'wallet', label: 'InstaPay', sub: 'إنستا باي', icon: '⚡' },
-  { id: 'paypal', group: 'intl', label: 'PayPal', sub: 'For international students', icon: '🌍' },
+// Gateway methods (handled via API)
+const GATEWAY_METHODS = [
+  { id: 'card',      group: 'card',   label: 'Visa / Mastercard', sub: 'Secure card payment',   icon: '💳' },
+  { id: 'vodafone',  group: 'wallet', label: 'Vodafone Cash',     sub: 'المحافظ الإلكترونية',   icon: '📱' },
+  { id: 'fawry',     group: 'wallet', label: 'Fawry',             sub: 'فوري',                  icon: '🏪' },
+  { id: 'instapay',  group: 'wallet', label: 'InstaPay',          sub: 'إنستا باي',             icon: '⚡' },
+  { id: 'paypal',    group: 'intl',   label: 'PayPal',            sub: 'For international students', icon: '🌍' },
 ];
 
 const amountOf = (price = '') => price.replace(/[^\d.]/g, '');
 
 export default function CheckoutModal({ plan, onClose }) {
-  const [method, setMethod] = useState('card');
-  const [customer, setCustomer] = useState({ name: '', email: '', phone: '' });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [iframeUrl, setIframeUrl] = useState(''); // PayMob card iframe, shown inline
+  const [method, setMethod]         = useState('card');
+  const [manualMethods, setManual]  = useState([]);
+  const [customer, setCustomer]     = useState({ name: '', email: '', phone: '' });
+  const [reference, setReference]   = useState('');
+  const [loading, setLoading]       = useState(false);
+  const [error, setError]           = useState('');
+  const [iframeUrl, setIframeUrl]   = useState('');
+  const [success, setSuccess]       = useState('');
+
+  useEffect(() => {
+    if (!plan) return;
+    getManualMethods().then(setManual).catch(() => {});
+  }, [plan]);
 
   if (!plan) return null;
 
-  const amount = amountOf(plan.price);
-  const needsPhone = method !== 'card' && method !== 'paypal';
+  const amount      = amountOf(plan.price);
+  const isGateway   = GATEWAY_METHODS.some((m) => m.id === method);
+  const isManual    = !isGateway;
+  const manualDef   = manualMethods.find((m) => m.id === method);
+  const needsPhone  = method === 'vodafone';
+
   const onField = (key) => (e) => setCustomer((c) => ({ ...c, [key]: e.target.value }));
 
-  const handleSubmit = async (e) => {
+  const handleGatewaySubmit = async (e) => {
     e.preventDefault();
-    setError('');
-    setLoading(true);
+    setError(''); setLoading(true);
     try {
       const payload = { plan: plan.name, method, customer };
-      const res =
-        method === 'paypal'
-          ? await startPaypalPayment(payload)
-          : await startPaymobPayment(payload);
+      const res = method === 'paypal'
+        ? await startPaypalPayment(payload)
+        : await startPaymobPayment(payload);
 
-      if (res.type === 'iframe') {
-        // Card: render PayMob's secure form inside the modal.
-        setIframeUrl(res.url);
-      } else if (res.type === 'redirect' && res.url) {
-        // Wallet / PayPal: hand off to the gateway.
-        window.location.href = res.url;
-      } else {
-        throw new Error('Could not start the payment. Please try again.');
-      }
+      if (res.type === 'iframe')    setIframeUrl(res.url);
+      else if (res.type === 'redirect' && res.url) window.location.href = res.url;
+      else throw new Error('Could not start the payment. Please try again.');
     } catch (err) {
       setError(err.response?.data?.message || err.message || 'Payment failed.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleManualSubmit = async (e) => {
+    e.preventDefault();
+    setError(''); setLoading(true);
+    try {
+      await submitManualPayment({ plan: plan.name, method, customer, reference });
+      setSuccess('✅ Payment request received! We will verify and activate your plan within 24 hours. Check your email for confirmation.');
+    } catch (err) {
+      setError(err.response?.data?.message || err.message || 'Submission failed.');
     } finally {
       setLoading(false);
     }
@@ -69,30 +80,35 @@ export default function CheckoutModal({ plan, onClose }) {
       >
         <button className="modal__close" onClick={onClose} aria-label="Close">×</button>
 
-        {/* Header: plan name + price */}
+        {/* Header */}
         <div className="checkout__head">
           <p className="checkout__lock">🔒 Secure Checkout</p>
           <h3 className="modal__title">{plan.name} Plan</h3>
           <p className="checkout__price">
+            {plan.originalPrice && <s className="checkout__orig">{plan.originalPrice}</s>}
             <span>{plan.price}</span> / month
           </p>
+          {plan.discountPct && (
+            <span className="checkout__discount-pill">{plan.discountPct}% OFF applied</span>
+          )}
         </div>
 
-        {/* Card payment: once we have the iframe URL, show PayMob's secure form */}
-        {iframeUrl ? (
+        {/* Success state */}
+        {success ? (
+          <div className="checkout__success">
+            <p>{success}</p>
+            <button type="button" className="btn btn--green btn--block" onClick={onClose}>Close</button>
+          </div>
+        ) : iframeUrl ? (
           <div className="checkout__iframe-wrap">
             <iframe title="Secure card payment" src={iframeUrl} className="checkout__iframe" />
-            <button
-              type="button"
-              className="btn btn--ghost btn--block"
-              onClick={() => setIframeUrl('')}
-            >
+            <button type="button" className="btn btn--ghost btn--block" onClick={() => setIframeUrl('')}>
               ← Back to payment options
             </button>
           </div>
         ) : (
-          <form onSubmit={handleSubmit}>
-            {/* Billing info (PayMob/PayPal require name + email; wallets need phone) */}
+          <form onSubmit={isManual ? handleManualSubmit : handleGatewaySubmit}>
+            {/* Customer info */}
             <div className="checkout__field">
               <label htmlFor="ck-name">Full Name</label>
               <input id="ck-name" value={customer.name} onChange={onField('name')} required />
@@ -100,48 +116,72 @@ export default function CheckoutModal({ plan, onClose }) {
             <div className="checkout__row">
               <div className="checkout__field">
                 <label htmlFor="ck-email">Email</label>
-                <input
-                  id="ck-email"
-                  type="email"
-                  value={customer.email}
-                  onChange={onField('email')}
-                  required
-                />
+                <input id="ck-email" type="email" value={customer.email} onChange={onField('email')} required />
               </div>
               <div className="checkout__field">
-                <label htmlFor="ck-phone">
-                  Mobile {needsPhone ? '' : <small>(optional)</small>}
-                </label>
+                <label htmlFor="ck-phone">Mobile {needsPhone ? '' : <small>(optional)</small>}</label>
                 <input
-                  id="ck-phone"
-                  inputMode="tel"
-                  placeholder="01xxxxxxxxx"
-                  value={customer.phone}
-                  onChange={onField('phone')}
-                  required={needsPhone}
+                  id="ck-phone" inputMode="tel" placeholder="01xxxxxxxxx"
+                  value={customer.phone} onChange={onField('phone')} required={needsPhone}
                 />
               </div>
             </div>
 
-            {/* ===== Group 1: Cards ===== */}
-            <p className="checkout__group-title">Credit / Debit Card</p>
-            {METHODS.filter((m) => m.group === 'card').map((m) => (
+            {/* ── Gateway methods ── */}
+            <p className="checkout__group-title">💳 Card Payment</p>
+            {GATEWAY_METHODS.filter((m) => m.group === 'card').map((m) => (
               <MethodRow key={m.id} m={m} method={method} setMethod={setMethod} />
             ))}
 
-            {/* ===== Group 2: Digital wallets & instant pay ===== */}
-            <p className="checkout__group-title">Digital Wallets &amp; Instant Pay</p>
+            <p className="checkout__group-title">📱 Digital Wallets</p>
             <div className="checkout__wallets">
-              {METHODS.filter((m) => m.group === 'wallet').map((m) => (
+              {GATEWAY_METHODS.filter((m) => m.group === 'wallet').map((m) => (
                 <MethodRow key={m.id} m={m} method={method} setMethod={setMethod} />
               ))}
             </div>
 
-            {/* ===== Group 3: International ===== */}
-            <p className="checkout__group-title">International</p>
-            {METHODS.filter((m) => m.group === 'intl').map((m) => (
+            <p className="checkout__group-title">🌍 International — Online</p>
+            {GATEWAY_METHODS.filter((m) => m.group === 'intl').map((m) => (
               <MethodRow key={m.id} m={m} method={method} setMethod={setMethod} />
             ))}
+
+            {/* ── Manual / transfer methods ── */}
+            {manualMethods.length > 0 && (
+              <>
+                <p className="checkout__group-title">🏦 Manual Bank &amp; Transfer</p>
+                <div className="checkout__wallets">
+                  {manualMethods.map((m) => (
+                    <MethodRow key={m.id} m={m} method={method} setMethod={setMethod} />
+                  ))}
+                </div>
+              </>
+            )}
+
+            {/* ── Manual method: show account details + reference field ── */}
+            {isManual && manualDef && (
+              <div className="checkout__manual-box">
+                <p className="checkout__manual-title">Transfer details</p>
+                <ul className="checkout__manual-fields">
+                  {manualDef.fields.filter((f) => f.value).map((f) => (
+                    <li key={f.label}>
+                      <span>{f.label}</span>
+                      <strong>{f.value}</strong>
+                    </li>
+                  ))}
+                </ul>
+                <p className="checkout__manual-instr">{manualDef.instructions}</p>
+                <div className="checkout__field" style={{ marginTop: 12 }}>
+                  <label htmlFor="ck-ref">Reference / Confirmation Number</label>
+                  <input
+                    id="ck-ref"
+                    placeholder="e.g. MTCN, transaction ID, transfer ref…"
+                    value={reference}
+                    onChange={(e) => setReference(e.target.value)}
+                    required
+                  />
+                </div>
+              </div>
+            )}
 
             {error && <p className="checkout__error">{error}</p>}
 
@@ -150,10 +190,16 @@ export default function CheckoutModal({ plan, onClose }) {
               className="btn btn--gold btn--block checkout__submit"
               disabled={loading}
             >
-              {loading ? 'Processing…' : `Complete Payment — €${amount} / إتمام الدفع`}
+              {loading
+                ? 'Processing…'
+                : isManual
+                  ? `Submit Payment Request — €${amount}`
+                  : `Complete Payment — €${amount}`}
             </button>
             <p className="checkout__secure-note">
-              🔒 Card details are entered on the gateway's secure page. Cancel anytime.
+              🔒 {isManual
+                ? 'We will verify your transfer within 24 hours and activate your plan.'
+                : 'Card details are entered on the gateway\'s secure page. Cancel anytime.'}
             </p>
           </form>
         )}
@@ -162,19 +208,13 @@ export default function CheckoutModal({ plan, onClose }) {
   );
 }
 
-// A single selectable payment-method row.
 function MethodRow({ m, method, setMethod }) {
   return (
     <label
       className={`checkout__method ${method === m.id ? 'is-active' : ''}`}
       onClick={() => setMethod(m.id)}
     >
-      <input
-        type="radio"
-        name="method"
-        checked={method === m.id}
-        onChange={() => setMethod(m.id)}
-      />
+      <input type="radio" name="method" checked={method === m.id} onChange={() => setMethod(m.id)} />
       <span className="checkout__wallet-icon">{m.icon}</span>
       <span className="checkout__method-label">
         <strong>{m.label}</strong>

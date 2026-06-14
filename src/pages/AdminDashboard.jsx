@@ -6,27 +6,39 @@ import {
   createCourse,
   deleteCourse,
   getTrials,
+  getManualPayments,
+  reviewManualPayment,
 } from '../api/client';
 
 const EMPTY_COURSE = { title: '', description: '', icon: '📘', level: 'All levels' };
 
 export default function AdminDashboard() {
   const { user, logout } = useAuth();
-  const [courses, setCourses] = useState([]);
-  const [trials, setTrials] = useState([]);
-  const [form, setForm] = useState(EMPTY_COURSE);
-  const [error, setError] = useState('');
+  const [courses, setCourses]         = useState([]);
+  const [trials, setTrials]           = useState([]);
+  const [manualPays, setManualPays]   = useState([]);
+  const [form, setForm]               = useState(EMPTY_COURSE);
+  const [error, setError]             = useState('');
 
-  // Load both lists once on mount.
   const loadAll = useCallback(async () => {
     try {
-      const [c, t] = await Promise.all([getCourses(), getTrials()]);
+      const [c, t, m] = await Promise.all([getCourses(), getTrials(), getManualPayments()]);
       setCourses(c);
       setTrials(t);
+      setManualPays(m);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to load data');
     }
   }, []);
+
+  const handleReview = async (id, status) => {
+    try {
+      const updated = await reviewManualPayment(id, { status });
+      setManualPays((prev) => prev.map((p) => (p._id === id ? updated : p)));
+    } catch (err) {
+      setError(err.response?.data?.message || 'Action failed');
+    }
+  };
 
   useEffect(() => {
     loadAll();
@@ -139,6 +151,45 @@ export default function AdminDashboard() {
                 ))}
                 {trials.length === 0 && (
                   <tr><td colSpan="5" className="admin__empty">No requests yet.</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        {/* Manual payment requests */}
+        <section className="admin__panel">
+          <h2>Manual Payments ({manualPays.filter((p) => p.status === 'pending').length} pending)</h2>
+          <div className="admin__table-wrap">
+            <table className="admin__table">
+              <thead>
+                <tr><th>Name</th><th>Email</th><th>Plan</th><th>Method</th><th>Amount</th><th>Reference</th><th>Status</th><th>Date</th><th>Action</th></tr>
+              </thead>
+              <tbody>
+                {manualPays.map((p) => (
+                  <tr key={p._id}>
+                    <td>{p.customer?.name || '—'}</td>
+                    <td>{p.customer?.email || '—'}</td>
+                    <td>{p.plan}</td>
+                    <td><span className="admin__badge">{p.method}</span></td>
+                    <td>€{p.amount}</td>
+                    <td style={{ fontFamily: 'monospace', fontSize: '.82rem' }}>{p.reference || '—'}</td>
+                    <td>
+                      <span className={`admin__badge admin__badge--${p.status}`}>{p.status}</span>
+                    </td>
+                    <td>{new Date(p.createdAt).toLocaleDateString()}</td>
+                    <td>
+                      {p.status === 'pending' && (
+                        <div style={{ display: 'flex', gap: 6 }}>
+                          <button className="btn btn--green btn--sm" onClick={() => handleReview(p._id, 'approved')}>✓</button>
+                          <button className="admin__del" onClick={() => handleReview(p._id, 'rejected')}>✗</button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+                {manualPays.length === 0 && (
+                  <tr><td colSpan="9" className="admin__empty">No manual payments yet.</td></tr>
                 )}
               </tbody>
             </table>

@@ -31,6 +31,12 @@ export const startPaypalPayment = (data) =>
 export const capturePaypalPayment = (orderId) =>
   api.post(`/payments/paypal/${orderId}/capture`).then((r) => r.data);
 
+// --- Manual payment methods ---
+export const getManualMethods   = ()       => api.get('/payments/manual-methods').then((r) => r.data);
+export const submitManualPayment = (data)  => api.post('/payments/manual', data).then((r) => r.data);
+export const getManualPayments  = ()       => api.get('/payments/manual').then((r) => r.data);
+export const reviewManualPayment = (id, data) => api.patch(`/payments/manual/${id}`, data).then((r) => r.data);
+
 // --- Invoices (require login) ---
 export const getInvoices = () => api.get('/invoices').then((r) => r.data);
 

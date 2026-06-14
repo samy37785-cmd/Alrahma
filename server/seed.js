@@ -23,7 +23,7 @@ async function seed() {
     await Course.insertMany(courses);
     console.log(`✅ Inserted ${courses.length} courses`);
 
-    const adminEmail = 'admin@al-rahmaacademy.com';
+    const adminEmail = 'alrahmaacademy038@gmail.com';
     if (!(await User.findOne({ email: adminEmail }))) {
       await User.create({
         name: 'Academy Admin',

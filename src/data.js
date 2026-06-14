@@ -3,7 +3,7 @@
 export const site = {
   name: 'AL-Rahma',
   tagline: 'Learn the Holy Quran Online',
-  email: 'info@al-rahmaacademy.com',
+  email: 'alrahmaacademy038@gmail.com',
   phoneDisplay: '+20 101 605 4663',
   phoneHref: '+201016054663',
   whatsapp: '201016054663',

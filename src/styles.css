@@ -436,7 +436,11 @@ h2 { font-size: clamp(1.7rem, 3.5vw, 2.4rem); color: var(--green-deep); }
 .quran__head { text-align: center; border-bottom: 1px solid var(--line); padding-bottom: 22px; margin-bottom: 14px; }
 .quran__head h1 { font-family: var(--serif); font-size: 2.6rem; color: var(--green-deep); }
 .quran__head p { color: var(--muted); font-size: .9rem; margin-top: 6px; text-transform: capitalize; }
-.quran__audio { margin-top: 16px; width: 100%; max-width: 480px; }
+.quran__reciter-row { display: flex; align-items: center; gap: 10px; justify-content: center; margin-top: 16px; }
+.quran__reciter-label { font-size: .85rem; font-weight: 600; color: var(--green-deep); white-space: nowrap; }
+.quran__reciter-select { padding: 6px 12px; border: 1px solid var(--line); border-radius: 6px; font-size: .9rem; background: #fff; color: var(--ink); cursor: pointer; max-width: 280px; }
+.quran__reciter-select:focus { outline: none; border-color: var(--green); }
+.quran__audio { margin-top: 12px; width: 100%; max-width: 480px; }
 .quran__msg { text-align: center; color: var(--muted); padding: 30px; }
 .quran__msg--err { color: #c0392b; }
 
@@ -632,6 +636,8 @@ h2 { font-size: clamp(1.7rem, 3.5vw, 2.4rem); color: var(--green-deep); }
 .alpha__mic:disabled { opacity: .5; cursor: default; }
 @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.08); } }
 
+.alpha__desc { font-size: .75rem; color: var(--muted); margin: 4px 0 6px; line-height: 1.4; text-align: center; }
+.alpha__audio.playing { background: var(--green); color: #fff; }
 .alpha__result { margin-top: 10px; font-size: .82rem; font-weight: 600; }
 .alpha__result.ok { color: var(--green); }
 .alpha__result.no { color: #c0392b; }

@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import Brand from '../components/Brand';
-import { getChapters, getVerses, getChapterAudio } from '../api/quran';
+import { getChapters, getVerses, getChapterAudio, RECITERS } from '../api/quran';
 
 // Strip footnote tags from translation HTML.
 const clean = (html = '') => html.replace(/<[^>]+>/g, '');
@@ -9,6 +9,7 @@ const clean = (html = '') => html.replace(/<[^>]+>/g, '');
 export default function Quran() {
   const [chapters, setChapters] = useState([]);
   const [activeId, setActiveId] = useState(1);
+  const [reciterId, setReciterId] = useState(RECITERS[0].id);
   const [verses, setVerses] = useState([]);
   const [audioUrl, setAudioUrl] = useState('');
   const [loading, setLoading] = useState(false);
@@ -23,12 +24,12 @@ export default function Quran() {
       .catch(() => setError('Could not load surahs.'));
   }, []);
 
-  // Load verses + audio whenever the active surah changes.
+  // Load verses + audio whenever the active surah or reciter changes.
   useEffect(() => {
     let active = true;
     setLoading(true);
     setError('');
-    Promise.all([getVerses(activeId), getChapterAudio(activeId)])
+    Promise.all([getVerses(activeId), getChapterAudio(activeId, reciterId)])
       .then(([v, url]) => {
         if (!active) return;
         setVerses(v);
@@ -39,7 +40,7 @@ export default function Quran() {
     return () => {
       active = false;
     };
-  }, [activeId]);
+  }, [activeId, reciterId]);
 
   const activeChapter = chapters.find((c) => c.id === activeId);
   const filtered = chapters.filter(
@@ -94,8 +95,23 @@ export default function Quran() {
                 {activeChapter.name_simple} — {activeChapter.translated_name.name} ·{' '}
                 {activeChapter.revelation_place} · {activeChapter.verses_count} verses
               </p>
+              <div className="quran__reciter-row">
+                <label htmlFor="reciter-select" className="quran__reciter-label">
+                  Sheikh:
+                </label>
+                <select
+                  id="reciter-select"
+                  className="quran__reciter-select"
+                  value={reciterId}
+                  onChange={(e) => setReciterId(Number(e.target.value))}
+                >
+                  {RECITERS.map((r) => (
+                    <option key={r.id} value={r.id}>{r.name}</option>
+                  ))}
+                </select>
+              </div>
               {audioUrl && (
-                <audio ref={audioRef} controls src={audioUrl} className="quran__audio">
+                <audio ref={audioRef} controls src={audioUrl} className="quran__audio" key={`${activeId}-${reciterId}`}>
                   Your browser does not support audio.
                 </audio>
               )}

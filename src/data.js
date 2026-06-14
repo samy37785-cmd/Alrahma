@@ -120,51 +120,82 @@ export const courses = [
   },
 ];
 
-// Interactive alphabet: each letter has the Arabic glyph, a Latin name,
-// `say` = vocalized Arabic for text-to-speech, and `it` = Italian transliteration.
-// Grouped into small sets (4 letters) for easy, focused learning.
+// Interactive alphabet.
+// Fields: ar=glyph, name=English, say=Arabic TTS text, it=Italian transliteration,
+//         audio=CDN WAV URL (CC BY-SA 4.0, Wikimedia Commons), desc=optional note.
+// Audio falls back to Web Speech API when unavailable.
+const WM = 'https://upload.wikimedia.org/wikipedia/commons';
+
 export const alphabetGroups = [
+  // ── Group 1: ا ب ت ث ──────────────────────────────────────────────────────
   [
-    { ar: 'ا', name: 'Alif', say: 'أَلِف', it: 'A' },
-    { ar: 'ب', name: 'Ba', say: 'بَاء', it: 'B' },
-    { ar: 'ت', name: 'Ta', say: 'تَاء', it: 'T' },
-    { ar: 'ث', name: 'Tha', say: 'ثَاء', it: 'Th' },
+    { ar: 'ا', name: 'Alif',  say: 'أَلِف',  it: 'A',     audio: `${WM}/7/77/Alif_A.wav` },
+    { ar: 'ب', name: 'Ba',    say: 'بَاء',   it: 'B',     audio: `${WM}/0/01/Baaudio.wav` },
+    { ar: 'ت', name: 'Ta',    say: 'تَاء',   it: 'T',     audio: `${WM}/5/54/Taaudio.wav` },
+    { ar: 'ث', name: 'Tha',   say: 'ثَاء',   it: 'Th',    audio: `${WM}/5/59/Thaaudio.wav` },
   ],
+  // ── Group 2: ج ح خ د ──────────────────────────────────────────────────────
   [
-    { ar: 'ج', name: 'Jim', say: 'جِيم', it: 'G/Gi' },
-    { ar: 'ح', name: 'Ha', say: 'حَاء', it: 'Ḥ' },
-    { ar: 'خ', name: 'Kha', say: 'خَاء', it: 'Kh' },
-    { ar: 'د', name: 'Dal', say: 'دَال', it: 'D' },
+    { ar: 'ج', name: 'Jeem',  say: 'جِيم',   it: 'G/Gi',  audio: `${WM}/a/ab/Jeemaudio.wav` },
+    { ar: 'ح', name: 'Ha',    say: 'حَاء',   it: 'Ḥ',     audio: `${WM}/8/8c/Haaudio.wav` },
+    { ar: 'خ', name: 'Kha',   say: 'خَاء',   it: 'Kh',    audio: `${WM}/a/a6/Khaaudio.wav` },
+    { ar: 'د', name: 'Dal',   say: 'دَال',   it: 'D',     audio: `${WM}/1/1b/Dalaudio.wav` },
   ],
+  // ── Group 3: ذ ر ز س ──────────────────────────────────────────────────────
   [
-    { ar: 'ذ', name: 'Dhal', say: 'ذَال', it: 'Dh' },
-    { ar: 'ر', name: 'Ra', say: 'رَاء', it: 'R' },
-    { ar: 'ز', name: 'Zay', say: 'زَاي', it: 'Z' },
-    { ar: 'س', name: 'Sin', say: 'سِين', it: 'S' },
+    { ar: 'ذ', name: 'Dhal',  say: 'ذَال',   it: 'Dh',    audio: `${WM}/6/62/Dzalaudio.wav` },
+    { ar: 'ر', name: 'Ra',    say: 'رَاء',   it: 'R',     audio: `${WM}/c/c9/RAAUDIO.wav` },
+    { ar: 'ز', name: 'Zain',  say: 'زَاي',   it: 'Z',     audio: `${WM}/3/3d/ZaiAUDIO.wav` },
+    { ar: 'س', name: 'Sin',   say: 'سِين',   it: 'S',     audio: `${WM}/5/56/Senaudio.wav` },
   ],
+  // ── Group 4: ش ص ض ط ──────────────────────────────────────────────────────
   [
-    { ar: 'ش', name: 'Shin', say: 'شِين', it: 'Sc/Sh' },
-    { ar: 'ص', name: 'Sad', say: 'صَاد', it: 'Ṣ' },
-    { ar: 'ض', name: 'Dad', say: 'ضَاد', it: 'Ḍ' },
-    { ar: 'ط', name: 'Ta', say: 'طَاء', it: 'Ṭ' },
+    { ar: 'ش', name: 'Shin',  say: 'شِين',   it: 'Sc/Sh', audio: `${WM}/f/f0/Shenaudio.wav` },
+    { ar: 'ص', name: 'Sad',   say: 'صَاد',   it: 'Ṣ',     audio: `${WM}/9/9b/Sadaudio.wav` },
+    { ar: 'ض', name: 'Dad',   say: 'ضَاد',   it: 'Ḍ',     audio: `${WM}/0/02/Ddadaudio.wav` },
+    { ar: 'ط', name: 'Tah',   say: 'طَاء',   it: 'Ṭ',     audio: `${WM}/c/cf/Ttaaudio.wav` },
   ],
+  // ── Group 5: ظ ع غ ف ──────────────────────────────────────────────────────
   [
-    { ar: 'ظ', name: 'Za', say: 'ظَاء', it: 'Ẓ' },
-    { ar: 'ع', name: 'Ain', say: 'عَين', it: 'ʿ' },
-    { ar: 'غ', name: 'Ghain', say: 'غَين', it: 'Gh' },
-    { ar: 'ف', name: 'Fa', say: 'فَاء', it: 'F' },
+    { ar: 'ظ', name: 'Zah',   say: 'ظَاء',   it: 'Ẓ',     audio: `${WM}/c/c4/Dddaudio.wav` },
+    { ar: 'ع', name: 'Ain',   say: 'عَين',   it: 'ʿ',     audio: `${WM}/8/88/Aaaudio.wav` },
+    { ar: 'غ', name: 'Ghain', say: 'غَين',   it: 'Gh',    audio: `${WM}/b/b2/Ghaudio.wav` },
+    { ar: 'ف', name: 'Fa',    say: 'فَاء',   it: 'F',     audio: `${WM}/a/a2/Faaudio.wav` },
   ],
+  // ── Group 6: ق ك ل م ──────────────────────────────────────────────────────
   [
-    { ar: 'ق', name: 'Qaf', say: 'قَاف', it: 'Q' },
-    { ar: 'ك', name: 'Kaf', say: 'كَاف', it: 'K' },
-    { ar: 'ل', name: 'Lam', say: 'لاَم', it: 'L' },
-    { ar: 'م', name: 'Mim', say: 'مِيم', it: 'M' },
+    { ar: 'ق', name: 'Qaf',   say: 'قَاف',   it: 'Q',     audio: `${WM}/d/d3/Qafaudio.wav` },
+    { ar: 'ك', name: 'Kaf',   say: 'كَاف',   it: 'K',     audio: `${WM}/9/93/Kafaudio.wav` },
+    { ar: 'ل', name: 'Lam',   say: 'لاَم',   it: 'L',     audio: `${WM}/8/83/Lamudio.wav` },
+    { ar: 'م', name: 'Meem',  say: 'مِيم',   it: 'M',     audio: `${WM}/d/d8/Maudio.wav` },
   ],
+  // ── Group 7: ن ه و ي ──────────────────────────────────────────────────────
   [
-    { ar: 'ن', name: 'Nun', say: 'نُون', it: 'N' },
-    { ar: 'ه', name: 'Ha', say: 'هَاء', it: 'H' },
-    { ar: 'و', name: 'Waw', say: 'وَاو', it: 'W/U' },
-    { ar: 'ي', name: 'Ya', say: 'يَاء', it: 'Y/I' },
+    { ar: 'ن', name: 'Noon',  say: 'نُون',   it: 'N',     audio: `${WM}/2/2d/Naudio.wav` },
+    { ar: 'ه', name: 'Heh',   say: 'هَاء',   it: 'H',     audio: `${WM}/e/e9/Haaaudio.wav` },
+    { ar: 'و', name: 'Waw',   say: 'وَاو',   it: 'W/U',   audio: `${WM}/4/4e/Wawaudio.wav` },
+    { ar: 'ي', name: 'Ya',    say: 'يَاء',   it: 'Y/I',   audio: `${WM}/b/bd/Yaaudio.wav` },
+  ],
+  // ── Group 8: Short vowels (harakat) ───────────────────────────────────────
+  [
+    { ar: 'أَ', name: 'Fatha',       say: 'فَتحة',          it: 'A',      desc: 'Short "a" — the most common vowel' },
+    { ar: 'أِ', name: 'Kasra',       say: 'كَسرة',          it: 'I',      desc: 'Short "i" — written below the letter' },
+    { ar: 'أُ', name: 'Damma',       say: 'ضَمة',           it: 'U',      desc: 'Short "u" — looks like a small و' },
+    { ar: 'أْ', name: 'Sukun',       say: 'سُكون',          it: '—',      desc: 'No vowel — the letter is silent/stopped' },
+  ],
+  // ── Group 9: Tanwin & Shadda ───────────────────────────────────────────────
+  [
+    { ar: 'أً', name: 'Tanwin Fath', say: 'تَنوين الفَتح',  it: '-an',    desc: 'Double fatha — adds "an" sound at end' },
+    { ar: 'أٍ', name: 'Tanwin Kasr', say: 'تَنوين الكَسر',  it: '-in',    desc: 'Double kasra — adds "in" sound at end' },
+    { ar: 'أٌ', name: 'Tanwin Damm', say: 'تَنوين الضَم',   it: '-un',    desc: 'Double damma — adds "un" sound at end' },
+    { ar: 'أّ', name: 'Shadda',      say: 'شَدة',           it: 'Double', desc: 'Doubles the consonant strength' },
+  ],
+  // ── Group 10: Special letters & forms ─────────────────────────────────────
+  [
+    { ar: 'ة', name: 'Ta Marbuta',   say: 'تاء مَربوطة',   it: 'a / at', desc: 'Feminine suffix — sounds like "a" or "at"' },
+    { ar: 'ى', name: 'Alef Maqsura', say: 'أَلِف مَقصورة', it: 'a',      desc: 'Final "a" — looks like ي without dots' },
+    { ar: 'ء', name: 'Hamza',        say: 'هَمزة',          it: "ʾ",      desc: 'Glottal stop — a brief catch in the throat' },
+    { ar: 'لا', name: 'Lam-Alef',   say: 'لا',             it: 'lā',     desc: 'Mandatory ligature of ل + ا' },
   ],
 ];
 

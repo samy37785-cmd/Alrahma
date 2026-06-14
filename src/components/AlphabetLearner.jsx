@@ -1,18 +1,29 @@
-import { useState } from 'react';
+﻿import { useState, useRef } from 'react';
 import useSpeech from '../hooks/useSpeech';
 import { alphabetGroups } from '../data';
 
-// Remove Arabic diacritics so we can loosely compare spoken input to the target.
 const stripDiacritics = (s = '') => s.replace(/[ً-ْ]/g, '').trim();
+
+const GROUP_LABELS = [
+  'Letters 1-4',
+  'Letters 5-8',
+  'Letters 9-12',
+  'Letters 13-16',
+  'Letters 17-20',
+  'Letters 21-24',
+  'Letters 25-28',
+  'Short vowels (harakat)',
+  'Tanwin and Shadda',
+  'Special letters and forms',
+];
 
 export default function AlphabetLearner({ onClose }) {
   const { speak, listen, ttsSupported, sttSupported } = useSpeech();
-
-  // State for which group (set of letters) is currently shown.
   const [groupIndex, setGroupIndex] = useState(0);
-  // State for the live microphone test: which letter + the result.
   const [micLetter, setMicLetter] = useState(null);
-  const [result, setResult] = useState(null); // { ar, ok, heard }
+  const [result, setResult] = useState(null);
+  const [playing, setPlaying] = useState(null);
+  const audioRef = useRef(null);
 
   const group = alphabetGroups[groupIndex];
   const isFirst = groupIndex === 0;
@@ -21,7 +32,24 @@ export default function AlphabetLearner({ onClose }) {
   const goPrev = () => { setGroupIndex((i) => Math.max(0, i - 1)); setResult(null); };
   const goNext = () => { setGroupIndex((i) => Math.min(alphabetGroups.length - 1, i + 1)); setResult(null); };
 
-  // Test the user's pronunciation of a letter via voice recognition.
+  const playArabic = (letter) => {
+    if (letter.audio) {
+      if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
+      const a = new Audio(letter.audio);
+      audioRef.current = a;
+      setPlaying(letter.ar);
+      a.onended = () => setPlaying(null);
+      a.onerror = () => { setPlaying(null); speak(letter.say, 'ar-SA'); };
+      a.play().catch(() => { setPlaying(null); speak(letter.say, 'ar-SA'); });
+    } else {
+      speak(letter.say, 'ar-SA');
+    }
+  };
+
+  const playAll = () => {
+    speak(group.map((l) => l.say).join(', '), 'ar-SA');
+  };
+
   const testPronunciation = async (letter) => {
     setMicLetter(letter.ar);
     setResult(null);
@@ -44,16 +72,16 @@ export default function AlphabetLearner({ onClose }) {
     <div className="alpha">
       <div className="alpha__top">
         <div>
-          <h4 className="alpha__title">Arabic & Italian Alphabet</h4>
+          <h4 className="alpha__title">Arabic and Italian Alphabet</h4>
           <p className="alpha__progress">
-            Group {groupIndex + 1} of {alphabetGroups.length}
+            {GROUP_LABELS[groupIndex]} - {groupIndex + 1} / {alphabetGroups.length}
           </p>
         </div>
-        <button className="alpha__close" onClick={onClose} aria-label="Close lesson">×</button>
+        <button className="alpha__close" onClick={onClose} aria-label="Close lesson">x</button>
       </div>
 
       {!ttsSupported && (
-        <p className="alpha__warn">⚠ Your browser doesn’t support speech synthesis. Audio may not play.</p>
+        <p className="alpha__warn">Your browser does not support speech synthesis.</p>
       )}
 
       <div className="alpha__grid">
@@ -64,40 +92,38 @@ export default function AlphabetLearner({ onClose }) {
               <span className="alpha__name">{letter.name}</span>
               <span className="alpha__it">IT: {letter.it}</span>
             </div>
+            {letter.desc && <p className="alpha__desc">{letter.desc}</p>}
 
             <div className="alpha__btns">
-              {/* Arabic accent */}
               <button
-                className="alpha__audio"
-                onClick={() => speak(letter.say, 'ar-SA')}
-                title="Listen (Arabic)"
+                className={playing === letter.ar ? 'alpha__audio playing' : 'alpha__audio'}
+                onClick={() => playArabic(letter)}
+                title="Listen in Arabic"
               >
-                🔊 ع
+                {playing === letter.ar ? 'pause' : 'listen'}
               </button>
-              {/* Italian accent */}
               <button
                 className="alpha__audio alpha__audio--it"
                 onClick={() => speak(letter.it, 'it-IT')}
-                title="Ascolta (Italiano)"
+                title="Ascolta in Italiano"
               >
-                🔊 IT
+                IT
               </button>
-              {/* Voice test */}
               {sttSupported && (
                 <button
-                  className={`alpha__mic${micLetter === letter.ar ? ' listening' : ''}`}
+                  className={micLetter === letter.ar ? 'alpha__mic listening' : 'alpha__mic'}
                   onClick={() => testPronunciation(letter)}
                   disabled={micLetter !== null}
                   title="Test your pronunciation"
                 >
-                  {micLetter === letter.ar ? '🎙️…' : '🎤'}
+                  {micLetter === letter.ar ? 'listening...' : 'mic'}
                 </button>
               )}
             </div>
 
             {result && result.ar === letter.ar && (
-              <p className={`alpha__result ${result.ok ? 'ok' : 'no'}`}>
-                {result.ok ? '✓ Well done!' : `✗ Heard: ${result.heard}`}
+              <p className={result.ok ? 'alpha__result ok' : 'alpha__result no'}>
+                {result.ok ? 'Well done!' : 'Heard: ' + result.heard}
               </p>
             )}
           </div>
@@ -105,14 +131,9 @@ export default function AlphabetLearner({ onClose }) {
       </div>
 
       <div className="alpha__nav">
-        <button className="btn btn--ghost btn--sm" onClick={goPrev} disabled={isFirst}>← Previous</button>
-        <button
-          className="btn btn--ghost btn--sm"
-          onClick={() => speak(group.map((l) => l.say).join('، '), 'ar-SA')}
-        >
-          🔊 Play all
-        </button>
-        <button className="btn btn--gold btn--sm" onClick={goNext} disabled={isLast}>Next →</button>
+        <button className="btn btn--ghost btn--sm" onClick={goPrev} disabled={isFirst}>Previous</button>
+        <button className="btn btn--ghost btn--sm" onClick={playAll}>Play all</button>
+        <button className="btn btn--gold btn--sm" onClick={goNext} disabled={isLast}>Next</button>
       </div>
     </div>
   );

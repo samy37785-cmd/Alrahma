@@ -598,48 +598,136 @@ h2 { font-size: clamp(1.7rem, 3.5vw, 2.4rem); color: var(--green-deep); }
 .course--expanded { grid-column: 1 / -1; }
 .course--expanded .course__media { height: 90px; font-size: 2.4rem; }
 
-.alpha { margin-top: 18px; border-top: 1px solid var(--line); padding-top: 18px; }
-.alpha__top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
-.alpha__title { color: var(--green-deep); font-size: 1.1rem; }
-.alpha__progress { color: var(--muted); font-size: .85rem; }
-.alpha__close {
-  background: none; border: 0; font-size: 1.5rem; line-height: 1; color: var(--muted);
-  cursor: pointer;
+/* ── AlphabetLearner — modern redesign ─────────────────────────────────── */
+.alpha {
+  margin-top: 20px; border-top: 2px solid var(--green); padding-top: 22px;
 }
-.alpha__close:hover { color: var(--green-deep); }
-.alpha__warn { background: #fff7e6; color: #8a6d1b; padding: 8px 12px; border-radius: 8px; font-size: .85rem; margin-bottom: 12px; }
 
-.alpha__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; }
-.alpha__tile {
-  background: var(--cream); border: 1px solid var(--line); border-radius: 12px;
-  padding: 16px; text-align: center; transition: border-color .15s, transform .15s;
+/* Header */
+.alpha__header {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  margin-bottom: 16px;
 }
-.alpha__tile:hover { border-color: var(--green); transform: translateY(-2px); }
-.alpha__char {
-  font-family: var(--serif); font-size: 3rem; color: var(--green-deep); line-height: 1;
-  margin-bottom: 8px;
+.alpha__title {
+  font-size: 1.25rem; font-weight: 700; color: var(--green-deep); margin: 0 0 2px;
+  font-family: var(--serif);
 }
-.alpha__map { display: flex; flex-direction: column; gap: 2px; margin-bottom: 12px; }
-.alpha__name { font-weight: 600; color: var(--ink); }
-.alpha__it { color: var(--gold-dark); font-size: .85rem; font-weight: 600; }
-
-.alpha__btns { display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; }
-.alpha__audio, .alpha__mic {
-  background: #fff; border: 1px solid var(--line); border-radius: 8px;
-  padding: 7px 10px; cursor: pointer; font-size: .82rem; font-weight: 600;
-  transition: background .15s, border-color .15s;
+.alpha__subtitle { font-size: .82rem; color: var(--muted); margin: 0; }
+.alpha__close-btn {
+  background: none; border: 1.5px solid var(--line); border-radius: 50%;
+  width: 32px; height: 32px; font-size: 1rem; cursor: pointer; color: var(--muted);
+  display: flex; align-items: center; justify-content: center;
+  transition: border-color .15s, color .15s;
 }
-.alpha__audio:hover { background: var(--green); color: #fff; border-color: var(--green); }
-.alpha__audio--it:hover { background: var(--gold-dark); border-color: var(--gold-dark); }
-.alpha__mic:hover { background: #eaf4ef; border-color: var(--green); }
-.alpha__mic.listening { background: #fde8e8; border-color: #e74c3c; animation: pulse 1s infinite; }
-.alpha__mic:disabled { opacity: .5; cursor: default; }
-@keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.08); } }
+.alpha__close-btn:hover { border-color: var(--green); color: var(--green-deep); }
 
-.alpha__desc { font-size: .75rem; color: var(--muted); margin: 4px 0 6px; line-height: 1.4; text-align: center; }
-.alpha__audio.playing { background: var(--green); color: #fff; }
-.alpha__result { margin-top: 10px; font-size: .82rem; font-weight: 600; }
-.alpha__result.ok { color: var(--green); }
-.alpha__result.no { color: #c0392b; }
+/* Progress dots */
+.alpha__dots {
+  display: flex; justify-content: center; gap: 6px; margin-bottom: 8px;
+}
+.alpha__dot {
+  width: 8px; height: 8px; border-radius: 50%; border: none; cursor: pointer;
+  background: var(--line); padding: 0; transition: background .2s, transform .2s;
+}
+.alpha__dot--active { background: var(--green); transform: scale(1.4); }
+.alpha__dot:hover:not(.alpha__dot--active) { background: #a8d5c2; }
+.alpha__group-label {
+  text-align: center; font-size: .8rem; color: var(--muted);
+  letter-spacing: .03em; margin: 0 0 18px; font-weight: 500;
+}
 
-.alpha__nav { display: flex; justify-content: space-between; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
+/* Full-alphabet recordings */
+.alpha__recordings {
+  background: linear-gradient(135deg, #eef8f3 0%, #f5fbf7 100%);
+  border: 1px solid #c8e6d8; border-radius: 14px;
+  padding: 14px 16px; margin-bottom: 20px;
+}
+.alpha__rec-header {
+  display: flex; justify-content: space-between; align-items: center;
+  flex-wrap: wrap; gap: 10px; margin-bottom: 10px;
+}
+.alpha__rec-title { font-size: .88rem; font-weight: 700; color: var(--green-deep); }
+.alpha__rec-tabs { display: flex; gap: 6px; }
+.alpha__rec-tab {
+  padding: 5px 14px; border-radius: 20px; border: 1.5px solid var(--green);
+  background: #fff; color: var(--green-deep); font-size: .8rem; font-weight: 600;
+  cursor: pointer; transition: background .15s, color .15s;
+}
+.alpha__rec-tab--active { background: var(--green); color: #fff; }
+.alpha__rec-audio { width: 100%; height: 36px; border-radius: 8px; }
+
+/* Letter cards */
+.alpha__cards {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px;
+  margin-bottom: 20px;
+}
+.alpha__card {
+  background: #fff; border: 1.5px solid var(--line); border-radius: 16px;
+  padding: 20px 14px 14px; text-align: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,.05);
+  transition: border-color .2s, transform .2s, box-shadow .2s;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+}
+.alpha__card:hover {
+  border-color: var(--green); transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(11,110,79,.12);
+}
+.alpha__glyph {
+  font-family: var(--serif); font-size: 3.8rem; color: var(--green-deep);
+  line-height: 1; margin-bottom: 6px;
+  background: linear-gradient(135deg, var(--green-deep), #1a9c6c);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.alpha__card-name { font-weight: 700; font-size: .95rem; color: var(--ink); }
+.alpha__card-it {
+  font-size: .78rem; font-weight: 600; color: var(--gold-dark);
+  background: #fdf6e3; border-radius: 6px; padding: 2px 8px;
+}
+.alpha__card-desc {
+  font-size: .72rem; color: var(--muted); line-height: 1.4;
+  margin: 4px 0 6px; max-width: 140px;
+}
+
+/* Action buttons */
+.alpha__actions { display: flex; gap: 8px; margin-top: 10px; }
+.alpha__btn {
+  width: 38px; height: 38px; border-radius: 50%; border: 1.5px solid var(--line);
+  background: #fff; cursor: pointer; font-size: 1.1rem;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .15s, border-color .15s, transform .15s;
+}
+.alpha__btn:hover { transform: scale(1.1); }
+.alpha__btn--ar { border-color: var(--green); color: var(--green-deep); }
+.alpha__btn--ar:hover { background: var(--green); color: #fff; }
+.alpha__btn--ar.alpha__btn--playing { background: var(--green); color: #fff; animation: pulse 1s infinite; }
+.alpha__btn--mic { border-color: #b0c4de; color: #555; }
+.alpha__btn--mic:hover { border-color: var(--green); background: #eaf4ef; }
+.alpha__btn--mic.alpha__btn--listening { background: #fde8e8; border-color: #e74c3c; animation: pulse 1s infinite; }
+.alpha__btn:disabled { opacity: .4; cursor: default; transform: none; }
+
+@keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+
+/* Feedback */
+.alpha__feedback {
+  margin-top: 8px; font-size: .78rem; font-weight: 700;
+  padding: 4px 10px; border-radius: 8px;
+}
+.alpha__feedback--ok { color: var(--green); background: #eaf4ef; }
+.alpha__feedback--no { color: #c0392b; background: #fde8e8; }
+
+/* Navigation */
+.alpha__nav {
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 10px; padding-top: 4px;
+}
+.alpha__nav-btn {
+  padding: 9px 22px; border-radius: 10px; border: 1.5px solid var(--green);
+  background: #fff; color: var(--green-deep); font-weight: 600; font-size: .88rem;
+  cursor: pointer; transition: background .15s, color .15s;
+}
+.alpha__nav-btn:hover:not(:disabled) { background: var(--green); color: #fff; }
+.alpha__nav-btn--next { background: var(--green); color: #fff; }
+.alpha__nav-btn--next:hover:not(:disabled) { background: var(--green-deep); }
+.alpha__nav-btn:disabled { opacity: .35; cursor: default; }
+.alpha__nav-count { font-size: .85rem; color: var(--muted); font-weight: 500; }

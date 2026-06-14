@@ -122,59 +122,59 @@ export const courses = [
 
 // Interactive alphabet.
 // Fields: ar=glyph, name=English, say=Arabic TTS text, it=Italian transliteration,
-//         audio=CDN WAV URL (CC BY-SA 4.0, Wikimedia Commons), desc=optional note.
+//         audio=local MP3 path (islamcan.com, downloaded), desc=optional note.
 // Audio falls back to Web Speech API when unavailable.
-const WM = 'https://upload.wikimedia.org/wikipedia/commons';
+const L = '/audio/letters'; // local folder: public/audio/letters/
 
 export const alphabetGroups = [
   // ── Group 1: ا ب ت ث ──────────────────────────────────────────────────────
   [
-    { ar: 'ا', name: 'Alif',  say: 'أَلِف',  it: 'A',     audio: `${WM}/7/77/Alif_A.wav` },
-    { ar: 'ب', name: 'Ba',    say: 'بَاء',   it: 'B',     audio: `${WM}/0/01/Baaudio.wav` },
-    { ar: 'ت', name: 'Ta',    say: 'تَاء',   it: 'T',     audio: `${WM}/5/54/Taaudio.wav` },
-    { ar: 'ث', name: 'Tha',   say: 'ثَاء',   it: 'Th',    audio: `${WM}/5/59/Thaaudio.wav` },
+    { ar: 'ا', name: 'Alif',  say: 'أَلِف',  it: 'A',     audio: `${L}/alif.mp3` },
+    { ar: 'ب', name: 'Ba',    say: 'بَاء',   it: 'B',     audio: `${L}/ba.mp3` },
+    { ar: 'ت', name: 'Ta',    say: 'تَاء',   it: 'T',     audio: `${L}/ta.mp3` },
+    { ar: 'ث', name: 'Tha',   say: 'ثَاء',   it: 'Th',    audio: `${L}/tha.mp3` },
   ],
   // ── Group 2: ج ح خ د ──────────────────────────────────────────────────────
   [
-    { ar: 'ج', name: 'Jeem',  say: 'جِيم',   it: 'G/Gi',  audio: `${WM}/a/ab/Jeemaudio.wav` },
-    { ar: 'ح', name: 'Ha',    say: 'حَاء',   it: 'Ḥ',     audio: `${WM}/8/8c/Haaudio.wav` },
-    { ar: 'خ', name: 'Kha',   say: 'خَاء',   it: 'Kh',    audio: `${WM}/a/a6/Khaaudio.wav` },
-    { ar: 'د', name: 'Dal',   say: 'دَال',   it: 'D',     audio: `${WM}/1/1b/Dalaudio.wav` },
+    { ar: 'ج', name: 'Jeem',  say: 'جِيم',   it: 'G/Gi',  audio: `${L}/jeem.mp3` },
+    { ar: 'ح', name: 'Ha',    say: 'حَاء',   it: 'H',     audio: `${L}/ha.mp3` },
+    { ar: 'خ', name: 'Kha',   say: 'خَاء',   it: 'Kh',    audio: `${L}/kha.mp3` },
+    { ar: 'د', name: 'Dal',   say: 'دَال',   it: 'D',     audio: `${L}/dal.mp3` },
   ],
   // ── Group 3: ذ ر ز س ──────────────────────────────────────────────────────
   [
-    { ar: 'ذ', name: 'Dhal',  say: 'ذَال',   it: 'Dh',    audio: `${WM}/6/62/Dzalaudio.wav` },
-    { ar: 'ر', name: 'Ra',    say: 'رَاء',   it: 'R',     audio: `${WM}/c/c9/RAAUDIO.wav` },
-    { ar: 'ز', name: 'Zain',  say: 'زَاي',   it: 'Z',     audio: `${WM}/3/3d/ZaiAUDIO.wav` },
-    { ar: 'س', name: 'Sin',   say: 'سِين',   it: 'S',     audio: `${WM}/5/56/Senaudio.wav` },
+    { ar: 'ذ', name: 'Dhal',  say: 'ذَال',   it: 'Dh',    audio: `${L}/dhal.mp3` },
+    { ar: 'ر', name: 'Ra',    say: 'رَاء',   it: 'R',     audio: `${L}/ra.mp3` },
+    { ar: 'ز', name: 'Zain',  say: 'زَاي',   it: 'Z',     audio: `${L}/zain.mp3` },
+    { ar: 'س', name: 'Sin',   say: 'سِين',   it: 'S',     audio: `${L}/sin.mp3` },
   ],
   // ── Group 4: ش ص ض ط ──────────────────────────────────────────────────────
   [
-    { ar: 'ش', name: 'Shin',  say: 'شِين',   it: 'Sc/Sh', audio: `${WM}/f/f0/Shenaudio.wav` },
-    { ar: 'ص', name: 'Sad',   say: 'صَاد',   it: 'Ṣ',     audio: `${WM}/9/9b/Sadaudio.wav` },
-    { ar: 'ض', name: 'Dad',   say: 'ضَاد',   it: 'Ḍ',     audio: `${WM}/0/02/Ddadaudio.wav` },
-    { ar: 'ط', name: 'Tah',   say: 'طَاء',   it: 'Ṭ',     audio: `${WM}/c/cf/Ttaaudio.wav` },
+    { ar: 'ش', name: 'Shin',  say: 'شِين',   it: 'Sc/Sh', audio: `${L}/shin.mp3` },
+    { ar: 'ص', name: 'Sad',   say: 'صَاد',   it: 'S',     audio: `${L}/sad.mp3` },
+    { ar: 'ض', name: 'Dad',   say: 'ضَاد',   it: 'D',     audio: `${L}/dad.mp3` },
+    { ar: 'ط', name: 'Tah',   say: 'طَاء',   it: 'T',     audio: `${L}/tah.mp3` },
   ],
   // ── Group 5: ظ ع غ ف ──────────────────────────────────────────────────────
   [
-    { ar: 'ظ', name: 'Zah',   say: 'ظَاء',   it: 'Ẓ',     audio: `${WM}/c/c4/Dddaudio.wav` },
-    { ar: 'ع', name: 'Ain',   say: 'عَين',   it: 'ʿ',     audio: `${WM}/8/88/Aaaudio.wav` },
-    { ar: 'غ', name: 'Ghain', say: 'غَين',   it: 'Gh',    audio: `${WM}/b/b2/Ghaudio.wav` },
-    { ar: 'ف', name: 'Fa',    say: 'فَاء',   it: 'F',     audio: `${WM}/a/a2/Faaudio.wav` },
+    { ar: 'ظ', name: 'Zah',   say: 'ظَاء',   it: 'Z',     audio: `${L}/zah.mp3` },
+    { ar: 'ع', name: 'Ain',   say: 'عَين',   it: 'Ain',   audio: `${L}/ain.mp3` },
+    { ar: 'غ', name: 'Ghain', say: 'غَين',   it: 'Gh',    audio: `${L}/ghain.mp3` },
+    { ar: 'ف', name: 'Fa',    say: 'فَاء',   it: 'F',     audio: `${L}/fa.mp3` },
   ],
   // ── Group 6: ق ك ل م ──────────────────────────────────────────────────────
   [
-    { ar: 'ق', name: 'Qaf',   say: 'قَاف',   it: 'Q',     audio: `${WM}/d/d3/Qafaudio.wav` },
-    { ar: 'ك', name: 'Kaf',   say: 'كَاف',   it: 'K',     audio: `${WM}/9/93/Kafaudio.wav` },
-    { ar: 'ل', name: 'Lam',   say: 'لاَم',   it: 'L',     audio: `${WM}/8/83/Lamudio.wav` },
-    { ar: 'م', name: 'Meem',  say: 'مِيم',   it: 'M',     audio: `${WM}/d/d8/Maudio.wav` },
+    { ar: 'ق', name: 'Qaf',   say: 'قَاف',   it: 'Q',     audio: `${L}/qaf.mp3` },
+    { ar: 'ك', name: 'Kaf',   say: 'كَاف',   it: 'K',     audio: `${L}/kaf.mp3` },
+    { ar: 'ل', name: 'Lam',   say: 'لاَم',   it: 'L',     audio: `${L}/lam.mp3` },
+    { ar: 'م', name: 'Meem',  say: 'مِيم',   it: 'M',     audio: `${L}/meem.mp3` },
   ],
   // ── Group 7: ن ه و ي ──────────────────────────────────────────────────────
   [
-    { ar: 'ن', name: 'Noon',  say: 'نُون',   it: 'N',     audio: `${WM}/2/2d/Naudio.wav` },
-    { ar: 'ه', name: 'Heh',   say: 'هَاء',   it: 'H',     audio: `${WM}/e/e9/Haaaudio.wav` },
-    { ar: 'و', name: 'Waw',   say: 'وَاو',   it: 'W/U',   audio: `${WM}/4/4e/Wawaudio.wav` },
-    { ar: 'ي', name: 'Ya',    say: 'يَاء',   it: 'Y/I',   audio: `${WM}/b/bd/Yaaudio.wav` },
+    { ar: 'ن', name: 'Noon',  say: 'نُون',   it: 'N',     audio: `${L}/noon.mp3` },
+    { ar: 'ه', name: 'Heh',   say: 'هَاء',   it: 'H',     audio: `${L}/heh.mp3` },
+    { ar: 'و', name: 'Waw',   say: 'وَاو',   it: 'W/U',   audio: `${L}/waw.mp3` },
+    { ar: 'ي', name: 'Ya',    say: 'يَاء',   it: 'Y/I',   audio: `${L}/ya.mp3` },
   ],
   // ── Group 8: Short vowels (harakat) ───────────────────────────────────────
   [

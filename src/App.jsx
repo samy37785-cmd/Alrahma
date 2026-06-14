@@ -10,6 +10,7 @@ import Blog from './pages/Blog';
 import FAQ from './pages/FAQ';
 import Privacy from './pages/Privacy';
 import PaymentResult from './pages/PaymentResult';
+import Billing from './pages/Billing';
 
 export default function App() {
   return (
@@ -23,6 +24,7 @@ export default function App() {
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/payment/success" element={<PaymentResult />} />
           <Route path="/payment/cancel" element={<PaymentResult cancelled />} />
+          <Route path="/billing" element={<ProtectedRoute><Billing /></ProtectedRoute>} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route

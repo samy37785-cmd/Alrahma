@@ -224,23 +224,45 @@ export const stats = [
 export const plans = [
   {
     name: 'Starter',
+    originalPrice: '€75',
     price: '€56',
+    discountPct: 25,
     featured: false,
-    features: ['2 classes / week', '1 hour per class', 'One-to-one tutoring', 'Zoom or Skype'],
+    sessionsPerWeek: 2,
+    sessionsPerMonth: 8,
+    features: ['2 classes / week', '8 sessions / month', '1 hour per class', 'One-to-one tutoring', 'Zoom or Skype'],
   },
   {
     name: 'Standard',
+    originalPrice: '€112',
     price: '€84',
+    discountPct: 25,
     featured: true,
     tag: 'Most popular',
-    features: ['3 classes / week', '1 hour per class', 'One-to-one tutoring', 'Progress reports'],
+    sessionsPerWeek: 3,
+    sessionsPerMonth: 12,
+    features: ['3 classes / week', '12 sessions / month', '1 hour per class', 'One-to-one tutoring', 'Progress reports'],
   },
   {
     name: 'Premium',
+    originalPrice: '€149',
     price: '€112',
+    discountPct: 25,
     featured: false,
-    features: ['4 classes / week', '1 hour per class', 'One-to-one tutoring', 'Ijazah pathway support'],
+    sessionsPerWeek: 4,
+    sessionsPerMonth: 16,
+    features: ['4 classes / week', '16 sessions / month', '1 hour per class', 'One-to-one tutoring', 'Ijazah pathway support'],
   },
+];
+
+// Sample billing invoices — one per month, newest first.
+export const sampleInvoices = [
+  { id: 'INV-2025-006', date: '2025-06-01', plan: 'Starter', originalAmount: 75, amount: 56, discountPct: 25, status: 'paid' },
+  { id: 'INV-2025-005', date: '2025-05-01', plan: 'Starter', originalAmount: 75, amount: 56, discountPct: 25, status: 'paid' },
+  { id: 'INV-2025-004', date: '2025-04-01', plan: 'Starter', originalAmount: 75, amount: 56, discountPct: 25, status: 'paid' },
+  { id: 'INV-2025-003', date: '2025-03-01', plan: 'Standard', originalAmount: 112, amount: 84, discountPct: 25, status: 'paid' },
+  { id: 'INV-2025-002', date: '2025-02-01', plan: 'Standard', originalAmount: 112, amount: 84, discountPct: 25, status: 'paid' },
+  { id: 'INV-2025-001', date: '2025-01-01', plan: 'Starter', originalAmount: 75, amount: 56, discountPct: 25, status: 'paid' },
 ];
 
 export const testimonials = [

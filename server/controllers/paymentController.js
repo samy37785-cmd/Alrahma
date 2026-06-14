@@ -1,6 +1,27 @@
 import crypto from 'crypto';
 import Payment from '../models/Payment.js';
+import Invoice from '../models/Invoice.js';
 import { getPlan } from '../config/plans.js';
+
+// Creates an Invoice from a confirmed Payment record.
+async function createInvoice(payment) {
+  const plan = getPlan(payment.plan);
+  const period = new Date(payment.createdAt || Date.now())
+    .toISOString().slice(0, 7); // "2025-06"
+  await Invoice.create({
+    user:           payment.userId,
+    customerEmail:  payment.customer?.email,
+    customerName:   payment.customer?.name,
+    plan:           payment.plan,
+    amount:         payment.amount,
+    originalAmount: plan?.originalAmount ?? payment.amount,
+    discountPct:    plan?.discountPct ?? 0,
+    currency:       payment.currency,
+    billingPeriod:  period,
+    status:         'paid',
+    payment:        payment._id,
+  });
+}
 
 /*
  * Payment controller — PayMob (cards + Vodafone Cash / wallets + Fawry) for the
@@ -113,6 +134,7 @@ export async function createPaymobPayment(req, res, next) {
       customer,
       status: 'pending',
       gatewayOrderId: String(order.id),
+      userId: req.user?._id ?? null,
     });
 
     // 4a) Cards -> return the hosted iframe URL (browser loads PayMob's secure page)
@@ -163,11 +185,15 @@ export async function paymobWebhook(req, res, next) {
     }
 
     const paid = obj.success === true && obj.pending === false && !obj.error_occured;
-    await Payment.findOneAndUpdate(
+    const updated = await Payment.findOneAndUpdate(
       { gatewayOrderId: String(obj.order?.id) },
       { status: paid ? 'paid' : 'failed', gatewayTxnId: String(obj.id), raw: obj },
       { new: true }
     );
+
+    if (paid && updated) {
+      await createInvoice(updated).catch(() => {}); // non-blocking — don't fail the webhook
+    }
 
     // PayMob only needs a 200 to stop retrying.
     res.sendStatus(200);
@@ -244,6 +270,7 @@ export async function createPaypalOrder(req, res, next) {
       customer,
       status: 'pending',
       gatewayOrderId: order.id,
+      userId: req.user?._id ?? null,
     });
 
     const approve = order.links?.find((l) => l.rel === 'approve')?.href;
@@ -271,11 +298,15 @@ export async function capturePaypalOrder(req, res, next) {
     const captureId =
       capture.purchase_units?.[0]?.payments?.captures?.[0]?.id;
 
-    await Payment.findOneAndUpdate(
+    const updated = await Payment.findOneAndUpdate(
       { gatewayOrderId: orderId },
       { status: completed ? 'paid' : 'failed', gatewayTxnId: captureId, raw: capture },
       { new: true }
     );
+
+    if (completed && updated) {
+      await createInvoice(updated).catch(() => {});
+    }
 
     res.json({ status: capture.status, orderId });
   } catch (err) {

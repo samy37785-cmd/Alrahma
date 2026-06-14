@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { softProtect } from '../middleware/auth.js';
 import {
   createPaymobPayment,
   paymobWebhook,
@@ -9,11 +10,11 @@ import {
 const router = Router();
 
 // --- PayMob (cards + Vodafone Cash / wallets + Fawry) ---
-router.post('/paymob', createPaymobPayment); // start a payment
-router.post('/paymob/webhook', paymobWebhook); // server-to-server callback (HMAC verified)
+router.post('/paymob', softProtect, createPaymobPayment);
+router.post('/paymob/webhook', paymobWebhook); // server-to-server, no auth header
 
 // --- PayPal (international) ---
-router.post('/paypal', createPaypalOrder); // create order -> approval link
-router.post('/paypal/:orderId/capture', capturePaypalOrder); // capture after approval
+router.post('/paypal', softProtect, createPaypalOrder);
+router.post('/paypal/:orderId/capture', capturePaypalOrder);
 
 export default router;

@@ -25,6 +25,9 @@ export default function Header() {
           {isAdmin && (
             <Link to="/admin" onClick={close}>Dashboard</Link>
           )}
+          {user && !isAdmin && (
+            <Link to="/billing" onClick={close}>My Invoices</Link>
+          )}
           <Link to={user ? '/' : '/login'} onClick={close}>
             {user ? user.name.split(' ')[0] : 'Login'}
           </Link>

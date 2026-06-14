@@ -594,6 +594,122 @@ h2 { font-size: clamp(1.7rem, 3.5vw, 2.4rem); color: var(--green-deep); }
   .modal__card.checkout { padding: 24px 18px; }
 }
 
+/* ===== Pricing discount additions ===== */
+.pricing__banner {
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+  background: linear-gradient(135deg, var(--green-deep), var(--green));
+  color: #fff; border-radius: var(--radius); padding: 14px 24px;
+  font-size: .95rem; margin-bottom: 32px; text-align: center;
+}
+.pricing__banner strong { color: var(--gold); }
+.pricing__banner-badge {
+  background: var(--gold); color: #3a2e05; font-size: .72rem; font-weight: 700;
+  padding: 3px 10px; border-radius: 999px; white-space: nowrap;
+}
+.plan__discount-badge {
+  position: absolute; top: -14px; right: 18px;
+  background: #e53e3e; color: #fff; font-size: .7rem; font-weight: 700;
+  padding: 3px 10px; border-radius: 999px;
+}
+.plan__original-price {
+  font-size: 1.1rem; color: var(--muted); font-weight: 500;
+  text-decoration: line-through; display: block; margin-bottom: 2px;
+}
+.plan__saving {
+  font-size: .82rem; color: #22863a; font-weight: 600;
+  background: #e6f4ea; border-radius: 999px; padding: 3px 12px;
+  display: inline-block; margin: -12px 0 16px;
+}
+
+/* ===== Billing page ===== */
+.billing-page__bar {
+  background: var(--green-deep); color: #d8e6df; padding: 14px 0;
+}
+.billing-page__bar-inner {
+  display: flex; justify-content: space-between; align-items: center;
+}
+.billing-page__main { padding: 48px 0 80px; }
+.billing-page__head { margin-bottom: 24px; }
+.billing-page__head h1 { font-size: clamp(1.6rem, 3vw, 2.2rem); color: var(--green-deep); }
+.billing-page__discount-notice {
+  display: flex; align-items: center; gap: 10px;
+  background: #e6f4ea; border: 1px solid #a8d5b5; border-radius: 10px;
+  padding: 12px 18px; font-size: .9rem; color: #1a5c2e; margin-bottom: 28px;
+}
+.billing-page__discount-notice strong { color: #145a2e; }
+.billing-page__table-wrap { overflow-x: auto; border-radius: var(--radius); box-shadow: var(--shadow); }
+.billing-page__table {
+  width: 100%; border-collapse: collapse; background: #fff; border-radius: var(--radius); overflow: hidden;
+}
+.billing-page__table thead { background: var(--green-deep); color: #fff; }
+.billing-page__table th { padding: 14px 18px; text-align: left; font-size: .82rem; font-weight: 600; letter-spacing: .3px; }
+.billing-page__table td { padding: 14px 18px; border-bottom: 1px solid var(--line); font-size: .92rem; vertical-align: middle; }
+.billing-page__row { cursor: pointer; transition: background .15s; }
+.billing-page__row:hover { background: #f0f8f4; }
+.billing-page__row:last-child td { border-bottom: none; }
+.billing-page__id { font-family: monospace; font-size: .82rem; color: var(--muted); }
+.billing-page__plan-badge {
+  background: var(--green); color: #fff; font-size: .72rem; font-weight: 700;
+  padding: 3px 10px; border-radius: 999px;
+}
+.billing-page__strike { color: var(--muted); text-decoration: line-through; font-size: .88rem; }
+.billing-page__discount-col { color: #e53e3e; font-weight: 600; }
+.billing-page__amount { font-weight: 700; color: var(--green-deep); }
+.billing-page__status--paid {
+  background: #e6f4ea; color: #1a5c2e; font-size: .75rem; font-weight: 700;
+  padding: 4px 12px; border-radius: 999px; display: inline-block;
+}
+.billing-page__hint { color: var(--muted); font-size: .82rem; margin-top: 14px; text-align: center; }
+
+/* ===== Invoice detail modal ===== */
+.modal__card.invoice-detail {
+  width: min(100%, 560px); max-height: 92vh; overflow-y: auto; padding: 32px 28px;
+}
+.inv__header {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  gap: 16px; flex-wrap: wrap; margin-bottom: 6px;
+}
+.inv__academy { display: flex; align-items: center; gap: 12px; }
+.inv__logo { font-size: 2.2rem; color: var(--gold); }
+.inv__academy strong { display: block; font-size: 1.1rem; color: var(--green-deep); }
+.inv__academy small { color: var(--muted); font-size: .78rem; }
+.inv__meta { text-align: right; font-size: .85rem; color: var(--muted); line-height: 1.8; }
+.inv__meta strong { color: var(--ink); }
+.inv__status--paid {
+  background: #e6f4ea; color: #1a5c2e; font-size: .72rem; font-weight: 700;
+  padding: 3px 12px; border-radius: 999px; display: inline-block; margin-top: 6px;
+}
+.inv__divider { border: none; border-top: 1px solid var(--line); margin: 18px 0; }
+.inv__section-title {
+  font-size: .8rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .4px; color: var(--green-deep); margin-bottom: 10px;
+}
+.inv__features { display: flex; flex-direction: column; gap: 6px; }
+.inv__features li { font-size: .9rem; color: var(--ink); }
+.inv__breakdown { display: flex; flex-direction: column; gap: 8px; }
+.inv__row {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: .93rem; color: var(--muted);
+}
+.inv__strike { text-decoration: line-through; color: var(--muted); }
+.inv__row--discount { color: #e53e3e; }
+.inv__discount-val { font-weight: 600; }
+.inv__row--total {
+  border-top: 2px solid var(--green-deep); padding-top: 10px; margin-top: 4px;
+  font-size: 1.05rem; color: var(--green-deep);
+}
+.inv__note {
+  text-align: center; font-size: .82rem; color: var(--muted);
+  margin: 20px 0 14px; font-style: italic;
+}
+.inv__print { font-size: .88rem; }
+
+@media print {
+  .modal { position: static; background: none; }
+  .modal__card.invoice-detail { box-shadow: none; max-height: none; width: 100%; padding: 0; }
+  .modal__close, .inv__print { display: none; }
+}
+
 /* ===== Interactive alphabet learner (inside the course card) ===== */
 .course--expanded { grid-column: 1 / -1; }
 .course--expanded .course__media { height: 90px; font-size: 2.4rem; }

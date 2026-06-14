@@ -31,6 +31,9 @@ export const startPaypalPayment = (data) =>
 export const capturePaypalPayment = (orderId) =>
   api.post(`/payments/paypal/${orderId}/capture`).then((r) => r.data);
 
+// --- Invoices (require login) ---
+export const getInvoices = () => api.get('/invoices').then((r) => r.data);
+
 // --- Admin helpers (require a valid admin token) ---
 export const createCourse = (data) => api.post('/courses', data).then((r) => r.data);
 export const deleteCourse = (id) => api.delete(`/courses/${id}`).then((r) => r.data);

@@ -6,9 +6,9 @@
 // PayMob settles in the currency your account is configured for (often EGP);
 // set PAYMOB_CURRENCY in .env to match your merchant account.
 export const PLANS = {
-  Starter: { name: 'Starter', amount: 56, currency: 'EUR' },
-  Standard: { name: 'Standard', amount: 84, currency: 'EUR' },
-  Premium: { name: 'Premium', amount: 112, currency: 'EUR' },
+  Starter:  { name: 'Starter',  amount: 56,  originalAmount: 75,  discountPct: 25, currency: 'EUR' },
+  Standard: { name: 'Standard', amount: 84,  originalAmount: 112, discountPct: 25, currency: 'EUR' },
+  Premium:  { name: 'Premium',  amount: 112, originalAmount: 149, discountPct: 25, currency: 'EUR' },
 };
 
 // Look up a plan by name; returns undefined if unknown (controllers send 400).

@@ -1,8 +1,8 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import Brand from '../components/Brand';
-import AlphabetLearner from '../components/AlphabetLearner';
-import Tasbeeh from '../components/Tasbeeh';
+import Brand from '../components/layout/Brand';
+import AlphabetLearner from '../components/features/AlphabetLearner';
+import Tasbeeh from '../components/features/Tasbeeh';
 import useSEO from '../hooks/useSEO';
 import {
   getChapters, getVerses, getVersesByPage, getVersesByJuz,

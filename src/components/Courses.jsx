@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Reveal from './Reveal';
-import ResourceModal from './ResourceModal';
-import AlphabetLearner from './AlphabetLearner';
+import Reveal from './ui/Reveal';
+import ResourceModal from './ui/ResourceModal';
+import AlphabetLearner from './features/AlphabetLearner';
 import { useTrial } from '../context/TrialContext';
 import { courses } from '../data';
 

@@ -1,5 +1,5 @@
 import { Navigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../../context/AuthContext';
 
 // Guards a route. If not logged in -> redirect to /login.
 // If adminOnly and the user isn't an admin -> redirect home.

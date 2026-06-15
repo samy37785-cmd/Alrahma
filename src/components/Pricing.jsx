@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import Reveal from './Reveal';
-import CheckoutModal from './CheckoutModal';
+import Reveal from './ui/Reveal';
+import CheckoutModal from './ui/CheckoutModal';
 import { plans } from '../data';
 
 export default function Pricing() {

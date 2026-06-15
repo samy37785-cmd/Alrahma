@@ -1,7 +1,7 @@
 import { TrialProvider } from '../context/TrialContext';
 import useSEO from '../hooks/useSEO';
-import TopBar from '../components/TopBar';
-import Header from '../components/Header';
+import TopBar from '../components/layout/TopBar';
+import Header from '../components/layout/Header';
 import Hero from '../components/Hero';
 import Features from '../components/Features';
 import Steps from '../components/Steps';
@@ -11,8 +11,8 @@ import Pricing from '../components/Pricing';
 import Testimonials from '../components/Testimonials';
 import Trial from '../components/Trial';
 import Newsletter from '../components/Newsletter';
-import Footer from '../components/Footer';
-import WhatsappFab from '../components/WhatsappFab';
+import Footer from '../components/layout/Footer';
+import WhatsappFab from '../components/ui/WhatsappFab';
 
 export default function Home() {
   useSEO({

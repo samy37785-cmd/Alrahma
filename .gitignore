@@ -1,4 +1,7 @@
 node_modules
 dist
+legacy
 .vite
 *.local
+.env
+server/.env

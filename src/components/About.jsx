@@ -1,4 +1,4 @@
-﻿import Reveal from './Reveal';
+﻿import Reveal from './ui/Reveal';
 import { site, stats, about, objectives, values, offers } from '../data';
 
 export default function About() {

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import Brand from '../components/Brand';
+import Brand from '../components/layout/Brand';
 import useSEO from '../hooks/useSEO';
 
 export default function Register() {

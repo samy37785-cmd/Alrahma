@@ -1,4 +1,4 @@
-import useScrollReveal from '../hooks/useScrollReveal';
+import useScrollReveal from '../../hooks/useScrollReveal';
 
 /**
  * Wraps children in an element that fades/slides in on scroll.

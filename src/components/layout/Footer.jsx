@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import Brand from './Brand';
-import { site, socials, courses } from '../data';
+import { site, socials, courses } from '../../data';
 
 const quickLinks = [
   { to: '/', label: 'Home' },

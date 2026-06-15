@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { startPaymobPayment, startPaypalPayment, getManualMethods, submitManualPayment } from '../api/client';
+import { startPaymobPayment, startPaypalPayment, getManualMethods, submitManualPayment } from '../../api/client';
 
 // Gateway methods (handled via API)
 const GATEWAY_METHODS = [

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import Brand from '../components/Brand';
+import Brand from '../components/layout/Brand';
 import { site } from '../data';
 import useSEO from '../hooks/useSEO';
 

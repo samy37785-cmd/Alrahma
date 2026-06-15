@@ -1,4 +1,4 @@
-import { site } from '../data';
+import { site } from '../../data';
 
 export default function Brand({ light = false }) {
   return (

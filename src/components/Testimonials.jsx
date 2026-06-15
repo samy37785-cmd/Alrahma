@@ -1,4 +1,4 @@
-﻿import Reveal from './Reveal';
+﻿import Reveal from './ui/Reveal';
 import { testimonials } from '../data';
 
 const VIDEO_REVIEWS = [

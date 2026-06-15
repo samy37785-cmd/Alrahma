@@ -1,4 +1,4 @@
-import { site, socials } from '../data';
+import { site, socials } from '../../data';
 
 export default function TopBar() {
   return (

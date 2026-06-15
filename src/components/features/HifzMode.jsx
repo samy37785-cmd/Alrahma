@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { getVerseAudios } from '../api/quran';
+import { getVerseAudios } from '../../api/quran';
 
 const clean = (html = '') => html.replace(/<[^>]+>/g, '');
 

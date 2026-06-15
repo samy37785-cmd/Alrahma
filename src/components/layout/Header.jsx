@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import Brand from './Brand';
-import { useAuth } from '../context/AuthContext';
-import { navLinks } from '../data';
+import { useAuth } from '../../context/AuthContext';
+import { navLinks } from '../../data';
 
 export default function Header() {
   const [open, setOpen] = useState(false);

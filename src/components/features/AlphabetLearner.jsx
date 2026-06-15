@@ -1,6 +1,6 @@
 ﻿import { useState, useRef } from 'react';
-import useSpeech from '../hooks/useSpeech';
-import { alphabetGroups } from '../data';
+import useSpeech from '../../hooks/useSpeech';
+import { alphabetGroups } from '../../data';
 
 const stripDiacritics = (s = '') => s.replace(/[ً-ْ]/g, '').trim();
 

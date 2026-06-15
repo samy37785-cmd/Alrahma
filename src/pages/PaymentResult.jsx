@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import Brand from '../components/Brand';
+import Brand from '../components/layout/Brand';
 import { capturePaypalPayment } from '../api/client';
 
 // Shown after PayPal redirects the buyer back. `cancelled` = the user backed out.

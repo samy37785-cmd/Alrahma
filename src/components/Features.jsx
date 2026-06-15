@@ -1,4 +1,4 @@
-import Reveal from './Reveal';
+import Reveal from './ui/Reveal';
 import { features } from '../data';
 
 export default function Features() {

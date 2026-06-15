@@ -1,5 +1,5 @@
 import { useParams, Link, Navigate } from 'react-router-dom';
-import Brand from '../components/Brand';
+import Brand from '../components/layout/Brand';
 import { posts, CATEGORY_COLORS } from '../data/blogPosts';
 import useSEO from '../hooks/useSEO';
 

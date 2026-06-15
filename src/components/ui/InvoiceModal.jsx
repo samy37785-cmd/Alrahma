@@ -1,4 +1,4 @@
-import { plans } from '../data';
+import { plans } from '../../data';
 
 const FMT = new Intl.DateTimeFormat('en-GB', { year: 'numeric', month: 'long', day: 'numeric' });
 

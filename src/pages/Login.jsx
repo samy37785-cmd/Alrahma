@@ -63,6 +63,9 @@ export default function Login() {
           No account? <Link to="/register">Create one</Link>
         </p>
         <p className="auth__switch">
+          <Link to="/forgot-password">Forgot your password?</Link>
+        </p>
+        <p className="auth__switch">
           <Link to="/">← Back to website</Link>
         </p>
       </div>

@@ -2,6 +2,7 @@ import ManualPayment from '../models/ManualPayment.js';
 import Invoice from '../models/Invoice.js';
 import { getPlan } from '../config/plans.js';
 import { sendMail, ADMIN_EMAIL } from '../config/mailer.js';
+import { enrollUser } from '../config/enrollment.js';
 import {
   manualPaymentAdminEmail,
   manualPaymentApprovedEmail,
@@ -181,8 +182,9 @@ export async function reviewManualPayment(req, res, next) {
       throw new Error('Manual payment request not found');
     }
 
-    // On approval, create an invoice for the student.
+    // On approval, create an invoice and activate subscription.
     if (status === 'approved') {
+      await enrollUser(record.userId, record.plan).catch(() => {});
       const plan = getPlan(record.plan);
       const period = new Date().toISOString().slice(0, 7);
       await Invoice.create({

@@ -9,6 +9,7 @@ import {
   getTrials,
   getManualPayments,
   reviewManualPayment,
+  getUsers,
 } from '../api/client';
 import api from '../api/client';
 
@@ -20,6 +21,7 @@ export default function AdminDashboard() {
   const [trials, setTrials]           = useState([]);
   const [manualPays, setManualPays]   = useState([]);
   const [subscribers, setSubscribers] = useState([]);
+  const [users, setUsers]             = useState([]);
   const [form, setForm]               = useState(EMPTY_COURSE);
   const [editingId, setEditingId]     = useState(null);
   const [error, setError]             = useState('');
@@ -27,16 +29,18 @@ export default function AdminDashboard() {
 
   const loadAll = useCallback(async () => {
     try {
-      const [c, t, m, s] = await Promise.all([
+      const [c, t, m, s, u] = await Promise.all([
         getCourses(),
         getTrials(),
         getManualPayments(),
         api.get('/newsletter').then((r) => r.data),
+        getUsers(),
       ]);
       setCourses(c);
       setTrials(t);
       setManualPays(m);
       setSubscribers(s);
+      setUsers(u);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to load data');
     }
@@ -102,6 +106,7 @@ export default function AdminDashboard() {
     { key: 'trials',      label: `Trials (${trials.length})` },
     { key: 'payments',    label: `Payments (${manualPays.filter((p) => p.status === 'pending').length} pending)` },
     { key: 'newsletter',  label: `Newsletter (${subscribers.length})` },
+    { key: 'users',       label: `Users (${users.length})` },
   ];
 
   return (
@@ -255,6 +260,41 @@ export default function AdminDashboard() {
                   ))}
                   {manualPays.length === 0 && (
                     <tr><td colSpan="9" className="admin__empty">No manual payments yet.</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        )}
+
+        {/* ── Users tab ── */}
+        {activeTab === 'users' && (
+          <section className="admin__panel">
+            <h2>Registered Users ({users.length})</h2>
+            <div className="admin__table-wrap">
+              <table className="admin__table">
+                <thead>
+                  <tr><th>#</th><th>Name</th><th>Email</th><th>Role</th><th>Plan</th><th>Sub Status</th><th>Valid Until</th><th>Joined</th></tr>
+                </thead>
+                <tbody>
+                  {users.map((u, i) => (
+                    <tr key={u._id}>
+                      <td>{i + 1}</td>
+                      <td>{u.name}</td>
+                      <td>{u.email}</td>
+                      <td><span className="admin__badge">{u.role}</span></td>
+                      <td>{u.subscription?.plan || '—'}</td>
+                      <td>
+                        <span className={`admin__badge admin__badge--${u.subscription?.status === 'active' ? 'approved' : 'rejected'}`}>
+                          {u.subscription?.status || 'inactive'}
+                        </span>
+                      </td>
+                      <td>{u.subscription?.validUntil ? new Date(u.subscription.validUntil).toLocaleDateString() : '—'}</td>
+                      <td>{new Date(u.createdAt).toLocaleDateString()}</td>
+                    </tr>
+                  ))}
+                  {users.length === 0 && (
+                    <tr><td colSpan="8" className="admin__empty">No users yet.</td></tr>
                   )}
                 </tbody>
               </table>

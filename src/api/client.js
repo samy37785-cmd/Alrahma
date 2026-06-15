@@ -50,3 +50,6 @@ export const createCourse = (data) => api.post('/courses', data).then((r) => r.d
 export const updateCourse = (id, data) => api.put(`/courses/${id}`, data).then((r) => r.data);
 export const deleteCourse = (id) => api.delete(`/courses/${id}`).then((r) => r.data);
 export const getTrials = () => api.get('/trials').then((r) => r.data);
+export const getUsers  = () => api.get('/auth/users').then((r) => r.data);
+export const forgotPassword = (email) => api.post('/auth/forgot-password', { email }).then((r) => r.data);
+export const resetPassword  = (data)  => api.post('/auth/reset-password', data).then((r) => r.data);

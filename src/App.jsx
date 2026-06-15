@@ -17,6 +17,8 @@ import Profile from './pages/Profile';
 import Teachers from './pages/Teachers';
 import IslamicTools from './pages/IslamicTools';
 import Adhkar from './pages/Adhkar';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import NotFound from './pages/NotFound';
 
 export default function App() {
@@ -37,6 +39,8 @@ export default function App() {
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route
             path="/admin"
             element={

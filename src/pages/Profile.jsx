@@ -1,9 +1,16 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { getMe } from '../api/client';
 
 export default function Profile() {
   const { user, logout, updateProfile } = useAuth();
+
+  const [subscription, setSubscription] = useState(user?.subscription || null);
+
+  useEffect(() => {
+    getMe().then((u) => setSubscription(u.subscription)).catch(() => {});
+  }, []);
 
   const [info, setInfo] = useState({ name: user?.name || '', email: user?.email || '' });
   const [pass, setPass] = useState({ currentPassword: '', newPassword: '', confirm: '' });
@@ -144,6 +151,33 @@ export default function Profile() {
             </form>
           </section>
         </div>
+
+        {/* Subscription card */}
+        <section className="admin__panel" style={{ marginTop: '1.5rem' }}>
+          <h2>My Subscription</h2>
+          {subscription?.status === 'active' ? (
+            <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap', alignItems: 'center' }}>
+              <div>
+                <p style={{ margin: 0, color: '#888', fontSize: '.85rem' }}>Current Plan</p>
+                <p style={{ margin: 0, fontWeight: 700, fontSize: '1.2rem', color: '#0b6e4f' }}>{subscription.plan}</p>
+              </div>
+              <div>
+                <p style={{ margin: 0, color: '#888', fontSize: '.85rem' }}>Status</p>
+                <span className="admin__badge admin__badge--approved">Active</span>
+              </div>
+              <div>
+                <p style={{ margin: 0, color: '#888', fontSize: '.85rem' }}>Valid Until</p>
+                <p style={{ margin: 0, fontWeight: 600 }}>{new Date(subscription.validUntil).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+              </div>
+              <Link to="/billing" className="btn btn--ghost btn--sm" style={{ marginLeft: 'auto' }}>View Invoices</Link>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+              <p style={{ margin: 0, color: '#888' }}>You don't have an active subscription yet.</p>
+              <Link to="/#pricing" className="btn btn--green btn--sm">View Plans</Link>
+            </div>
+          )}
+        </section>
       </main>
     </div>
   );

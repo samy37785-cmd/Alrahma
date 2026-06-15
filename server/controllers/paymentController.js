@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import Payment from '../models/Payment.js';
 import Invoice from '../models/Invoice.js';
 import { getPlan } from '../config/plans.js';
+import { enrollUser } from '../config/enrollment.js';
 
 // Creates an Invoice from a confirmed Payment record.
 async function createInvoice(payment) {
@@ -192,7 +193,8 @@ export async function paymobWebhook(req, res, next) {
     );
 
     if (paid && updated) {
-      await createInvoice(updated).catch(() => {}); // non-blocking — don't fail the webhook
+      await createInvoice(updated).catch(() => {});
+      await enrollUser(updated.userId, updated.plan).catch(() => {});
     }
 
     // PayMob only needs a 200 to stop retrying.
@@ -306,6 +308,7 @@ export async function capturePaypalOrder(req, res, next) {
 
     if (completed && updated) {
       await createInvoice(updated).catch(() => {});
+      await enrollUser(updated.userId, updated.plan).catch(() => {});
     }
 
     res.json({ status: capture.status, orderId });

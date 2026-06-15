@@ -18,6 +18,14 @@ const userSchema = new mongoose.Schema(
       select: false, // never return the password by default
     },
     role: { type: String, enum: ['student', 'admin'], default: 'student' },
+    subscription: {
+      plan:        { type: String, default: null },
+      status:      { type: String, enum: ['active', 'inactive'], default: 'inactive' },
+      activeSince: { type: Date, default: null },
+      validUntil:  { type: Date, default: null },
+    },
+    resetToken:       { type: String, select: false },
+    resetTokenExpiry: { type: Date,   select: false },
   },
   { timestamps: true }
 );

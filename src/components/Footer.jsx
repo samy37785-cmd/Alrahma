@@ -1,15 +1,16 @@
 import { Link } from 'react-router-dom';
 import Brand from './Brand';
-import { site, socials } from '../data';
+import { site, socials, courses } from '../data';
 
 const quickLinks = [
-  { href: '#about', label: 'About' },
-  { href: '#courses', label: 'Courses' },
-  { href: '#pricing', label: 'Pricing' },
-  { href: '#testimonials', label: 'Testimonials' },
+  { to: '/', label: 'Home' },
+  { to: '/#about', label: 'About' },
+  { to: '/#courses', label: 'Courses' },
+  { to: '/#pricing', label: 'Pricing' },
+  { to: '/#testimonials', label: 'Testimonials' },
+  { to: '/teachers', label: 'Teachers' },
+  { to: '/#contact', label: 'Contact' },
 ];
-
-const courseLinks = ['Quran Reading', 'Tajweed', 'Memorization', 'Arabic Language'];
 
 export default function Footer() {
   return (
@@ -27,8 +28,8 @@ export default function Footer() {
           <h4>Quick Links</h4>
           <ul>
             {quickLinks.map((l) => (
-              <li key={l.href}>
-                <a href={l.href}>{l.label}</a>
+              <li key={l.to}>
+                <Link to={l.to}>{l.label}</Link>
               </li>
             ))}
           </ul>
@@ -37,9 +38,9 @@ export default function Footer() {
         <div className="footer__col">
           <h4>Courses</h4>
           <ul>
-            {courseLinks.map((c) => (
-              <li key={c}>
-                <a href="#courses">{c}</a>
+            {courses.map((c) => (
+              <li key={c.title}>
+                <Link to="/#courses">{c.title}</Link>
               </li>
             ))}
           </ul>
@@ -63,7 +64,7 @@ export default function Footer() {
           <div className="footer__social">
             {socials.map((s) => (
               <a key={s.label} href={s.href} aria-label={s.label} target="_blank" rel="noopener noreferrer">
-                {s.short}
+                <i className={s.icon}></i>
               </a>
             ))}
           </div>
@@ -74,7 +75,7 @@ export default function Footer() {
         <div className="container">
           <p>Copyright © {new Date().getFullYear()} {site.name} Academy. All rights reserved.</p>
           <p>
-            <Link to="/privacy">Privacy Policy</Link> · <a href="#contact">Contact</a>
+            <Link to="/privacy">Privacy Policy</Link> · <Link to="/#contact">Contact</Link>
           </p>
         </div>
       </div>

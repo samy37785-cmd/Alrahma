@@ -13,6 +13,7 @@ import Privacy from './pages/Privacy';
 import PaymentResult from './pages/PaymentResult';
 import Billing from './pages/Billing';
 import Profile from './pages/Profile';
+import Teachers from './pages/Teachers';
 import NotFound from './pages/NotFound';
 
 export default function App() {
@@ -40,6 +41,7 @@ export default function App() {
               </ProtectedRoute>
             }
           />
+          <Route path="/teachers" element={<Teachers />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

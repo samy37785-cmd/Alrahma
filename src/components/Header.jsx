@@ -21,6 +21,7 @@ export default function Header() {
               {link.label}
             </a>
           ))}
+          <Link to="/teachers" onClick={close}>Teachers</Link>
           {isAdmin && (
             <Link to="/admin" onClick={close}>Dashboard</Link>
           )}

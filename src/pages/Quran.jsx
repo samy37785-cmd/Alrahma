@@ -2,6 +2,7 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import Brand from '../components/Brand';
 import AlphabetLearner from '../components/AlphabetLearner';
+import Tasbeeh from '../components/Tasbeeh';
 import useSEO from '../hooks/useSEO';
 import {
   getChapters, getVerses, getVersesByPage, getVersesByJuz,
@@ -250,6 +251,7 @@ export default function Quran() {
   const [fontSize, setFontSize] = useState(() => Number(localStorage.getItem('qlc-font') || 34));
   useEffect(() => { localStorage.setItem('qlc-dark', darkMode ? '1' : '0'); }, [darkMode]);
   useEffect(() => { localStorage.setItem('qlc-font', String(fontSize)); }, [fontSize]);
+  useEffect(() => { localStorage.setItem('khatm-done', JSON.stringify(khatmDone)); }, [khatmDone]);
 
   /* ── Panel / UI state ────────────────────────────────────────── */
   const [showShortcuts,  setShowShortcuts] = useState(false);
@@ -292,6 +294,9 @@ export default function Quran() {
   const [loadingVA, setLoadingVA]           = useState(false);
   const [revealed, setRevealed]             = useState({});
   const [showTrans, setShowTrans]           = useState(true);
+  const [khatmDone, setKhatmDone]          = useState(
+    () => { try { return JSON.parse(localStorage.getItem('khatm-done') || '[]'); } catch { return []; } }
+  );
 
   const audioRef      = useRef(null);
   const hifzAudio     = useRef(null);
@@ -388,6 +393,7 @@ export default function Quran() {
           break;
         case ' ':
           e.preventDefault();
+          if (tab === 'tasbeeh') { break; }
           if (tab === 'hifz') { isPlaying ? stopHifz() : startHifz(); }
           else if (audioRef.current) {
             audioRef.current.paused ? audioRef.current.play().catch(() => {}) : audioRef.current.pause();
@@ -504,7 +510,9 @@ export default function Quran() {
   };
 
   /* ── Navigation helpers ──────────────────────────────────────── */
-  const selectSurah = (id) => { setActiveId(id); setNavMode('surah'); stopHifz(); setRevealed({}); setOpenTafsir({}); };
+  const selectSurah     = (id) => { setActiveId(id); setNavMode('surah'); stopHifz(); setRevealed({}); setOpenTafsir({}); };
+  const selectFromKhatm = (id) => { setActiveId(id); stopHifz(); setRevealed({}); setOpenTafsir({}); };
+  const toggleKhatm     = (id) => setKhatmDone((p) => p.includes(id) ? p.filter((x) => x !== id) : [...p, id]);
   const changeLang  = (l)  => { setLang(l); stopHifz(); };
   const goPage      = (n)  => { setPageNum(Math.max(1, Math.min(604, n))); setNavMode('page'); setOpenTafsir({}); };
   const goJuz       = (n)  => { setJuzNum(n); setNavMode('juz'); setOpenTafsir({}); };
@@ -552,6 +560,7 @@ export default function Quran() {
             {[
               { key: 'reading',  icon: '📖', label: ui.reading },
               { key: 'hifz',     icon: '🧠', label: ui.hifz },
+              { key: 'tasbeeh',  icon: '📿', label: 'تسبيح' },
               { key: 'alphabet', icon: '🔤', label: ui.alphabet },
             ].map((t) => (
               <button
@@ -599,8 +608,14 @@ export default function Quran() {
         </div>
       )}
 
+      {tab === 'tasbeeh' && (
+        <div className="qlc__tasbeeh-wrap">
+          <Tasbeeh />
+        </div>
+      )}
+
       {/* ════ MAIN LAYOUT ══════════════════════════════════════════ */}
-      {tab !== 'alphabet' && (
+      {tab !== 'alphabet' && tab !== 'tasbeeh' && (
         <div className="qlc__layout">
 
           {/* ━━━━━━━━━━━━━━  SIDEBAR  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
@@ -610,6 +625,7 @@ export default function Quran() {
                 { key: 'surah', label: ui.navSurah || 'Surah' },
                 { key: 'page',  label: ui.navPage  || 'Page' },
                 { key: 'juz',   label: ui.navJuz   || 'Juz' },
+                { key: 'khatm', label: 'ختمة' },
               ].map((m) => (
                 <button
                   key={m.key}
@@ -618,6 +634,7 @@ export default function Quran() {
                     if (m.key === 'surah') setNavMode('surah');
                     if (m.key === 'page')  setNavMode('page');
                     if (m.key === 'juz')   setNavMode('juz');
+                    if (m.key === 'khatm') setNavMode('khatm');
                   }}
                 >{m.label}</button>
               ))}
@@ -691,6 +708,38 @@ export default function Quran() {
                 ))}
               </ul>
             )}
+
+            {navMode === 'khatm' && (
+              <div className="qlc__khatm">
+                <div className="qlc__khatm-header">
+                  <div className="qlc__khatm-bar">
+                    <div className="qlc__khatm-fill" style={{ width: `${(khatmDone.length / 114) * 100}%` }} />
+                  </div>
+                  <div className="qlc__khatm-meta">
+                    <span className="qlc__khatm-pct">{khatmDone.length}/114 سورة</span>
+                    <button className="qlc__khatm-new" onClick={() => setKhatmDone([])}>ختمة جديدة ↺</button>
+                  </div>
+                </div>
+                <ul className="qlc__khatm-list">
+                  {chapters.map((c) => (
+                    <li key={c.id} className={`qlc__khatm-item${khatmDone.includes(c.id) ? ' done' : ''}`}>
+                      <label>
+                        <input
+                          type="checkbox"
+                          checked={khatmDone.includes(c.id)}
+                          onChange={() => toggleKhatm(c.id)}
+                        />
+                        <button className="qlc__khatm-surah" onClick={() => selectFromKhatm(c.id)}>
+                          <span className="qlc__khatm-snum">{c.id}</span>
+                          <span className="qlc__khatm-sname">{c.name_simple}</span>
+                          <span className="qlc__khatm-sar">{c.name_arabic}</span>
+                        </button>
+                      </label>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </aside>
 
           {/* ━━━━━━━━━━━━━━  MAIN  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
@@ -698,7 +747,7 @@ export default function Quran() {
 
             {/* ═══ ❶ CHAPTER HEADER ══════════════════════════════ */}
             <div className="qlc__chapter-header">
-              {navMode === 'surah' && activeChapter ? (
+              {(navMode === 'surah' || navMode === 'khatm') && activeChapter ? (
                 <>
                   <h1 className="qlc__chapter-ar" dir="rtl">{activeChapter.name_arabic}</h1>
                   <p className="qlc__chapter-en">

@@ -22,6 +22,8 @@ export default function Header() {
             </a>
           ))}
           <Link to="/teachers" onClick={close}>Teachers</Link>
+          <Link to="/islamic-tools" onClick={close}>Islamic Tools</Link>
+          <Link to="/adhkar" onClick={close}>الأذكار</Link>
           {isAdmin && (
             <Link to="/admin" onClick={close}>Dashboard</Link>
           )}

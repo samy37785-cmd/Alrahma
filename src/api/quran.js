@@ -94,6 +94,14 @@ export const getVerseTafsirCloud = (verseKey, edition) =>
     .get(`/ayah/${verseKey}/${edition}`)
     .then((r) => r.data?.data?.text || '');
 
+// ── Single verse by key (e.g. "2:255") ──────────────────────────────
+export const getVerse = (verseKey, translationId = 20) =>
+  quran
+    .get(`/verses/by_key/${verseKey}`, {
+      params: { fields: 'text_uthmani', translations: translationId },
+    })
+    .then((r) => r.data.verse);
+
 // ── Chapter list ─────────────────────────────────────────────────────
 export const getChapters = () =>
   quran.get('/chapters', { params: { language: 'en' } }).then((r) => r.data.chapters);

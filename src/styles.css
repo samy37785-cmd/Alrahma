@@ -2270,3 +2270,216 @@ h2 { font-size: clamp(1.7rem, 3.5vw, 2.4rem); color: var(--green-deep); }
 .qlc__khatm-snum  { font-size: .68rem; color: var(--muted); min-width: 20px; flex-shrink: 0; }
 .qlc__khatm-sname { flex: 1; font-size: .78rem; font-weight: 500; }
 .qlc__khatm-sar   { font-family: var(--serif); font-size: .92rem; color: var(--green); flex-shrink: 0; }
+
+/* ════════════════════════════════════════════════════════════════
+   ISLAMIC TOOLS PAGE   .it__*
+   ════════════════════════════════════════════════════════════════ */
+.it__main { background: var(--cream); min-height: 80vh; }
+
+/* Hero */
+.it__hero {
+  background: linear-gradient(135deg, var(--green-deep) 0%, var(--green) 100%);
+  color: white;
+  padding: 56px 0 48px;
+  text-align: center;
+}
+.it__hero h1 { color: white; font-size: clamp(1.8rem, 4vw, 2.8rem); }
+.it__hero .eyebrow { color: var(--gold); margin-bottom: 8px; }
+
+.it__hijri {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+.it__hijri-date {
+  font-family: var(--serif);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--gold);
+}
+.it__hijri-greg { font-size: .9rem; opacity: .75; }
+
+/* Grid */
+.it__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  padding: 40px 0 64px;
+}
+@media (max-width: 860px) {
+  .it__grid { grid-template-columns: 1fr; }
+}
+
+.it__right { display: flex; flex-direction: column; gap: 24px; }
+
+/* Card base */
+.it__card {
+  background: var(--white);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.it__card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.it__card-head h2 {
+  font-size: 1.1rem;
+  color: var(--green-deep);
+  margin: 0;
+}
+
+/* Location badge */
+.it__loc {
+  font-size: .78rem;
+  color: var(--muted);
+  background: var(--cream);
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+
+/* Next prayer banner */
+.it__next {
+  background: linear-gradient(135deg, var(--green-deep), var(--green));
+  border-radius: 12px;
+  padding: 18px 20px;
+  color: white;
+  text-align: center;
+}
+.it__next-label { font-size: .72rem; text-transform: uppercase; letter-spacing: 1px; opacity: .75; margin-bottom: 4px; }
+.it__next-name  { font-family: var(--serif); font-size: 1.5rem; font-weight: 700; margin-bottom: 4px; }
+.it__next-time  { font-size: 2rem; font-weight: 800; color: var(--gold); margin-bottom: 4px; }
+.it__next-cd    { font-size: .82rem; opacity: .8; }
+
+/* Prayer list */
+.it__prayers { display: flex; flex-direction: column; gap: 4px; }
+.it__prayer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  transition: background .15s;
+  font-size: .9rem;
+}
+.it__prayer:hover { background: var(--cream); }
+.it__prayer--next {
+  background: rgba(11,110,79,.08);
+  border: 1px solid rgba(11,110,79,.2);
+}
+.it__prayer-icon { font-size: 1.1rem; flex-shrink: 0; }
+.it__prayer-ar   { font-family: var(--serif); font-size: 1rem; font-weight: 700; color: var(--green-deep); flex: 1; direction: rtl; }
+.it__prayer-en   { font-size: .78rem; color: var(--muted); }
+.it__prayer-time { font-size: 1rem; font-weight: 700; color: var(--ink); margin-left: auto; }
+.it__prayer-badge {
+  font-size: .68rem;
+  background: var(--green);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-weight: 700;
+}
+
+/* Geolocation / city search */
+.it__geo-note { border-top: 1px solid var(--line); padding-top: 14px; }
+.it__geo-msg  { font-size: .83rem; color: var(--muted); margin-bottom: 10px; }
+.it__city-form { display: flex; gap: 8px; }
+.it__city-input {
+  flex: 1;
+  padding: 9px 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: .88rem;
+  font-family: inherit;
+}
+.it__city-input:focus { outline: 2px solid var(--green); border-color: var(--green); }
+.it__city-btn {
+  padding: 9px 18px;
+  background: var(--green);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: .88rem;
+  transition: background .2s;
+}
+.it__city-btn:hover { background: var(--green-dark); }
+.it__city-err { font-size: .78rem; color: #c0392b; margin-top: 6px; }
+
+/* Spinner */
+.it__spin { display: flex; justify-content: center; padding: 24px; }
+.it__spinner {
+  width: 32px; height: 32px;
+  border: 3px solid var(--line);
+  border-top-color: var(--green);
+  border-radius: 50%;
+  animation: it-spin .7s linear infinite;
+}
+@keyframes it-spin { to { transform: rotate(360deg); } }
+
+/* Hadith card */
+.it__card--hadith { border-top: 4px solid var(--gold); }
+.it__hadith-ar {
+  font-family: var(--serif);
+  font-size: 1.45rem;
+  font-weight: 700;
+  color: var(--green-deep);
+  line-height: 1.7;
+  margin: 0;
+  padding: 16px;
+  background: var(--cream);
+  border-radius: 10px;
+  border-right: 4px solid var(--gold);
+}
+.it__hadith-en {
+  font-size: .88rem;
+  color: var(--muted);
+  font-style: italic;
+  line-height: 1.65;
+}
+.it__hadith-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+  font-size: .78rem;
+}
+.it__hadith-narrator { color: var(--ink); font-weight: 600; }
+.it__hadith-source   { color: var(--muted); background: var(--cream); padding: 2px 10px; border-radius: 999px; }
+
+/* Verse card */
+.it__card--verse { border-top: 4px solid var(--green); }
+.it__verse-key {
+  font-size: .75rem;
+  background: var(--cream);
+  padding: 3px 10px;
+  border-radius: 999px;
+  color: var(--green);
+  font-weight: 700;
+}
+.it__verse-ar {
+  font-family: var(--serif);
+  font-size: 1.7rem;
+  line-height: 2;
+  color: var(--ink);
+  margin: 0;
+  padding: 16px;
+  background: var(--cream);
+  border-radius: 10px;
+  border-right: 4px solid var(--green);
+}
+.it__verse-num { font-size: 1.1rem; color: var(--gold-dark); margin-right: 4px; }
+.it__verse-tr  { font-size: .88rem; color: var(--muted); font-style: italic; line-height: 1.65; margin: 0; }

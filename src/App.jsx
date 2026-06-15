@@ -14,6 +14,8 @@ import PaymentResult from './pages/PaymentResult';
 import Billing from './pages/Billing';
 import Profile from './pages/Profile';
 import Teachers from './pages/Teachers';
+import IslamicTools from './pages/IslamicTools';
+import Adhkar from './pages/Adhkar';
 import NotFound from './pages/NotFound';
 
 export default function App() {
@@ -42,6 +44,8 @@ export default function App() {
             }
           />
           <Route path="/teachers" element={<Teachers />} />
+          <Route path="/islamic-tools" element={<IslamicTools />} />
+          <Route path="/adhkar" element={<Adhkar />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

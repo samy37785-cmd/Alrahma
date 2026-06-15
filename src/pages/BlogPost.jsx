@@ -1,6 +1,7 @@
 import { useParams, Link, Navigate } from 'react-router-dom';
 import Brand from '../components/Brand';
 import { posts, CATEGORY_COLORS } from '../data/blogPosts';
+import useSEO from '../hooks/useSEO';
 
 // Minimal markdown renderer: headings, bold, tables, hr, paragraphs.
 function renderMarkdown(text) {
@@ -85,6 +86,8 @@ function formatInline(text) {
 export default function BlogPost() {
   const { slug } = useParams();
   const post = posts.find((p) => p.slug === slug);
+
+  useSEO({ title: post?.title, description: post?.excerpt });
 
   if (!post) return <Navigate to="/blog" replace />;
 

@@ -1,6 +1,12 @@
 import ManualPayment from '../models/ManualPayment.js';
 import Invoice from '../models/Invoice.js';
 import { getPlan } from '../config/plans.js';
+import { sendMail, ADMIN_EMAIL } from '../config/mailer.js';
+import {
+  manualPaymentAdminEmail,
+  manualPaymentApprovedEmail,
+  manualPaymentRejectedEmail,
+} from '../config/emailTemplates.js';
 
 // Returns the configured manual payment methods with display info.
 // Only returns a method if its env vars are filled in.
@@ -118,6 +124,24 @@ export async function submitManualPayment(req, res, next) {
       status:    'pending',
     });
 
+    // Notify admin (non-blocking)
+    const adminEmail = ADMIN_EMAIL();
+    if (adminEmail) {
+      sendMail({
+        to: adminEmail,
+        subject: `New Manual Payment — ${customer.name || 'Unknown'} · ${plan.name}`,
+        html: manualPaymentAdminEmail({
+          name:      customer.name,
+          email:     customer.email,
+          plan:      plan.name,
+          amount:    plan.amount,
+          currency:  plan.currency,
+          method,
+          reference,
+        }),
+      });
+    }
+
     res.status(201).json({ message: 'Payment request received. We will verify and activate your plan within 24 hours.', id: record._id });
   } catch (err) {
     next(err);
@@ -173,6 +197,25 @@ export async function reviewManualPayment(req, res, next) {
         billingPeriod:  period,
         status:         'paid',
       });
+    }
+
+    // Email the student about the decision
+    const studentEmail = record.customer?.email;
+    const studentName  = record.customer?.name || 'Student';
+    if (studentEmail) {
+      if (status === 'approved') {
+        sendMail({
+          to: studentEmail,
+          subject: 'Your payment has been approved — AL-Rahma Academy',
+          html: manualPaymentApprovedEmail({ name: studentName, plan: record.plan }),
+        });
+      } else {
+        sendMail({
+          to: studentEmail,
+          subject: 'Payment verification update — AL-Rahma Academy',
+          html: manualPaymentRejectedEmail({ name: studentName, adminNote }),
+        });
+      }
     }
 
     res.json(record);

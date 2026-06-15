@@ -1,4 +1,6 @@
 import TrialRequest from '../models/TrialRequest.js';
+import { sendMail, ADMIN_EMAIL } from '../config/mailer.js';
+import { trialRequestAdminEmail, trialRequestStudentEmail } from '../config/emailTemplates.js';
 
 // @desc   Submit a free-trial request (from the React form)
 // @route  POST /api/trials
@@ -10,7 +12,24 @@ export async function createTrial(req, res, next) {
       res.status(400);
       throw new Error('Name and email are required');
     }
+
     const trial = await TrialRequest.create({ name, email, phone, course, message });
+
+    // Notify admin + confirm to student (non-blocking)
+    const adminEmail = ADMIN_EMAIL();
+    if (adminEmail) {
+      sendMail({
+        to: adminEmail,
+        subject: `New Trial Request — ${name}`,
+        html: trialRequestAdminEmail({ name, email, phone, course, message }),
+      });
+    }
+    sendMail({
+      to: email,
+      subject: 'We received your trial request — AL-Rahma Academy',
+      html: trialRequestStudentEmail({ name }),
+    });
+
     res.status(201).json({ message: 'Trial request received', trial });
   } catch (err) {
     next(err);

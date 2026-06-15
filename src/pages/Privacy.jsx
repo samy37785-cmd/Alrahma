@@ -1,8 +1,10 @@
 import { Link } from 'react-router-dom';
 import Brand from '../components/Brand';
 import { site } from '../data';
+import useSEO from '../hooks/useSEO';
 
 export default function Privacy() {
+  useSEO({ title: 'Privacy Policy', description: 'Read the AL-Rahma Academy privacy policy to understand how we collect, use and protect your personal data.' });
   return (
     <div className="legal">
       <header className="quran__bar">

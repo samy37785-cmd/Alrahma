@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Brand from '../components/Brand';
+import useSEO from '../hooks/useSEO';
 
 export default function Login() {
+  useSEO({ title: 'Login', description: 'Sign in to your AL-Rahma Academy account to manage your classes and invoices.' });
   const { login } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState({ email: '', password: '' });

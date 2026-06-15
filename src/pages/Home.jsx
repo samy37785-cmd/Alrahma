@@ -1,4 +1,5 @@
 import { TrialProvider } from '../context/TrialContext';
+import useSEO from '../hooks/useSEO';
 import TopBar from '../components/TopBar';
 import Header from '../components/Header';
 import Hero from '../components/Hero';
@@ -14,6 +15,10 @@ import Footer from '../components/Footer';
 import WhatsappFab from '../components/WhatsappFab';
 
 export default function Home() {
+  useSEO({
+    title: 'Learn the Holy Quran Online',
+    description: 'Join AL-Rahma Academy and learn to read the Quran with Tajweed from certified teachers. Flexible online classes for all ages. Book a free trial today.',
+  });
   return (
     <TrialProvider>
       <TopBar />

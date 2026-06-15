@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import Brand from '../components/Brand';
+import useSEO from '../hooks/useSEO';
 
 const faqs = [
   {
@@ -54,6 +55,7 @@ const faqs = [
 ];
 
 export default function FAQ() {
+  useSEO({ title: 'Frequently Asked Questions', description: 'Everything you need to know about AL-Rahma Academy — pricing, scheduling, teaching methods, and how to get started.' });
   const [open, setOpen] = useState(null);
 
   return (

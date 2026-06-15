@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import Brand from '../components/Brand';
 import { getChapters, getVerses, getChapterAudio, RECITERS } from '../api/quran';
 import AlphabetLearner from '../components/AlphabetLearner';
+import useSEO from '../hooks/useSEO';
 
 // Strip footnote tags from translation HTML.
 const clean = (html = '') => html.replace(/<[^>]+>/g, '');
@@ -43,6 +44,7 @@ export default function Quran() {
     };
   }, [activeId, reciterId]);
 
+  useSEO({ title: 'Read the Quran Online', description: 'Read the Holy Quran online with Arabic text, English translation and audio recitation by world-renowned reciters.' });
   const [showAlphabet, setShowAlphabet] = useState(false);
 
   const activeChapter = chapters.find((c) => c.id === activeId);

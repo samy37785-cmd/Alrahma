@@ -1,8 +1,10 @@
 import { Link } from 'react-router-dom';
 import Brand from '../components/Brand';
 import { posts, CATEGORY_COLORS } from '../data/blogPosts';
+import useSEO from '../hooks/useSEO';
 
 export default function Blog() {
+  useSEO({ title: 'Blog', description: 'Articles on Quran, Tajweed, Arabic and Islamic education for non-Arabic speakers in Europe.' });
   return (
     <div className="blog-page">
       <header className="quran__bar">

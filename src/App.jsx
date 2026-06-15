@@ -13,6 +13,7 @@ import Privacy from './pages/Privacy';
 import PaymentResult from './pages/PaymentResult';
 import Billing from './pages/Billing';
 import Profile from './pages/Profile';
+import NotFound from './pages/NotFound';
 
 export default function App() {
   return (
@@ -39,6 +40,7 @@ export default function App() {
               </ProtectedRoute>
             }
           />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

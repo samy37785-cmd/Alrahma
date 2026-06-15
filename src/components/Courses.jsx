@@ -34,7 +34,16 @@ export default function Courses() {
       navigate('/quran');
       return;
     }
+    // No interactive content yet — book a free trial for this course
     startLearning(course.title);
+    // Briefly highlight the trial form so the user knows where to look
+    setTimeout(() => {
+      const el = document.getElementById('trial');
+      if (!el) return;
+      el.style.outline = '3px solid #d4af37';
+      el.style.outlineOffset = '-3px';
+      setTimeout(() => { el.style.outline = ''; el.style.outlineOffset = ''; }, 1800);
+    }, 600);
   };
 
   return (

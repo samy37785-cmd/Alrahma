@@ -251,7 +251,6 @@ export default function Quran() {
   const [fontSize, setFontSize] = useState(() => Number(localStorage.getItem('qlc-font') || 34));
   useEffect(() => { localStorage.setItem('qlc-dark', darkMode ? '1' : '0'); }, [darkMode]);
   useEffect(() => { localStorage.setItem('qlc-font', String(fontSize)); }, [fontSize]);
-  useEffect(() => { localStorage.setItem('khatm-done', JSON.stringify(khatmDone)); }, [khatmDone]);
 
   /* ── Panel / UI state ────────────────────────────────────────── */
   const [showShortcuts,  setShowShortcuts] = useState(false);
@@ -297,6 +296,7 @@ export default function Quran() {
   const [khatmDone, setKhatmDone]          = useState(
     () => { try { return JSON.parse(localStorage.getItem('khatm-done') || '[]'); } catch { return []; } }
   );
+  useEffect(() => { localStorage.setItem('khatm-done', JSON.stringify(khatmDone)); }, [khatmDone]);
 
   const audioRef      = useRef(null);
   const hifzAudio     = useRef(null);

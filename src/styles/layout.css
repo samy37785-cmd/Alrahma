@@ -98,6 +98,10 @@
   display: flex; flex-direction: column;
 }
 .course:hover { transform: translateY(-6px); box-shadow: var(--shadow-lg); }
+.course--expanded {
+  grid-column: 1 / -1;
+  transform: none !important;
+}
 .course__media {
   height: 130px; display: flex; align-items: center; justify-content: center;
   font-size: 3.2rem;
@@ -185,6 +189,7 @@
   outline: none; border-color: var(--green); box-shadow: 0 0 0 3px rgba(11,110,79,.12);
 }
 .form-note { margin-top: 14px; color: var(--green); font-weight: 600; text-align: center; }
+.form-note--error { color: #c0392b; }
 
 /* Newsletter */
 .newsletter { padding: 56px 0; background: var(--gold); }

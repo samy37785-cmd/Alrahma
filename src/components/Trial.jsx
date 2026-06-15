@@ -12,22 +12,18 @@ export default function Trial() {
   const [error, setError] = useState('');
   const [sending, setSending] = useState(false);
 
-  // When the user clicks "Start learning" on a course, preselect it here.
   useEffect(() => {
     if (selectedCourse) {
       setForm((prev) => ({ ...prev, course: selectedCourse }));
     }
   }, [selectedCourse]);
 
-  // When the user picks a pricing plan, note it in the message field.
   useEffect(() => {
     if (selectedPlan) {
       setForm((prev) => ({ ...prev, message: `I'm interested in the ${selectedPlan} plan.` }));
     }
   }, [selectedPlan]);
 
-  // Ensure the chosen course always appears as an option, even if it came
-  // from the API and isn't in the static courseOptions list.
   const options = courseOptions.includes(form.course) || !form.course
     ? courseOptions
     : [form.course, ...courseOptions];
@@ -42,17 +38,27 @@ export default function Trial() {
     setError('');
     setSending(true);
     try {
-      // POST the form data to the backend API.
       await submitTrial(form);
       setSubmitted(true);
       setForm(EMPTY);
       setTimeout(() => setSubmitted(false), 6000);
     } catch (err) {
-      setError(err.response?.data?.message || 'Could not send. Please try again.');
+      if (!err.response) {
+        setError('network');
+      } else {
+        setError(err.response?.data?.message || 'Could not send. Please try again.');
+      }
     } finally {
       setSending(false);
     }
   };
+
+  const waText = encodeURIComponent(
+    `Hi! I'm interested in ${form.course || 'a course'}. My name is ${form.name}.`
+  );
+  const mailBody = encodeURIComponent(
+    `Name: ${form.name}\nEmail: ${form.email}\nPhone: ${form.phone}\nCourse: ${form.course}\nMessage: ${form.message}`
+  );
 
   return (
     <section className="trial" id="trial">
@@ -134,12 +140,39 @@ export default function Trial() {
             />
           </div>
           <button type="submit" className="btn btn--gold btn--block" disabled={sending}>
-            {sending ? 'Sending…' : 'Request Free Trial'}
+            {sending ? 'Sending...' : 'Request Free Trial'}
           </button>
           {submitted && (
-            <p className="form-note">✓ Thank you! We’ll be in touch shortly, in shaa Allah.</p>
+            <p className="form-note">
+              Thank you! We will be in touch shortly, in shaa Allah.
+            </p>
           )}
-          {error && <p className="form-note" style={{ color: '#c0392b' }}>{error}</p>}
+          {error === 'network' && (
+            <div className="form-note form-note--error">
+              <p>Server offline — reach us directly:</p>
+              <div style={{ display: 'flex', gap: '8px', marginTop: '10px', flexWrap: 'wrap' }}>
+                <a
+                  href={`https://wa.me/${site.whatsapp}?text=${waText}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn--green"
+                  style={{ fontSize: '0.9rem', padding: '10px 20px' }}
+                >
+                  WhatsApp us
+                </a>
+                <a
+                  href={`mailto:${site.email}?subject=Free Trial Request&body=${mailBody}`}
+                  className="btn btn--ghost"
+                  style={{ fontSize: '0.9rem', padding: '10px 20px' }}
+                >
+                  Email us
+                </a>
+              </div>
+            </div>
+          )}
+          {error && error !== 'network' && (
+            <p className="form-note form-note--error">{error}</p>
+          )}
         </form>
       </div>
     </section>

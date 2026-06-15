@@ -1,50 +1,36 @@
-﻿import Reveal from './ui/Reveal';
+import Reveal from './ui/Reveal';
+import { useLang } from '../context/LangContext';
 import { testimonials } from '../data';
 
 const VIDEO_REVIEWS = [
-  {
-    id: 'dQw4w9WgXcQ',
-    name: 'Fatima A.',
-    location: 'Milan, Italy',
-    label: 'Watch her story',
-  },
-  {
-    id: 'dQw4w9WgXcQ',
-    name: 'Omar S.',
-    location: 'Paris, France',
-    label: 'Watch his story',
-  },
-  {
-    id: 'dQw4w9WgXcQ',
-    name: 'Maryam K.',
-    location: 'London, UK',
-    label: 'Watch her story',
-  },
+  { id: 'dQw4w9WgXcQ', name: 'Fatima A.', location: 'Milan, Italy',  label: 'Watch her story' },
+  { id: 'dQw4w9WgXcQ', name: 'Omar S.',   location: 'Paris, France', label: 'Watch his story' },
+  { id: 'dQw4w9WgXcQ', name: 'Maryam K.', location: 'London, UK',   label: 'Watch her story' },
 ];
 
 export default function Testimonials() {
+  const { t } = useLang();
+
   return (
     <section className="testimonials" id="testimonials">
       <div className="container">
         <Reveal className="section-head">
-          <p className="eyebrow">Student stories</p>
-          <h2>What Our Students Say</h2>
+          <p className="eyebrow">{t.testimonials.eyebrow}</p>
+          <h2>{t.testimonials.heading}</h2>
         </Reveal>
 
-        {/* Text reviews */}
         <div className="testimonials__grid">
-          {testimonials.map((t) => (
-            <Reveal as="figure" className="quote" key={t.name}>
-              <blockquote>{'"' + t.quote + '"'}</blockquote>
+          {testimonials.map((item) => (
+            <Reveal as="figure" className="quote" key={item.name}>
+              <blockquote>{'"' + item.quote + '"'}</blockquote>
               <figcaption>
-                <strong>{t.name}</strong>
-                <span>{t.location}</span>
+                <strong>{item.name}</strong>
+                <span>{item.location}</span>
               </figcaption>
             </Reveal>
           ))}
         </div>
 
-        {/* Video reviews */}
         <Reveal className="video-reviews">
           <p className="video-reviews__label">Watch real student experiences</p>
           <div className="video-reviews__grid">

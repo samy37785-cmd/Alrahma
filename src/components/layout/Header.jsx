@@ -2,11 +2,14 @@ import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import Brand from './Brand';
 import { useAuth } from '../../context/AuthContext';
+import { useLang } from '../../context/LangContext';
+import LangSwitcher from '../ui/LangSwitcher';
 import { navLinks } from '../../data';
 
 export default function Header() {
   const [open, setOpen] = useState(false);
   const { user, isAdmin } = useAuth();
+  const { t } = useLang();
   const location = useLocation();
   const isHome = location.pathname === '/';
 
@@ -21,43 +24,46 @@ export default function Header() {
           {navLinks.map((link) =>
             isHome ? (
               <a key={link.href} href={link.href} onClick={close}>
-                {link.label}
+                {t.nav[link.key] || link.label}
               </a>
             ) : (
               <Link key={link.href} to={`/${link.href}`} onClick={close}>
-                {link.label}
+                {t.nav[link.key] || link.label}
               </Link>
             )
           )}
-          <Link to="/teachers" onClick={close}>Teachers</Link>
-          <Link to="/islamic-tools" onClick={close}>Islamic Tools</Link>
-          <Link to="/adhkar" onClick={close}>الأذكار</Link>
+          <Link to="/teachers" onClick={close}>{t.nav.teachers}</Link>
+          <Link to="/islamic-tools" onClick={close}>{t.nav.tools}</Link>
+          <Link to="/adhkar" onClick={close}>{t.nav.adhkar}</Link>
           {isAdmin && (
-            <Link to="/admin" onClick={close}>Dashboard</Link>
+            <Link to="/admin" onClick={close}>{t.nav.dashboard}</Link>
           )}
           {user && !isAdmin && (
-            <Link to="/billing" onClick={close}>My Invoices</Link>
+            <Link to="/billing" onClick={close}>{t.nav.invoices}</Link>
           )}
           {user ? (
             <Link to="/profile" onClick={close}>{user.name.split(' ')[0]}</Link>
           ) : (
-            <Link to="/login" onClick={close}>Login</Link>
+            <Link to="/login" onClick={close}>{t.nav.login}</Link>
           )}
           <a href="#trial" className="nav__cta" onClick={close}>
-            Free Trial
+            {t.nav.trial}
           </a>
         </nav>
 
-        <button
-          className="nav-toggle"
-          aria-label="Toggle menu"
-          aria-expanded={open}
-          onClick={() => setOpen((v) => !v)}
-        >
-          <span></span>
-          <span></span>
-          <span></span>
-        </button>
+        <div className="header__right">
+          <LangSwitcher />
+          <button
+            className="nav-toggle"
+            aria-label="Toggle menu"
+            aria-expanded={open}
+            onClick={() => setOpen((v) => !v)}
+          >
+            <span></span>
+            <span></span>
+            <span></span>
+          </button>
+        </div>
       </div>
     </header>
   );

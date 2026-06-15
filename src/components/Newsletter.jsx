@@ -1,9 +1,12 @@
 import { useState } from 'react';
 import { subscribeNewsletter } from '../api/client';
+import { useLang } from '../context/LangContext';
 
 export default function Newsletter() {
   const [email, setEmail] = useState('');
-  const [status, setStatus] = useState('idle'); // idle | loading | done | error
+  const [status, setStatus] = useState('idle');
+  const { t } = useLang();
+  const n = t.newsletter;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -22,17 +25,13 @@ export default function Newsletter() {
     <section className="newsletter">
       <div className="container newsletter__inner">
         <div>
-          <h2>Subscribe to our newsletter</h2>
-          <p>Get Islamic articles and academy updates straight to your inbox.</p>
+          <h2>{n.heading}</h2>
+          <p>{n.sub}</p>
         </div>
         <form className="newsletter__form" onSubmit={handleSubmit}>
           <input
             type="email"
-            placeholder={
-              status === 'done'
-                ? '✓ Subscribed! Jazak Allah khair.'
-                : 'Enter your email'
-            }
+            placeholder={status === 'done' ? n.success : n.placeholder}
             aria-label="Email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -44,12 +43,12 @@ export default function Newsletter() {
             className="btn btn--green"
             disabled={status === 'loading' || status === 'done'}
           >
-            {status === 'loading' ? 'Subscribing…' : status === 'done' ? 'Subscribed ✓' : 'Subscribe'}
+            {status === 'loading' ? n.subscribing : status === 'done' ? n.subscribed : n.btn}
           </button>
         </form>
         {status === 'error' && (
           <p style={{ color: '#c0392b', marginTop: '0.5rem', fontSize: '0.85rem' }}>
-            Something went wrong. Please try again.
+            {n.error}
           </p>
         )}
       </div>

@@ -24,6 +24,15 @@
 .nav-toggle { display: none; flex-direction: column; gap: 5px; background: none; border: 0; cursor: pointer; padding: 6px; }
 .nav-toggle span { width: 26px; height: 3px; background: var(--green-deep); border-radius: 3px; transition: .3s; }
 
+/* Header right slot (LangSwitcher + hamburger) */
+.header__right { display: flex; align-items: center; gap: 10px; }
+
+/* Language switcher */
+.lang-switcher { display: flex; align-items: center; gap: 4px; }
+.lang-btn { background: transparent; border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px; font-size: 0.78rem; font-weight: 600; color: var(--muted); cursor: pointer; transition: background .2s, color .2s, border-color .2s; white-space: nowrap; }
+.lang-btn:hover { border-color: var(--green); color: var(--green); }
+.lang-btn--active { background: var(--green-deep); border-color: var(--green-deep); color: #fff; }
+
 /* Hero */
 .hero {
   background:

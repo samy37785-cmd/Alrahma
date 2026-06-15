@@ -1,21 +1,23 @@
 import { useState } from 'react';
 import Reveal from './ui/Reveal';
 import CheckoutModal from './ui/CheckoutModal';
+import { useLang } from '../context/LangContext';
 import { plans } from '../data';
 
 export default function Pricing() {
   const [selectedPlan, setSelectedPlan] = useState(null);
+  const { t } = useLang();
+  const p = t.pricing;
 
   return (
     <section className="pricing" id="pricing">
       <div className="container">
         <Reveal className="section-head">
-          <p className="eyebrow">Simple &amp; fair</p>
-          <h2>Our Pricing Plans</h2>
+          <p className="eyebrow">{p.eyebrow}</p>
+          <h2>{p.heading}</h2>
           <p className="section-sub">Affordable monthly plans billed per student. Cancel anytime.</p>
         </Reveal>
 
-        {/* Discount banner */}
         <Reveal className="pricing__banner">
           <span className="pricing__banner-badge">🎉 Limited Time</span>
           <span>Save <strong>25% OFF</strong> on all plans — discount already applied below</span>
@@ -28,16 +30,20 @@ export default function Pricing() {
               className={`plan${plan.featured ? ' plan--featured' : ''}`}
               key={plan.name}
             >
-              {plan.tag && <span className="plan__tag">{plan.tag}</span>}
+              {plan.tag && (
+                <span className="plan__tag">
+                  {plan.tag === 'Most popular' ? p.mostPopular : plan.tag}
+                </span>
+              )}
               {plan.discountPct && (
-                <span className="plan__discount-badge">{plan.discountPct}% OFF</span>
+                <span className="plan__discount-badge">{plan.discountPct}{p.off}</span>
               )}
               <h3>{plan.name}</h3>
               <p className="plan__price">
                 {plan.originalPrice && (
                   <s className="plan__original-price">{plan.originalPrice}</s>
                 )}
-                <span>{plan.price}</span>/month
+                <span>{plan.price}</span>{p.perMonth}
               </p>
               {plan.originalPrice && (
                 <p className="plan__saving">
@@ -54,7 +60,7 @@ export default function Pricing() {
                 className={`btn ${plan.featured ? 'btn--gold' : 'btn--ghost'}`}
                 onClick={() => setSelectedPlan(plan)}
               >
-                Choose plan
+                {p.getStarted}
               </button>
             </Reveal>
           ))}

@@ -2,11 +2,14 @@ import { useState, useEffect } from 'react';
 import { site, courseOptions } from '../data';
 import { submitTrial } from '../api/client';
 import { useTrial } from '../context/TrialContext';
+import { useLang } from '../context/LangContext';
 
 const EMPTY = { name: '', email: '', phone: '', course: '', message: '' };
 
 export default function Trial() {
   const { selectedCourse, selectedPlan } = useTrial();
+  const { t } = useLang();
+  const tr = t.trial;
   const [form, setForm] = useState(EMPTY);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
@@ -20,7 +23,7 @@ export default function Trial() {
 
   useEffect(() => {
     if (selectedPlan) {
-      setForm((prev) => ({ ...prev, message: `I'm interested in the ${selectedPlan} plan.` }));
+      setForm((prev) => ({ ...prev, message: 'I\'m interested in the ' + selectedPlan + ' plan.' }));
     }
   }, [selectedPlan]);
 
@@ -54,118 +57,113 @@ export default function Trial() {
   };
 
   const waText = encodeURIComponent(
-    `Hi! I'm interested in ${form.course || 'a course'}. My name is ${form.name}.`
+    'Hi! I\'m interested in ' + (form.course || 'a course') + '. My name is ' + form.name + '.'
   );
   const mailBody = encodeURIComponent(
-    `Name: ${form.name}\nEmail: ${form.email}\nPhone: ${form.phone}\nCourse: ${form.course}\nMessage: ${form.message}`
+    'Name: ' + form.name + '\nEmail: ' + form.email + '\nPhone: ' + form.phone + '\nCourse: ' + form.course + '\nMessage: ' + form.message
   );
 
   return (
     <section className="trial" id="trial">
       <div className="container trial__inner">
         <div className="trial__text">
-          <p className="eyebrow">Free trial</p>
-          <h2>Book Your 2 Free Trial Lessons</h2>
-          <p>
-            Fill in the form and our team will contact you to schedule your first lesson. No
-            payment required.
-          </p>
+          <p className="eyebrow">{tr.eyebrow}</p>
+          <h2>{tr.heading}</h2>
+          <p>{tr.sub}</p>
           <ul className="trial__list">
-            <li>✓ No commitment</li>
-            <li>✓ Choose your preferred time</li>
-            <li>✓ Lessons over Zoom or Skype</li>
+            {tr.bullets.map((b) => (
+              <li key={b}>{b}</li>
+            ))}
           </ul>
           <p className="trial__whats">
-            Prefer WhatsApp?{' '}
-            <a href={`https://wa.me/${site.whatsapp}`} target="_blank" rel="noopener noreferrer">
-              Message us {site.whatsappDisplay}
+            {tr.waLabel}{' '}
+            <a href={'https://wa.me/' + site.whatsapp} target="_blank" rel="noopener noreferrer">
+              {tr.waLink} {site.whatsappDisplay}
             </a>
           </p>
         </div>
 
         <form className="trial__form" onSubmit={handleSubmit} noValidate>
           <div className="field">
-            <label htmlFor="name">Full name</label>
+            <label htmlFor="name">{tr.fields.name}</label>
             <input
               type="text"
               id="name"
               name="name"
-              placeholder="Your name"
+              placeholder={tr.placeholders.name}
               value={form.name}
               onChange={handleChange}
               required
             />
           </div>
           <div className="field">
-            <label htmlFor="email">Email</label>
+            <label htmlFor="email">{tr.fields.email}</label>
             <input
               type="email"
               id="email"
               name="email"
-              placeholder="you@example.com"
+              placeholder={tr.placeholders.email}
               value={form.email}
               onChange={handleChange}
               required
             />
           </div>
           <div className="field">
-            <label htmlFor="phone">Phone / WhatsApp</label>
+            <label htmlFor="phone">{tr.fields.phone}</label>
             <input
               type="tel"
               id="phone"
               name="phone"
-              placeholder="+1 234 567 890"
+              placeholder={tr.placeholders.phone}
               value={form.phone}
               onChange={handleChange}
             />
           </div>
           <div className="field">
-            <label htmlFor="course">Course of interest</label>
+            <label htmlFor="course">{tr.fields.course}</label>
             <select id="course" name="course" value={form.course} onChange={handleChange}>
-              <option value="">Select a course</option>
+              <option value="">{tr.placeholders.course}</option>
               {options.map((opt) => (
                 <option key={opt}>{opt}</option>
               ))}
             </select>
           </div>
           <div className="field">
-            <label htmlFor="message">Message (optional)</label>
+            <label htmlFor="message">{tr.fields.message}</label>
             <textarea
               id="message"
               name="message"
               rows="3"
-              placeholder="Tell us about the student, age, level..."
+              placeholder={tr.placeholders.message}
               value={form.message}
               onChange={handleChange}
             />
           </div>
           <button type="submit" className="btn btn--gold btn--block" disabled={sending}>
-            {sending ? 'Sending...' : 'Request Free Trial'}
+            {sending ? tr.sending : tr.submit}
           </button>
           {submitted && (
-            <p className="form-note">
-              Thank you! We will be in touch shortly, in shaa Allah.
-            </p>
+            <p className="form-note">{tr.success}</p>
           )}
           {error === 'network' && (
             <div className="form-note form-note--error">
-              <p>Server offline — reach us directly:</p>
+              <p>{tr.errorOffline}</p>
               <div style={{ display: 'flex', gap: '8px', marginTop: '10px', flexWrap: 'wrap' }}>
                 <a
-                  href={`https://wa.me/${site.whatsapp}?text=${waText}`}
+                  href={'https://wa.me/' + site.whatsapp + '?text=' + waText}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="btn btn--green"
                   style={{ fontSize: '0.9rem', padding: '10px 20px' }}
                 >
-                  WhatsApp us
+                  {tr.whatsappBtn}
                 </a>
                 <a
-                  href={`mailto:${site.email}?subject=Free Trial Request&body=${mailBody}`}
+                  href={'mailto:' + site.email + '?subject=Free Trial Request&body=' + mailBody}
                   className="btn btn--ghost"
                   style={{ fontSize: '0.9rem', padding: '10px 20px' }}
                 >
-                  Email us
+                  {tr.emailBtn}
                 </a>
               </div>
             </div>

@@ -1,35 +1,37 @@
-﻿import Reveal from './ui/Reveal';
-import { site, stats, about, objectives, values, offers } from '../data';
+import Reveal from './ui/Reveal';
+import { useLang } from '../context/LangContext';
+import { site, stats, objectives, values, offers } from '../data';
 
 export default function About() {
+  const { t } = useLang();
+  const a = t.about;
+
   return (
     <>
-      {/* ── Who we are ───────────────────────────────────────────────────── */}
       <section className="about" id="about">
         <div className="container about__inner">
           <div className="about__text">
-            <p className="eyebrow">Who we are</p>
-            <h2>About {site.name} Academy</h2>
-            <p className="about__mission">{about.mission}</p>
-            <p className="about__vision">{about.vision}</p>
-            <a href="#trial" className="btn btn--green">Book Your Free Trial</a>
+            <p className="eyebrow">{a.eyebrow}</p>
+            <h2>{a.heading}</h2>
+            <p className="about__mission">{a.mission}</p>
+            <p className="about__vision">{a.vision}</p>
+            <a href="#trial" className="btn btn--green">{t.nav.trial}</a>
           </div>
           <div className="about__stats">
-            {stats.map((s) => (
+            {stats.map((s, i) => (
               <Reveal className="stat" key={s.label}>
                 <strong>{s.value}</strong>
-                <span>{s.label}</span>
+                <span>{a.statsLabel[i] || s.label}</span>
               </Reveal>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── Our Objectives ───────────────────────────────────────────────── */}
       <section className="obj">
         <div className="container">
-          <p className="eyebrow obj__eyebrow">What we set out to do</p>
-          <h2 className="obj__heading">Our Objectives</h2>
+          <p className="eyebrow obj__eyebrow">{a.objectivesHeading}</p>
+          <h2 className="obj__heading">{a.objectivesHeading}</h2>
           <div className="obj__grid">
             {objectives.map((o) => (
               <Reveal className="obj__item" key={o.num}>
@@ -41,11 +43,10 @@ export default function About() {
         </div>
       </section>
 
-      {/* ── Our Values ───────────────────────────────────────────────────── */}
       <section className="values">
         <div className="container">
-          <p className="eyebrow values__eyebrow">What guides us</p>
-          <h2 className="values__heading">Our Core Values</h2>
+          <p className="eyebrow values__eyebrow">{a.valuesHeading}</p>
+          <h2 className="values__heading">{a.valuesHeading}</h2>
           <div className="values__grid">
             {values.map((v) => (
               <Reveal className="value-card" key={v.title}>
@@ -58,11 +59,10 @@ export default function About() {
         </div>
       </section>
 
-      {/* ── What We Offer ────────────────────────────────────────────────── */}
       <section className="offers">
         <div className="container">
-          <p className="eyebrow offers__eyebrow">What you get</p>
-          <h2 className="offers__heading">What We Offer</h2>
+          <p className="eyebrow offers__eyebrow">{a.offersHeading}</p>
+          <h2 className="offers__heading">{a.offersHeading}</h2>
           <div className="offers__grid">
             {offers.map((o) => (
               <Reveal className="offer-card" key={o.title}>

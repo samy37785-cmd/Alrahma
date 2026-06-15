@@ -4,6 +4,7 @@ import Reveal from './ui/Reveal';
 import ResourceModal from './ui/ResourceModal';
 import AlphabetLearner from './features/AlphabetLearner';
 import { useTrial } from '../context/TrialContext';
+import { useLang } from '../context/LangContext';
 import { courses } from '../data';
 
 const READER_RE = /reading/i;
@@ -13,6 +14,7 @@ const isAlphabet = (course) =>
 
 export default function Courses() {
   const { startLearning } = useTrial();
+  const { t } = useLang();
   const navigate = useNavigate();
   const [picker, setPicker] = useState(null);
   const [openAlphabet, setOpenAlphabet] = useState(false);
@@ -34,9 +36,7 @@ export default function Courses() {
       navigate('/quran');
       return;
     }
-    // No interactive content yet — book a free trial for this course
     startLearning(course.title);
-    // Briefly highlight the trial form so the user knows where to look
     setTimeout(() => {
       const el = document.getElementById('trial');
       if (!el) return;
@@ -50,11 +50,12 @@ export default function Courses() {
     <section className="courses" id="courses">
       <div className="container">
         <Reveal className="section-head">
-          <p className="eyebrow">What we teach</p>
-          <h2>Our Recommended Courses</h2>
+          <p className="eyebrow">{t.courses.eyebrow}</p>
+          <h2>{t.courses.heading}</h2>
         </Reveal>
         <div className="courses__grid">
-          {courses.map((c) => {
+          {courses.map((c, i) => {
+            const item = t.courses.items[i] || {};
             const expanded = isAlphabet(c) && openAlphabet;
             return (
               <Reveal
@@ -64,10 +65,10 @@ export default function Courses() {
               >
                 <div className="course__media">{c.media}</div>
                 <div className="course__body">
-                  <h3>{c.title}</h3>
-                  <p>{c.text}</p>
+                  <h3>{item.title || c.title}</h3>
+                  <p>{item.text || c.text}</p>
                   <button type="button" className="course__link" onClick={() => handleStart(c)}>
-                    {expanded ? 'Close lesson ×' : 'Start learning →'}
+                    {expanded ? t.courses.closeBtn : t.courses.startBtn}
                   </button>
 
                   {expanded && <AlphabetLearner onClose={() => setOpenAlphabet(false)} />}

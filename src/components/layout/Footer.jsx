@@ -1,63 +1,55 @@
 import { Link } from 'react-router-dom';
 import Brand from './Brand';
+import { useLang } from '../../context/LangContext';
 import { site, socials, courses } from '../../data';
 
-const quickLinks = [
-  { to: '/', label: 'Home' },
-  { to: '/#about', label: 'About' },
-  { to: '/#courses', label: 'Courses' },
-  { to: '/#pricing', label: 'Pricing' },
-  { to: '/#testimonials', label: 'Testimonials' },
-  { to: '/teachers', label: 'Teachers' },
-  { to: '/#contact', label: 'Contact' },
-];
+const QUICK_HREFS = ['/', '/#about', '/#courses', '/#pricing', '/#testimonials', '/teachers', '/#contact'];
 
 export default function Footer() {
+  const { t } = useLang();
+  const f = t.footer;
+
   return (
     <footer className="footer" id="contact">
       <div className="container footer__grid">
         <div className="footer__col">
           <Brand light />
-          <p className="footer__about">
-            Authentic online Quran, Arabic and Islamic education for students of all ages,
-            anywhere in the world.
-          </p>
+          <p className="footer__about">{f.about}</p>
         </div>
 
         <div className="footer__col">
-          <h4>Quick Links</h4>
+          <h4>{f.quickLinks}</h4>
           <ul>
-            {quickLinks.map((l) => (
-              <li key={l.to}>
-                <Link to={l.to}>{l.label}</Link>
+            {f.links.map((label, i) => (
+              <li key={QUICK_HREFS[i]}>
+                <Link to={QUICK_HREFS[i]}>{label}</Link>
               </li>
             ))}
           </ul>
         </div>
 
         <div className="footer__col">
-          <h4>Courses</h4>
+          <h4>{f.coursesCol}</h4>
           <ul>
-            {courses.map((c) => (
-              <li key={c.title}>
-                <Link to="/#courses">{c.title}</Link>
-              </li>
-            ))}
+            {courses.map((c, i) => {
+              const label = t.courses.items[i]?.title || c.title;
+              return (
+                <li key={c.title}>
+                  <Link to="/#courses">{label}</Link>
+                </li>
+              );
+            })}
           </ul>
         </div>
 
         <div className="footer__col">
-          <h4>Contact</h4>
+          <h4>{f.contact}</h4>
           <ul className="footer__contact">
+            <li><a href={'mailto:' + site.email}>{site.email}</a></li>
+            <li><a href={'tel:' + site.phoneHref}>{site.phoneDisplay}</a></li>
             <li>
-              <a href={`mailto:${site.email}`}>{site.email}</a>
-            </li>
-            <li>
-              <a href={`tel:${site.phoneHref}`}>{site.phoneDisplay}</a>
-            </li>
-            <li>
-              <a href={`https://wa.me/${site.whatsapp}`} target="_blank" rel="noopener noreferrer">
-                WhatsApp us
+              <a href={'https://wa.me/' + site.whatsapp} target="_blank" rel="noopener noreferrer">
+                {f.whatsapp}
               </a>
             </li>
           </ul>
@@ -73,9 +65,9 @@ export default function Footer() {
 
       <div className="footer__bottom">
         <div className="container">
-          <p>Copyright © {new Date().getFullYear()} {site.name} Academy. All rights reserved.</p>
+          <p>Copyright &copy; {new Date().getFullYear()} {site.name} Academy. {f.rights}</p>
           <p>
-            <Link to="/privacy">Privacy Policy</Link> · <Link to="/#contact">Contact</Link>
+            <Link to="/privacy">{f.privacy}</Link> &middot; <Link to="/#contact">{f.contact}</Link>
           </p>
         </div>
       </div>

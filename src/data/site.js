@@ -9,12 +9,12 @@ export const site = {
 };
 
 export const navLinks = [
-  { href: '#top',          label: 'Home' },
-  { href: '#about',        label: 'About' },
-  { href: '#courses',      label: 'Courses' },
-  { href: '#pricing',      label: 'Pricing' },
-  { href: '#testimonials', label: 'Testimonials' },
-  { href: '#contact',      label: 'Contact' },
+  { href: '#top',          label: 'Home',         key: 'home' },
+  { href: '#about',        label: 'About',         key: 'about' },
+  { href: '#courses',      label: 'Courses',       key: 'courses' },
+  { href: '#pricing',      label: 'Pricing',       key: 'pricing' },
+  { href: '#testimonials', label: 'Testimonials',  key: 'testimonials' },
+  { href: '#contact',      label: 'Contact',       key: 'contact' },
 ];
 
 export const socials = [

@@ -5,49 +5,108 @@ import AlphabetLearner from '../components/AlphabetLearner';
 import useSEO from '../hooks/useSEO';
 import {
   getChapters, getVerses, getVersesByPage, getVersesByJuz,
-  getChapterAudio, getVerseAudios, getVerseTafsir, RECITERS,
+  getChapterAudio, getVerseAudios, getVerseTafsir, getVerseTafsirCloud, RECITERS,
 } from '../api/quran';
+
+// Reciters that support per-verse Hifz audio
+const HIFZ_RECITERS = RECITERS.filter((r) => r.verseId != null);
 import { TRANSLATIONS, TAFASEER, JUZ_NAMES, getUI } from '../data/quranLangs';
 
-/* ── Helpers ─────────────────────────────────────────────────────── */
+/* ── Helpers ──────────────────────────────────────────────────────── */
 const clean = (html = '') =>
-  html
-    .replace(/<br\s*\/?>/gi, '\n').replace(/<\/p>/gi, '\n\n').replace(/<\/div>/gi, '\n')
-    .replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").trim();
+  html.replace(/<br\s*\/?>/gi, '\n').replace(/<\/p>/gi, '\n\n').replace(/<\/div>/gi, '\n')
+      .replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").trim();
 
 const firstWords = (text, n = 3) => text.split(/\s+/).slice(0, n).join(' ');
-
-// Al-Fatiha: basmalah IS verse 1; At-Tawba: no basmalah
 const NO_BASMALAH = new Set([1, 9]);
 
-/* ── Tafsir panel (lazy-loaded per verse) ───────────────────────── */
-function TafsirPanel({ verseKey, tafsirId, ui }) {
+/* ══════════════════════════════════════════════════════════════════
+   SUB-COMPONENTS
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── Tafsir panel ─────────────────────────────────────────────────── */
+function TafsirPanel({ verseKey, tafsirId, onClose, ui }) {
   const [text, setText]       = useState('');
   const [loading, setLoading] = useState(true);
   const [err, setErr]         = useState('');
 
+  const entry  = TAFASEER.find((t) => t.id === tafsirId);
+  const isHtml = entry?.source !== 'cloud'; // quran.com returns HTML; cloud returns plain text
+
   useEffect(() => {
     let alive = true;
     setLoading(true); setText(''); setErr('');
-    getVerseTafsir(verseKey, tafsirId)
-      .then((t) => { if (alive) setText(clean(t)); })
-      .catch(() => { if (alive) setErr('Tafsir not available.'); })
+    const fetchP = entry?.source === 'cloud'
+      ? getVerseTafsirCloud(verseKey, entry.edition)
+      : getVerseTafsir(verseKey, tafsirId);
+    fetchP
+      .then((t) => { if (alive) setText(t); })
+      .catch(() => { if (alive) setErr('التفسير غير متوفر لهذه الآية.'); })
       .finally(() => { if (alive) setLoading(false); });
     return () => { alive = false; };
   }, [verseKey, tafsirId]);
 
-  const tafsirName = TAFASEER.find((t) => t.id === tafsirId)?.name || 'تفسير';
-
   return (
     <div className="qlc__tafsir-panel">
       <div className="qlc__tafsir-head">
-        <span className="qlc__tafsir-name">📖 {tafsirName}</span>
-        <span className="qlc__tafsir-key">{verseKey}</span>
+        <div className="qlc__tafsir-head-left">
+          <span className="qlc__tafsir-name">📖 {entry?.name || 'تفسير'}</span>
+          {entry?.nameEn && <span className="qlc__tafsir-name-en">{entry.nameEn}</span>}
+        </div>
+        <div className="qlc__tafsir-head-right">
+          <span className="qlc__tafsir-key">{verseKey}</span>
+          <button className="qlc__tafsir-close" onClick={onClose}>✕</button>
+        </div>
       </div>
-      {loading && <p className="qlc__tafsir-loading">{ui.tafsirLoading || 'Loading tafsir…'}</p>}
-      {err     && <p className="qlc__tafsir-err">{err}</p>}
-      {text    && <p className="qlc__tafsir-text" dir="rtl">{text}</p>}
+      {loading && (
+        <div className="qlc__tafsir-loading-wrap">
+          <div className="qlc__tafsir-spinner" />
+          <span>{ui.tafsirLoading || 'جاري التحميل…'}</span>
+        </div>
+      )}
+      {err && <p className="qlc__tafsir-err">⚠ {err}</p>}
+      {text && (
+        <div className="qlc__tafsir-body" dir={entry?.lang === 'ar' ? 'rtl' : 'ltr'} lang={entry?.lang}>
+          {isHtml
+            ? <div className="qlc__tafsir-html" dangerouslySetInnerHTML={{ __html: text }} />
+            : text.split('\n').filter(Boolean).map((para, i) => (
+                <p key={i} className="qlc__tafsir-para">{para}</p>
+              ))
+          }
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Tafsir picker (inline per-verse dropdown) ───────────────────── */
+function TafsirPicker({ onSelect, onClose }) {
+  const AR  = TAFASEER.filter((t) => t.lang === 'ar');
+  const NON = TAFASEER.filter((t) => t.lang !== 'ar');
+  return (
+    <div className="qlc__tafsir-picker" dir="rtl">
+      <div className="qlc__tafsir-picker-head">
+        <span>📚 اختر التفسير</span>
+        <button onClick={onClose}>✕</button>
+      </div>
+      <div className="qlc__tafsir-picker-group">
+        <p className="qlc__tafsir-picker-cat">تفاسير عربية</p>
+        {AR.map((t) => (
+          <button key={t.id} className="qlc__tafsir-picker-item" onClick={() => onSelect(t.id)}>
+            <span className="qlc__tafsir-picker-name">{t.name}</span>
+          </button>
+        ))}
+      </div>
+      <div className="qlc__tafsir-picker-group">
+        <p className="qlc__tafsir-picker-cat">تفاسير بلغات أخرى</p>
+        {NON.map((t) => (
+          <button key={t.id} className="qlc__tafsir-picker-item" onClick={() => onSelect(t.id)}>
+            <span className="qlc__tafsir-picker-name">{t.name}</span>
+            <span className="qlc__tafsir-picker-en">{t.nameEn}</span>
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
@@ -62,80 +121,221 @@ function CtrlItem({ icon, label, children }) {
   );
 }
 
-/* ═══════════════════════════════════════════════════════════════════
+/* ── KSU-style: floating keyboard SIDE panel ─────────────────────── */
+function KbdSidePanel({ open, onToggle }) {
+  const SHORTCUTS = [
+    { key: 'Space', ar: 'تشغيل / إيقاف' },
+    { key: '← →',  ar: 'سورة سابقة / تالية' },
+    { key: '+ / −', ar: 'حجم الخط' },
+    { key: 'T',    ar: 'إظهار / إخفاء الترجمة' },
+    { key: 'D',    ar: 'الوضع الليلي' },
+    { key: 'G',    ar: 'الإعدادات' },
+    { key: '?',    ar: 'كل الاختصارات' },
+    { key: 'P',    ar: 'طباعة' },
+    { key: 'Esc',  ar: 'إغلاق / إيقاف' },
+  ];
+  return (
+    <div className={`qlc__ksp${open ? ' open' : ''}`}>
+      <button className="qlc__ksp-tab" onClick={onToggle} title="Keyboard Shortcuts (K)">
+        <span className="qlc__ksp-tab-icon">⌨</span>
+        <span className="qlc__ksp-tab-text">مفاتيح</span>
+      </button>
+      <div className="qlc__ksp-body" dir="rtl">
+        <p className="qlc__ksp-title">⌨ اختصارات لوحة المفاتيح</p>
+        {SHORTCUTS.map(({ key, ar }) => (
+          <div key={key} className="qlc__ksp-row">
+            <span className="qlc__ksp-label">{ar}</span>
+            <kbd className="qlc__kbd">{key}</kbd>
+          </div>
+        ))}
+        <button className="qlc__ksp-close" onClick={onToggle}>إغلاق ✕</button>
+      </div>
+    </div>
+  );
+}
+
+/* ── Full shortcuts modal (opened by ?) ─────────────────────────── */
+function ShortcutsModal({ onClose }) {
+  const GROUPS = [
+    { title: 'Playback',   items: [['Space','Play / Pause'],['Esc','Stop']] },
+    { title: 'Navigation', items: [['← →','Prev / Next Surah'],['1–9','Jump to Surah']] },
+    { title: 'Display',    items: [['+ / −','Font size'],['T','Toggle translation'],['D','Dark mode']] },
+    { title: 'Panels',     items: [['?','Shortcuts'],['G','Settings'],['K','Side shortcuts'],['P','Print']] },
+  ];
+  return (
+    <div className="qlc__overlay" onClick={onClose}>
+      <div className="qlc__shortcuts" onClick={(e) => e.stopPropagation()}>
+        <div className="qlc__panel-head">
+          <span>⌨ Keyboard Shortcuts</span>
+          <button className="qlc__panel-close" onClick={onClose}>✕</button>
+        </div>
+        <div className="qlc__shortcuts-body">
+          {GROUPS.map((g) => (
+            <div key={g.title} className="qlc__shortcuts-group">
+              <p className="qlc__shortcuts-cat">{g.title}</p>
+              {g.items.map(([k, l]) => (
+                <div key={k} className="qlc__shortcut-row">
+                  <kbd className="qlc__kbd">{k}</kbd>
+                  <span>{l}</span>
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Settings panel ─────────────────────────────────────────────── */
+function SettingsPanel({ fontSize, setFontSize, darkMode, setDarkMode, showTrans, setShowTrans, onClose }) {
+  return (
+    <div className="qlc__overlay" onClick={onClose}>
+      <div className="qlc__settings" onClick={(e) => e.stopPropagation()}>
+        <div className="qlc__panel-head">
+          <span>⚙ Settings</span>
+          <button className="qlc__panel-close" onClick={onClose}>✕</button>
+        </div>
+        <div className="qlc__settings-body">
+          <div className="qlc__settings-section">
+            <p className="qlc__settings-label">Arabic Font Size</p>
+            <div className="qlc__fontsize-row">
+              <button className="qlc__fontsize-btn" onClick={() => setFontSize((v) => Math.max(v - 2, 22))}>A−</button>
+              <input type="range" min={22} max={52} value={fontSize} className="qlc__fontsize-slider"
+                onChange={(e) => setFontSize(Number(e.target.value))} />
+              <button className="qlc__fontsize-btn" onClick={() => setFontSize((v) => Math.min(v + 2, 52))}>A+</button>
+            </div>
+            <p className="qlc__fontsize-preview" style={{ fontSize: `${fontSize}px` }}>
+              بِسۡمِ ٱللَّهِ ٱلرَّحۡمَٰنِ ٱلرَّحِيمِ
+            </p>
+          </div>
+          <div className="qlc__settings-section">
+            <p className="qlc__settings-label">Appearance</p>
+            <label className="qlc__toggle-row">
+              <span>🌙 Dark mode</span>
+              <div className={`qlc__switch${darkMode ? ' on' : ''}`} onClick={() => setDarkMode((v) => !v)}>
+                <div className="qlc__switch-knob" />
+              </div>
+            </label>
+            <label className="qlc__toggle-row">
+              <span>🌐 Show translation</span>
+              <div className={`qlc__switch${showTrans ? ' on' : ''}`} onClick={() => setShowTrans((v) => !v)}>
+                <div className="qlc__switch-knob" />
+              </div>
+            </label>
+          </div>
+          <div className="qlc__settings-section">
+            <p className="qlc__settings-hint">
+              Press <kbd className="qlc__kbd qlc__kbd--sm">?</kbd> to see all shortcuts ·&nbsp;
+              <kbd className="qlc__kbd qlc__kbd--sm">K</kbd> side panel
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════════
    MAIN PAGE
-   ═══════════════════════════════════════════════════════════════════ */
+   ══════════════════════════════════════════════════════════════════ */
 export default function Quran() {
   useSEO({
     title: 'Quran Learning Center — Al-Rahma Academy',
-    description: 'Read, listen and memorise the Holy Quran in 40+ languages with 20+ reciters. Tafsir Ibn Kathir, As-Saadi, Al-Jalalayn.',
+    description: 'Read, listen and memorise the Holy Quran in 40+ languages with 20+ reciters. Tafsir, Hifz mode, keyboard shortcuts.',
   });
 
-  /* ── State ────────────────────────────────────────────────────── */
-  const [chapters, setChapters]           = useState([]);
-  const [activeId, setActiveId]           = useState(1);
-  const [reciterId, setReciterId]         = useState(7);
-  const [verses, setVerses]               = useState([]);
-  const [audioUrl, setAudioUrl]           = useState('');
-  const [loading, setLoading]             = useState(false);
-  const [error, setError]                 = useState('');
-  const [search, setSearch]               = useState('');
+  /* ── Persisted preferences ───────────────────────────────────── */
+  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('qlc-dark') === '1');
+  const [fontSize, setFontSize] = useState(() => Number(localStorage.getItem('qlc-font') || 34));
+  useEffect(() => { localStorage.setItem('qlc-dark', darkMode ? '1' : '0'); }, [darkMode]);
+  useEffect(() => { localStorage.setItem('qlc-font', String(fontSize)); }, [fontSize]);
 
-  // Navigation: surah | page | juz
-  const [navMode, setNavMode]             = useState('surah');
-  const [pageNum, setPageNum]             = useState(1);
-  const [juzNum, setJuzNum]               = useState(1);
+  /* ── Panel / UI state ────────────────────────────────────────── */
+  const [showShortcuts,  setShowShortcuts] = useState(false);
+  const [showSettings,   setShowSettings]  = useState(false);
+  const [kbdPanelOpen,   setKbdPanelOpen]  = useState(false);
+  const [copiedKey,      setCopiedKey]     = useState('');
+  const [jumpVerse,      setJumpVerse]     = useState('');
+  const [tafsirPicker,   setTafsirPicker]  = useState(null); // verse_key | null
 
-  // Language / translation
-  const [lang, setLang]                   = useState('en');
-  const ui                                = getUI(lang);
-  const transObj                          = TRANSLATIONS.find((t) => t.lang === lang) || TRANSLATIONS[0];
-  const translationId                     = transObj.id;
-
-  // Tabs
-  const [tab, setTab]                     = useState('reading');
-
-  // Tafsir: 0 = off
-  const [openTafsir, setOpenTafsir]       = useState({});
-  const [tafsirId, setTafsirId]           = useState(0);
-
-  // Hifz
-  const [hifzMode, setHifzMode]           = useState('repeat');
-  const [fromV, setFromV]                 = useState(1);
-  const [toV, setToV]                     = useState(10);
-  const [repeatCount, setRepeatCount]     = useState(3);
-  const [hifzDelay, setHifzDelay]         = useState(0);
-  const [rangeRepeat, setRangeRepeat]     = useState(1);
-  const [isPlaying, setIsPlaying]         = useState(false);
-  const [curIdx, setCurIdx]               = useState(0);
-  const [playCount, setPlayCount]         = useState(0);
+  /* ── Core state ──────────────────────────────────────────────── */
+  const [chapters, setChapters]             = useState([]);
+  const [activeId, setActiveId]             = useState(1);
+  const [reciterId, setReciterId]           = useState(7);
+  const [verses, setVerses]                 = useState([]);
+  const [audioUrl, setAudioUrl]             = useState('');
+  const [loading, setLoading]               = useState(false);
+  const [error, setError]                   = useState('');
+  const [search, setSearch]                 = useState('');
+  const [navMode, setNavMode]               = useState('surah');
+  const [pageNum, setPageNum]               = useState(1);
+  const [juzNum, setJuzNum]                 = useState(1);
+  const [lang, setLang]                     = useState('en');
+  const ui                                  = getUI(lang);
+  const transObj                            = TRANSLATIONS.find((t) => t.lang === lang) || TRANSLATIONS[0];
+  const translationId                       = transObj.id;
+  const [tab, setTab]                       = useState('reading');
+  const [openTafsir, setOpenTafsir]         = useState({});
+  const [tafsirId, setTafsirId]             = useState(0);
+  const [hifzMode, setHifzMode]             = useState('repeat');
+  const [fromV, setFromV]                   = useState(1);
+  const [toV, setToV]                       = useState(10);
+  const [repeatCount, setRepeatCount]       = useState(3);
+  const [hifzDelay, setHifzDelay]           = useState(0);
+  const [rangeRepeat, setRangeRepeat]       = useState(1);
+  const [isPlaying, setIsPlaying]           = useState(false);
+  const [curIdx, setCurIdx]                 = useState(0);
+  const [playCount, setPlayCount]           = useState(0);
   const [rangeIteration, setRangeIteration] = useState(0);
-  const [verseAudios, setVerseAudios]     = useState([]);
-  const [loadingVA, setLoadingVA]         = useState(false);
-  const [revealed, setRevealed]           = useState({});
-  const [showTrans, setShowTrans]         = useState(true);
+  const [verseAudios, setVerseAudios]       = useState([]);
+  const [loadingVA, setLoadingVA]           = useState(false);
+  const [revealed, setRevealed]             = useState({});
+  const [showTrans, setShowTrans]           = useState(true);
 
   const audioRef      = useRef(null);
   const hifzAudio     = useRef(null);
   const rangeCountRef = useRef(0);
 
+  /* ── Deep-link: parse URL hash on first load ─────────────────── */
+  useEffect(() => {
+    const hash = window.location.hash.slice(1);
+    if (!hash) return;
+    const p = new URLSearchParams(hash);
+    const s = parseInt(p.get('s'));
+    const v = parseInt(p.get('v'));
+    if (s >= 1 && s <= 114) {
+      setActiveId(s); setNavMode('surah');
+      if (v >= 1) {
+        const tryScroll = (n = 0) => {
+          const el = document.getElementById(`v-${s}:${v}`);
+          if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
+          if (n < 12) setTimeout(() => tryScroll(n + 1), 300);
+        };
+        setTimeout(() => tryScroll(), 900);
+      }
+    }
+  }, []);
+
+  /* ── Update URL hash on surah change ────────────────────────── */
+  useEffect(() => {
+    if (navMode === 'surah') window.history.replaceState(null, '', `#s=${activeId}`);
+  }, [activeId, navMode]);
+
   /* ── Load chapters ───────────────────────────────────────────── */
   useEffect(() => { getChapters().then(setChapters).catch(() => {}); }, []);
 
-  /* ── Load verses + audio ─────────────────────────────────────── */
+  /* ── Load verses + chapter audio ────────────────────────────── */
   useEffect(() => {
     let alive = true;
     setLoading(true); setError(''); setVerses([]); setIsPlaying(false); setOpenTafsir({});
-
     const fetchV =
       navMode === 'page' ? getVersesByPage(pageNum, translationId) :
       navMode === 'juz'  ? getVersesByJuz(juzNum, translationId)   :
                            getVerses(activeId, translationId);
-
     const fetchA = navMode === 'surah'
       ? getChapterAudio(activeId, reciterId).catch(() => '')
       : Promise.resolve('');
-
     Promise.all([fetchV, fetchA])
       .then(([v, url]) => {
         if (!alive) return;
@@ -156,13 +356,67 @@ export default function Quran() {
   }, [tab, activeId, reciterId, navMode]);
 
   /* ── Derived ─────────────────────────────────────────────────── */
-  const audioMap       = Object.fromEntries(verseAudios.map((a) => [a.verse_key, a.url]));
   const selectedVerses = verses.slice(fromV - 1, toV);
+  const displayVerses  = tab === 'hifz' ? selectedVerses : verses;
+  const audioMap       = Object.fromEntries(verseAudios.map((a) => [a.verse_key, a.url]));
   const activeChapter  = chapters.find((c) => c.id === activeId);
   const filtered       = chapters.filter(
     (c) => c.name_simple.toLowerCase().includes(search.toLowerCase()) ||
            c.name_arabic.includes(search) || String(c.id).includes(search)
   );
+
+  /* ── Auto-scroll to playing verse ───────────────────────────── */
+  useEffect(() => {
+    if (!isPlaying || curIdx < 0) return;
+    const key = selectedVerses[curIdx]?.verse_key;
+    if (!key) return;
+    const el = document.getElementById(`v-${key}`);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [curIdx, isPlaying]);
+
+  /* ── Keyboard shortcuts ──────────────────────────────────────── */
+  useEffect(() => {
+    const handler = (e) => {
+      if (['INPUT', 'SELECT', 'TEXTAREA'].includes(e.target.tagName)) return;
+      switch (e.key) {
+        case '?': setShowShortcuts((v) => !v); break;
+        case 'g': case 'G': setShowSettings((v) => !v); break;
+        case 'k': case 'K': setKbdPanelOpen((v) => !v); break;
+        case 'p': case 'P': window.print(); break;
+        case 'Escape':
+          setShowShortcuts(false); setShowSettings(false); setKbdPanelOpen(false); stopHifz();
+          break;
+        case ' ':
+          e.preventDefault();
+          if (tab === 'hifz') { isPlaying ? stopHifz() : startHifz(); }
+          else if (audioRef.current) {
+            audioRef.current.paused ? audioRef.current.play().catch(() => {}) : audioRef.current.pause();
+          }
+          break;
+        case 'ArrowRight':
+          if (navMode === 'surah') setActiveId((v) => Math.max(1, v - 1));
+          else if (navMode === 'page') goPage(pageNum - 1);
+          else if (navMode === 'juz') setJuzNum((v) => Math.max(1, v - 1));
+          break;
+        case 'ArrowLeft':
+          if (navMode === 'surah') setActiveId((v) => Math.min(114, v + 1));
+          else if (navMode === 'page') goPage(pageNum + 1);
+          else if (navMode === 'juz') setJuzNum((v) => Math.min(30, v + 1));
+          break;
+        case 'd': case 'D': setDarkMode((v) => !v); break;
+        case 't': case 'T': setShowTrans((v) => !v); break;
+        case '+': case '=': setFontSize((v) => Math.min(v + 2, 52)); break;
+        case '-': setFontSize((v) => Math.max(v - 2, 22)); break;
+        default: {
+          const n = Number(e.key);
+          if (n >= 1 && n <= 9 && navMode === 'surah') setActiveId(n);
+          break;
+        }
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [tab, isPlaying, navMode, activeId, pageNum, juzNum]);
 
   /* ── Hifz playback ───────────────────────────────────────────── */
   const playVerse = useCallback((idx) => {
@@ -198,27 +452,62 @@ export default function Quran() {
     });
   }, [repeatCount, curIdx, selectedVerses.length, playVerse, hifzDelay, rangeRepeat]);
 
-  const startHifz = () => {
+  const startHifz = useCallback(() => {
     rangeCountRef.current = 0; setRangeIteration(0);
     setIsPlaying(true); setCurIdx(0); setPlayCount(0);
     setTimeout(() => playVerse(0), 100);
-  };
-  const stopHifz = () => {
+  }, [playVerse]);
+
+  const stopHifz = useCallback(() => {
     setIsPlaying(false);
     hifzAudio.current?.pause();
     if (hifzAudio.current) hifzAudio.current.currentTime = 0;
     setCurIdx(0); setPlayCount(0); rangeCountRef.current = 0; setRangeIteration(0);
+  }, []);
+
+  /* ── Verse actions ───────────────────────────────────────────── */
+  const toggleReveal = (key) => setRevealed((p) => ({ ...p, [key]: !p[key] }));
+  const revealAll    = () => { const m = {}; selectedVerses.forEach((v) => (m[v.verse_key] = true)); setRevealed(m); };
+  const hideAll      = () => setRevealed({});
+  const toggleTafsir = (key) => setOpenTafsir((p) => ({ ...p, [key]: !p[key] }));
+
+  const copyVerse = async (verse) => {
+    const parts = [verse.text_uthmani];
+    if (verse.translations?.[0]) parts.push(clean(verse.translations[0].text));
+    parts.push(`[${verse.verse_key}]`);
+    try {
+      await navigator.clipboard.writeText(parts.join('\n'));
+      setCopiedKey(`copy-${verse.verse_key}`);
+      setTimeout(() => setCopiedKey(''), 2000);
+    } catch { /* ignore */ }
   };
 
-  const toggleReveal  = (key) => setRevealed((p) => ({ ...p, [key]: !p[key] }));
-  const revealAll     = () => { const m = {}; selectedVerses.forEach((v) => (m[v.verse_key] = true)); setRevealed(m); };
-  const hideAll       = () => setRevealed({});
-  const toggleTafsir  = (key) => setOpenTafsir((p) => ({ ...p, [key]: !p[key] }));
+  const shareVerse = async (verse) => {
+    const [s, v] = verse.verse_key.split(':');
+    const url = `${window.location.origin}/quran#s=${s}&v=${v}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopiedKey(`share-${verse.verse_key}`);
+      setTimeout(() => setCopiedKey(''), 2000);
+    } catch { /* ignore */ }
+  };
 
-  const selectSurah  = (id) => { setActiveId(id); setNavMode('surah'); stopHifz(); setRevealed({}); setOpenTafsir({}); };
-  const changeLang   = (l)  => { setLang(l); stopHifz(); };
-  const goPage       = (n)  => { setPageNum(Math.max(1, Math.min(604, n))); setNavMode('page'); setOpenTafsir({}); };
-  const goJuz        = (n)  => { setJuzNum(n); setNavMode('juz'); setOpenTafsir({}); };
+  /* ── Jump to verse ───────────────────────────────────────────── */
+  const doJumpVerse = (numStr) => {
+    const n = parseInt(numStr);
+    if (!n || n < 1) return;
+    const target = displayVerses[n - 1];
+    if (!target) return;
+    const el = document.getElementById(`v-${target.verse_key}`);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setJumpVerse('');
+  };
+
+  /* ── Navigation helpers ──────────────────────────────────────── */
+  const selectSurah = (id) => { setActiveId(id); setNavMode('surah'); stopHifz(); setRevealed({}); setOpenTafsir({}); };
+  const changeLang  = (l)  => { setLang(l); stopHifz(); };
+  const goPage      = (n)  => { setPageNum(Math.max(1, Math.min(604, n))); setNavMode('page'); setOpenTafsir({}); };
+  const goJuz       = (n)  => { setJuzNum(n); setNavMode('juz'); setOpenTafsir({}); };
 
   const REPEAT_OPTIONS = [1, 2, 3, 5, 7, 10, 15, 20, 30, 50, 100];
   const RANGE_OPTIONS  = [1, 2, 3, 5, 7, 10];
@@ -231,15 +520,30 @@ export default function Quran() {
   ];
 
   const showBasmalah = navMode === 'surah' && !NO_BASMALAH.has(activeId);
-  const uiDir = getUI(lang.replace(/\d+$/, '')).dir || 'ltr';
 
-  /* ══════════════════════════════════════════════════════════════════
+  /* ══════════════════════════════════════════════════════════════
      RENDER
-     ══════════════════════════════════════════════════════════════════ */
+     ══════════════════════════════════════════════════════════════ */
   return (
-    <div className="qlc" dir={uiDir}>
+    <div className={`qlc${darkMode ? ' qlc--dark' : ''}`}>
 
-      {/* ══════════════════ TOP BAR ════════════════════════════════ */}
+      {/* ════ KSU-STYLE: Keyboard shortcuts SIDE PANEL ════════════ */}
+      <KbdSidePanel open={kbdPanelOpen} onToggle={() => setKbdPanelOpen((v) => !v)} />
+
+      {/* ════ SHORTCUTS MODAL (full, opened by ?) ════════════════ */}
+      {showShortcuts && <ShortcutsModal onClose={() => setShowShortcuts(false)} />}
+
+      {/* ════ SETTINGS PANEL ═══════════════════════════════════════ */}
+      {showSettings && (
+        <SettingsPanel
+          fontSize={fontSize} setFontSize={setFontSize}
+          darkMode={darkMode} setDarkMode={setDarkMode}
+          showTrans={showTrans} setShowTrans={setShowTrans}
+          onClose={() => setShowSettings(false)}
+        />
+      )}
+
+      {/* ════ TOP BAR ══════════════════════════════════════════════ */}
       <header className="qlc__bar">
         <div className="qlc__bar-inner">
           <Brand />
@@ -255,41 +559,52 @@ export default function Quran() {
                 className={`qlc__tab${tab === t.key ? ' qlc__tab--active' : ''}`}
                 onClick={() => { setTab(t.key); stopHifz(); }}
               >
-                <span className="qlc__tab-icon">{t.icon}</span>
-                <span className="qlc__tab-label">{t.label}</span>
+                <span>{t.icon}</span> {t.label}
               </button>
             ))}
           </nav>
 
           <div className="qlc__bar-right">
             <div className="qlc__lang-wrap">
-              <span className="qlc__lang-label">🌍</span>
+              <span>🌍</span>
               <select className="qlc__lang-select" value={lang} onChange={(e) => changeLang(e.target.value)}>
                 {TRANSLATIONS.map((t) => (
                   <option key={t.lang} value={t.lang}>{t.flag} {t.label}</option>
                 ))}
               </select>
             </div>
+
+            <button className="qlc__bar-icon" onClick={() => setShowSettings((v) => !v)} title="Settings (G)">⚙</button>
+            <button
+              className={`qlc__bar-icon${kbdPanelOpen ? ' active' : ''}`}
+              onClick={() => setKbdPanelOpen((v) => !v)}
+              title="Keyboard panel (K)"
+            >⌨</button>
+            <button
+              className={`qlc__bar-icon${darkMode ? ' active' : ''}`}
+              onClick={() => setDarkMode((v) => !v)}
+              title="Dark mode (D)"
+            >🌙</button>
+            <button className="qlc__bar-icon" onClick={() => window.print()} title="Print (P)">🖨</button>
+
             <Link to="/" className="btn btn--ghost btn--sm qlc__back">{ui.back}</Link>
           </div>
         </div>
       </header>
 
-      {/* ══════════════════ ALPHABET ═══════════════════════════════ */}
+      {/* ════ ALPHABET ══════════════════════════════════════════════ */}
       {tab === 'alphabet' && (
         <div className="qlc__alphabet-wrap container">
           <AlphabetLearner onClose={() => setTab('reading')} />
         </div>
       )}
 
-      {/* ══════════════════ MAIN LAYOUT ════════════════════════════ */}
+      {/* ════ MAIN LAYOUT ══════════════════════════════════════════ */}
       {tab !== 'alphabet' && (
         <div className="qlc__layout">
 
-          {/* ━━━━━━━━━━━━━━━━━━ SIDEBAR ━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+          {/* ━━━━━━━━━━━━━━  SIDEBAR  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
           <aside className="qlc__sidebar">
-
-            {/* ❶ Navigation tabs — top of sidebar, full width */}
             <div className="qlc__nav-tabs">
               {[
                 { key: 'surah', label: ui.navSurah || 'Surah' },
@@ -300,19 +615,14 @@ export default function Quran() {
                   key={m.key}
                   className={`qlc__nav-tab${navMode === m.key ? ' active' : ''}`}
                   onClick={() => {
-                    if (m.key !== navMode) {
-                      if (m.key === 'surah') setNavMode('surah');
-                      if (m.key === 'page')  setNavMode('page');
-                      if (m.key === 'juz')   setNavMode('juz');
-                    }
+                    if (m.key === 'surah') setNavMode('surah');
+                    if (m.key === 'page')  setNavMode('page');
+                    if (m.key === 'juz')   setNavMode('juz');
                   }}
-                >
-                  {m.label}
-                </button>
+                >{m.label}</button>
               ))}
             </div>
 
-            {/* ❷ Surah mode */}
             {navMode === 'surah' && (
               <>
                 <div className="qlc__sidebar-search">
@@ -344,32 +654,25 @@ export default function Quran() {
               </>
             )}
 
-            {/* ❸ Page mode */}
             {navMode === 'page' && (
               <div className="qlc__page-nav">
-                <p className="qlc__page-label">{ui.page || 'Page'} (1 – 604)</p>
+                <p className="qlc__page-label">{ui.page || 'Page'} (1–604)</p>
                 <div className="qlc__page-row">
                   <button className="qlc__page-arrow" onClick={() => goPage(pageNum - 1)} disabled={pageNum <= 1}>‹</button>
-                  <input
-                    type="number" className="qlc__page-input"
-                    value={pageNum} min={1} max={604}
-                    onChange={(e) => goPage(Number(e.target.value))}
-                  />
+                  <input type="number" className="qlc__page-input" value={pageNum} min={1} max={604}
+                    onChange={(e) => goPage(Number(e.target.value))} />
                   <button className="qlc__page-arrow" onClick={() => goPage(pageNum + 1)} disabled={pageNum >= 604}>›</button>
                 </div>
                 <div className="qlc__page-grid">
                   {Array.from({ length: 30 }, (_, i) => i * 20 + 1).map((p) => (
-                    <button
-                      key={p}
+                    <button key={p}
                       className={`qlc__page-chip${pageNum >= p && pageNum < p + 20 ? ' active' : ''}`}
-                      onClick={() => goPage(p)}
-                    >{p}</button>
+                      onClick={() => goPage(p)}>{p}</button>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* ❹ Juz mode */}
             {navMode === 'juz' && (
               <ul className="qlc__list">
                 {JUZ_NAMES.map((name, i) => (
@@ -390,10 +693,10 @@ export default function Quran() {
             )}
           </aside>
 
-          {/* ━━━━━━━━━━━━━━━━━━ MAIN CONTENT ━━━━━━━━━━━━━━━━━━━━━━ */}
+          {/* ━━━━━━━━━━━━━━  MAIN  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
           <main className="qlc__main" dir="ltr">
 
-            {/* ═══════════════ ❶ SURAH / PAGE HEADER ═════════════ */}
+            {/* ═══ ❶ CHAPTER HEADER ══════════════════════════════ */}
             <div className="qlc__chapter-header">
               {navMode === 'surah' && activeChapter ? (
                 <>
@@ -417,106 +720,92 @@ export default function Quran() {
               )}
             </div>
 
-            {/* ═══════════════ ❷ CONTROLS BAR ════════════════════ */}
+            {/* ═══ ❷ READING CONTROLS BAR ════════════════════════ */}
             {tab === 'reading' && (
               <div className="qlc__cbar">
-
-                {/* Row 1: Selectors in one horizontal line */}
                 <div className="qlc__cbar-selects">
-
                   <CtrlItem icon="🎙" label={ui.reciter}>
-                    <select
-                      className="qlc__cbar-select"
-                      value={reciterId}
-                      onChange={(e) => setReciterId(Number(e.target.value))}
-                    >
+                    <select className="qlc__cbar-select" value={reciterId}
+                      onChange={(e) => setReciterId(Number(e.target.value))}>
                       {RECITERS.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
                     </select>
                   </CtrlItem>
-
                   <div className="qlc__cbar-sep" />
-
                   <CtrlItem icon="🌐" label={ui.translation}>
-                    <select
-                      className="qlc__cbar-select"
-                      value={lang}
-                      onChange={(e) => changeLang(e.target.value)}
-                    >
+                    <select className="qlc__cbar-select" value={lang} onChange={(e) => changeLang(e.target.value)}>
                       {TRANSLATIONS.map((t) => (
                         <option key={t.lang} value={t.lang}>{t.flag} {t.label} — {t.name}</option>
                       ))}
                     </select>
                   </CtrlItem>
-
                   <div className="qlc__cbar-sep" />
-
                   <CtrlItem icon="📚" label={ui.tafsir}>
                     <select
                       className="qlc__cbar-select"
                       value={tafsirId}
-                      onChange={(e) => { setTafsirId(Number(e.target.value)); setOpenTafsir({}); }}
+                      onChange={(e) => { setTafsirId(Number(e.target.value)); setOpenTafsir({}); setTafsirPicker(null); }}
                     >
-                      <option value={0}>— off —</option>
-                      {TAFASEER.map((t) => (
-                        <option key={t.id} value={t.id}>{t.name} ({t.nameEn})</option>
-                      ))}
+                      <option value={0}>— اختر تفسيراً —</option>
+                      <optgroup label="تفاسير عربية">
+                        {TAFASEER.filter((t) => t.lang === 'ar').map((t) => (
+                          <option key={t.id} value={t.id}>{t.name}</option>
+                        ))}
+                      </optgroup>
+                      <optgroup label="Other languages">
+                        {TAFASEER.filter((t) => t.lang !== 'ar').map((t) => (
+                          <option key={t.id} value={t.id}>{t.name} ({t.lang.toUpperCase()})</option>
+                        ))}
+                      </optgroup>
                     </select>
                   </CtrlItem>
+                  <div className="qlc__cbar-sep" />
+                  {/* Quick font-size control in reading bar */}
+                  <div className="qlc__cbar-item">
+                    <span className="qlc__cbar-label">🔤 Font</span>
+                    <div className="qlc__cbar-font-row">
+                      <button className="qlc__cbar-font-btn" onClick={() => setFontSize((v) => Math.max(v - 2, 22))}>A−</button>
+                      <span className="qlc__cbar-font-val">{fontSize}px</span>
+                      <button className="qlc__cbar-font-btn" onClick={() => setFontSize((v) => Math.min(v + 2, 52))}>A+</button>
+                    </div>
+                  </div>
                 </div>
 
-                {/* Row 2: Audio player — full width, prominent */}
                 {navMode === 'surah' && audioUrl && (
                   <div className="qlc__cbar-player">
                     <span className="qlc__cbar-reciter-name">
                       ♪ {RECITERS.find((r) => r.id === reciterId)?.name}
                     </span>
-                    <audio
-                      ref={audioRef}
-                      controls
-                      src={audioUrl}
-                      className="qlc__audio"
-                      key={`${activeId}-${reciterId}`}
-                    />
+                    <audio ref={audioRef} controls src={audioUrl} className="qlc__audio"
+                      key={`${activeId}-${reciterId}`} />
                   </div>
                 )}
               </div>
             )}
 
-            {/* ═══════════════ ❷ HIFZ CONTROLS ═══════════════════ */}
+            {/* ═══ ❷ HIFZ CONTROLS ═══════════════════════════════ */}
             {tab === 'hifz' && (
               <div className="qlc__cbar qlc__cbar--hifz">
-
-                {/* Mode tabs */}
                 <div className="qlc__hifz-modetabs">
-                  <button
-                    className={`qlc__hifz-modetab${hifzMode === 'repeat' ? ' active' : ''}`}
-                    onClick={() => { setHifzMode('repeat'); stopHifz(); }}
-                  >🔁 {ui.repeat}</button>
-                  <button
-                    className={`qlc__hifz-modetab${hifzMode === 'test' ? ' active' : ''}`}
-                    onClick={() => { setHifzMode('test'); stopHifz(); setRevealed({}); }}
-                  >🧪 {ui.test}</button>
+                  <button className={`qlc__hifz-modetab${hifzMode === 'repeat' ? ' active' : ''}`}
+                    onClick={() => { setHifzMode('repeat'); stopHifz(); }}>🔁 {ui.repeat}</button>
+                  <button className={`qlc__hifz-modetab${hifzMode === 'test' ? ' active' : ''}`}
+                    onClick={() => { setHifzMode('test'); stopHifz(); setRevealed({}); }}>🧪 {ui.test}</button>
                 </div>
 
-                {/* Hifz selectors — one horizontal row */}
                 <div className="qlc__cbar-selects qlc__cbar-selects--hifz">
-
                   <CtrlItem icon="▶" label={ui.fromVerse}>
                     <select className="qlc__cbar-select" value={fromV}
                       onChange={(e) => { stopHifz(); setFromV(Number(e.target.value)); }}>
                       {verses.map((_, i) => <option key={i} value={i + 1}>{i + 1}</option>)}
                     </select>
                   </CtrlItem>
-
                   <div className="qlc__cbar-sep" />
-
                   <CtrlItem icon="⏹" label={ui.toVerse}>
                     <select className="qlc__cbar-select" value={toV}
                       onChange={(e) => { stopHifz(); setToV(Number(e.target.value)); }}>
                       {verses.map((_, i) => <option key={i} value={i + 1}>{i + 1}</option>)}
                     </select>
                   </CtrlItem>
-
                   {hifzMode === 'repeat' && (
                     <>
                       <div className="qlc__cbar-sep" />
@@ -526,7 +815,6 @@ export default function Quran() {
                           {REPEAT_OPTIONS.map((n) => <option key={n} value={n}>{n}{ui.times}</option>)}
                         </select>
                       </CtrlItem>
-
                       <div className="qlc__cbar-sep" />
                       <CtrlItem icon="🔄" label={ui.rangeRepeat || 'Range'}>
                         <select className="qlc__cbar-select" value={rangeRepeat}
@@ -534,7 +822,6 @@ export default function Quran() {
                           {RANGE_OPTIONS.map((n) => <option key={n} value={n}>{n}{ui.times}</option>)}
                         </select>
                       </CtrlItem>
-
                       <div className="qlc__cbar-sep" />
                       <CtrlItem icon="⏱" label={ui.delay || 'Delay'}>
                         <select className="qlc__cbar-select" value={hifzDelay}
@@ -542,17 +829,20 @@ export default function Quran() {
                           {DELAY_OPTIONS.map((d) => <option key={d.value} value={d.value}>{d.label}</option>)}
                         </select>
                       </CtrlItem>
-
                       <div className="qlc__cbar-sep" />
+                      {/* Hifz reciter: only show those with per-verse audio */}
                       <CtrlItem icon="🎙" label={ui.reciter}>
                         <select className="qlc__cbar-select" value={reciterId}
-                          onChange={(e) => { stopHifz(); setReciterId(Number(e.target.value)); }}>
-                          {RECITERS.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+                          onChange={(e) => {
+                            stopHifz();
+                            const v = Number(e.target.value);
+                            setReciterId(HIFZ_RECITERS.find((r) => r.id === v) ? v : HIFZ_RECITERS[0].id);
+                          }}>
+                          {HIFZ_RECITERS.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
                         </select>
                       </CtrlItem>
                     </>
                   )}
-
                   {hifzMode === 'test' && (
                     <>
                       <div className="qlc__cbar-sep" />
@@ -566,16 +856,19 @@ export default function Quran() {
                   )}
                 </div>
 
-                {/* Play bar */}
                 <div className="qlc__hifz-playbar">
                   {hifzMode === 'repeat' && (
                     navMode !== 'surah' ? (
-                      <p className="qlc__hifz-warn">⚠ {ui.navSurah || 'Select a Surah'} to use Hifz mode</p>
+                      <p className="qlc__hifz-warn">⚠ Select a Surah first</p>
+                    ) : !HIFZ_RECITERS.find((r) => r.id === reciterId) ? (
+                      <p className="qlc__hifz-warn">
+                        ⚠ This reciter has no per-verse audio. Choose another reciter above.
+                      </p>
                     ) : loadingVA ? (
                       <span className="qlc__hifz-status">{ui.loading}</span>
                     ) : !isPlaying ? (
                       <button className="btn btn--green qlc__hifz-startbtn" onClick={startHifz} disabled={!verseAudios.length}>
-                        {ui.start}
+                        ▶ {ui.start}
                         <span className="qlc__hifz-startinfo">
                           {selectedVerses.length} {ui.verses} · {repeatCount}{ui.times}
                           {rangeRepeat > 1 ? ` · ${rangeRepeat}×` : ''}
@@ -590,7 +883,9 @@ export default function Quran() {
                             {Array.from({ length: Math.min(repeatCount, 20) }, (_, i) => (
                               <span key={i} className={`qlc__hdot${i < playCount ? ' on' : ''}`} />
                             ))}
-                            {repeatCount > 20 && <span className="qlc__hdot-more">{playCount}/{repeatCount}</span>}
+                            {repeatCount > 20 && (
+                              <span className="qlc__hdot-more">{playCount}/{repeatCount}</span>
+                            )}
                           </div>
                           {rangeRepeat > 1 && (
                             <span className="qlc__hifz-range">
@@ -613,15 +908,28 @@ export default function Quran() {
               </div>
             )}
 
-            {/* ═══════════════ LOADING / ERROR ════════════════════ */}
-            {loading && (
-              <div className="qlc__loading">
-                <div className="qlc__spinner" />
+            {/* ═══ LOADING / ERROR ══════════════════════════════ */}
+            {loading && <div className="qlc__loading"><div className="qlc__spinner" /></div>}
+            {error   && <p className="qlc__error">{error}</p>}
+
+            {/* ═══ JUMP-TO-VERSE bar ═══════════════════════════════ */}
+            {!loading && !error && displayVerses.length > 0 && (
+              <div className="qlc__jump-bar">
+                <span className="qlc__jump-label">{ui.jump || 'Jump to verse'}</span>
+                <input
+                  className="qlc__jump-input"
+                  type="number" min={1} max={displayVerses.length}
+                  placeholder="1"
+                  value={jumpVerse}
+                  onChange={(e) => setJumpVerse(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') doJumpVerse(jumpVerse); }}
+                />
+                <span className="qlc__jump-of">/ {displayVerses.length}</span>
+                <button className="qlc__jump-btn" onClick={() => doJumpVerse(jumpVerse)}>↵ Go</button>
               </div>
             )}
-            {error && <p className="qlc__error">{error}</p>}
 
-            {/* ═══════════════ ❸ BASMALAH ═════════════════════════ */}
+            {/* ═══ ❸ BASMALAH ══════════════════════════════════════ */}
             {!loading && !error && showBasmalah && tab !== 'hifz' && (
               <div className="qlc__basmalah-wrap">
                 <p className="qlc__basmalah" dir="rtl">
@@ -630,22 +938,18 @@ export default function Quran() {
               </div>
             )}
 
-            {/* ═══════════════ ❹ VERSE LIST ═══════════════════════ */}
+            {/* ═══ ❹ VERSE LIST ════════════════════════════════════ */}
             {!loading && !error && (
               <div className="qlc__verses-wrap">
                 <ol className="qlc__verses" start={tab === 'hifz' ? fromV : 1}>
-                  {(tab === 'hifz' ? selectedVerses : verses).map((v, idx) => {
-                    const isActive = tab === 'hifz' && hifzMode === 'repeat' && isPlaying && idx === curIdx;
-                    const isHidden = tab === 'hifz' && hifzMode === 'test' && !revealed[v.verse_key];
-                    const tafsirOn = tafsirId > 0 && openTafsir[v.verse_key];
-
-                    // Surah divider in page/juz modes
-                    const list = tab === 'hifz' ? selectedVerses : verses;
-                    const prevV = idx > 0 ? list[idx - 1] : null;
+                  {displayVerses.map((v, idx) => {
+                    const isActive   = tab === 'hifz' && hifzMode === 'repeat' && isPlaying && idx === curIdx;
+                    const isHidden   = tab === 'hifz' && hifzMode === 'test' && !revealed[v.verse_key];
+                    const tafsirOn   = tafsirId !== 0 && openTafsir[v.verse_key];
+                    const prevV      = idx > 0 ? displayVerses[idx - 1] : null;
                     const surahBroke = prevV
                       ? v.verse_key.split(':')[0] !== prevV.verse_key.split(':')[0]
                       : true;
-
                     const vNum = Number(v.verse_key.split(':')[1]);
 
                     return (
@@ -654,7 +958,7 @@ export default function Quran() {
                         id={`v-${v.verse_key}`}
                         className={`qlc__verse${isActive ? ' qlc__verse--active' : ''}`}
                       >
-                        {/* Surah divider */}
+                        {/* Surah divider in page/juz mode */}
                         {navMode !== 'surah' && surahBroke && (() => {
                           const ch = chapters.find((c) => c.id === Number(v.verse_key.split(':')[0]));
                           return ch ? (
@@ -665,54 +969,89 @@ export default function Quran() {
                           ) : null;
                         })()}
 
-                        {/* Arabic text — verse number embedded as ﴿n﴾ */}
-                        <div className={`qlc__arabic-wrap${isHidden ? ' hidden' : ''}`}>
-                          <p className="qlc__arabic" dir="rtl" lang="ar">
-                            {isHidden ? (
-                              <>{firstWords(v.text_uthmani, 3)}<span className="qlc__dots"> ···</span></>
-                            ) : (
-                              v.text_uthmani
-                            )}
-                            {!isHidden && <span className="qlc__vnum" aria-label={`Verse ${vNum}`}>﴿{vNum}﴾</span>}
-                          </p>
-                        </div>
+                        {/* Now-playing badge */}
+                        {isActive && (
+                          <div className="qlc__now-playing">
+                            <span className="qlc__np-dot" />
+                            <span>Now Playing · {playCount}/{repeatCount}</span>
+                          </div>
+                        )}
+
+                        {/* Arabic text */}
+                        <p className="qlc__arabic" dir="rtl" lang="ar" style={{ fontSize: `${fontSize}px` }}>
+                          {isHidden
+                            ? <><span>{firstWords(v.text_uthmani, 3)}</span><span className="qlc__dots"> ···</span></>
+                            : v.text_uthmani
+                          }
+                          {!isHidden && <span className="qlc__vnum">﴿{vNum}﴾</span>}
+                        </p>
 
                         {/* Translation */}
                         {translationId && v.translations?.[0] && !isHidden && (showTrans || tab === 'reading') && (
-                          <p className="qlc__trans" dir="auto">
-                            {clean(v.translations[0].text)}
-                          </p>
+                          <p className="qlc__trans" dir="auto">{clean(v.translations[0].text)}</p>
                         )}
 
-                        {/* Actions row: tafsir btn / play btn / reveal btn / meta */}
+                        {/* Verse footer */}
                         <div className="qlc__verse-foot">
                           <span className="qlc__vbadge">{v.verse_key}</span>
-
-                          {navMode !== 'surah' && (
-                            <span className="qlc__vmeta">
-                              {v.page_number ? `📄${v.page_number}` : ''}
-                              {v.juz_number  ? ` · J${v.juz_number}` : ''}
-                            </span>
+                          {navMode !== 'surah' && v.page_number && (
+                            <span className="qlc__vmeta">📄{v.page_number} · J{v.juz_number}</span>
                           )}
 
                           <div className="qlc__verse-actions">
+                            {/* Copy verse */}
+                            <button
+                              className={`qlc__actbtn${copiedKey === `copy-${v.verse_key}` ? ' copied' : ''}`}
+                              onClick={() => copyVerse(v)}
+                              title="Copy verse (text + translation)"
+                            >
+                              {copiedKey === `copy-${v.verse_key}` ? '✓' : '📋'}
+                            </button>
+
+                            {/* Share link */}
+                            <button
+                              className={`qlc__actbtn${copiedKey === `share-${v.verse_key}` ? ' copied' : ''}`}
+                              onClick={() => shareVerse(v)}
+                              title="Copy link to this verse"
+                            >
+                              {copiedKey === `share-${v.verse_key}` ? '✓' : '🔗'}
+                            </button>
+
+                            {/* Hifz per-verse play button */}
                             {tab === 'hifz' && hifzMode === 'repeat' && (
                               <button
-                                className="qlc__playbtn"
-                                onClick={() => { setCurIdx(idx); setIsPlaying(true); setTimeout(() => playVerse(idx), 50); }}
+                                className="qlc__actbtn qlc__actbtn--play"
+                                onClick={() => {
+                                  setCurIdx(idx); setIsPlaying(true);
+                                  setTimeout(() => playVerse(idx), 50);
+                                }}
                                 disabled={loadingVA}
-                                title="Play verse"
                               >▶</button>
                             )}
+
+                            {/* Test mode reveal */}
                             {tab === 'hifz' && hifzMode === 'test' && (
                               <button className="qlc__revealbtn" onClick={() => toggleReveal(v.verse_key)}>
                                 {revealed[v.verse_key] ? ui.hide : ui.reveal}
                               </button>
                             )}
-                            {tab === 'reading' && tafsirId > 0 && (
+
+                            {/* Tafsir button — always visible in reading mode */}
+                            {tab === 'reading' && (
                               <button
                                 className={`qlc__tafsirbtn${tafsirOn ? ' active' : ''}`}
-                                onClick={() => toggleTafsir(v.verse_key)}
+                                onClick={() => {
+                                  if (tafsirOn) {
+                                    toggleTafsir(v.verse_key);
+                                  } else if (tafsirId !== 0) {
+                                    toggleTafsir(v.verse_key);
+                                  } else {
+                                    setTafsirPicker(
+                                      tafsirPicker === v.verse_key ? null : v.verse_key
+                                    );
+                                  }
+                                }}
+                                title="تفسير الآية"
                               >
                                 📚 {ui.tafsir}
                               </button>
@@ -720,15 +1059,35 @@ export default function Quran() {
                           </div>
                         </div>
 
-                        {/* Active verse progress bar */}
+                        {/* Active-verse progress bar */}
                         {isActive && (
                           <div className="qlc__progress-bar">
-                            <div className="qlc__progress-fill" style={{ width: `${(playCount / repeatCount) * 100}%` }} />
+                            <div className="qlc__progress-fill"
+                              style={{ width: `${(playCount / repeatCount) * 100}%` }} />
                           </div>
                         )}
 
+                        {/* Tafsir picker (inline dropdown) */}
+                        {tafsirPicker === v.verse_key && !tafsirOn && (
+                          <TafsirPicker
+                            onSelect={(tid) => {
+                              setTafsirId(tid);
+                              setOpenTafsir((p) => ({ ...p, [v.verse_key]: true }));
+                              setTafsirPicker(null);
+                            }}
+                            onClose={() => setTafsirPicker(null)}
+                          />
+                        )}
+
                         {/* Tafsir panel */}
-                        {tafsirOn && <TafsirPanel verseKey={v.verse_key} tafsirId={tafsirId} ui={ui} />}
+                        {tafsirOn && (
+                          <TafsirPanel
+                            verseKey={v.verse_key}
+                            tafsirId={tafsirId}
+                            ui={ui}
+                            onClose={() => toggleTafsir(v.verse_key)}
+                          />
+                        )}
                       </li>
                     );
                   })}
@@ -736,6 +1095,30 @@ export default function Quran() {
               </div>
             )}
           </main>
+        </div>
+      )}
+
+      {/* ════ FLOATING HIFZ BAR (sticks to bottom while playing) ══ */}
+      {tab === 'hifz' && hifzMode === 'repeat' && isPlaying && selectedVerses[curIdx] && (
+        <div className="qlc__float-bar">
+          <div className="qlc__float-info">
+            <span className="qlc__float-key">{selectedVerses[curIdx].verse_key}</span>
+            <span className="qlc__float-ar" dir="rtl">
+              {selectedVerses[curIdx].text_uthmani.slice(0, 80)}
+              {selectedVerses[curIdx].text_uthmani.length > 80 ? '…' : ''}
+            </span>
+          </div>
+          <div className="qlc__float-right">
+            <span className="qlc__float-count">{playCount}/{repeatCount}×</span>
+            {rangeRepeat > 1 && (
+              <span className="qlc__float-range">{rangeIteration + 1}/{rangeRepeat}</span>
+            )}
+            <button className="qlc__float-stop" onClick={stopHifz}>{ui.stop}</button>
+          </div>
+          <div className="qlc__float-progress">
+            <div className="qlc__float-fill"
+              style={{ width: `${(curIdx / selectedVerses.length) * 100}%` }} />
+          </div>
         </div>
       )}
     </div>

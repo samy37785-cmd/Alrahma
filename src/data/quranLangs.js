@@ -45,13 +45,32 @@ export const TRANSLATIONS = [
   { lang: 'ky',    id: 68,  label: 'Кыргызча',     flag: '🇰🇬', name: 'Khalilrahman Saliev' },
 ];
 
-// ── Tafsir sources with quran.com API IDs ───────────────────────────
+/*
+ * Tafsir IDs verified against quran.com API v4 /resources/tafsirs
+ * Endpoint: GET /tafsirs/{id}/by_ayah/{verse_key}?fields=text
+ */
 export const TAFASEER = [
-  { id: 169, name: 'ابن كثير',        nameEn: 'Ibn Kathir',   lang: 'ar' },
-  { id: 168, name: 'السعدي',          nameEn: "As-Sa'di",     lang: 'ar' },
-  { id: 91,  name: 'الميسر',          nameEn: 'Al-Muyassar',  lang: 'ar' },
-  { id: 17,  name: 'الجلالين',        nameEn: 'Al-Jalalayn',  lang: 'ar' },
-  { id: 164, name: 'Tafsir Ibn Kathir',nameEn: 'Ibn Kathir (EN)', lang: 'en' },
+  // ── Arabic — quran.com API (IDs > 0, return HTML) ────────────────
+  { id: 14,  name: 'ابن كثير',              nameEn: 'Ibn Kathir',           lang: 'ar' },
+  { id: 91,  name: 'السعدي',                nameEn: "As-Sa'di",             lang: 'ar' },
+  { id: 16,  name: 'الميسر',                nameEn: 'Al-Muyassar',          lang: 'ar' },
+  { id: 15,  name: 'الطبري',                nameEn: 'Al-Tabari',            lang: 'ar' },
+  { id: 90,  name: 'القرطبي',               nameEn: 'Al-Qurtubi',           lang: 'ar' },
+  { id: 94,  name: 'البغوي',                nameEn: 'Al-Baghawi',           lang: 'ar' },
+  { id: 93,  name: 'الوسيط (الطنطاوي)',     nameEn: 'Al-Wasit (Tantawi)',   lang: 'ar' },
+  // ── Arabic — alquran.cloud (IDs < 0, return plain text) ──────────
+  { id: -1,  name: 'الجلالين',              nameEn: 'Jalalayn',             lang: 'ar', source: 'cloud', edition: 'ar.jalalayn' },
+  { id: -2,  name: 'تنوير المقباس',         nameEn: 'Ibn Abbas (Miqbas)',   lang: 'ar', source: 'cloud', edition: 'ar.miqbas'   },
+  // ── English ───────────────────────────────────────────────────────
+  { id: 169, name: 'Ibn Kathir (EN)',        nameEn: 'Ibn Kathir Abridged',  lang: 'en' },
+  { id: 168, name: "Ma'arif al-Qur'an (EN)", nameEn: 'Mufti Shafi (EN)',    lang: 'en' },
+  { id: 817, name: 'Tazkirul Quran (EN)',    nameEn: 'Wahiduddin Khan (EN)', lang: 'en' },
+  // ── Urdu ──────────────────────────────────────────────────────────
+  { id: 160, name: 'ابن كثير (اردو)',        nameEn: 'Ibn Kathir (UR)',      lang: 'ur' },
+  { id: 157, name: 'في ظلال القرآن (اردو)',  nameEn: 'Fi Zilal al-Quran',   lang: 'ur' },
+  { id: 159, name: 'بيان القرآن (اردو)',     nameEn: 'Bayan ul Quran (UR)',  lang: 'ur' },
+  // ── Russian ───────────────────────────────────────────────────────
+  { id: 170, name: 'السعدي (روسي)',          nameEn: 'Al-Sa\'di (RU)',       lang: 'ru' },
 ];
 
 // ── JUZ names ────────────────────────────────────────────────────────

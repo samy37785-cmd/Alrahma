@@ -22,6 +22,10 @@ export default function Courses() {
       setOpenAlphabet((v) => !v);
       return;
     }
+    if (course.interactive === 'quran') {
+      navigate('/quran');
+      return;
+    }
     if (course.resources?.length) {
       setPicker(course);
       return;

@@ -82,6 +82,7 @@ export const courses = [
     media: '📖',
     title: 'Quran Reading (Noorani Qaida)',
     text: 'Learn to read the Quran correctly from the very basics of Arabic letters and sounds.',
+    interactive: 'quran',
   },
   {
     media: '🎙️',
@@ -103,19 +104,8 @@ export const courses = [
   {
     media: '🧠',
     title: 'Quran Memorization (Hifz)',
-    text: 'Structured memorization programs with revision plans for all ages.',
-    resources: [
-      {
-        type: 'link',
-        label: 'Memorization & follow-up website',
-        url: 'https://quran.ksu.edu.sa/',
-      },
-      {
-        type: 'pdf',
-        label: 'Download the Hifz plan schedule (PDF)',
-        url: 'https://ia801604.us.archive.org/15/items/wessam_20161022_1623/%D8%AC%D8%AF%D9%88%D9%84%20%D8%AD%D9%81%D8%B8%20%D8%A7%D9%84%D9%82%D8%B1%D8%A2%D9%86%20%D8%A7%D9%84%D9%83%D8%B1%D9%8A%D9%85.pdf',
-      },
-    ],
+    text: 'Structured memorization programs with repetition tools, memory tests, and revision plans — in 17 languages.',
+    interactive: 'quran',
   },
   {
     media: '📜',

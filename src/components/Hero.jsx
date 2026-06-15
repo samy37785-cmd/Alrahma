@@ -13,8 +13,11 @@ export default function Hero() {
             <a href="#trial" className="btn btn--gold">
               Book a Free Trial
             </a>
+            <a href="/quran" className="btn btn--green">
+              🧠 Start Learning
+            </a>
             <a href="#courses" className="btn btn--ghost">
-              Browse Our Courses
+              Browse Courses
             </a>
           </div>
           <ul className="hero__badges">

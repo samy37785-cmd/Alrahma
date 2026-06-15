@@ -21,7 +21,6 @@ export default function Header() {
               {link.label}
             </a>
           ))}
-          <Link to="/quran" onClick={close}>Read Quran</Link>
           {isAdmin && (
             <Link to="/admin" onClick={close}>Dashboard</Link>
           )}

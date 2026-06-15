@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import Brand from './Brand';
 import { useAuth } from '../context/AuthContext';
 import { navLinks } from '../data';
@@ -7,6 +7,8 @@ import { navLinks } from '../data';
 export default function Header() {
   const [open, setOpen] = useState(false);
   const { user, isAdmin } = useAuth();
+  const location = useLocation();
+  const isHome = location.pathname === '/';
 
   const close = () => setOpen(false);
 
@@ -16,11 +18,17 @@ export default function Header() {
         <Brand />
 
         <nav className={`nav${open ? ' open' : ''}`} id="nav">
-          {navLinks.map((link) => (
-            <a key={link.href} href={link.href} onClick={close}>
-              {link.label}
-            </a>
-          ))}
+          {navLinks.map((link) =>
+            isHome ? (
+              <a key={link.href} href={link.href} onClick={close}>
+                {link.label}
+              </a>
+            ) : (
+              <Link key={link.href} to={`/${link.href}`} onClick={close}>
+                {link.label}
+              </Link>
+            )
+          )}
           <Link to="/teachers" onClick={close}>Teachers</Link>
           <Link to="/islamic-tools" onClick={close}>Islamic Tools</Link>
           <Link to="/adhkar" onClick={close}>الأذكار</Link>

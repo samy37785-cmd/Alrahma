@@ -87,7 +87,11 @@ function qiblaDistance(userLat, userLng) {
 function daysUntilHijriEvent(hijri, targetMonth, targetDay) {
   const cm = parseInt(hijri.month.number);
   const cd = parseInt(hijri.day);
+  // Event is today
+  if (cm === targetMonth && cd === targetDay) return 0;
+  // Event is still this month
   if (cm === targetMonth && targetDay > cd) return targetDay - cd;
+  // Event has passed this month (or is in a future month/next year)
   let days = 30 - cd;
   let m = cm + 1 > 12 ? 1 : cm + 1;
   while (m !== targetMonth) {
@@ -297,15 +301,28 @@ export default function IslamicTools() {
   };
 
   /* ── Device orientation for Qibla ──────────────────────────── */
+  const compassHandlerRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (compassHandlerRef.current) {
+        window.removeEventListener('deviceorientation', compassHandlerRef.current);
+      }
+    };
+  }, []);
+
   const startCompass = useCallback(async () => {
     if (typeof DeviceOrientationEvent?.requestPermission === 'function') {
       const perm = await DeviceOrientationEvent.requestPermission();
       if (perm !== 'granted') return;
     }
     const handler = (e) => setDeviceHeading(e.alpha ?? null);
+    if (compassHandlerRef.current) {
+      window.removeEventListener('deviceorientation', compassHandlerRef.current);
+    }
+    compassHandlerRef.current = handler;
     window.addEventListener('deviceorientation', handler);
     setCompassPerm(true);
-    return () => window.removeEventListener('deviceorientation', handler);
   }, []);
 
   /* ══════════════════════════════════════════════════════════════
@@ -554,21 +571,21 @@ export default function IslamicTools() {
                     <div className="it__occasion it__occasion--ramadan">
                       <span className="it__oc-icon">🌙</span>
                       <span className="it__oc-name">شهر رمضان المبارك</span>
-                      <span className="it__oc-days">{daysToRamadan} يوماً</span>
+                      <span className="it__oc-days">{daysToRamadan === 0 ? 'اليوم 🎉' : `${daysToRamadan} يوماً`}</span>
                       <span className="it__oc-lbl">1 رمضان {parseInt(hijri.year) + (daysToRamadan > 300 ? 1 : 0)} هـ</span>
                     </div>
 
                     <div className="it__occasion it__occasion--eid1">
                       <span className="it__oc-icon">🎉</span>
                       <span className="it__oc-name">عيد الفطر المبارك</span>
-                      <span className="it__oc-days">{daysToEidFitr} يوماً</span>
+                      <span className="it__oc-days">{daysToEidFitr === 0 ? 'اليوم 🎊' : `${daysToEidFitr} يوماً`}</span>
                       <span className="it__oc-lbl">1 شوال {parseInt(hijri.year) + (daysToEidFitr > 300 ? 1 : 0)} هـ</span>
                     </div>
 
                     <div className="it__occasion it__occasion--eid2">
                       <span className="it__oc-icon">🐑</span>
                       <span className="it__oc-name">عيد الأضحى المبارك</span>
-                      <span className="it__oc-days">{daysToEidAdha} يوماً</span>
+                      <span className="it__oc-days">{daysToEidAdha === 0 ? 'اليوم 🐑' : `${daysToEidAdha} يوماً`}</span>
                       <span className="it__oc-lbl">10 ذو الحجة {parseInt(hijri.year) + (daysToEidAdha > 300 ? 1 : 0)} هـ</span>
                     </div>
 

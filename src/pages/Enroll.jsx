@@ -7,6 +7,7 @@ import useSEO from '../hooks/useSEO';
 import { submitEnrollment } from '../api/client';
 import { TEACHERS } from '../data';
 import { plans } from '../data';
+import { useLang } from '../context/LangContext';
 
 /* ── Static data ────────────────────────────────────────────────── */
 const COUNTRIES = [
@@ -226,6 +227,7 @@ function Step2({ form, set }) {
 
 /* ── Step 3: Choose Teacher ─────────────────────────────────────── */
 function Step3({ form, set }) {
+  const { lang } = useLang();
   const filtered = TEACHERS.filter((t) => {
     if (form.genderPref !== 'any' && t.gender !== form.genderPref) return false;
     if (form.lang && !t.langs.includes(form.lang)) return false;
@@ -261,7 +263,7 @@ function Step3({ form, set }) {
               <div className="enroll__tcard-info">
                 <strong dir="rtl">{t.nameAr}</strong>
                 <span>{t.nameEn}</span>
-                <p>{t.title}</p>
+                <p>{t.title[lang] || t.title.en}</p>
               </div>
               <div className="enroll__tcard-meta">
                 <span className="enroll__tcard-rating">★ {t.rating.toFixed(1)}</span>
@@ -376,9 +378,17 @@ export default function Enroll() {
       [key]: typeof valOrFn === 'function' ? valOrFn(prev[key]) : valOrFn,
     }));
 
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const PHONE_RE = /^\+?[\d\s\-(). ]{7,20}$/;
+
   const validate = () => {
-    if (step === 1 && (!form.name.trim() || !form.email.trim())) {
-      setError('Name and email are required.'); return false;
+    if (step === 1) {
+      if (!form.name.trim()) { setError('Full name is required.'); return false; }
+      if (!form.email.trim()) { setError('Email address is required.'); return false; }
+      if (!EMAIL_RE.test(form.email.trim())) { setError('Please enter a valid email address.'); return false; }
+      if (form.whatsapp && !PHONE_RE.test(form.whatsapp.trim())) {
+        setError('Please enter a valid phone number (e.g. +44 7700 900000).'); return false;
+      }
     }
     if (step === 2 && form.subjects.length === 0) {
       setError('Please select at least one subject.'); return false;

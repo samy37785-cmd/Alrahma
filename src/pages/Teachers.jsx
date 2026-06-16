@@ -3,23 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 import useSEO from '../hooks/useSEO';
+import { useLang } from '../context/LangContext';
 import { TEACHERS, TEACHER_CREDENTIALS as CREDENTIALS } from '../data';
 
 const FLAG = { en:'🇬🇧', ar:'🇪🇬', it:'🇮🇹', fr:'🇫🇷', de:'🇩🇪', es:'🇪🇸' };
-const ALL_SUBJECTS = [
-  { id:'all',     label:'All subjects' },
-  { id:'quran',   label:'Quran'        },
-  { id:'tajweed', label:'Tajweed'      },
-  { id:'hifz',    label:'Hifz'         },
-  { id:'ijazah',  label:'Ijazah'       },
-  { id:'arabic',  label:'Arabic'       },
-  { id:'islamic', label:'Islamic Studies' },
-  { id:'tafsir',  label:'Tafsir'       },
-  { id:'seerah',  label:'Seerah'       },
-];
 
 /* Interactive star rating */
-function StarRow({ teacher }) {
+function StarRow({ teacher, ui }) {
   const key = `tc-rating-${teacher.id}`;
   const [myRating, setMyRating] = useState(() => Number(localStorage.getItem(key) || 0));
   const [hover, setHover] = useState(0);
@@ -43,9 +33,9 @@ function StarRow({ teacher }) {
         ))}
       </div>
       <span className="tpg__avg">{avg}</span>
-      <span className="tpg__cnt">({total} reviews)</span>
+      <span className="tpg__cnt">({total} {ui.reviews})</span>
       <div className="tpg__rate">
-        <span>Rate:</span>
+        <span>{ui.rate}</span>
         {[1,2,3,4,5].map((s) => (
           <button key={s} type="button"
             className={`tpg__rate-btn${(hover || myRating) >= s ? ' lit' : ''}`}
@@ -58,63 +48,66 @@ function StarRow({ teacher }) {
   );
 }
 
-function TeacherCard({ t, onEnroll }) {
+function TeacherCard({ teacher, onEnroll, ui, lang }) {
   const [expanded, setExpanded] = useState(false);
-  const initials = t.nameAr.split(' ').slice(0, 2).map((w) => w[0]).join('');
+  const isAr = lang === 'ar';
+  const initials = teacher.nameAr.split(' ').slice(0, 2).map((w) => w[0]).join('');
+  const title      = teacher.title[lang]      || teacher.title.en;
+  const specialties = teacher.specialties[lang] || teacher.specialties.en;
   return (
     <article className="tpg__card">
       {/* Left: avatar column */}
-      <div className="tpg__avatar-col" style={{ background: `linear-gradient(160deg,${t.color}ee,${t.color}99)` }}>
+      <div className="tpg__avatar-col" style={{ background: `linear-gradient(160deg,${teacher.color}ee,${teacher.color}99)` }}>
         <div className="tpg__avatar">
           <span dir="rtl">{initials}</span>
         </div>
         <div className="tpg__gender-badge">
-          {t.gender === 'f' ? '👩‍🏫 Female' : '👨‍🏫 Male'}
+          {teacher.gender === 'f' ? ui.female : ui.male}
         </div>
-        <div className="tpg__az-badge">🏅 Al-Azhar</div>
+        <div className="tpg__az-badge">{ui.alazhar}</div>
       </div>
 
       {/* Right: info */}
       <div className="tpg__info">
         <div className="tpg__names">
-          <h2 className="tpg__name-ar" dir="rtl">{t.nameAr}</h2>
-          <p className="tpg__name-en">{t.nameEn}</p>
-          <p className="tpg__role">{t.title}</p>
+          <h2 className="tpg__name-ar" dir="rtl">{teacher.nameAr}</h2>
+          <p className="tpg__name-en">{teacher.nameEn}</p>
+          <p className="tpg__role">{title}</p>
         </div>
 
-        <StarRow teacher={t} />
+        <StarRow teacher={teacher} ui={ui} />
 
         {/* Languages */}
         <div className="tpg__langs">
-          {t.langs.map((l) => (
+          {teacher.langs.map((l) => (
             <span key={l} className="tpg__lang">{FLAG[l]} {l.toUpperCase()}</span>
           ))}
         </div>
 
         {/* Specialties */}
         <div className="tpg__tags">
-          {t.specialties.map((s) => (
+          {specialties.map((s) => (
             <span key={s} className="tpg__tag">{s}</span>
           ))}
         </div>
 
         {/* Bio */}
         <div className={`tpg__bio${expanded ? ' open' : ''}`}>
-          <p>{t.bio}</p>
+          <p>{teacher.bio[lang] || teacher.bio.en}</p>
         </div>
         <button className="tpg__bio-toggle" onClick={() => setExpanded((v) => !v)}>
-          {expanded ? 'Show less ↑' : 'Read bio ↓'}
+          {expanded ? ui.showLess : ui.readBio}
         </button>
 
         {/* Credentials */}
         <ul className="tpg__creds">
           {CREDENTIALS.map((c) => (
-            <li key={c.label}><span>{c.icon}</span> {c.label}</li>
+            <li key={c.label.en}><span>{c.icon}</span> {c.label[lang] || c.label.en}</li>
           ))}
         </ul>
 
-        <button type="button" className="btn btn--green tpg__enroll-btn" onClick={() => onEnroll(t.id)}>
-          Enroll with {t.nameEn.split(' ')[0]} →
+        <button type="button" className="btn btn--green tpg__enroll-btn" onClick={() => onEnroll(teacher.id)}>
+          {ui.enrollWith} {teacher.nameEn.split(' ')[0]} {isAr ? '←' : '→'}
         </button>
       </div>
     </article>
@@ -122,9 +115,15 @@ function TeacherCard({ t, onEnroll }) {
 }
 
 export default function Teachers() {
+  const { t, lang } = useLang();
+  const ui = t.teachersPg;
+  const isAr = lang === 'ar';
+
   useSEO({
-    title: 'Our Teachers — AL-Rahma Academy',
-    description: 'Meet our qualified Al-Azhar certified Quran and Arabic tutors. All teachers hold an Ijazah with a verified sanad.',
+    title: isAr ? 'معلمونا — أكاديمية الرحمة' : 'Our Teachers — AL-Rahma Academy',
+    description: isAr
+      ? 'تعرف على معلمينا المعتمدين من الأزهر، خبراء في القرآن والتجويد والدراسات الإسلامية.'
+      : 'Meet our qualified Al-Azhar certified Quran and Arabic tutors. All teachers hold an Ijazah with a verified sanad.',
   });
 
   const navigate = useNavigate();
@@ -132,14 +131,21 @@ export default function Teachers() {
   const [filterGender,  setFilterGender]  = useState('all');
   const [filterLang,    setFilterLang]    = useState('all');
 
-  const filtered = TEACHERS.filter((t) => {
-    if (filterSubject !== 'all' && !t.subjects.includes(filterSubject)) return false;
-    if (filterGender  !== 'all' && t.gender !== filterGender)            return false;
-    if (filterLang    !== 'all' && !t.langs.includes(filterLang))        return false;
+  const filtered = TEACHERS.filter((teacher) => {
+    if (filterSubject !== 'all' && !teacher.subjects.includes(filterSubject)) return false;
+    if (filterGender  !== 'all' && teacher.gender !== filterGender)           return false;
+    if (filterLang    !== 'all' && !teacher.langs.includes(filterLang))       return false;
     return true;
   });
 
   const onEnroll = (id) => navigate(`/enroll?teacher=${id}`);
+
+  const langFilters = [
+    { v:'all', l: isAr ? 'الكل' : 'All' },
+    { v:'en',  l:'🇬🇧 EN' }, { v:'it', l:'🇮🇹 IT' },
+    { v:'fr',  l:'🇫🇷 FR' }, { v:'de', l:'🇩🇪 DE' },
+    { v:'es',  l:'🇪🇸 ES' },
+  ];
 
   return (
     <>
@@ -148,17 +154,11 @@ export default function Teachers() {
         {/* Hero */}
         <section className="tpg__hero">
           <div className="container tpg__hero-inner">
-            <p className="eyebrow" style={{ color: 'var(--gold)' }}>Meet the team</p>
-            <h1>Our Qualified Instructors</h1>
-            <p className="tpg__hero-sub">
-              Every teacher at AL-Rahma Academy is a verified graduate of Al-Azhar University,
-              holding an authentic Ijazah with an unbroken chain of narration (Sanad).
-            </p>
+            <p className="eyebrow" style={{ color: 'var(--gold)' }}>{ui.eyebrow}</p>
+            <h1>{ui.title}</h1>
+            <p className="tpg__hero-sub">{ui.sub}</p>
             <div className="tpg__hero-badges">
-              <span>🎓 Al-Azhar Certified</span>
-              <span>📜 Ijazah Holders</span>
-              <span>👩‍🏫 Female Tutors Available</span>
-              <span>🌍 Teaching in 40+ Countries</span>
+              {ui.badges.map((b) => <span key={b}>{b}</span>)}
             </div>
           </div>
         </section>
@@ -166,12 +166,7 @@ export default function Teachers() {
         {/* Stats bar */}
         <div className="tpg__stats-bar">
           <div className="container tpg__stats-inner">
-            {[
-              { n: '7+',    l: 'Expert Tutors'     },
-              { n: '1,200+',l: 'Students Taught'   },
-              { n: '4.9★',  l: 'Average Rating'    },
-              { n: '40+',   l: 'Countries Reached' },
-            ].map((s) => (
+            {ui.stats.map((s) => (
               <div key={s.l} className="tpg__stat">
                 <strong>{s.n}</strong>
                 <span>{s.l}</span>
@@ -184,9 +179,9 @@ export default function Teachers() {
         <div className="tpg__filters">
           <div className="container tpg__filters-inner">
             <div className="tpg__filter-group">
-              <span className="tpg__filter-label">Subject:</span>
+              <span className="tpg__filter-label">{ui.filterSubject}</span>
               <div className="tpg__filter-btns">
-                {ALL_SUBJECTS.map((s) => (
+                {ui.subjects.map((s) => (
                   <button key={s.id} type="button"
                     className={`tpg__filter-btn${filterSubject === s.id ? ' active' : ''}`}
                     onClick={() => setFilterSubject(s.id)}>{s.label}</button>
@@ -194,9 +189,9 @@ export default function Teachers() {
               </div>
             </div>
             <div className="tpg__filter-group">
-              <span className="tpg__filter-label">Gender:</span>
+              <span className="tpg__filter-label">{ui.filterGender}</span>
               <div className="tpg__filter-btns">
-                {[{v:'all',l:'All'},{v:'m',l:'Male'},{v:'f',l:'Female'}].map((o) => (
+                {ui.genders.map((o) => (
                   <button key={o.v} type="button"
                     className={`tpg__filter-btn${filterGender === o.v ? ' active' : ''}`}
                     onClick={() => setFilterGender(o.v)}>{o.l}</button>
@@ -204,9 +199,9 @@ export default function Teachers() {
               </div>
             </div>
             <div className="tpg__filter-group">
-              <span className="tpg__filter-label">Language:</span>
+              <span className="tpg__filter-label">{ui.filterLang}</span>
               <div className="tpg__filter-btns">
-                {[{v:'all',l:'All'},{v:'en',l:'🇬🇧 EN'},{v:'it',l:'🇮🇹 IT'},{v:'fr',l:'🇫🇷 FR'},{v:'de',l:'🇩🇪 DE'},{v:'es',l:'🇪🇸 ES'}].map((o) => (
+                {langFilters.map((o) => (
                   <button key={o.v} type="button"
                     className={`tpg__filter-btn${filterLang === o.v ? ' active' : ''}`}
                     onClick={() => setFilterLang(o.v)}>{o.l}</button>
@@ -220,10 +215,17 @@ export default function Teachers() {
         <section className="tpg__section">
           <div className="container">
             {filtered.length === 0 ? (
-              <p className="tpg__empty">No teachers match the selected filters. <button className="tpg__reset" onClick={() => { setFilterSubject('all'); setFilterGender('all'); setFilterLang('all'); }}>Reset filters</button></p>
+              <p className="tpg__empty">
+                {ui.noMatch}{' '}
+                <button className="tpg__reset" onClick={() => { setFilterSubject('all'); setFilterGender('all'); setFilterLang('all'); }}>
+                  {ui.resetFilters}
+                </button>
+              </p>
             ) : (
               <div className="tpg__list">
-                {filtered.map((t) => <TeacherCard key={t.id} t={t} onEnroll={onEnroll} />)}
+                {filtered.map((teacher) => (
+                  <TeacherCard key={teacher.id} teacher={teacher} onEnroll={onEnroll} ui={ui} lang={lang} />
+                ))}
               </div>
             )}
           </div>
@@ -232,10 +234,10 @@ export default function Teachers() {
         {/* CTA */}
         <section className="tpg__cta">
           <div className="container tpg__cta-inner">
-            <h2>Ready to start your Quran journey?</h2>
-            <p>Book two free trial lessons — no payment required.</p>
+            <h2>{ui.ctaTitle}</h2>
+            <p>{ui.ctaSub}</p>
             <button type="button" className="btn btn--gold btn--lg" onClick={() => navigate('/enroll')}>
-              Start Enrollment →
+              {ui.ctaBtn}
             </button>
           </div>
         </section>

@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { getInvoices } from '../api/client';
 import { sampleInvoices, plans } from '../data';
 import InvoiceModal from '../components/ui/InvoiceModal';
+import { useLang } from '../context/LangContext';
 
-const FMT = new Intl.DateTimeFormat('en-GB', { year: 'numeric', month: 'short', day: 'numeric' });
+const LOCALE_MAP = { en: 'en-GB', ar: 'ar-EG', it: 'it-IT', fr: 'fr-FR', de: 'de-DE', es: 'es-ES' };
 
 function toUiInvoice(inv) {
   // Normalize API invoice (snake_case MongoDB doc) to the shape our modal expects.
@@ -20,6 +21,11 @@ function toUiInvoice(inv) {
 }
 
 export default function Billing() {
+  const { lang } = useLang();
+  const FMT = useMemo(
+    () => new Intl.DateTimeFormat(LOCALE_MAP[lang] || 'en-GB', { year: 'numeric', month: 'short', day: 'numeric' }),
+    [lang]
+  );
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading]   = useState(true);
   const [selected, setSelected] = useState(null);

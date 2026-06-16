@@ -323,6 +323,10 @@ const BOOKS = [
     },
     link: 'https://sunnah.com/nawawi40',
     linkLabel: { en: 'Read all 42 hadiths — Sunnah.com', ar: 'اقرأ الأحاديث الـ ٤٢ — Sunnah.com' },
+    libraryNote: {
+      en: '📚 Browse this full collection in our Hadith Library',
+      ar: '📚 تصفح هذا الكتاب كاملاً في مكتبة الحديث',
+    },
   },
   {
     icon: '📓',
@@ -447,6 +451,11 @@ function BookCard({ book, lang }) {
             ? <a href={book.link} target="_blank" rel="noreferrer" className="cl__book-link">{isAr ? book.linkLabel.ar : book.linkLabel.en} ↗</a>
             : <span className="cl__book-link cl__book-link--muted">📚 {isAr ? book.linkLabel.ar : book.linkLabel.en}</span>
           }
+          {book.libraryNote && (
+            <Link to="/hadith-library" className="cl__book-library-link">
+              {isAr ? book.libraryNote.ar : book.libraryNote.en} →
+            </Link>
+          )}
         </div>
       )}
     </div>

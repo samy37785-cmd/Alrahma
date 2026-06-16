@@ -5,8 +5,12 @@ const LangContext = createContext(null);
 
 export function LangProvider({ children }) {
   const [lang, setLangState] = useState(() => {
-    const saved = localStorage.getItem('lang');
-    return LANGS.includes(saved) ? saved : 'en';
+    try {
+      const saved = localStorage.getItem('lang');
+      return LANGS.includes(saved) ? saved : 'en';
+    } catch {
+      return 'en';
+    }
   });
 
   const setLang = (code) => {

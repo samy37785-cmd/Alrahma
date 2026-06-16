@@ -28,6 +28,8 @@ export default function AdminDashboard() {
   const [editingId, setEditingId]     = useState(null);
   const [error, setError]             = useState('');
   const [activeTab, setActiveTab]     = useState('courses');
+  const [trialSearch, setTrialSearch] = useState('');
+  const [userSearch, setUserSearch]   = useState('');
 
   const loadAll = useCallback(async () => {
     try {
@@ -241,22 +243,36 @@ export default function AdminDashboard() {
         {/* ── Trials tab ── */}
         {activeTab === 'trials' && (
           <section className="admin__panel">
-            <h2>Trial requests ({trials.length})</h2>
+            <div className="admin__panel-head">
+              <h2>Trial requests ({trials.length})</h2>
+              <input
+                type="search"
+                className="admin__search"
+                placeholder="Search by name, email or course…"
+                value={trialSearch}
+                onChange={(e) => setTrialSearch(e.target.value)}
+              />
+            </div>
             <div className="admin__table-wrap">
               <table className="admin__table">
                 <thead>
                   <tr><th>Name</th><th>Email</th><th>Course</th><th>Status</th><th>Date</th></tr>
                 </thead>
                 <tbody>
-                  {trials.map((t) => (
-                    <tr key={t._id}>
-                      <td>{t.name}</td>
-                      <td>{t.email}</td>
-                      <td>{t.course || '—'}</td>
-                      <td><span className="admin__badge">{t.status}</span></td>
-                      <td>{new Date(t.createdAt).toLocaleDateString()}</td>
-                    </tr>
-                  ))}
+                  {trials
+                    .filter((t) => !trialSearch ||
+                      t.name?.toLowerCase().includes(trialSearch.toLowerCase()) ||
+                      t.email?.toLowerCase().includes(trialSearch.toLowerCase()) ||
+                      t.course?.toLowerCase().includes(trialSearch.toLowerCase()))
+                    .map((t) => (
+                      <tr key={t._id}>
+                        <td>{t.name}</td>
+                        <td>{t.email}</td>
+                        <td>{t.course || '—'}</td>
+                        <td><span className="admin__badge">{t.status}</span></td>
+                        <td>{new Date(t.createdAt).toLocaleDateString()}</td>
+                      </tr>
+                    ))}
                   {trials.length === 0 && (
                     <tr><td colSpan="5" className="admin__empty">No requests yet.</td></tr>
                   )}
@@ -308,14 +324,27 @@ export default function AdminDashboard() {
         {/* ── Users tab ── */}
         {activeTab === 'users' && (
           <section className="admin__panel">
-            <h2>Registered Users ({users.length})</h2>
+            <div className="admin__panel-head">
+              <h2>Registered Users ({users.length})</h2>
+              <input
+                type="search"
+                className="admin__search"
+                placeholder="Search by name or email…"
+                value={userSearch}
+                onChange={(e) => setUserSearch(e.target.value)}
+              />
+            </div>
             <div className="admin__table-wrap">
               <table className="admin__table">
                 <thead>
                   <tr><th>#</th><th>Name</th><th>Email</th><th>Role</th><th>Plan</th><th>Status</th><th>Valid Until</th><th>Joined</th><th>Action</th></tr>
                 </thead>
                 <tbody>
-                  {users.map((u, i) => (
+                  {users
+                    .filter((u) => !userSearch ||
+                      u.name?.toLowerCase().includes(userSearch.toLowerCase()) ||
+                      u.email?.toLowerCase().includes(userSearch.toLowerCase()))
+                    .map((u, i) => (
                     <tr key={u._id}>
                       <td>{i + 1}</td>
                       <td>{u.name}</td>

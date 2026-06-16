@@ -196,6 +196,22 @@ export default function HadithLibrary() {
         </section>
 
         <div className="container hl__wrap">
+          {/* ── Course note ── */}
+          {!selected && (
+            <div className="hl__course-note">
+              <span>🕌</span>
+              <span>
+                {isAr
+                  ? 'هذه الكتب تُدرَّس في '
+                  : 'These books are studied in our '}
+                <Link to="/course/islamic-studies" className="hl__course-note-link">
+                  {isAr ? 'دورة الدراسات الإسلامية' : 'Islamic Studies course'}
+                </Link>
+                {isAr ? ' — انقر على أي كتاب للتصفح.' : ' — click any book to browse it.'}
+              </span>
+            </div>
+          )}
+
           {/* ── Collection grid ── */}
           {!selected && (
             <Reveal className="hl__grid">

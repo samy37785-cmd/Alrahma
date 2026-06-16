@@ -18,8 +18,15 @@
 .nav { display: flex; align-items: center; gap: 26px; }
 .nav a { font-weight: 500; font-size: 0.95rem; color: var(--ink); transition: color .2s; }
 .nav a:hover { color: var(--green); }
+.nav__active { color: var(--green) !important; font-weight: 700; }
 .nav__cta { background: var(--gold); color: #3a2e05 !important; padding: 9px 20px; border-radius: 999px; font-weight: 600; }
 .nav__cta:hover { background: var(--gold-dark); }
+.skip-link {
+  position: absolute; left: -9999px; top: 8px; z-index: 9999;
+  background: var(--green); color: #fff; padding: 8px 18px; border-radius: 6px;
+  font-size: .9rem; font-weight: 600; text-decoration: none;
+}
+.skip-link:focus { left: 8px; }
 
 .nav-toggle { display: none; flex-direction: column; gap: 5px; background: none; border: 0; cursor: pointer; padding: 6px; }
 .nav-toggle span { width: 26px; height: 3px; background: var(--green-deep); border-radius: 3px; transition: .3s; }
@@ -1157,6 +1164,8 @@
 .cl__book-link { display: inline-flex; align-items: center; gap: 6px; font-size: .82rem; font-weight: 600; color: var(--green); text-decoration: none; padding: 6px 14px; background: var(--green-light); border-radius: 999px; }
 .cl__book-link:hover { background: var(--green); color: #fff; }
 .cl__book-link--muted { color: var(--muted); background: var(--cream); }
+.cl__book-library-link { display: inline-flex; align-items: center; gap: 6px; font-size: .82rem; font-weight: 600; color: var(--gold-dark); text-decoration: none; padding: 6px 14px; background: var(--gold-light); border: 1px solid rgba(212,175,55,.3); border-radius: 999px; margin-top: 4px; }
+.cl__book-library-link:hover { background: var(--gold); color: #fff; border-color: var(--gold); }
 
 /* Prerequisites */
 .cl__prereqs { display: flex; flex-direction: column; gap: 10px; }
@@ -1315,11 +1324,27 @@
 /* Wrapper */
 .hl__wrap { padding: 56px 0 80px; }
 
-/* Collection grid */
+/* Course connection note */
+.hl__course-note {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--gold-light); border: 1px solid rgba(212,175,55,.35);
+  border-radius: 10px; padding: 12px 18px; margin-bottom: 28px;
+  font-size: .9rem; color: var(--ink); line-height: 1.5;
+}
+.hl__course-note-link { color: var(--green-deep); font-weight: 700; text-decoration: underline; }
+.hl__course-note-link:hover { color: var(--green); }
+
+/* Collection grid — 5 cols on desktop, 10 cards = 2 clean rows */
 .hl__grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 22px;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 20px;
+}
+@media (max-width: 1100px) {
+  .hl__grid { grid-template-columns: repeat(4, 1fr); gap: 16px; }
+}
+@media (max-width: 860px) {
+  .hl__grid { grid-template-columns: repeat(3, 1fr); gap: 14px; }
 }
 .hl__card {
   display: flex; flex-direction: column;

@@ -14,6 +14,7 @@ export default function Header() {
   const isHome = location.pathname === '/';
 
   const close = () => setOpen(false);
+  const isActive = (path) => location.pathname === path || location.pathname.startsWith(path + '/');
 
   return (
     <header className="header" id="top">
@@ -27,15 +28,17 @@ export default function Header() {
                 {t.nav[link.key] || link.label}
               </a>
             ) : (
-              <Link key={link.href} to={`/${link.href}`} onClick={close}>
+              <Link key={link.href} to={`/${link.href}`}
+                className={isActive(`/${link.href}`) ? 'nav__active' : undefined}
+                onClick={close}>
                 {t.nav[link.key] || link.label}
               </Link>
             )
           )}
-          <Link to="/teachers" onClick={close}>{t.nav.teachers}</Link>
-          <Link to="/islamic-tools" onClick={close}>{t.nav.tools}</Link>
-          <Link to="/adhkar" onClick={close}>{t.nav.adhkar}</Link>
-          <Link to="/hadith-library" onClick={close}>{t.nav.hadith}</Link>
+          <Link to="/teachers" className={isActive('/teachers') ? 'nav__active' : undefined} onClick={close}>{t.nav.teachers}</Link>
+          <Link to="/islamic-tools" className={isActive('/islamic-tools') ? 'nav__active' : undefined} onClick={close}>{t.nav.tools}</Link>
+          <Link to="/adhkar" className={isActive('/adhkar') ? 'nav__active' : undefined} onClick={close}>{t.nav.adhkar}</Link>
+          <Link to="/hadith-library" className={isActive('/hadith-library') ? 'nav__active' : undefined} onClick={close}>{t.nav.hadith}</Link>
           {isAdmin && (
             <Link to="/admin" onClick={close}>{t.nav.dashboard}</Link>
           )}

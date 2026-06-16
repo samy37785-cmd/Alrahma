@@ -2,23 +2,26 @@ import { Link } from 'react-router-dom';
 import Brand from '../components/layout/Brand';
 import { posts, CATEGORY_COLORS } from '../data/blogPosts';
 import useSEO from '../hooks/useSEO';
+import { useLang } from '../context/LangContext';
 
 export default function Blog() {
-  useSEO({ title: 'Blog', description: 'Articles on Quran, Tajweed, Arabic and Islamic education for non-Arabic speakers in Europe.' });
+  const { t } = useLang();
+  const bl = t.blog;
+  useSEO({ title: bl.eyebrow, description: bl.sub });
   return (
     <div className="blog-page">
       <header className="quran__bar">
         <div className="container quran__bar-inner">
           <Brand />
-          <Link to="/" className="btn btn--ghost btn--sm">Back to site</Link>
+          <Link to="/" className="btn btn--ghost btn--sm">{bl.backToSite}</Link>
         </div>
       </header>
 
       <main className="container blog-page__main">
         <div className="blog-page__header">
-          <p className="eyebrow">Our Blog</p>
-          <h1>Learn. Understand. Grow.</h1>
-          <p className="blog-page__sub">Articles on Quran, Tajweed, Arabic and Islamic education — written for non-Arabic speakers in Europe.</p>
+          <p className="eyebrow">{bl.eyebrow}</p>
+          <h1>{bl.heading}</h1>
+          <p className="blog-page__sub">{bl.sub}</p>
         </div>
 
         <div className="blog-grid">
@@ -34,7 +37,7 @@ export default function Blog() {
               <p className="blog-card__excerpt">{p.excerpt}</p>
               <div className="blog-card__footer">
                 <span className="blog-card__date">{p.date}</span>
-                <span className="blog-card__read">Read article →</span>
+                <span className="blog-card__read">{bl.readArticle}</span>
               </div>
             </Link>
           ))}

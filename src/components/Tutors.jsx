@@ -2,9 +2,11 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Reveal from './ui/Reveal';
 import { TEACHERS } from '../data';
+import { useLang } from '../context/LangContext';
 
-/* Interactive star rating stored in localStorage */
 function StarRating({ teacher }) {
+  const { t } = useLang();
+  const ut = t.tutors;
   const key = `tutor-rating-${teacher.id}`;
   const [myRating, setMyRating] = useState(() => Number(localStorage.getItem(key) || 0));
   const [hover, setHover] = useState(0);
@@ -34,7 +36,7 @@ function StarRating({ teacher }) {
       <span className="tc2__cnt">({total})</span>
 
       <div className="tc2__rate-wrap">
-        <span className="tc2__rate-lbl">{myRating ? 'Your rating:' : 'Rate:'}</span>
+        <span className="tc2__rate-lbl">{myRating ? ut.yourRating : ut.rate}</span>
         {[1,2,3,4,5].map((s) => (
           <button
             key={s}
@@ -52,52 +54,55 @@ function StarRating({ teacher }) {
   );
 }
 
-function TutorCard({ t }) {
-  const navigate  = useNavigate();
-  const initials  = t.nameAr.split(' ').slice(0, 2).map((w) => w[0]).join('');
-  const grad      = `linear-gradient(145deg, ${t.color}dd, ${t.color}88)`;
+function TutorCard({ t: teacher }) {
+  const navigate           = useNavigate();
+  const { lang, t: i18n } = useLang();
+  const tp                 = i18n.tp;
+  const ut                 = i18n.tutors;
+  const initials           = teacher.nameAr.split(' ').slice(0, 2).map((w) => w[0]).join('');
+  const grad               = `linear-gradient(145deg, ${teacher.color}dd, ${teacher.color}88)`;
+  const title              = teacher.title[lang]       || teacher.title.en;
+  const specialties        = teacher.specialties[lang] || teacher.specialties.en;
 
   return (
     <Reveal as="article" className="tc2__card">
-      {/* Clickable top → teacher profile */}
-      <Link to={`/teachers/${t.id}`} className="tc2__top" style={{ background: grad }}>
+      <Link to={`/teachers/${teacher.id}`} className="tc2__top" style={{ background: grad }}>
         <div className="tc2__ring tc2__ring--1" />
         <div className="tc2__ring tc2__ring--2" />
-        <div className="tc2__az-badge">🏅 Al-Azhar Certified</div>
+        <div className="tc2__az-badge">{tp.alazharBadge}</div>
         <div className="tc2__avatar">
           <span className="tc2__initials" dir="rtl">{initials}</span>
         </div>
         <div className="tc2__gender">
-          {t.gender === 'f' ? '👩‍🏫 Female Instructor' : '👨‍🏫 Male Instructor'}
+          {teacher.gender === 'f' ? tp.femaleBadge : tp.maleBadge}
         </div>
       </Link>
 
-      {/* Body */}
       <div className="tc2__body">
-        <Link to={`/teachers/${t.id}`} className="tc2__name-link">
-          <h3 className="tc2__name-ar" dir="rtl">{t.nameAr}</h3>
-          <p className="tc2__name-en">{t.nameEn}</p>
+        <Link to={`/teachers/${teacher.id}`} className="tc2__name-link">
+          <h3 className="tc2__name-ar" dir="rtl">{teacher.nameAr}</h3>
+          <p className="tc2__name-en">{teacher.nameEn}</p>
         </Link>
-        <p className="tc2__role">{t.title}</p>
+        <p className="tc2__role">{title}</p>
 
         <div className="tc2__tags">
-          {t.specialties.slice(0, 3).map((s) => (
+          {specialties.slice(0, 3).map((s) => (
             <span key={s} className="tc2__tag">{s}</span>
           ))}
         </div>
 
-        <StarRating teacher={t} />
+        <StarRating teacher={teacher} />
 
         <div className="tc2__actions">
-          <Link to={`/teachers/${t.id}`} className="btn btn--ghost btn--sm">
-            View Profile
+          <Link to={`/teachers/${teacher.id}`} className="btn btn--ghost btn--sm">
+            {ut.viewProfile}
           </Link>
           <button
             type="button"
             className="btn btn--green btn--sm"
-            onClick={() => navigate(`/enroll?teacher=${t.id}`)}
+            onClick={() => navigate(`/enroll?teacher=${teacher.id}`)}
           >
-            Enroll →
+            {ut.enroll}
           </button>
         </div>
       </div>
@@ -106,27 +111,24 @@ function TutorCard({ t }) {
 }
 
 export default function Tutors() {
+  const { t: i18n } = useLang();
+  const ut = i18n.tutors;
+  const credIcons = ['🎓', '📜', '👩‍🏫', '🌍'];
+
   return (
     <section className="tutors2" id="tutors">
       <div className="container">
         <Reveal className="section-head">
-          <p className="eyebrow">Our Team</p>
-          <h2>Meet Our Certified Tutors</h2>
-          <p className="section-sub">
-            Every tutor is a verified Al-Azhar graduate with an authentic Ijazah — personally selected for knowledge, patience and dedication.
-          </p>
+          <p className="eyebrow">{ut.eyebrow}</p>
+          <h2>{ut.heading}</h2>
+          <p className="section-sub">{ut.sub}</p>
         </Reveal>
 
         <Reveal className="tc2__creds-bar">
-          {[
-            { icon: '🎓', label: 'Al-Azhar Graduate' },
-            { icon: '📜', label: 'Ijazah with Sanad' },
-            { icon: '👩‍🏫', label: 'Female Tutors Available' },
-            { icon: '🌍', label: 'Teaching 40+ Countries' },
-          ].map((c) => (
-            <div className="tc2__cred" key={c.label}>
-              <span className="tc2__cred-icon">{c.icon}</span>
-              <span>{c.label}</span>
+          {ut.creds.map((label, i) => (
+            <div className="tc2__cred" key={label}>
+              <span className="tc2__cred-icon">{credIcons[i]}</span>
+              <span>{label}</span>
             </div>
           ))}
         </Reveal>
@@ -137,7 +139,7 @@ export default function Tutors() {
 
         <Reveal className="tc2__footer">
           <Link to="/teachers" className="btn btn--ghost">
-            View All Tutors &amp; Full Profiles →
+            {ut.viewAll}
           </Link>
         </Reveal>
       </div>

@@ -7,8 +7,12 @@ const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   // Initialise from localStorage so the session survives refresh.
   const [user, setUser] = useState(() => {
-    const saved = localStorage.getItem('user');
-    return saved ? JSON.parse(saved) : null;
+    try {
+      const saved = localStorage.getItem('user');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
   });
 
   // Store the auth result (token + user) in state + localStorage.

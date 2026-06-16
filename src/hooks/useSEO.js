@@ -30,5 +30,13 @@ export default function useSEO({ title, description }) {
       document.head.appendChild(ogDesc);
     }
     if (description) ogDesc.content = description;
+
+    let canonical = document.querySelector('link[rel="canonical"]');
+    if (!canonical) {
+      canonical = document.createElement('link');
+      canonical.rel = 'canonical';
+      document.head.appendChild(canonical);
+    }
+    canonical.href = window.location.href.split('?')[0];
   }, [title, description]);
 }

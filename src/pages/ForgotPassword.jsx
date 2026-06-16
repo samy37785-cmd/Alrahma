@@ -1,8 +1,11 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { forgotPassword } from '../api/client';
+import { useLang } from '../context/LangContext';
 
 export default function ForgotPassword() {
+  const { t } = useLang();
+  const fp = t.authPg.forgotPwd;
   const [email, setEmail]   = useState('');
   const [msg, setMsg]       = useState('');
   const [err, setErr]       = useState('');
@@ -14,9 +17,9 @@ export default function ForgotPassword() {
     setLoading(true);
     try {
       const res = await forgotPassword(email);
-      setMsg(res.message);
+      setMsg(res.message || fp.success);
     } catch {
-      setErr('Something went wrong. Please try again.');
+      setErr(fp.sub);
     } finally {
       setLoading(false);
     }
@@ -25,14 +28,14 @@ export default function ForgotPassword() {
   return (
     <div className="auth">
       <div className="auth__card">
-        <h1 className="auth__title">Forgot Password</h1>
-        <p className="auth__sub">Enter your email and we'll send you a reset link.</p>
+        <h1 className="auth__title">{fp.title}</h1>
+        <p className="auth__sub">{fp.sub}</p>
         {msg && <p className="profile-page__success">{msg}</p>}
         {err && <p className="auth__error">{err}</p>}
         {!msg && (
           <form onSubmit={handleSubmit}>
             <div className="field">
-              <label htmlFor="email">Email address</label>
+              <label htmlFor="email">{fp.email}</label>
               <input
                 id="email"
                 type="email"
@@ -43,11 +46,11 @@ export default function ForgotPassword() {
               />
             </div>
             <button type="submit" className="btn btn--green btn--block" disabled={loading}>
-              {loading ? 'Sending…' : 'Send Reset Link'}
+              {loading ? fp.busy : fp.btn}
             </button>
           </form>
         )}
-        <p className="auth__foot"><Link to="/login">Back to Login</Link></p>
+        <p className="auth__foot"><Link to="/login">{fp.back}</Link></p>
       </div>
     </div>
   );

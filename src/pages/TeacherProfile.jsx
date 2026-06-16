@@ -4,11 +4,14 @@ import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 import useSEO from '../hooks/useSEO';
 import { TEACHERS, TEACHER_CREDENTIALS } from '../data';
+import { useLang } from '../context/LangContext';
 
 const FLAG = { en:'🇬🇧', ar:'🇪🇬', it:'🇮🇹', fr:'🇫🇷', de:'🇩🇪', es:'🇪🇸' };
 const LANG_LABEL = { en:'English', ar:'Arabic', it:'Italian', fr:'French', de:'German', es:'Spanish' };
 
 function InteractiveStars({ teacher }) {
+  const { t } = useLang();
+  const tp = t.tp;
   const key = `tc-rating-${teacher.id}`;
   const [myRating, setMyRating] = useState(() => Number(localStorage.getItem(key) || 0));
   const [hover, setHover]       = useState(0);
@@ -32,16 +35,16 @@ function InteractiveStars({ teacher }) {
         ))}
       </div>
       <span className="tp__avg">{avg}</span>
-      <span className="tp__cnt">({total} reviews)</span>
+      <span className="tp__cnt">({total} {tp.reviews})</span>
       <div className="tp__rate-row">
-        <span className="tp__rate-lbl">Rate this teacher:</span>
+        <span className="tp__rate-lbl">{tp.rateThis}</span>
         {[1,2,3,4,5].map((s) => (
           <button key={s} type="button"
             className={`tp__rate-btn${(hover || myRating) >= s ? ' lit' : ''}`}
             onMouseEnter={() => setHover(s)} onMouseLeave={() => setHover(0)}
             onClick={() => handle(s)} aria-label={`Rate ${s} stars`}>★</button>
         ))}
-        {thanks && <span className="tp__thanks">✓ Thank you!</span>}
+        {thanks && <span className="tp__thanks">{tp.thanks}</span>}
       </div>
     </div>
   );
@@ -50,11 +53,17 @@ function InteractiveStars({ teacher }) {
 export default function TeacherProfile() {
   const { id }   = useParams();
   const navigate = useNavigate();
-  const teacher  = TEACHERS.find((t) => t.id === Number(id));
+  const { lang, t } = useLang();
+  const tp = t.tp;
+  const teacher  = TEACHERS.find((tc) => tc.id === Number(id));
+
+  const title       = teacher ? (teacher.title[lang]       || teacher.title.en)       : '';
+  const bio         = teacher ? (teacher.bio[lang]         || teacher.bio.en)         : '';
+  const specialties = teacher ? (teacher.specialties[lang] || teacher.specialties.en) : [];
 
   useSEO({
     title: teacher ? `${teacher.nameEn} — AL-Rahma Academy` : 'Teacher — AL-Rahma Academy',
-    description: teacher?.bio || '',
+    description: bio,
   });
 
   if (!teacher) {
@@ -62,9 +71,9 @@ export default function TeacherProfile() {
       <>
         <Header />
         <main style={{ padding: '80px 0', textAlign: 'center' }}>
-          <h2>Teacher not found.</h2>
+          <h2>{tp.notFound}</h2>
           <Link to="/teachers" className="btn btn--green" style={{ marginTop: '24px' }}>
-            ← Back to all teachers
+            {tp.backToAll}
           </Link>
         </main>
         <Footer />
@@ -72,8 +81,9 @@ export default function TeacherProfile() {
     );
   }
 
-  const initials = teacher.nameAr.split(' ').slice(0, 2).map((w) => w[0]).join('');
-  const grad     = `linear-gradient(145deg, ${teacher.color}ee, ${teacher.color}99)`;
+  const firstName = teacher.nameEn.split(' ')[0];
+  const initials  = teacher.nameAr.split(' ').slice(0, 2).map((w) => w[0]).join('');
+  const grad      = `linear-gradient(145deg, ${teacher.color}ee, ${teacher.color}99)`;
 
   return (
     <>
@@ -86,17 +96,17 @@ export default function TeacherProfile() {
               <span dir="rtl">{initials}</span>
             </div>
             <div className="tp__hero-info">
-              <span className="tp__az-badge">🏅 Al-Azhar Certified</span>
+              <span className="tp__az-badge">{tp.alazharBadge}</span>
               <h1 className="tp__name-ar" dir="rtl">{teacher.nameAr}</h1>
               <p className="tp__name-en">{teacher.nameEn}</p>
-              <p className="tp__role">{teacher.title}</p>
-              <p className="tp__gender">{teacher.gender === 'f' ? '👩‍🏫 Female Instructor' : '👨‍🏫 Male Instructor'}</p>
+              <p className="tp__role">{title}</p>
+              <p className="tp__gender">{teacher.gender === 'f' ? tp.femaleBadge : tp.maleBadge}</p>
               <div className="tp__hero-actions">
                 <button type="button" className="btn btn--gold btn--lg"
                   onClick={() => navigate(`/enroll?teacher=${teacher.id}`)}>
-                  Enroll with {teacher.nameEn.split(' ')[0]} →
+                  {tp.enrollWith} {firstName} →
                 </button>
-                <Link to="/teachers" className="btn btn--ghost-white">← All Teachers</Link>
+                <Link to="/teachers" className="btn btn--ghost-white">{tp.allTeachers}</Link>
               </div>
             </div>
           </div>
@@ -107,19 +117,19 @@ export default function TeacherProfile() {
           <div className="container tp__strip-inner">
             <div className="tp__strip-stat">
               <strong>★ {teacher.rating.toFixed(1)}</strong>
-              <span>{teacher.reviews} reviews</span>
+              <span>{teacher.reviews} {tp.reviews}</span>
             </div>
             <div className="tp__strip-stat">
-              <strong>{teacher.gender === 'f' ? 'Female' : 'Male'}</strong>
-              <span>Instructor</span>
+              <strong>{teacher.gender === 'f' ? tp.female : tp.male}</strong>
+              <span>{tp.instructor}</span>
             </div>
             <div className="tp__strip-stat">
               <strong>{teacher.langs.length}</strong>
-              <span>Teaching languages</span>
+              <span>{tp.teachingLangs}</span>
             </div>
             <div className="tp__strip-stat">
-              <strong>{teacher.specialties.length}</strong>
-              <span>Specialties</span>
+              <strong>{specialties.length}</strong>
+              <span>{tp.specialties}</span>
             </div>
           </div>
         </div>
@@ -127,38 +137,34 @@ export default function TeacherProfile() {
         <div className="container tp__body">
           {/* Left column */}
           <div className="tp__left">
-            {/* Bio */}
             <div className="tp__section">
-              <h2>About {teacher.nameEn.split(' ')[0]}</h2>
-              <p className="tp__bio">{teacher.bio}</p>
+              <h2>{tp.about} {firstName}</h2>
+              <p className="tp__bio">{bio}</p>
             </div>
 
-            {/* Credentials */}
             <div className="tp__section">
-              <h2>Credentials</h2>
+              <h2>{tp.credentials}</h2>
               <ul className="tp__creds">
                 {TEACHER_CREDENTIALS.map((c) => (
-                  <li key={c.label} className="tp__cred">
+                  <li key={c.label.en} className="tp__cred">
                     <span className="tp__cred-icon">{c.icon}</span>
-                    <span>{c.label}</span>
+                    <span>{c.label[lang] || c.label.en}</span>
                   </li>
                 ))}
               </ul>
             </div>
 
-            {/* Specialties */}
             <div className="tp__section">
-              <h2>Specialties</h2>
+              <h2>{tp.specialties}</h2>
               <div className="tp__tags">
-                {teacher.specialties.map((s) => (
+                {specialties.map((s) => (
                   <span key={s} className="tp__tag">{s}</span>
                 ))}
               </div>
             </div>
 
-            {/* Languages */}
             <div className="tp__section">
-              <h2>Teaching Languages</h2>
+              <h2>{tp.teachingLangs}</h2>
               <div className="tp__langs">
                 {teacher.langs.map((l) => (
                   <div key={l} className="tp__lang">
@@ -169,9 +175,8 @@ export default function TeacherProfile() {
               </div>
             </div>
 
-            {/* Interactive rating */}
             <div className="tp__section">
-              <h2>Student Rating</h2>
+              <h2>{tp.studentRating}</h2>
               <InteractiveStars teacher={teacher} />
             </div>
           </div>
@@ -185,26 +190,20 @@ export default function TeacherProfile() {
                 </div>
               </div>
               <div className="tp__enroll-body">
-                <h3>Enroll with {teacher.nameEn.split(' ')[0]}</h3>
-                <p>Start with 2 free trial lessons — no payment required.</p>
+                <h3>{tp.enrollWith} {firstName}</h3>
+                <p>{tp.trialDesc}</p>
                 <ul className="tp__enroll-perks">
-                  <li>✓ One-to-one lesson</li>
-                  <li>✓ Flexible schedule</li>
-                  <li>✓ Any device — Zoom or Skype</li>
-                  <li>✓ Cancel anytime</li>
+                  {tp.perks.map((perk, i) => <li key={i}>{perk}</li>)}
                 </ul>
                 <button
                   type="button"
                   className="btn btn--gold btn--block"
                   onClick={() => navigate(`/enroll?teacher=${teacher.id}`)}
                 >
-                  Start Enrollment →
+                  {tp.startEnroll}
                 </button>
-                <Link
-                  to="/teachers"
-                  className="tp__back-link"
-                >
-                  ← Browse other teachers
+                <Link to="/teachers" className="tp__back-link">
+                  {tp.browseOthers}
                 </Link>
               </div>
             </div>

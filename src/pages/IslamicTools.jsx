@@ -3,6 +3,7 @@ import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 import useSEO from '../hooks/useSEO';
 import { getVerse } from '../api/quran';
+import { useLang } from '../context/LangContext';
 
 /* ══════════════════════════════════════════════════════════════════
    CONSTANTS
@@ -156,6 +157,7 @@ function QiblaCompass({ bearing, deviceHeading }) {
    MAIN PAGE
    ══════════════════════════════════════════════════════════════════ */
 export default function IslamicTools() {
+  const { t } = useLang();
   useSEO({
     title: 'الأدوات الإسلامية — Al-Rahma Academy',
     description: 'مواقيت الصلاة، القبلة، التقويم الهجري، حديث اليوم، آية اليوم.',
@@ -337,7 +339,7 @@ export default function IslamicTools() {
         <section className="it__hero">
           <div className="container it__hero-inner">
             <p className="eyebrow">أدوات إسلامية</p>
-            <h1>Islamic Daily Tools</h1>
+            <h1>{t.islamicTools.heading}</h1>
             {hijri && (
               <div className="it__hijri">
                 <span className="it__hijri-ar" dir="rtl">

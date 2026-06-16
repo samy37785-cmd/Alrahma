@@ -3,9 +3,12 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Brand from '../components/layout/Brand';
 import useSEO from '../hooks/useSEO';
+import { useLang } from '../context/LangContext';
 
 export default function Register() {
-  useSEO({ title: 'Create an Account', description: 'Create a free AL-Rahma Academy account to track your sessions, view invoices and manage your subscription.' });
+  const { t } = useLang();
+  const rg = t.authPg.register;
+  useSEO({ title: rg.title });
   const { register } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState({ name: '', email: '', password: '' });
@@ -20,9 +23,9 @@ export default function Register() {
     setBusy(true);
     try {
       await register(form);
-      navigate('/'); // new accounts are students -> go home
+      navigate('/');
     } catch (err) {
-      setError(err.response?.data?.message || 'Registration failed');
+      setError(err.response?.data?.message || rg.btn);
     } finally {
       setBusy(false);
     }
@@ -34,20 +37,20 @@ export default function Register() {
         <div className="auth__brand">
           <Brand />
         </div>
-        <h1>Create your account</h1>
-        <p className="auth__sub">Join AL-Rahma Academy</p>
+        <h1>{rg.title}</h1>
+        <p className="auth__sub">{rg.sub}</p>
 
         <form onSubmit={handleSubmit}>
           <div className="field">
-            <label htmlFor="name">Full name</label>
+            <label htmlFor="name">{rg.name}</label>
             <input type="text" id="name" name="name" value={form.name} onChange={handleChange} required />
           </div>
           <div className="field">
-            <label htmlFor="email">Email</label>
+            <label htmlFor="email">{rg.email}</label>
             <input type="email" id="email" name="email" value={form.email} onChange={handleChange} required />
           </div>
           <div className="field">
-            <label htmlFor="password">Password</label>
+            <label htmlFor="password">{rg.password}</label>
             <input
               type="password"
               id="password"
@@ -60,15 +63,15 @@ export default function Register() {
           </div>
           {error && <p className="auth__error">{error}</p>}
           <button type="submit" className="btn btn--green btn--block" disabled={busy}>
-            {busy ? 'Creating…' : 'Register'}
+            {busy ? rg.busy : rg.btn}
           </button>
         </form>
 
         <p className="auth__switch">
-          Already have an account? <Link to="/login">Login</Link>
+          {rg.haveAccount} <Link to="/login">{rg.signIn}</Link>
         </p>
         <p className="auth__switch">
-          <Link to="/">← Back to website</Link>
+          <Link to="/">{rg.back}</Link>
         </p>
       </div>
     </div>

@@ -2,9 +2,12 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getMe, getCourses } from '../api/client';
+import { useLang } from '../context/LangContext';
 
 export default function Profile() {
   const { user, logout, updateProfile } = useAuth();
+  const { t } = useLang();
+  const pg = t.authPg.profile;
 
   const [subscription, setSubscription] = useState(user?.subscription || null);
   const [courses, setCourses]           = useState([]);
@@ -28,9 +31,9 @@ export default function Profile() {
     setSaving(true);
     try {
       await updateProfile({ name: info.name, email: info.email });
-      setInfoMsg('Profile updated successfully.');
+      setInfoMsg(pg.infoSuccess);
     } catch (err) {
-      setInfoErr(err.response?.data?.message || 'Could not update profile.');
+      setInfoErr(err.response?.data?.message || pg.infoSuccess);
     } finally {
       setSaving(false);
     }
@@ -39,19 +42,15 @@ export default function Profile() {
   const handlePass = async (e) => {
     e.preventDefault();
     setPassMsg(''); setPassErr('');
-    if (pass.newPassword !== pass.confirm) {
-      return setPassErr('New passwords do not match.');
-    }
-    if (pass.newPassword.length < 6) {
-      return setPassErr('New password must be at least 6 characters.');
-    }
+    if (pass.newPassword !== pass.confirm) return setPassErr(pg.passNoMatch);
+    if (pass.newPassword.length < 6)       return setPassErr(pg.passShort);
     setSaving(true);
     try {
       await updateProfile({ currentPassword: pass.currentPassword, newPassword: pass.newPassword });
-      setPassMsg('Password changed successfully.');
+      setPassMsg(pg.passSuccess);
       setPass({ currentPassword: '', newPassword: '', confirm: '' });
     } catch (err) {
-      setPassErr(err.response?.data?.message || 'Could not change password.');
+      setPassErr(err.response?.data?.message || pg.passNoMatch);
     } finally {
       setSaving(false);
     }
@@ -61,14 +60,14 @@ export default function Profile() {
     <div className="profile-page">
       <header className="admin__bar">
         <div className="container admin__bar-inner">
-          <strong>AL-Rahma · My Account</strong>
+          <strong>AL-Rahma · {pg.myAccount}</strong>
           <div className="admin__bar-right">
-            <Link to="/" className="btn btn--ghost btn--sm">← Back to site</Link>
-            <Link to="/billing" className="btn btn--ghost btn--sm">Billing</Link>
+            <Link to="/" className="btn btn--ghost btn--sm">{pg.backToSite}</Link>
+            <Link to="/billing" className="btn btn--ghost btn--sm">{pg.billing}</Link>
             {user?.role === 'admin' && (
-              <Link to="/admin" className="btn btn--ghost btn--sm">Admin</Link>
+              <Link to="/admin" className="btn btn--ghost btn--sm">{pg.admin}</Link>
             )}
-            <button className="btn btn--gold btn--sm" onClick={logout}>Logout</button>
+            <button className="btn btn--gold btn--sm" onClick={logout}>{pg.logout}</button>
           </div>
         </div>
       </header>
@@ -76,14 +75,13 @@ export default function Profile() {
       <main className="container profile-page__main">
         <div className="profile-page__grid">
 
-          {/* Personal info */}
           <section className="admin__panel">
-            <h2>Personal Information</h2>
+            <h2>{pg.personalInfo}</h2>
             {infoMsg && <p className="profile-page__success">{infoMsg}</p>}
             {infoErr && <p className="auth__error">{infoErr}</p>}
             <form onSubmit={handleInfo}>
               <div className="field">
-                <label htmlFor="prof-name">Full name</label>
+                <label htmlFor="prof-name">{pg.fullName}</label>
                 <input
                   id="prof-name"
                   value={info.name}
@@ -92,7 +90,7 @@ export default function Profile() {
                 />
               </div>
               <div className="field">
-                <label htmlFor="prof-email">Email address</label>
+                <label htmlFor="prof-email">{pg.email}</label>
                 <input
                   id="prof-email"
                   type="email"
@@ -102,23 +100,22 @@ export default function Profile() {
                 />
               </div>
               <div className="field">
-                <label>Account type</label>
-                <input value={user?.role === 'admin' ? 'Administrator' : 'Student'} disabled />
+                <label>{pg.accountType}</label>
+                <input value={user?.role === 'admin' ? pg.roleAdmin : pg.roleStudent} disabled />
               </div>
               <button type="submit" className="btn btn--green btn--block" disabled={saving}>
-                {saving ? 'Saving…' : 'Save changes'}
+                {saving ? pg.saving : pg.saveChanges}
               </button>
             </form>
           </section>
 
-          {/* Change password */}
           <section className="admin__panel">
-            <h2>Change Password</h2>
+            <h2>{pg.changePass}</h2>
             {passMsg && <p className="profile-page__success">{passMsg}</p>}
             {passErr && <p className="auth__error">{passErr}</p>}
             <form onSubmit={handlePass}>
               <div className="field">
-                <label htmlFor="cur-pass">Current password</label>
+                <label htmlFor="cur-pass">{pg.currentPass}</label>
                 <input
                   id="cur-pass"
                   type="password"
@@ -128,7 +125,7 @@ export default function Profile() {
                 />
               </div>
               <div className="field">
-                <label htmlFor="new-pass">New password</label>
+                <label htmlFor="new-pass">{pg.newPass}</label>
                 <input
                   id="new-pass"
                   type="password"
@@ -138,7 +135,7 @@ export default function Profile() {
                 />
               </div>
               <div className="field">
-                <label htmlFor="conf-pass">Confirm new password</label>
+                <label htmlFor="conf-pass">{pg.confirmPass}</label>
                 <input
                   id="conf-pass"
                   type="password"
@@ -148,22 +145,20 @@ export default function Profile() {
                 />
               </div>
               <button type="submit" className="btn btn--green btn--block" disabled={saving}>
-                {saving ? 'Saving…' : 'Change password'}
+                {saving ? pg.saving : pg.changeBtn}
               </button>
             </form>
           </section>
         </div>
 
-        {/* Subscription card */}
-        {/* My Courses */}
         {subscription?.status === 'active' && courses.length > 0 && (
           <section className="admin__panel" style={{ marginTop: '1.5rem' }}>
-            <h2>My Courses</h2>
+            <h2>{pg.myCourses}</h2>
             <ul className="admin__list">
               {courses.map((c) => (
                 <li key={c._id}>
                   <span>{c.icon} {c.title}</span>
-                  <Link to={`/courses/${c._id}`} className="btn btn--green btn--sm">Start learning →</Link>
+                  <Link to={`/courses/${c._id}`} className="btn btn--green btn--sm">{pg.startLearning}</Link>
                 </li>
               ))}
             </ul>
@@ -171,27 +166,27 @@ export default function Profile() {
         )}
 
         <section className="admin__panel" style={{ marginTop: '1.5rem' }}>
-          <h2>My Subscription</h2>
+          <h2>{pg.mySubscription}</h2>
           {subscription?.status === 'active' ? (
             <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap', alignItems: 'center' }}>
               <div>
-                <p style={{ margin: 0, color: '#888', fontSize: '.85rem' }}>Current Plan</p>
+                <p style={{ margin: 0, color: '#888', fontSize: '.85rem' }}>{pg.currentPlan}</p>
                 <p style={{ margin: 0, fontWeight: 700, fontSize: '1.2rem', color: '#0b6e4f' }}>{subscription.plan}</p>
               </div>
               <div>
-                <p style={{ margin: 0, color: '#888', fontSize: '.85rem' }}>Status</p>
-                <span className="admin__badge admin__badge--approved">Active</span>
+                <p style={{ margin: 0, color: '#888', fontSize: '.85rem' }}>{pg.status}</p>
+                <span className="admin__badge admin__badge--approved">{pg.active}</span>
               </div>
               <div>
-                <p style={{ margin: 0, color: '#888', fontSize: '.85rem' }}>Valid Until</p>
+                <p style={{ margin: 0, color: '#888', fontSize: '.85rem' }}>{pg.validUntil}</p>
                 <p style={{ margin: 0, fontWeight: 600 }}>{new Date(subscription.validUntil).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
               </div>
-              <Link to="/billing" className="btn btn--ghost btn--sm" style={{ marginLeft: 'auto' }}>View Invoices</Link>
+              <Link to="/billing" className="btn btn--ghost btn--sm" style={{ marginLeft: 'auto' }}>{pg.viewInvoices}</Link>
             </div>
           ) : (
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-              <p style={{ margin: 0, color: '#888' }}>You don't have an active subscription yet.</p>
-              <Link to="/#pricing" className="btn btn--green btn--sm">View Plans</Link>
+              <p style={{ margin: 0, color: '#888' }}>{pg.noSub}</p>
+              <Link to="/#pricing" className="btn btn--green btn--sm">{pg.viewPlans}</Link>
             </div>
           )}
         </section>

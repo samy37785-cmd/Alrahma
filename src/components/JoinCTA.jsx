@@ -1,34 +1,30 @@
 import { Link } from 'react-router-dom';
+import { useLang } from '../context/LangContext';
 
-const STATS = [
-  { icon: '🌍', label: '30+ Countries' },
-  { icon: '⭐', label: '5.0 Rating'    },
-  { icon: '🎓', label: 'Al-Azhar Certified' },
-  { icon: '🕒', label: '24/7 Available' },
-];
+const ICONS = ['🌍', '⭐', '🎓', '🕒'];
 
 export default function JoinCTA() {
+  const { t } = useLang();
+  const jc = t.joinCta;
+
   return (
     <section className="join-cta">
       <div className="join-cta__ring join-cta__ring--1" />
       <div className="join-cta__ring join-cta__ring--2" />
       <div className="container join-cta__inner">
-        <p className="eyebrow" style={{ color: 'var(--gold)' }}>Start Today</p>
-        <h2>Join 1,200+ Students Worldwide</h2>
-        <p className="join-cta__sub">
-          Learn the Quran from the comfort of your home with Al-Azhar certified tutors.
-          Flexible schedules, personalised lessons — for every age and level.
-        </p>
+        <p className="eyebrow" style={{ color: 'var(--gold)' }}>{jc.eyebrow}</p>
+        <h2>{jc.heading}</h2>
+        <p className="join-cta__sub">{jc.sub}</p>
         <div className="join-cta__stats">
-          {STATS.map((s) => (
-            <div className="join-cta__stat" key={s.label}>
-              <span className="join-cta__stat-icon">{s.icon}</span>
-              <span>{s.label}</span>
+          {jc.stats.map((label, i) => (
+            <div className="join-cta__stat" key={i}>
+              <span className="join-cta__stat-icon">{ICONS[i]}</span>
+              <span>{label}</span>
             </div>
           ))}
         </div>
         <Link to="/enroll" className="btn btn--gold btn--lg">
-          Book Your Free Trial →
+          {jc.cta}
         </Link>
       </div>
     </section>

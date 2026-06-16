@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
+import { useLang } from '../context/LangContext';
 
-const STATS = [
-  { value: 1200, suffix: '+', label: 'Happy Students' },
-  { value: 15,   suffix: '+', label: 'Expert Tutors' },
-  { value: 5,    suffix: '★', label: 'Average Rating' },
-  { value: 24,   suffix: '/7', label: 'Always Available' },
+const STATS_DATA = [
+  { value: 1200, suffix: '+' },
+  { value: 15,   suffix: '+' },
+  { value: 5,    suffix: '★' },
+  { value: 24,   suffix: '/7' },
 ];
 
 function useCountUp(target, duration = 1600, active = false) {
@@ -34,6 +35,8 @@ function StatItem({ value, suffix, label, active }) {
 }
 
 export default function StatsBanner() {
+  const { t } = useLang();
+  const labels = t.stats.labels;
   const ref  = useRef(null);
   const [active, setActive] = useState(false);
 
@@ -49,8 +52,8 @@ export default function StatsBanner() {
   return (
     <section className="stats-banner" ref={ref}>
       <div className="container stats-banner__grid">
-        {STATS.map((s) => (
-          <StatItem key={s.label} {...s} active={active} />
+        {STATS_DATA.map((s, i) => (
+          <StatItem key={i} {...s} label={labels[i]} active={active} />
         ))}
       </div>
     </section>

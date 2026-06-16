@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { LangProvider } from './context/LangContext';
 import ProtectedRoute from './components/ui/ProtectedRoute';
+import ErrorBoundary from './components/ErrorBoundary';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -29,9 +30,11 @@ import NotFound from './pages/NotFound';
 
 export default function App() {
   return (
+    <ErrorBoundary>
     <LangProvider>
     <AuthProvider>
       <BrowserRouter>
+        <a href="#main-content" className="skip-link">Skip to main content</a>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/quran" element={<Quran />} />
@@ -69,5 +72,6 @@ export default function App() {
       </BrowserRouter>
     </AuthProvider>
     </LangProvider>
+    </ErrorBoundary>
   );
 }

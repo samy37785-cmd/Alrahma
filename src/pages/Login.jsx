@@ -3,9 +3,12 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Brand from '../components/layout/Brand';
 import useSEO from '../hooks/useSEO';
+import { useLang } from '../context/LangContext';
 
 export default function Login() {
-  useSEO({ title: 'Login', description: 'Sign in to your AL-Rahma Academy account to manage your classes and invoices.' });
+  const { t } = useLang();
+  const lg = t.authPg.login;
+  useSEO({ title: lg.title });
   const { login } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState({ email: '', password: '' });
@@ -20,19 +23,21 @@ export default function Login() {
     setBusy(true);
     try {
       const user = await loginAndGet();
-      // admins go to the dashboard, everyone else to home
       navigate(user?.role === 'admin' ? '/admin' : '/');
     } catch (err) {
-      setError(err.response?.data?.message || 'Login failed');
+      setError(err.response?.data?.message || lg.btn);
     } finally {
       setBusy(false);
     }
   };
 
-  // login() updates context; we also read the stored user to decide where to go
   const loginAndGet = async () => {
     await login(form);
-    return JSON.parse(localStorage.getItem('user'));
+    try {
+      return JSON.parse(localStorage.getItem('user'));
+    } catch {
+      return null;
+    }
   };
 
   return (
@@ -41,32 +46,32 @@ export default function Login() {
         <div className="auth__brand">
           <Brand />
         </div>
-        <h1>Welcome back</h1>
-        <p className="auth__sub">Log in to your account</p>
+        <h1>{lg.title}</h1>
+        <p className="auth__sub">{lg.sub}</p>
 
         <form onSubmit={handleSubmit}>
           <div className="field">
-            <label htmlFor="email">Email</label>
+            <label htmlFor="email">{lg.email}</label>
             <input type="email" id="email" name="email" value={form.email} onChange={handleChange} required />
           </div>
           <div className="field">
-            <label htmlFor="password">Password</label>
+            <label htmlFor="password">{lg.password}</label>
             <input type="password" id="password" name="password" value={form.password} onChange={handleChange} required />
           </div>
           {error && <p className="auth__error">{error}</p>}
           <button type="submit" className="btn btn--green btn--block" disabled={busy}>
-            {busy ? 'Logging in…' : 'Login'}
+            {busy ? lg.busy : lg.btn}
           </button>
         </form>
 
         <p className="auth__switch">
-          No account? <Link to="/register">Create one</Link>
+          {lg.noAccount} <Link to="/register">{lg.createOne}</Link>
         </p>
         <p className="auth__switch">
-          <Link to="/forgot-password">Forgot your password?</Link>
+          <Link to="/forgot-password">{lg.forgot}</Link>
         </p>
         <p className="auth__switch">
-          <Link to="/">← Back to website</Link>
+          <Link to="/">{lg.back}</Link>
         </p>
       </div>
     </div>

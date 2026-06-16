@@ -58,7 +58,7 @@ function renderMarkdown(text) {
       }
       elements.push(
         <ul key={key++}>
-          {items.map((item, ii) => <li key={ii} dangerouslySetInnerHTML={{ __html: formatInline(item) }} />)}
+          {items.map((item, ii) => <li key={ii}>{parseInline(item)}</li>)}
         </ul>
       );
       continue;
@@ -69,7 +69,7 @@ function renderMarkdown(text) {
 
     // Paragraph
     elements.push(
-      <p key={key++} dangerouslySetInnerHTML={{ __html: formatInline(line) }} />
+      <p key={key++}>{parseInline(line)}</p>
     );
     i++;
   }
@@ -77,15 +77,21 @@ function renderMarkdown(text) {
   return elements;
 }
 
-function formatInline(text) {
-  return text
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*(.+?)\*/g, '<em>$1</em>');
+function parseInline(text) {
+  const segments = text.split(/(\*\*[^*]+\*\*|\*[^*]+\*)/g);
+  return segments.map((seg, i) => {
+    if (seg.startsWith('**') && seg.endsWith('**')) return <strong key={i}>{seg.slice(2, -2)}</strong>;
+    if (seg.startsWith('*')  && seg.endsWith('*'))  return <em key={i}>{seg.slice(1, -1)}</em>;
+    return seg;
+  });
 }
 
 export default function BlogPost() {
   const { slug } = useParams();
   const post = posts.find((p) => p.slug === slug);
+  const idx  = posts.findIndex((p) => p.slug === slug);
+  const prev = idx > 0 ? posts[idx - 1] : null;
+  const next = idx < posts.length - 1 ? posts[idx + 1] : null;
 
   useSEO({ title: post?.title, description: post?.excerpt });
 
@@ -114,6 +120,23 @@ export default function BlogPost() {
         <article className="blog-post__body">
           {renderMarkdown(post.content)}
         </article>
+
+        {(prev || next) && (
+          <nav className="blog-post__nav">
+            {prev && (
+              <Link to={`/blog/${prev.slug}`} className="blog-post__nav-link blog-post__nav-link--prev">
+                <span className="blog-post__nav-dir">← Previous</span>
+                <span className="blog-post__nav-title">{prev.title}</span>
+              </Link>
+            )}
+            {next && (
+              <Link to={`/blog/${next.slug}`} className="blog-post__nav-link blog-post__nav-link--next">
+                <span className="blog-post__nav-dir">Next →</span>
+                <span className="blog-post__nav-title">{next.title}</span>
+              </Link>
+            )}
+          </nav>
+        )}
 
         <div className="blog-post__cta">
           <h3>Ready to start your Quran journey?</h3>

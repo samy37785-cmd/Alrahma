@@ -418,6 +418,13 @@
   background: rgba(255,255,255,.2); color: #fff; font-size: .72rem; font-weight: 700;
   padding: 3px 10px; border-radius: 999px; border: 1px solid rgba(255,255,255,.3);
 }
+/* Scoped override so the pricing badge stays visible (the hifz.css rule
+   places it at top:-14px which gets clipped by .plan overflow:hidden). */
+.pricing .plan__discount-badge {
+  top: 12px; left: 12px; right: auto;
+  background: #e53e3e; border-color: rgba(255,255,255,.45);
+}
+[dir="rtl"] .pricing .plan__discount-badge { left: auto; right: 12px; }
 .plan__body { padding: 24px 28px 28px; display: flex; flex-direction: column; flex: 1; }
 .plan__saving { font-size: .85rem; color: var(--green); font-weight: 600; margin-bottom: 14px; text-align: center; }
 .plan ul { text-align: left; margin-bottom: 22px; flex: 1; }

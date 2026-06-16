@@ -1,10 +1,12 @@
 import Reveal from './ui/Reveal';
 import { useLang } from '../context/LangContext';
 import { stats, values } from '../data';
+import { VALUES_TEXT, pick } from '../i18n/content';
 
 export default function About() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const a = t.about;
+  const valuesT = pick(VALUES_TEXT, lang);
 
   return (
     <section className="about" id="about">
@@ -39,13 +41,16 @@ export default function About() {
           <h2>{a.valuesHeading}</h2>
         </Reveal>
         <div className="values__grid">
-          {values.map((v) => (
-            <Reveal className="value-card" key={v.title}>
-              <span className="value-card__icon">{v.icon}</span>
-              <h4 className="value-card__title">{v.title}</h4>
-              <p className="value-card__desc">{v.desc}</p>
-            </Reveal>
-          ))}
+          {values.map((v, i) => {
+            const vt = valuesT[i] || {};
+            return (
+              <Reveal className="value-card" key={v.title}>
+                <span className="value-card__icon">{v.icon}</span>
+                <h4 className="value-card__title">{vt.title || v.title}</h4>
+                <p className="value-card__desc">{vt.desc || v.desc}</p>
+              </Reveal>
+            );
+          })}
         </div>
       </div>
     </section>

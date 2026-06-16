@@ -3,6 +3,7 @@ import Reveal from './ui/Reveal';
 import CheckoutModal from './ui/CheckoutModal';
 import { useLang } from '../context/LangContext';
 import { plans } from '../data';
+import { PLAN_TEXT, pick } from '../i18n/content';
 
 const PLAN_GRADS = [
   'linear-gradient(135deg,#1a5fa0,#2176c7)',
@@ -14,8 +15,9 @@ const PLAN_ICONS = ['🌱', '⭐', '👑'];
 
 export default function Pricing() {
   const [selectedPlan, setSelectedPlan] = useState(null);
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const p = t.pricing;
+  const planText = pick(PLAN_TEXT, lang);
 
   return (
     <section className="pricing" id="pricing">
@@ -23,16 +25,18 @@ export default function Pricing() {
         <Reveal className="section-head">
           <p className="eyebrow">{p.eyebrow}</p>
           <h2>{p.heading}</h2>
-          <p className="section-sub">Affordable monthly plans billed per student. Cancel anytime.</p>
+          <p className="section-sub">{p.sub}</p>
         </Reveal>
 
         <Reveal className="pricing__banner">
-          <span className="pricing__banner-badge">🎉 Limited Time</span>
-          <span>Save <strong>25% OFF</strong> on all plans — discount already applied below</span>
+          <span className="pricing__banner-badge">{p.banner}</span>
+          <span>{p.bannerText}</span>
         </Reveal>
 
         <div className="pricing__grid">
-          {plans.map((plan, i) => (
+          {plans.map((plan, i) => {
+            const pt = planText[i] || planText[0];
+            return (
             <Reveal
               as="article"
               className={`plan${plan.featured ? ' plan--featured' : ''}`}
@@ -46,7 +50,7 @@ export default function Pricing() {
 
               <div className="plan__header" style={{ background: PLAN_GRADS[i % PLAN_GRADS.length] }}>
                 <span className="plan__header-icon">{PLAN_ICONS[i % PLAN_ICONS.length]}</span>
-                <h3>{plan.name}</h3>
+                <h3>{pt.name}</h3>
                 <p className="plan__price">
                   {plan.originalPrice && (
                     <s className="plan__original-price">{plan.originalPrice}</s>
@@ -61,11 +65,11 @@ export default function Pricing() {
               <div className="plan__body">
                 {plan.originalPrice && (
                   <p className="plan__saving">
-                    You save €{parseInt(plan.originalPrice.replace('€','')) - parseInt(plan.price.replace('€',''))} / month
+                    {p.youSave} €{parseInt(plan.originalPrice.replace('€','')) - parseInt(plan.price.replace('€',''))}{p.perMonth}
                   </p>
                 )}
                 <ul>
-                  {plan.features.map((feat) => (
+                  {pt.features.map((feat) => (
                     <li key={feat}>{feat}</li>
                   ))}
                 </ul>
@@ -78,7 +82,8 @@ export default function Pricing() {
                 </button>
               </div>
             </Reveal>
-          ))}
+            );
+          })}
         </div>
       </div>
 

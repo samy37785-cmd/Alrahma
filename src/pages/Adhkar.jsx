@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 import useSEO from '../hooks/useSEO';
+import { useLang } from '../context/LangContext';
+import { ADHKAR_TR, sourceTr } from '../i18n/adhkarText';
 
 /* ══════════════════════════════════════════════════════════════════
    ADHKAR DATA — based on Hisnul Muslim (حصن المسلم)
@@ -440,9 +442,14 @@ const CATEGORY_KEYS = Object.keys(ADHKAR);
    MAIN PAGE
    ══════════════════════════════════════════════════════════════════ */
 export default function Adhkar() {
+  const { t, lang } = useLang();
+  const a = t.adhkar;
+  const isAr = lang === 'ar';
+  const catName = (key) => a.categories[key] || ADHKAR[key].title;
+
   useSEO({
-    title: 'الأذكار والأدعية — Al-Rahma Academy',
-    description: 'مكتبة متكاملة للأذكار اليومية من حصن المسلم — أذكار الصباح والمساء والنوم والصلاة.',
+    title: `${a.heading} — Al-Rahma Academy`,
+    description: a.sub,
   });
 
   const [cat,    setCat]    = useState('sabah');
@@ -503,13 +510,13 @@ export default function Adhkar() {
         {/* Hero */}
         <section className="adhkar__hero">
           <div className="container adhkar__hero-inner">
-            <p className="eyebrow">من حصن المسلم</p>
-            <h1>مكتبة الأذكار والأدعية</h1>
-            <p className="adhkar__hero-sub">أذكار يومية بتشكيل كامل مع الفضائل والمصادر</p>
+            <p className="eyebrow">{a.eyebrow}</p>
+            <h1>{a.heading}</h1>
+            <p className="adhkar__hero-sub">{a.sub}</p>
             {totalDone > 0 && (
               <div className="adhkar__hero-progress">
-                <span>أتممت اليوم: {totalDone} ذكراً</span>
-                <button className="adhkar__reset-all" onClick={resetAll}>إعادة تعيين الكل</button>
+                <span>{a.doneToday} {totalDone}</span>
+                <button className="adhkar__reset-all" onClick={resetAll}>{a.resetAll}</button>
               </div>
             )}
           </div>
@@ -524,8 +531,8 @@ export default function Adhkar() {
                 className="adhkar__search"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="🔍 ابحث في الأذكار…"
-                dir="rtl"
+                placeholder={a.searchPlaceholder}
+                dir={isAr ? 'rtl' : 'ltr'}
               />
               {search && (
                 <button className="adhkar__search-clear" onClick={() => setSearch('')}>✕</button>
@@ -544,7 +551,7 @@ export default function Adhkar() {
                     style={{ '--cat-color': c.color }}
                   >
                     <span className="adhkar__cat-icon">{c.icon}</span>
-                    <span className="adhkar__cat-name">{c.title}</span>
+                    <span className="adhkar__cat-name">{catName(key)}</span>
                     {dCnt > 0 && (
                       <span className="adhkar__cat-badge">{dCnt}/{c.items.length}</span>
                     )}
@@ -560,9 +567,9 @@ export default function Adhkar() {
               <div className="adhkar__cat-header" style={{ '--cat-color': activeCat.color }}>
                 <span className="adhkar__ch-icon">{activeCat.icon}</span>
                 <div>
-                  <h2 className="adhkar__ch-title">{activeCat.title}</h2>
+                  <h2 className="adhkar__ch-title">{catName(cat)}</h2>
                   <p className="adhkar__ch-progress">
-                    {doneCount} / {activeCat.items.length} مكتمل
+                    {doneCount} / {activeCat.items.length} {a.complete}
                   </p>
                 </div>
                 <div className="adhkar__ch-bar-wrap">
@@ -573,19 +580,22 @@ export default function Adhkar() {
 
             {search && filteredCats.length === 0 && (
               <div className="adhkar__no-results">
-                <p>لا توجد نتائج لـ "{search}"</p>
+                <p>{a.noResults} "{search}"</p>
               </div>
             )}
 
             {filteredCats.map(({ key, items }) => (
               <div key={key}>
-                {search && <h3 className="adhkar__search-cat-title">{ADHKAR[key].icon} {ADHKAR[key].title}</h3>}
+                {search && <h3 className="adhkar__search-cat-title">{ADHKAR[key].icon} {catName(key)}</h3>}
                 <div className="adhkar__list">
                   {items.map((item, idx) => {
                     const itemDone  = done[item.id]   || false;
                     const itemCount = counts[item.id] || 0;
                     const target    = typeof item.count === 'number' ? item.count : null;
                     const reachedTarget = target && itemCount >= target;
+                    const tr        = !isAr ? (ADHKAR_TR[item.id]?.[lang] || ADHKAR_TR[item.id]?.en) : null;
+                    const ctx       = isAr ? item.context : tr?.context;
+                    const fadl      = isAr ? item.fadl : tr?.fadl;
 
                     return (
                       <div
@@ -597,22 +607,27 @@ export default function Adhkar() {
                         <div className="adhkar__card-num">{idx + 1}</div>
 
                         {/* Context badge */}
-                        {item.context && (
-                          <div className="adhkar__context-badge">{item.context}</div>
+                        {ctx && (
+                          <div className="adhkar__context-badge">{ctx}</div>
                         )}
 
-                        {/* Arabic text */}
+                        {/* Arabic text (always shown — to be recited) */}
                         <p className="adhkar__ar" dir="rtl" lang="ar">{item.ar}</p>
 
+                        {/* Translation / meaning for non-Arabic readers */}
+                        {tr?.meaning && (
+                          <p className="adhkar__translation" dir="ltr">{tr.meaning}</p>
+                        )}
+
                         {/* Benefit */}
-                        {item.fadl && (
-                          <p className="adhkar__fadl" dir="rtl">💡 {item.fadl}</p>
+                        {fadl && (
+                          <p className="adhkar__fadl" dir={isAr ? 'rtl' : 'ltr'}>💡 {fadl}</p>
                         )}
 
                         {/* Footer */}
                         <div className="adhkar__card-footer">
                           <div className="adhkar__meta">
-                            <span className="adhkar__source">📖 {item.source}</span>
+                            <span className="adhkar__source">📖 {sourceTr(item.source, lang)}</span>
                             <span className="adhkar__count-target">
                               {typeof item.count === 'number' ? `${item.count}×` : item.count}
                             </span>
@@ -623,14 +638,14 @@ export default function Adhkar() {
                             <button
                               className={`adhkar__tap${reachedTarget ? ' adhkar__tap--done' : ''}`}
                               onClick={() => tap(item.id)}
-                              title="اضغط للعد"
+                              title={a.tapTitle}
                             >
                               {reachedTarget ? '✓' : itemCount > 0 ? itemCount : '◉'}
                             </button>
 
                             {/* Reset item */}
                             {(itemCount > 0 || itemDone) && (
-                              <button className="adhkar__reset-btn" onClick={() => resetItem(item.id)} title="إعادة تعيين">
+                              <button className="adhkar__reset-btn" onClick={() => resetItem(item.id)} title={a.resetTitle}>
                                 ↺
                               </button>
                             )}
@@ -639,9 +654,9 @@ export default function Adhkar() {
                             <button
                               className={`adhkar__done-btn${itemDone ? ' on' : ''}`}
                               onClick={() => toggleDone(item.id)}
-                              title={itemDone ? 'إلغاء التأشير' : 'تأشير كمكتمل'}
+                              title={itemDone ? a.unmarkDone : a.markDone}
                             >
-                              {itemDone ? '✅ تم' : '☐ تم'}
+                              {itemDone ? a.doneBtn : a.notDoneBtn}
                             </button>
                           </div>
                         </div>

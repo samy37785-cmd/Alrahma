@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import Reveal from './ui/Reveal';
 import { useLang } from '../context/LangContext';
+import { TESTIMONIAL_TEXT, pick } from '../i18n/content';
 
 const ALL = [
   {
@@ -61,7 +62,7 @@ const ALL = [
 ];
 
 export default function Testimonials() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const [idx, setIdx] = useState(0);
   const total = ALL.length;
 
@@ -73,8 +74,11 @@ export default function Testimonials() {
     return () => clearInterval(id);
   }, [next]);
 
-  const cur  = ALL[idx];
-  const side = [ALL[(idx + 1) % total], ALL[(idx + 2) % total]];
+  // Merge static data (name, location, flag, avatar, color) with translated text.
+  const txt = pick(TESTIMONIAL_TEXT, lang);
+  const items = ALL.map((item, i) => ({ ...item, quote: txt[i]?.quote || item.quote, course: txt[i]?.course || item.course }));
+  const cur  = items[idx];
+  const side = [items[(idx + 1) % total], items[(idx + 2) % total]];
 
   return (
     <section className="testimonials" id="testimonials">
@@ -82,7 +86,7 @@ export default function Testimonials() {
         <Reveal className="section-head">
           <p className="eyebrow">{t.testimonials?.eyebrow || 'What students say'}</p>
           <h2>{t.testimonials?.heading || 'Trusted by Families Worldwide'}</h2>
-          <p className="section-sub">Real experiences from real students — in their own words.</p>
+          <p className="section-sub">{t.testimonials?.sub || 'Real experiences from real students — in their own words.'}</p>
         </Reveal>
 
         <div className="tst__layout">
@@ -141,9 +145,9 @@ export default function Testimonials() {
             {/* CTA card */}
             <div className="tst__cta-card">
               <p className="tst__cta-num">1,200+</p>
-              <p className="tst__cta-label">happy students worldwide</p>
+              <p className="tst__cta-label">{t.testimonials?.happyStudents || 'happy students worldwide'}</p>
               <Link to="/enroll" className="btn btn--gold btn--block">
-                Join them today →
+                {t.testimonials?.joinToday || 'Join them today →'}
               </Link>
             </div>
           </div>

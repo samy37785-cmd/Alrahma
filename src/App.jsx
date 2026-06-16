@@ -1,32 +1,45 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { LangProvider } from './context/LangContext';
 import ProtectedRoute from './components/ui/ProtectedRoute';
 import ErrorBoundary from './components/ErrorBoundary';
-import Home from './pages/Home';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import AdminDashboard from './pages/AdminDashboard';
-import Quran from './pages/Quran';
-import Blog from './pages/Blog';
-import BlogPost from './pages/BlogPost';
-import FAQ from './pages/FAQ';
-import Privacy from './pages/Privacy';
-import PaymentResult from './pages/PaymentResult';
-import Billing from './pages/Billing';
-import Profile from './pages/Profile';
-import Teachers from './pages/Teachers';
-import TeacherProfile from './pages/TeacherProfile';
-import Enroll from './pages/Enroll';
-import IslamicTools from './pages/IslamicTools';
-import Adhkar from './pages/Adhkar';
-import ForgotPassword from './pages/ForgotPassword';
-import ResetPassword from './pages/ResetPassword';
-import CourseContent from './pages/CourseContent';
-import CourseIjazah from './pages/CourseIjazah';
-import CourseIslamicStudies from './pages/CourseIslamicStudies';
-import HadithLibrary from './pages/HadithLibrary';
-import NotFound from './pages/NotFound';
+import ContentGuard from './components/ContentGuard';
+
+// Route-level code splitting: each page loads in its own chunk, so the first
+// paint only downloads what the landing page needs (much smaller initial JS).
+const Home          = lazy(() => import('./pages/Home'));
+const Login         = lazy(() => import('./pages/Login'));
+const Register      = lazy(() => import('./pages/Register'));
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
+const Quran         = lazy(() => import('./pages/Quran'));
+const Blog          = lazy(() => import('./pages/Blog'));
+const BlogPost      = lazy(() => import('./pages/BlogPost'));
+const FAQ           = lazy(() => import('./pages/FAQ'));
+const Privacy       = lazy(() => import('./pages/Privacy'));
+const PaymentResult = lazy(() => import('./pages/PaymentResult'));
+const Billing       = lazy(() => import('./pages/Billing'));
+const Profile       = lazy(() => import('./pages/Profile'));
+const Teachers      = lazy(() => import('./pages/Teachers'));
+const TeacherProfile = lazy(() => import('./pages/TeacherProfile'));
+const Enroll        = lazy(() => import('./pages/Enroll'));
+const IslamicTools  = lazy(() => import('./pages/IslamicTools'));
+const Adhkar        = lazy(() => import('./pages/Adhkar'));
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
+const ResetPassword = lazy(() => import('./pages/ResetPassword'));
+const CourseContent = lazy(() => import('./pages/CourseContent'));
+const CourseIjazah  = lazy(() => import('./pages/CourseIjazah'));
+const CourseIslamicStudies = lazy(() => import('./pages/CourseIslamicStudies'));
+const HadithLibrary = lazy(() => import('./pages/HadithLibrary'));
+const NotFound      = lazy(() => import('./pages/NotFound'));
+
+function PageFallback() {
+  return (
+    <div style={{ minHeight: '60vh', display: 'grid', placeItems: 'center', color: '#0b6e4f' }}>
+      <div style={{ width: 40, height: 40, border: '4px solid #cfe6dc', borderTopColor: '#0b6e4f', borderRadius: '50%', animation: 'it-spin 0.8s linear infinite' }} />
+    </div>
+  );
+}
 
 export default function App() {
   return (
@@ -34,7 +47,9 @@ export default function App() {
     <LangProvider>
     <AuthProvider>
       <BrowserRouter>
+        <ContentGuard />
         <a href="#main-content" className="skip-link">Skip to main content</a>
+        <Suspense fallback={<PageFallback />}>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/quran" element={<Quran />} />
@@ -69,6 +84,7 @@ export default function App() {
           <Route path="/adhkar" element={<Adhkar />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
+        </Suspense>
       </BrowserRouter>
     </AuthProvider>
     </LangProvider>

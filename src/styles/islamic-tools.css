@@ -72,9 +72,36 @@
 .it__next-name  { font-family: var(--serif); font-size: 2rem; margin: 0; }
 .it__next-time  { font-size: 1.1rem; opacity: .9; margin: 6px 0 0; font-weight: 600; }
 .it__next-right { text-align: center; }
+.it__next-clock { font-size: 1.15rem; font-weight: 700; letter-spacing: .05em; font-variant-numeric: tabular-nums; font-family: monospace; margin: 0 0 10px; opacity: .95; }
 .it__next-cd-lbl { font-size: .78rem; opacity: .8; margin: 0 0 4px; }
 .it__next-cd { font-size: 2.6rem; font-weight: 800; letter-spacing: .04em; font-variant-numeric: tabular-nums; margin: 0; font-family: monospace; }
 .it__next-loc { font-size: .78rem; opacity: .7; margin: 8px 0 0; }
+
+/* 12/24h toggle */
+.it__fmt-toggle { display: inline-flex; border: 1.5px solid var(--line); border-radius: 8px; overflow: hidden; }
+.it__fmt-btn { padding: 8px 16px; background: #fff; border: 0; cursor: pointer; font-weight: 700; color: var(--muted); font-size: .9rem; }
+.it__fmt-btn.active { background: var(--green); color: #fff; }
+
+/* Extra times: Suhoor / Midnight / Last third (Qiyam) */
+.it__extra-times { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 14px; }
+.it__extra-card { display: flex; flex-direction: column; align-items: center; gap: 4px; background: #fff; border: 1.5px solid var(--line); border-top: 3px solid var(--c, var(--green)); border-radius: 12px; padding: 14px 8px; text-align: center; }
+.it__extra-icon { font-size: 1.3rem; }
+.it__extra-ar { font-size: .82rem; color: var(--muted); font-weight: 600; }
+.it__extra-time { font-size: 1.15rem; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; }
+@media (max-width: 520px) { .it__extra-times { grid-template-columns: 1fr; } }
+
+/* Monthly timetable */
+.it__month { margin-top: 18px; }
+.it__month-toggle { width: 100%; padding: 13px; border: 1.5px dashed var(--green); background: #f0faf6; color: var(--green); font-weight: 700; border-radius: 12px; cursor: pointer; font-size: .95rem; }
+.it__month-toggle:hover { background: #e3f5ec; }
+.it__month-wrap { margin-top: 12px; overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; }
+.it__month-table { width: 100%; border-collapse: collapse; font-size: .85rem; min-width: 560px; }
+.it__month-table th { background: var(--green); color: #fff; padding: 10px 8px; font-weight: 700; position: sticky; top: 0; }
+.it__month-table td { padding: 9px 8px; text-align: center; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+.it__month-date { display: flex; flex-direction: column; line-height: 1.3; }
+.it__month-date span { font-size: .72rem; color: var(--muted); }
+.it__month-today { background: #fffdf0; }
+.it__month-today td { font-weight: 800; }
 
 /* Prayer list */
 .it__prayer-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }

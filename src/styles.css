@@ -13,3 +13,10 @@
 @import './styles/khatm.css';         /* qlc__khatm-* tracker                       */
 @import './styles/islamic-tools.css'; /* it__* prayer times, qibla, calendar        */
 @import './styles/adhkar.css';        /* adhkar__* library                          */
+
+/* ── Content protection (deterrent): disable selection/drag, keep forms usable ── */
+.no-select { -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; }
+.no-select input, .no-select textarea, .no-select [contenteditable] {
+  -webkit-user-select: text; -moz-user-select: text; -ms-user-select: text; user-select: text;
+}
+img { -webkit-user-drag: none; -webkit-touch-callout: none; }

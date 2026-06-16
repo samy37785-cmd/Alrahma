@@ -70,6 +70,7 @@ export default function Courses() {
           {courses.map((c, i) => {
             const item = t.courses.items[i] || {};
             const meta = COURSE_META[i] || COURSE_META[0];
+            const metaT = (t.courses.meta && t.courses.meta[i]) || {};
             const expanded = isAlphabet(c) && openAlphabet;
             return (
               <Reveal
@@ -80,16 +81,16 @@ export default function Courses() {
                 <div className="course__banner" style={{ background: meta.grad }}>
                   <span className="course__banner-icon">{c.media}</span>
                   <div className="course__badges">
-                    <span className="course__badge">{meta.level}</span>
-                    <span className="course__badge course__badge--alt">{meta.duration}</span>
+                    <span className="course__badge">{metaT.level || meta.level}</span>
+                    <span className="course__badge course__badge--alt">{metaT.duration || meta.duration}</span>
                   </div>
                 </div>
                 <div className="course__body">
                   <h3>{item.title || c.title}</h3>
                   <p>{item.text || c.text}</p>
-                  {c.points && (
+                  {(item.points || c.points) && (
                     <ul className="course__points">
-                      {c.points.map((pt) => (
+                      {(item.points || c.points).map((pt) => (
                         <li key={pt}>{pt}</li>
                       ))}
                     </ul>

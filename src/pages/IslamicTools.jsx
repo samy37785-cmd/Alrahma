@@ -4,6 +4,7 @@ import Footer from '../components/layout/Footer';
 import useSEO from '../hooks/useSEO';
 import { getVerse } from '../api/quran';
 import { useLang } from '../context/LangContext';
+import { TOOLS_TEXT, pick } from '../i18n/content';
 
 /* ══════════════════════════════════════════════════════════════════
    CONSTANTS
@@ -20,6 +21,19 @@ const PRAYER_META = {
   Isha:    { ar: 'العشاء',  icon: '⭐', color: '#1a5fa0' },
 };
 
+// Extra informational times the API also returns (Suhoor / Tahajjud etc.)
+const EXTRA_ORDER = ['Imsak', 'Midnight', 'Lastthird'];
+const EXTRA_META = {
+  Imsak:     { ar: 'الإمساك (السحور)',     icon: '🌃', color: '#5a4b8a' },
+  Midnight:  { ar: 'منتصف الليل',          icon: '🌌', color: '#34495e' },
+  Lastthird: { ar: 'الثلث الأخير (قيام)',  icon: '✨', color: '#2c3e50' },
+};
+
+const ASR_SCHOOLS = [
+  { id: 0, ar: 'الجمهور (شافعي/مالكي/حنبلي)', en: 'Standard (Shafii)' },
+  { id: 1, ar: 'الحنفي',                       en: 'Hanafi' },
+];
+
 const CALC_METHODS = [
   { id: 3,  name: 'الهيئة المصرية العامة للمساحة',         en: 'Egyptian Authority' },
   { id: 4,  name: 'أم القرى (مكة المكرمة)',                en: 'Umm Al-Qura, Makkah' },
@@ -27,12 +41,6 @@ const CALC_METHODS = [
   { id: 2,  name: 'جمعية إسلامية لأمريكا الشمالية (ISNA)', en: 'ISNA' },
   { id: 5,  name: 'جامعة العلوم الإسلامية، كراتشي',        en: 'Karachi' },
   { id: 12, name: 'الاتحاد الإسلامي الأوروبي',             en: 'Union of Islamic Orgs. (France)' },
-];
-
-const HIJRI_MONTHS = [
-  'محرم','صفر','ربيع الأول','ربيع الآخر',
-  'جمادى الأولى','جمادى الآخرة','رجب','شعبان',
-  'رمضان','شوال','ذو القعدة','ذو الحجة',
 ];
 
 const DAILY_VERSE_KEYS = [
@@ -45,18 +53,45 @@ const DAILY_VERSE_KEYS = [
    HELPERS
    ══════════════════════════════════════════════════════════════════ */
 function stripParens(t = '') { return t.replace(/\s*\([^)]*\)/g, '').trim(); }
+function to12h(hhmm) {
+  const [h, m] = hhmm.split(':').map(Number);
+  const ap = h < 12 ? 'AM' : 'PM';
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return `${h12}:${String(m).padStart(2, '0')} ${ap}`;
+}
+// Format an API time ("HH:MM" possibly with "(+03)") in 12h or 24h.
+function fmtTime(t, is12) { const s = stripParens(t); return is12 ? to12h(s) : s; }
+// Format the live HH:MM:SS clock in 12h or 24h.
+function fmtClock(hms, is12) {
+  if (!is12 || !hms) return hms;
+  const [h, m, s] = hms.split(':').map(Number);
+  const ap = h < 12 ? 'AM' : 'PM';
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return `${h12}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')} ${ap}`;
+}
 function parseMins(t)        { const [h, m] = stripParens(t).split(':').map(Number); return h * 60 + m; }
 
-function nextPrayerInfo(timings) {
-  const now = new Date();
-  const nowMins = now.getHours() * 60 + now.getMinutes();
+// Seconds elapsed today in a given IANA timezone (falls back to device time).
+function tzNowSecs(tz) {
+  const p = new Intl.DateTimeFormat('en-GB', { timeZone: tz || undefined, hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }).formatToParts(new Date());
+  const g = (t) => Number(p.find((x) => x.type === t)?.value) || 0;
+  return (g('hour') % 24) * 3600 + g('minute') * 60 + g('second');
+}
+
+// Live HH:MM:SS clock string for a timezone.
+function tzClock(tz) {
+  return new Intl.DateTimeFormat('en-GB', { timeZone: tz || undefined, hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }).format(new Date());
+}
+
+// Next upcoming prayer + exact seconds left, computed at `nowSecs` (seconds into the day).
+function nextPrayerInfo(timings, nowSecs = tzNowSecs()) {
   const relevant = PRAYERS_ORDER.filter((p) => p !== 'Sunrise');
   for (const name of relevant) {
-    const pm = parseMins(timings[name]);
-    if (pm > nowMins) return { name, minsLeft: pm - nowMins };
+    const ps = parseMins(timings[name]) * 60;
+    if (ps > nowSecs) return { name, secsLeft: ps - nowSecs };
   }
-  const pm = parseMins(timings.Fajr);
-  return { name: 'Fajr', minsLeft: 1440 - nowMins + pm };
+  const ps = parseMins(timings.Fajr) * 60;
+  return { name: 'Fajr', secsLeft: 86400 - nowSecs + ps };
 }
 
 function formatHMS(totalSecs) {
@@ -103,18 +138,37 @@ function daysUntilHijriEvent(hijri, targetMonth, targetDay) {
   return Math.round(days);
 }
 
-async function fetchPrayerCoords(lat, lng, method) {
+async function fetchPrayerCoords(lat, lng, method, school = 0) {
   const ts = Math.floor(Date.now() / 1000);
-  const r = await fetch(`https://api.aladhan.com/v1/timings/${ts}?latitude=${lat}&longitude=${lng}&method=${method}`);
+  const r = await fetch(`https://api.aladhan.com/v1/timings/${ts}?latitude=${lat}&longitude=${lng}&method=${method}&school=${school}`);
   if (!r.ok) throw new Error('API');
   return (await r.json()).data;
 }
 
-async function fetchPrayerCity(city, method) {
-  const r = await fetch(`https://api.aladhan.com/v1/timingsByCity?city=${encodeURIComponent(city)}&method=${method}`);
+async function fetchPrayerCity(city, method, school = 0) {
+  // Use timingsByAddress — accepts a free-form place ("Cairo", "London, UK")
+  // and geocodes it. (timingsByCity now requires an explicit country.)
+  const r = await fetch(`https://api.aladhan.com/v1/timingsByAddress?address=${encodeURIComponent(city)}&method=${method}&school=${school}`);
   if (!r.ok) throw new Error('city');
   const j = await r.json();
-  if (j.code !== 200) throw new Error('city');
+  if (j.code !== 200 || !j.data?.timings) throw new Error('city');
+  return j.data;
+}
+
+// Full-month timetable. Uses calendarByAddress when we only have a place name,
+// otherwise calendar by coordinates. Returns an array of day objects.
+async function fetchMonth({ city, lat, lng }, method, school, month, year) {
+  const base = city
+    ? `https://api.aladhan.com/v1/calendarByAddress?address=${encodeURIComponent(city)}`
+    : `https://api.aladhan.com/v1/calendar/${year}/${month}?latitude=${lat}&longitude=${lng}`;
+  const sep = city ? '&' : '&';
+  const url = city
+    ? `${base}&method=${method}&school=${school}&month=${month}&year=${year}`
+    : `${base}${sep}method=${method}&school=${school}`;
+  const r = await fetch(url);
+  if (!r.ok) throw new Error('month');
+  const j = await r.json();
+  if (j.code !== 200 || !Array.isArray(j.data)) throw new Error('month');
   return j.data;
 }
 
@@ -157,10 +211,12 @@ function QiblaCompass({ bearing, deviceHeading }) {
    MAIN PAGE
    ══════════════════════════════════════════════════════════════════ */
 export default function IslamicTools() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
+  const tx = pick(TOOLS_TEXT, lang);
+  const isAr = lang === 'ar';
   useSEO({
-    title: 'الأدوات الإسلامية — Al-Rahma Academy',
-    description: 'مواقيت الصلاة، القبلة، التقويم الهجري، حديث اليوم، آية اليوم.',
+    title: `${t.islamicTools.heading} — Al-Rahma Academy`,
+    description: tx.eyebrow,
   });
 
   const [tab, setTab] = useState('prayer');
@@ -169,17 +225,25 @@ export default function IslamicTools() {
   const [coords,       setCoords]       = useState(null);
   const [cityInput,    setCityInput]     = useState('');
   const [method,       setMethod]        = useState(3);
+  const [school,       setSchool]        = useState(0);
+  const [clock12,      setClock12]       = useState(false);
   const [prayerData,   setPrayerData]    = useState(null);
   const [loading,      setLoading]       = useState(true);
   const [error,        setError]         = useState('');
   const [locationName, setLocationName]  = useState('');
   const [nextPrayer,   setNextPrayer]    = useState(null);
   const [secsLeft,     setSecsLeft]      = useState(0);
+  const [clock,        setClock]         = useState('');
   const [notifyMins,   setNotifyMins]    = useState(10);
   const [notifyOn,     setNotifyOn]      = useState(false);
   const [notifyPerms,  setNotifyPerms]   = useState('default');
   const timerRef = useRef(null);
   const notifyRef = useRef([]);
+
+  /* ── Monthly timetable ──────────────────────────────────────── */
+  const [monthData,  setMonthData]  = useState(null);
+  const [monthOpen,  setMonthOpen]  = useState(false);
+  const [monthLoad,  setMonthLoad]  = useState(false);
 
   /* ── Qibla ──────────────────────────────────────────────────── */
   const [bearing,       setBearing]      = useState(null);
@@ -220,7 +284,7 @@ export default function IslamicTools() {
       async ({ coords: c }) => {
         try {
           setCoords({ lat: c.latitude, lng: c.longitude });
-          const data = await fetchPrayerCoords(c.latitude, c.longitude, method);
+          const data = await fetchPrayerCoords(c.latitude, c.longitude, method, school);
           apply(data);
           setBearing(qiblaBearing(c.latitude, c.longitude));
           setDistance(qiblaDistance(c.latitude, c.longitude));
@@ -231,15 +295,16 @@ export default function IslamicTools() {
     );
   }, []); // eslint-disable-line
 
-  /* ── Re-fetch when method changes ──────────────────────────── */
+  /* ── Re-fetch when method or Asr school changes ────────────── */
   useEffect(() => {
     if (!coords && !prayerData) return;
     setLoading(true);
+    setMonthData(null); // invalidate cached month table
     const fn = coords
-      ? fetchPrayerCoords(coords.lat, coords.lng, method)
-      : fetchPrayerCity(locationName, method);
-    fn.then(apply).catch(() => { setError('تعذر إعادة الجلب.'); setLoading(false); });
-  }, [method]); // eslint-disable-line
+      ? fetchPrayerCoords(coords.lat, coords.lng, method, school)
+      : fetchPrayerCity(locationName, method, school);
+    fn.then((d) => apply(d, locationName)).catch(() => { setError(tx.errRefetch); setLoading(false); });
+  }, [method, school]); // eslint-disable-line
 
   /* ── City search ────────────────────────────────────────────── */
   const searchCity = async (e) => {
@@ -247,22 +312,52 @@ export default function IslamicTools() {
     if (!cityInput.trim()) return;
     setLoading(true); setError('');
     try {
-      const data = await fetchPrayerCity(cityInput.trim(), method);
+      const data = await fetchPrayerCity(cityInput.trim(), method, school);
+      setMonthData(null);
+      // Derive coordinates from the API response so Qibla + method re-fetch work for the searched city.
+      const lat = Number(data.meta?.latitude);
+      const lng = Number(data.meta?.longitude);
       apply(data, cityInput.trim());
-      setCoords(null);
-      setBearing(null); setDistance(null);
-    } catch { setError('المدينة غير موجودة. استخدم الاسم بالإنجليزية.'); setLoading(false); }
+      if (Number.isFinite(lat) && Number.isFinite(lng)) {
+        setCoords({ lat, lng });
+        setBearing(qiblaBearing(lat, lng));
+        setDistance(qiblaDistance(lat, lng));
+      } else {
+        setCoords(null);
+        setBearing(null); setDistance(null);
+      }
+    } catch { setError(tx.errCity); setLoading(false); }
   };
 
-  /* ── Countdown every second ─────────────────────────────────── */
+  /* ── Monthly timetable (lazy) ───────────────────────────────── */
+  const toggleMonth = async () => {
+    if (monthOpen) { setMonthOpen(false); return; }
+    setMonthOpen(true);
+    if (monthData || (!coords && !locationName)) return;
+    setMonthLoad(true);
+    try {
+      const now = new Date();
+      const loc = coords ? { lat: coords.lat, lng: coords.lng } : { city: locationName };
+      const data = await fetchMonth(loc, method, school, now.getMonth() + 1, now.getFullYear());
+      setMonthData(data);
+    } catch { /* keep silent — button stays available to retry */ }
+    finally { setMonthLoad(false); }
+  };
+
+  /* ── Live clock + countdown every second (in the location's timezone) ── */
   useEffect(() => {
     if (!prayerData) return;
-    clearInterval(timerRef.current);
-    timerRef.current = setInterval(() => {
-      const np = nextPrayerInfo(prayerData.timings);
+    const tz = prayerData.meta?.timezone;
+    const tick = () => {
+      const nowSecs = tzNowSecs(tz);
+      const np = nextPrayerInfo(prayerData.timings, nowSecs);
       setNextPrayer(np);
-      setSecsLeft(np.minsLeft * 60 - new Date().getSeconds());
-    }, 1000);
+      setSecsLeft(np.secsLeft);
+      setClock(tzClock(tz));
+    };
+    tick(); // run immediately so there's no 1s flash
+    clearInterval(timerRef.current);
+    timerRef.current = setInterval(tick, 1000);
     return () => clearInterval(timerRef.current);
   }, [prayerData]);
 
@@ -338,12 +433,12 @@ export default function IslamicTools() {
         {/* ── Hero ─────────────────────────────────────────── */}
         <section className="it__hero">
           <div className="container it__hero-inner">
-            <p className="eyebrow">أدوات إسلامية</p>
+            <p className="eyebrow">{tx.eyebrow}</p>
             <h1>{t.islamicTools.heading}</h1>
             {hijri && (
               <div className="it__hijri">
-                <span className="it__hijri-ar" dir="rtl">
-                  {hijri.day} {hijri.month.ar} {hijri.year} هـ
+                <span className="it__hijri-ar" dir={isAr ? 'rtl' : 'ltr'}>
+                  {hijri.day} {isAr ? hijri.month.ar : (tx.cal.months[parseInt(hijri.month.number) - 1] || hijri.month.en)} {hijri.year} {isAr ? 'هـ' : 'AH'}
                 </span>
                 <span className="it__hijri-sep">·</span>
                 <span className="it__hijri-en">{greg?.date}</span>
@@ -356,17 +451,17 @@ export default function IslamicTools() {
         <div className="it__tabs-bar">
           <div className="container it__tabs">
             {[
-              { key: 'prayer',   icon: '🕌', ar: 'مواقيت الصلاة' },
-              { key: 'qibla',    icon: '🧭', ar: 'القبلة' },
-              { key: 'calendar', icon: '📅', ar: 'التقويم الإسلامي' },
-              { key: 'verse',    icon: '🌟', ar: 'آية اليوم' },
-            ].map((t) => (
+              { key: 'prayer',   icon: '🕌' },
+              { key: 'qibla',    icon: '🧭' },
+              { key: 'calendar', icon: '📅' },
+              { key: 'verse',    icon: '🌟' },
+            ].map((tb) => (
               <button
-                key={t.key}
-                className={`it__tab${tab === t.key ? ' active' : ''}`}
-                onClick={() => setTab(t.key)}
+                key={tb.key}
+                className={`it__tab${tab === tb.key ? ' active' : ''}`}
+                onClick={() => setTab(tb.key)}
               >
-                <span>{t.icon}</span> {t.ar}
+                <span>{tb.icon}</span> {tx.tabs[tb.key]}
               </button>
             ))}
           </div>
@@ -383,20 +478,37 @@ export default function IslamicTools() {
               {/* Controls bar */}
               <div className="it__controls">
                 <div className="it__control-item">
-                  <label className="it__ctrl-lbl">⚙ طريقة الحساب</label>
+                  <label className="it__ctrl-lbl">{tx.calcMethod}</label>
                   <select className="it__ctrl-sel" value={method} onChange={(e) => setMethod(Number(e.target.value))}>
                     {CALC_METHODS.map((m) => (
-                      <option key={m.id} value={m.id}>{m.name}</option>
+                      <option key={m.id} value={m.id}>{isAr ? m.name : m.en}</option>
                     ))}
                   </select>
                 </div>
 
                 <div className="it__control-item">
-                  <label className="it__ctrl-lbl">🔔 تنبيه الصلاة</label>
+                  <label className="it__ctrl-lbl">{tx.asrSchool}</label>
+                  <select className="it__ctrl-sel" value={school} onChange={(e) => setSchool(Number(e.target.value))}>
+                    {ASR_SCHOOLS.map((s, i) => (
+                      <option key={s.id} value={s.id}>{tx.asrSchools[i]}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="it__control-item">
+                  <label className="it__ctrl-lbl">{tx.timeFormat}</label>
+                  <div className="it__fmt-toggle">
+                    <button className={`it__fmt-btn${!clock12 ? ' active' : ''}`} onClick={() => setClock12(false)}>24</button>
+                    <button className={`it__fmt-btn${clock12 ? ' active' : ''}`} onClick={() => setClock12(true)}>12</button>
+                  </div>
+                </div>
+
+                <div className="it__control-item">
+                  <label className="it__ctrl-lbl">{tx.notify}</label>
                   <div className="it__notify-row">
                     {notifyPerms !== 'granted' ? (
                       <button className="it__notify-btn" onClick={requestNotify}>
-                        تفعيل التنبيهات
+                        {tx.enableNotify}
                       </button>
                     ) : (
                       <>
@@ -410,7 +522,7 @@ export default function IslamicTools() {
                           <select className="it__ctrl-sel it__ctrl-sel--sm" value={notifyMins}
                             onChange={(e) => setNotifyMins(Number(e.target.value))}>
                             {[5,10,15,20,30].map((n) => (
-                              <option key={n} value={n}>قبل {n} دقيقة</option>
+                              <option key={n} value={n}>{tx.before} {n} {tx.minute}</option>
                             ))}
                           </select>
                         )}
@@ -420,15 +532,15 @@ export default function IslamicTools() {
                 </div>
 
                 <form className="it__city-form it__control-item" onSubmit={searchCity}>
-                  <label className="it__ctrl-lbl">📍 تغيير المدينة</label>
+                  <label className="it__ctrl-lbl">{tx.changeCity}</label>
                   <div className="it__city-row">
                     <input
                       className="it__city-input"
                       value={cityInput}
                       onChange={(e) => setCityInput(e.target.value)}
-                      placeholder="e.g. Cairo, London, Paris…"
+                      placeholder={tx.cityPlaceholder}
                     />
-                    <button className="it__city-btn" type="submit">بحث</button>
+                    <button className="it__city-btn" type="submit">{tx.search}</button>
                   </div>
                   {error && <p className="it__err">{error}</p>}
                 </form>
@@ -438,14 +550,15 @@ export default function IslamicTools() {
               {nextPrayer && prayerData && (
                 <div className="it__next-banner" style={{ '--c': PRAYER_META[nextPrayer.name]?.color }}>
                   <div className="it__next-left">
-                    <p className="it__next-lbl">الصلاة القادمة</p>
-                    <p className="it__next-name" dir="rtl">
-                      {PRAYER_META[nextPrayer.name]?.icon} {PRAYER_META[nextPrayer.name]?.ar}
+                    <p className="it__next-lbl">{tx.nextPrayerLbl}</p>
+                    <p className="it__next-name" dir={isAr ? 'rtl' : 'ltr'}>
+                      {PRAYER_META[nextPrayer.name]?.icon} {tx.prayers[nextPrayer.name]}
                     </p>
-                    <p className="it__next-time">{stripParens(prayerData.timings[nextPrayer.name])}</p>
+                    <p className="it__next-time">{fmtTime(prayerData.timings[nextPrayer.name], clock12)}</p>
                   </div>
                   <div className="it__next-right">
-                    <p className="it__next-cd-lbl">الوقت المتبقي</p>
+                    {clock && <p className="it__next-clock" dir="ltr">🕐 {fmtClock(clock, clock12)}</p>}
+                    <p className="it__next-cd-lbl">{tx.timeRemaining}</p>
                     <p className="it__next-cd">{formatHMS(Math.max(0, secsLeft))}</p>
                     {locationName && <p className="it__next-loc">📍 {locationName}</p>}
                   </div>
@@ -456,7 +569,7 @@ export default function IslamicTools() {
 
               {!loading && !prayerData && (
                 <div className="it__empty">
-                  <p>🔒 لم يُسمح بالموقع. ابحث عن مدينتك أعلاه.</p>
+                  <p>{tx.noLocation}</p>
                 </div>
               )}
 
@@ -472,15 +585,71 @@ export default function IslamicTools() {
                           {PRAYER_META[name].icon}
                         </span>
                         <div className="it__pi-names">
-                          <span className="it__pi-ar" dir="rtl">{PRAYER_META[name].ar}</span>
-                          <span className="it__pi-en">{name}</span>
+                          <span className="it__pi-ar" dir={isAr ? 'rtl' : 'ltr'}>{tx.prayers[name]}</span>
+                          <span className="it__pi-en">{isAr ? name : (PRAYER_META[name].ar)}</span>
                         </div>
-                        <span className="it__pi-time">{stripParens(prayerData.timings[name])}</span>
-                        {isNext && <span className="it__pi-badge">قادمة ⟵</span>}
+                        <span className="it__pi-time">{fmtTime(prayerData.timings[name], clock12)}</span>
+                        {isNext && <span className="it__pi-badge">{tx.upcoming}</span>}
                       </li>
                     );
                   })}
                 </ul>
+              )}
+
+              {/* Extra times: Suhoor / Midnight / Last third (Qiyam) */}
+              {!loading && prayerData && (
+                <div className="it__extra-times">
+                  {EXTRA_ORDER.map((name) => (
+                    <div key={name} className="it__extra-card" style={{ '--c': EXTRA_META[name].color }}>
+                      <span className="it__extra-icon">{EXTRA_META[name].icon}</span>
+                      <span className="it__extra-ar" dir={isAr ? 'rtl' : 'ltr'}>{tx.extras[name]}</span>
+                      <span className="it__extra-time">{fmtTime(prayerData.timings[name], clock12)}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Monthly timetable */}
+              {!loading && prayerData && (
+                <div className="it__month">
+                  <button className="it__month-toggle" onClick={toggleMonth}>
+                    {monthOpen ? tx.monthHide : tx.monthShow}
+                  </button>
+
+                  {monthOpen && monthLoad && <div className="it__spin"><div className="it__spinner" /></div>}
+
+                  {monthOpen && monthData && (
+                    <div className="it__month-wrap">
+                      <table className="it__month-table">
+                        <thead>
+                          <tr>
+                            <th>{tx.cols.date}</th><th>{tx.cols.Fajr}</th><th>{tx.cols.Sunrise}</th><th>{tx.cols.Dhuhr}</th>
+                            <th>{tx.cols.Asr}</th><th>{tx.cols.Maghrib}</th><th>{tx.cols.Isha}</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {monthData.map((d) => {
+                            const isToday = greg?.date && d.date?.gregorian?.date === greg.date;
+                            return (
+                              <tr key={d.date.gregorian.date} className={isToday ? 'it__month-today' : ''}>
+                                <td className="it__month-date">
+                                  <strong>{d.date.gregorian.day}</strong>
+                                  <span dir={isAr ? 'rtl' : 'ltr'}>{d.date.hijri.day} {isAr ? d.date.hijri.month.ar : (tx.cal.months[parseInt(d.date.hijri.month.number) - 1] || d.date.hijri.month.en)}</span>
+                                </td>
+                                <td>{fmtTime(d.timings.Fajr, clock12)}</td>
+                                <td>{fmtTime(d.timings.Sunrise, clock12)}</td>
+                                <td>{fmtTime(d.timings.Dhuhr, clock12)}</td>
+                                <td>{fmtTime(d.timings.Asr, clock12)}</td>
+                                <td>{fmtTime(d.timings.Maghrib, clock12)}</td>
+                                <td>{fmtTime(d.timings.Isha, clock12)}</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
               )}
             </div>
           )}
@@ -491,7 +660,7 @@ export default function IslamicTools() {
           {tab === 'qibla' && (
             <div className="it__qibla-page">
               <div className="it__qibla-card">
-                <h2 className="it__qibla-title">🕋 اتجاه القبلة</h2>
+                <h2 className="it__qibla-title">{tx.qibla.title}</h2>
 
                 {bearing !== null ? (
                   <>
@@ -500,42 +669,38 @@ export default function IslamicTools() {
                     <div className="it__qibla-info">
                       <div className="it__qibla-stat">
                         <span className="it__qs-val">{Math.round(bearing)}°</span>
-                        <span className="it__qs-lbl">الاتجاه من الشمال</span>
+                        <span className="it__qs-lbl">{tx.qibla.fromNorth}</span>
                       </div>
                       {distance && (
                         <div className="it__qibla-stat">
                           <span className="it__qs-val">{distance.toLocaleString()} km</span>
-                          <span className="it__qs-lbl">المسافة إلى مكة</span>
+                          <span className="it__qs-lbl">{tx.qibla.distance}</span>
                         </div>
                       )}
                     </div>
 
                     {!compassPerm && (
                       <button className="it__compass-btn" onClick={startCompass}>
-                        🧭 تفعيل البوصلة الحية (للهاتف)
+                        {tx.qibla.enableCompass}
                       </button>
                     )}
                     {compassPerm && (
-                      <p className="it__compass-live">✅ البوصلة الحية مفعّلة — وجّه هاتفك ↑</p>
+                      <p className="it__compass-live">{tx.qibla.compassLive}</p>
                     )}
                   </>
                 ) : (
                   <div className="it__qibla-no-loc">
-                    <p>📍 يجب السماح بالموقع من تبويب "مواقيت الصلاة" أولاً</p>
+                    <p>{tx.qibla.allowFirst}</p>
                     <button className="it__tab-link" onClick={() => setTab('prayer')}>
-                      الذهاب لمواقيت الصلاة ←
+                      {tx.qibla.goToPrayer}
                     </button>
                   </div>
                 )}
 
                 {/* Kaaba info */}
                 <div className="it__kaaba-info">
-                  <h3>🕌 الكعبة المشرفة</h3>
-                  <p dir="rtl">
-                    الكعبة المشرفة هي أول بيت وُضع للناس، تقع في مدينة مكة المكرمة بالمملكة العربية السعودية.
-                    إليها يتوجه المسلمون في جميع أنحاء العالم أثناء الصلاة.
-                    إحداثياتها: {MECCA.lat}° شمالاً، {MECCA.lng}° شرقاً.
-                  </p>
+                  <h3>{tx.qibla.kaabaTitle}</h3>
+                  <p dir={isAr ? 'rtl' : 'ltr'}>{tx.qibla.kaabaText}</p>
                 </div>
               </div>
             </div>
@@ -551,53 +716,51 @@ export default function IslamicTools() {
               <div className="it__cal-hero">
                 {hijri ? (
                   <>
-                    <p className="it__cal-hijri-date" dir="rtl">
-                      {hijri.weekday.ar} {hijri.day} {hijri.month.ar} {hijri.year} هـ
+                    <p className="it__cal-hijri-date" dir={isAr ? 'rtl' : 'ltr'}>
+                      {isAr ? hijri.weekday.ar : hijri.weekday.en} {hijri.day} {isAr ? hijri.month.ar : (tx.cal.months[parseInt(hijri.month.number) - 1] || hijri.month.en)} {hijri.year} {isAr ? 'هـ' : 'AH'}
                     </p>
                     <p className="it__cal-greg">{greg?.weekday?.en}, {greg?.date}</p>
-                    <p className="it__cal-month-name">شهر {hijri.month.ar}</p>
+                    <p className="it__cal-month-name">{tx.cal.monthWord} {isAr ? hijri.month.ar : (tx.cal.months[parseInt(hijri.month.number) - 1] || hijri.month.en)}</p>
                   </>
                 ) : (
-                  <p className="it__cal-no-data">
-                    ابحث عن مدينتك في تبويب "مواقيت الصلاة" لتحديد التاريخ الهجري
-                  </p>
+                  <p className="it__cal-no-data">{tx.cal.setDate}</p>
                 )}
               </div>
 
               {/* Islamic occasions countdowns */}
               {hijri && (
                 <div className="it__occasions">
-                  <h2>المناسبات الإسلامية القادمة</h2>
+                  <h2>{tx.cal.upcoming}</h2>
                   <div className="it__occasions-grid">
 
                     <div className="it__occasion it__occasion--ramadan">
                       <span className="it__oc-icon">🌙</span>
-                      <span className="it__oc-name">شهر رمضان المبارك</span>
-                      <span className="it__oc-days">{daysToRamadan === 0 ? 'اليوم 🎉' : `${daysToRamadan} يوماً`}</span>
-                      <span className="it__oc-lbl">1 رمضان {parseInt(hijri.year) + (daysToRamadan > 300 ? 1 : 0)} هـ</span>
+                      <span className="it__oc-name">{tx.cal.ramadan}</span>
+                      <span className="it__oc-days">{daysToRamadan === 0 ? tx.cal.today : `${daysToRamadan} ${tx.cal.days}`}</span>
+                      <span className="it__oc-lbl">{isAr ? `1 رمضان ${parseInt(hijri.year) + (daysToRamadan > 300 ? 1 : 0)} هـ` : `1 Ramadan ${parseInt(hijri.year) + (daysToRamadan > 300 ? 1 : 0)} AH`}</span>
                     </div>
 
                     <div className="it__occasion it__occasion--eid1">
                       <span className="it__oc-icon">🎉</span>
-                      <span className="it__oc-name">عيد الفطر المبارك</span>
-                      <span className="it__oc-days">{daysToEidFitr === 0 ? 'اليوم 🎊' : `${daysToEidFitr} يوماً`}</span>
-                      <span className="it__oc-lbl">1 شوال {parseInt(hijri.year) + (daysToEidFitr > 300 ? 1 : 0)} هـ</span>
+                      <span className="it__oc-name">{tx.cal.eidFitr}</span>
+                      <span className="it__oc-days">{daysToEidFitr === 0 ? tx.cal.today : `${daysToEidFitr} ${tx.cal.days}`}</span>
+                      <span className="it__oc-lbl">{isAr ? `1 شوال ${parseInt(hijri.year) + (daysToEidFitr > 300 ? 1 : 0)} هـ` : `1 Shawwal ${parseInt(hijri.year) + (daysToEidFitr > 300 ? 1 : 0)} AH`}</span>
                     </div>
 
                     <div className="it__occasion it__occasion--eid2">
                       <span className="it__oc-icon">🐑</span>
-                      <span className="it__oc-name">عيد الأضحى المبارك</span>
-                      <span className="it__oc-days">{daysToEidAdha === 0 ? 'اليوم 🐑' : `${daysToEidAdha} يوماً`}</span>
-                      <span className="it__oc-lbl">10 ذو الحجة {parseInt(hijri.year) + (daysToEidAdha > 300 ? 1 : 0)} هـ</span>
+                      <span className="it__oc-name">{tx.cal.eidAdha}</span>
+                      <span className="it__oc-days">{daysToEidAdha === 0 ? tx.cal.today : `${daysToEidAdha} ${tx.cal.days}`}</span>
+                      <span className="it__oc-lbl">{isAr ? `10 ذو الحجة ${parseInt(hijri.year) + (daysToEidAdha > 300 ? 1 : 0)} هـ` : `10 Dhu al-Hijjah ${parseInt(hijri.year) + (daysToEidAdha > 300 ? 1 : 0)} AH`}</span>
                     </div>
 
                   </div>
 
                   {/* Islamic month names reference */}
                   <div className="it__months-ref">
-                    <h3>الأشهر الهجرية</h3>
+                    <h3>{tx.cal.monthsTitle}</h3>
                     <div className="it__months-grid">
-                      {HIJRI_MONTHS.map((m, i) => (
+                      {tx.cal.months.map((m, i) => (
                         <div
                           key={i}
                           className={`it__month-chip${parseInt(hijri.month.number) === i + 1 ? ' current' : ''}`}
@@ -620,7 +783,7 @@ export default function IslamicTools() {
             <div className="it__verse-page">
               <div className="it__verse-card">
                 <div className="it__verse-head">
-                  <h2>🌟 آية اليوم</h2>
+                  <h2>{tx.verse.title}</h2>
                   <span className="it__verse-key-badge">{verseKey}</span>
                 </div>
                 {verse ? (
@@ -634,7 +797,7 @@ export default function IslamicTools() {
                         {verse.translations[0].text?.replace(/<[^>]+>/g, '').replace(/&amp;/g, '&')}
                       </p>
                     )}
-                    <p className="it__verse-ref" dir="rtl">سورة {verseKey.split(':')[0]}, الآية {verseKey.split(':')[1]}</p>
+                    <p className="it__verse-ref" dir={isAr ? 'rtl' : 'ltr'}>{tx.verse.ref} {verseKey.split(':')[0]} : {verseKey.split(':')[1]}</p>
                   </>
                 ) : (
                   <div className="it__spin"><div className="it__spinner" /></div>

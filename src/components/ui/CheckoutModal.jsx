@@ -1,18 +1,24 @@
 import { useState, useEffect } from 'react';
 import { startPaymobPayment, startPaypalPayment, getManualMethods, submitManualPayment } from '../../api/client';
+import { useLang } from '../../context/LangContext';
+import { PLAN_TEXT, CHECKOUT_SUBS, pick } from '../../i18n/content';
+import { plans } from '../../data';
 
-// Gateway methods (handled via API)
+// Gateway methods (handled via API). `subKey` resolves a translated subtitle from t.checkout.methods.
 const GATEWAY_METHODS = [
-  { id: 'card',      group: 'card',   label: 'Visa / Mastercard', sub: 'Secure card payment',   icon: '💳' },
-  { id: 'vodafone',  group: 'wallet', label: 'Vodafone Cash',     sub: 'المحافظ الإلكترونية',   icon: '📱' },
-  { id: 'fawry',     group: 'wallet', label: 'Fawry',             sub: 'فوري',                  icon: '🏪' },
-  { id: 'instapay',  group: 'wallet', label: 'InstaPay',          sub: 'إنستا باي',             icon: '⚡' },
-  { id: 'paypal',    group: 'intl',   label: 'PayPal',            sub: 'For international students', icon: '🌍' },
+  { id: 'card',      group: 'card',   label: 'Visa / Mastercard', subKey: 'cardSub',   icon: '💳' },
+  { id: 'vodafone',  group: 'wallet', label: 'Vodafone Cash',     subKey: 'wallets',   icon: '📱' },
+  { id: 'fawry',     group: 'wallet', label: 'Fawry',             subKey: 'fawry',     icon: '🏪' },
+  { id: 'instapay',  group: 'wallet', label: 'InstaPay',          subKey: 'instapay',  icon: '⚡' },
+  { id: 'paypal',    group: 'intl',   label: 'PayPal',            subKey: 'intlSub',   icon: '🌍' },
 ];
 
 const amountOf = (price = '') => price.replace(/[^\d.]/g, '');
 
 export default function CheckoutModal({ plan, onClose }) {
+  const { t, lang } = useLang();
+  const c = t.checkout;
+  const subs = pick(CHECKOUT_SUBS, lang);
   const [method, setMethod]         = useState('card');
   const [manualMethods, setManual]  = useState([]);
   const [customer, setCustomer]     = useState({ name: '', email: '', phone: '' });
@@ -29,6 +35,8 @@ export default function CheckoutModal({ plan, onClose }) {
 
   if (!plan) return null;
 
+  const planIdx     = plans.findIndex((p) => p.name === plan.name);
+  const planName    = pick(PLAN_TEXT, lang)[planIdx]?.name || plan.name;
   const amount      = amountOf(plan.price);
   const isGateway   = GATEWAY_METHODS.some((m) => m.id === method);
   const isManual    = !isGateway;
@@ -61,7 +69,7 @@ export default function CheckoutModal({ plan, onClose }) {
     setError(''); setLoading(true);
     try {
       await submitManualPayment({ plan: plan.name, method, customer, reference });
-      setSuccess('✅ Payment request received! We will verify and activate your plan within 24 hours. Check your email for confirmation.');
+      setSuccess(c.successMsg);
     } catch (err) {
       setError(err.response?.data?.message || err.message || 'Submission failed.');
     } finally {
@@ -76,20 +84,20 @@ export default function CheckoutModal({ plan, onClose }) {
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
-        aria-label="Secure checkout"
+        aria-label={c.secureCheckout}
       >
-        <button className="modal__close" onClick={onClose} aria-label="Close">×</button>
+        <button className="modal__close" onClick={onClose} aria-label={c.close}>×</button>
 
         {/* Header */}
         <div className="checkout__head">
-          <p className="checkout__lock">🔒 Secure Checkout</p>
-          <h3 className="modal__title">{plan.name} Plan</h3>
+          <p className="checkout__lock">{c.secureCheckout}</p>
+          <h3 className="modal__title">{planName} {c.planSuffix}</h3>
           <p className="checkout__price">
             {plan.originalPrice && <s className="checkout__orig">{plan.originalPrice}</s>}
-            <span>{plan.price}</span> / month
+            <span>{plan.price}</span> {c.perMonth}
           </p>
           {plan.discountPct && (
-            <span className="checkout__discount-pill">{plan.discountPct}% OFF applied</span>
+            <span className="checkout__discount-pill">{plan.discountPct}{c.offApplied}</span>
           )}
         </div>
 
@@ -97,29 +105,29 @@ export default function CheckoutModal({ plan, onClose }) {
         {success ? (
           <div className="checkout__success">
             <p>{success}</p>
-            <button type="button" className="btn btn--green btn--block" onClick={onClose}>Close</button>
+            <button type="button" className="btn btn--green btn--block" onClick={onClose}>{c.close}</button>
           </div>
         ) : iframeUrl ? (
           <div className="checkout__iframe-wrap">
-            <iframe title="Secure card payment" src={iframeUrl} className="checkout__iframe" />
+            <iframe title={c.secureCheckout} src={iframeUrl} className="checkout__iframe" />
             <button type="button" className="btn btn--ghost btn--block" onClick={() => setIframeUrl('')}>
-              ← Back to payment options
+              {c.backToOptions}
             </button>
           </div>
         ) : (
           <form onSubmit={isManual ? handleManualSubmit : handleGatewaySubmit}>
             {/* Customer info */}
             <div className="checkout__field">
-              <label htmlFor="ck-name">Full Name</label>
+              <label htmlFor="ck-name">{c.fullName}</label>
               <input id="ck-name" value={customer.name} onChange={onField('name')} required />
             </div>
             <div className="checkout__row">
               <div className="checkout__field">
-                <label htmlFor="ck-email">Email</label>
+                <label htmlFor="ck-email">{c.email}</label>
                 <input id="ck-email" type="email" value={customer.email} onChange={onField('email')} required />
               </div>
               <div className="checkout__field">
-                <label htmlFor="ck-phone">Mobile {needsPhone ? '' : <small>(optional)</small>}</label>
+                <label htmlFor="ck-phone">{c.mobile} {needsPhone ? '' : <small>({c.optional})</small>}</label>
                 <input
                   id="ck-phone" inputMode="tel" placeholder="01xxxxxxxxx"
                   value={customer.phone} onChange={onField('phone')} required={needsPhone}
@@ -128,30 +136,30 @@ export default function CheckoutModal({ plan, onClose }) {
             </div>
 
             {/* ── Gateway methods ── */}
-            <p className="checkout__group-title">💳 Card Payment</p>
+            <p className="checkout__group-title">{c.cardPayment}</p>
             {GATEWAY_METHODS.filter((m) => m.group === 'card').map((m) => (
-              <MethodRow key={m.id} m={m} method={method} setMethod={setMethod} />
+              <MethodRow key={m.id} m={m} method={method} setMethod={setMethod} subs={subs} />
             ))}
 
-            <p className="checkout__group-title">📱 Digital Wallets</p>
+            <p className="checkout__group-title">{c.digitalWallets}</p>
             <div className="checkout__wallets">
               {GATEWAY_METHODS.filter((m) => m.group === 'wallet').map((m) => (
-                <MethodRow key={m.id} m={m} method={method} setMethod={setMethod} />
+                <MethodRow key={m.id} m={m} method={method} setMethod={setMethod} subs={subs} />
               ))}
             </div>
 
-            <p className="checkout__group-title">🌍 International — Online</p>
+            <p className="checkout__group-title">{c.international}</p>
             {GATEWAY_METHODS.filter((m) => m.group === 'intl').map((m) => (
-              <MethodRow key={m.id} m={m} method={method} setMethod={setMethod} />
+              <MethodRow key={m.id} m={m} method={method} setMethod={setMethod} subs={subs} />
             ))}
 
             {/* ── Manual / transfer methods ── */}
             {manualMethods.length > 0 && (
               <>
-                <p className="checkout__group-title">🏦 Manual Bank &amp; Transfer</p>
+                <p className="checkout__group-title">{c.manualBank}</p>
                 <div className="checkout__wallets">
                   {manualMethods.map((m) => (
-                    <MethodRow key={m.id} m={m} method={method} setMethod={setMethod} />
+                    <MethodRow key={m.id} m={m} method={method} setMethod={setMethod} subs={subs} />
                   ))}
                 </div>
               </>
@@ -160,7 +168,7 @@ export default function CheckoutModal({ plan, onClose }) {
             {/* ── Manual method: show account details + reference field ── */}
             {isManual && manualDef && (
               <div className="checkout__manual-box">
-                <p className="checkout__manual-title">Transfer details</p>
+                <p className="checkout__manual-title">{c.transferDetails}</p>
                 <ul className="checkout__manual-fields">
                   {manualDef.fields.filter((f) => f.value).map((f) => (
                     <li key={f.label}>
@@ -171,10 +179,10 @@ export default function CheckoutModal({ plan, onClose }) {
                 </ul>
                 <p className="checkout__manual-instr">{manualDef.instructions}</p>
                 <div className="checkout__field" style={{ marginTop: 12 }}>
-                  <label htmlFor="ck-ref">Reference / Confirmation Number</label>
+                  <label htmlFor="ck-ref">{c.reference}</label>
                   <input
                     id="ck-ref"
-                    placeholder="e.g. MTCN, transaction ID, transfer ref…"
+                    placeholder={c.refPlaceholder}
                     value={reference}
                     onChange={(e) => setReference(e.target.value)}
                     required
@@ -191,15 +199,13 @@ export default function CheckoutModal({ plan, onClose }) {
               disabled={loading}
             >
               {loading
-                ? 'Processing…'
+                ? c.processing
                 : isManual
-                  ? `Submit Payment Request — €${amount}`
-                  : `Complete Payment — €${amount}`}
+                  ? `${c.submitRequest} — €${amount}`
+                  : `${c.completePayment} — €${amount}`}
             </button>
             <p className="checkout__secure-note">
-              🔒 {isManual
-                ? 'We will verify your transfer within 24 hours and activate your plan.'
-                : 'Card details are entered on the gateway\'s secure page. Cancel anytime.'}
+              🔒 {isManual ? c.verifyNote : c.secureNote}
             </p>
           </form>
         )}
@@ -208,7 +214,9 @@ export default function CheckoutModal({ plan, onClose }) {
   );
 }
 
-function MethodRow({ m, method, setMethod }) {
+function MethodRow({ m, method, setMethod, subs }) {
+  // m.sub = manual-method subtitle (from API); m.subKey = translated gateway subtitle key
+  const sub = m.sub || (m.subKey ? subs[m.subKey] : '');
   return (
     <label
       className={`checkout__method ${method === m.id ? 'is-active' : ''}`}
@@ -218,7 +226,7 @@ function MethodRow({ m, method, setMethod }) {
       <span className="checkout__wallet-icon">{m.icon}</span>
       <span className="checkout__method-label">
         <strong>{m.label}</strong>
-        <small>{m.sub}</small>
+        <small>{sub}</small>
       </span>
     </label>
   );

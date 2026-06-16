@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useLang } from '../../context/LangContext';
 
 const CIRC = 326.73; // 2 * π * 52
 
@@ -13,6 +14,8 @@ const DHIKR_LIST = [
 ];
 
 export default function Tasbeeh() {
+  const { t } = useLang();
+  const ts = t.tasbeeh;
   const [selectedId, setSelectedId] = useState('subhan');
   const [counts, setCounts] = useState(() => {
     try { return JSON.parse(localStorage.getItem('tsb-counts') || '{}'); } catch { return {}; }
@@ -80,7 +83,7 @@ export default function Tasbeeh() {
           <div className="tsb__inner">
             <span className="tsb__num">{displayCount}</span>
             <span className="tsb__den">/ {target}</span>
-            {rounds > 0 && <span className="tsb__rounds">{rounds}× مكتمل</span>}
+            {rounds > 0 && <span className="tsb__rounds">{rounds}× {ts.completed}</span>}
           </div>
         </div>
 
@@ -89,7 +92,7 @@ export default function Tasbeeh() {
 
         {done && (
           <div className="tsb__badge" style={{ background: dhikr?.color }}>
-            ✓ {rounds} دورة مكتملة
+            ✓ {rounds} {ts.roundsDone}
           </div>
         )}
       </div>
@@ -99,15 +102,15 @@ export default function Tasbeeh() {
         className={`tsb__tap${flash ? ' tsb__tap--flash' : ''}`}
         style={{ background: dhikr?.color }}
         onClick={tap}
-        aria-label="اضغط للذكر"
+        aria-label={ts.tapLabel}
       >
-        <span className="tsb__tap-ar">اضغط</span>
-        <span className="tsb__tap-hint">أو Space / Enter</span>
+        <span className="tsb__tap-ar">{ts.press}</span>
+        <span className="tsb__tap-hint">{ts.pressHint}</span>
       </button>
 
       {/* ── Target selector ─────────────────────────────────── */}
       <div className="tsb__target-row">
-        <span className="tsb__target-lbl">الهدف:</span>
+        <span className="tsb__target-lbl">{ts.goal}</span>
         {[33, 34, 99, 100, 300, 1000].map((n) => (
           <button
             key={n}
@@ -121,17 +124,17 @@ export default function Tasbeeh() {
       {/* ── Reset ───────────────────────────────────────────── */}
       <div className="tsb__resets">
         <button className="tsb__rst" onClick={() => setCounts((p) => ({ ...p, [selectedId]: 0 }))}>
-          ↺ إعادة هذا
+          {ts.resetThis}
         </button>
         <button className="tsb__rst tsb__rst--all" onClick={() => setCounts({})}>
-          ↺ مسح الكل
+          {ts.clearAll}
         </button>
       </div>
 
       {/* ── Session stats ───────────────────────────────────── */}
       {totalToday > 0 && (
         <div className="tsb__stats">
-          <p className="tsb__stats-title">إجمالي الجلسة: <strong>{totalToday.toLocaleString()}</strong></p>
+          <p className="tsb__stats-title">{ts.sessionTotal} <strong>{totalToday.toLocaleString()}</strong></p>
           <div className="tsb__stats-row">
             {DHIKR_LIST.filter((d) => counts[d.id] > 0).map((d) => (
               <div key={d.id} className="tsb__stat-item" style={{ borderColor: d.color }}>

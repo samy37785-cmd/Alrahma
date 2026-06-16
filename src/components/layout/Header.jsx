@@ -35,6 +35,7 @@ export default function Header() {
           <Link to="/teachers" onClick={close}>{t.nav.teachers}</Link>
           <Link to="/islamic-tools" onClick={close}>{t.nav.tools}</Link>
           <Link to="/adhkar" onClick={close}>{t.nav.adhkar}</Link>
+          <Link to="/hadith-library" onClick={close}>{t.nav.hadith}</Link>
           {isAdmin && (
             <Link to="/admin" onClick={close}>{t.nav.dashboard}</Link>
           )}
@@ -46,9 +47,9 @@ export default function Header() {
           ) : (
             <Link to="/login" onClick={close}>{t.nav.login}</Link>
           )}
-          <a href="#trial" className="nav__cta" onClick={close}>
+          <Link to="/enroll" className="nav__cta" onClick={close}>
             {t.nav.trial}
-          </a>
+          </Link>
         </nav>
 
         <div className="header__right">

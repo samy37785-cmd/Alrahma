@@ -1,15 +1,17 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { getMe } from '../api/client';
+import { getMe, getCourses } from '../api/client';
 
 export default function Profile() {
   const { user, logout, updateProfile } = useAuth();
 
   const [subscription, setSubscription] = useState(user?.subscription || null);
+  const [courses, setCourses]           = useState([]);
 
   useEffect(() => {
     getMe().then((u) => setSubscription(u.subscription)).catch(() => {});
+    getCourses().then(setCourses).catch(() => {});
   }, []);
 
   const [info, setInfo] = useState({ name: user?.name || '', email: user?.email || '' });
@@ -153,6 +155,21 @@ export default function Profile() {
         </div>
 
         {/* Subscription card */}
+        {/* My Courses */}
+        {subscription?.status === 'active' && courses.length > 0 && (
+          <section className="admin__panel" style={{ marginTop: '1.5rem' }}>
+            <h2>My Courses</h2>
+            <ul className="admin__list">
+              {courses.map((c) => (
+                <li key={c._id}>
+                  <span>{c.icon} {c.title}</span>
+                  <Link to={`/courses/${c._id}`} className="btn btn--green btn--sm">Start learning →</Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
         <section className="admin__panel" style={{ marginTop: '1.5rem' }}>
           <h2>My Subscription</h2>
           {subscription?.status === 'active' ? (

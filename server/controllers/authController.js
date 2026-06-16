@@ -85,6 +85,30 @@ export async function listUsers(req, res, next) {
   }
 }
 
+// @desc   Admin: update a user's subscription
+// @route  PATCH /api/auth/users/:id/subscription
+// @access Private/Admin
+export async function updateUserSubscription(req, res, next) {
+  try {
+    const { action, plan } = req.body; // action: 'activate' | 'deactivate' | 'renew'
+    const user = await User.findById(req.params.id);
+    if (!user) { res.status(404); throw new Error('User not found'); }
+
+    if (action === 'deactivate') {
+      user.subscription = { plan: user.subscription?.plan, status: 'inactive', activeSince: user.subscription?.activeSince, validUntil: user.subscription?.validUntil };
+    } else {
+      const activeSince = action === 'renew' ? (user.subscription?.activeSince || new Date()) : new Date();
+      const validUntil  = new Date();
+      validUntil.setDate(validUntil.getDate() + 30);
+      user.subscription = { plan: plan || user.subscription?.plan || 'Starter', status: 'active', activeSince, validUntil };
+    }
+    await user.save({ validateBeforeSave: false });
+    res.json({ _id: user._id, name: user.name, email: user.email, subscription: user.subscription });
+  } catch (err) {
+    next(err);
+  }
+}
+
 // @desc   Request a password-reset email
 // @route  POST /api/auth/forgot-password
 // @access Public

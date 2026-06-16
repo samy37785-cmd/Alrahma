@@ -5,7 +5,7 @@ const t = {
     nav: {
       home: 'Home', about: 'About', courses: 'Courses',
       pricing: 'Pricing', testimonials: 'Testimonials', contact: 'Contact',
-      teachers: 'Teachers', tools: 'Islamic Tools', adhkar: 'Adhkar',
+      teachers: 'Teachers', tools: 'Islamic Tools', adhkar: 'Adhkar', hadith: 'Hadith Library',
       trial: 'Free Trial', login: 'Login', dashboard: 'Dashboard', invoices: 'My Invoices',
     },
     hero: {
@@ -125,7 +125,7 @@ const t = {
     nav: {
       home: 'Home', about: 'Chi Siamo', courses: 'Corsi',
       pricing: 'Prezzi', testimonials: 'Testimonianze', contact: 'Contatti',
-      teachers: 'Insegnanti', tools: 'Strumenti Islamici', adhkar: 'Adhkar',
+      teachers: 'Insegnanti', tools: 'Strumenti Islamici', adhkar: 'Adhkar', hadith: 'Biblioteca Hadith',
       trial: 'Prova Gratuita', login: 'Accedi', dashboard: 'Dashboard', invoices: 'Le Mie Fatture',
     },
     hero: {
@@ -245,7 +245,7 @@ const t = {
     nav: {
       home: 'Inicio', about: 'Nosotros', courses: 'Cursos',
       pricing: 'Precios', testimonials: 'Testimonios', contact: 'Contacto',
-      teachers: 'Profesores', tools: 'Herramientas Islámicas', adhkar: 'Adhkar',
+      teachers: 'Profesores', tools: 'Herramientas Islámicas', adhkar: 'Adhkar', hadith: 'Biblioteca Hadith',
       trial: 'Prueba Gratuita', login: 'Iniciar Sesión', dashboard: 'Panel', invoices: 'Mis Facturas',
     },
     hero: {
@@ -358,7 +358,7 @@ const t = {
     nav: {
       home: 'Startseite', about: 'Über uns', courses: 'Kurse',
       pricing: 'Preise', testimonials: 'Bewertungen', contact: 'Kontakt',
-      teachers: 'Lehrer', tools: 'Islamische Tools', adhkar: 'Adhkar',
+      teachers: 'Lehrer', tools: 'Islamische Tools', adhkar: 'Adhkar', hadith: 'Hadith-Bibliothek',
       trial: 'Kostenlose Probestunde', login: 'Anmelden', dashboard: 'Dashboard', invoices: 'Meine Rechnungen',
     },
     hero: {
@@ -471,7 +471,7 @@ const t = {
     nav: {
       home: 'Accueil', about: 'À propos', courses: 'Cours',
       pricing: 'Tarifs', testimonials: 'Témoignages', contact: 'Contact',
-      teachers: 'Enseignants', tools: 'Outils Islamiques', adhkar: 'Adhkar',
+      teachers: 'Enseignants', tools: 'Outils Islamiques', adhkar: 'Adhkar', hadith: 'Bibliothèque Hadith',
       trial: 'Essai Gratuit', login: 'Connexion', dashboard: 'Tableau de bord', invoices: 'Mes Factures',
     },
     hero: {
@@ -576,8 +576,127 @@ const t = {
       links: ['Accueil', 'À propos', 'Cours', 'Tarifs', 'Témoignages', 'Enseignants', 'Contact'],
     },
   },
+  /* ════════════════════════════════════════════ ARABIC ════ */
+  ar: {
+    lang: 'ar',
+    dir: 'rtl',
+    nav: {
+      home: 'الرئيسية', about: 'من نحن', courses: 'الدورات',
+      pricing: 'الأسعار', testimonials: 'آراء الطلاب', contact: 'تواصل معنا',
+      teachers: 'المعلمون', tools: 'أدوات إسلامية', adhkar: 'الأذكار', hadith: 'مكتبة الحديث',
+      trial: 'تجربة مجانية', login: 'تسجيل الدخول', dashboard: 'لوحة التحكم', invoices: 'فواتيري',
+    },
+    hero: {
+      eyebrow: 'قرآن كريم • لغة عربية • دراسات إسلامية',
+      title: 'تعلم القرآن الكريم أونلاين',
+      sub: 'أفضل أكاديمية أونلاين لتعليم القرآن الكريم واللغة العربية للأطفال والكبار — تعليم فردي مع معلمين مؤهلين، في الوقت الذي يناسبك.',
+      cta1: 'احجز تجربة مجانية',
+      cta2: '🧠 ابدأ التعلم',
+      cta3: 'تصفح الدورات',
+      badge1: '✓ حصتان تجريبيتان مجانيتان',
+      badge2: '✓ متاح على مدار الساعة',
+      badge3: '✓ معلمات متاحات',
+      verseQuote: '﴿اقْرَأْ بِاسْمِ رَبِّكَ الَّذِي خَلَقَ﴾',
+      verseRef: 'سورة العلق · 96:1',
+    },
+    features: {
+      eyebrow: 'لماذا تختارنا',
+      heading: 'لماذا تختار الأسر أكاديمية الرحمة',
+      items: [
+        { title: 'حصص تجريبية مجانية',       text: 'ابدأ بحصتين تجريبيتين مجانيتين — بدون التزام ولا دفع مسبق.' },
+        { title: 'معلمون معتمدون من الأزهر',  text: 'جميع معلمينا خريجو جامعة الأزهر الشريف ويحملون إجازة معتمدة.' },
+        { title: 'جدول مرن',                   text: 'حصص متاحة على مدار الساعة طوال أيام الأسبوع لتناسب كل المناطق الزمنية.' },
+        { title: 'معلمات للنساء والأطفال',     text: 'معلمات محترفات ومؤهلات للأخوات والأطفال.' },
+        { title: 'تعليم متعدد اللغات',         text: 'حصص باللغة العربية والإنجليزية والفرنسية — لكل طالب.' },
+        { title: 'تعليم فردي حصراً',          text: 'كل حصة تكون بينك وبين معلمك فقط — اهتمام شخصي كامل.' },
+      ],
+    },
+    steps: {
+      eyebrow: 'كيف يعمل النظام',
+      heading: 'ابدأ في 3 خطوات بسيطة',
+      items: [
+        { title: 'أكمل نموذج التجربة المجانية', text: 'أخبرنا عن الطالب والدورة التي تهمك.' },
+        { title: 'احجز جلسة تجريبية',           text: 'سنرتب لك معلماً مناسباً وموعداً يناسب جدولك.' },
+        { title: 'حمّل تطبيق الاجتماعات',      text: 'انضم لحصصك بسهولة عبر Zoom أو Skype من أي مكان.' },
+      ],
+    },
+    courses: {
+      eyebrow: 'ما نقدمه',
+      heading: 'دوراتنا المميزة',
+      startBtn: 'ابدأ التعلم ←',
+      closeBtn: 'إغلاق ×',
+      items: [
+        { title: 'تعليم القرآن الكريم (القاعدة النورانية)', text: 'تعلم قراءة القرآن الكريم من أساسيات الحروف العربية والأصوات بشكل صحيح.' },
+        { title: 'التلاوة بأحكام التجويد',                   text: 'أتقن أحكام التجويد لتلاوة قرآنية جميلة وصحيحة.' },
+        { title: 'حفظ القرآن الكريم (حفظ)',                 text: 'برامج حفظ منظمة مع أدوات مراجعة واختبارات وخطط مراجعة.' },
+        { title: 'دورة الإجازة القرآنية',                   text: 'احصل على إجازة رسمية بسند متصل إلى النبي ﷺ.' },
+        { title: 'الدراسات الإسلامية',                      text: 'تعلم أساسيات العقيدة والفقه والسيرة النبوية والممارسة الإسلامية اليومية.' },
+        { title: 'الحروف العربية والإيطالية',               text: 'تعلم الحروف العربية والإيطالية معاً مع نطق صوتي تفاعلي.' },
+      ],
+    },
+    about: {
+      eyebrow: 'من نحن',
+      heading: 'رسالتنا ورؤيتنا',
+      mission: 'إعداد وتأهيل طلاب متميزين قادرين على تقديم صورة صادقة عن الإسلام — مع توفير تعليم قرآني وعربي متميز للجاليات المسلمة في أوروبا وخارجها.',
+      vision: 'تحقيق ريادة معترف بها في مجال التعليم القرآني والإسلامي الإلكتروني على المستوى الأوروبي، لنكون الخيار الأول الموثوق للأسر المسلمة.',
+      description: 'أكاديمية الرحمة منصة تعليمية متخصصة تربط الطلاب في جميع أنحاء العالم بالقرآن الكريم واللغة العربية. يقدم معلمونا المصريون المؤهلون حصصاً فردية مباشرة — للأطفال والكبار، من أي مكان في العالم.',
+      statsLabel: ['سنوات من الخبرة', 'معلم مؤهل', 'طالب سعيد', 'ساعة تعليمية'],
+      objectivesHeading: 'أهدافنا',
+      valuesHeading: 'قيمنا',
+      offersHeading: 'ما نقدمه',
+    },
+    pricing: {
+      eyebrow: 'الأسعار',
+      heading: 'خطط الاشتراك',
+      perMonth: '/ شهر',
+      off: '% خصم',
+      sessions: 'حصة/شهر',
+      getStarted: 'ابدأ الآن',
+      mostPopular: 'الأكثر طلباً',
+    },
+    testimonials: {
+      eyebrow: 'آراء الطلاب',
+      heading: 'ماذا يقول طلابنا',
+    },
+    trial: {
+      eyebrow: 'تجربة مجانية',
+      heading: 'احجز حصتين تجريبيتين مجانيتين',
+      sub: 'أكمل النموذج وسيتواصل معك فريقنا لترتيب أول حصة. لا يلزم أي دفع.',
+      bullets: ['بدون أي التزام', 'اختر الوقت المناسب لك', 'الحصص عبر Zoom أو Skype'],
+      waLabel: 'تفضل واتساب؟',
+      waLink: 'راسلنا',
+      fields: { name: 'الاسم الكامل', email: 'البريد الإلكتروني', phone: 'الهاتف / واتساب', course: 'الدورة المطلوبة', message: 'رسالة (اختياري)' },
+      placeholders: { name: 'اسمك', email: 'example@mail.com', phone: '+20 ...', course: 'اختر دورة', message: 'أخبرنا عن الطالب، العمر، المستوى...' },
+      submit: 'طلب تجربة مجانية',
+      sending: 'جاري الإرسال...',
+      success: 'شكراً! سنتواصل معك قريباً إن شاء الله.',
+      errorOffline: 'الخادم غير متاح — تواصل معنا مباشرة:',
+      whatsappBtn: 'راسلنا على واتساب',
+      emailBtn: 'أرسل بريداً إلكترونياً',
+    },
+    newsletter: {
+      heading: 'اشترك في نشرتنا البريدية',
+      sub: 'احصل على مقالات إسلامية وأخبار الأكاديمية مباشرة في بريدك الإلكتروني.',
+      placeholder: 'أدخل بريدك الإلكتروني',
+      btn: 'اشترك',
+      subscribing: 'جاري الاشتراك...',
+      subscribed: 'مشترك ✓',
+      success: '✓ تم الاشتراك! جزاك الله خيراً.',
+      error: 'حدث خطأ. يرجى المحاولة مرة أخرى.',
+    },
+    footer: {
+      about: 'تعليم أصيل للقرآن الكريم واللغة العربية والإسلام عبر الإنترنت لطلاب من جميع الأعمار، في أي مكان بالعالم.',
+      quickLinks: 'روابط سريعة',
+      coursesCol: 'الدورات',
+      contact: 'تواصل معنا',
+      whatsapp: 'راسلنا على واتساب',
+      privacy: 'سياسة الخصوصية',
+      rights: 'جميع الحقوق محفوظة.',
+      links: ['الرئيسية', 'من نحن', 'الدورات', 'الأسعار', 'آراء الطلاب', 'المعلمون', 'تواصل معنا'],
+    },
+  },
 };
 
 export default t;
-export const LANGS = ['en', 'it', 'es', 'de', 'fr'];
-export const LANG_LABELS = { en: 'EN 🇬🇧', it: 'IT 🇮🇹', es: 'ES 🇪🇸', de: 'DE 🇩🇪', fr: 'FR 🇫🇷' };
+export const LANGS = ['en', 'ar', 'it', 'es', 'de', 'fr'];
+export const LANG_LABELS = { en: 'EN 🇬🇧', ar: 'عربي 🇪🇬', it: 'IT 🇮🇹', es: 'ES 🇪🇸', de: 'DE 🇩🇪', fr: 'FR 🇫🇷' };

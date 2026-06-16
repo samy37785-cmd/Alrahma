@@ -7,6 +7,15 @@ import { useTrial } from '../context/TrialContext';
 import { useLang } from '../context/LangContext';
 import { courses } from '../data';
 
+const COURSE_META = [
+  { grad: 'linear-gradient(135deg,#0b6e4f,#1a9e72)', level: 'Beginner', duration: 'All ages' },
+  { grad: 'linear-gradient(135deg,#1a5fa0,#2176c7)', level: 'Intermediate', duration: '6+ months' },
+  { grad: 'linear-gradient(135deg,#7a3a8a,#a04dba)', level: 'All levels', duration: 'Ongoing' },
+  { grad: 'linear-gradient(135deg,#2c3e50,#3d5166)', level: 'Advanced', duration: '2+ years' },
+  { grad: 'linear-gradient(135deg,#d4af37,#b8941f)', level: 'All levels', duration: 'Flexible' },
+  { grad: 'linear-gradient(135deg,#c0392b,#e74c3c)', level: 'Beginner', duration: 'Kids & Adults' },
+];
+
 const READER_RE = /reading/i;
 
 const isAlphabet = (course) =>
@@ -22,6 +31,10 @@ export default function Courses() {
   const handleStart = (course) => {
     if (isAlphabet(course)) {
       setOpenAlphabet((v) => !v);
+      return;
+    }
+    if (course.detailPath) {
+      navigate(course.detailPath);
       return;
     }
     if (course.interactive === 'quran') {
@@ -56,6 +69,7 @@ export default function Courses() {
         <div className="courses__grid">
           {courses.map((c, i) => {
             const item = t.courses.items[i] || {};
+            const meta = COURSE_META[i] || COURSE_META[0];
             const expanded = isAlphabet(c) && openAlphabet;
             return (
               <Reveal
@@ -63,10 +77,23 @@ export default function Courses() {
                 className={`course${expanded ? ' course--expanded' : ''}`}
                 key={c.title}
               >
-                <div className="course__media">{c.media}</div>
+                <div className="course__banner" style={{ background: meta.grad }}>
+                  <span className="course__banner-icon">{c.media}</span>
+                  <div className="course__badges">
+                    <span className="course__badge">{meta.level}</span>
+                    <span className="course__badge course__badge--alt">{meta.duration}</span>
+                  </div>
+                </div>
                 <div className="course__body">
                   <h3>{item.title || c.title}</h3>
                   <p>{item.text || c.text}</p>
+                  {c.points && (
+                    <ul className="course__points">
+                      {c.points.map((pt) => (
+                        <li key={pt}>{pt}</li>
+                      ))}
+                    </ul>
+                  )}
                   <button type="button" className="course__link" onClick={() => handleStart(c)}>
                     {expanded ? t.courses.closeBtn : t.courses.startBtn}
                   </button>

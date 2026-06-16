@@ -1,4 +1,4 @@
-import { createContext, useState, useContext, useMemo } from 'react';
+import { createContext, useState, useContext, useMemo, useEffect } from 'react';
 import translations, { LANGS } from '../i18n';
 
 const LangContext = createContext(null);
@@ -14,6 +14,13 @@ export function LangProvider({ children }) {
     localStorage.setItem('lang', code);
     setLangState(code);
   };
+
+  // Apply dir and lang attributes on the root <html> element
+  useEffect(() => {
+    const dir = translations[lang]?.dir || 'ltr';
+    document.documentElement.setAttribute('dir', dir);
+    document.documentElement.setAttribute('lang', lang);
+  }, [lang]);
 
   const value = useMemo(
     () => ({ lang, setLang, t: translations[lang] }),

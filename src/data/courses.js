@@ -3,12 +3,14 @@ export const courses = [
     media: '📖',
     title: 'Quran Reading (Noorani Qaida)',
     text: 'Learn to read the Quran correctly from the very basics of Arabic letters and sounds.',
+    points: ['Arabic letters & pronunciation', 'Noorani Qaida method step-by-step', 'Read Quran independently'],
     interactive: 'quran',
   },
   {
     media: '🎙️',
     title: 'Recitation with Tajweed',
     text: 'Master the rules of Tajweed for beautiful and accurate Quranic recitation.',
+    points: ['All Tajweed rules (Hafs & Warsh)', 'Live correction by certified teacher', 'Audio & video practice materials'],
     resources: [
       {
         type: 'youtube',
@@ -26,22 +28,28 @@ export const courses = [
     media: '🧠',
     title: 'Quran Memorization (Hifz)',
     text: 'Structured memorization programs with repetition tools, memory tests, and revision plans — in 17 languages.',
+    points: ['Personalised memorization plan', 'Daily revision & progress tracking', 'Suitable for all ages'],
     interactive: 'quran',
   },
   {
     media: '📜',
     title: 'Quran Ijazah Course',
     text: 'Earn a formal certification (Ijazah) with a connected chain of narration.',
+    points: ['Sanad connected to the Prophet ﷺ', 'Matn Al-Jazariyyah & Al-Shatibiyyah', 'Official Ijazah certificate issued'],
+    detailPath: '/course/ijazah',
   },
   {
     media: '🕌',
     title: 'Islamic Studies',
     text: 'Learn the fundamentals of Aqeedah, Fiqh, Seerah and daily Islamic practice.',
+    points: ['5 modules — Aqeedah, Fiqh, Seerah, Hadith, Tafsir', 'Authentic primary Islamic sources', 'Taught in your own language'],
+    detailPath: '/course/islamic-studies',
   },
   {
     media: '🔤',
     title: 'Arabic & Italian Alphabet',
     text: 'Learn the letters in Arabic and Italian together, with interactive audio pronunciation in both accents.',
+    points: ['28 Arabic letters with audio', 'Interactive in-browser practice', 'Italian phonetic equivalents'],
     interactive: 'alphabet',
   },
 ];

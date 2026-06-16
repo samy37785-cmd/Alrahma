@@ -9,6 +9,7 @@ import trialRoutes from './routes/trialRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
 import invoiceRoutes from './routes/invoiceRoutes.js';
 import subscriberRoutes from './routes/subscriberRoutes.js';
+import enrollmentRoutes from './routes/enrollmentRoutes.js';
 import { notFound, errorHandler } from './middleware/errorHandler.js';
 
 dotenv.config();
@@ -58,6 +59,7 @@ app.use('/api/trials', trialRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/invoices', invoiceRoutes);
 app.use('/api/newsletter', subscriberRoutes);
+app.use('/api/enrollments', enrollmentRoutes);
 
 // 6) Error handling (must be LAST)
 app.use(notFound);

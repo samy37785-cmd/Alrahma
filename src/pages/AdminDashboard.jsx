@@ -10,10 +10,12 @@ import {
   getManualPayments,
   reviewManualPayment,
   getUsers,
+  updateUserSubscription,
 } from '../api/client';
 import api from '../api/client';
 
-const EMPTY_COURSE = { title: '', description: '', icon: '📘', level: 'All levels' };
+const EMPTY_COURSE = { title: '', description: '', icon: '📘', level: 'All levels', resources: [] };
+const EMPTY_RES    = { type: 'youtube', label: '', url: '' };
 
 export default function AdminDashboard() {
   const { user, logout } = useAuth();
@@ -73,8 +75,13 @@ export default function AdminDashboard() {
 
   const startEdit = (course) => {
     setEditingId(course._id);
-    setForm({ title: course.title, description: course.description, icon: course.icon, level: course.level });
+    setForm({ title: course.title, description: course.description, icon: course.icon, level: course.level, resources: course.resources || [] });
   };
+
+  const addResource    = ()        => setForm((f) => ({ ...f, resources: [...f.resources, { ...EMPTY_RES }] }));
+  const removeResource = (i)       => setForm((f) => ({ ...f, resources: f.resources.filter((_, idx) => idx !== i) }));
+  const updateResource = (i, key, val) =>
+    setForm((f) => ({ ...f, resources: f.resources.map((r, idx) => idx === i ? { ...r, [key]: val } : r) }));
 
   const handleUpdate = async (e) => {
     e.preventDefault();
@@ -90,6 +97,15 @@ export default function AdminDashboard() {
   };
 
   const cancelEdit = () => { setEditingId(null); setForm(EMPTY_COURSE); };
+
+  const handleSubscription = async (userId, action, plan) => {
+    try {
+      const updated = await updateUserSubscription(userId, { action, plan });
+      setUsers((prev) => prev.map((u) => u._id === userId ? { ...u, subscription: updated.subscription } : u));
+    } catch (err) {
+      setError(err.response?.data?.message || 'Action failed');
+    }
+  };
 
   const handleDelete = async (id) => {
     if (!confirm('Delete this course?')) return;
@@ -168,6 +184,28 @@ export default function AdminDashboard() {
                     </select>
                   </div>
                 </div>
+                {/* Resources */}
+                <div className="field" style={{ marginTop: '1rem' }}>
+                  <label style={{ marginBottom: '0.5rem', display: 'block' }}>
+                    Resources (YouTube / PDF / Links)
+                  </label>
+                  {form.resources.map((r, i) => (
+                    <div key={i} style={{ display: 'flex', gap: '6px', marginBottom: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
+                      <select value={r.type} onChange={(e) => updateResource(i, 'type', e.target.value)} style={{ width: '100px' }}>
+                        <option value="youtube">YouTube</option>
+                        <option value="pdf">PDF</option>
+                        <option value="link">Link</option>
+                      </select>
+                      <input placeholder="Label" value={r.label} onChange={(e) => updateResource(i, 'label', e.target.value)} style={{ flex: 1, minWidth: '100px' }} />
+                      <input placeholder="URL" value={r.url} onChange={(e) => updateResource(i, 'url', e.target.value)} style={{ flex: 2, minWidth: '140px' }} />
+                      <button type="button" className="admin__del" onClick={() => removeResource(i)} style={{ padding: '4px 8px' }}>✕</button>
+                    </div>
+                  ))}
+                  <button type="button" className="btn btn--ghost btn--sm" onClick={addResource} style={{ marginTop: '4px' }}>
+                    + Add resource
+                  </button>
+                </div>
+
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
                   <button type="submit" className="btn btn--green btn--block">
                     {editingId ? 'Save changes' : 'Add course'}
@@ -274,7 +312,7 @@ export default function AdminDashboard() {
             <div className="admin__table-wrap">
               <table className="admin__table">
                 <thead>
-                  <tr><th>#</th><th>Name</th><th>Email</th><th>Role</th><th>Plan</th><th>Sub Status</th><th>Valid Until</th><th>Joined</th></tr>
+                  <tr><th>#</th><th>Name</th><th>Email</th><th>Role</th><th>Plan</th><th>Status</th><th>Valid Until</th><th>Joined</th><th>Action</th></tr>
                 </thead>
                 <tbody>
                   {users.map((u, i) => (
@@ -291,10 +329,22 @@ export default function AdminDashboard() {
                       </td>
                       <td>{u.subscription?.validUntil ? new Date(u.subscription.validUntil).toLocaleDateString() : '—'}</td>
                       <td>{new Date(u.createdAt).toLocaleDateString()}</td>
+                      <td>
+                        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                          <button className="btn btn--green btn--sm" title="Renew 30 days"
+                            onClick={() => handleSubscription(u._id, 'renew', u.subscription?.plan || 'Starter')}>
+                            +30d
+                          </button>
+                          {u.subscription?.status === 'active'
+                            ? <button className="admin__del" title="Deactivate" onClick={() => handleSubscription(u._id, 'deactivate')}>✕</button>
+                            : <button className="btn btn--ghost btn--sm" title="Activate" onClick={() => handleSubscription(u._id, 'activate', u.subscription?.plan || 'Starter')}>✓</button>
+                          }
+                        </div>
+                      </td>
                     </tr>
                   ))}
                   {users.length === 0 && (
-                    <tr><td colSpan="8" className="admin__empty">No users yet.</td></tr>
+                    <tr><td colSpan="9" className="admin__empty">No users yet.</td></tr>
                   )}
                 </tbody>
               </table>

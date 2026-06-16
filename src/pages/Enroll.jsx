@@ -378,7 +378,6 @@ export default function Enroll() {
     description: 'Start your Quran journey. Choose your subjects, pick a certified tutor, and select a plan — in just a few steps.',
   });
 
-  const navigate = useNavigate();
   const { t } = useLang();
   const e = t.enroll;
   const [searchParams] = useSearchParams();

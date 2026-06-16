@@ -1,10 +1,10 @@
 // 404 handler for unknown routes.
-export function notFound(req, res, next) {
+export function notFound(req, res, _next) {
   res.status(404).json({ message: `Route not found: ${req.originalUrl}` });
 }
 
 // Central error handler — catches errors thrown anywhere in the app.
-export function errorHandler(err, req, res, next) {
+export function errorHandler(err, req, res, _next) {
   console.error('💥', err.message);
 
   // Mongoose duplicate key (e.g. email already exists)

@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { withCache, TTL } from './cache';
 
 const quran = axios.create({ baseURL: 'https://api.quran.com/api/v4' });
 
@@ -40,25 +41,29 @@ const VERSE_ID = Object.fromEntries(
 );
 
 // ── Verses by chapter (surah) ────────────────────────────────────────
-export const getVerses = (chapterId, translationId = 20) => {
-  const params = { fields: 'text_uthmani,page_number,juz_number', per_page: 300 };
-  if (translationId) params.translations = translationId;
-  return quran.get(`/verses/by_chapter/${chapterId}`, { params }).then((r) => r.data.verses);
-};
+// Verse text is immutable scripture, so cache it for a week with stale fallback.
+export const getVerses = (chapterId, translationId = 20) =>
+  withCache(`verses:chapter:${chapterId}:${translationId}`, TTL.WEEK, () => {
+    const params = { fields: 'text_uthmani,page_number,juz_number', per_page: 300 };
+    if (translationId) params.translations = translationId;
+    return quran.get(`/verses/by_chapter/${chapterId}`, { params }).then((r) => r.data.verses);
+  });
 
 // ── Verses by Mushaf page (1-604) ───────────────────────────────────
-export const getVersesByPage = (pageNum, translationId = 20) => {
-  const params = { fields: 'text_uthmani,page_number,juz_number', per_page: 50 };
-  if (translationId) params.translations = translationId;
-  return quran.get(`/verses/by_page/${pageNum}`, { params }).then((r) => r.data.verses);
-};
+export const getVersesByPage = (pageNum, translationId = 20) =>
+  withCache(`verses:page:${pageNum}:${translationId}`, TTL.WEEK, () => {
+    const params = { fields: 'text_uthmani,page_number,juz_number', per_page: 50 };
+    if (translationId) params.translations = translationId;
+    return quran.get(`/verses/by_page/${pageNum}`, { params }).then((r) => r.data.verses);
+  });
 
 // ── Verses by Juz (1-30) ────────────────────────────────────────────
-export const getVersesByJuz = (juzNum, translationId = 20) => {
-  const params = { fields: 'text_uthmani,page_number,juz_number', per_page: 300 };
-  if (translationId) params.translations = translationId;
-  return quran.get(`/verses/by_juz/${juzNum}`, { params }).then((r) => r.data.verses);
-};
+export const getVersesByJuz = (juzNum, translationId = 20) =>
+  withCache(`verses:juz:${juzNum}:${translationId}`, TTL.WEEK, () => {
+    const params = { fields: 'text_uthmani,page_number,juz_number', per_page: 300 };
+    if (translationId) params.translations = translationId;
+    return quran.get(`/verses/by_juz/${juzNum}`, { params }).then((r) => r.data.verses);
+  });
 
 // ── Full-chapter audio  (uses /chapter_recitations/{id})  ───────────
 export const getChapterAudio = (chapterId, reciterId = 7) =>
@@ -83,28 +88,37 @@ export const getVerseAudios = (chapterId, reciterId = 7) => {
 
 // ── Tafsir for a single verse — quran.com API (returns HTML) ────────
 export const getVerseTafsir = (verseKey, tafsirId) =>
-  quran
-    .get(`/tafsirs/${tafsirId}/by_ayah/${verseKey}`, { params: { fields: 'text' } })
-    .then((r) => r.data?.tafsir?.text || '');
+  withCache(`tafsir:${tafsirId}:${verseKey}`, TTL.WEEK, () =>
+    quran
+      .get(`/tafsirs/${tafsirId}/by_ayah/${verseKey}`, { params: { fields: 'text' } })
+      .then((r) => r.data?.tafsir?.text || '')
+  );
 
 // ── Tafsir from alquran.cloud (returns plain text) ───────────────────
 const cloud = axios.create({ baseURL: 'https://api.alquran.cloud/v1' });
 export const getVerseTafsirCloud = (verseKey, edition) =>
-  cloud
-    .get(`/ayah/${verseKey}/${edition}`)
-    .then((r) => r.data?.data?.text || '');
+  withCache(`tafsir-cloud:${edition}:${verseKey}`, TTL.WEEK, () =>
+    cloud
+      .get(`/ayah/${verseKey}/${edition}`)
+      .then((r) => r.data?.data?.text || '')
+  );
 
 // ── Single verse by key (e.g. "2:255") ──────────────────────────────
 export const getVerse = (verseKey, translationId = 20) =>
-  quran
-    .get(`/verses/by_key/${verseKey}`, {
-      params: { fields: 'text_uthmani', translations: translationId },
-    })
-    .then((r) => r.data.verse);
+  withCache(`verse:${verseKey}:${translationId}`, TTL.WEEK, () =>
+    quran
+      .get(`/verses/by_key/${verseKey}`, {
+        params: { fields: 'text_uthmani', translations: translationId },
+      })
+      .then((r) => r.data.verse)
+  );
 
 // ── Chapter list ─────────────────────────────────────────────────────
+// The 114-surah list never changes — cache it for a week with stale fallback.
 export const getChapters = () =>
-  quran.get('/chapters', { params: { language: 'en' } }).then((r) => r.data.chapters);
+  withCache('chapters:en', TTL.WEEK, () =>
+    quran.get('/chapters', { params: { language: 'en' } }).then((r) => r.data.chapters)
+  );
 
 // ── Word / phrase search ─────────────────────────────────────────────
 export const searchQuran = (q, size = 20) =>

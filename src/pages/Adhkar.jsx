@@ -580,7 +580,7 @@ export default function Adhkar() {
 
             {search && filteredCats.length === 0 && (
               <div className="adhkar__no-results">
-                <p>{a.noResults} "{search}"</p>
+                <p>{a.noResults} &quot;{search}&quot;</p>
               </div>
             )}
 

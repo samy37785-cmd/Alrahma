@@ -3,6 +3,7 @@ import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 import useSEO from '../hooks/useSEO';
 import { getVerse } from '../api/quran';
+import { withCache, TTL } from '../api/cache';
 import { useLang } from '../context/LangContext';
 import { TOOLS_TEXT, pick } from '../i18n/content';
 
@@ -138,38 +139,51 @@ function daysUntilHijriEvent(hijri, targetMonth, targetDay) {
   return Math.round(days);
 }
 
+// Today's date as a cache-key segment, so prayer times refresh once per day but
+// the last good copy still survives an API outage (served stale by withCache).
+const dayKey = () => new Date().toISOString().slice(0, 10);
+
 async function fetchPrayerCoords(lat, lng, method, school = 0) {
-  const ts = Math.floor(Date.now() / 1000);
-  const r = await fetch(`https://api.aladhan.com/v1/timings/${ts}?latitude=${lat}&longitude=${lng}&method=${method}&school=${school}`);
-  if (!r.ok) throw new Error('API');
-  return (await r.json()).data;
+  const key = `prayer:coords:${lat.toFixed(3)},${lng.toFixed(3)}:${method}:${school}:${dayKey()}`;
+  return withCache(key, 6 * TTL.HOUR, async () => {
+    const ts = Math.floor(Date.now() / 1000);
+    const r = await fetch(`https://api.aladhan.com/v1/timings/${ts}?latitude=${lat}&longitude=${lng}&method=${method}&school=${school}`);
+    if (!r.ok) throw new Error('API');
+    return (await r.json()).data;
+  });
 }
 
 async function fetchPrayerCity(city, method, school = 0) {
   // Use timingsByAddress — accepts a free-form place ("Cairo", "London, UK")
   // and geocodes it. (timingsByCity now requires an explicit country.)
-  const r = await fetch(`https://api.aladhan.com/v1/timingsByAddress?address=${encodeURIComponent(city)}&method=${method}&school=${school}`);
-  if (!r.ok) throw new Error('city');
-  const j = await r.json();
-  if (j.code !== 200 || !j.data?.timings) throw new Error('city');
-  return j.data;
+  const key = `prayer:city:${city.toLowerCase()}:${method}:${school}:${dayKey()}`;
+  return withCache(key, 6 * TTL.HOUR, async () => {
+    const r = await fetch(`https://api.aladhan.com/v1/timingsByAddress?address=${encodeURIComponent(city)}&method=${method}&school=${school}`);
+    if (!r.ok) throw new Error('city');
+    const j = await r.json();
+    if (j.code !== 200 || !j.data?.timings) throw new Error('city');
+    return j.data;
+  });
 }
 
 // Full-month timetable. Uses calendarByAddress when we only have a place name,
 // otherwise calendar by coordinates. Returns an array of day objects.
 async function fetchMonth({ city, lat, lng }, method, school, month, year) {
-  const base = city
-    ? `https://api.aladhan.com/v1/calendarByAddress?address=${encodeURIComponent(city)}`
-    : `https://api.aladhan.com/v1/calendar/${year}/${month}?latitude=${lat}&longitude=${lng}`;
-  const sep = city ? '&' : '&';
-  const url = city
-    ? `${base}&method=${method}&school=${school}&month=${month}&year=${year}`
-    : `${base}${sep}method=${method}&school=${school}`;
-  const r = await fetch(url);
-  if (!r.ok) throw new Error('month');
-  const j = await r.json();
-  if (j.code !== 200 || !Array.isArray(j.data)) throw new Error('month');
-  return j.data;
+  const loc = city ? city.toLowerCase() : `${lat},${lng}`;
+  const key = `prayer:month:${loc}:${method}:${school}:${year}-${month}`;
+  return withCache(key, TTL.DAY, async () => {
+    const base = city
+      ? `https://api.aladhan.com/v1/calendarByAddress?address=${encodeURIComponent(city)}`
+      : `https://api.aladhan.com/v1/calendar/${year}/${month}?latitude=${lat}&longitude=${lng}`;
+    const url = city
+      ? `${base}&method=${method}&school=${school}&month=${month}&year=${year}`
+      : `${base}&method=${method}&school=${school}`;
+    const r = await fetch(url);
+    if (!r.ok) throw new Error('month');
+    const j = await r.json();
+    if (j.code !== 200 || !Array.isArray(j.data)) throw new Error('month');
+    return j.data;
+  });
 }
 
 /* ══════════════════════════════════════════════════════════════════

@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { getInvoices } from '../api/client';
-import { sampleInvoices, plans } from '../data';
+import { sampleInvoices } from '../data';
 import InvoiceModal from '../components/ui/InvoiceModal';
 import { useLang } from '../context/LangContext';
 

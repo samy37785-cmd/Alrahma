@@ -1,12 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLang } from '../context/LangContext';
-
-const STATS_DATA = [
-  { value: 1200, suffix: '+' },
-  { value: 15,   suffix: '+' },
-  { value: 5,    suffix: '★' },
-  { value: 24,   suffix: '/7' },
-];
+import { STATS as STATS_DATA, SHOW_PLACEHOLDER_CONTENT } from '../data/socialProof';
 
 function useCountUp(target, duration = 1600, active = false) {
   const [count, setCount] = useState(0);
@@ -48,6 +42,10 @@ export default function StatsBanner() {
     if (ref.current) obs.observe(ref.current);
     return () => obs.disconnect();
   }, []);
+
+  // These figures are placeholder marketing numbers — hide the banner unless
+  // they're explicitly enabled (or replaced with real stats in socialProof.js).
+  if (!SHOW_PLACEHOLDER_CONTENT) return null;
 
   return (
     <section className="stats-banner" ref={ref}>

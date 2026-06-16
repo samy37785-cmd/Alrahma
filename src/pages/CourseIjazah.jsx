@@ -247,7 +247,7 @@ const PERKS = {
 };
 
 /* ─── Book card with expand ─── */
-function BookCard({ book, lang, ui }) {
+function BookCard({ book, lang }) {
   const [open, setOpen] = useState(false);
   const isAr = lang === 'ar';
   const authorLabel = isAr ? book.author.ar : book.author.en;

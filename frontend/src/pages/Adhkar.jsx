@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+﻿import { useState, useEffect, useCallback } from 'react';
 import '../styles/adhkar.css';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
@@ -7,6 +7,7 @@ import { useLang } from '../context/LangContext';
 import { ADHKAR_TR, sourceTr } from '../i18n/adhkarText';
 
 import { ADHKAR, CATEGORY_KEYS } from '../data/adhkarData';
+import Breadcrumbs from '../components/ui/Breadcrumbs';
 
 
 /* ══════════════════════════════════════════════════════════════════
@@ -19,7 +20,7 @@ export default function Adhkar() {
   const catName = (key) => a.categories[key] || ADHKAR[key].title;
 
   useSEO({
-    title: `${a.heading} — Al-Rahma Academy`,
+    title: a.heading,
     description: a.sub,
   });
 
@@ -76,7 +77,8 @@ export default function Adhkar() {
   return (
     <>
       <Header />
-      <main className="adhkar__main">
+      <Breadcrumbs items={[{ label: 'Tools', to: '/tools' }, { label: isAr ? 'الأذكار' : 'Adhkar' }]} />
+      <main id="main-content" className="adhkar__main">
 
         {/* Hero */}
         <section className="adhkar__hero">

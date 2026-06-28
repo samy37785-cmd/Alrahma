@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import Brand from '../components/layout/Brand';
 import '../styles/quran.css';
 import useSEO from '../hooks/useSEO';
+import Breadcrumbs from '../components/ui/Breadcrumbs';
 import { useLang } from '../context/LangContext';
 import faqItems from '../data/faqItems';
 
@@ -28,6 +29,8 @@ export default function FAQ() {
           <Link to="/" className="btn btn--ghost btn--sm">{pg.backToSite}</Link>
         </div>
       </header>
+
+      <Breadcrumbs items={[{ label: 'Resources', to: '/resources' }, { label: pg.heading }]} />
 
       <main id="main-content" className="container faq-page__main">
         <div className="faq-page__header">

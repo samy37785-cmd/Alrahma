@@ -5,9 +5,25 @@ import Brand from '../components/layout/Brand';
 import useSEO from '../hooks/useSEO';
 import { useLang } from '../context/LangContext';
 
+// Parse "prefix <a href="...">label</a> suffix" from an i18n string safely.
+function GdprText({ raw }) {
+  const m = raw.match(/^([\s\S]*?)<a[^>]*>([\s\S]*?)<\/a>([\s\S]*)$/);
+  if (!m) return <span>{raw}</span>;
+  const [, pre, linkText, post] = m;
+  return (
+    <span>
+      {pre}
+      <Link to="/academy/privacy" style={{ color: 'var(--green)' }}>{linkText}</Link>
+      {post}
+    </span>
+  );
+}
+
 export default function Register() {
   const { t } = useLang();
   const rg = t.authPg.register;
+  const profile = t.authPg.profile;
+  const networkError = t.authPg.login.networkError;
   useSEO({ title: rg.title, noindex: true });
   const { register } = useAuth();
   const navigate = useNavigate();
@@ -15,7 +31,7 @@ export default function Register() {
   const [gdpr, setGdpr] = useState(false);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
-  const isAr = t.dir === 'rtl';
+
 
   const handleChange = (e) => setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
 
@@ -28,7 +44,7 @@ export default function Register() {
       await register(form);
       navigate(form.role === 'parent' ? '/parent' : '/');
     } catch (err) {
-      setError(err.response?.data?.message || rg.btn);
+      setError(err.response?.data?.message || (!err.response ? networkError : rg.btn));
     } finally {
       setBusy(false);
     }
@@ -45,10 +61,10 @@ export default function Register() {
 
         <form onSubmit={handleSubmit}>
           <div className="field">
-            <label htmlFor="role">{isAr ? 'نوع الحساب' : 'Account type'}</label>
+            <label htmlFor="role">{profile.accountType}</label>
             <select id="role" name="role" value={form.role} onChange={handleChange}>
-              <option value="student">{isAr ? 'طالب' : 'Student'}</option>
-              <option value="parent">{isAr ? 'ولي أمر' : 'Parent'}</option>
+              <option value="student">{profile.roleStudent}</option>
+              <option value="parent">{profile.roleParent}</option>
             </select>
           </div>
           <div className="field">
@@ -67,7 +83,7 @@ export default function Register() {
               name="password"
               value={form.password}
               onChange={handleChange}
-              minLength={6}
+              minLength={8}
               required
             />
           </div>
@@ -78,7 +94,7 @@ export default function Register() {
                 checked={gdpr}
                 onChange={(e) => setGdpr(e.target.checked)}
               />
-              <span dangerouslySetInnerHTML={{ __html: rg.gdprConsent }} />
+              <GdprText raw={rg.gdprConsent} />
             </label>
           </div>
           {error && <p className="auth__error">{error}</p>}

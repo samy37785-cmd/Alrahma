@@ -13,7 +13,7 @@ export default function Brand({ light = false }) {
 
   return (
     <Link to="/" onClick={handleClick} className={`brand${light ? ' brand--light' : ''}`}>
-      <span className="brand__mark">۩</span>
+      <span className="brand__mark" aria-hidden="true">۩</span>
       <span className="brand__text">
         <strong>{site.name}</strong>
         <small>{t.tagline}</small>

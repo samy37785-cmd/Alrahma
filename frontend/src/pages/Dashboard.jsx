@@ -144,7 +144,7 @@ export default function Dashboard() {
                   <p className="dash__tutor-sub">{d.subjects} {enrollment.subjects.join(', ')}</p>
                 )}
                 {enrollment.plan && (
-                  <p className="dash__tutor-sub" style={{ marginTop: 0 }}>Plan: {enrollment.plan}</p>
+                  <p className="dash__tutor-sub" style={{ marginTop: 0 }}>{d.planLabel} {enrollment.plan}</p>
                 )}
                 <div className="dash__tutor-actions">
                   <a
@@ -170,7 +170,7 @@ export default function Dashboard() {
                 <span className="dash__action-icon">💬</span> {d.contactTutor}
               </a>
               <Link to="/messages" className="dash__action-btn">
-                <span className="dash__action-icon">💬</span> {d.messages || 'Messages'}
+                <span className="dash__action-icon">💬</span> {d.messages}
               </Link>
               <Link to="/billing" className="dash__action-btn">
                 <span className="dash__action-icon">💳</span> {d.viewInvoices}
@@ -188,8 +188,8 @@ export default function Dashboard() {
                   <span className="dash__action-icon">📋</span> {d.enrollNow}
                 </Link>
               )}
-              <Link to="/quran" className="dash__action-btn">
-                <span className="dash__action-icon">📖</span> {t.nav.hadith || 'Quran'}
+              <Link to="/tools/quran-reader" className="dash__action-btn">
+                <span className="dash__action-icon">📖</span> {d.quranReader}
               </Link>
             </div>
           </div>

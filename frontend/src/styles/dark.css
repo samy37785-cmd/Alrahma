@@ -8,6 +8,7 @@ html.dark {
   /* ── Core palette overrides ── */
   --cream:       #0d1712;
   --white:       #152010;
+  --surface:     #1a2820;
   --ink:         #dceee5;
   --muted:       #7aad95;
   --line:        #253d2c;
@@ -214,15 +215,16 @@ html.dark .blog-filter-btn:hover {
 
 /* ── Blog post page ───────────────────────────────────────────── */
 html.dark .blog-post { background: var(--cream); }
-html.dark .blog-post__content {
+html.dark .blog-post__body {
   background: #1a2820;
   border-color: var(--line);
   color: var(--ink);
 }
-html.dark .blog-post__content h2,
-html.dark .blog-post__content h3 { color: var(--ink); }
-html.dark .blog-post__content a { color: var(--green); }
-html.dark .blog-post__content blockquote {
+html.dark .blog-post__body h2,
+html.dark .blog-post__body h3 { color: var(--ink); }
+html.dark .blog-post__body p { color: var(--muted); }
+html.dark .blog-post__body a { color: var(--green); }
+html.dark .blog-post__body blockquote {
   border-color: var(--green);
   background: #162518;
   color: var(--muted);
@@ -597,3 +599,93 @@ html.dark .billing__card,
 html.dark .admin__card {
   transition: background .25s, border-color .25s, color .25s;
 }
+
+/* ════════════════════════════════════════════════════════════════
+   DARK MODE — MOBILE-SPECIFIC OVERRIDES
+   (The mobile nav has `background: #fff` hardcoded in media
+   queries; without these rules the drawer stays white in dark mode)
+   ════════════════════════════════════════════════════════════════ */
+
+/* Mobile nav drawer (≤640px + tablet 641-900px) */
+@media (max-width: 900px) {
+  html.dark .nav {
+    background: #0e1a11;
+    border-bottom-color: var(--line);
+  }
+  /* Inline sub-links inside the mobile drawer */
+  html.dark .nav__dropdown-mobile .nav__dropdown-item {
+    color: var(--ink);
+  }
+  html.dark .nav__dropdown-mobile .nav__dropdown-item:hover {
+    background: #1e2e22;
+    color: var(--gold);
+  }
+  /* Divider line between top nav items */
+  html.dark .nav > a,
+  html.dark .nav__dropdown-trigger,
+  html.dark .nav__cta {
+    border-bottom-color: var(--line);
+  }
+}
+
+/* h2 uses hard-coded var(--green-deep) which becomes near-invisible on
+   dark backgrounds; override globally and let individual sections that
+   need a specific shade use higher-specificity selectors. */
+html.dark h2 { color: var(--ink); }
+
+/* Hub cards benefit from the --surface override already in :root above,
+   but keep an explicit fallback so existing cards always have a bg. */
+html.dark .hub-card {
+  background: var(--surface);
+  border-color: var(--line);
+  color: var(--ink);
+}
+html.dark .hub-card__title { color: var(--ink); }
+html.dark .hub-card__desc  { color: var(--muted); }
+html.dark .hub-card--cta   { background: #162518; border-color: var(--green); }
+
+/* ── Enrollment wizard (main card + interactive buttons) ──────── */
+html.dark .enroll__card { background: #1a2820; border-color: var(--line); }
+html.dark .enroll__time-btn,
+html.dark .enroll__subject-btn {
+  background: #1a2820;
+  border-color: var(--line);
+  color: var(--ink);
+}
+html.dark .enroll__time-btn strong { color: var(--ink); }
+html.dark .enroll__time-btn span,
+html.dark .enroll__subject-btn { color: var(--muted); }
+html.dark .enroll__time-btn.selected,
+html.dark .enroll__subject-btn.selected {
+  background: var(--green-light);
+  border-color: var(--green);
+}
+html.dark .enroll__time-btn.selected strong { color: var(--ink); }
+html.dark .enroll__lang-btn,
+html.dark .enroll__pref-btn {
+  background: #1a2820;
+  border-color: var(--line);
+  color: var(--ink);
+}
+html.dark .enroll__lang-btn.selected,
+html.dark .enroll__pref-btn.selected {
+  background: var(--green);
+  border-color: var(--green);
+  color: #fff;
+}
+
+/* ── Teachers page filter bar (sticky; hardcoded #fff) ──────────── */
+html.dark .tpg__filters {
+  background: #0e1a11;
+  border-bottom-color: var(--line);
+}
+
+/* ── Admin panel class fix (.admin__panel vs .admin__card mismatch) ─ */
+html.dark .admin__panel {
+  background: #1a2820;
+  border-color: var(--line);
+}
+html.dark .admin__panel h2 { color: var(--ink); }
+
+/* ── Hero wave — fill was hardcoded white; match dark body background ── */
+html.dark .hero__wave path { fill: var(--cream); }

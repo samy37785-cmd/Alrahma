@@ -27,7 +27,19 @@ import parentRoutes from './routes/parentRoutes.js';
 import liveClassRoutes from './routes/liveClassRoutes.js';
 import messageRoutes from './routes/messageRoutes.js';
 import cronRoutes from './routes/cronRoutes.js';
+import adminRoutes from './routes/v1/admin/index.js';
+import notificationRoutes from './routes/notificationRoutes.js';
+import contactRoutes from './routes/contactRoutes.js';
+import couponRoutes from './routes/couponRoutes.js';
+import wishlistRoutes from './routes/wishlistRoutes.js';
+import reviewRoutes from './routes/reviewRoutes.js';
+import blogRoutes from './routes/blogRoutes.js';
+import searchRoutes from './routes/searchRoutes.js';
 import { notFound, errorHandler } from './middleware/errorHandler.js';
+import { sanitizeMongo } from './middleware/sanitizeMongo.js';
+import { requestLogger } from './middleware/requestLogger.js';
+import { issueCsrfToken, verifyCsrfToken } from './middleware/csrf.js';
+import logger from './config/logger.js';
 
 const app = express();
 
@@ -48,7 +60,7 @@ app.use(
       if (
         !origin ||                                              // curl / mobile / server-to-server
         allowedOrigins.includes(origin) ||                    // explicitly whitelisted
-        /^http:\/\/localhost:\d+$/.test(origin) ||            // any localhost port (local dev)
+        (process.env.NODE_ENV !== 'production' && /^http:\/\/localhost:\d+$/.test(origin)) || // any localhost port (local dev only)
         /^https:\/\/alrahma-[a-z0-9-]+\.vercel\.app$/.test(origin) // Vercel preview branches
       ) {
         return callback(null, true);
@@ -66,13 +78,27 @@ app.use('/api/payments/stripe/webhook', express.raw({ type: 'application/json' }
 app.use(express.json({ limit: '100kb' }));
 app.use(express.urlencoded({ extended: true, limit: '100kb' }));
 app.use(cookieParser()); // parses the httpOnly auth cookie into req.cookies
+app.use(sanitizeMongo);   // strip $-operators / dotted keys from input (NoSQL-injection guard)
+app.use(issueCsrfToken);  // attach readable CSRF cookie so the SPA can echo it back
+app.use(verifyCsrfToken); // reject mutating requests without a valid X-CSRF-Token header
+app.use(requestLogger);
 
 // Rate limiters live in config/rateLimit.js — they use a shared Redis store
 // when REDIS_URL is set (global across serverless instances), else in-memory.
 // Health-check endpoints — BEFORE the DB middleware so a platform health check
 // never blocks on a cold DB connection and the service stays marked as healthy.
-app.get('/',       (_req, res) => res.json({ status: 'ok', service: 'Al-Rahma Academy API' }));
-app.get('/health', (_req, res) => res.json({ status: 'ok', uptime: process.uptime() }));
+app.get('/', (_req, res) => res.json({ status: 'ok', service: 'Al-Rahma Academy API' }));
+app.get('/health', (_req, res) => {
+  const healthy = {
+    status:  'ok',
+    uptime:  Math.floor(process.uptime()),
+    memory:  process.memoryUsage().heapUsed,
+    version: process.env.npm_package_version || '1.0.0',
+    env:     process.env.NODE_ENV || 'development',
+    ts:      new Date().toISOString(),
+  };
+  res.json(healthy);
+});
 
 app.use('/api', apiLimiter);
 
@@ -82,7 +108,7 @@ app.use(async (req, res, next) => {
     await connectDB();
     next();
   } catch (err) {
-    console.error('DB connection failed:', err.message);
+    logger.error('DB connection failed', { message: err.message });
     res.status(503).json({ message: 'Database unavailable — please try again.' });
   }
 });
@@ -102,6 +128,18 @@ app.use('/api/parent', parentRoutes);
 app.use('/api/classes', liveClassRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/cron', cronRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/contact',       contactRoutes);
+app.use('/api/coupons',       couponRoutes);
+app.use('/api/wishlist',      wishlistRoutes);
+app.use('/api/reviews',       reviewRoutes);
+app.use('/api/blog',          blogRoutes);
+app.use('/api/search',        searchRoutes);
+
+// Admin dashboard — zero-trust, MFA-required, RBAC-enforced
+// All security middleware (IP whitelist, Helmet CSP, rate limit, sanitization,
+// verifyAccessToken, maintenanceGuard) is applied inside the router itself.
+app.use('/api/v1/admin', adminRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

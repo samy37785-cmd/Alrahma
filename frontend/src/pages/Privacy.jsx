@@ -3,6 +3,7 @@ import Brand from '../components/layout/Brand';
 import '../styles/quran.css';
 import { site } from '../data';
 import useSEO from '../hooks/useSEO';
+import Breadcrumbs from '../components/ui/Breadcrumbs';
 
 export default function Privacy() {
   useSEO({ title: 'Privacy Policy', description: 'Read the AL-Rahma Academy privacy policy to understand how we collect, use and protect your personal data.' });
@@ -14,6 +15,8 @@ export default function Privacy() {
           <Link to="/" className="btn btn--ghost btn--sm">← Back to site</Link>
         </div>
       </header>
+
+      <Breadcrumbs items={[{ label: 'Academy', to: '/academy' }, { label: 'Privacy Policy' }]} />
 
       <main className="container legal__main">
         <h1>Privacy Policy</h1>

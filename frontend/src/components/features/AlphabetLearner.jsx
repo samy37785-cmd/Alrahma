@@ -1,21 +1,11 @@
 ﻿import { useState, useRef } from 'react';
 import useSpeech from '../../hooks/useSpeech';
+import { useLang } from '../../context/LangContext';
 import { alphabetGroups } from '../../data';
 
 const stripDiacritics = (s = '') => s.replace(/[ً-ْ]/g, '').trim();
 
-const GROUP_LABELS = [
-  'Group 1 — ا ب ت ث',
-  'Group 2 — ج ح خ د',
-  'Group 3 — ذ ر ز س',
-  'Group 4 — ش ص ض ط',
-  'Group 5 — ظ ع غ ف',
-  'Group 6 — ق ك ل م',
-  'Group 7 — ن ه و ي',
-  'Short vowels (harakat)',
-  'Tanwin & Shadda',
-  'Special letters & forms',
-];
+const AR_LETTER_GROUPS = ['ا ب ت ث','ج ح خ د','ذ ر ز س','ش ص ض ط','ظ ع غ ف','ق ك ل م','ن ه و ي'];
 
 const RECORDINGS = [
   { label: 'قارئ ١', src: '/audio/arabic-alphabet-full.ogg' },
@@ -23,6 +13,8 @@ const RECORDINGS = [
 ];
 
 export default function AlphabetLearner({ onClose }) {
+  const { t } = useLang();
+  const al = t.alphabet;
   const { speak, listen, sttSupported } = useSpeech();
   const [groupIndex, setGroupIndex] = useState(0);
   const [micLetter, setMicLetter]   = useState(null);
@@ -66,7 +58,7 @@ export default function AlphabetLearner({ onClose }) {
       setResult({ ar: letter.ar, ok, heard });
     } catch (err) {
       setResult({ ar: letter.ar, ok: false,
-        heard: err.message === 'no-speech' ? 'No speech detected' : 'Mic error' });
+        heard: err.message === 'no-speech' ? al.noSpeech : al.micError });
     } finally {
       setMicLetter(null);
     }
@@ -79,9 +71,9 @@ export default function AlphabetLearner({ onClose }) {
       <div className="alpha__header">
         <div>
           <h4 className="alpha__title">الأبجدية العربية والإيطالية</h4>
-          <p className="alpha__subtitle">Arabic &amp; Italian Alphabet</p>
+          <p className="alpha__subtitle">{al.title}</p>
         </div>
-        <button className="alpha__close-btn" onClick={onClose} aria-label="Close">&#10005;</button>
+        <button className="alpha__close-btn" onClick={onClose} aria-label={al.closeLabel}>&#10005;</button>
       </div>
 
       {/* ── Progress dots ───────────────────────────────────── */}
@@ -91,16 +83,22 @@ export default function AlphabetLearner({ onClose }) {
             key={i}
             className={i === groupIndex ? 'alpha__dot alpha__dot--active' : 'alpha__dot'}
             onClick={() => goTo(i)}
-            aria-label={'Go to group ' + (i + 1)}
+            aria-label={al.groupPrefix + ' ' + (i + 1)}
           />
         ))}
       </div>
-      <p className="alpha__group-label">{GROUP_LABELS[groupIndex]}</p>
+      <p className="alpha__group-label">
+        {groupIndex < 7
+          ? `${al.groupPrefix} ${groupIndex + 1} — ${AR_LETTER_GROUPS[groupIndex]}`
+          : groupIndex === 7 ? al.shortVowels
+          : groupIndex === 8 ? al.tanwinShadda
+          : al.specialLetters}
+      </p>
 
       {/* ── Full-alphabet recordings ─────────────────────────── */}
       <div className="alpha__recordings">
         <div className="alpha__rec-header">
-          <span className="alpha__rec-title">استمع للأبجدية كاملة</span>
+          <span className="alpha__rec-title">{al.listenFull}</span>
           <div className="alpha__rec-tabs">
             {RECORDINGS.map((r, i) => (
               <button
@@ -127,14 +125,14 @@ export default function AlphabetLearner({ onClose }) {
           <div className="alpha__card" key={letter.ar}>
             <div className="alpha__glyph" dir="rtl" lang="ar">{letter.ar}</div>
             <div className="alpha__card-name">{letter.name}</div>
-            <div className="alpha__card-it">IT: {letter.it}</div>
+            <div className="alpha__card-it">{al.itLabel} {letter.it}</div>
             {letter.desc && <p className="alpha__card-desc">{letter.desc}</p>}
 
             <div className="alpha__actions">
               <button
                 className={playing === letter.ar ? 'alpha__btn alpha__btn--ar alpha__btn--playing' : 'alpha__btn alpha__btn--ar'}
                 onClick={() => playArabic(letter)}
-                title="استمع بالعربية"
+                title={al.listenTitle}
               >
                 {playing === letter.ar ? '⏸' : '🔊'}
               </button>
@@ -144,7 +142,7 @@ export default function AlphabetLearner({ onClose }) {
                   className={micLetter === letter.ar ? 'alpha__btn alpha__btn--mic alpha__btn--listening' : 'alpha__btn alpha__btn--mic'}
                   onClick={() => testPronunciation(letter)}
                   disabled={micLetter !== null}
-                  title="Test your pronunciation"
+                  title={al.testPronTitle}
                 >
                   {micLetter === letter.ar ? '⏳' : '🎙'}
                 </button>
@@ -153,7 +151,7 @@ export default function AlphabetLearner({ onClose }) {
 
             {result && result.ar === letter.ar && (
               <p className={result.ok ? 'alpha__feedback alpha__feedback--ok' : 'alpha__feedback alpha__feedback--no'}>
-                {result.ok ? '✓ Well done!' : '✗ ' + result.heard}
+                {result.ok ? al.wellDone : '✗ ' + result.heard}
               </p>
             )}
           </div>
@@ -163,11 +161,11 @@ export default function AlphabetLearner({ onClose }) {
       {/* ── Navigation ───────────────────────────────────────── */}
       <div className="alpha__nav">
         <button className="alpha__nav-btn" onClick={goPrev} disabled={isFirst}>
-          ← Previous
+          {al.prevBtn}
         </button>
         <span className="alpha__nav-count">{groupIndex + 1} / {alphabetGroups.length}</span>
         <button className="alpha__nav-btn alpha__nav-btn--next" onClick={goNext} disabled={isLast}>
-          Next →
+          {al.nextBtn}
         </button>
       </div>
 

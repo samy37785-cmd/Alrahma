@@ -4,10 +4,9 @@ import { useAuth } from '../context/AuthContext';
 import { getMe, getCourses, getMyCertificates, getMyLinkCode } from '../api/client';
 import { useLang } from '../context/LangContext';
 
-const CERT_LABEL = { ijazah: 'Ijazah', completion: 'Course Completion', hifz: 'Hifz Milestone', attendance: 'Attendance' };
 
 // Opens a clean printable certificate in a new window and triggers print.
-function printCertificate(cert) {
+function printCertificate(cert, typeLabel) {
   const w = window.open('', '_blank', 'width=900,height=650');
   if (!w) return;
   const date = new Date(cert.issuedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -29,7 +28,7 @@ function printCertificate(cert) {
     <div class="cert">
       <p class="hdr">🕌 AL-Rahma Academy</p>
       <h1>Certificate</h1>
-      <p class="sub">${CERT_LABEL[cert.type] || cert.type}</p>
+      <p class="sub">${typeLabel || cert.type}</p>
       <p class="lbl">This is proudly presented to</p>
       <p class="name">${cert.studentName}</p>
       <p class="title">${cert.title}</p>
@@ -119,7 +118,7 @@ export default function Profile() {
         <div className="container admin__bar-inner">
           <strong>AL-Rahma · {pg.myAccount}</strong>
           <div className="admin__bar-right">
-            <Link to="/dashboard" className="btn btn--ghost btn--sm">← Dashboard</Link>
+            <Link to="/dashboard" className="btn btn--ghost btn--sm">{pg.dashboard}</Link>
             <Link to="/billing" className="btn btn--ghost btn--sm">{pg.billing}</Link>
             {user?.role === 'admin' && (
               <Link to="/admin" className="btn btn--ghost btn--sm">{pg.admin}</Link>
@@ -160,8 +159,8 @@ export default function Profile() {
                 <label>{pg.accountType}</label>
                 <input value={
                   user?.role === 'admin'   ? pg.roleAdmin
-                  : user?.role === 'teacher' ? (t.dir === 'rtl' ? 'معلّم' : 'Teacher')
-                  : user?.role === 'parent'  ? (t.dir === 'rtl' ? 'ولي أمر' : 'Parent')
+                  : user?.role === 'teacher' ? pg.roleTeacher
+                  : user?.role === 'parent'  ? pg.roleParent
                   : pg.roleStudent
                 } disabled />
               </div>
@@ -229,18 +228,18 @@ export default function Profile() {
 
         {certificates.length > 0 && (
           <section className="admin__panel" style={{ marginTop: '1.5rem' }}>
-            <h2>🎓 {pg.myCertificates || 'My Certificates'}</h2>
+            <h2>🎓 {pg.myCertificates}</h2>
             <ul className="admin__list">
               {certificates.map((c) => (
                 <li key={c._id} style={{ alignItems: 'center' }}>
                   <span>
                     <strong>{c.title}</strong>
                     <small style={{ display: 'block', color: '#888' }}>
-                      {CERT_LABEL[c.type] || c.type} · {c.certificateNumber} · {new Date(c.issuedAt).toLocaleDateString('en-GB')}
+                      {pg.certTypes[c.type] || c.type} · {c.certificateNumber} · {new Date(c.issuedAt).toLocaleDateString('en-GB')}
                     </small>
                   </span>
-                  <button className="btn btn--green btn--sm" onClick={() => printCertificate(c)}>
-                    🖨 {pg.printCert || 'View / Print'}
+                  <button className="btn btn--green btn--sm" onClick={() => printCertificate(c, pg.certTypes[c.type])}>
+                    🖨 {pg.printCert}
                   </button>
                 </li>
               ))}
@@ -277,24 +276,20 @@ export default function Profile() {
         {/* Parent-link code — lets a parent connect to this student's account */}
         {isStudent && (
           <section className="admin__panel" style={{ marginTop: '1.5rem' }}>
-            <h2>👨‍👩‍👧 {t.dir === 'rtl' ? 'ربط ولي الأمر' : 'Parent link'}</h2>
-            <p style={{ color: '#888', fontSize: '.9rem', marginTop: 0 }}>
-              {t.dir === 'rtl'
-                ? 'شارك الكود ده مع ولي أمرك عشان يقدر يتابع تقدّمك من حسابه.'
-                : 'Share this code with your parent so they can follow your progress from their account.'}
-            </p>
+            <h2>👨‍👩‍👧 {pg.parentLink}</h2>
+            <p style={{ color: '#888', fontSize: '.9rem', marginTop: 0 }}>{pg.parentLinkDesc}</p>
             {linkCode ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
                 <code style={{ fontSize: '1.5rem', fontWeight: 700, letterSpacing: '4px', background: '#f1f6f3', color: '#0b6e4f', padding: '8px 18px', borderRadius: 8, border: '1px dashed #0b6e4f' }}>
                   {linkCode}
                 </code>
                 <button className="btn btn--ghost btn--sm" onClick={() => navigator.clipboard?.writeText(linkCode)}>
-                  📋 {t.dir === 'rtl' ? 'نسخ' : 'Copy'}
+                  📋 {pg.copy}
                 </button>
               </div>
             ) : (
               <button className="btn btn--green btn--sm" onClick={revealCode} disabled={codeLoading}>
-                {codeLoading ? '…' : (t.dir === 'rtl' ? 'إظهار كود الربط' : 'Show link code')}
+                {codeLoading ? '…' : pg.showLinkCode}
               </button>
             )}
           </section>

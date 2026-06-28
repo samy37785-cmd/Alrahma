@@ -4,15 +4,29 @@
 
 ## Main pages
 - [Home](https://al-rahmaacademy.com/): Overview of courses, pricing and the free trial.
-- [About](https://al-rahmaacademy.com/about): Mission, vision and values of the academy.
-- [Teachers](https://al-rahmaacademy.com/teachers): Certified Al-Azhar tutors and their specialties.
-- [FAQ](https://al-rahmaacademy.com/faq): Answers about lessons, pricing, trials and certificates.
+- [About](https://al-rahmaacademy.com/academy/about): Mission, vision and values of the academy.
+- [Teachers](https://al-rahmaacademy.com/academy/teachers): Certified Al-Azhar tutors and their specialties.
+- [FAQ](https://al-rahmaacademy.com/resources/faq): Answers about lessons, pricing, trials and certificates.
 - [Free Trial / Enrollment](https://al-rahmaacademy.com/enroll): Book two free trial classes.
 
 ## Courses
-- [Ijazah Certification](https://al-rahmaacademy.com/course/ijazah): Quran memorization and recitation with a connected chain (sanad).
-- [Islamic Studies](https://al-rahmaacademy.com/course/islamic-studies): Fiqh, Aqeedah, Seerah and Arabic.
-- [Blog](https://al-rahmaacademy.com/blog): Articles on Quran learning, Tajweed and Arabic.
+- [Courses Hub](https://al-rahmaacademy.com/courses): All available courses.
+- [Quran & Tajweed](https://al-rahmaacademy.com/courses/quran): Quran reading, Tajweed and Hifz programme.
+- [Arabic Language](https://al-rahmaacademy.com/courses/arabic): Modern Standard Arabic for all levels.
+- [Ijazah Certification](https://al-rahmaacademy.com/courses/ijazah): Quran memorization and recitation with a connected chain (sanad).
+- [Islamic Studies](https://al-rahmaacademy.com/courses/islamic-studies): Fiqh, Aqeedah, Seerah and Arabic.
+
+## Tools
+- [Tools Hub](https://al-rahmaacademy.com/tools): All Islamic tools.
+- [Quran Reader](https://al-rahmaacademy.com/tools/quran-reader): Full Quran reader with Hifz tracker.
+- [Adhkar](https://al-rahmaacademy.com/tools/adhkar): Daily remembrances (Azkar).
+- [Hadith Library](https://al-rahmaacademy.com/tools/hadith): Searchable hadith collections.
+- [Prayer Times](https://al-rahmaacademy.com/tools/prayer): Prayer times, Qibla and Islamic calendar.
+- [Blog](https://al-rahmaacademy.com/resources/blog): Articles on Quran learning, Tajweed and Arabic.
+
+## Locale pages (pre-rendered)
+- [Italian landing page](https://al-rahmaacademy.com/it/)
+- [French landing page](https://al-rahmaacademy.com/fr/)
 
 ## Contact
 - WhatsApp: +20 101 605 4663

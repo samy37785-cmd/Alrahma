@@ -14,7 +14,8 @@ const userSchema = new mongoose.Schema(
     password: {
       type: String,
       required: [true, 'Password is required'],
-      minlength: [6, 'Password must be at least 6 characters'],
+      minlength: [8,  'Password must be at least 8 characters'],
+      maxlength: [72, 'Password must not exceed 72 characters'],
       select: false, // never return the password by default
     },
     role: { type: String, enum: ['student', 'teacher', 'parent', 'admin'], default: 'student' },
@@ -49,6 +50,8 @@ const userSchema = new mongoose.Schema(
     },
     resetToken:       { type: String, select: false },
     resetTokenExpiry: { type: Date,   select: false },
+    // Incremented on password change; invalidates all previously-issued tokens.
+    tokenVersion:     { type: Number, default: 0 },
   },
   { timestamps: true }
 );

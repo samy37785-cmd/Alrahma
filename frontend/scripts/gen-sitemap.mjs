@@ -1,9 +1,9 @@
 /**
  * Auto-generate public/sitemap.xml from a single source of truth: the
- * react-snap `include` list in package.json (the public, prerendered routes).
- * Runs as the npm `prebuild` hook, so every deploy ships a complete, current
- * sitemap with no manual editing. Auth/admin routes are never in the include
- * list, so they are never sitemapped (and robots.txt blocks them too).
+ * `seoRoutes` list in package.json (the public, indexable routes). Runs as the
+ * npm `prebuild` hook, so every deploy ships a complete, current sitemap with
+ * no manual editing. Auth/admin routes are never in that list, so they are
+ * never sitemapped (and robots.txt blocks them too).
  */
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -14,7 +14,7 @@ const root = join(__dirname, '..');
 const ORIGIN = 'https://al-rahmaacademy.com';
 
 const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
-const routes = pkg.reactSnap?.include ?? ['/'];
+const routes = pkg.seoRoutes ?? ['/'];
 
 // Standalone static language landing pages that live in public/{it,fr}/ and
 // are not React routes, so they aren't in the react-snap include list.
@@ -25,7 +25,10 @@ const today = new Date().toISOString().slice(0, 10);
 
 const priorityFor = (p) => {
   if (p === '/') return '1.0';
-  if (p.startsWith('/course')) return '0.9';
+  if (p.startsWith('/courses')) return '0.9';
+  if (p.startsWith('/tools')) return '0.85';
+  if (p.startsWith('/academy')) return '0.8';
+  if (p.startsWith('/resources')) return '0.8';
   if (p.startsWith('/blog/')) return '0.6';
   return '0.8';
 };

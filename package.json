@@ -8,9 +8,14 @@
     "setup": "npm install --prefix frontend && npm install --prefix backend",
     "start": "npm run dev",
     "frontend": "npm run dev --prefix frontend",
-    "backend": "npm run dev --prefix backend"
+    "backend": "npm run dev --prefix backend",
+    "test": "npm run test --prefix backend && npm run test --prefix frontend",
+    "test:backend": "npm run test --prefix backend",
+    "test:frontend": "npm run test --prefix frontend",
+    "test:coverage": "npm run test:coverage --prefix frontend"
   },
   "devDependencies": {
+    "@playwright/test": "^1.61.1",
     "concurrently": "^10.0.3"
   }
 }

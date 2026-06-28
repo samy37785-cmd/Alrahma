@@ -21,14 +21,14 @@
   <meta name="keywords" content="learn Quran online, online Quran classes, Tajweed course, Hifz program, Ijazah online, Arabic language course, female Quran teacher, Quran for kids, Islamic studies online, imparare il Corano online, corso di Tajweed, apprendre le Coran en ligne" />
   <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
   <meta name="author" content="Al-Rahma Academy" />
-  <link rel="canonical" href="https://al-rahmaacademy.com/en/" />
+  <link rel="canonical" href="https://al-rahmaacademy.com/" />
 
-  <!-- hreflang — tells Google which page to show per language/region -->
+  <!-- hreflang — en/it/fr have dedicated pages; ar/es/de use lang query param -->
   <link rel="alternate" hreflang="en"       href="https://al-rahmaacademy.com/en/" />
-  <link rel="alternate" hreflang="ar"       href="https://al-rahmaacademy.com/ar/" />
+  <link rel="alternate" hreflang="ar"       href="https://al-rahmaacademy.com/?lang=ar" />
   <link rel="alternate" hreflang="it"       href="https://al-rahmaacademy.com/it/" />
-  <link rel="alternate" hreflang="es"       href="https://al-rahmaacademy.com/es/" />
-  <link rel="alternate" hreflang="de"       href="https://al-rahmaacademy.com/de/" />
+  <link rel="alternate" hreflang="es"       href="https://al-rahmaacademy.com/?lang=es" />
+  <link rel="alternate" hreflang="de"       href="https://al-rahmaacademy.com/?lang=de" />
   <link rel="alternate" hreflang="fr"       href="https://al-rahmaacademy.com/fr/" />
   <link rel="alternate" hreflang="x-default" href="https://al-rahmaacademy.com/en/" />
 
@@ -37,7 +37,7 @@
   ════════════════════════════════════════════════════════════════ -->
   <meta property="og:type"        content="website" />
   <meta property="og:site_name"   content="Al-Rahma Academy" />
-  <meta property="og:url"         content="https://al-rahmaacademy.com/en/" />
+  <meta property="og:url"         content="https://al-rahmaacademy.com/" />
   <meta property="og:title"       content="Al-Rahma Academy — Learn Quran Online | Tajweed, Hifz & Arabic" />
   <meta property="og:description" content="One-to-one live Quran lessons with certified Egyptian tutors. Tajweed, Hifz, Ijazah & Arabic for all ages. Book 2 free trial classes — no commitment." />
   <meta property="og:image"       content="https://al-rahmaacademy.com/og-cover.jpg" />
@@ -55,9 +55,11 @@
   ════════════════════════════════════════════════════════════════ -->
   <meta name="twitter:card"        content="summary_large_image" />
   <meta name="twitter:site"        content="@alrahmaacademy" />
+  <meta name="twitter:creator"     content="@alrahmaacademy" />
   <meta name="twitter:title"       content="Al-Rahma Academy — Learn Quran Online" />
   <meta name="twitter:description" content="Certified Egyptian tutors. One-to-one lessons in Tajweed, Hifz & Arabic. Book 2 free trial classes today." />
   <meta name="twitter:image"       content="https://al-rahmaacademy.com/og-cover.jpg" />
+  <meta name="twitter:image:alt"   content="Al-Rahma Academy — Online Quran School" />
 
   <!-- ═══════════════════════════════════════════════════════════════
        Fonts & Icons
@@ -288,13 +290,40 @@
     "name": "Al-Rahma Academy",
     "description": "Online Quran and Arabic academy for Muslim communities in Europe",
     "inLanguage": ["en", "ar", "it", "es", "de", "fr"],
-    "publisher": { "@id": "https://al-rahmaacademy.com/#organization" }
+    "publisher": { "@id": "https://al-rahmaacademy.com/#organization" },
+    "potentialAction": {
+      "@type": "SearchAction",
+      "target": {
+        "@type": "EntryPoint",
+        "urlTemplate": "https://al-rahmaacademy.com/academy/teachers?q={search_term_string}"
+      },
+      "query-input": "required name=search_term_string"
+    }
   }
   </script>
 
 </head>
 <body>
-  <div id="root"></div>
+  <style>
+    @keyframes alr-spin { to { transform: rotate(360deg); } }
+    #app-loading { position: fixed; inset: 0; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 18px; background: #ffffff;
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif; z-index: 9999; }
+    #app-loading .alr-mark { font-size: 52px; line-height: 1; color: #0b6e4f; }
+    #app-loading .alr-spin { width: 38px; height: 38px; border: 3px solid #e5e7eb;
+      border-top-color: #0b6e4f; border-radius: 50%; animation: alr-spin .8s linear infinite; }
+    #app-loading .alr-name { font-size: 14px; letter-spacing: .04em; color: #6b7280; }
+  </style>
+  <div id="root">
+    <!-- First-paint loading state: shown instantly from static HTML so users
+         never see a blank white screen while the JS bundle downloads. React
+         (createRoot) replaces this on mount. -->
+    <div id="app-loading">
+      <div class="alr-mark">۩</div>
+      <div class="alr-spin"></div>
+      <div class="alr-name">Al-Rahma Academy</div>
+    </div>
+  </div>
   <script type="module" src="/src/main.jsx"></script>
 </body>
 </html>

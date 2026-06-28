@@ -40,7 +40,7 @@ export default function LangSwitcher() {
       >
         <span className="ls__flag">{FLAG[lang]}</span>
         <span className="ls__code">{lang.toUpperCase()}</span>
-        <svg className="ls__chevron" width="12" height="12" viewBox="0 0 12 12" fill="none">
+        <svg className="ls__chevron" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
           <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
         </svg>
       </button>

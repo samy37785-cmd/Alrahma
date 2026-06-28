@@ -1,9 +1,10 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 import Reveal from '../components/ui/Reveal';
 import useSEO from '../hooks/useSEO';
+import Breadcrumbs from '../components/ui/Breadcrumbs';
 import { useLang } from '../context/LangContext';
 import { COURSE_UI } from '../i18n/coursePages';
 
@@ -293,7 +294,7 @@ export default function CourseIjazah() {
   const [openStage, setOpenStage] = useState(null);
 
   useSEO({
-    title: isAr ? 'دورة إجازة القرآن الكريم — أكاديمية الرحمة' : 'Quran Ijazah Course — AL-Rahma Academy',
+    title: isAr ? 'دورة إجازة القرآن الكريم' : 'Quran Ijazah Course',
     description: isAr
       ? 'احصل على إجازة قرآنية رسمية بسند متصل إلى النبي ﷺ. ادرس متن الجزرية والشاطبية مع علماء أزهريين معتمدين.'
       : "Earn a formal Quran Ijazah with a continuous Sanad to the Prophet ﷺ. Study Matn Al-Jazariyyah, Al-Shatibiyyah and the Seven Qira'at with certified Al-Azhar scholars.",
@@ -319,6 +320,7 @@ export default function CourseIjazah() {
     <>
       <Header />
       <main id="main-content" dir={ui.dir}>
+        <Breadcrumbs items={[{ label: 'Courses', to: '/courses' }, { label: isAr ? 'دورة الإجازة' : 'Quran Ijazah Course' }]} />
         {/* Hero */}
         <section className="cl__hero" style={{ background: 'linear-gradient(145deg,#062d1f,#0b6e4f)' }}>
           <div className="container cl__hero-inner">

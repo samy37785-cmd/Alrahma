@@ -218,3 +218,107 @@ img, video, svg, canvas { max-width: 100%; }
      off-screen; let it shrink so the row fits. */
   .it__controls .it__city-input { min-width: 0; }
 }
+
+/* ══════════════════════════════════════════════════════════════════
+   7) HERO SECTION — reduce tall padding on phones so content sits
+   higher and the scroll-to-first-section feels snappy.
+   ══════════════════════════════════════════════════════════════════ */
+@media (max-width: 760px) {
+  .hero__inner { padding: 52px 0 60px; }
+}
+@media (max-width: 480px) {
+  .hero__inner { padding: 36px 0 44px; }
+  /* Decorative blobs are large (520px / 380px blur). On phones they
+     add rendering overhead with no visible payoff — hide them. */
+  .hero__orb { display: none; }
+}
+
+/* ── 8) HUB HERO — compress the tall hero on phones ──────────────── */
+@media (max-width: 640px) {
+  .hub-hero { padding: 44px 0 36px; }
+}
+
+/* ── 9) NEWSLETTER — column layout on small screens ──────────────── */
+@media (max-width: 640px) {
+  .newsletter__inner { flex-direction: column; align-items: flex-start; gap: 20px; }
+  .newsletter__form  { width: 100%; }
+  .newsletter__form input { min-width: 0; width: 100%; box-sizing: border-box; }
+}
+
+/* ── 10) TOPBAR — hide contact links on very small phones to save
+    vertical space; social icons stay so the bar isn't empty. ──────── */
+@media (max-width: 480px) {
+  .topbar__contact { display: none; }
+  .topbar__inner   { justify-content: center; }
+}
+
+/* ── 11) TEACHERS CREDS BAR — tighter padding on small phones ─────── */
+@media (max-width: 480px) {
+  .tc2__creds-bar { padding: 16px; }
+}
+
+/* ── 12) RTL FIX — mobile dropdown sub-menu indentation ──────────── */
+[dir="rtl"] .nav__dropdown-mobile { padding-left: 0; padding-right: 16px; }
+
+/* RTL: enrollment teacher card tags align to right (avatar is on the right) */
+[dir="rtl"] .enroll__tcard-tags { padding-left: 0; padding-right: 66px; }
+
+/* RTL: enrollment plan card list items align right */
+[dir="rtl"] .enroll__plan-card ul { text-align: right; }
+
+/* ── 13) ADHKAR — tighter card padding on small phones ───────────── */
+@media (max-width: 480px) {
+  .adhkar__card { padding: 16px; }
+  .adhkar__ar   { padding-right: 28px; }
+  .adhkar__context-badge { margin-right: 28px; }
+}
+
+/* ── 14) ENROLLMENT PAGE — less vertical padding on phones ─────────── */
+@media (max-width: 640px) {
+  .enroll__page { padding: 24px 0 48px; }
+}
+
+/* ── 15) TEACHER PROFILE STRIP — tighter stat cells on phones ──────── */
+@media (max-width: 480px) {
+  .tp__strip-stat { padding: 8px 10px; }
+}
+
+/* ── 16) FAQ QUESTION — break long words to prevent overflow ─────── */
+.faq__question { word-break: break-word; hyphens: auto; }
+
+/* ══════════════════════════════════════════════════════════════════
+   17) IPHONE SAFE-AREA  (home-bar / notch)
+   `env(safe-area-inset-bottom)` is 0 on non-notched devices, so
+   these rules are completely harmless everywhere else.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* WhatsApp FAB: lift above the home-bar indicator */
+.whatsapp-fab {
+  bottom: calc(22px + env(safe-area-inset-bottom, 0px));
+}
+
+/* Quran Hifz floating bar: add internal padding so text clears the bar */
+.qlc__float-bar {
+  padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+}
+
+/* ── 18) QURAN READER — hide keyboard-shortcut side tab on touch
+    devices; keyboard shortcuts serve no purpose without a keyboard.  */
+@media (max-width: 900px) {
+  .qlc__ksp { display: none; }
+}
+
+/* ── 19) 320px SANITY — ultra-small phone safety net ─────────────── */
+@media (max-width: 360px) {
+  /* Prevent any single flex/grid child from forcing the page wider */
+  .container > * { min-width: 0; }
+
+  /* Pricing plan price number is very large; scale down slightly */
+  .plan__price span { font-size: 2rem; }
+
+  /* Stat numbers in the banner would overflow at 2.8rem on 320px */
+  .stats-item__num { font-size: clamp(1.5rem, 7vw, 2rem); }
+
+  /* Dashboard stat value */
+  .dash__stat-value { font-size: 1.1rem; }
+}

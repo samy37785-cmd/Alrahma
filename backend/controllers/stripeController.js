@@ -1,4 +1,5 @@
 import Stripe from 'stripe';
+import { siteOrigin } from '../config/site.js';
 import Payment from '../models/Payment.js';
 import Invoice from '../models/Invoice.js';
 import { getPlan } from '../config/plans.js';
@@ -6,16 +7,16 @@ import {
   activateRecurringSubscription,
   deactivateSubscription,
 } from '../config/enrollment.js';
+import { asyncHandler } from '../middleware/asyncHandler.js';
 
+// Module-level singleton — avoids creating a new Stripe client (and its HTTP
+// connection pool) on every request. Safe for serverless: each warm instance
+// reuses the same object; a cold start creates it once.
+let _stripe = null;
 function getStripe() {
   if (!process.env.STRIPE_SECRET_KEY) throw new Error('Stripe is not configured');
-  return new Stripe(process.env.STRIPE_SECRET_KEY);
-}
-
-function siteOrigin() {
-  if (process.env.CLIENT_URL) return process.env.CLIENT_URL.split(',')[0].trim();
-  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
-  return 'http://localhost:5173';
+  if (!_stripe) _stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+  return _stripe;
 }
 
 // Records a paid invoice for a given plan + customer (initial or renewal).
@@ -40,8 +41,7 @@ async function recordInvoice({ userId, email, name, planName }) {
 //         (cards + Apple Pay + Google Pay). Stripe auto-charges every month.
 // @route  POST /api/payments/stripe
 // @access Public (softProtect attaches userId if logged in)
-export async function createStripeSession(req, res, next) {
-  try {
+export const createStripeSession = asyncHandler(async (req, res) => {
     const { plan: planName, customer = {} } = req.body;
     const plan = getPlan(planName);
     if (!plan) {
@@ -85,16 +85,12 @@ export async function createStripeSession(req, res, next) {
     });
 
     res.json({ type: 'redirect', url: session.url, sessionId: session.id });
-  } catch (err) {
-    next(err);
-  }
-}
+});
 
 // @desc   Stripe webhook — handles initial payment, monthly renewals, cancellation.
 // @route  POST /api/payments/stripe/webhook
 // @access Public (verified via Stripe signature; raw body set in app.js)
-export async function stripeWebhook(req, res, next) {
-  try {
+export const stripeWebhook = asyncHandler(async (req, res) => {
     const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
     if (!webhookSecret) return res.status(401).json({ message: 'Stripe webhook not configured' });
 
@@ -138,14 +134,16 @@ export async function stripeWebhook(req, res, next) {
             validUntil,
             stripeCustomerId: session.customer,
             stripeSubscriptionId: subscription.id,
-          }).catch(() => {});
+          }).catch((err) =>
+            console.error('[stripe] activateRecurringSubscription failed:', { userId, planName, err: err.message }));
         }
         await recordInvoice({
           userId,
           email: session.customer_email || updated?.customer?.email,
           name:  updated?.customer?.name,
           planName,
-        }).catch(() => {});
+        }).catch((err) =>
+          console.error('[stripe] recordInvoice failed:', { userId, planName, err: err.message }));
         break;
       }
 
@@ -167,21 +165,24 @@ export async function stripeWebhook(req, res, next) {
             validUntil,
             stripeCustomerId: invoice.customer,
             stripeSubscriptionId: subscription.id,
-          }).catch(() => {});
+          }).catch((err) =>
+            console.error('[stripe] activateRecurringSubscription failed (renewal):', { userId, planName, err: err.message }));
         }
         await recordInvoice({
           userId,
           email: invoice.customer_email,
           name:  invoice.customer_name,
           planName,
-        }).catch(() => {});
+        }).catch((err) =>
+          console.error('[stripe] recordInvoice failed (renewal):', { userId, planName, err: err.message }));
         break;
       }
 
       // ---- Subscription cancelled or expired ----
       case 'customer.subscription.deleted': {
         const subscription = event.data.object;
-        await deactivateSubscription(subscription.id).catch(() => {});
+        await deactivateSubscription(subscription.id).catch((err) =>
+          console.error('[stripe] deactivateSubscription failed:', { subscriptionId: subscription.id, err: err.message }));
         break;
       }
 
@@ -190,7 +191,4 @@ export async function stripeWebhook(req, res, next) {
     }
 
     res.sendStatus(200);
-  } catch (err) {
-    next(err);
-  }
-}
+});

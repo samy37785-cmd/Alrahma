@@ -1,12 +1,9 @@
-import { useEffect, useState, useRef, useCallback } from 'react';
+﻿import { useEffect, useState, useRef, useCallback } from 'react';
 import '../styles/quran.css';
-import '../styles/tasbeeh.css';
 import '../styles/khatm.css';
 import { Link } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
 import Brand from '../components/layout/Brand';
-import AlphabetLearner from '../components/features/AlphabetLearner';
-import Tasbeeh from '../components/features/Tasbeeh';
 import useSEO from '../hooks/useSEO';
 import {
   getChapters, getVerses, getVersesByPage, getVersesByJuz,
@@ -33,7 +30,7 @@ const NO_BASMALAH = new Set([1, 9]);
    ══════════════════════════════════════════════════════════════════ */
 export default function Quran() {
   useSEO({
-    title: 'Quran Learning Center — Al-Rahma Academy',
+    title: 'Quran Learning Center',
     description: 'Read, listen and memorise the Holy Quran in 40+ languages with 20+ reciters. Tafsir, Hifz mode, keyboard shortcuts.',
   });
 
@@ -238,7 +235,6 @@ export default function Quran() {
           break;
         case ' ':
           e.preventDefault();
-          if (tab === 'tasbeeh') { break; }
           if (tab === 'hifz') { isPlaying ? stopHifz() : startHifz(); }
           else if (audioRef.current) {
             audioRef.current.paused ? audioRef.current.play().catch(() => {}) : audioRef.current.pause();
@@ -288,7 +284,7 @@ export default function Quran() {
 
   const shareVerse = async (verse) => {
     const [s, v] = verse.verse_key.split(':');
-    const url = `${window.location.origin}/quran#s=${s}&v=${v}`;
+    const url = `${window.location.origin}/tools/quran-reader#s=${s}&v=${v}`;
     try {
       await navigator.clipboard.writeText(url);
       setCopiedKey(`share-${verse.verse_key}`);
@@ -358,8 +354,6 @@ export default function Quran() {
             {[
               { key: 'reading',  icon: '📖', label: ui.reading },
               { key: 'hifz',     icon: '🧠', label: ui.hifz },
-              { key: 'tasbeeh',  icon: '📿', label: 'تسبيح' },
-              { key: 'alphabet', icon: '🔤', label: ui.alphabet },
             ].map((t) => (
               <button
                 key={t.key}
@@ -399,22 +393,8 @@ export default function Quran() {
         </div>
       </header>
 
-      {/* ════ ALPHABET ══════════════════════════════════════════════ */}
-      {tab === 'alphabet' && (
-        <div className="qlc__alphabet-wrap container">
-          <AlphabetLearner onClose={() => setTab('reading')} />
-        </div>
-      )}
-
-      {tab === 'tasbeeh' && (
-        <div className="qlc__tasbeeh-wrap">
-          <Tasbeeh />
-        </div>
-      )}
-
       {/* ════ MAIN LAYOUT ══════════════════════════════════════════ */}
-      {tab !== 'alphabet' && tab !== 'tasbeeh' && (
-        <div className="qlc__layout">
+      <div className="qlc__layout">
 
           {/* ━━━━━━━━━━━━━━  SIDEBAR  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
           <aside className="qlc__sidebar">
@@ -943,7 +923,6 @@ export default function Quran() {
             )}
           </main>
         </div>
-      )}
 
       {/* ════ FLOATING HIFZ BAR (sticks to bottom while playing) ══ */}
       {tab === 'hifz' && hifzMode === 'repeat' && isPlaying && selectedVerses[curIdx] && (

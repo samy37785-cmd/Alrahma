@@ -23,9 +23,9 @@ export default function Trial() {
 
   useEffect(() => {
     if (selectedPlan) {
-      setForm((prev) => ({ ...prev, message: 'I\'m interested in the ' + selectedPlan + ' plan.' }));
+      setForm((prev) => ({ ...prev, message: tr.planMessage.replace('{plan}', selectedPlan) }));
     }
-  }, [selectedPlan]);
+  }, [selectedPlan, tr.planMessage]);
 
   const options = courseOptions.includes(form.course) || !form.course
     ? courseOptions
@@ -53,8 +53,8 @@ export default function Trial() {
         const msg =
           (typeof data === 'object' && data?.message) ||
           (err.response?.status >= 500
-            ? 'Server error — please contact us directly.'
-            : 'Could not send. Please try again.');
+            ? tr.errorServer
+            : tr.errorGeneric);
         setError(msg);
       }
     } finally {

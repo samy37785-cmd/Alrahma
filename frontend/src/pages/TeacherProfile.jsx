@@ -1,8 +1,9 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 import useSEO from '../hooks/useSEO';
+import Breadcrumbs from '../components/ui/Breadcrumbs';
 import { TEACHERS, TEACHER_CREDENTIALS } from '../data';
 import { useLang } from '../context/LangContext';
 
@@ -62,7 +63,7 @@ export default function TeacherProfile() {
   const specialties = teacher ? (teacher.specialties[lang] || teacher.specialties.en) : [];
 
   useSEO({
-    title: teacher ? `${teacher.nameEn} — AL-Rahma Academy` : 'Teacher — AL-Rahma Academy',
+    title: teacher ? teacher.nameEn : 'Teacher',
     description: bio,
   });
 
@@ -89,6 +90,7 @@ export default function TeacherProfile() {
     <>
       <Header />
       <main>
+        <Breadcrumbs items={[{ label: 'Teachers', to: '/academy/teachers' }, { label: teacher.nameEn }]} />
         {/* Hero */}
         <section className="tp__hero" style={{ background: grad }}>
           <div className="container tp__hero-inner">

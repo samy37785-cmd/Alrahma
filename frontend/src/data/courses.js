@@ -36,14 +36,14 @@ export const courses = [
     title: 'Quran Ijazah Course',
     text: 'Earn a formal certification (Ijazah) with a connected chain of narration.',
     points: ['Sanad connected to the Prophet ﷺ', 'Matn Al-Jazariyyah & Al-Shatibiyyah', 'Official Ijazah certificate issued'],
-    detailPath: '/course/ijazah',
+    detailPath: '/courses/ijazah',
   },
   {
     media: '🕌',
     title: 'Islamic Studies',
     text: 'Learn the fundamentals of Aqeedah, Fiqh, Seerah and daily Islamic practice.',
     points: ['5 modules — Aqeedah, Fiqh, Seerah, Hadith, Tafsir', 'Authentic primary Islamic sources', 'Taught in your own language'],
-    detailPath: '/course/islamic-studies',
+    detailPath: '/courses/islamic-studies',
   },
   {
     media: '🔤',

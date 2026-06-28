@@ -6,10 +6,26 @@ import axios from 'axios';
 // Keeping it same-origin is what lets the httpOnly auth cookie work everywhere.
 const baseURL = import.meta.env.VITE_API_URL || '/api';
 
+function getCsrfToken() {
+  return document.cookie
+    .split('; ')
+    .find((row) => row.startsWith('csrf_token='))
+    ?.split('=')[1] ?? '';
+}
+
 const api = axios.create({
   baseURL,
   headers: { 'Content-Type': 'application/json' },
   withCredentials: true, // send/receive the httpOnly auth cookie
+});
+
+// Attach CSRF token on every mutating request so the server can verify it.
+api.interceptors.request.use((config) => {
+  const mutating = ['post', 'put', 'patch', 'delete'];
+  if (mutating.includes(config.method?.toLowerCase())) {
+    config.headers['x-csrf-token'] = getCsrfToken();
+  }
+  return config;
 });
 
 export default api;
@@ -115,3 +131,36 @@ export const submitEnrollment   = (data) => api.post('/enrollments', data).then(
 export const getMyEnrollment    = ()     => api.get('/enrollments/mine').then((r) => r.data);
 export const getEnrollments     = ()     => api.get('/enrollments').then((r) => r.data);
 export const updateEnrollment   = (id, data) => api.patch(`/enrollments/${id}`, data).then((r) => r.data);
+
+// --- Notifications ---
+export const getMyNotifications  = (params) => api.get('/notifications', { params }).then((r) => r.data);
+export const getUnreadNotifs     = ()        => api.get('/notifications/unread').then((r) => r.data);
+export const markNotifRead       = (id)      => api.patch(`/notifications/${id}/read`).then((r) => r.data);
+export const markAllNotifsRead   = ()        => api.patch('/notifications/read-all').then((r) => r.data);
+export const deleteNotif         = (id)      => api.delete(`/notifications/${id}`).then((r) => r.data);
+
+// --- Contact ---
+export const submitContactForm = (data) => api.post('/contact', data).then((r) => r.data);
+
+// --- Coupons ---
+export const validateCoupon = (code) => api.post('/coupons/validate', { code }).then((r) => r.data);
+
+// --- Wishlist ---
+export const getWishlist         = ()          => api.get('/wishlist').then((r) => r.data);
+export const addToWishlist       = (courseId)  => api.post('/wishlist', { courseId }).then((r) => r.data);
+export const removeFromWishlist  = (courseId)  => api.delete(`/wishlist/${courseId}`).then((r) => r.data);
+export const clearWishlist       = ()          => api.delete('/wishlist/clear').then((r) => r.data);
+
+// --- Reviews ---
+export const getTeacherReviews  = (teacherId, params) => api.get(`/reviews/teacher/${teacherId}`, { params }).then((r) => r.data);
+export const getCourseReviews   = (courseId, params)  => api.get(`/reviews/course/${courseId}`, { params }).then((r) => r.data);
+export const submitReview       = (data)               => api.post('/reviews', data).then((r) => r.data);
+
+// --- Blog (DB-backed) ---
+export const getBlogPosts = (params) => api.get('/blog', { params }).then((r) => r.data);
+export const getBlogPost  = (slug)   => api.get(`/blog/${slug}`).then((r) => r.data);
+
+// --- Search ---
+export const globalSearch    = (q)       => api.get('/search', { params: { q } }).then((r) => r.data);
+export const searchCourses   = (params)  => api.get('/search/courses', { params }).then((r) => r.data);
+export const searchTeachers  = (params)  => api.get('/search/teachers', { params }).then((r) => r.data);

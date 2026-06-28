@@ -1,11 +1,13 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { forgotPassword } from '../api/client';
 import { useLang } from '../context/LangContext';
+import useSEO from '../hooks/useSEO';
 
 export default function ForgotPassword() {
   const { t } = useLang();
   const fp = t.authPg.forgotPwd;
+  useSEO({ title: fp.title, noindex: true });
   const [email, setEmail]   = useState('');
   const [msg, setMsg]       = useState('');
   const [err, setErr]       = useState('');

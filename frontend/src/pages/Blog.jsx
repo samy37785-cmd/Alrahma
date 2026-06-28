@@ -4,6 +4,7 @@ import Brand from '../components/layout/Brand';
 import '../styles/quran.css';
 import { posts, CATEGORY_COLORS } from '../data/blogPosts';
 import useSEO from '../hooks/useSEO';
+import Breadcrumbs from '../components/ui/Breadcrumbs';
 import { useLang } from '../context/LangContext';
 
 export default function Blog() {
@@ -23,6 +24,8 @@ export default function Blog() {
           <Link to="/" className="btn btn--ghost btn--sm">{bl.backToSite}</Link>
         </div>
       </header>
+
+      <Breadcrumbs items={[{ label: 'Resources', to: '/resources' }, { label: bl.heading }]} />
 
       <main id="main-content" className="container blog-page__main">
         <div className="blog-page__header">

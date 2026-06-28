@@ -4,8 +4,9 @@ import { useEffect } from 'react';
  * Central SEO engine. Every public page calls this hook to drive its
  * <head>: title, description, canonical, Open Graph, Twitter Card, robots,
  * an automatic BreadcrumbList, and optional page-specific JSON-LD (Article,
- * Course, …). Because react-snap prerenders the DOM *after* React runs, all of
- * these tags end up in the static HTML that Google/Bing crawl.
+ * Course, …). The app is client-rendered, so these are applied on mount;
+ * JS-executing crawlers (e.g. Googlebot) pick them up. The static <head> in
+ * index.html carries the baseline Organization/FAQ/WebSite schema + meta.
  *
  * Backward compatible: useSEO({ title, description }) still works.
  */

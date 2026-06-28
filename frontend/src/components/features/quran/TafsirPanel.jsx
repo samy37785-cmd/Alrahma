@@ -2,6 +2,29 @@ import { useState, useEffect } from 'react';
 import { getVerseTafsir, getVerseTafsirCloud } from '../../../api/quran';
 import { TAFASEER } from '../../../data/quranLangs';
 
+const ALLOWED_TAGS = new Set(['p','br','strong','em','b','i','u','span','div','sup','sub','ul','ol','li','blockquote','h3','h4']);
+
+function sanitizeHtml(html) {
+  const root = document.createElement('div');
+  root.innerHTML = html;
+  (function clean(node) {
+    [...node.childNodes].forEach((child) => {
+      if (child.nodeType === Node.ELEMENT_NODE) {
+        if (!ALLOWED_TAGS.has(child.tagName.toLowerCase())) {
+          child.replaceWith(...child.childNodes);
+          clean(node);
+        } else {
+          [...child.attributes].forEach((a) => child.removeAttribute(a.name));
+          clean(child);
+        }
+      } else if (child.nodeType !== Node.TEXT_NODE) {
+        child.remove();
+      }
+    });
+  }(root));
+  return root.innerHTML;
+}
+
 export default function TafsirPanel({ verseKey, tafsirId, onClose, ui }) {
   const [text, setText]       = useState('');
   const [loading, setLoading] = useState(true);
@@ -45,7 +68,7 @@ export default function TafsirPanel({ verseKey, tafsirId, onClose, ui }) {
       {text && (
         <div className="qlc__tafsir-body" dir={entry?.lang === 'ar' ? 'rtl' : 'ltr'} lang={entry?.lang}>
           {isHtml
-            ? <div className="qlc__tafsir-html" dangerouslySetInnerHTML={{ __html: text }} />
+            ? <div className="qlc__tafsir-html" dangerouslySetInnerHTML={{ __html: sanitizeHtml(text) }} />
             : text.split('\n').filter(Boolean).map((para, i) => (
                 <p key={i} className="qlc__tafsir-para">{para}</p>
               ))

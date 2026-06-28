@@ -209,3 +209,29 @@
 @media (min-width: 769px) and (max-width: 1024px) {
   .video-reviews__grid, .blog-grid { grid-template-columns: 1fr 1fr; }
 }
+
+/* ─────────────────────────────────────────────────────────────────
+   Legal pages (Privacy Policy, Terms)
+   ───────────────────────────────────────────────────────────────── */
+.legal__main { padding: 48px 0 80px; }
+.legal__main h1 { font-size: clamp(1.8rem, 4vw, 2.4rem); color: var(--green-deep); margin-bottom: 8px; }
+.legal__updated { font-size: .85rem; color: var(--muted); margin-bottom: 28px; }
+.legal__main h2 { font-size: 1.15rem; margin-top: 28px; margin-bottom: 8px; }
+.legal__main p, .legal__main li { color: var(--muted); line-height: 1.7; margin-bottom: 10px; }
+.legal__main ul { padding-left: 20px; }
+.legal__main a { color: var(--green); text-decoration: underline; }
+
+/* ─────────────────────────────────────────────────────────────────
+   Breadcrumbs — uses CSS variables so dark mode adapts automatically
+   ───────────────────────────────────────────────────────────────── */
+.breadcrumbs { padding: 14px 0 2px; font-size: .85rem; }
+.breadcrumbs__list {
+  list-style: none; margin: 0; padding: 0;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
+}
+.breadcrumbs__item { display: inline-flex; align-items: center; gap: 6px; }
+.breadcrumbs__link { color: var(--muted, #6b7280); text-decoration: none; }
+.breadcrumbs__link:hover { color: var(--green, #0b6e4f); text-decoration: underline; }
+.breadcrumbs__current { color: var(--ink, #1f2937); font-weight: 600; }
+.breadcrumbs__sep { color: var(--muted, #9ca3af); }
+[dir="rtl"] .breadcrumbs__sep { display: inline-block; transform: scaleX(-1); }

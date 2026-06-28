@@ -1,9 +1,10 @@
-import { useState, useMemo } from 'react';
+﻿import { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 import Reveal from '../components/ui/Reveal';
 import useSEO from '../hooks/useSEO';
+import Breadcrumbs from '../components/ui/Breadcrumbs';
 import { useLang } from '../context/LangContext';
 import { COURSE_UI } from '../i18n/coursePages';
 
@@ -478,7 +479,7 @@ export default function CourseIslamicStudies() {
   }, []);
 
   useSEO({
-    title: isAr ? 'دورة الدراسات الإسلامية — أكاديمية الرحمة' : 'Islamic Studies Course — AL-Rahma Academy',
+    title: isAr ? 'دورة الدراسات الإسلامية' : 'Islamic Studies Course',
     description: isAr
       ? 'منهج شامل مبني على المصادر يغطي العقيدة والفقه والسيرة والحديث والتفسير — ٥ وحدات يدرّسها علماء معتمدون بلغتك.'
       : 'A comprehensive, source-based curriculum covering Aqeedah, Fiqh, Seerah, Hadith and Tafsir — 5 structured modules taught by certified scholars in your own language.',
@@ -503,6 +504,7 @@ export default function CourseIslamicStudies() {
     <>
       <Header />
       <main id="main-content" dir={ui.dir}>
+        <Breadcrumbs items={[{ label: 'Courses', to: '/courses' }, { label: isAr ? 'الدراسات الإسلامية' : 'Islamic Studies Course' }]} />
         {/* Hero */}
         <section className="cl__hero" style={{ background: 'linear-gradient(145deg,#1e0a30,#7a3a8a)' }}>
           <div className="container cl__hero-inner">

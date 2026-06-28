@@ -13,6 +13,13 @@ export default function useScrollReveal(options = { threshold: 0.12 }) {
 
     el.classList.add('reveal');
 
+    // Fallback for browsers without IntersectionObserver (very old phones):
+    // reveal immediately so content is never stuck invisible (opacity:0).
+    if (typeof IntersectionObserver === 'undefined') {
+      el.classList.add('visible');
+      return;
+    }
+
     const observer = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
         if (entry.isIntersecting) {

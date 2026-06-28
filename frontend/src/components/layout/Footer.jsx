@@ -1,9 +1,7 @@
-import { Link } from 'react-router-dom';
-import Brand from './Brand';
-import { useLang } from '../../context/LangContext';
-import { site, socials, courses } from '../../data';
-
-const QUICK_HREFS = ['/', '/about', '/#courses', '/#pricing', '/#testimonials', '/teachers', '/#contact'];
+﻿import { Link } from "react-router-dom";
+import Brand from "./Brand";
+import { useLang } from "../../context/LangContext";
+import { site, socials } from "../../data";
 
 export default function Footer() {
   const { t } = useLang();
@@ -12,43 +10,16 @@ export default function Footer() {
   return (
     <footer className="footer" id="contact">
       <div className="container footer__grid">
+
+        {/* Brand + contact */}
         <div className="footer__col">
           <Brand light />
           <p className="footer__about">{f.about}</p>
-        </div>
-
-        <div className="footer__col">
-          <h3>{f.quickLinks}</h3>
-          <ul>
-            {f.links.map((label, i) => (
-              <li key={QUICK_HREFS[i]}>
-                <Link to={QUICK_HREFS[i]}>{label}</Link>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div className="footer__col">
-          <h3>{f.coursesCol}</h3>
-          <ul>
-            {courses.map((c, i) => {
-              const label = t.courses.items[i]?.title || c.title;
-              return (
-                <li key={c.title}>
-                  <Link to="/#courses">{label}</Link>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-
-        <div className="footer__col">
-          <h3>{f.contact}</h3>
           <ul className="footer__contact">
-            <li><a href={'mailto:' + site.email}>{site.email}</a></li>
-            <li><a href={'tel:' + site.phoneHref}>{site.phoneDisplay}</a></li>
+            <li><a href={"mailto:" + site.email}>{site.email}</a></li>
+            <li><a href={"tel:" + site.phoneHref}>{site.phoneDisplay}</a></li>
             <li>
-              <a href={'https://wa.me/' + site.whatsapp} target="_blank" rel="noopener noreferrer">
+              <a href={"https://wa.me/" + site.whatsapp} target="_blank" rel="noopener noreferrer">
                 {f.whatsapp}
               </a>
             </li>
@@ -63,13 +34,57 @@ export default function Footer() {
             ))}
           </div>
         </div>
+
+        {/* Courses */}
+        <div className="footer__col">
+          <h3>{f.coursesCol}</h3>
+          <ul>
+            <li><Link to="/courses">{f.allCourses}</Link></li>
+            <li><Link to="/courses/quran">{f.quranTajweed}</Link></li>
+            <li><Link to="/courses/quran">{f.hifzMem}</Link></li>
+            <li><Link to="/courses/ijazah">{f.quranIjazah}</Link></li>
+            <li><Link to="/courses/islamic-studies">{f.islamicStudies}</Link></li>
+            <li><Link to="/courses/arabic">{f.arabicAlphabet}</Link></li>
+          </ul>
+        </div>
+
+        {/* Tools */}
+        <div className="footer__col">
+          <h3>{f.toolsCol}</h3>
+          <ul>
+            <li><Link to="/tools">{f.allTools}</Link></li>
+            <li><Link to="/tools/quran-reader">{f.quranReader}</Link></li>
+            <li><Link to="/tools/adhkar">{f.adhkarLink}</Link></li>
+            <li><Link to="/tools/hadith">{f.hadithLibLink}</Link></li>
+            <li><Link to="/tools/prayer">{f.prayerLink}</Link></li>
+          </ul>
+        </div>
+
+        {/* Resources & Academy */}
+        <div className="footer__col">
+          <h3>{f.resourcesCol}</h3>
+          <ul>
+            <li><Link to="/resources/blog">{f.blogLink}</Link></li>
+            <li><Link to="/resources/faq">{f.faqLink}</Link></li>
+            <li><Link to="/enroll">{f.freeTrialLink}</Link></li>
+          </ul>
+          <h3 style={{ marginTop: "1.2rem" }}>{f.academyCol}</h3>
+          <ul>
+            <li><Link to="/academy/about">{f.aboutUs}</Link></li>
+            <li><Link to="/academy/teachers">{f.teachersLink}</Link></li>
+            <li><Link to="/academy/privacy">{f.privacy}</Link></li>
+          </ul>
+        </div>
+
       </div>
 
       <div className="footer__bottom">
         <div className="container">
           <p>Copyright &copy; {new Date().getFullYear()} {site.name} Academy. {f.rights}</p>
           <p>
-            <Link to="/privacy">{f.privacy}</Link> &middot; <Link to="/#contact">{f.contact}</Link>
+            <Link to="/academy/privacy">{f.privacy}</Link>
+            {" · "}
+            <a href={"mailto:" + site.email}>{f.contact}</a>
           </p>
         </div>
       </div>

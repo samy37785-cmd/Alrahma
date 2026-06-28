@@ -8,6 +8,7 @@ import {
   manualPaymentApprovedEmail,
   manualPaymentRejectedEmail,
 } from '../config/emailTemplates.js';
+import { asyncHandler } from '../middleware/asyncHandler.js';
 
 // Returns the configured manual payment methods with display info.
 // Only returns a method if its env vars are filled in.
@@ -94,8 +95,7 @@ export function getManualMethods(req, res) {
 // @desc  Student submits a manual payment request
 // @route POST /api/payments/manual
 // @access Public (softProtect attaches userId if logged in)
-export async function submitManualPayment(req, res, next) {
-  try {
+export const submitManualPayment = asyncHandler(async (req, res) => {
     const { plan: planName, method, customer = {}, reference = '', notes = '' } = req.body;
 
     const plan = getPlan(planName);
@@ -135,28 +135,27 @@ export async function submitManualPayment(req, res, next) {
     }
 
     res.status(201).json({ message: 'Payment request received. We will verify and activate your plan within 24 hours.', id: record._id });
-  } catch (err) {
-    next(err);
-  }
-}
+});
 
 // @desc  Admin: list all manual payment requests
 // @route GET /api/payments/manual
 // @access Admin
-export async function listManualPayments(req, res, next) {
-  try {
-    const requests = await ManualPayment.find().sort({ createdAt: -1 });
-    res.json(requests);
-  } catch (err) {
-    next(err);
-  }
-}
+export const listManualPayments = asyncHandler(async (req, res) => {
+  const page  = Math.max(1, parseInt(req.query.page)  || 1);
+  const limit = Math.min(500, parseInt(req.query.limit) || 500);
+  const skip  = (page - 1) * limit;
+
+  const [data, total] = await Promise.all([
+    ManualPayment.find().sort({ createdAt: -1 }).skip(skip).limit(limit),
+    ManualPayment.countDocuments(),
+  ]);
+  res.json({ data, total, page, pages: Math.ceil(total / limit) });
+});
 
 // @desc  Admin: approve or reject a manual payment
 // @route PATCH /api/payments/manual/:id
 // @access Admin
-export async function reviewManualPayment(req, res, next) {
-  try {
+export const reviewManualPayment = asyncHandler(async (req, res) => {
     const { status, adminNote } = req.body;
     if (!['approved', 'rejected'].includes(status)) {
       res.status(400);
@@ -175,7 +174,8 @@ export async function reviewManualPayment(req, res, next) {
 
     // On approval, create an invoice and activate subscription.
     if (status === 'approved') {
-      await enrollUser(record.userId, record.plan).catch(() => {});
+      await enrollUser(record.userId, record.plan).catch((err) =>
+        console.error('[manual-payment] enrollUser failed after approval:', { id: String(record._id), userId: String(record.userId), plan: record.plan, err: err.message }));
       const plan = getPlan(record.plan);
       const period = new Date().toISOString().slice(0, 7);
       await Invoice.create({
@@ -212,7 +212,4 @@ export async function reviewManualPayment(req, res, next) {
     }
 
     res.json(record);
-  } catch (err) {
-    next(err);
-  }
-}
+});

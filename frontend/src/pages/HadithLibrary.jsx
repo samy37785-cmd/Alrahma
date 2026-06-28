@@ -4,6 +4,7 @@ import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 import Reveal from '../components/ui/Reveal';
 import useSEO from '../hooks/useSEO';
+import Breadcrumbs from '../components/ui/Breadcrumbs';
 import { useLang } from '../context/LangContext';
 
 const CDN  = 'https://cdn.jsdelivr.net/gh/fawazahmed0/hadith-api@1/editions';
@@ -104,8 +105,9 @@ const COLLECTIONS = [
 ];
 
 export default function HadithLibrary() {
-  const { lang } = useLang();
+  const { lang, t } = useLang();
   const isAr = lang === 'ar';
+  const h = t.hadith;
 
   const [selected, setSelected]   = useState(null);
   const [hadiths,  setHadiths]    = useState({ en: [], ar: [] });
@@ -116,10 +118,8 @@ export default function HadithLibrary() {
   const [display,  setDisplay]    = useState('both'); // 'en' | 'ar' | 'both'
 
   useSEO({
-    title: isAr ? 'مكتبة الحديث النبوي — أكاديمية الرحمة' : 'Hadith Library — AL-Rahma Academy',
-    description: isAr
-      ? 'تصفح وابحث في ١٣ كتاباً من أمهات كتب الحديث النبوي — صحيح البخاري، صحيح مسلم، رياض الصالحين، الأربعون النووية وغيرها.'
-      : 'Browse & search 13 authentic hadith collections including Sahih Bukhari, Sahih Muslim, Riyad As-Salihin, and more.',
+    title: h.pageTitle,
+    description: h.pageDesc,
   });
 
   const loadCollection = useCallback(async (col) => {
@@ -138,10 +138,10 @@ export default function HadithLibrary() {
       const [enData, arData] = await Promise.all([enRes.json(), arRes.json()]);
       setHadiths({ en: enData.hadiths || [], ar: arData.hadiths || [] });
     } catch {
-      setError(isAr ? 'فشل التحميل. يرجى المحاولة مرة أخرى.' : 'Failed to load. Please try again.');
+      setError(h.failedLoad);
     }
     setLoading(false);
-  }, [isAr]);
+  }, [h.failedLoad]);
 
   // Pair English + Arabic hadiths
   const paired = useMemo(() => {
@@ -181,34 +181,32 @@ export default function HadithLibrary() {
   return (
     <>
       <Header />
-      <main>
+      <main id="main-content">
+        <Breadcrumbs items={[{ label: 'Tools', to: '/tools' }, { label: t.nav.hadith }]} />
         {/* Hero */}
         <section className="hl__hero">
           <div className="container">
             {selected && (
               <button className="hl__hero-back" onClick={() => setSelected(null)}>
-                ← {isAr ? 'جميع الكتب' : 'All Collections'}
+                ← {h.back}
               </button>
             )}
-            <span className="hl__hero-badge">📚 {isAr ? 'مكتبة الحديث' : 'Hadith Library'}</span>
+            <span className="hl__hero-badge">{h.badge}</span>
             <h1 className="hl__hero-title">
               {selected
                 ? (isAr ? selected.ar : selected.label)
-                : (isAr ? 'مكتبة الحديث النبوي الشريف' : 'Islamic Hadith Library')
+                : h.heroTitle
               }
             </h1>
             <p className="hl__hero-sub">
               {selected
                 ? (isAr ? selected.author.ar : selected.author.en)
-                : (isAr
-                    ? 'تصفح وابحث في ١٣ كتاباً من أمهات كتب الحديث النبوي — عربي وإنجليزي — مباشرةً داخل الموقع'
-                    : 'Browse & search 13 authentic hadith collections — Arabic & English — all hosted right here'
-                  )
+                : h.heroSub
               }
             </p>
             {selected && (
               <div className="hl__hero-meta">
-                <span>{selected.count.toLocaleString()} {isAr ? 'حديث' : 'hadiths'}</span>
+                <span>{selected.count.toLocaleString()} {h.hadiths}</span>
                 <span>·</span>
                 <span>{isAr ? selected.note.ar : selected.note.en}</span>
               </div>
@@ -222,13 +220,11 @@ export default function HadithLibrary() {
             <div className="hl__course-note">
               <span>🕌</span>
               <span>
-                {isAr
-                  ? 'هذه الكتب تُدرَّس في '
-                  : 'These books are studied in our '}
+                {h.courseNote}{' '}
                 <Link to="/course/islamic-studies" className="hl__course-note-link">
-                  {isAr ? 'دورة الدراسات الإسلامية' : 'Islamic Studies course'}
+                  {h.courseLink}
                 </Link>
-                {isAr ? ' — انقر على أي كتاب للتصفح.' : ' — click any book to browse it.'}
+                {h.courseClick}
               </span>
             </div>
           )}
@@ -252,7 +248,7 @@ export default function HadithLibrary() {
                     <strong className="hl__card-title">{col.label}</strong>
                     <span className="hl__card-author">{isAr ? col.author.ar : col.author.en}</span>
                     <span className="hl__card-note">{isAr ? col.note.ar : col.note.en}</span>
-                    <span className="hl__card-cta">{isAr ? 'تصفح الكتاب ←' : 'Browse →'}</span>
+                    <span className="hl__card-cta">{h.browse}</span>
                   </div>
                 </button>
               ))}
@@ -267,17 +263,17 @@ export default function HadithLibrary() {
                 <input
                   className="hl__search"
                   type="search"
-                  placeholder={isAr ? 'ابحث في الأحاديث...' : 'Search hadiths...'}
+                  placeholder={h.searchPlaceholder}
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   dir={isAr ? 'rtl' : 'ltr'}
                 />
                 <div className="hl__display-toggle">
-                  <span className="hl__toggle-label">{isAr ? 'العرض:' : 'Show:'}</span>
+                  <span className="hl__toggle-label">{h.displayLabel}</span>
                   {[
-                    { key: 'both', label: isAr ? 'الكل'   : 'Both' },
-                    { key: 'ar',   label: isAr ? 'عربي'   : 'Arabic' },
-                    { key: 'en',   label: isAr ? 'إنجليزي' : 'English' },
+                    { key: 'both', label: h.displayBoth },
+                    { key: 'ar',   label: h.displayAr },
+                    { key: 'en',   label: h.displayEn },
                   ].map((opt) => (
                     <button
                       key={opt.key}
@@ -295,10 +291,10 @@ export default function HadithLibrary() {
               {loading && (
                 <div className="hl__loading">
                   <div className="hl__spinner" style={{ borderTopColor: selected.color }} />
-                  <p>{isAr ? `جاري تحميل ${selected.ar}...` : `Loading ${selected.label}...`}</p>
+                  <p>{h.loading.replace('{book}', isAr ? selected.ar : selected.label)}</p>
                   {selected.count > 1000 && (
                     <p className="hl__loading-note">
-                      {isAr ? `(${selected.count.toLocaleString()} حديث — قد يستغرق بضع ثوانٍ)` : `(${selected.count.toLocaleString()} hadiths — may take a few seconds)`}
+                      {h.loadingNote.replace('{count}', selected.count.toLocaleString())}
                     </p>
                   )}
                 </div>
@@ -311,12 +307,12 @@ export default function HadithLibrary() {
                 <div className="hl__results-bar">
                   <span>
                     {search
-                      ? (isAr ? `${filtered.length} نتيجة لـ "${search}"` : `${filtered.length} results for "${search}"`)
-                      : (isAr ? `${filtered.length.toLocaleString()} حديث` : `${filtered.length.toLocaleString()} hadiths`)
+                      ? h.resultsSearch.replace('{count}', filtered.length).replace('{query}', search)
+                      : h.resultsCount.replace('{count}', filtered.length.toLocaleString())
                     }
                   </span>
                   <span className="hl__page-label">
-                    {isAr ? `صفحة ${page} من ${totalPages}` : `Page ${page} of ${totalPages}`}
+                    {h.pageOf.replace('{page}', page).replace('{total}', totalPages)}
                   </span>
                 </div>
               )}
@@ -355,9 +351,9 @@ export default function HadithLibrary() {
               {/* Empty */}
               {!loading && !error && filtered.length === 0 && hadiths.en.length > 0 && (
                 <div className="hl__empty">
-                  <p>🔍 {isAr ? `لا توجد نتائج لـ "${search}"` : `No results for "${search}"`}</p>
+                  <p>🔍 {h.noResults.replace('{query}', search)}</p>
                   <button className="btn btn--green" onClick={() => setSearch('')}>
-                    {isAr ? 'مسح البحث' : 'Clear search'}
+                    {h.clearSearch}
                   </button>
                 </div>
               )}
@@ -395,9 +391,9 @@ export default function HadithLibrary() {
         {!selected && (
           <div className="hl__cta">
             <div className="container">
-              <p>{isAr ? 'تريد دراسة هذه الكتب مع معلم معتمد؟' : 'Want to study these books with a certified scholar?'}</p>
+              <p>{h.ctaPrompt}</p>
               <Link to="/course/islamic-studies" className="btn btn--gold btn--lg">
-                {isAr ? 'دورة الدراسات الإسلامية ←' : 'Islamic Studies Course →'}
+                {h.ctaBtn}
               </Link>
             </div>
           </div>

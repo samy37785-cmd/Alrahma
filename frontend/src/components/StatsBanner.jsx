@@ -35,6 +35,8 @@ export default function StatsBanner() {
   const [active, setActive] = useState(false);
 
   useEffect(() => {
+    // Fallback for browsers without IntersectionObserver: count up immediately.
+    if (typeof IntersectionObserver === 'undefined') { setActive(true); return; }
     const obs = new IntersectionObserver(
       ([e]) => { if (e.isIntersecting) { setActive(true); obs.disconnect(); } },
       { threshold: 0.3 }

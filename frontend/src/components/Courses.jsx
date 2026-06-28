@@ -39,7 +39,7 @@ export default function Courses() {
       return;
     }
     if (course.interactive === 'quran') {
-      navigate('/quran');
+      navigate('/tools/quran-reader');
       return;
     }
     if (course.resources?.length) {
@@ -47,7 +47,7 @@ export default function Courses() {
       return;
     }
     if (READER_RE.test(course.title)) {
-      navigate('/quran');
+      navigate('/tools/quran-reader');
       return;
     }
     startLearning(course.title);

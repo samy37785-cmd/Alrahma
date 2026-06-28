@@ -36,9 +36,11 @@ export default function AdminDashboard() {
   const { user, logout } = useAuth();
   const [courses, setCourses]         = useState([]);
   const [trials, setTrials]           = useState([]);
-  const [manualPays, setManualPays]   = useState([]);
-  const [subscribers, setSubscribers] = useState([]);
-  const [users, setUsers]             = useState([]);
+  const [manualPays, setManualPays]         = useState([]);
+  const [manualPaysTotal, setManualPaysTotal] = useState(0);
+  const [subscribers, setSubscribers]     = useState([]);
+  const [users, setUsers]                 = useState([]);
+  const [usersTotal, setUsersTotal]       = useState(0);
   const [form, setForm]               = useState(EMPTY_COURSE);
   const [editingId, setEditingId]     = useState(null);
   const [error, setError]             = useState('');
@@ -110,9 +112,11 @@ export default function AdminDashboard() {
       ]);
       setCourses(c);
       setTrials(t);
-      setManualPays(m);
+      setManualPays(m.data ?? m);
+      setManualPaysTotal(m.total ?? (m.data ?? m).length);
       setSubscribers(s);
-      setUsers(u);
+      setUsers(u.data ?? u);
+      setUsersTotal(u.total ?? (u.data ?? u).length);
       setTeachers(te);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to load data');
@@ -251,9 +255,9 @@ export default function AdminDashboard() {
   const TABS = [
     { key: 'courses',     label: 'Courses' },
     { key: 'trials',      label: `Trials (${trials.length})` },
-    { key: 'payments',    label: `Payments (${manualPays.filter((p) => p.status === 'pending').length} pending)` },
+    { key: 'payments',    label: `Payments (${manualPays.filter((p) => p.status === 'pending').length} pending / ${manualPaysTotal} total)` },
     { key: 'newsletter',  label: `Newsletter (${subscribers.length})` },
-    { key: 'users',       label: `Users (${users.length})` },
+    { key: 'users',       label: `Users (${usersTotal})` },
     { key: 'staff',       label: `Staff (${teachers.length})` },
   ];
 
@@ -456,7 +460,7 @@ export default function AdminDashboard() {
         {/* ── Manual Payments tab ── */}
         {activeTab === 'payments' && (
           <section className="admin__panel">
-            <h2>Manual Payments ({manualPays.filter((p) => p.status === 'pending').length} pending)</h2>
+            <h2>Manual Payments ({manualPays.filter((p) => p.status === 'pending').length} pending / {manualPaysTotal} total)</h2>
             <div className="admin__table-wrap">
               <table className="admin__table">
                 <thead>
@@ -496,7 +500,7 @@ export default function AdminDashboard() {
         {activeTab === 'users' && (
           <section className="admin__panel">
             <div className="admin__panel-head">
-              <h2>Registered Users ({users.length})</h2>
+              <h2>Registered Users ({usersTotal})</h2>
               <input
                 type="search"
                 className="admin__search"

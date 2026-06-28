@@ -76,6 +76,86 @@
 .nav__dropdown-item--danger:hover { background: #fff1f1; color: #c0392b; }
 .nav__dropdown-divider { height: 1px; background: var(--line); margin: 4px 0; }
 
+/* Mega-menu dropdown — wider, 2-col grid for Courses */
+.nav__dropdown-menu--mega {
+  min-width: 300px;
+  padding: 8px 4px;
+}
+.nav__dropdown-menu--mega .nav__dropdown-item { padding: 9px 14px; border-radius: 8px; margin: 1px 4px; }
+.nav__dropdown-menu--mega .nav__megamenu-footer {
+  border-top: 1px solid var(--line); margin: 6px 8px 2px;
+  padding-top: 6px;
+}
+.nav__dropdown-menu--mega .nav__megamenu-footer a {
+  display: block; padding: 8px 10px; font-size: .85rem;
+  font-weight: 700; color: var(--green-deep); border-radius: 8px;
+  text-decoration: none; transition: background .15s;
+}
+.nav__dropdown-menu--mega .nav__megamenu-footer a:hover { background: var(--green-light); }
+
+/* Hub pages — hero */
+.hub-hero {
+  background: var(--grad-hero);
+  color: #eef6f1;
+  padding: 70px 0 60px;
+}
+.hub-hero__inner { max-width: 680px; }
+.hub-hero .eyebrow {
+  display: inline-block;
+  font-size: .75rem; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--gold);
+  margin-bottom: 14px;
+}
+.hub-hero h1 { color: #fff; margin-bottom: 16px; }
+.hub-hero__sub { font-size: 1.05rem; color: #c8dfd6; line-height: 1.7; }
+
+/* Hub pages — cards grid */
+.hub-cards { padding: 60px 0; }
+.hub-cards__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 24px;
+}
+.hub-cards__grid--4 { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+
+.hub-card {
+  display: flex; flex-direction: column; gap: 10px;
+  padding: 28px 24px; border-radius: 16px;
+  background: var(--surface); border: 1.5px solid var(--line);
+  text-decoration: none; color: var(--ink);
+  transition: transform .2s, box-shadow .2s, border-color .2s;
+  position: relative;
+}
+.hub-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 32px rgba(11,110,79,.12);
+  border-color: var(--green);
+}
+.hub-card--cta { background: var(--green-light); border-color: var(--green); }
+.hub-card__badge {
+  position: absolute; top: 16px; right: 16px;
+  background: var(--gold); color: #3a2e05;
+  font-size: .7rem; font-weight: 800; letter-spacing: .5px;
+  text-transform: uppercase; padding: 3px 10px; border-radius: 999px;
+}
+.hub-card__icon { font-size: 2rem; line-height: 1; }
+.hub-card__title { font-size: 1.05rem; font-weight: 700; color: var(--green-deep); margin: 0; }
+.hub-card__desc { font-size: .9rem; color: var(--muted); line-height: 1.6; flex: 1; margin: 0; }
+.hub-card__link { font-size: .88rem; font-weight: 700; color: var(--green); margin-top: 4px; }
+
+/* Related links row at bottom of hub page */
+.hub-related { padding: 40px 0 60px; }
+.hub-related h2 { font-size: 1.1rem; margin-bottom: 18px; color: var(--green-deep); }
+.hub-related__list { display: flex; flex-wrap: wrap; gap: 12px; list-style: none; padding: 0; margin: 0; }
+.hub-related__list a {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 9px 18px; border-radius: 999px;
+  border: 1.5px solid var(--line); color: var(--ink);
+  font-size: .9rem; font-weight: 600; text-decoration: none;
+  transition: border-color .2s, background .2s, color .2s;
+}
+.hub-related__list a:hover { border-color: var(--green); background: var(--green-light); color: var(--green-deep); }
+
 /* User button */
 .nav__dropdown--user { margin-left: 4px; }
 .nav__user-btn {

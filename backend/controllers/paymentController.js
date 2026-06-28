@@ -2,6 +2,8 @@ import Payment from '../models/Payment.js';
 import Invoice from '../models/Invoice.js';
 import { getPlan } from '../config/plans.js';
 import { enrollUser } from '../config/enrollment.js';
+import { siteOrigin } from '../config/site.js';
+import { asyncHandler } from '../middleware/asyncHandler.js';
 
 // Creates an Invoice from a confirmed Payment record.
 async function createInvoice(payment) {
@@ -50,13 +52,6 @@ async function postJSON(url, body, headers = {}) {
 
 // ----------------------------- PayPal ---------------------------------------
 
-// Resolves the public site origin: explicit CLIENT_URL → Vercel auto-URL → localhost fallback.
-function siteOrigin() {
-  if (process.env.CLIENT_URL) return process.env.CLIENT_URL.split(',')[0].trim();
-  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
-  return 'http://localhost:5173';
-}
-
 function paypalBase() {
   return process.env.PAYPAL_MODE === 'live'
     ? 'https://api-m.paypal.com'
@@ -84,8 +79,7 @@ async function paypalAccessToken() {
 // @desc   Create a PayPal order (returns the approval link to redirect to)
 // @route  POST /api/payments/paypal
 // @access Public
-export async function createPaypalOrder(req, res, next) {
-  try {
+export const createPaypalOrder = asyncHandler(async (req, res) => {
     const { plan: planName, customer = {} } = req.body;
     const plan = getPlan(planName);
     if (!plan) {
@@ -128,10 +122,7 @@ export async function createPaypalOrder(req, res, next) {
 
     const approve = order.links?.find((l) => l.rel === 'approve')?.href;
     res.json({ type: 'redirect', url: approve, orderId: order.id });
-  } catch (err) {
-    next(err);
-  }
-}
+});
 
 // Idempotently finalise a PayPal order: mark the Payment paid and fulfil
 // (invoice + enrolment) EXACTLY ONCE, even if both the browser capture and the
@@ -148,8 +139,10 @@ async function finalizePaypalOrder(orderId, capture) {
   await payment.save();
 
   if (completed) {
-    await createInvoice(payment).catch(() => {});
-    await enrollUser(payment.userId, payment.plan).catch(() => {});
+    await createInvoice(payment).catch((err) =>
+      console.error('[paypal] createInvoice failed:', { orderId, err: err.message }));
+    await enrollUser(payment.userId, payment.plan).catch((err) =>
+      console.error('[paypal] enrollUser failed:', { orderId, userId: String(payment.userId), plan: payment.plan, err: err.message }));
   }
   return { status: capture?.status, fulfilled: completed };
 }
@@ -157,8 +150,7 @@ async function finalizePaypalOrder(orderId, capture) {
 // @desc   Capture an approved PayPal order (called by the browser after approval)
 // @route  POST /api/payments/paypal/:orderId/capture
 // @access Public
-export async function capturePaypalOrder(req, res, next) {
-  try {
+export const capturePaypalOrder = asyncHandler(async (req, res) => {
     const { orderId } = req.params;
     const token = await paypalAccessToken();
 
@@ -170,26 +162,27 @@ export async function capturePaypalOrder(req, res, next) {
 
     await finalizePaypalOrder(orderId, capture);
     res.json({ status: capture.status, orderId });
-  } catch (err) {
-    next(err);
-  }
-}
+});
 
 // @desc   PayPal webhook — safety net so a payment is never lost if the buyer
 //         closes the tab before the browser-side capture runs.
 // @route  POST /api/payments/paypal/webhook
 // @access Public (verified via PayPal's verify-webhook-signature API)
-export async function paypalWebhook(req, res, next) {
-  try {
+export const paypalWebhook = asyncHandler(async (req, res) => {
     const webhookId = process.env.PAYPAL_WEBHOOK_ID;
     if (!webhookId) return res.status(401).json({ message: 'PayPal webhook not configured' });
+
+    const certUrl = req.headers['paypal-cert-url'] || '';
+    if (!/^https:\/\/api(?:-m)?\.paypal\.com\//.test(certUrl)) {
+      return res.status(400).json({ message: 'Invalid PayPal cert_url' });
+    }
 
     const token = await paypalAccessToken();
     const verify = await postJSON(
       `${paypalBase()}/v1/notifications/verify-webhook-signature`,
       {
         auth_algo:         req.headers['paypal-auth-algo'],
-        cert_url:          req.headers['paypal-cert-url'],
+        cert_url:          certUrl,
         transmission_id:   req.headers['paypal-transmission-id'],
         transmission_sig:  req.headers['paypal-transmission-sig'],
         transmission_time: req.headers['paypal-transmission-time'],
@@ -228,7 +221,4 @@ export async function paypalWebhook(req, res, next) {
     }
 
     res.sendStatus(200);
-  } catch (err) {
-    next(err);
-  }
-}
+});

@@ -3,6 +3,7 @@ import Brand from '../components/layout/Brand';
 import '../styles/quran.css';
 import { posts, CATEGORY_COLORS } from '../data/blogPosts';
 import useSEO from '../hooks/useSEO';
+import Breadcrumbs from '../components/ui/Breadcrumbs';
 
 // Minimal markdown renderer: headings, bold, tables, hr, paragraphs.
 function renderMarkdown(text) {
@@ -117,7 +118,7 @@ export default function BlogPost() {
     } : null,
   });
 
-  if (!post) return <Navigate to="/blog" replace />;
+  if (!post) return <Navigate to="/resources/blog" replace />;
 
   const catColor = CATEGORY_COLORS[post.category] || '#0b6e4f';
 
@@ -126,11 +127,13 @@ export default function BlogPost() {
       <header className="quran__bar">
         <div className="container quran__bar-inner">
           <Brand />
-          <Link to="/blog" className="btn btn--ghost btn--sm">← Blog</Link>
+          <Link to="/resources/blog" className="btn btn--ghost btn--sm">← Blog</Link>
         </div>
       </header>
 
-      <main className="container blog-post__main">
+      <Breadcrumbs items={[{ label: 'Blog', to: '/blog' }, { label: post.title }]} />
+
+      <main id="main-content" className="container blog-post__main">
         <div className="blog-post__hero">
           <span className="blog-card__cat" style={{ background: catColor }}>
             {post.category}

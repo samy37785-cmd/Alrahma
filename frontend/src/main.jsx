@@ -1,5 +1,5 @@
 import React from 'react';
-import { createRoot, hydrateRoot } from 'react-dom/client';
+import { createRoot } from 'react-dom/client';
 // Self-hosted fonts (served from our own origin = far faster than Google's
 // gstatic CDN, and no render-blocking 3rd-party stylesheet). Amiri uses the
 // Arabic subset only — Latin text is covered by Poppins.
@@ -18,6 +18,9 @@ import '@fontsource/poppins/latin-ext-700.css';
 // fraction of a second, then swaps to Amiri (font-display: swap).
 import App from './App.jsx';
 import './styles.css';
+import { initSentry } from './utils/sentry.js';
+
+initSentry();
 
 const rootElement = document.getElementById('root');
 const app = (
@@ -26,14 +29,10 @@ const app = (
   </React.StrictMode>
 );
 
-// react-snap prerenders each public route to static HTML at build time.
-// If the root already has server-rendered markup, hydrate it (keeps the
-// prerendered HTML for SEO/first paint); otherwise mount fresh as usual.
-if (rootElement.hasChildNodes()) {
-  hydrateRoot(rootElement, app);
-} else {
-  createRoot(rootElement).render(app);
-}
+// Client-side render. createRoot cleanly replaces the static #app-loading
+// spinner (in index.html) with the rendered app — the spinner gives an instant
+// first paint while this bundle loads instead of a blank white screen.
+createRoot(rootElement).render(app);
 
 // Load the heavy Arabic (Amiri) fonts off the critical path, once the browser
 // is idle after the first paint. Vite emits these as async CSS chunks.

@@ -2,6 +2,7 @@
 // Vercel uses api/index.js which imports server/app.js directly.
 import app from './app.js';
 import connectDB from './config/db.js';
+import { startKeepAlive } from './config/keepAlive.js';
 
 // Connect eagerly at startup so the first request isn't slow.
 connectDB().catch((err) => {
@@ -10,4 +11,7 @@ connectDB().catch((err) => {
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on http://localhost:${PORT}`);
+  startKeepAlive();
+});

@@ -50,7 +50,7 @@ export default function Hero() {
             <div className="hero__ring hero__ring--2" />
             <div className="hero__circle-inner">
               <span className="hero__arabic-big">ٱقْرَأْ</span>
-              <span className="hero__arabic-tr">Read</span>
+              <span className="hero__arabic-tr">{h.iqraRead}</span>
             </div>
           </div>
 
@@ -59,7 +59,7 @@ export default function Hero() {
             <span className="hero__pill-icon">⭐</span>
             <div>
               <strong>4.9 / 5</strong>
-              <span>1,200+ students</span>
+              <span>{h.studentsCount}</span>
             </div>
           </div>
 
@@ -68,7 +68,7 @@ export default function Hero() {
             <span className="hero__pill-icon">🎓</span>
             <div>
               <strong>Al-Azhar</strong>
-              <span>Certified tutors</span>
+              <span>{h.certifiedTutors}</span>
             </div>
           </div>
 

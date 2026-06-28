@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
@@ -374,7 +374,7 @@ function Success({ name }) {
 /* ── Main page ──────────────────────────────────────────────────── */
 export default function Enroll() {
   useSEO({
-    title: 'Enroll — AL-Rahma Academy',
+    title: 'Enroll',
     description: 'Start your Quran journey. Choose your subjects, pick a certified tutor, and select a plan — in just a few steps.',
   });
 
@@ -447,7 +447,7 @@ export default function Enroll() {
   return (
     <>
       <Header />
-      <main className="enroll__page">
+      <main id="main-content" className="enroll__page">
         <div className="enroll__container">
           {done ? (
             <Success name={form.name} />

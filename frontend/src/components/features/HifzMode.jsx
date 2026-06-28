@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { getVerseAudios } from '../../api/quran';
 import { getMyHifz, markHifz } from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
+import { useLang } from '../../context/LangContext';
 
 const clean = (html = '') => html.replace(/<[^>]+>/g, '');
 
@@ -11,6 +12,8 @@ function firstWords(text, n = 3) {
 }
 
 export default function HifzMode({ verses, chapterId, reciterId, chapterName, onClose }) {
+  const { t } = useLang();
+  const hz = t.hifz;
   const [mode, setMode]               = useState('repeat');   // 'repeat' | 'test'
   const [repeatCount, setRepeatCount] = useState(3);
   const [fromVerse, setFromVerse]     = useState(1);
@@ -137,10 +140,10 @@ export default function HifzMode({ verses, chapterId, reciterId, chapterName, on
       {/* Header */}
       <div className="hifz__header">
         <div>
-          <h2 className="hifz__title">🧠 Hifz Mode — {chapterName}</h2>
-          <p className="hifz__sub">Repetition &amp; memorization tools</p>
+          <h2 className="hifz__title">🧠 {hz.mode} — {chapterName}</h2>
+          <p className="hifz__sub">{hz.sub}</p>
         </div>
-        <button className="hifz__close" onClick={onClose} aria-label="Close">✕</button>
+        <button className="hifz__close" onClick={onClose} aria-label={hz.closeLabel}>✕</button>
       </div>
 
       {/* Mode tabs */}
@@ -149,13 +152,13 @@ export default function HifzMode({ verses, chapterId, reciterId, chapterName, on
           className={`hifz__tab${mode === 'repeat' ? ' hifz__tab--active' : ''}`}
           onClick={() => { setMode('repeat'); stopPlay(); }}
         >
-          🔁 Repetition (التكرار)
+          🔁 {hz.tabRepeat} (التكرار)
         </button>
         <button
           className={`hifz__tab${mode === 'test' ? ' hifz__tab--active' : ''}`}
           onClick={() => { setMode('test'); stopPlay(); setRevealed({}); }}
         >
-          🧪 Test (اختبار الحفظ)
+          🧪 {hz.tabTest} (اختبار الحفظ)
         </button>
       </div>
 
@@ -163,13 +166,13 @@ export default function HifzMode({ verses, chapterId, reciterId, chapterName, on
       {user && (
         <div className="hifz__progress-save" style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', padding: '10px 0' }}>
           <span className="quran__badge">
-            ✅ {memorized.size}/{verses.length} {chapterName} memorized
+            ✅ {hz.progress.replace('{count}', memorized.size).replace('{total}', verses.length).replace('{chapter}', chapterName)}
           </span>
           <button className="btn btn--green btn--sm" disabled={savingHifz} onClick={() => saveHifz(true)}>
-            {savingHifz ? '…' : `Mark verses ${fromVerse}–${toVerse} memorized`}
+            {savingHifz ? '…' : hz.markMem.replace('{from}', fromVerse).replace('{to}', toVerse)}
           </button>
           <button className="btn btn--ghost btn--sm" disabled={savingHifz} onClick={() => saveHifz(false)}>
-            Unmark
+            {hz.unmark}
           </button>
         </div>
       )}
@@ -177,11 +180,11 @@ export default function HifzMode({ verses, chapterId, reciterId, chapterName, on
       {/* Controls bar */}
       <div className="hifz__controls">
         <div className="hifz__range">
-          <label>From verse</label>
+          <label>{hz.fromVerse}</label>
           <select value={fromVerse} onChange={(e) => { stopPlay(); setFromVerse(Number(e.target.value)); }}>
             {verses.map((_, i) => <option key={i} value={i + 1}>{i + 1}</option>)}
           </select>
-          <label>to</label>
+          <label>{hz.toVerse}</label>
           <select value={toVerse} onChange={(e) => { stopPlay(); setToVerse(Number(e.target.value)); }}>
             {verses.map((_, i) => <option key={i} value={i + 1}>{i + 1}</option>)}
           </select>
@@ -189,7 +192,7 @@ export default function HifzMode({ verses, chapterId, reciterId, chapterName, on
 
         {mode === 'repeat' && (
           <div className="hifz__range">
-            <label>Repeat each verse</label>
+            <label>{hz.repeatLabel}</label>
             <select value={repeatCount} onChange={(e) => setRepeatCount(Number(e.target.value))}>
               {[1, 2, 3, 5, 7, 10].map((n) => <option key={n} value={n}>{n}×</option>)}
             </select>
@@ -203,12 +206,12 @@ export default function HifzMode({ verses, chapterId, reciterId, chapterName, on
                 type="checkbox"
                 checked={showTranslation}
                 onChange={(e) => setShowTranslation(e.target.checked)}
-                style={{ marginRight: 6 }}
+                style={{ marginInlineEnd: 6 }}
               />
-              Show translation
+              {hz.showTrans}
             </label>
-            <button className="btn btn--ghost btn--sm" onClick={revealAll}>Reveal all</button>
-            <button className="btn btn--ghost btn--sm" onClick={hideAll}>Hide all</button>
+            <button className="btn btn--ghost btn--sm" onClick={revealAll}>{hz.revealAll}</button>
+            <button className="btn btn--ghost btn--sm" onClick={hideAll}>{hz.hideAll}</button>
           </div>
         )}
       </div>
@@ -217,16 +220,16 @@ export default function HifzMode({ verses, chapterId, reciterId, chapterName, on
       {mode === 'repeat' && (
         <div className="hifz__playbar">
           {loadingAudio ? (
-            <span className="hifz__status">Loading audio…</span>
+            <span className="hifz__status">{hz.loadingAudio}</span>
           ) : !isPlaying ? (
             <button className="btn btn--green" onClick={startPlay} disabled={loadingAudio}>
-              ▶ Start ({selectedVerses.length} verses · {repeatCount}× each)
+              ▶ {hz.startPlay.replace('{count}', selectedVerses.length).replace('{repeat}', repeatCount)}
             </button>
           ) : (
             <>
-              <button className="btn btn--ghost" onClick={stopPlay}>⏹ Stop</button>
+              <button className="btn btn--ghost" onClick={stopPlay}>⏹ {hz.stopPlay}</button>
               <span className="hifz__status">
-                Verse {fromVerse + currentIdx} — play {playCount}/{repeatCount}
+                {hz.versePlaying.replace('{verse}', fromVerse + currentIdx).replace('{count}', playCount).replace('{repeat}', repeatCount)}
               </span>
             </>
           )}
@@ -249,7 +252,7 @@ export default function HifzMode({ verses, chapterId, reciterId, chapterName, on
                 {mode === 'repeat' && (
                   <button
                     className="hifz__play-btn"
-                    title="Play this verse"
+                    title={hz.playTitle}
                     onClick={() => playOne(idx)}
                     disabled={loadingAudio}
                   >
@@ -263,7 +266,7 @@ export default function HifzMode({ verses, chapterId, reciterId, chapterName, on
                     className="hifz__reveal-btn"
                     onClick={() => toggleReveal(v.verse_key)}
                   >
-                    {revealed[v.verse_key] ? '🙈 Hide' : '👁 Reveal'}
+                    {revealed[v.verse_key] ? '🙈 ' + hz.hide : '👁 ' + hz.reveal}
                   </button>
                 )}
               </div>

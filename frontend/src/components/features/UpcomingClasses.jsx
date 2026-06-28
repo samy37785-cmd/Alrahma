@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { getClasses } from '../../api/client';
+import { useLang } from '../../context/LangContext';
 
 // Renders a viewer's upcoming live classes. Times are formatted with the
 // browser's LOCAL timezone (toLocaleString with no timeZone arg), so each
@@ -11,7 +12,9 @@ const fmt = (d) =>
     hour: '2-digit', minute: '2-digit',
   });
 
-export default function UpcomingClasses({ showStudent = false, title = '📅 Upcoming live classes' }) {
+export default function UpcomingClasses({ showStudent = false, title }) {
+  const { t } = useLang();
+  const d = t.dashboard;
   const [classes, setClasses] = useState([]);
   const [loaded, setLoaded]   = useState(false);
 
@@ -26,7 +29,7 @@ export default function UpcomingClasses({ showStudent = false, title = '📅 Upc
 
   return (
     <section className="admin__panel" style={{ marginBottom: '1.5rem' }}>
-      <h2 style={{ marginTop: 0 }}>{title}</h2>
+      <h2 style={{ marginTop: 0 }}>{title ?? d.upcomingClasses}</h2>
       <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
         {classes.map((c) => (
           <li key={c._id} style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', background: '#f7faf8', border: '1px solid #e0e8e4', borderRadius: 10, padding: '12px 16px' }}>
@@ -35,12 +38,12 @@ export default function UpcomingClasses({ showStudent = false, title = '📅 Upc
               <p style={{ margin: '2px 0 0', fontSize: '.85rem', color: '#666' }}>
                 🕒 {fmt(c.startsAt)} · {c.durationMin} min
                 {c.teacher?.name ? ` · ${c.teacher.name}` : ''}
-                {showStudent && c.student?.name ? ` · for ${c.student.name}` : ''}
+                {showStudent && c.student?.name ? ` · ${d.forStudent} ${c.student.name}` : ''}
               </p>
             </div>
             {c.meetingUrl
-              ? <a href={c.meetingUrl} target="_blank" rel="noopener noreferrer" className="btn btn--green btn--sm">Join</a>
-              : <span style={{ fontSize: '.8rem', color: '#999' }}>link soon</span>}
+              ? <a href={c.meetingUrl} target="_blank" rel="noopener noreferrer" className="btn btn--green btn--sm">{d.joinBtn}</a>
+              : <span style={{ fontSize: '.8rem', color: '#999' }}>{d.linkSoon}</span>}
           </li>
         ))}
       </ul>

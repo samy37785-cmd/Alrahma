@@ -22,10 +22,13 @@ export async function protect(req, res, next) {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    // attach the user (without password) to the request
     req.user = await User.findById(decoded.id).select('-password');
     if (!req.user) {
       return res.status(401).json({ message: 'User no longer exists' });
+    }
+    // Reject tokens issued before a password change (tokenVersion mismatch).
+    if ((decoded.v ?? 0) !== (req.user.tokenVersion ?? 0)) {
+      return res.status(401).json({ message: 'Session expired — please log in again' });
     }
     next();
   } catch {
@@ -76,4 +79,30 @@ export async function softProtect(req, res, next) {
     }
   } catch { /* no-op — unauthenticated access is fine here */ }
   next();
+}
+
+// Role-guarded protect: verifies JWT, fetches fresh user data from DB (so a
+// role change or password reset immediately locks out the old token), and checks
+// that the user's current role is among the allowed ones.
+// Usage: router.get('/admin-route', requireRole('admin'), handler)
+export function requireRole(...roles) {
+  return async (req, res, next) => {
+    const token = getToken(req);
+    if (!token) return res.status(401).json({ message: 'Not authorized, no token' });
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const user = await User.findById(decoded.id).select('-password');
+      if (!user) return res.status(401).json({ message: 'User no longer exists' });
+      if ((decoded.v ?? 0) !== (user.tokenVersion ?? 0)) {
+        return res.status(401).json({ message: 'Session expired — please log in again' });
+      }
+      if (!roles.includes(user.role)) {
+        return res.status(403).json({ message: `Access restricted to: ${roles.join(', ')}` });
+      }
+      req.user = user;
+      next();
+    } catch {
+      return res.status(401).json({ message: 'Not authorized, token failed' });
+    }
+  };
 }

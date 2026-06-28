@@ -52,9 +52,9 @@ export default function CheckoutModal({ plan, onClose }) {
         : await startStripeSession(payload);
 
       if (res.type === 'redirect' && res.url) window.location.href = res.url;
-      else throw new Error('Could not start the payment. Please try again.');
+      else throw new Error(c.startFailed);
     } catch (err) {
-      setError(err.response?.data?.message || err.message || 'Payment failed.');
+      setError(err.response?.data?.message || err.message || c.paymentFailed);
     } finally {
       setLoading(false);
     }
@@ -67,7 +67,7 @@ export default function CheckoutModal({ plan, onClose }) {
       await submitManualPayment({ plan: plan.name, method, customer, reference });
       setSuccess(c.successMsg);
     } catch (err) {
-      setError(err.response?.data?.message || err.message || 'Submission failed.');
+      setError(err.response?.data?.message || err.message || c.submitFailed);
     } finally {
       setLoading(false);
     }
@@ -198,7 +198,7 @@ export default function CheckoutModal({ plan, onClose }) {
             </p>
             {method === 'stripe' && (
               <p className="checkout__secure-note">
-                🔄 {c.recurringNote || 'Auto-renews every month — you can cancel anytime.'}
+                🔄 {c.recurringNote}
               </p>
             )}
           </form>

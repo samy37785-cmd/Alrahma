@@ -24,8 +24,8 @@ export default function NotFound() {
           <p className="notfound-page__sub">{nf.sub}</p>
           <div className="notfound-page__links">
             <Link to="/" className="btn btn--green">{nf.goHome}</Link>
-            <Link to="/blog" className="btn btn--ghost">{nf.readBlog}</Link>
-            <Link to="/quran" className="btn btn--ghost">{nf.readQuran}</Link>
+            <Link to="/resources/blog" className="btn btn--ghost">{nf.readBlog}</Link>
+            <Link to="/tools/quran-reader" className="btn btn--ghost">{nf.readQuran}</Link>
           </div>
         </div>
       </main>

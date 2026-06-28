@@ -47,6 +47,11 @@ function limiter({ max, message, prefix }) {
     standardHeaders: true,
     legacyHeaders: false,
     message: { message },
+    keyGenerator(req) {
+      const ip = req.ip || req.socket?.remoteAddress || 'unknown';
+      return ip.startsWith('::ffff:') ? ip.slice(7) : ip;
+    },
+    validate: { keyGeneratorIpFallback: false },
     ...(store ? { store } : {}),
   });
 }
@@ -61,4 +66,10 @@ export const authLimiter = limiter({
   max: 20,
   message: 'Too many attempts — please try again later.',
   prefix: 'rl:auth:',
+});
+
+export const enrollmentLimiter = limiter({
+  max: 5,
+  message: 'Too many enrollment requests — please try again later.',
+  prefix: 'rl:enrollment:',
 });

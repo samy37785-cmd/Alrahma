@@ -1,4 +1,4 @@
-const it = {
+﻿const it = {
   "lang": "it",
   "dir": "ltr",
   "tagline": "Impara il Corano Online",
@@ -16,7 +16,29 @@ const it = {
     "trial": "Prova Gratuita",
     "login": "Accedi",
     "dashboard": "Dashboard",
-    "invoices": "Le Mie Fatture"
+    "invoices": "Le Mie Fatture",
+    "resources": "Risorse",
+    "academy": "Accademia",
+    "quranTajweed": "Corano & Tajweed",
+    "hifzMem": "Memorizzazione (Hifz)",
+    "quranIjazah": "Ijazah del Corano",
+    "islamicStudies": "Studi Islamici",
+    "arabicAlphabet": "Alfabeto Arabo",
+    "quranReader": "Lettore del Corano",
+    "prayerTimes": "Orari di Preghiera",
+    "qibla": "Direzione Qibla",
+    "islamicCalendar": "Calendario Islamico",
+    "verseOfDay": "Versetto del Giorno",
+    "tasbeehCounter": "Contatore Tasbeeh",
+    "blog": "Blog & Articoli",
+    "faq": "FAQ",
+    "privacy": "Informativa sulla Privacy",
+    "profile": "Il Mio Profilo",
+    "myChildren": "I Miei Figli",
+    "logout": "Disconnettersi",
+    "teacher": "Area Insegnante",
+    "viewAll": "Vedi tutto",
+    "allLabel": "Tutto"
   },
   "hero": {
     "eyebrow": "Corano • Arabo • Studi Islamici",
@@ -29,7 +51,10 @@ const it = {
     "badge2": "✓ Disponibile 24/7",
     "badge3": "✓ Insegnanti donne disponibili",
     "verseQuote": "\"Leggi nel nome del tuo Signore che ha creato.\"",
-    "verseRef": "Surah Al-'Alaq · 96:1"
+    "verseRef": "Surah Al-'Alaq · 96:1",
+    "iqraRead": "Leggi",
+    "studentsCount": "1.200+ studenti",
+    "certifiedTutors": "Insegnanti certificati"
   },
   "features": {
     "eyebrow": "Perché sceglierci",
@@ -98,7 +123,7 @@ const it = {
         "title": "Recitazione con Tajweed",
         "text": "Padroneggia le regole del Tajweed per una recitazione coranica bella e precisa.",
         "points": [
-          "Tutte le regole Tajweed (Hafs e Warsh)",
+          "Tutte le regole del Tajweed (Hafs e Warsh)",
           "Correzione dal vivo da insegnante certificato",
           "Materiali audio e video di pratica"
         ]
@@ -235,7 +260,10 @@ const it = {
     "success": "Grazie! Ti contatteremo presto, in shaa Allah.",
     "errorOffline": "Server offline — contattaci direttamente:",
     "whatsappBtn": "Scrivici su WhatsApp",
-    "emailBtn": "Inviaci una Email"
+    "emailBtn": "Inviaci una Email",
+    "errorServer": "Errore del server — contattaci direttamente.",
+    "errorGeneric": "Impossibile inviare. Riprova.",
+    "planMessage": "Sono interessato al piano {plan}."
   },
   "newsletter": {
     "heading": "Iscriviti alla nostra newsletter",
@@ -263,7 +291,26 @@ const it = {
       "Testimonianze",
       "Insegnanti",
       "Contatti"
-    ]
+    ],
+    "toolsCol": "Strumenti",
+    "resourcesCol": "Risorse",
+    "academyCol": "Accademia",
+    "allCourses": "Tutti i corsi",
+    "quranTajweed": "Corano e Tajweed",
+    "hifzMem": "Hifz (Memorizzazione)",
+    "quranIjazah": "Ijazah del Corano",
+    "islamicStudies": "Studi islamici",
+    "arabicAlphabet": "Alfabeto arabo",
+    "allTools": "Tutti gli strumenti",
+    "quranReader": "Lettore del Corano",
+    "adhkarLink": "Adhkar",
+    "hadithLibLink": "Biblioteca degli Hadith",
+    "prayerLink": "Orari delle preghiere & Qibla",
+    "blogLink": "Blog",
+    "faqLink": "FAQ",
+    "freeTrialLink": "Prova gratuita",
+    "aboutUs": "Chi siamo",
+    "teachersLink": "I nostri insegnanti"
   },
   "teachersPg": {
     "eyebrow": "Conosci il team",
@@ -509,7 +556,8 @@ const it = {
       "noAccount": "Non hai un account?",
       "createOne": "Creane uno",
       "forgot": "Hai dimenticato la password?",
-      "back": "← Torna al sito"
+      "back": "← Torna al sito",
+      "networkError": "Errore di rete — controlla la connessione e riprova."
     },
     "register": {
       "title": "Crea il tuo account",
@@ -537,6 +585,7 @@ const it = {
       "accountType": "Tipo di account",
       "roleAdmin": "Amministratore",
       "roleStudent": "Studente",
+      "roleParent": "Genitore",
       "saveChanges": "Salva modifiche",
       "saving": "Salvataggio…",
       "infoSuccess": "Profilo aggiornato con successo.",
@@ -557,7 +606,21 @@ const it = {
       "active": "Attivo",
       "viewInvoices": "Vedi Fatture",
       "noSub": "Non hai ancora un abbonamento attivo.",
-      "viewPlans": "Vedi Piani"
+      "viewPlans": "Vedi Piani",
+      "roleTeacher": "Insegnante",
+      "myCertificates": "I Miei Certificati",
+      "printCert": "Visualizza / Stampa",
+      "dashboard": "← Pannello",
+      "parentLink": "Collegamento Genitore",
+      "parentLinkDesc": "Condividi questo codice con il tuo genitore per permettergli di seguire i tuoi progressi dal suo account.",
+      "copy": "Copia",
+      "showLinkCode": "Mostra codice",
+      "certTypes": {
+        "ijazah": "Ijazah",
+        "completion": "Completamento corso",
+        "hifz": "Traguardo Hifz",
+        "attendance": "Presenze"
+      }
     },
     "payment": {
       "backToSite": "← Torna al sito",
@@ -612,7 +675,7 @@ const it = {
     "tagline": "4 semplici passi per iniziare a imparare il Corano con un insegnante certificato Al-Azhar.",
     "step1": {
       "title": "Raccontaci di te",
-      "sub": "Li useremo per abbinarti all'insegnante e all'orario giusti.",
+      "sub": "Useremo queste informazioni per abbinarti all'insegnante e all'orario più adatti.",
       "fullName": "Nome completo *",
       "email": "Indirizzo email *",
       "whatsapp": "Numero WhatsApp",
@@ -620,7 +683,7 @@ const it = {
       "city": "Città / Regione",
       "timezone": "Il tuo fuso orario (rilevato automaticamente)",
       "available": "Quando sei disponibile?",
-      "selectAll": "(seleziona tutti che si applicano)",
+      "selectAll": "(seleziona tutto ciò che si applica)",
       "selectCountry": "Seleziona paese…",
       "placeholderName": "Il tuo nome",
       "placeholderCity": "es. Londra, Roma, Parigi…",
@@ -776,14 +839,21 @@ const it = {
     "loading": "Caricamento dashboard…",
     "renewSub": "Rinnova Abbonamento",
     "subExpires": "Abbonamento scade",
-    "subExpired": "Abbonamento scaduto"
+    "subExpired": "Abbonamento scaduto",
+    "upcomingClasses": "📅 Prossime lezioni dal vivo",
+    "joinBtn": "Entra",
+    "linkSoon": "link a breve",
+    "forStudent": "per",
+    "messages": "Messaggi",
+    "planLabel": "Piano:",
+    "quranReader": "Lettore del Corano"
   },
   "billing": {
     "bar": "Al-Rahma · Fatturazione",
     "backToSite": "← Torna al sito",
     "heading": "Fatture e Fatturazione",
     "sub": "Tutte le tue fatture mensili — clicca su una riga per vedere i dettagli completi.",
-    "discountNotice": "Uno sconto del 25% è applicato a tutte le tue fatture. I prezzi originali sono mostrati con una sbarra.",
+    "discountNotice": "Uno sconto del 25% è applicato a tutte le tue fatture. I prezzi originali sono mostrati barrati.",
     "loading": "Caricamento fatture…",
     "colInvoice": "Fattura #",
     "colDate": "Data",
@@ -818,7 +888,258 @@ const it = {
     "secureNote": "I dettagli della carta vengono inseriti sulla pagina sicura del gateway. Cancella quando vuoi.",
     "successMsg": "✅ Richiesta di pagamento ricevuta! Verificheremo e attiveremo il tuo piano entro 24 ore. Controlla la tua email per la conferma.",
     "close": "Chiudi",
-    "backToOptions": "← Torna alle opzioni di pagamento"
+    "backToOptions": "← Torna alle opzioni di pagamento",
+    "startFailed": "Impossibile avviare il pagamento. Riprova.",
+    "paymentFailed": "Pagamento non riuscito. Riprova.",
+    "submitFailed": "Invio non riuscito. Riprova.",
+    "recurringNote": "Rinnovo automatico mensile — puoi disdire in qualsiasi momento."
+  },
+  "errors": {
+    "crashed": "Si è verificato un errore",
+    "crashSub": "Si è verificato un errore imprevisto. Aggiorna la pagina e riprova.",
+    "refresh": "Aggiorna la pagina"
+  },
+  "alphabet": {
+    "title": "Alfabeto Arabo e Italiano",
+    "listenFull": "Ascolta l'alfabeto completo",
+    "prevBtn": "← Precedente",
+    "nextBtn": "Successivo →",
+    "wellDone": "✓ Bravo!",
+    "noSpeech": "Nessuna voce rilevata",
+    "micError": "Errore del microfono",
+    "groupPrefix": "Gruppo",
+    "shortVowels": "Vocali brevi (harakat)",
+    "tanwinShadda": "Tanwin e Shadda",
+    "specialLetters": "Lettere speciali e forme",
+    "closeLabel": "Chiudi",
+    "itLabel": "IT:",
+    "listenTitle": "Ascolta in arabo",
+    "testPronTitle": "Metti alla prova la tua pronuncia"
+  },
+  "hifz": {
+    "mode": "Modalità Hifz",
+    "sub": "Strumenti di ripetizione e memorizzazione",
+    "tabRepeat": "Ripetizione",
+    "tabTest": "Test",
+    "closeLabel": "Chiudi",
+    "progress": "{count}/{total} {chapter} memorizzati",
+    "markMem": "Segna i versetti {from}–{to} come memorizzati",
+    "unmark": "Deseleziona",
+    "fromVerse": "Dal versetto",
+    "toVerse": "al",
+    "repeatLabel": "Ripeti ogni versetto",
+    "showTrans": "Mostra traduzione",
+    "revealAll": "Rivela tutto",
+    "hideAll": "Nascondi tutto",
+    "loadingAudio": "Caricamento audio…",
+    "startPlay": "Avvia ({count} versetti · {repeat}× ciascuno)",
+    "stopPlay": "Ferma",
+    "versePlaying": "Versetto {verse} — ascolto {count}/{repeat}",
+    "playTitle": "Riproduci questo versetto",
+    "reveal": "Rivela",
+    "hide": "Nascondi"
+  },
+  "hadith": {
+    "pageTitle": "Biblioteca degli Hadith",
+    "pageDesc": "Sfoglia e cerca 13 autentiche collezioni di hadith tra cui Sahih Bukhari, Sahih Muslim, Riyad As-Salihin e altre.",
+    "badge": "📚 Biblioteca degli Hadith",
+    "back": "Tutte le collezioni",
+    "heroTitle": "Biblioteca islamica degli Hadith",
+    "heroSub": "Sfoglia e cerca 13 autentiche collezioni di hadith — in arabo e inglese — tutte ospitate qui",
+    "hadiths": "hadith",
+    "hadithSingle": "hadith",
+    "courseNote": "Questi libri vengono studiati nel nostro",
+    "courseLink": "corso di studi islamici",
+    "courseClick": "— clicca su un libro per sfogliarlo.",
+    "searchPlaceholder": "Cerca hadith...",
+    "displayLabel": "Mostra:",
+    "displayBoth": "Entrambi",
+    "displayAr": "Arabo",
+    "displayEn": "Inglese",
+    "loading": "Caricamento di {book}...",
+    "loadingNote": "({count} hadith — potrebbe richiedere qualche secondo)",
+    "failedLoad": "Caricamento non riuscito. Riprova.",
+    "resultsCount": "{count} hadith",
+    "resultsSearch": "{count} risultati per \"{query}\"",
+    "pageOf": "Pagina {page} di {total}",
+    "noResults": "Nessun risultato per \"{query}\"",
+    "clearSearch": "Cancella ricerca",
+    "ctaPrompt": "Vuoi studiare questi libri con un insegnante certificato?",
+    "ctaBtn": "Corso di studi islamici →",
+    "browse": "Sfoglia →"
+  },
+  "hubs": {
+    "learnMore": "Scopri di più",
+    "open": "Apri",
+    "browse": "Sfoglia",
+    "startTrial": "Inizia la Prova Gratuita",
+    "enrollTrial": "Iscriviti — Prova Gratuita",
+    "enrollNow": "Iscriviti Ora",
+    "bookFree": "Prenota Ora — Gratis",
+    "allCourses": "Tutti i Corsi",
+    "courses": {
+      "eyebrow": "I Nostri Corsi",
+      "heading": "Impara il Corano e le Scienze Islamiche Online",
+      "sub": "Lezioni individuali dal vivo con insegnanti certificati Al-Azhar — in 17 lingue, al tuo ritmo, da qualsiasi parte del mondo.",
+      "cards": [
+        { "icon": "📖", "title": "Lettura del Corano & Tajweed", "desc": "Impara a leggere il Corano correttamente con le regole del Tajweed da insegnanti certificati.", "badge": "Popolare" },
+        { "icon": "🧠", "title": "Memorizzazione del Corano (Hifz)", "desc": "Programmi di memorizzazione strutturati con revisione giornaliera e monitoraggio dei progressi.", "badge": "" },
+        { "icon": "📜", "title": "Ijazah del Corano", "desc": "Ottieni una certificazione Ijazah ufficiale con un Sanad collegato al Profeta ﷺ.", "badge": "Avanzato" },
+        { "icon": "🕌", "title": "Studi Islamici", "desc": "Impara Aqeedah, Fiqh, Seerah e la pratica islamica quotidiana nella tua lingua.", "badge": "" },
+        { "icon": "🔤", "title": "Alfabeto Arabo", "desc": "Padroneggia le 28 lettere arabe con pronuncia audio ed esercizi interattivi.", "badge": "Principiante" },
+        { "icon": "🎓", "title": "Lezione di Prova Gratuita", "desc": "Prova una lezione gratuita con uno dei nostri insegnanti Al-Azhar certificati — senza impegno.", "badge": "Gratuito" }
+      ]
+    },
+    "quran": {
+      "eyebrow": "Corsi di Corano",
+      "heading": "Corsi di Corano & Tajweed",
+      "sub": "Dalla tua primissima lettera a una recitazione impeccabile — i nostri insegnanti Al-Azhar certificati ti guidano in ogni passo, nella tua lingua.",
+      "relatedHeading": "Strumento Correlato",
+      "relatedDesc": "Pratica la tua recitazione con il nostro Lettore del Corano gratuito — ascolta più recitatori e segui il testo.",
+      "relatedBtn": "Apri il Lettore del Corano →",
+      "cards": [
+        { "icon": "📖", "title": "Lettura del Corano (Noorani Qaida)", "desc": "Inizia da zero — impara le lettere arabe, la pronuncia e leggi il Corano in modo autonomo.", "points": ["Lettere arabe & pronuncia", "Metodo Noorani Qaida passo dopo passo", "Leggere il Corano autonomamente"] },
+        { "icon": "🎙️", "title": "Recitazione con Tajweed", "desc": "Padroneggia tutte le regole del Tajweed per una recitazione coranica bella e accurata.", "points": ["Tutte le regole del Tajweed (Hafs & Warsh)", "Correzione in diretta da un insegnante certificato", "Materiali di pratica audio e video"] },
+        { "icon": "🧠", "title": "Memorizzazione del Corano (Hifz)", "desc": "Piano Hifz personalizzato con strumenti di ripetizione, test di memoria e monitoraggio delle revisioni.", "points": ["Piano di memorizzazione personalizzato", "Revisione giornaliera & monitoraggio progressi", "Adatto a tutte le età"] }
+      ]
+    },
+    "arabic": {
+      "eyebrow": "Alfabeto Arabo",
+      "heading": "Alfabeto Arabo",
+      "sub": "Impara tutte le 28 lettere arabe con guide alla pronuncia audio. Il primo passo ideale prima di leggere il Corano.",
+      "learnHeading": "Cosa Imparerai",
+      "learnPoints": [
+        "Tutte le 28 lettere arabe — nome, suono e forma scritta",
+        "Pratica interattiva nel browser con feedback audio istantaneo",
+        "Equivalenti fonetici per ogni lettera",
+        "Segni vocalici (harakat): Fatha, Kasra, Damma, Sukun",
+        "Tanwin, Shadda, Ta Marbuta e altri simboli essenziali",
+        "Come unire le lettere e riconoscere le parole"
+      ],
+      "tryHeading": "Prova la Lezione Interattiva",
+      "tryDesc": "Pratica le lettere arabe direttamente nel tuo browser — nessun download necessario.",
+      "tryBtn": "Inizia la Lezione Gratuita",
+      "nextHeading": "Prossimo Passo: Orari di Preghiera",
+      "nextDesc": "Una volta che conosci l'alfabeto arabo, pratica la lettura dei nomi e degli orari di preghiera con i nostri strumenti islamici.",
+      "nextBtn": "Apri gli Orari di Preghiera →"
+    },
+    "tools": {
+      "eyebrow": "Strumenti Islamici",
+      "heading": "Strumenti Gratuiti per Ogni Musulmano",
+      "sub": "Una crescente collezione di strumenti islamici gratuiti per aiutarti ad adorare, imparare e crescere — creata con cura dal team di Al-Rahma Academy.",
+      "cards": [
+        { "icon": "📖", "title": "Lettore del Corano", "desc": "Leggi e ascolta il Corano completo con più recitatori, traduzioni, Tafsir e modalità Hifz." },
+        { "icon": "📿", "title": "Adhkar & Suppliche", "desc": "Adhkar del mattino e della sera, dhikr dopo la preghiera e du'a per ogni occasione." },
+        { "icon": "📚", "title": "Biblioteca di Hadith", "desc": "Sfoglia Al-Arba'een Al-Nawawiyyah, Hadith Qudsi e altre raccolte di hadith." },
+        { "icon": "🕌", "title": "Preghiera & Strumenti Islamici", "desc": "Orari di preghiera, bussola Qibla, calendario islamico e Versetto del Giorno — quattro strumenti per l'adorazione quotidiana." },
+        { "icon": "✋", "title": "Contatore Tasbeeh", "desc": "Contatore dhikr digitale per SubhanAllah, Alhamdulillah, AllahuAkbar e altro." },
+        { "icon": "🔤", "title": "Alfabeto Arabo", "desc": "Impara le 28 lettere arabe con pronuncia audio, pratica microfono e registrazioni complete." }
+      ]
+    },
+    "resources": {
+      "eyebrow": "Risorse",
+      "heading": "Tutto Ciò di Cui Hai Bisogno per Iniziare",
+      "sub": "Sfoglia i nostri articoli del blog, le domande frequenti e scopri di più su Al-Rahma Academy e i nostri insegnanti.",
+      "cards": [
+        { "icon": "✍️", "title": "Blog & Articoli", "desc": "Consigli, guide e storie sull'apprendimento del Corano, Tajweed, Hifz e vita islamica." },
+        { "icon": "❓", "title": "FAQ", "desc": "Risposte alle domande più comuni su lezioni, prezzi, orari e altro." },
+        { "icon": "🏫", "title": "Sull'Accademia", "desc": "La nostra missione, metodologia e i valori che guidano Al-Rahma Academy." },
+        { "icon": "👨‍🏫", "title": "I Nostri Insegnanti", "desc": "Incontra i nostri studiosi Al-Azhar certificati e gli esperti insegnanti di Corano." }
+      ]
+    },
+    "academy": {
+      "eyebrow": "Al-Rahma Academy",
+      "heading": "Una Casa di Fiducia per l'Apprendimento del Corano",
+      "sub": "Collegare le famiglie musulmane di tutto il mondo con insegnanti Al-Azhar certificati — portando la tradizione del sapere islamico in ogni casa.",
+      "cards": [
+        { "icon": "🏫", "title": "Chi Siamo", "desc": "La nostra missione, storia, metodologia e i valori che definiscono Al-Rahma Academy." },
+        { "icon": "👨‍🏫", "title": "I Nostri Insegnanti", "desc": "Incontra i nostri studiosi Al-Azhar certificati e gli esperti insegnanti di Corano e studi islamici." },
+        { "icon": "🔒", "title": "Informativa sulla Privacy", "desc": "Come raccogliamo, utilizziamo e proteggiamo i tuoi dati personali sulla nostra piattaforma." },
+        { "icon": "🎓", "title": "Inizia la Prova Gratuita", "desc": "Prenota una lezione di prova gratuita con uno dei nostri insegnanti certificati — nessun pagamento richiesto." }
+      ]
+    }
+  },
+  "notifications": {
+    "title": "Notifiche",
+    "markAllRead": "Segna tutte come lette",
+    "noNotifications": "Nessuna notifica ancora",
+    "unread": "Non lette",
+    "all": "Tutte",
+    "viewAll": "Vedi tutte",
+    "clear": "Cancella",
+    "justNow": "Proprio ora",
+    "minutesAgo": "{{n}} min fa",
+    "hoursAgo": "{{n}} ore fa",
+    "daysAgo": "{{n}} giorni fa"
+  },
+  "contact": {
+    "title": "Contattaci",
+    "eyebrow": "Mettiti in contatto",
+    "heading": "Siamo felici di sentirti",
+    "sub": "Inviaci un messaggio e il nostro team ti risponderà entro 24 ore.",
+    "name": "Nome completo",
+    "email": "Indirizzo email",
+    "phone": "Numero di telefono (opzionale)",
+    "subject": "Oggetto",
+    "message": "Messaggio",
+    "messagePlaceholder": "Come possiamo aiutarti?",
+    "send": "Invia messaggio",
+    "sending": "Invio in corso...",
+    "success": "Messaggio ricevuto. Ti contatteremo presto.",
+    "error": "Invio del messaggio fallito. Riprova."
+  },
+  "wishlist": {
+    "title": "Lista dei Desideri",
+    "empty": "La tua lista dei desideri è vuota",
+    "emptyHint": "Sfoglia i nostri corsi e salva quelli che ti interessano.",
+    "add": "Aggiungi alla lista",
+    "remove": "Rimuovi dalla lista",
+    "saved": "Salvato",
+    "viewWishlist": "Vedi lista",
+    "browseCourses": "Sfoglia corsi"
+  },
+  "reviews": {
+    "title": "Recensioni",
+    "averageRating": "Valutazione media",
+    "totalReviews": "{{n}} recensioni",
+    "noReviews": "Ancora nessuna recensione. Sii il primo!",
+    "writeReview": "Scrivi una recensione",
+    "yourRating": "La tua valutazione",
+    "reviewTitle": "Titolo (opzionale)",
+    "reviewBody": "La tua recensione",
+    "reviewBodyPlaceholder": "Condividi la tua esperienza con questo insegnante o corso...",
+    "submit": "Invia recensione",
+    "submitting": "Invio in corso...",
+    "thankYou": "Grazie per la tua recensione!",
+    "pendingApproval": "La tua recensione è in attesa di moderazione e sarà visibile dopo l'approvazione.",
+    "alreadyReviewed": "Hai già inviato una recensione.",
+    "anonymous": "Anonimo"
+  },
+  "search": {
+    "placeholder": "Cerca corsi, insegnanti, articoli...",
+    "label": "Cerca",
+    "noResults": "Nessun risultato per \"{{q}}\"",
+    "results": "Risultati di ricerca per \"{{q}}\"",
+    "courses": "Corsi",
+    "teachers": "Insegnanti",
+    "articles": "Articoli",
+    "viewAllCourses": "Vedi tutti i corsi",
+    "viewAllTeachers": "Vedi tutti gli insegnanti",
+    "viewAllPosts": "Vedi tutti gli articoli",
+    "searching": "Ricerca in corso..."
+  },
+  "coupons": {
+    "label": "Codice coupon",
+    "placeholder": "Inserisci il codice coupon",
+    "apply": "Applica",
+    "remove": "Rimuovi",
+    "applied": "Coupon applicato",
+    "discount": "Sconto",
+    "invalid": "Codice coupon non valido",
+    "expired": "Questo coupon è scaduto",
+    "alreadyUsed": "Hai già utilizzato questo coupon",
+    "notApplicable": "Questo coupon non è applicabile al tuo piano",
+    "minOrder": "Importo minimo dell'ordine non raggiunto"
   }
 };
 export default it;

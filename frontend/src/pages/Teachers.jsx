@@ -1,8 +1,9 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 import useSEO from '../hooks/useSEO';
+import Breadcrumbs from '../components/ui/Breadcrumbs';
 import { useLang } from '../context/LangContext';
 import { TEACHERS, TEACHER_CREDENTIALS as CREDENTIALS } from '../data';
 
@@ -123,7 +124,7 @@ export default function Teachers() {
   const isAr = lang === 'ar';
 
   useSEO({
-    title: isAr ? 'معلمونا — أكاديمية الرحمة' : 'Our Teachers — AL-Rahma Academy',
+    title: isAr ? 'معلمونا' : 'Our Teachers',
     description: isAr
       ? 'تعرف على معلمينا المعتمدين من الأزهر، خبراء في القرآن والتجويد والدراسات الإسلامية.'
       : 'Meet our qualified Al-Azhar certified Quran and Arabic tutors. All teachers hold an Ijazah with a verified sanad.',
@@ -154,6 +155,7 @@ export default function Teachers() {
     <>
       <Header />
       <main id="main-content">
+        <Breadcrumbs items={[{ label: 'Academy', to: '/academy' }, { label: ui.title }]} />
         {/* Hero */}
         <section className="tpg__hero">
           <div className="container tpg__hero-inner">

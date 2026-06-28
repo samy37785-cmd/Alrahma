@@ -26,7 +26,7 @@ export default function Login() {
       const dest = { admin: '/admin', teacher: '/teacher', parent: '/parent' }[user?.role] || '/';
       navigate(dest);
     } catch (err) {
-      setError(err.response?.data?.message || lg.btn);
+      setError(err.response?.data?.message || (!err.response ? lg.networkError : lg.btn));
     } finally {
       setBusy(false);
     }

@@ -273,7 +273,7 @@
 }
 .plan__discount-badge {
   position: absolute; top: -14px; right: 18px;
-  background: #e53e3e; color: #fff; font-size: .7rem; font-weight: 700;
+  background: #c0392b; color: #fff; font-size: .7rem; font-weight: 700;
   padding: 3px 10px; border-radius: 999px;
 }
 .plan__original-price {
@@ -281,7 +281,7 @@
   text-decoration: line-through; display: block; margin-bottom: 2px;
 }
 .plan__saving {
-  font-size: .82rem; color: #22863a; font-weight: 600;
+  font-size: .82rem; color: var(--green-deep); font-weight: 700;
   background: #e6f4ea; border-radius: 999px; padding: 3px 12px;
   display: inline-block; margin: -12px 0 16px;
 }
@@ -445,7 +445,7 @@
 .alpha__card {
   background: #fff; border: 1.5px solid var(--line); border-radius: 16px;
   padding: 20px 14px 14px; text-align: center;
-  box-shadow: 0 2px 8px rgba(0,0,0,.05);
+  box-shadow: 0 3px 14px rgba(8,77,55,.07);
   transition: border-color .2s, transform .2s, box-shadow .2s;
   display: flex; flex-direction: column; align-items: center; gap: 4px;
 }
@@ -512,3 +512,27 @@
 .alpha__nav-btn--next:hover:not(:disabled) { background: var(--green-deep); }
 .alpha__nav-btn:disabled { opacity: .35; cursor: default; }
 .alpha__nav-count { font-size: .85rem; color: var(--muted); font-weight: 500; }
+
+/* ── Alphabet learner — dark (follows the Quran reader's .qlc--dark) ── */
+.qlc--dark .alpha { border-top-color: #1e3028; }
+.qlc--dark .alpha__title { color: #e8f5ee; }
+.qlc--dark .alpha__subtitle,
+.qlc--dark .alpha__group-label,
+.qlc--dark .alpha__card-desc,
+.qlc--dark .alpha__nav-count { color: #8fb6a3; }
+.qlc--dark .alpha__close-btn { border-color: #2a4035; color: #8fb6a3; }
+.qlc--dark .alpha__close-btn:hover { border-color: var(--green); color: #d5e8de; }
+.qlc--dark .alpha__dot { background: #2a4035; }
+.qlc--dark .alpha__recordings {
+  background: linear-gradient(135deg, #13241c 0%, #16291f 100%); border-color: #1e3028;
+}
+.qlc--dark .alpha__rec-title { color: #6fc79e; }
+.qlc--dark .alpha__rec-tab { background: #1e2d24; color: #cfe7da; }
+.qlc--dark .alpha__card {
+  background: #151f1a; border-color: #1e3028; box-shadow: 0 3px 14px rgba(0,0,0,.3);
+}
+.qlc--dark .alpha__card-name { color: #e8f5ee; }
+.qlc--dark .alpha__card-it { background: #2a2410; color: #e8c97a; }
+.qlc--dark .alpha__btn { background: #1e2d24; border-color: #2a4035; }
+.qlc--dark .alpha__btn--ar { border-color: var(--green); color: #6fc79e; }
+.qlc--dark .alpha__btn--mic { border-color: #2a4035; color: #9fbcae; }

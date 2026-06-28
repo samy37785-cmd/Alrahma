@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import Reveal from './ui/Reveal';
 import { useLang } from '../context/LangContext';
 import { stats, values } from '../data';
@@ -18,9 +19,9 @@ export default function About() {
             <h2>{a.heading}</h2>
             <p className="about__desc">{a.description}</p>
             <p className="about__mission">{a.mission}</p>
-            <a href="#trial" className="btn btn--green" style={{ marginTop: '1.5rem', display: 'inline-flex' }}>
+            <Link to="/enroll" className="btn btn--green" style={{ marginTop: '1.5rem', display: 'inline-flex' }}>
               {t.nav.trial}
-            </a>
+            </Link>
           </Reveal>
 
           <div className="about__right">

@@ -462,7 +462,7 @@
 /* ════  TAFSIR PICKER (inline per-verse) ════════════════════════════ */
 .qlc__tafsir-picker {
   margin-top: 12px; border: 1px solid #d8e8d0; border-radius: 10px; overflow: hidden;
-  background: #fff; box-shadow: 0 4px 16px rgba(0,0,0,.1);
+  background: #fff; box-shadow: 0 6px 22px rgba(8,77,55,.12);
   animation: qlc-pop .2s ease;
 }
 .qlc__tafsir-picker-head {

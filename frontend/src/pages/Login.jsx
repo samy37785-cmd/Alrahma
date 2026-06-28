@@ -8,7 +8,7 @@ import { useLang } from '../context/LangContext';
 export default function Login() {
   const { t } = useLang();
   const lg = t.authPg.login;
-  useSEO({ title: lg.title });
+  useSEO({ title: lg.title, noindex: true });
   const { login } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState({ email: '', password: '' });
@@ -22,21 +22,13 @@ export default function Login() {
     setError('');
     setBusy(true);
     try {
-      const user = await loginAndGet();
-      navigate(user?.role === 'admin' ? '/admin' : '/');
+      const user = await login(form);
+      const dest = { admin: '/admin', teacher: '/teacher', parent: '/parent' }[user?.role] || '/';
+      navigate(dest);
     } catch (err) {
       setError(err.response?.data?.message || lg.btn);
     } finally {
       setBusy(false);
-    }
-  };
-
-  const loginAndGet = async () => {
-    await login(form);
-    try {
-      return JSON.parse(localStorage.getItem('user'));
-    } catch {
-      return null;
     }
   };
 

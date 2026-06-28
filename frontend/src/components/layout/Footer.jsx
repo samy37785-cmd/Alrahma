@@ -3,7 +3,7 @@ import Brand from './Brand';
 import { useLang } from '../../context/LangContext';
 import { site, socials, courses } from '../../data';
 
-const QUICK_HREFS = ['/', '/#about', '/#courses', '/#pricing', '/#testimonials', '/teachers', '/#contact'];
+const QUICK_HREFS = ['/', '/about', '/#courses', '/#pricing', '/#testimonials', '/teachers', '/#contact'];
 
 export default function Footer() {
   const { t } = useLang();
@@ -18,7 +18,7 @@ export default function Footer() {
         </div>
 
         <div className="footer__col">
-          <h4>{f.quickLinks}</h4>
+          <h3>{f.quickLinks}</h3>
           <ul>
             {f.links.map((label, i) => (
               <li key={QUICK_HREFS[i]}>
@@ -29,7 +29,7 @@ export default function Footer() {
         </div>
 
         <div className="footer__col">
-          <h4>{f.coursesCol}</h4>
+          <h3>{f.coursesCol}</h3>
           <ul>
             {courses.map((c, i) => {
               const label = t.courses.items[i]?.title || c.title;
@@ -43,7 +43,7 @@ export default function Footer() {
         </div>
 
         <div className="footer__col">
-          <h4>{f.contact}</h4>
+          <h3>{f.contact}</h3>
           <ul className="footer__contact">
             <li><a href={'mailto:' + site.email}>{site.email}</a></li>
             <li><a href={'tel:' + site.phoneHref}>{site.phoneDisplay}</a></li>
@@ -55,8 +55,10 @@ export default function Footer() {
           </ul>
           <div className="footer__social">
             {socials.map((s) => (
-              <a key={s.label} href={s.href} aria-label={s.label} target="_blank" rel="noopener noreferrer">
-                <i className={s.icon}></i>
+              <a key={s.label} href={s.href} aria-label={s.label} title={s.label} target="_blank" rel="noopener noreferrer">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d={s.svg} />
+                </svg>
               </a>
             ))}
           </div>

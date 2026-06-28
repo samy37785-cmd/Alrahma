@@ -6,19 +6,15 @@
 @import './styles/global.css';        /* variables, reset, typography, buttons     */
 @import './styles/layout.css';        /* topbar, header, nav, home sections, footer */
 @import './styles/auth.css';          /* login, register, admin, profile, 404       */
-@import './styles/quran.css';         /* quran__* shared + qlc__* full reader       */
 @import './styles/hifz.css';          /* hifz mode                                  */
 @import './styles/pages.css';         /* blog, FAQ, teachers, testimonials, billing */
-@import './styles/tasbeeh.css';       /* tsb__* dhikr counter                       */
-@import './styles/khatm.css';         /* qlc__khatm-* tracker                       */
-@import './styles/islamic-tools.css'; /* it__* prayer times, qibla, calendar        */
-@import './styles/adhkar.css';        /* adhkar__* library                          */
-@import './styles/dashboard.css';     /* dash__* student dashboard                  */
+/* Page-specific CSS is code-split — imported by its own page component so it
+   no longer loads on every page (smaller critical CSS):
+     quran.css (43KB)        → Quran/Blog/BlogPost/FAQ/NotFound/PaymentResult/Privacy
+                               (NOT used on the home page — moved out of the critical bundle)
+     tasbeeh.css + khatm.css → pages/Quran.jsx
+     islamic-tools.css       → pages/IslamicTools.jsx
+     adhkar.css              → pages/Adhkar.jsx
+     dashboard.css           → already imported by Dashboard & co. */
 @import './styles/dark.css';          /* site-wide dark mode (html.dark)            */
-
-/* ── Content protection (deterrent): disable selection/drag, keep forms usable ── */
-.no-select { -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; }
-.no-select input, .no-select textarea, .no-select [contenteditable] {
-  -webkit-user-select: text; -moz-user-select: text; -ms-user-select: text; user-select: text;
-}
-img { -webkit-user-drag: none; -webkit-touch-callout: none; }
+@import './styles/responsive.css';    /* mobile fixes — MUST stay last to win        */

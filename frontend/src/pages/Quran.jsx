@@ -1,5 +1,9 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
+import '../styles/quran.css';
+import '../styles/tasbeeh.css';
+import '../styles/khatm.css';
 import { Link } from 'react-router-dom';
+import { useTheme } from '../context/ThemeContext';
 import Brand from '../components/layout/Brand';
 import AlphabetLearner from '../components/features/AlphabetLearner';
 import Tasbeeh from '../components/features/Tasbeeh';
@@ -34,9 +38,14 @@ export default function Quran() {
   });
 
   /* ── Persisted preferences ───────────────────────────────────── */
-  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('qlc-dark') === '1');
+  // The reader's dark mode follows the site-wide theme so toggling either
+  // keeps the whole site consistent. setDarkMode accepts a value or updater.
+  const { dark: darkMode, toggle: toggleDark } = useTheme();
+  const setDarkMode = (next) => {
+    const target = typeof next === 'function' ? next(darkMode) : next;
+    if (target !== darkMode) toggleDark();
+  };
   const [fontSize, setFontSize] = useState(() => Number(localStorage.getItem('qlc-font') || 34));
-  useEffect(() => { localStorage.setItem('qlc-dark', darkMode ? '1' : '0'); }, [darkMode]);
   useEffect(() => { localStorage.setItem('qlc-font', String(fontSize)); }, [fontSize]);
 
   /* ── Panel / UI state ────────────────────────────────────────── */
@@ -245,7 +254,7 @@ export default function Quran() {
           else if (navMode === 'page') goPage(pageNum + 1);
           else if (navMode === 'juz') setJuzNum((v) => Math.min(30, v + 1));
           break;
-        case 'd': case 'D': setDarkMode((v) => !v); break;
+        case 'd': case 'D': toggleDark(); break;
         case 't': case 'T': setShowTrans((v) => !v); break;
         case '+': case '=': setFontSize((v) => Math.min(v + 2, 52)); break;
         case '-': setFontSize((v) => Math.max(v - 2, 22)); break;
@@ -258,7 +267,7 @@ export default function Quran() {
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [tab, isPlaying, navMode, activeId, pageNum, juzNum, startHifz, stopHifz]);
+  }, [tab, isPlaying, navMode, activeId, pageNum, juzNum, startHifz, stopHifz, toggleDark]);
 
   /* ── Verse actions ───────────────────────────────────────────── */
   const toggleReveal = (key) => setRevealed((p) => ({ ...p, [key]: !p[key] }));

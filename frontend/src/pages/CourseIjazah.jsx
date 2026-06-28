@@ -297,6 +297,17 @@ export default function CourseIjazah() {
     description: isAr
       ? 'احصل على إجازة قرآنية رسمية بسند متصل إلى النبي ﷺ. ادرس متن الجزرية والشاطبية مع علماء أزهريين معتمدين.'
       : "Earn a formal Quran Ijazah with a continuous Sanad to the Prophet ﷺ. Study Matn Al-Jazariyyah, Al-Shatibiyyah and the Seven Qira'at with certified Al-Azhar scholars.",
+    schema: {
+      '@context': 'https://schema.org',
+      '@type': 'Course',
+      name: 'Quran Ijazah Certification Course',
+      description: "Earn a formal Quran Ijazah with a continuous Sanad to the Prophet ﷺ. Study Matn Al-Jazariyyah, Al-Shatibiyyah and the Seven Qira'at with certified Al-Azhar scholars.",
+      provider: { '@type': 'EducationalOrganization', name: 'Al-Rahma Academy', sameAs: 'https://al-rahmaacademy.com' },
+      educationalLevel: 'Advanced',
+      inLanguage: ['en', 'ar'],
+      teaches: 'Quran Ijazah, Tajweed, Matn Al-Jazariyyah, Al-Shatibiyyah, Seven Qira\'at',
+      hasCourseInstance: { '@type': 'CourseInstance', courseMode: 'online' },
+    },
   });
 
   const learnList = isAr ? LEARN.ar : LEARN.en;
@@ -307,7 +318,7 @@ export default function CourseIjazah() {
   return (
     <>
       <Header />
-      <main dir={ui.dir}>
+      <main id="main-content" dir={ui.dir}>
         {/* Hero */}
         <section className="cl__hero" style={{ background: 'linear-gradient(145deg,#062d1f,#0b6e4f)' }}>
           <div className="container cl__hero-inner">

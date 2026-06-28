@@ -21,7 +21,7 @@ function useDropdown() {
 
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { user, isAdmin, logout } = useAuth();
+  const { user, isAdmin, isTeacher, isParent, logout } = useAuth();
   const { t } = useLang();
   const { dark, toggle: toggleDark } = useTheme();
   const location = useLocation();
@@ -71,6 +71,13 @@ export default function Header() {
             )
           )}
 
+          {/* About page */}
+          <Link to="/about"
+            className={isActive('/about') ? 'nav__active' : undefined}
+            onClick={closeAll}>
+            {t.nav.about}
+          </Link>
+
           {/* Teachers */}
           <Link to="/teachers"
             className={isActive('/teachers') ? 'nav__active' : undefined}
@@ -118,13 +125,15 @@ export default function Header() {
           </div>
 
           {/* CTA */}
-          <Link to="/enroll" className="nav__cta" onClick={closeAll}>
+          <Link to="/enroll" onClick={closeAll}>
             {t.nav.trial}
           </Link>
         </nav>
 
         {/* ── Right slot ── */}
         <div className="header__right">
+        
+
           <button
             className="nav__theme-toggle"
             onClick={toggleDark}
@@ -134,6 +143,13 @@ export default function Header() {
             {dark ? '☀️' : '🌙'}
           </button>
           <LangSwitcher />
+
+          {/* Prominent role action — always visible (not hidden in a menu) */}
+          {isParent && (
+            <Link to="/parent" className="header__role-btn" onClick={closeAll}>
+              👨‍👩‍👧 <span>{t.dir === 'rtl' ? 'متابعة أبنائي' : 'My children'}</span>
+            </Link>
+          )}
 
           {/* User menu or Login */}
           {user ? (
@@ -167,6 +183,20 @@ export default function Header() {
                       ⚙️ Profile
                     </Link>
                   </li>
+                  {isTeacher && (
+                    <li>
+                      <Link to="/teacher" className="nav__dropdown-item" onClick={closeAll}>
+                        👨‍🏫 {t.dir === 'rtl' ? 'لوحة المعلّم' : 'Teacher'}
+                      </Link>
+                    </li>
+                  )}
+                  {isParent && (
+                    <li>
+                      <Link to="/parent" className="nav__dropdown-item" onClick={closeAll}>
+                        👨‍👩‍👧 {t.dir === 'rtl' ? 'متابعة أبنائي' : 'My children'}
+                      </Link>
+                    </li>
+                  )}
                   {isAdmin && (
                     <li>
                       <Link to="/admin" className="nav__dropdown-item" onClick={closeAll}>

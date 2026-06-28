@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useLang } from '../context/LangContext';
 import { getMe, getCourses, getMyEnrollment } from '../api/client';
+import UpcomingClasses from '../components/features/UpcomingClasses';
 import { site } from '../data';
 import '../styles/dashboard.css';
 
@@ -122,6 +123,9 @@ export default function Dashboard() {
           </div>
         )}
 
+        {/* upcoming live classes (hidden when none) */}
+        <UpcomingClasses />
+
         {/* schedule note */}
         <div className="dash__note">
           <span>📱</span>
@@ -165,6 +169,9 @@ export default function Dashboard() {
               <a href={`https://wa.me/${site.whatsapp}?text=${waText}`} target="_blank" rel="noopener noreferrer" className="dash__action-btn">
                 <span className="dash__action-icon">💬</span> {d.contactTutor}
               </a>
+              <Link to="/messages" className="dash__action-btn">
+                <span className="dash__action-icon">💬</span> {d.messages || 'Messages'}
+              </Link>
               <Link to="/billing" className="dash__action-btn">
                 <span className="dash__action-icon">💳</span> {d.viewInvoices}
               </Link>

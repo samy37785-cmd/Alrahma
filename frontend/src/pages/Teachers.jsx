@@ -153,7 +153,7 @@ export default function Teachers() {
   return (
     <>
       <Header />
-      <main>
+      <main id="main-content">
         {/* Hero */}
         <section className="tpg__hero">
           <div className="container tpg__hero-inner">

@@ -15,19 +15,6 @@ export function getManualMethods(req, res) {
   const e = process.env;
   const methods = [];
 
-  if (e.VODAFONE_CASH_NUMBER) {
-    methods.push({
-      id: 'vodafone_manual',
-      label: 'Vodafone Cash (Manual)',
-      icon: '📱',
-      fields: [
-        { label: 'Send to number', value: e.VODAFONE_CASH_NUMBER },
-        { label: 'Account name',   value: e.VODAFONE_CASH_NAME || '' },
-      ],
-      instructions: 'Transfer the exact amount via Vodafone Cash, then enter the transfer reference below.',
-    });
-  }
-
   if (e.PAYPAL_RECEIVER_EMAIL) {
     const paypalFields = [
       { label: 'PayPal email', value: e.PAYPAL_RECEIVER_EMAIL },

@@ -479,7 +479,9 @@ const ar = {
     "backToSite": "العودة إلى الموقع",
     "stillQuestion": "لا تزال لديك سؤال؟",
     "bookTrial": "احجز تجربة مجانية",
-    "whatsapp": "واتساب"
+    "whatsapp": "واتساب",
+    "showAll": "عرض كل الأسئلة",
+    "showLess": "عرض أقل"
   },
   "courseContent": {
     "loading": "جاري التحميل…",
@@ -804,7 +806,6 @@ const ar = {
     "mobile": "الجوال",
     "optional": "اختياري",
     "cardPayment": "💳 الدفع بالبطاقة",
-    "digitalWallets": "📱 المحافظ الرقمية",
     "international": "🌍 دولي — عبر الإنترنت",
     "manualBank": "🏦 تحويل بنكي يدوي",
     "transferDetails": "تفاصيل التحويل",

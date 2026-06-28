@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Reveal from './ui/Reveal';
+import MobileCarousel from './ui/MobileCarousel';
 import { TEACHERS } from '../data';
 import { useLang } from '../context/LangContext';
 
@@ -137,9 +138,9 @@ export default function Tutors() {
           ))}
         </Reveal>
 
-        <div className="tc2__grid">
+        <MobileCarousel trackClassName="tc2__grid" ariaLabel={ut.heading}>
           {TEACHERS.map((t) => <TutorCard key={t.id} t={t} />)}
-        </div>
+        </MobileCarousel>
 
         <Reveal className="tc2__footer">
           <Link to="/teachers" className="btn btn--ghost">

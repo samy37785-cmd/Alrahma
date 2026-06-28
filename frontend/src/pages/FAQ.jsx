@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import Brand from '../components/layout/Brand';
+import '../styles/quran.css';
 import useSEO from '../hooks/useSEO';
 import { useLang } from '../context/LangContext';
 import faqItems from '../data/faqItems';
@@ -10,8 +11,14 @@ export default function FAQ() {
   const pg = t.faqPg;
   useSEO({ title: pg.heading, description: pg.sub });
   const [open, setOpen] = useState(null);
+  const [showAll, setShowAll] = useState(false);
 
+  // Keep the page short by default — show the most important questions first
+  // and reveal the rest on demand.
+  const VISIBLE = 8;
   const items = faqItems.map((item) => item[lang] || item.en);
+  const visibleItems = showAll ? items : items.slice(0, VISIBLE);
+  const hasMore = items.length > VISIBLE;
 
   return (
     <div className="faq-page">
@@ -22,7 +29,7 @@ export default function FAQ() {
         </div>
       </header>
 
-      <main className="container faq-page__main">
+      <main id="main-content" className="container faq-page__main">
         <div className="faq-page__header">
           <p className="eyebrow">{pg.eyebrow}</p>
           <h1>{pg.heading}</h1>
@@ -30,7 +37,7 @@ export default function FAQ() {
         </div>
 
         <div className="faq-list">
-          {items.map((item, i) => (
+          {visibleItems.map((item, i) => (
             <div
               key={i}
               className={open === i ? 'faq-item faq-item--open' : 'faq-item'}
@@ -51,6 +58,22 @@ export default function FAQ() {
             </div>
           ))}
         </div>
+
+        {hasMore && (
+          <div className="faq-more">
+            <button
+              type="button"
+              className="btn btn--ghost"
+              onClick={() => {
+                if (showAll) setOpen(null);
+                setShowAll((v) => !v);
+              }}
+              aria-expanded={showAll}
+            >
+              {showAll ? pg.showLess : pg.showAll}
+            </button>
+          </div>
+        )}
 
         <div className="faq-cta">
           <p>{pg.stillQuestion}</p>

@@ -10,8 +10,10 @@ export default function TopBar() {
         </div>
         <div className="topbar__social">
           {socials.map((s) => (
-            <a key={s.label} href={s.href} aria-label={s.label} target="_blank" rel="noopener noreferrer">
-              <i className={s.icon}></i>
+            <a key={s.label} href={s.href} aria-label={s.label} title={s.label} target="_blank" rel="noopener noreferrer">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d={s.svg} />
+              </svg>
             </a>
           ))}
         </div>

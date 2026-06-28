@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { getMe, getCourses, getMyCertificates } from '../api/client';
+import { getMe, getCourses, getMyCertificates, getMyLinkCode } from '../api/client';
 import { useLang } from '../context/LangContext';
 
 const CERT_LABEL = { ijazah: 'Ijazah', completion: 'Course Completion', hifz: 'Hifz Milestone', attendance: 'Attendance' };
@@ -53,6 +53,20 @@ export default function Profile() {
   const [subscription, setSubscription] = useState(user?.subscription || null);
   const [courses, setCourses]           = useState([]);
   const [certificates, setCertificates] = useState([]);
+  const [linkCode, setLinkCode]         = useState('');
+  const [codeLoading, setCodeLoading]   = useState(false);
+
+  const isStudent = !user?.role || user.role === 'student';
+
+  const revealCode = async () => {
+    setCodeLoading(true);
+    try {
+      const { code } = await getMyLinkCode();
+      setLinkCode(code);
+    } finally {
+      setCodeLoading(false);
+    }
+  };
 
   useEffect(() => {
     getMe().then((u) => setSubscription(u.subscription)).catch(() => {});
@@ -144,7 +158,12 @@ export default function Profile() {
               </div>
               <div className="field">
                 <label>{pg.accountType}</label>
-                <input value={user?.role === 'admin' ? pg.roleAdmin : pg.roleStudent} disabled />
+                <input value={
+                  user?.role === 'admin'   ? pg.roleAdmin
+                  : user?.role === 'teacher' ? (t.dir === 'rtl' ? 'معلّم' : 'Teacher')
+                  : user?.role === 'parent'  ? (t.dir === 'rtl' ? 'ولي أمر' : 'Parent')
+                  : pg.roleStudent
+                } disabled />
               </div>
               <button type="submit" className="btn btn--green btn--block" disabled={saving}>
                 {saving ? pg.saving : pg.saveChanges}
@@ -254,6 +273,32 @@ export default function Profile() {
             </div>
           )}
         </section>
+
+        {/* Parent-link code — lets a parent connect to this student's account */}
+        {isStudent && (
+          <section className="admin__panel" style={{ marginTop: '1.5rem' }}>
+            <h2>👨‍👩‍👧 {t.dir === 'rtl' ? 'ربط ولي الأمر' : 'Parent link'}</h2>
+            <p style={{ color: '#888', fontSize: '.9rem', marginTop: 0 }}>
+              {t.dir === 'rtl'
+                ? 'شارك الكود ده مع ولي أمرك عشان يقدر يتابع تقدّمك من حسابه.'
+                : 'Share this code with your parent so they can follow your progress from their account.'}
+            </p>
+            {linkCode ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                <code style={{ fontSize: '1.5rem', fontWeight: 700, letterSpacing: '4px', background: '#f1f6f3', color: '#0b6e4f', padding: '8px 18px', borderRadius: 8, border: '1px dashed #0b6e4f' }}>
+                  {linkCode}
+                </code>
+                <button className="btn btn--ghost btn--sm" onClick={() => navigator.clipboard?.writeText(linkCode)}>
+                  📋 {t.dir === 'rtl' ? 'نسخ' : 'Copy'}
+                </button>
+              </div>
+            ) : (
+              <button className="btn btn--green btn--sm" onClick={revealCode} disabled={codeLoading}>
+                {codeLoading ? '…' : (t.dir === 'rtl' ? 'إظهار كود الربط' : 'Show link code')}
+              </button>
+            )}
+          </section>
+        )}
       </main>
     </div>
   );

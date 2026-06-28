@@ -21,13 +21,13 @@ const es = {
   "hero": {
     "eyebrow": "Corán • Árabe • Estudios Islámicos",
     "title": "Aprende el Corán en Línea",
-    "sub": "La mejor academia online de Corán y árabe para niños y adultos — clases individuales con tutores nativos calificados, cuando tú quieras.",
+    "sub": "La mejor academia online de Corán y árabe para niños y adultos — clases individuales con profesores nativos cualificados, cuando tú quieras.",
     "cta1": "Reserva una Prueba Gratuita",
     "cta2": "📚 Ver Cursos",
     "cta3": "Ver Cursos",
     "badge1": "✓ 2 Clases de prueba gratuitas",
     "badge2": "✓ Disponible 24/7",
-    "badge3": "✓ Tutoras disponibles",
+    "badge3": "✓ Profesoras disponibles",
     "verseQuote": "\"Lee en el nombre de tu Señor que creó.\"",
     "verseRef": "Surah Al-'Alaq · 96:1"
   },
@@ -40,16 +40,16 @@ const es = {
         "text": "Comienza con dos clases de prueba gratuitas — sin compromiso, sin pago."
       },
       {
-        "title": "Tutores Certificados Al-Azhar",
-        "text": "Todos los tutores son graduados de la Universidad Al-Azhar y poseen un Ijazah verificado."
+        "title": "Profesores Certificados por Al-Azhar",
+        "text": "Todos los profesores son graduados de la Universidad de Al-Azhar y poseen un Ijazah verificado."
       },
       {
         "title": "Horario Flexible",
         "text": "Clases disponibles las 24 horas, los 7 días de la semana, para cualquier zona horaria."
       },
       {
-        "title": "Tutoras Disponibles",
-        "text": "Profesoras calificadas para hermanas y niños."
+        "title": "Profesoras Disponibles",
+        "text": "Profesoras cualificadas para hermanas y niñas."
       },
       {
         "title": "Instrucción Multilingüe",
@@ -57,7 +57,7 @@ const es = {
       },
       {
         "title": "Solo Uno a Uno",
-        "text": "Cada clase es exclusiva entre tú y tu tutor — atención personal completa."
+        "text": "Cada clase es exclusivamente entre tú y tu profesor — atención personal completa."
       }
     ]
   },
@@ -71,7 +71,7 @@ const es = {
       },
       {
         "title": "Programa una sesión de prueba",
-        "text": "Te asignaremos un tutor y un horario que se adapte a ti."
+        "text": "Te asignaremos un profesor y un horario que se adapte a ti."
       },
       {
         "title": "Descarga la aplicación de reuniones",
@@ -170,12 +170,12 @@ const es = {
   "about": {
     "eyebrow": "Sobre nosotros",
     "heading": "Nuestra Misión y Visión",
-    "mission": "Preparar y calificar estudiantes dedicados capaces de presentar una imagen auténtica del Islam — ofreciendo educación coránica y árabe de calidad para las comunidades musulmanas en Europa y más allá.",
+    "mission": "Preparar y formar a estudiantes comprometidos, capaces de transmitir una imagen auténtica del Islam — ofreciendo una educación coránica y árabe de calidad a las comunidades musulmanas de Europa y más allá.",
     "vision": "Lograr un liderazgo reconocido en la educación coránica e islámica en línea a nivel europeo, convirtiéndonos en la primera opción de confianza para las familias musulmanas.",
-    "description": "Al-Rahma Academy es una plataforma en línea dedicada que conecta a estudiantes de todo el mundo con el Sagrado Corán y la lengua árabe. Nuestros tutores egipcios nativos cualificados ofrecen clases individuales en vivo — para niños y adultos, desde cualquier parte del mundo.",
+    "description": "Al-Rahma Academy es una plataforma online dedicada a conectar a estudiantes de todo el mundo con el Sagrado Corán y la lengua árabe. Nuestros profesores egipcios nativos y cualificados imparten clases individuales en directo — para niños y adultos, desde cualquier parte del mundo.",
     "statsLabel": [
       "Años de experiencia",
-      "Tutores calificados",
+      "Profesores cualificados",
       "Estudiantes felices",
       "Horas de enseñanza"
     ],
@@ -267,18 +267,18 @@ const es = {
   },
   "teachersPg": {
     "eyebrow": "Conoce al equipo",
-    "title": "Nuestros Instructores Calificados",
-    "sub": "Cada maestro en AL-Rahma Academy es un graduado verificado de la Universidad Al-Azhar, con un auténtico Ijazah con cadena de transmisión ininterrumpida.",
+    "title": "Nuestros Profesores Cualificados",
+    "sub": "Cada profesor de Al-Rahma Academy es graduado verificado de la Universidad de Al-Azhar y posee un Ijazah auténtico con una cadena de transmisión ininterrumpida.",
     "badges": [
       "🎓 Certificado Al-Azhar",
       "📜 Titulares Ijazah",
-      "👩‍🏫 Tutoras Disponibles",
+      "👩‍🏫 Profesoras Disponibles",
       "♿ Apoyo Necesidades Especiales"
     ],
     "stats": [
       {
         "n": "10+",
-        "l": "Tutores Expertos"
+        "l": "Profesores Expertos"
       },
       {
         "n": "500+",
@@ -286,7 +286,7 @@ const es = {
       },
       {
         "n": "4,9★",
-        "l": "Calificación Media"
+        "l": "Valoración Media"
       },
       {
         "n": "9.000+",
@@ -348,12 +348,12 @@ const es = {
         "l": "Femenino"
       }
     ],
-    "noMatch": "Ningún maestro coincide con los filtros seleccionados.",
+    "noMatch": "Ningún profesor coincide con los filtros seleccionados.",
     "resetFilters": "Restablecer filtros",
     "female": "👩‍🏫 Femenino",
     "male": "👨‍🏫 Masculino",
     "alazhar": "🏅 Al-Azhar",
-    "rate": "Calificar:",
+    "rate": "Valorar:",
     "reviews": "reseñas",
     "showLess": "Menos ↑",
     "readBio": "Leer bio ↓",
@@ -364,20 +364,20 @@ const es = {
   },
   "tp": {
     "alazharBadge": "🏅 Certificado Al-Azhar",
-    "femaleBadge": "👩‍🏫 Instructora",
-    "maleBadge": "👨‍🏫 Instructor",
+    "femaleBadge": "👩‍🏫 Profesora",
+    "maleBadge": "👨‍🏫 Profesor",
     "enrollWith": "Inscríbete con",
     "allTeachers": "← Todos los Profesores",
     "reviews": "reseñas",
     "female": "Femenino",
     "male": "Masculino",
-    "instructor": "Instructor",
+    "instructor": "Profesor",
     "teachingLangs": "Idiomas de Enseñanza",
     "specialties": "Especialidades",
     "about": "Sobre",
     "credentials": "Credenciales",
-    "studentRating": "Calificación de Estudiantes",
-    "rateThis": "Califica a este profesor:",
+    "studentRating": "Valoración de los Estudiantes",
+    "rateThis": "Valora a este profesor:",
     "thanks": "✓ ¡Gracias!",
     "trialDesc": "Comienza con 2 clases de prueba gratuitas — sin pago requerido.",
     "perks": [
@@ -393,8 +393,8 @@ const es = {
   },
   "tutors": {
     "eyebrow": "Nuestro Equipo",
-    "heading": "Nuestros Tutores Certificados",
-    "sub": "Cada tutor es un graduado verificado de Al-Azhar con un auténtico Ijazah — seleccionado personalmente por conocimiento, paciencia y dedicación.",
+    "heading": "Nuestros Profesores Certificados",
+    "sub": "Cada profesor es graduado verificado de Al-Azhar y posee un Ijazah auténtico — seleccionado personalmente por su conocimiento, paciencia y dedicación.",
     "creds": [
       "Graduado Al-Azhar",
       "Ijazah con Sanad",
@@ -403,9 +403,9 @@ const es = {
     ],
     "viewProfile": "Ver Perfil",
     "enroll": "Inscribirse →",
-    "viewAll": "Ver Todos los Tutores →",
-    "yourRating": "Tu calificación:",
-    "rate": "Calificar:"
+    "viewAll": "Ver Todos los Profesores →",
+    "yourRating": "Tu valoración:",
+    "rate": "Valorar:"
   },
   "faq": {
     "eyebrow": "FAQ",
@@ -414,19 +414,19 @@ const es = {
     "items": [
       {
         "q": "¿Necesito conocimientos previos para empezar?",
-        "a": "No — los principiantes absolutos son bienvenidos. Empezamos desde el alfabeto árabe (Noorani Qaida) y construimos desde ahí. Nuestros tutores tienen experiencia enseñando a estudiantes de todas las edades y niveles."
+        "a": "No — los principiantes absolutos son siempre bienvenidos. Empezamos por el alfabeto árabe (Noorani Qaida) y avanzamos desde ahí. Nuestros profesores tienen experiencia enseñando a estudiantes de todas las edades y niveles."
       },
       {
         "q": "¿Cómo funciona la prueba gratuita?",
-        "a": "Rellenas el formulario de prueba y te asignamos un tutor adecuado en 24 horas. Recibes 2 sesiones individuales completas totalmente gratuitas — sin pago, sin compromiso. Después de la prueba decides si quieres continuar."
+        "a": "Rellenas el formulario de prueba y te asignamos un profesor adecuado en 24 horas. Recibes 2 sesiones individuales completas totalmente gratuitas — sin pago y sin compromiso. Tras la prueba, decides si quieres continuar."
       },
       {
         "q": "¿Qué plataforma usan para las clases?",
         "a": "Las clases se realizan por Zoom o Skype. Ambas son gratuitas y funcionan en cualquier dispositivo. Podemos guiarte en la configuración antes de tu primera clase."
       },
       {
-        "q": "¿Puedo elegir una tutora para mi hija?",
-        "a": "Por supuesto. Tenemos tutoras calificadas disponibles específicamente para hermanas y niños. Solo indícalo al rellenar el formulario de prueba."
+        "q": "¿Puedo elegir una profesora para mi hija?",
+        "a": "Por supuesto. Contamos con profesoras cualificadas disponibles específicamente para hermanas y niñas. Solo tienes que indicarlo al rellenar el formulario de prueba."
       },
       {
         "q": "¿Qué pasa si necesito reprogramar una clase?",
@@ -441,10 +441,10 @@ const es = {
   "joinCta": {
     "eyebrow": "Empieza Hoy",
     "heading": "Únete a más de 500 estudiantes en todo el mundo",
-    "sub": "Aprende el Corán desde la comodidad de tu hogar con tutores certificados Al-Azhar. Horarios flexibles, clases personalizadas — para toda edad y nivel.",
+    "sub": "Aprende el Corán desde la comodidad de tu hogar con profesores certificados por Al-Azhar. Horarios flexibles y clases personalizadas — para todas las edades y niveles.",
     "stats": [
       "30+ Países",
-      "Calificación 4,9★",
+      "Valoración 4,9★",
       "Certificados Al-Azhar",
       "Disponible 24/7"
     ],
@@ -452,8 +452,8 @@ const es = {
   },
   "stats": {
     "labels": [
-      "Tutores Expertos",
-      "Calificación Media",
+      "Profesores Expertos",
+      "Valoración Media",
       "Siempre Disponible",
       "Idiomas"
     ]
@@ -479,7 +479,9 @@ const es = {
     "backToSite": "Volver al sitio",
     "stillQuestion": "¿Tienes más preguntas?",
     "bookTrial": "Reservar una prueba gratuita",
-    "whatsapp": "WhatsApp"
+    "whatsapp": "WhatsApp",
+    "showAll": "Ver todas las preguntas",
+    "showLess": "Ver menos"
   },
   "courseContent": {
     "loading": "Cargando…",
@@ -511,7 +513,7 @@ const es = {
     },
     "register": {
       "title": "Crea tu cuenta",
-      "sub": "Únete a AL-Rahma Academy",
+      "sub": "Únete a Al-Rahma Academy",
       "name": "Nombre completo",
       "email": "Correo electrónico",
       "password": "Contraseña",
@@ -606,8 +608,8 @@ const es = {
       "yourPlan": "Tu Plan"
     },
     "eyebrow": "Comienza Tu Camino",
-    "heading": "Inscríbete en AL-Rahma Academy",
-    "tagline": "4 pasos sencillos para empezar a aprender el Corán con un tutor certificado Al-Azhar.",
+    "heading": "Inscríbete en Al-Rahma Academy",
+    "tagline": "4 sencillos pasos para empezar a aprender el Corán con un profesor certificado por Al-Azhar.",
     "step1": {
       "title": "Cuéntanos sobre ti",
       "sub": "Usaremos esto para encontrarte el profesor y el horario adecuados.",
@@ -744,7 +746,7 @@ const es = {
     }
   },
   "dashboard": {
-    "bar": "AL-Rahma · Panel",
+    "bar": "Al-Rahma · Panel",
     "backToSite": "← Volver al sitio",
     "settings": "Ajustes",
     "logout": "Cerrar sesión",
@@ -777,7 +779,7 @@ const es = {
     "subExpired": "Suscripción vencida"
   },
   "billing": {
-    "bar": "AL-Rahma · Facturación",
+    "bar": "Al-Rahma · Facturación",
     "backToSite": "← Volver al sitio",
     "heading": "Facturas y Facturación",
     "sub": "Todas tus facturas mensuales — haz clic en una fila para ver los detalles.",
@@ -804,7 +806,6 @@ const es = {
     "mobile": "Móvil",
     "optional": "opcional",
     "cardPayment": "💳 Pago con Tarjeta",
-    "digitalWallets": "📱 Carteras Digitales",
     "international": "🌍 Internacional — Online",
     "manualBank": "🏦 Banco y Transferencia Manual",
     "transferDetails": "Detalles de transferencia",

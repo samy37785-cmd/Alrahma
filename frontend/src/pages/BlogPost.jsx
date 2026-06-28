@@ -1,5 +1,6 @@
 import { useParams, Link, Navigate } from 'react-router-dom';
 import Brand from '../components/layout/Brand';
+import '../styles/quran.css';
 import { posts, CATEGORY_COLORS } from '../data/blogPosts';
 import useSEO from '../hooks/useSEO';
 
@@ -93,7 +94,28 @@ export default function BlogPost() {
   const prev = idx > 0 ? posts[idx - 1] : null;
   const next = idx < posts.length - 1 ? posts[idx + 1] : null;
 
-  useSEO({ title: post?.title, description: post?.excerpt });
+  useSEO({
+    title: post?.title,
+    description: post?.excerpt,
+    type: 'article',
+    schema: post ? {
+      '@context': 'https://schema.org',
+      '@type': 'Article',
+      headline: post.title,
+      description: post.excerpt,
+      datePublished: post.date,
+      articleSection: post.category,
+      inLanguage: 'en',
+      author: { '@type': 'Organization', name: 'Al-Rahma Academy', url: 'https://al-rahmaacademy.com' },
+      publisher: {
+        '@type': 'Organization',
+        name: 'Al-Rahma Academy',
+        logo: { '@type': 'ImageObject', url: 'https://al-rahmaacademy.com/logo.png' },
+      },
+      image: 'https://al-rahmaacademy.com/og-cover.jpg',
+      mainEntityOfPage: `https://al-rahmaacademy.com/blog/${post.slug}`,
+    } : null,
+  });
 
   if (!post) return <Navigate to="/blog" replace />;
 

@@ -5,6 +5,7 @@ import { LangProvider } from './context/LangContext';
 import { ThemeProvider } from './context/ThemeContext';
 import ProtectedRoute from './components/ui/ProtectedRoute';
 import ScrollToTop from './components/ui/ScrollToTop';
+import Analytics from './components/ui/Analytics';
 import ErrorBoundary from './components/ErrorBoundary';
 import ContentGuard from './components/ContentGuard';
 
@@ -18,6 +19,7 @@ const Quran         = lazy(() => import('./pages/Quran'));
 const Blog          = lazy(() => import('./pages/Blog'));
 const BlogPost      = lazy(() => import('./pages/BlogPost'));
 const FAQ           = lazy(() => import('./pages/FAQ'));
+const AboutPage     = lazy(() => import('./pages/About'));
 const Privacy       = lazy(() => import('./pages/Privacy'));
 const PaymentResult = lazy(() => import('./pages/PaymentResult'));
 const Billing       = lazy(() => import('./pages/Billing'));
@@ -34,6 +36,9 @@ const CourseContent = lazy(() => import('./pages/CourseContent'));
 const CourseIjazah  = lazy(() => import('./pages/CourseIjazah'));
 const CourseIslamicStudies = lazy(() => import('./pages/CourseIslamicStudies'));
 const HadithLibrary = lazy(() => import('./pages/HadithLibrary'));
+const TeacherDashboard = lazy(() => import('./pages/TeacherDashboard'));
+const ParentDashboard  = lazy(() => import('./pages/ParentDashboard'));
+const Messages      = lazy(() => import('./pages/Messages'));
 const NotFound      = lazy(() => import('./pages/NotFound'));
 
 function PageFallback() {
@@ -52,6 +57,7 @@ export default function App() {
     <AuthProvider>
       <BrowserRouter>
         <ScrollToTop />
+        <Analytics />
         <ContentGuard />
         <a href="#main-content" className="skip-link">Skip to main content</a>
         <Suspense fallback={<PageFallback />}>
@@ -61,12 +67,14 @@ export default function App() {
           <Route path="/blog" element={<Blog />} />
           <Route path="/blog/:slug" element={<BlogPost />} />
           <Route path="/faq" element={<FAQ />} />
+          <Route path="/about" element={<AboutPage />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/payment/success" element={<PaymentResult />} />
           <Route path="/payment/cancel" element={<PaymentResult cancelled />} />
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/billing" element={<ProtectedRoute><Billing /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+          <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -77,6 +85,22 @@ export default function App() {
             element={
               <ProtectedRoute adminOnly>
                 <AdminDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/teacher"
+            element={
+              <ProtectedRoute role="teacher">
+                <TeacherDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/parent"
+            element={
+              <ProtectedRoute role="parent">
+                <ParentDashboard />
               </ProtectedRoute>
             }
           />

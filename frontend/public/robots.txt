@@ -2,12 +2,13 @@ User-agent: *
 Allow: /
 
 # Sitemaps
-Sitemap: https://alrahmaacademy.com/sitemap.xml
+Sitemap: https://al-rahmaacademy.com/sitemap.xml
 
 # Block admin routes from indexing
 Disallow: /admin
 Disallow: /login
 Disallow: /register
+Disallow: /sessions
 Disallow: /payment/
 
 # Allow important pages

@@ -131,6 +131,50 @@ export function certificateIssuedEmail({ name, title, number }) {
   `);
 }
 
+// ── Student: a live class was scheduled ──────────────────────────────────
+export function liveClassScheduledEmail({ studentName, teacherName, title, startsAt, meetingUrl }) {
+  // Shown in UTC; the website displays it in the viewer's local timezone.
+  const when = new Date(startsAt).toLocaleString('en-GB', {
+    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+    hour: '2-digit', minute: '2-digit', timeZone: 'UTC', timeZoneName: 'short',
+  });
+  return base(`
+    <h2 style="margin:0 0 8px;color:#0b6e4f;">Your live class is scheduled 📅</h2>
+    <p style="color:#555;font-size:15px;line-height:1.7;">
+      As-salamu alaykum <strong>${studentName}</strong>, ${teacherName ? `<strong>${teacherName}</strong> has` : 'we have'} scheduled a live class for you:
+    </p>
+    <div style="background:#f0f8f4;border:1px solid #bfe0cf;border-radius:8px;padding:16px 20px;margin:8px 0;">
+      <p style="margin:0;color:#0b6e4f;font-size:16px;font-weight:bold;">${title}</p>
+      <p style="margin:6px 0 0;color:#555;font-size:14px;">🕒 ${when}</p>
+    </div>
+    <p style="color:#888;font-size:13px;">The time above is shown in UTC — check the exact time in your local timezone on your dashboard.</p>
+    ${meetingUrl ? `<div style="margin-top:20px;"><a href="${meetingUrl}" style="background:#0b6e4f;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-size:14px;display:inline-block;">Join the Class</a></div>` : ''}
+  `);
+}
+
+// ── Student: subscription renewal coming up ──────────────────────────────
+export function subscriptionRenewalReminderEmail({ name, plan, validUntil, daysLeft, autoRenew }) {
+  const when = new Date(validUntil).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+  const lead = daysLeft <= 0
+    ? 'expires <strong>today</strong>'
+    : `expires in <strong>${daysLeft} day${daysLeft === 1 ? '' : 's'}</strong> (on ${when})`;
+  return base(`
+    <h2 style="margin:0 0 8px;color:#0b6e4f;">Your subscription is renewing soon 🔔</h2>
+    <p style="color:#555;font-size:15px;line-height:1.7;">
+      As-salamu alaykum <strong>${name}</strong>, your <strong>${plan || 'subscription'}</strong> plan ${lead}.
+    </p>
+    <p style="color:#555;font-size:15px;line-height:1.7;">
+      ${autoRenew
+        ? 'Your card on file will be charged automatically to keep your access uninterrupted — no action needed. To change or cancel, visit your billing page.'
+        : 'To keep your lessons going without interruption, please renew before that date from your billing page.'}
+    </p>
+    <div style="margin-top:24px;">
+      <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}/billing" style="background:#0b6e4f;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-size:14px;display:inline-block;">${autoRenew ? 'Manage Billing' : 'Renew Now'}</a>
+    </div>
+    <p style="color:#888;font-size:13px;margin-top:24px;">If you have any questions, just reply to this email.</p>
+  `);
+}
+
 // ── Student: manual payment rejected ─────────────────────────────────────
 export function manualPaymentRejectedEmail({ name, adminNote }) {
   return base(`

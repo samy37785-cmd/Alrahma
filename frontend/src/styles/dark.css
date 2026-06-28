@@ -390,33 +390,38 @@ html.dark .adhkar__source { color: var(--muted); }
 html.dark .adhkar__tap { background: #253d2c; color: var(--ink); }
 html.dark .adhkar__tap:hover { background: var(--green); color: #fff; }
 html.dark .adhkar__tap--done { background: var(--green); color: #fff; }
+html.dark .adhkar__cat-header { background: #1a2820; }
+html.dark .adhkar__context-badge { background: #16261b; border-color: #2a4a3a; color: var(--green); }
+html.dark .adhkar__count-target { background: #16261b; }
 
-/* ── Islamic Tools ────────────────────────────────────────────── */
-html.dark .it-page { background: var(--cream); }
-html.dark .it-card {
-  background: #1a2820;
-  border-color: var(--line);
+/* ── Hadith Library (real classes are .hl__*; not the .hadith__* reader) ─ */
+html.dark .hl__card { background: #1a2820; border-color: var(--line); }
+html.dark .hl__card-title { color: var(--ink); }
+html.dark .hl__card-note { color: var(--muted); }
+html.dark .hl__hadith { background: #1a2820; border-color: var(--line); }
+html.dark .hl__hadith-en { color: var(--muted); }
+
+/* ── Islamic Tools (real classes are .it__*; old .it-* never matched) ─ */
+html.dark .it__tabs-bar { background: #0e1a11; border-bottom-color: var(--line); }
+html.dark .it__tab { color: var(--muted); }
+html.dark .it__tab:hover,
+html.dark .it__tab.active { color: var(--green); }
+html.dark .it__prayer-item { background: #1a2820; border-color: var(--line); }
+html.dark .it__prayer-item--next {
+  background: linear-gradient(135deg, #16261b 0%, #1a2820 100%);
+  border-color: var(--green);
 }
-html.dark .it-card h2, html.dark .it-card h3 { color: var(--ink); }
-html.dark .it-tabs button {
-  background: #1a2820;
-  border-color: var(--line);
-  color: var(--muted);
-}
-html.dark .it-tabs button.active {
-  background: var(--green);
-  color: #fff;
-}
-html.dark .it-input {
-  background: #0e1a11;
-  border-color: var(--line);
-  color: var(--ink);
-}
-html.dark .it-input::placeholder { color: var(--muted); }
-html.dark .it-prayer-row { border-bottom-color: var(--line); }
-html.dark .it-prayer-name { color: var(--muted); }
-html.dark .it-prayer-time { color: var(--ink); }
-html.dark .it-prayer-row.current { background: #162518; }
+html.dark .it__extra-card { background: #1a2820; border-color: var(--line); }
+html.dark .it__verse-ar { background: #11211a; }
+html.dark .it__month-toggle { background: #16261b; }
+html.dark .it__month-toggle:hover { background: #1f3228; }
+html.dark .it__month-wrap { border-color: var(--line); }
+html.dark .it__month-table td { border-bottom-color: var(--line); color: var(--ink); }
+html.dark .it__month-chip { background: #1a2820; border-color: var(--line); }
+html.dark .it__compass { background: radial-gradient(circle, #16261b, #0e1a11); }
+html.dark .it__notify-btn { background: transparent; }
+html.dark .it__fmt-btn { background: #1a2820; color: var(--muted); }
+html.dark .it__fmt-btn.active { background: var(--green); color: #fff; }
 
 /* ── Hadith Library ───────────────────────────────────────────── */
 html.dark .hadith-page { background: var(--cream); }
@@ -479,6 +484,100 @@ html.dark ::selection {
   background: rgba(11, 110, 79, 0.5);
   color: #fff;
 }
+
+/* ════════════════════════════════════════════════════════════════
+   COMPLETENESS PASS — make dark mode reach EVERY page & surface.
+   (purely additive; light mode is untouched)
+   ════════════════════════════════════════════════════════════════ */
+
+/* Headings use brand green-deep (#06372a) — almost invisible on a dark
+   background. Default them to light ink; sections that need a custom
+   colour (hero, newsletter…) already override with higher specificity. */
+html.dark h1, html.dark h2, html.dark h3, html.dark h4, html.dark h5 { color: var(--ink); }
+
+/* Any standalone page wrapper (…-page) → dark page background */
+html.dark [class$="-page"] { background: var(--cream); color: var(--ink); }
+
+/* Page wrappers that don't end in "-page" */
+html.dark .dash,
+html.dark .it__main,
+html.dark .values { background: var(--cream); color: var(--ink); }
+
+/* ── Lessons / billing tables (CourseContent + Billing pages) ── */
+html.dark .billing-page__head h1 { color: var(--ink); }
+html.dark .billing-page__table { background: #1a2820; }
+html.dark .billing-page__table td { color: var(--ink); border-color: var(--line); }
+html.dark .billing-page__row:hover { background: #1f3228; }
+html.dark .billing-page__amount { color: #6fc79e; }
+html.dark .billing-page__id,
+html.dark .billing-page__strike { color: var(--muted); }
+html.dark .billing-page__discount-notice { background: #162518; border-color: rgba(212,175,55,.2); }
+html.dark .billing-page__discount-notice strong { color: #6fc79e; }
+
+/* ── Dashboard extra surfaces ── */
+html.dark .dash__tutor-card { background: #1a2820; border-color: var(--line); color: var(--ink); }
+html.dark .dash__tutor-sub { color: var(--muted); }
+html.dark .dash__course-title { color: var(--ink); }
+
+/* ── Islamic Tools ── */
+html.dark .it__qibla-card,
+html.dark .it__verse-card,
+html.dark .it__kaaba-info { background: #1a2820; border-color: var(--line); color: var(--ink); }
+html.dark .it__month-today { background: #1f3228; }
+html.dark .it__toggle { background: #253d2c; }
+html.dark .it__verse-ar,
+html.dark .it__pi-ar,
+html.dark .it__next-name,
+html.dark .it__cal-hijri-date,
+html.dark .it__hijri-ar,
+html.dark .it__oc-name { color: var(--ink); }
+
+/* ── About page (mission & values) ── */
+html.dark .value-card { background: #1a2820; border-color: var(--line); }
+html.dark .value-card__title { color: var(--ink); }
+html.dark .value-card__desc { color: var(--muted); }
+
+/* ── Standalone FAQ page ── */
+html.dark .faq-item { background: #1a2820; border-color: var(--line); }
+html.dark .faq-item__q { background: #1a2820; color: var(--ink); }
+html.dark .faq-item__q:hover { background: #1f3228; }
+html.dark .faq-item__a { background: #162018; }
+html.dark .faq-item__a p { color: var(--muted); }
+html.dark .faq-item--open { border-color: var(--green); }
+html.dark .faq-page__sub { color: var(--muted); }
+
+/* ── Video reviews / generic content cards ── */
+html.dark .video-card { background: #1a2820; border-color: var(--line); }
+
+/* ── Home: "Why families choose us" cards (real class is .feature,
+   the old .features__card patch above never matched anything) ── */
+html.dark .feature { background: #1a2820; border-color: var(--line); }
+html.dark .feature h3 { color: var(--ink); }
+html.dark .feature p { color: var(--muted); }
+
+/* ── Home: Course cards (white .course card → dark) ── */
+html.dark .course { background: #1a2820; border-color: var(--line); }
+html.dark .course__body h3 { color: var(--ink); }
+html.dark .course__body > p { color: var(--muted); opacity: 1; }
+html.dark .course__points li { color: var(--ink); }
+
+/* ── Home: "Start in 3 Simple Steps" cards (real class is
+   .timeline-step__card; the old .steps__card patch never matched) ── */
+html.dark .timeline-step__card { background: #1a2820; border-color: var(--line); }
+html.dark .timeline-step__card h3 { color: var(--ink); }
+html.dark .timeline-step__card p { color: var(--muted); }
+
+/* ── Home: Testimonials (real classes are .tst__*; the old .review-card
+   patch never matched) ── */
+html.dark .tst__featured,
+html.dark .tst__mini { background: #1a2820; border-color: var(--line); }
+html.dark .tst__name,
+html.dark .tst__mini-top strong { color: var(--ink); }
+html.dark .tst__text,
+html.dark .tst__mini-text,
+html.dark .tst__loc,
+html.dark .tst__mini-top span { color: var(--muted); }
+html.dark .tst__quote-mark { color: #2a4736; }
 
 /* ── Smooth transition on theme switch ──────────────────────────  */
 html.dark body,

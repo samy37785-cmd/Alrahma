@@ -29,6 +29,10 @@
   --grad-card-4: linear-gradient(135deg, #c0392b, #e74c3c);
   --grad-card-5: linear-gradient(135deg, #d4af37, #f0c040);
   --grad-card-6: linear-gradient(135deg, #2c3e50, #3d5166);
+  /* Subtle Islamic geometric ornament — a faint 8-point-star lattice in gold.
+     Baked-in low stroke-opacity keeps it barely visible (an "almost-hidden"
+     texture) over the dark-green sections. */
+  --islamic-pattern: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='56'%20height='56'%3E%3Cg%20fill='none'%20stroke='%23d4af37'%20stroke-opacity='0.13'%20stroke-width='1'%3E%3Cpath%20d='M28%204L52%2028L28%2052L4%2028Z'/%3E%3Crect%20x='16'%20y='16'%20width='24'%20height='24'/%3E%3C/g%3E%3C/svg%3E");
 }
 
 @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }

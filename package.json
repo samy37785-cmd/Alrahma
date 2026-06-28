@@ -1,6 +1,7 @@
 {
   "name": "al-rahma-academy",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "concurrently -n client,server -c cyan,green \"npm run dev --prefix frontend\" \"npm run dev --prefix backend\"",
     "build": "npm run build --prefix frontend",

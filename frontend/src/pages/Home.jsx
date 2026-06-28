@@ -9,7 +9,6 @@ import Features from '../components/Features';
 import Steps from '../components/Steps';
 import Tutors from '../components/Tutors';
 import Courses from '../components/Courses';
-import About from '../components/About';
 import JoinCTA from '../components/JoinCTA';
 import Pricing from '../components/Pricing';
 import Testimonials from '../components/Testimonials';
@@ -26,14 +25,13 @@ export default function Home() {
     <TrialProvider>
       <TopBar />
       <Header />
-      <main>
+      <main id="main-content">
         <Hero />
         <StatsBanner />
         <Courses />
         <Features />
         <Steps />
         <Tutors />
-        <About />
         <Testimonials />
         <Pricing />
         <JoinCTA />

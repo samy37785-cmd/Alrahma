@@ -1,0 +1,19 @@
+# Al-Rahma Academy
+
+> Al-Rahma Academy teaches the Holy Quran, Arabic and Islamic studies online through one-to-one live lessons with certified Al-Azhar tutors, for children and adults across Europe and worldwide. Two free trial classes, flexible scheduling, female tutors available.
+
+## Main pages
+- [Home](https://al-rahmaacademy.com/): Overview of courses, pricing and the free trial.
+- [About](https://al-rahmaacademy.com/about): Mission, vision and values of the academy.
+- [Teachers](https://al-rahmaacademy.com/teachers): Certified Al-Azhar tutors and their specialties.
+- [FAQ](https://al-rahmaacademy.com/faq): Answers about lessons, pricing, trials and certificates.
+- [Free Trial / Enrollment](https://al-rahmaacademy.com/enroll): Book two free trial classes.
+
+## Courses
+- [Ijazah Certification](https://al-rahmaacademy.com/course/ijazah): Quran memorization and recitation with a connected chain (sanad).
+- [Islamic Studies](https://al-rahmaacademy.com/course/islamic-studies): Fiqh, Aqeedah, Seerah and Arabic.
+- [Blog](https://al-rahmaacademy.com/blog): Articles on Quran learning, Tajweed and Arabic.
+
+## Contact
+- WhatsApp: +20 101 605 4663
+- Email: alrahmaacademy038@gmail.com

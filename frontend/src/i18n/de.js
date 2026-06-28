@@ -268,7 +268,7 @@ const de = {
   "teachersPg": {
     "eyebrow": "Lern unser Team kennen",
     "title": "Unsere Qualifizierten Lehrer",
-    "sub": "Jeder Lehrer an der AL-Rahma Academy ist ein überprüfter Absolvent der Al-Azhar-Universität mit einem authentischen Ijazah und ununterbrochener Überlieferungskette.",
+    "sub": "Jeder Lehrer an der Al-Rahma Academy ist ein überprüfter Absolvent der Al-Azhar-Universität mit einem authentischen Ijazah und ununterbrochener Überlieferungskette.",
     "badges": [
       "🎓 Al-Azhar Zertifiziert",
       "📜 Ijazah Inhaber",
@@ -393,8 +393,8 @@ const de = {
   },
   "tutors": {
     "eyebrow": "Unser Team",
-    "heading": "Unsere Zertifizierten Tutoren",
-    "sub": "Jeder Tutor ist ein verifizierter Al-Azhar-Absolvent mit einem echten Ijazah — persönlich ausgewählt für Wissen, Geduld und Engagement.",
+    "heading": "Unsere Zertifizierten Lehrer",
+    "sub": "Jeder Lehrer ist ein verifizierter Al-Azhar-Absolvent mit einem echten Ijazah — persönlich ausgewählt für sein Wissen, seine Geduld und sein Engagement.",
     "creds": [
       "Al-Azhar-Absolvent",
       "Ijazah mit Sanad",
@@ -403,8 +403,8 @@ const de = {
     ],
     "viewProfile": "Profil ansehen",
     "enroll": "Einschreiben →",
-    "viewAll": "Alle Tutoren ansehen →",
-    "yourRating": "Ihre Bewertung:",
+    "viewAll": "Alle Lehrer ansehen →",
+    "yourRating": "Deine Bewertung:",
     "rate": "Bewerten:"
   },
   "faq": {
@@ -479,7 +479,9 @@ const de = {
     "backToSite": "Zurück zur Website",
     "stillQuestion": "Noch eine Frage?",
     "bookTrial": "Kostenlose Probestunde buchen",
-    "whatsapp": "WhatsApp"
+    "whatsapp": "WhatsApp",
+    "showAll": "Alle Fragen anzeigen",
+    "showLess": "Weniger anzeigen"
   },
   "courseContent": {
     "loading": "Laden…",
@@ -511,7 +513,7 @@ const de = {
     },
     "register": {
       "title": "Konto erstellen",
-      "sub": "Tritt AL-Rahma Academy bei",
+      "sub": "Tritt Al-Rahma Academy bei",
       "name": "Vollständiger Name",
       "email": "E-Mail",
       "password": "Passwort",
@@ -606,8 +608,8 @@ const de = {
       "yourPlan": "Dein Plan"
     },
     "eyebrow": "Starte deine Reise",
-    "heading": "Melde dich bei AL-Rahma Academy an",
-    "tagline": "4 einfache Schritte, um mit einem Al-Azhar-zertifizierten Tutor Koran zu lernen.",
+    "heading": "Melde dich bei Al-Rahma Academy an",
+    "tagline": "4 einfache Schritte, um mit einem Al-Azhar-zertifizierten Lehrer den Koran zu lernen.",
     "step1": {
       "title": "Erzähl uns von dir",
       "sub": "Wir nutzen das, um dich mit dem richtigen Lehrer und Zeitplan zu verbinden.",
@@ -744,7 +746,7 @@ const de = {
     }
   },
   "dashboard": {
-    "bar": "AL-Rahma · Dashboard",
+    "bar": "Al-Rahma · Dashboard",
     "backToSite": "← Zurück zur Website",
     "settings": "Einstellungen",
     "logout": "Abmelden",
@@ -777,7 +779,7 @@ const de = {
     "subExpired": "Abonnement abgelaufen"
   },
   "billing": {
-    "bar": "AL-Rahma · Abrechnung",
+    "bar": "Al-Rahma · Abrechnung",
     "backToSite": "← Zurück zur Website",
     "heading": "Rechnungen & Abrechnung",
     "sub": "Alle deine monatlichen Rechnungen — klicke auf eine Zeile für vollständige Details.",
@@ -804,7 +806,6 @@ const de = {
     "mobile": "Mobilnummer",
     "optional": "optional",
     "cardPayment": "💳 Kartenzahlung",
-    "digitalWallets": "📱 Digitale Geldbörsen",
     "international": "🌍 International — Online",
     "manualBank": "🏦 Bank & Überweisung",
     "transferDetails": "Überweisungsdetails",

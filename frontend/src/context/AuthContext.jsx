@@ -1,11 +1,13 @@
 import { createContext, useContext, useState, useCallback, useEffect } from 'react';
-import { loginUser, registerUser, updateMe, getMe } from '../api/client';
+import { loginUser, registerUser, logoutUser, updateMe, getMe } from '../api/client';
 
 const AuthContext = createContext(null);
 
-// Wrap the app so any component can read/update auth state.
+// The auth TOKEN now lives in an httpOnly cookie the browser sends automatically
+// — JS never sees it (so XSS can't steal it). We only cache the public PROFILE
+// in localStorage, purely so the UI can render instantly on refresh before the
+// server confirms the session. The cached profile is not a credential.
 export function AuthProvider({ children }) {
-  // Initialise from localStorage so the session survives refresh.
   const [user, setUser] = useState(() => {
     try {
       const saved = localStorage.getItem('user');
@@ -15,54 +17,53 @@ export function AuthProvider({ children }) {
     }
   });
 
-  // Store the auth result (token + user) in state + localStorage.
-  const persist = useCallback((data) => {
-    const { token, ...profile } = data;
-    localStorage.setItem('token', token);
-    localStorage.setItem('user', JSON.stringify(profile));
+  // Cache (or clear) the public profile for instant render on next load.
+  const persist = useCallback((profile) => {
+    if (profile) localStorage.setItem('user', JSON.stringify(profile));
+    else localStorage.removeItem('user');
     setUser(profile);
   }, []);
 
-  // On first load, if we have a token, refresh the profile from the server so
-  // subscription status (and expiry) is current — not whatever was cached at
-  // login time. A 401 here means the token is stale → log the user out.
+  // On first load, if a profile was cached we likely have a valid cookie — ask
+  // the server who we are so subscription status/expiry is current. A 401 means
+  // the cookie is gone or expired → drop the stale cached profile.
   useEffect(() => {
-    if (!localStorage.getItem('token')) return;
+    if (!localStorage.getItem('user')) return;
     getMe()
-      .then((fresh) => {
-        localStorage.setItem('user', JSON.stringify(fresh));
-        setUser(fresh);
-      })
+      .then((fresh) => persist(fresh))
       .catch((err) => {
-        if (err.response?.status === 401) {
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
-          setUser(null);
-        }
+        if (err.response?.status === 401) persist(null);
       });
-  }, []);
+  }, [persist]);
 
   const login = useCallback(async (credentials) => {
-    persist(await loginUser(credentials));
+    const profile = await loginUser(credentials);
+    persist(profile);
+    return profile;
   }, [persist]);
 
   const register = useCallback(async (info) => {
-    persist(await registerUser(info));
+    const profile = await registerUser(info);
+    persist(profile);
+    return profile;
   }, [persist]);
 
-  const logout = useCallback(() => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    setUser(null);
-  }, []);
+  const logout = useCallback(async () => {
+    try { await logoutUser(); } catch { /* clear locally regardless */ }
+    persist(null);
+  }, [persist]);
 
   const updateProfile = useCallback(async (data) => {
     const updated = await updateMe(data);
-    localStorage.setItem('user', JSON.stringify(updated));
-    setUser(updated);
-  }, []);
+    persist(updated);
+  }, [persist]);
 
-  const value = { user, login, register, logout, updateProfile, isAdmin: user?.role === 'admin' };
+  const value = {
+    user, login, register, logout, updateProfile,
+    isAdmin:   user?.role === 'admin',
+    isTeacher: user?.role === 'teacher',
+    isParent:  user?.role === 'parent',
+  };
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 

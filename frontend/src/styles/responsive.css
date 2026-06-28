@@ -1,0 +1,220 @@
+/* ══════════════════════════════════════════════════════════
+   Mobile responsiveness — loaded LAST so its overrides win.
+   Desktop/laptop layout is intentionally left untouched; every
+   rule here is either a global safety net or inside a mobile
+   media query.
+   ══════════════════════════════════════════════════════════ */
+
+/* ── 1) Kill horizontal page shift on phones ──────────────────
+   `clip` prevents sideways scrolling WITHOUT creating a scroll
+   container, so the sticky header keeps working (unlike hidden). */
+html, body { overflow-x: clip; }
+body { max-width: 100%; }
+/* Flex/grid children are allowed to shrink below their content
+   size, which stops long words / wide media forcing overflow. */
+img, video, svg, canvas { max-width: 100%; }
+
+/* ── 2) Mobile carousel (courses / teachers / pricing) ────────
+   Desktop: arrows hidden, the track keeps its original grid class
+   so nothing changes. Mobile: the track becomes a swipeable,
+   scroll-snapping row with peek of the next card + arrow buttons. */
+.mcar { position: relative; }
+.mcar__arrow { display: none; }
+
+@media (max-width: 760px) {
+  .mcar__track {
+    display: flex !important;
+    grid-template-columns: none !important;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: 16px;
+    gap: 14px;
+    padding: 6px 4px 18px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;            /* Firefox */
+  }
+  .mcar__track::-webkit-scrollbar { display: none; } /* WebKit */
+
+  /* one card centred, with a peek of the neighbours so users know
+     there's more to swipe */
+  .mcar__track > * {
+    flex: 0 0 84%;
+    min-width: 84%;
+    scroll-snap-align: center;
+  }
+
+  /* Cards use the scroll-reveal fade (opacity:0 until they intersect the
+     viewport). Off-screen carousel cards never intersect, so they'd stay
+     invisible — force them visible inside the track. */
+  .mcar__track > * { opacity: 1 !important; }
+  .mcar__track > *:not(.visible) { transform: none !important; }
+
+  .mcar__arrow {
+    display: grid;
+    place-items: center;
+    position: absolute;
+    top: 46%;
+    transform: translateY(-50%);
+    z-index: 6;
+    width: 40px;
+    height: 40px;
+    padding: 0 0 4px;
+    border: 2px solid rgba(255, 255, 255, 0.9);
+    border-radius: 50%;
+    background: rgba(11, 110, 79, 0.96);
+    color: #fff;
+    font-size: 1.55rem;
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  }
+  .mcar__arrow:active { transform: translateY(-50%) scale(0.92); }
+  .mcar__arrow--prev { left: -2px; }
+  .mcar__arrow--next { right: -2px; }
+}
+
+/* ── 3) Stats banner — make it fit instead of overflowing ─────── */
+@media (max-width: 600px) {
+  .stats-banner__grid { grid-template-columns: repeat(2, 1fr); gap: 18px 10px; }
+  .stats-item__num { font-size: clamp(1.7rem, 8vw, 2.3rem); }
+  .stats-item__label { font-size: 0.82rem; }
+}
+
+/* ── 4) Less endless scrolling on phones ──────────────────────
+   Tighter section padding + a compact 2-up grid for the feature
+   ("why families…") and value cards so they aren't a tall column. */
+@media (max-width: 760px) {
+  .features, .courses, .pricing, .tutors2, .steps,
+  .about, .testimonials, .join-cta { padding-top: 58px; padding-bottom: 58px; }
+  .section-head { margin-bottom: 28px; }
+}
+
+@media (max-width: 640px) {
+  .features__grid { grid-template-columns: repeat(2, 1fr) !important; gap: 12px; }
+  .feature { padding: 18px 16px; }
+}
+
+/* Very small phones: feature cards stack to avoid cramping. */
+@media (max-width: 380px) {
+  .features__grid { grid-template-columns: 1fr !important; }
+}
+
+/* ── 5) Stop iOS Safari auto-zooming when a field is focused ───────
+   Any input/select/textarea under 16px makes iOS Safari zoom in on
+   tap — very visible (and feels broken) on the booking + checkout
+   forms. Force 16px on phones; desktop sizing is left untouched. */
+@media (max-width: 760px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+
+  /* Comfortable tap targets for small/secondary buttons (Apple's 44px
+     guideline). The primary .btn is already ~45px tall. */
+  .btn--sm { min-height: 44px; }
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   6) OVERFLOW FIXES — verified with an automated audit (Edge/puppeteer)
+   across 320–768px on every public route. Each rule below targets a
+   specific element that pushed the document wider than the viewport.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── 6a) Grid tracks that refuse to shrink ────────────────────────
+   A grid item defaults to `min-width: auto`, so a `1fr` track grows to
+   the item's min-content and overflows narrow phones. `minmax(0, 1fr)`
+   + `min-width: 0` lets the track shrink to the container instead. */
+@media (max-width: 760px) {
+  .tst__layout { grid-template-columns: minmax(0, 1fr); }
+  .tst__featured { min-width: 0; padding: 26px 22px 22px; }
+  .tst__quote-mark { left: 18px; font-size: 5rem; }
+  .tst__meta { flex-wrap: wrap; }
+  .tst__stars { flex-wrap: wrap; }
+}
+
+/* ── 6b) About hero/page — force the two-column layout to stack.
+   A later non-media base rule re-asserted `1fr 1fr`, defeating the
+   existing mobile stack; override it here (responsive.css wins). */
+@media (max-width: 760px) {
+  .about__inner { grid-template-columns: 1fr !important; }
+}
+@media (max-width: 440px) {
+  .about__stats { grid-template-columns: 1fr !important; }
+}
+
+/* ── 6c) Header — the desktop nav doesn't fit ≤900px (iPad portrait
+   = 768 overflowed). Show the hamburger + drawer for tablets too. The
+   ≤640 block already styles the drawer; this extends it to 641–900. */
+@media (min-width: 641px) and (max-width: 900px) {
+  .nav-toggle { display: flex; }
+  .nav {
+    position: fixed; inset: 64px 0 auto 0; flex-direction: column;
+    align-items: stretch; gap: 0; background: var(--white);
+    border-bottom: 1px solid var(--line); padding: 8px 16px 20px;
+    transform: translateY(-130%); transition: transform .3s ease;
+    box-shadow: var(--shadow); max-height: calc(100vh - 64px); overflow-y: auto;
+  }
+  .nav.open { transform: translateY(0); }
+  .nav > a, .nav__dropdown-trigger {
+    padding: 12px 10px; width: 100%;
+    border-bottom: 1px solid var(--line); border-radius: 0; background: none !important;
+  }
+  .nav__dropdown { position: static; }
+  .nav__dropdown-menu { display: none; }
+  .nav__dropdown-mobile { display: block; list-style: none; padding-left: 16px; }
+}
+
+/* Small phones: slim the right-hand cluster so it never spills past the
+   edge (Brand + theme + lang + login + hamburger was ~377px at 320px). */
+@media (max-width: 480px) {
+  .header__right { gap: 5px; }
+  .brand__text small { display: none; }   /* keep the name, drop the tagline */
+}
+@media (max-width: 400px) {
+  .header__right { gap: 4px; }
+  .ls__code { display: none; }             /* language: flag only */
+  .ls__trigger { padding: 6px 8px; }
+  .header__right .btn--sm { padding: 8px 12px; font-size: .82rem; }
+  .brand__mark { font-size: 1.5rem; }
+  .brand__text strong { font-size: 1rem; }
+  .brand { gap: 8px; }
+}
+
+/* ── 6d) Quran reader — control-bar selects (≈505px) overflowed once
+   `.qlc { overflow: visible }` kicks in at ≤900. Let them wrap and let
+   the columns shrink. */
+@media (max-width: 900px) {
+  .qlc__layout { grid-template-columns: minmax(0, 1fr); }
+  .qlc__main, .qlc__sidebar { min-width: 0; }
+  .qlc__cbar-selects { flex-wrap: wrap; }
+  .qlc__cbar-item { min-width: 0; flex: 1 1 45%; }
+  .qlc__cbar-sep { display: none; }
+  /* Top bar: let the 4 tabs scroll sideways instead of forcing page width,
+     and let the right-hand controls wrap onto their own row. */
+  .qlc__tabs {
+    max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .qlc__tabs::-webkit-scrollbar { display: none; }
+  .qlc__tab { flex: 0 0 auto; min-width: auto; }
+  .qlc__bar-right { flex-wrap: wrap; margin-left: 0; }
+  .qlc__lang-select { max-width: 150px; }
+}
+
+/* ── 6e) Islamic Tools — the <select>s have long option labels and no
+   width cap, so they stretched the control row past the screen.
+   NB: islamic-tools.css is a code-split route chunk that loads AFTER
+   responsive.css, so these need extra specificity (descendant selector)
+   to win over the base `.it__control-item { min-width: 200px }`. */
+@media (max-width: 480px) {
+  .it__controls { flex-direction: column; }
+  .it__controls .it__control-item { min-width: 0; width: 100%; max-width: 100%; flex-basis: auto; }
+  .it__control-item .it__ctrl-sel,
+  .it__controls .it__fmt-toggle,
+  .it__controls .it__notify-row,
+  .it__controls .it__city-form { width: 100%; max-width: 100%; min-width: 0; }
+  /* The text input has an intrinsic min-width that pushed its Search button
+     off-screen; let it shrink so the row fits. */
+  .it__controls .it__city-input { min-width: 0; }
+}

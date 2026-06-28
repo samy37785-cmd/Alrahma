@@ -9,7 +9,7 @@ const en = {
     "pricing": "Pricing",
     "testimonials": "Testimonials",
     "contact": "Contact",
-    "teachers": "Teachers",
+    "teachers": "Tutors",
     "tools": "Islamic Tools",
     "adhkar": "Adhkar",
     "hadith": "Hadith Library",
@@ -49,7 +49,7 @@ const en = {
       },
       {
         "title": "Female Tutors Available",
-        "text": "Professional, qualified female instructors for sisters and children."
+        "text": "Professional, qualified female tutors for sisters and children."
       },
       {
         "title": "Multilingual Instruction",
@@ -99,7 +99,7 @@ const en = {
         "text": "Master the rules of Tajweed for beautiful and accurate Quranic recitation.",
         "points": [
           "All Tajweed rules (Hafs & Warsh)",
-          "Live correction by certified teacher",
+          "Live correction by certified tutor",
           "Audio & video practice materials"
         ]
       },
@@ -116,7 +116,7 @@ const en = {
         "title": "Quran Ijazah Course",
         "text": "Earn a formal certification (Ijazah) with a connected chain of narration.",
         "points": [
-          "Sanad connected to the Prophet ﴿",
+          "Sanad connected to the Prophet ﷺ",
           "Matn Al-Jazariyyah & Al-Shatibiyyah",
           "Official Ijazah certificate issued"
         ]
@@ -261,14 +261,14 @@ const en = {
       "Courses",
       "Pricing",
       "Testimonials",
-      "Teachers",
+      "Tutors",
       "Contact"
     ]
   },
   "teachersPg": {
     "eyebrow": "Meet the team",
-    "title": "Our Qualified Instructors",
-    "sub": "Every teacher at AL-Rahma Academy is a verified graduate of Al-Azhar University, holding an authentic Ijazah with an unbroken chain of narration (Sanad).",
+    "title": "Our Qualified Tutors",
+    "sub": "Every tutor at Al-Rahma Academy is a verified graduate of Al-Azhar University, holding an authentic Ijazah with an unbroken chain of narration (Sanad).",
     "badges": [
       "🎓 Al-Azhar Certified",
       "📜 Ijazah Holders",
@@ -348,7 +348,7 @@ const en = {
         "l": "Female"
       }
     ],
-    "noMatch": "No teachers match the selected filters.",
+    "noMatch": "No tutors match the selected filters.",
     "resetFilters": "Reset filters",
     "female": "👩‍🏫 Female",
     "male": "👨‍🏫 Male",
@@ -364,20 +364,20 @@ const en = {
   },
   "tp": {
     "alazharBadge": "🏅 Al-Azhar Certified",
-    "femaleBadge": "👩‍🏫 Female Instructor",
-    "maleBadge": "👨‍🏫 Male Instructor",
+    "femaleBadge": "👩‍🏫 Female Tutor",
+    "maleBadge": "👨‍🏫 Male Tutor",
     "enrollWith": "Enroll with",
-    "allTeachers": "← All Teachers",
+    "allTeachers": "← All Tutors",
     "reviews": "reviews",
     "female": "Female",
     "male": "Male",
-    "instructor": "Instructor",
+    "instructor": "Tutor",
     "teachingLangs": "Teaching Languages",
     "specialties": "Specialties",
     "about": "About",
     "credentials": "Credentials",
     "studentRating": "Student Rating",
-    "rateThis": "Rate this teacher:",
+    "rateThis": "Rate this tutor:",
     "thanks": "✓ Thank you!",
     "trialDesc": "Start with 2 free trial lessons — no payment required.",
     "perks": [
@@ -387,9 +387,9 @@ const en = {
       "✓ Cancel anytime"
     ],
     "startEnroll": "Start Enrollment →",
-    "browseOthers": "← Browse other teachers",
-    "notFound": "Teacher not found.",
-    "backToAll": "← Back to all teachers"
+    "browseOthers": "← Browse other tutors",
+    "notFound": "Tutor not found.",
+    "backToAll": "← Back to all tutors"
   },
   "tutors": {
     "eyebrow": "Our Team",
@@ -479,7 +479,9 @@ const en = {
     "backToSite": "Back to site",
     "stillQuestion": "Still have a question?",
     "bookTrial": "Book a Free Trial",
-    "whatsapp": "WhatsApp Us"
+    "whatsapp": "WhatsApp Us",
+    "showAll": "Show all questions",
+    "showLess": "Show fewer"
   },
   "courseContent": {
     "loading": "Loading…",
@@ -511,7 +513,7 @@ const en = {
     },
     "register": {
       "title": "Create your account",
-      "sub": "Join AL-Rahma Academy",
+      "sub": "Join Al-Rahma Academy",
       "name": "Full name",
       "email": "Email",
       "password": "Password",
@@ -602,15 +604,15 @@ const en = {
     "steps": {
       "aboutYou": "About You",
       "yourGoals": "Your Goals",
-      "yourTeacher": "Your Teacher",
+      "yourTeacher": "Your Tutor",
       "yourPlan": "Your Plan"
     },
     "eyebrow": "Start Your Journey",
-    "heading": "Enroll in AL-Rahma Academy",
+    "heading": "Enroll in Al-Rahma Academy",
     "tagline": "4 simple steps to begin learning the Quran with a certified Al-Azhar tutor.",
     "step1": {
       "title": "Tell us about yourself",
-      "sub": "We'll use this to match you with the right teacher and schedule.",
+      "sub": "We'll use this to match you with the right tutor and schedule.",
       "fullName": "Full name *",
       "email": "Email address *",
       "whatsapp": "WhatsApp number",
@@ -637,7 +639,7 @@ const en = {
     },
     "step2": {
       "title": "What do you want to learn?",
-      "sub": "Choose as many subjects as you like — we'll find teachers who cover them.",
+      "sub": "Choose as many subjects as you like — we'll find tutors who cover them.",
       "subjects": "Subjects",
       "prefLang": "Preferred instruction language",
       "level": "Your level",
@@ -648,7 +650,7 @@ const en = {
       "ageChild": "Child (under 12)",
       "ageTeen": "Teen (12–17)",
       "ageAdult": "Adult (18+)",
-      "teacherPref": "Teacher gender preference",
+      "teacherPref": "Tutor gender preference",
       "prefAny": "🤝 No preference",
       "prefMale": "👨‍🏫 Male tutor",
       "prefFemale": "👩‍🏫 Female tutor",
@@ -664,21 +666,21 @@ const en = {
       ]
     },
     "step3": {
-      "title": "Choose your teacher",
-      "noMatch": "No exact match found — showing all available teachers. Pick anyone you like!",
-      "matchSingular": "teacher matches your preferences.",
-      "matchPlural": "teachers match your preferences.",
+      "title": "Choose your tutor",
+      "noMatch": "No exact match found — showing all available tutors. Pick anyone you like!",
+      "matchSingular": "tutor matches your preferences.",
+      "matchPlural": "tutors match your preferences.",
       "female": "Female"
     },
     "step4": {
       "title": "Choose your plan",
-      "sub": "All plans include one-to-one lessons with your chosen teacher. Cancel anytime.",
+      "sub": "All plans include one-to-one lessons with your chosen tutor. Cancel anytime.",
       "perMo": "/mo",
       "selected": "✓ Selected",
       "summaryTitle": "Your enrollment summary",
       "summaryStudent": "Student",
       "summaryEmail": "Email",
-      "summaryTeacher": "Teacher",
+      "summaryTeacher": "Tutor",
       "summaryPlan": "Plan",
       "summaryLang": "Language",
       "confirmPay": "Confirm & Proceed to Payment →"
@@ -702,7 +704,7 @@ const en = {
       "emailInvalid": "Please enter a valid email address.",
       "phoneInvalid": "Please enter a valid phone number (e.g. +44 7700 900000).",
       "subjectRequired": "Please select at least one subject.",
-      "teacherRequired": "Please choose a teacher.",
+      "teacherRequired": "Please choose a tutor.",
       "submitFailed": "Failed to submit. Please try again."
     }
   },
@@ -744,7 +746,7 @@ const en = {
     }
   },
   "dashboard": {
-    "bar": "AL-Rahma · Dashboard",
+    "bar": "Al-Rahma · Dashboard",
     "backToSite": "← Back to site",
     "settings": "Settings",
     "logout": "Logout",
@@ -757,7 +759,7 @@ const en = {
     "inactive": "Inactive",
     "noSub": "No active plan",
     "tutor": "Your Tutor",
-    "noTutor": "Teacher will be assigned",
+    "noTutor": "Tutor will be assigned",
     "subjects": "Subjects:",
     "contactTutor": "WhatsApp Tutor",
     "joinLesson": "Join Lesson",
@@ -777,7 +779,7 @@ const en = {
     "subExpired": "Subscription expired"
   },
   "billing": {
-    "bar": "AL-Rahma · Billing",
+    "bar": "Al-Rahma · Billing",
     "backToSite": "← Back to site",
     "heading": "Invoices & Billing",
     "sub": "All your monthly invoices — click any row to see full details.",
@@ -804,7 +806,6 @@ const en = {
     "mobile": "Mobile",
     "optional": "optional",
     "cardPayment": "💳 Card Payment",
-    "digitalWallets": "📱 Digital Wallets",
     "international": "🌍 International — Online",
     "manualBank": "🏦 Manual Bank & Transfer",
     "transferDetails": "Transfer details",

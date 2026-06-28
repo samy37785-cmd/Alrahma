@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import Brand from '../components/layout/Brand';
+import '../styles/quran.css';
 import { capturePaypalPayment } from '../api/client';
 import { useLang } from '../context/LangContext';
 

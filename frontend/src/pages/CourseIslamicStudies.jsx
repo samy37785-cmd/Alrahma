@@ -482,6 +482,17 @@ export default function CourseIslamicStudies() {
     description: isAr
       ? 'منهج شامل مبني على المصادر يغطي العقيدة والفقه والسيرة والحديث والتفسير — ٥ وحدات يدرّسها علماء معتمدون بلغتك.'
       : 'A comprehensive, source-based curriculum covering Aqeedah, Fiqh, Seerah, Hadith and Tafsir — 5 structured modules taught by certified scholars in your own language.',
+    schema: {
+      '@context': 'https://schema.org',
+      '@type': 'Course',
+      name: 'Islamic Studies Course',
+      description: 'A comprehensive, source-based curriculum covering Aqeedah, Fiqh, Seerah, Hadith and Tafsir — 5 structured modules taught by certified scholars in your own language.',
+      provider: { '@type': 'EducationalOrganization', name: 'Al-Rahma Academy', sameAs: 'https://al-rahmaacademy.com' },
+      educationalLevel: 'All levels',
+      inLanguage: ['en', 'ar'],
+      teaches: 'Aqeedah, Fiqh, Seerah, Hadith, Tafsir, Islamic Studies',
+      hasCourseInstance: { '@type': 'CourseInstance', courseMode: 'online' },
+    },
   });
 
   const learnList = isAr ? LEARN.ar : LEARN.en;
@@ -491,7 +502,7 @@ export default function CourseIslamicStudies() {
   return (
     <>
       <Header />
-      <main dir={ui.dir}>
+      <main id="main-content" dir={ui.dir}>
         {/* Hero */}
         <section className="cl__hero" style={{ background: 'linear-gradient(145deg,#1e0a30,#7a3a8a)' }}>
           <div className="container cl__hero-inner">

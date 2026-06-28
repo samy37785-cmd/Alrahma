@@ -267,8 +267,8 @@ const it = {
   },
   "teachersPg": {
     "eyebrow": "Conosci il team",
-    "title": "I Nostri Istruttori Qualificati",
-    "sub": "Ogni insegnante di AL-Rahma Academy è un laureato verificato dell'Università Al-Azhar, titolare di un autentico Ijazah con catena di trasmissione ininterrotta.",
+    "title": "I Nostri Insegnanti Qualificati",
+    "sub": "Ogni insegnante di Al-Rahma Academy è un laureato verificato dell'Università Al-Azhar, titolare di un autentico Ijazah con catena di trasmissione ininterrotta.",
     "badges": [
       "🎓 Certificato Al-Azhar",
       "📜 Titolari Ijazah",
@@ -371,7 +371,7 @@ const it = {
     "reviews": "valutazioni",
     "female": "Femmina",
     "male": "Maschio",
-    "instructor": "Istruttore",
+    "instructor": "Insegnante",
     "teachingLangs": "Lingue di Insegnamento",
     "specialties": "Specializzazioni",
     "about": "Chi è",
@@ -393,8 +393,8 @@ const it = {
   },
   "tutors": {
     "eyebrow": "Il Nostro Team",
-    "heading": "I Nostri Tutor Certificati",
-    "sub": "Ogni tutor è un laureato verificato di Al-Azhar con un autentico Ijazah — selezionato personalmente per conoscenza, pazienza e dedizione.",
+    "heading": "I Nostri Insegnanti Certificati",
+    "sub": "Ogni insegnante è un laureato verificato di Al-Azhar, titolare di un autentico Ijazah — selezionato personalmente per conoscenza, pazienza e dedizione.",
     "creds": [
       "Laureato Al-Azhar",
       "Ijazah con Sanad",
@@ -403,7 +403,7 @@ const it = {
     ],
     "viewProfile": "Vedi Profilo",
     "enroll": "Iscriviti →",
-    "viewAll": "Vedi Tutti i Tutor →",
+    "viewAll": "Vedi Tutti gli Insegnanti →",
     "yourRating": "La tua valutazione:",
     "rate": "Vota:"
   },
@@ -479,7 +479,9 @@ const it = {
     "backToSite": "Torna al sito",
     "stillQuestion": "Hai ancora una domanda?",
     "bookTrial": "Prenota una prova gratuita",
-    "whatsapp": "WhatsApp"
+    "whatsapp": "WhatsApp",
+    "showAll": "Mostra tutte le domande",
+    "showLess": "Mostra meno"
   },
   "courseContent": {
     "loading": "Caricamento…",
@@ -511,7 +513,7 @@ const it = {
     },
     "register": {
       "title": "Crea il tuo account",
-      "sub": "Unisciti ad AL-Rahma Academy",
+      "sub": "Unisciti ad Al-Rahma Academy",
       "name": "Nome completo",
       "email": "Email",
       "password": "Password",
@@ -606,11 +608,11 @@ const it = {
       "yourPlan": "Il Tuo Piano"
     },
     "eyebrow": "Inizia il Tuo Percorso",
-    "heading": "Iscriviti ad AL-Rahma Academy",
-    "tagline": "4 semplici passi per iniziare a imparare il Corano con un tutor certificato Al-Azhar.",
+    "heading": "Iscriviti ad Al-Rahma Academy",
+    "tagline": "4 semplici passi per iniziare a imparare il Corano con un insegnante certificato Al-Azhar.",
     "step1": {
       "title": "Raccontaci di te",
-      "sub": "Useremo questo per abbinarti al tutor e al programma giusti.",
+      "sub": "Li useremo per abbinarti all'insegnante e all'orario giusti.",
       "fullName": "Nome completo *",
       "email": "Indirizzo email *",
       "whatsapp": "Numero WhatsApp",
@@ -744,7 +746,7 @@ const it = {
     }
   },
   "dashboard": {
-    "bar": "AL-Rahma · Dashboard",
+    "bar": "Al-Rahma · Dashboard",
     "backToSite": "← Torna al sito",
     "settings": "Impostazioni",
     "logout": "Esci",
@@ -777,7 +779,7 @@ const it = {
     "subExpired": "Abbonamento scaduto"
   },
   "billing": {
-    "bar": "AL-Rahma · Fatturazione",
+    "bar": "Al-Rahma · Fatturazione",
     "backToSite": "← Torna al sito",
     "heading": "Fatture e Fatturazione",
     "sub": "Tutte le tue fatture mensili — clicca su una riga per vedere i dettagli completi.",
@@ -804,7 +806,6 @@ const it = {
     "mobile": "Cellulare",
     "optional": "opzionale",
     "cardPayment": "💳 Pagamento con Carta",
-    "digitalWallets": "📱 Portafogli Digitali",
     "international": "🌍 Internazionale — Online",
     "manualBank": "🏦 Banca e Bonifico Manuale",
     "transferDetails": "Dettagli bonifico",

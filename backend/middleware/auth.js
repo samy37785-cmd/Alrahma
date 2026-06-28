@@ -1,13 +1,20 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 
-
-// Protects routes: requires a valid "Authorization: Bearer <token>" header.
-export async function protect(req, res, next) {
-  let token;
+// Resolves the JWT from the httpOnly cookie (primary) or a Bearer header
+// (fallback, e.g. for API tooling). The cookie is never readable by JS, which
+// is what protects the token from theft via XSS.
+function getToken(req) {
+  if (req.cookies?.token) return req.cookies.token;
   if (req.headers.authorization?.startsWith('Bearer ')) {
-    token = req.headers.authorization.split(' ')[1];
+    return req.headers.authorization.split(' ')[1];
   }
+  return null;
+}
+
+// Protects routes: requires a valid auth token (cookie or Bearer header).
+export async function protect(req, res, next) {
+  const token = getToken(req);
 
   if (!token) {
     return res.status(401).json({ message: 'Not authorized, no token' });
@@ -34,13 +41,36 @@ export function adminOnly(req, res, next) {
   next();
 }
 
+// Restricts a route to teachers only. Use after `protect`.
+export function teacherOnly(req, res, next) {
+  if (req.user?.role !== 'teacher') {
+    return res.status(403).json({ message: 'Teacher access required' });
+  }
+  next();
+}
+
+// Restricts a route to parents only. Use after `protect`.
+export function parentOnly(req, res, next) {
+  if (req.user?.role !== 'parent') {
+    return res.status(403).json({ message: 'Parent access required' });
+  }
+  next();
+}
+
+// Allows staff (admin OR teacher). Use after `protect`.
+export function staffOnly(req, res, next) {
+  if (req.user?.role !== 'admin' && req.user?.role !== 'teacher') {
+    return res.status(403).json({ message: 'Staff access required' });
+  }
+  next();
+}
+
 // Attaches req.user if a valid token is present — but never blocks the request.
 // Use on routes that are public but benefit from knowing who the caller is.
 export async function softProtect(req, res, next) {
   try {
-    const header = req.headers.authorization;
-    if (header?.startsWith('Bearer ')) {
-      const token = header.split(' ')[1];
+    const token = getToken(req);
+    if (token) {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       req.user = await User.findById(decoded.id).select('-password');
     }

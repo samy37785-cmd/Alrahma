@@ -1,13 +1,34 @@
 import Course from '../models/Course.js';
 
+// Removes all paid material from a course object for users without an active
+// subscription: clears flat resources and strips every lesson body, leaving
+// only the module/lesson outline (titles + types). Pure + exported so it can be
+// unit-tested. Returns a new object; never mutates the input.
+export function lockCourseContent(course) {
+  return {
+    ...course,
+    resources: [],
+    modules: (course.modules || []).map((m) => ({
+      ...m,
+      lessons: (m.lessons || []).map((l) => ({
+        _id: l._id, title: l.title, type: l.type, duration: l.duration,
+        url: '', content: '', resources: [],
+      })),
+    })),
+    locked: true,
+  };
+}
+
 // @desc   Get all courses (public catalogue — resources are intentionally
 //         excluded so paid material never leaks via the public listing).
 // @route  GET /api/courses
 // @access Public
 export async function getCourses(req, res, next) {
   try {
+    // Exclude paid material (flat resources AND structured module lessons) from
+    // the public catalogue; only return the lightweight module outline (titles).
     const courses = await Course.find({ published: true })
-      .select('-resources')
+      .select('-resources -modules.lessons')
       .sort('-createdAt');
     res.json(courses);
   } catch (err) {
@@ -30,11 +51,7 @@ export async function getCourse(req, res, next) {
     }
 
     const unlocked = req.user?.hasActiveSubscription?.();
-    const payload = course.toObject();
-    if (!unlocked) {
-      payload.resources = [];   // never expose paid material without an active sub
-      payload.locked = true;
-    }
+    const payload = unlocked ? course.toObject() : lockCourseContent(course.toObject());
     res.json(payload);
   } catch (err) {
     next(err);

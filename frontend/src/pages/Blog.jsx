@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import Brand from '../components/layout/Brand';
+import '../styles/quran.css';
 import { posts, CATEGORY_COLORS } from '../data/blogPosts';
 import useSEO from '../hooks/useSEO';
 import { useLang } from '../context/LangContext';
@@ -23,7 +24,7 @@ export default function Blog() {
         </div>
       </header>
 
-      <main className="container blog-page__main">
+      <main id="main-content" className="container blog-page__main">
         <div className="blog-page__header">
           <p className="eyebrow">{bl.eyebrow}</p>
           <h1>{bl.heading}</h1>

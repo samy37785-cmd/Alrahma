@@ -1,12 +1,13 @@
 import { Link } from 'react-router-dom';
 import Brand from '../components/layout/Brand';
+import '../styles/quran.css';
 import useSEO from '../hooks/useSEO';
 import { useLang } from '../context/LangContext';
 
 export default function NotFound() {
   const { t } = useLang();
   const nf = t.notFound;
-  useSEO({ title: nf.title });
+  useSEO({ title: nf.title, noindex: true });
   return (
     <div className="notfound-page">
       <header className="quran__bar">

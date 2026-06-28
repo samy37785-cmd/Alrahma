@@ -5,7 +5,7 @@ const manualPaymentSchema = new mongoose.Schema(
     plan:     { type: String, required: true },
     amount:   { type: Number, required: true },
     currency: { type: String, default: 'EUR' },
-    method:   { type: String, required: true }, // wu | moneygram | payoneer | bank | vodafone_manual | paypal_manual
+    method:   { type: String, required: true }, // wu | moneygram | payoneer | bank | paypal_manual
 
     customer: {
       name:  { type: String, trim: true },

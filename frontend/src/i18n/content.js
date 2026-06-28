@@ -46,7 +46,7 @@ export const VALUES_TEXT = {
     { title: 'Moderation',     desc: 'We present Islam in its true balanced form — inclusive, welcoming and free from extremism, suitable for Muslim communities living in the West.' },
     { title: 'Authenticity',   desc: 'Every tutor holds a verified Ijazah with a chain of knowledge traced back to the Prophet. Our curriculum is rooted in traditional, authentic scholarship.' },
     { title: 'Contemporary',   desc: 'We combine centuries-old Islamic scholarship with modern online technology to deliver world-class Quranic education directly to your home.' },
-    { title: 'Responsibility', desc: 'Every teacher is personally accountable for the progress, wellbeing and Islamic development of each student entrusted to their care.' },
+    { title: 'Responsibility', desc: 'Every tutor is personally accountable for the progress, wellbeing and Islamic development of each student entrusted to their care.' },
     { title: 'Excellence',     desc: 'We set high academic standards and continuously raise the quality of our teaching, drawing on the best Egyptian scholarly tradition.' },
     { title: 'Transparency',   desc: 'Families receive honest, regular progress reports and open communication throughout the learning journey — no hidden fees, no surprises.' },
   ],
@@ -68,7 +68,7 @@ export const VALUES_TEXT = {
   ],
   es: [
     { title: 'Moderación',     desc: 'Presentamos el Islam en su verdadera forma equilibrada — inclusivo, acogedor y libre de extremismo, adecuado para las comunidades musulmanas en Occidente.' },
-    { title: 'Autenticidad',   desc: 'Cada tutor posee una Ijazah verificada con una cadena de conocimiento que se remonta al Profeta. Nuestro plan de estudios se basa en la erudición tradicional y auténtica.' },
+    { title: 'Autenticidad',   desc: 'Cada profesor posee un Ijazah verificado con una cadena de conocimiento que se remonta al Profeta. Nuestro plan de estudios se basa en la erudición tradicional y auténtica.' },
     { title: 'Modernidad',     desc: 'Combinamos la erudición islámica centenaria con la tecnología en línea moderna para ofrecer una educación coránica de primer nivel directamente en tu hogar.' },
     { title: 'Responsabilidad',desc: 'Cada profesor es personalmente responsable del progreso, el bienestar y el desarrollo islámico de cada estudiante a su cargo.' },
     { title: 'Excelencia',     desc: 'Establecemos altos estándares académicos y elevamos continuamente la calidad de nuestra enseñanza, inspirándonos en la mejor tradición erudita egipcia.' },
@@ -97,10 +97,10 @@ export const TESTIMONIAL_TEXT = {
   en: [
     { quote: "My children love their lessons. The tutors are patient, kind and truly knowledgeable. We've seen amazing progress in just a few months.", course: 'Quran Reading & Tajweed' },
     { quote: 'Flexible timing made it possible for me to study around work. My Tajweed has improved more than I imagined. Highly recommended.', course: 'Tajweed (Hafs)' },
-    { quote: 'Professional, organized and very welcoming. The free trial convinced our whole family to join. May Allah reward the teachers.', course: 'Islamic Studies' },
+    { quote: 'Professional, organized and very welcoming. The free trial convinced our whole family to join. May Allah reward the tutors.', course: 'Islamic Studies' },
     { quote: "Our daughter memorised her first Juz in 3 months. The tutor's patience is incredible — she never gets frustrated and always finds a new way to explain.", course: 'Hifz (Quran Memorization)' },
     { quote: 'I converted 2 years ago and wanted to learn how to read the Quran properly. Starting from zero, I can now read independently. Alhamdulillah.', course: 'Noorani Qaida for Adults' },
-    { quote: 'The teacher is extremely patient and very skilled. My son learned the Arabic letters in just a few weeks. Highly recommended!', course: 'Arabic Alphabet for Children' },
+    { quote: 'The tutor is extremely patient and very skilled. My son learned the Arabic letters in just a few weeks. Highly recommended!', course: 'Arabic Alphabet for Children' },
   ],
   ar: [
     { quote: 'أطفالي يحبون حصصهم. المعلمون صبورون ولطفاء وذوو علم حقيقي. لمسنا تقدماً مذهلاً في أشهر قليلة فقط.', course: 'تعليم القرآن والتجويد' },
@@ -156,12 +156,12 @@ export const INVOICE_TEXT = {
 
 /* ── Checkout payment-method subtitles (keyed by method subKey) ── */
 export const CHECKOUT_SUBS = {
-  en: { cardSub: 'Secure card payment', wallets: 'Digital wallet', fawry: 'Fawry', instapay: 'InstaPay', intlSub: 'For international students' },
-  ar: { cardSub: 'دفع آمن بالبطاقة', wallets: 'محفظة إلكترونية', fawry: 'فوري', instapay: 'إنستا باي', intlSub: 'للطلاب الدوليين' },
-  it: { cardSub: 'Pagamento sicuro con carta', wallets: 'Portafoglio digitale', fawry: 'Fawry', instapay: 'InstaPay', intlSub: 'Per studenti internazionali' },
-  es: { cardSub: 'Pago seguro con tarjeta', wallets: 'Cartera digital', fawry: 'Fawry', instapay: 'InstaPay', intlSub: 'Para estudiantes internacionales' },
-  de: { cardSub: 'Sichere Kartenzahlung', wallets: 'Digitale Geldbörse', fawry: 'Fawry', instapay: 'InstaPay', intlSub: 'Für internationale Schüler' },
-  fr: { cardSub: 'Paiement par carte sécurisé', wallets: 'Portefeuille numérique', fawry: 'Fawry', instapay: 'InstaPay', intlSub: 'Pour les étudiants internationaux' },
+  en: { cardSub: 'Secure card payment', intlSub: 'For international students' },
+  ar: { cardSub: 'دفع آمن بالبطاقة', intlSub: 'للطلاب الدوليين' },
+  it: { cardSub: 'Pagamento sicuro con carta', intlSub: 'Per studenti internazionali' },
+  es: { cardSub: 'Pago seguro con tarjeta', intlSub: 'Para estudiantes internacionales' },
+  de: { cardSub: 'Sichere Kartenzahlung', intlSub: 'Für internationale Schüler' },
+  fr: { cardSub: 'Paiement par carte sécurisé', intlSub: 'Pour les étudiants internationaux' },
 };
 
 /* ── Small shared UI strings (modals, floating buttons) ── */

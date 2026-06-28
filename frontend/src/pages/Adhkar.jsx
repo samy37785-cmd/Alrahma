@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import '../styles/adhkar.css';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 import useSEO from '../hooks/useSEO';

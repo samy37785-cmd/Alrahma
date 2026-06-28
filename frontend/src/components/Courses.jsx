@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Reveal from './ui/Reveal';
+import MobileCarousel from './ui/MobileCarousel';
 import ResourceModal from './ui/ResourceModal';
 import AlphabetLearner from './features/AlphabetLearner';
 import { useTrial } from '../context/TrialContext';
@@ -66,7 +67,7 @@ export default function Courses() {
           <p className="eyebrow">{t.courses.eyebrow}</p>
           <h2>{t.courses.heading}</h2>
         </Reveal>
-        <div className="courses__grid">
+        <MobileCarousel trackClassName="courses__grid" ariaLabel={t.courses.heading}>
           {courses.map((c, i) => {
             const item = t.courses.items[i] || {};
             const meta = COURSE_META[i] || COURSE_META[0];
@@ -104,7 +105,7 @@ export default function Courses() {
               </Reveal>
             );
           })}
-        </div>
+        </MobileCarousel>
       </div>
 
       <ResourceModal course={picker} onClose={() => setPicker(null)} />

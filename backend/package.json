@@ -9,10 +9,12 @@
     "start": "node server.js",
     "seed": "node seed.js",
     "import:courses": "node importCourses.js",
-    "update:resources": "node updateResources.js"
+    "update:resources": "node updateResources.js",
+    "test": "node --test"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.21.2",
@@ -23,7 +25,12 @@
     "nodemailer": "^9.0.0",
     "stripe": "^22.2.1"
   },
+  "optionalDependencies": {
+    "ioredis": "^5.4.1",
+    "rate-limit-redis": "^4.2.0"
+  },
   "devDependencies": {
-    "nodemon": "^3.1.9"
+    "nodemon": "^3.1.9",
+    "supertest": "^7.0.0"
   }
 }

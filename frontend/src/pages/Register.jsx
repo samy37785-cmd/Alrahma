@@ -8,13 +8,14 @@ import { useLang } from '../context/LangContext';
 export default function Register() {
   const { t } = useLang();
   const rg = t.authPg.register;
-  useSEO({ title: rg.title });
+  useSEO({ title: rg.title, noindex: true });
   const { register } = useAuth();
   const navigate = useNavigate();
-  const [form, setForm] = useState({ name: '', email: '', password: '' });
+  const [form, setForm] = useState({ name: '', email: '', password: '', role: 'student' });
   const [gdpr, setGdpr] = useState(false);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const isAr = t.dir === 'rtl';
 
   const handleChange = (e) => setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
 
@@ -25,7 +26,7 @@ export default function Register() {
     setBusy(true);
     try {
       await register(form);
-      navigate('/');
+      navigate(form.role === 'parent' ? '/parent' : '/');
     } catch (err) {
       setError(err.response?.data?.message || rg.btn);
     } finally {
@@ -43,6 +44,13 @@ export default function Register() {
         <p className="auth__sub">{rg.sub}</p>
 
         <form onSubmit={handleSubmit}>
+          <div className="field">
+            <label htmlFor="role">{isAr ? 'نوع الحساب' : 'Account type'}</label>
+            <select id="role" name="role" value={form.role} onChange={handleChange}>
+              <option value="student">{isAr ? 'طالب' : 'Student'}</option>
+              <option value="parent">{isAr ? 'ولي أمر' : 'Parent'}</option>
+            </select>
+          </div>
           <div className="field">
             <label htmlFor="name">{rg.name}</label>
             <input type="text" id="name" name="name" value={form.name} onChange={handleChange} required />

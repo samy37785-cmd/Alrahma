@@ -6,14 +6,52 @@
   "description": "Al-Rahma Academy — Learn the Holy Quran Online (React + Vite)",
   "scripts": {
     "dev": "vite",
+    "prebuild": "node scripts/gen-sitemap.mjs",
     "build": "vite build",
+    "postbuild": "node prerender.mjs",
     "lint": "eslint .",
     "lint:strict": "eslint . --max-warnings 0",
     "lint:fix": "eslint . --fix",
     "preview": "vite preview"
   },
+  "reactSnap": {
+    "source": "dist",
+    "minifyHtml": {
+      "collapseWhitespace": false,
+      "removeComments": false
+    },
+    "inlineCss": false,
+    "skipThirdPartyRequests": true,
+    "puppeteerArgs": [
+      "--no-sandbox",
+      "--disable-setuid-sandbox"
+    ],
+    "include": [
+      "/",
+      "/about",
+      "/faq",
+      "/teachers",
+      "/blog",
+      "/quran",
+      "/privacy",
+      "/enroll",
+      "/islamic-tools",
+      "/adhkar",
+      "/hadith-library",
+      "/course/ijazah",
+      "/course/islamic-studies",
+      "/blog/how-to-start-learning-quran",
+      "/blog/what-is-tajweed",
+      "/blog/noorani-qaida-explained",
+      "/blog/how-long-to-memorise-quran",
+      "/blog/why-learn-arabic-to-understand-quran",
+      "/blog/quran-memorization-tips-adults",
+      "/blog/understanding-fiqh-everyday-muslims"
+    ]
+  },
   "dependencies": {
-    "@fortawesome/fontawesome-free": "^7.2.0",
+    "@fontsource/amiri": "^5.2.8",
+    "@fontsource/poppins": "^5.2.7",
     "axios": "^1.17.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -27,6 +65,8 @@
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.26",
     "globals": "^15.15.0",
+    "puppeteer": "^23.11.1",
+    "react-snap": "^1.23.0",
     "sharp": "^0.35.1",
     "vite": "^5.4.11"
   }

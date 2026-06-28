@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import Reveal from './ui/Reveal';
+import MobileCarousel from './ui/MobileCarousel';
 import CheckoutModal from './ui/CheckoutModal';
 import { useLang } from '../context/LangContext';
 import { plans } from '../data';
@@ -39,7 +40,7 @@ export default function Pricing() {
           </Reveal>
         )}
 
-        <div className="pricing__grid">
+        <MobileCarousel trackClassName="pricing__grid" ariaLabel={p.heading}>
           {plans.map((plan, i) => {
             const pt = planText[i] || planText[0];
             return (
@@ -94,7 +95,7 @@ export default function Pricing() {
             </Reveal>
             );
           })}
-        </div>
+        </MobileCarousel>
       </div>
 
       <CheckoutModal plan={selectedPlan} onClose={() => setSelectedPlan(null)} />

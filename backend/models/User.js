@@ -17,7 +17,21 @@ const userSchema = new mongoose.Schema(
       minlength: [6, 'Password must be at least 6 characters'],
       select: false, // never return the password by default
     },
-    role: { type: String, enum: ['student', 'admin'], default: 'student' },
+    role: { type: String, enum: ['student', 'teacher', 'parent', 'admin'], default: 'student' },
+
+    // ── Teacher / student link (set by admin) ──
+    // For a STUDENT: the teacher responsible for following up on them.
+    teacher: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+
+    // ── Parent / child link ──
+    // For a PARENT: the student accounts they can follow.
+    children: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    // For a STUDENT: a short code they share so a parent can link to them.
+    parentLinkCode: { type: String, default: null, index: true },
+    // For a STUDENT: optional family/household name, used to group students
+    // (e.g. "Ammar's family") in the sessions register.
+    familyName: { type: String, trim: true, default: '' },
+
     subscription: {
       plan:        { type: String, default: null },
       status:      { type: String, enum: ['active', 'inactive'], default: 'inactive' },
@@ -28,6 +42,10 @@ const userSchema = new mongoose.Schema(
       stripeCustomerId:     { type: String, default: null },
       stripeSubscriptionId: { type: String, default: null },
       cancelAtPeriodEnd:    { type: Boolean, default: false },
+      // The validUntil value we last sent a "renewal coming up" email for.
+      // Stored so the daily reminder job never emails the same period twice;
+      // it naturally re-arms when validUntil moves forward on renewal.
+      renewalReminderSentFor: { type: Date, default: null },
     },
     resetToken:       { type: String, select: false },
     resetTokenExpiry: { type: Date,   select: false },

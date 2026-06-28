@@ -10,6 +10,9 @@
   <link rel="mask-icon" href="/favicon.svg" color="#0b6e4f" />
   <meta name="theme-color" content="#0b6e4f" />
 
+  <!-- Search engine ownership verification -->
+  <meta name="msvalidate.01" content="1B4B677E45AB5F857BCC64B17E316782" />
+
   <!-- ═══════════════════════════════════════════════════════════════
        Primary SEO
   ════════════════════════════════════════════════════════════════ -->
@@ -18,27 +21,33 @@
   <meta name="keywords" content="learn Quran online, online Quran classes, Tajweed course, Hifz program, Ijazah online, Arabic language course, female Quran teacher, Quran for kids, Islamic studies online, imparare il Corano online, corso di Tajweed, apprendre le Coran en ligne" />
   <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
   <meta name="author" content="Al-Rahma Academy" />
-  <link rel="canonical" href="https://alrahmaacademy.com/en/" />
+  <link rel="canonical" href="https://al-rahmaacademy.com/en/" />
 
   <!-- hreflang — tells Google which page to show per language/region -->
-  <link rel="alternate" hreflang="en"       href="https://alrahmaacademy.com/en/" />
-  <link rel="alternate" hreflang="it"       href="https://alrahmaacademy.com/it/" />
-  <link rel="alternate" hreflang="fr"       href="https://alrahmaacademy.com/fr/" />
-  <link rel="alternate" hreflang="x-default" href="https://alrahmaacademy.com/en/" />
+  <link rel="alternate" hreflang="en"       href="https://al-rahmaacademy.com/en/" />
+  <link rel="alternate" hreflang="ar"       href="https://al-rahmaacademy.com/ar/" />
+  <link rel="alternate" hreflang="it"       href="https://al-rahmaacademy.com/it/" />
+  <link rel="alternate" hreflang="es"       href="https://al-rahmaacademy.com/es/" />
+  <link rel="alternate" hreflang="de"       href="https://al-rahmaacademy.com/de/" />
+  <link rel="alternate" hreflang="fr"       href="https://al-rahmaacademy.com/fr/" />
+  <link rel="alternate" hreflang="x-default" href="https://al-rahmaacademy.com/en/" />
 
   <!-- ═══════════════════════════════════════════════════════════════
        Open Graph (Facebook, WhatsApp, LinkedIn previews)
   ════════════════════════════════════════════════════════════════ -->
   <meta property="og:type"        content="website" />
   <meta property="og:site_name"   content="Al-Rahma Academy" />
-  <meta property="og:url"         content="https://alrahmaacademy.com/en/" />
+  <meta property="og:url"         content="https://al-rahmaacademy.com/en/" />
   <meta property="og:title"       content="Al-Rahma Academy — Learn Quran Online | Tajweed, Hifz & Arabic" />
   <meta property="og:description" content="One-to-one live Quran lessons with certified Egyptian tutors. Tajweed, Hifz, Ijazah & Arabic for all ages. Book 2 free trial classes — no commitment." />
-  <meta property="og:image"       content="https://alrahmaacademy.com/og-cover.jpg" />
+  <meta property="og:image"       content="https://al-rahmaacademy.com/og-cover.jpg" />
   <meta property="og:image:width"  content="1200" />
   <meta property="og:image:height" content="630" />
   <meta property="og:locale"      content="en_GB" />
+  <meta property="og:locale:alternate" content="ar_EG" />
   <meta property="og:locale:alternate" content="it_IT" />
+  <meta property="og:locale:alternate" content="es_ES" />
+  <meta property="og:locale:alternate" content="de_DE" />
   <meta property="og:locale:alternate" content="fr_FR" />
 
   <!-- ═══════════════════════════════════════════════════════════════
@@ -48,15 +57,13 @@
   <meta name="twitter:site"        content="@alrahmaacademy" />
   <meta name="twitter:title"       content="Al-Rahma Academy — Learn Quran Online" />
   <meta name="twitter:description" content="Certified Egyptian tutors. One-to-one lessons in Tajweed, Hifz & Arabic. Book 2 free trial classes today." />
-  <meta name="twitter:image"       content="https://alrahmaacademy.com/og-cover.jpg" />
+  <meta name="twitter:image"       content="https://al-rahmaacademy.com/og-cover.jpg" />
 
   <!-- ═══════════════════════════════════════════════════════════════
        Fonts & Icons
   ════════════════════════════════════════════════════════════════ -->
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
-  <!-- FontAwesome is bundled locally via src/main.jsx (no external CDN needed) -->
+  <!-- Poppins + Amiri are self-hosted (bundled via src/main.jsx) — no
+       render-blocking Google Fonts request and no 3rd-party origin. -->
 
 
   <!-- ═══════════════════════════════════════════════════════════════
@@ -67,18 +74,25 @@
   {
     "@context": "https://schema.org",
     "@type": ["EducationalOrganization", "LocalBusiness"],
-    "@id": "https://alrahmaacademy.com/#organization",
+    "@id": "https://al-rahmaacademy.com/#organization",
     "name": "Al-Rahma Academy",
-    "alternateName": ["أكاديمية الرحمة", "Accademia Al-Rahma", "Académie Al-Rahma"],
+    "alternateName": [
+      "أكاديمية الرحمة", "الرحمة", "الرحمة أكاديمي", "أكاديمية الرحمة لتعليم القرآن",
+      "أكاديمية الرحمة التعليمية", "الرحمة لتعليم القرآن",
+      "Al Rahma Academy", "Alrahma Academy", "Rahma Academy", "Rahmah Academy",
+      "Al-Rahma", "Al Rahma", "Alrahma", "Rahma", "Rahmah",
+      "Al-Rahma Quran Academy", "Al Rahma Educational Academy",
+      "Accademia Al-Rahma", "Académie Al-Rahma"
+    ],
     "description": "Online Quran and Arabic academy for non-Arabic speakers. One-to-one live lessons in Tajweed, Hifz, Ijazah, Islamic Studies and Arabic for children and adults across Europe.",
-    "url": "https://alrahmaacademy.com",
+    "url": "https://al-rahmaacademy.com",
     "logo": {
       "@type": "ImageObject",
-      "url": "https://alrahmaacademy.com/logo.png",
+      "url": "https://al-rahmaacademy.com/logo.png",
       "width": 200,
       "height": 60
     },
-    "image": "https://alrahmaacademy.com/og-cover.jpg",
+    "image": "https://al-rahmaacademy.com/og-cover.jpg",
     "email": "alrahmaacademy038@gmail.com",
     "telephone": "+201016054663",
     "foundingDate": "2020",
@@ -98,7 +112,7 @@
       { "@type": "Country", "name": "Canada" },
       { "@type": "Country", "name": "Australia" }
     ],
-    "availableLanguage": ["English", "Italian", "French", "Arabic"],
+    "availableLanguage": ["English", "Arabic", "Italian", "Spanish", "German", "French"],
     "priceRange": "€56–€112/month",
     "sameAs": [
       "https://facebook.com/alrahmaacademy",
@@ -116,7 +130,7 @@
             "@type": "Course",
             "name": "Quran Reading — Noorani Qaida",
             "description": "Learn to read the Quran from the very basics. Perfect for complete beginners with no Arabic background.",
-            "provider": { "@id": "https://alrahmaacademy.com/#organization" },
+            "provider": { "@id": "https://al-rahmaacademy.com/#organization" },
             "teaches": "Quran reading, Arabic alphabet pronunciation, basic tajweed",
             "educationalLevel": "Beginner",
             "inLanguage": ["en", "it", "fr"]
@@ -128,7 +142,7 @@
             "@type": "Course",
             "name": "Recitation with Tajweed",
             "description": "Master the rules of Tajweed for beautiful and accurate Quranic recitation.",
-            "provider": { "@id": "https://alrahmaacademy.com/#organization" },
+            "provider": { "@id": "https://al-rahmaacademy.com/#organization" },
             "teaches": "Tajweed rules, Quranic recitation",
             "educationalLevel": "Intermediate",
             "inLanguage": ["en", "it", "fr"]
@@ -140,7 +154,7 @@
             "@type": "Course",
             "name": "Quran Memorization — Hifz Program",
             "description": "Structured Quran memorization program with personalised revision plans for all ages.",
-            "provider": { "@id": "https://alrahmaacademy.com/#organization" },
+            "provider": { "@id": "https://al-rahmaacademy.com/#organization" },
             "teaches": "Quran memorization, revision techniques",
             "educationalLevel": "All levels",
             "inLanguage": ["en", "it", "fr"]
@@ -152,7 +166,7 @@
             "@type": "Course",
             "name": "Quran Ijazah Certification",
             "description": "Earn a formal Ijazah certificate with a connected chain of narration back to the Prophet.",
-            "provider": { "@id": "https://alrahmaacademy.com/#organization" },
+            "provider": { "@id": "https://al-rahmaacademy.com/#organization" },
             "teaches": "Ijazah recitation, advanced tajweed",
             "educationalLevel": "Advanced",
             "inLanguage": ["en", "it", "fr"]
@@ -164,7 +178,7 @@
             "@type": "Course",
             "name": "Islamic Studies",
             "description": "Learn Aqeedah, Fiqh, Seerah and daily Islamic practice with certified tutors.",
-            "provider": { "@id": "https://alrahmaacademy.com/#organization" },
+            "provider": { "@id": "https://al-rahmaacademy.com/#organization" },
             "educationalLevel": "All levels",
             "inLanguage": ["en", "it", "fr"]
           }
@@ -175,7 +189,7 @@
             "@type": "Course",
             "name": "Arabic Language Course",
             "description": "Speak, read and write Arabic with confidence. Modern Standard Arabic for all levels.",
-            "provider": { "@id": "https://alrahmaacademy.com/#organization" },
+            "provider": { "@id": "https://al-rahmaacademy.com/#organization" },
             "teaches": "Modern Standard Arabic, reading, writing, conversation",
             "educationalLevel": "All levels",
             "inLanguage": ["en", "it", "fr"]
@@ -269,12 +283,12 @@
   {
     "@context": "https://schema.org",
     "@type": "WebSite",
-    "@id": "https://alrahmaacademy.com/#website",
-    "url": "https://alrahmaacademy.com",
+    "@id": "https://al-rahmaacademy.com/#website",
+    "url": "https://al-rahmaacademy.com",
     "name": "Al-Rahma Academy",
     "description": "Online Quran and Arabic academy for Muslim communities in Europe",
-    "inLanguage": ["en", "it", "fr"],
-    "publisher": { "@id": "https://alrahmaacademy.com/#organization" }
+    "inLanguage": ["en", "ar", "it", "es", "de", "fr"],
+    "publisher": { "@id": "https://al-rahmaacademy.com/#organization" }
   }
   </script>
 

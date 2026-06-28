@@ -1,10 +1,17 @@
+// Load environment variables FIRST — before any other import runs. ES module
+// imports are hoisted, so route/controller/mailer modules below would otherwise
+// read process.env before dotenv.config() ran (e.g. the mailer's SMTP check),
+// producing false "not configured" warnings. The side-effect import guarantees
+// .env is loaded before the rest of the graph evaluates.
+import 'dotenv/config';
+
 import express from 'express';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
-import rateLimit from 'express-rate-limit';
-import dotenv from 'dotenv';
 
 import connectDB from './config/db.js';
+import { apiLimiter, authLimiter } from './config/rateLimit.js';
 import authRoutes from './routes/authRoutes.js';
 import courseRoutes from './routes/courseRoutes.js';
 import trialRoutes from './routes/trialRoutes.js';
@@ -15,9 +22,12 @@ import enrollmentRoutes from './routes/enrollmentRoutes.js';
 import hifzRoutes from './routes/hifzRoutes.js';
 import progressRoutes from './routes/progressRoutes.js';
 import certificateRoutes from './routes/certificateRoutes.js';
+import teacherRoutes from './routes/teacherRoutes.js';
+import parentRoutes from './routes/parentRoutes.js';
+import liveClassRoutes from './routes/liveClassRoutes.js';
+import messageRoutes from './routes/messageRoutes.js';
+import cronRoutes from './routes/cronRoutes.js';
 import { notFound, errorHandler } from './middleware/errorHandler.js';
-
-dotenv.config();
 
 const app = express();
 
@@ -55,24 +65,11 @@ app.use('/api/payments/stripe/webhook', express.raw({ type: 'application/json' }
 
 app.use(express.json({ limit: '100kb' }));
 app.use(express.urlencoded({ extended: true, limit: '100kb' }));
+app.use(cookieParser()); // parses the httpOnly auth cookie into req.cookies
 
-// Rate limiters — note: in Serverless each instance has its own memory,
-// so this limits per-instance not globally. For real protection use Redis store.
-const apiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 300,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { message: 'Too many requests — please try again later.' },
-});
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 20,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { message: 'Too many attempts — please try again later.' },
-});
-// Health-check endpoints — BEFORE the DB middleware so Render's health check
+// Rate limiters live in config/rateLimit.js — they use a shared Redis store
+// when REDIS_URL is set (global across serverless instances), else in-memory.
+// Health-check endpoints — BEFORE the DB middleware so a platform health check
 // never blocks on a cold DB connection and the service stays marked as healthy.
 app.get('/',       (_req, res) => res.json({ status: 'ok', service: 'Al-Rahma Academy API' }));
 app.get('/health', (_req, res) => res.json({ status: 'ok', uptime: process.uptime() }));
@@ -100,6 +97,11 @@ app.use('/api/enrollments', enrollmentRoutes);
 app.use('/api/hifz', hifzRoutes);
 app.use('/api/progress', progressRoutes);
 app.use('/api/certificates', certificateRoutes);
+app.use('/api/teacher', teacherRoutes);
+app.use('/api/parent', parentRoutes);
+app.use('/api/classes', liveClassRoutes);
+app.use('/api/messages', messageRoutes);
+app.use('/api/cron', cronRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

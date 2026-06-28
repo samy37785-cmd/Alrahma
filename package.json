@@ -1,38 +1,15 @@
 {
   "name": "al-rahma-academy",
   "private": true,
-  "version": "1.0.0",
-  "type": "module",
-  "description": "Al-Rahma Academy — Learn the Holy Quran Online (React)",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "lint": "eslint .",
-    "lint:strict": "eslint . --max-warnings 0",
-    "lint:fix": "eslint . --fix",
-    "preview": "vite preview",
-    "server": "npm --prefix server run dev",
-    "start:all": "concurrently -n server,client -c green,cyan \"npm run server\" \"npm run dev\"",
-    "setup": "npm install && npm --prefix server install",
-    "start": "npm run start:all"
-  },
-  "dependencies": {
-    "@fortawesome/fontawesome-free": "^7.2.0",
-    "axios": "^1.17.0",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "react-router-dom": "^7.17.0"
+    "dev": "concurrently -n client,server -c cyan,green \"npm run dev --prefix frontend\" \"npm run dev --prefix backend\"",
+    "build": "npm run build --prefix frontend",
+    "setup": "npm install --prefix frontend && npm install --prefix backend",
+    "start": "npm run dev",
+    "frontend": "npm run dev --prefix frontend",
+    "backend": "npm run dev --prefix backend"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.4",
-    "@vitejs/plugin-react": "^4.3.4",
-    "concurrently": "^10.0.3",
-    "eslint": "^9.39.4",
-    "eslint-plugin-react": "^7.37.5",
-    "eslint-plugin-react-hooks": "^5.2.0",
-    "eslint-plugin-react-refresh": "^0.4.26",
-    "globals": "^15.15.0",
-    "sharp": "^0.35.1",
-    "vite": "^5.4.11"
+    "concurrently": "^10.0.3"
   }
 }

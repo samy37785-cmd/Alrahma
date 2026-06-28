@@ -260,7 +260,7 @@ function Step3({ form, set }) {
 
       <div className="enroll__teacher-grid">
         {visible.map((t) => {
-          const initials = t.nameAr.split(' ').slice(0, 2).map((w) => w[0]).join('');
+          const initials = t.nameEn.split(' ').slice(0, 2).map((w) => w[0].toUpperCase()).join('');
           const selected = form.teacherId === t.id;
           return (
             <button
@@ -274,8 +274,8 @@ function Step3({ form, set }) {
                 <span dir="rtl">{initials}</span>
               </div>
               <div className="enroll__tcard-info">
-                <strong dir="rtl">{t.nameAr}</strong>
-                <span>{t.nameEn}</span>
+                <strong>{t.nameEn}</strong>
+                <span dir="rtl" style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-serif)' }}>{t.nameAr}</span>
                 <p>{t.title[lang] || t.title.en}</p>
               </div>
               <div className="enroll__tcard-meta">
@@ -356,17 +356,91 @@ function Step4({ form, set, onPayNow }) {
 }
 
 /* ── Success screen ─────────────────────────────────────────────── */
+const CONFETTI_PIECES = [
+  { color: '#d4af37', delay: 0,    left: '10%',  size: 8,  shape: 'square' },
+  { color: '#0b6e4f', delay: 0.1,  left: '20%',  size: 6,  shape: 'circle' },
+  { color: '#d4af37', delay: 0.2,  left: '35%',  size: 10, shape: 'square' },
+  { color: '#1a9e72', delay: 0.05, left: '50%',  size: 7,  shape: 'circle' },
+  { color: '#f0c040', delay: 0.3,  left: '65%',  size: 9,  shape: 'square' },
+  { color: '#0b6e4f', delay: 0.15, left: '78%',  size: 6,  shape: 'circle' },
+  { color: '#d4af37', delay: 0.25, left: '88%',  size: 8,  shape: 'square' },
+  { color: '#1a9e72', delay: 0.35, left: '5%',   size: 7,  shape: 'circle' },
+  { color: '#f0c040', delay: 0.4,  left: '45%',  size: 5,  shape: 'square' },
+  { color: '#d4af37', delay: 0.45, left: '92%',  size: 9,  shape: 'circle' },
+  { color: '#0b6e4f', delay: 0.08, left: '30%',  size: 6,  shape: 'square' },
+  { color: '#1a9e72', delay: 0.38, left: '72%',  size: 8,  shape: 'circle' },
+];
+
 function Success({ name }) {
   const navigate = useNavigate();
   const { t } = useLang();
   const s = t.enroll.success;
+  const steps = s.nextSteps || [];
+
   return (
     <div className="enroll__success">
-      <div className="enroll__success-icon">{s.icon}</div>
-      <h2>{s.title}</h2>
-      <p>{s.thankYouPre}<strong>{name}</strong>{s.thankYouPost}</p>
-      <p className="enroll__success-sub">{s.emailNote}</p>
-      <button type="button" className="btn btn--green" onClick={() => navigate('/')}>{s.backHome}</button>
+      {/* Confetti */}
+      <div className="enroll__confetti" aria-hidden="true">
+        {CONFETTI_PIECES.map((p, i) => (
+          <span
+            key={i}
+            className="enroll__confetti-piece"
+            style={{
+              '--c-color': p.color,
+              '--c-delay': `${p.delay}s`,
+              '--c-left': p.left,
+              '--c-size': `${p.size}px`,
+              borderRadius: p.shape === 'circle' ? '50%' : '2px',
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Animated check circle */}
+      <div className="enroll__success-check" aria-hidden="true">
+        <svg viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg" className="enroll__check-svg">
+          <circle className="enroll__check-circle" cx="26" cy="26" r="24" stroke="#0b6e4f" strokeWidth="3" fill="none"/>
+          <path className="enroll__check-tick" d="M14 27l8 8 16-16" stroke="#0b6e4f" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+        </svg>
+      </div>
+
+      {/* Arabic blessing */}
+      <div className="enroll__success-blessing" aria-label={s.blessingSub}>
+        <span className="text-arabic" style={{ fontSize: '1.6rem', color: 'var(--color-primary)' }}>{s.blessing}</span>
+        <span className="enroll__success-blessing-sub">{s.blessingSub}</span>
+      </div>
+
+      <h2 className="enroll__success-title">{s.title}</h2>
+      <p className="enroll__success-intro">{s.thankYouPre}<strong>{name}</strong>{s.thankYouPost}</p>
+      <p className="enroll__success-email">{s.emailNote}</p>
+
+      {/* What happens next */}
+      {steps.length > 0 && (
+        <div className="enroll__next">
+          <h3 className="enroll__next-title">{s.nextTitle}</h3>
+          <div className="enroll__next-steps">
+            {steps.map((step, i) => (
+              <div key={i} className="enroll__next-step">
+                <div className="enroll__next-step-icon">{step.icon}</div>
+                <div className="enroll__next-step-body">
+                  <strong>{step.title}</strong>
+                  <span>{step.text}</span>
+                </div>
+                {i < steps.length - 1 && <div className="enroll__next-step-connector" aria-hidden="true" />}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="enroll__success-actions">
+        <button type="button" className="btn btn--green btn--lg" onClick={() => navigate('/dashboard')}>
+          {s.goToDashboard}
+        </button>
+        <button type="button" className="btn btn--ghost" onClick={() => navigate('/')}>
+          {s.backHome}
+        </button>
+      </div>
     </div>
   );
 }
@@ -374,8 +448,9 @@ function Success({ name }) {
 /* ── Main page ──────────────────────────────────────────────────── */
 export default function Enroll() {
   useSEO({
-    title: 'Enroll',
-    description: 'Start your Quran journey. Choose your subjects, pick a certified tutor, and select a plan — in just a few steps.',
+    title: 'Book Free Trial Lessons — Enroll at Al-Rahma Academy',
+    description: '2 free one-to-one Quran lessons — no payment, no commitment. Choose your subjects, pick an Al-Azhar certified tutor, and start learning today. 14-day money-back guarantee on all plans.',
+    keywords: 'free quran trial lesson, online quran enrollment, book quran lesson, quran class booking',
   });
 
   const { t } = useLang();
@@ -453,11 +528,25 @@ export default function Enroll() {
             <Success name={form.name} />
           ) : (
             <>
-              {/* Header */}
+              {/* ── Emotional header ── */}
               <div className="enroll__header">
                 <p className="eyebrow" style={{ color: 'var(--gold)' }}>{e.eyebrow}</p>
                 <h1>{e.heading}</h1>
                 <p className="enroll__tagline">{e.tagline}</p>
+              </div>
+
+              {/* ── Social proof quote strip ── */}
+              <div className="enroll__trust-strip">
+                <div className="enroll__trust-quote">
+                  <span className="enroll__trust-quote-mark">"</span>
+                  <p>My daughter completed her first Surah in just 3 weeks. I've never seen her so proud of herself.</p>
+                  <footer>— Fatima K., Manchester</footer>
+                </div>
+                <div className="enroll__trust-stats">
+                  <div className="enroll__trust-stat"><strong>500+</strong><span>Families enrolled</span></div>
+                  <div className="enroll__trust-stat"><strong>40+</strong><span>Countries</span></div>
+                  <div className="enroll__trust-stat"><strong>4.9★</strong><span>Avg. rating</span></div>
+                </div>
               </div>
 
               <Progress step={step} />

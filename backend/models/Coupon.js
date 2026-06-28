@@ -5,6 +5,7 @@ const couponSchema = new mongoose.Schema(
     code: {
       type: String,
       required: true,
+      unique: true,
       uppercase: true,
       trim: true,
       match: /^[A-Z0-9_-]{3,30}$/,
@@ -57,8 +58,9 @@ const couponSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-couponSchema.index({ code: 1 });
 couponSchema.index({ active: 1, validUntil: 1 });
+// Fast per-user duplicate-use check (validateCoupon) — avoids loading full usedBy array
+couponSchema.index({ 'usedBy.user': 1 });
 
 couponSchema.methods.isValid = function () {
   const now = new Date();

@@ -48,13 +48,42 @@ const userSchema = new mongoose.Schema(
       // it naturally re-arms when validUntil moves forward on renewal.
       renewalReminderSentFor: { type: Date, default: null },
     },
+    // OAuth — Google Sign-In subject identifier
+    googleId: { type: String, default: null, index: true, sparse: true },
+
+    // ── Gamification ──────────────────────────────────────────────────────────
+    xp:            { type: Number, default: 0, min: 0 },
+    level:         { type: Number, default: 1, min: 1 },
+    streak:        { type: Number, default: 0, min: 0 },   // current daily streak
+    lastStudyDate: { type: Date,   default: null },         // last day XP was earned
+    badges:        [{ type: String }],                      // awarded badge keys
+
     resetToken:       { type: String, select: false },
     resetTokenExpiry: { type: Date,   select: false },
     // Incremented on password change; invalidates all previously-issued tokens.
     tokenVersion:     { type: Number, default: 0 },
+
+    // ── Teacher profile (admin-populated for role=teacher accounts) ──
+    // Referenced by searchController, teacherController, and admin staff views.
+    specialization: { type: String, trim: true, default: '' },
+    bio:            { type: String, trim: true, default: '' },
+    gender:         { type: String, enum: ['male', 'female', ''], default: '' },
+    languages:      [{ type: String }],
+    subjects:       [{ type: String }],
+    rating:         { type: Number, default: 0, min: 0, max: 5 },
   },
   { timestamps: true }
 );
+
+// ── Query indexes ─────────────────────────────────────────────────────────────
+// Cron job: find active subscribers expiring within N days
+userSchema.index({ 'subscription.status': 1, 'subscription.validUntil': 1 });
+// Stripe webhook: deactivateSubscription() looks up by stripeSubscriptionId
+userSchema.index({ 'subscription.stripeSubscriptionId': 1 }, { sparse: true });
+// Admin listTeachers / role-based access checks
+userSchema.index({ role: 1 });
+// Student-teacher assignment queries (updateMany + populate)
+userSchema.index({ teacher: 1 }, { sparse: true });
 
 // Hash the password automatically before saving (only if changed).
 userSchema.pre('save', async function () {

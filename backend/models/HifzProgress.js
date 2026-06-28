@@ -5,7 +5,7 @@ import mongoose from 'mongoose';
 // marked as memorized, so we can compute counts and completion per surah.
 const hifzProgressSchema = new mongoose.Schema(
   {
-    user:        { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+    user:        { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     chapterId:   { type: Number, required: true, min: 1, max: 114 }, // surah number
     chapterName: { type: String, default: '' },
     totalVerses: { type: Number, default: 0 }, // ayah count of the surah (for % complete)

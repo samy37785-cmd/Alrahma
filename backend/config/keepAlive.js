@@ -1,4 +1,5 @@
 import https from 'https';
+import logger from './logger.js';
 
 /*
  * Self-ping to prevent Render free-tier sleep (15-min inactivity timeout).
@@ -22,13 +23,13 @@ export function startKeepAlive() {
   const ping = () =>
     https
       .get(url, (res) => {
-        console.log(`[keep-alive] ✅ ${res.statusCode} — ${new Date().toISOString()}`);
+        logger.debug('Keep-alive ping succeeded', { status: res.statusCode });
         res.resume(); // drain the response so the socket closes cleanly
       })
       .on('error', (err) => {
-        console.error(`[keep-alive] ❌ ping failed: ${err.message}`);
+        logger.warn('Keep-alive ping failed', { url, message: err.message });
       });
 
   setInterval(ping, INTERVAL_MS);
-  console.log(`[keep-alive] active — pinging ${url} every 14 min`);
+  logger.info('Keep-alive active', { url, intervalMs: INTERVAL_MS });
 }

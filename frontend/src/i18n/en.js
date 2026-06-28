@@ -41,15 +41,16 @@
     "allLabel": "All"
   },
   "hero": {
-    "eyebrow": "Quran • Arabic • Islamic Studies",
-    "title": "Learn the Quran Online",
-    "sub": "The best online Quran and Arabic academy for children and adults — taught one-to-one by qualified native tutors, anytime that suits you.",
+    "eyebrow": "Quran · Arabic · Islamic Studies",
+    "title": "Give Your Child the Gift of the Quran",
+    "titleHighlight": "the Quran",
+    "sub": "Al-Azhar certified tutors teach your child one-to-one — in English, Italian, French, German or Spanish. Authentic knowledge. A chain that reaches the Prophet ﷺ.",
     "cta1": "Book a Free Trial",
     "cta2": "📚 Explore Courses",
     "cta3": "Browse Courses",
-    "badge1": "✓ 2 Free trial lessons",
-    "badge2": "✓ Available 24/7",
-    "badge3": "✓ Female tutors available",
+    "badge1": "✓ 2 free trial lessons — no card needed",
+    "badge2": "✓ Ijazah-certified tutors with verified chain",
+    "badge3": "✓ Female tutors available · 24/7 scheduling",
     "verseQuote": "\"Read in the name of your Lord who created.\"",
     "verseRef": "Surah Al-'Alaq · 96:1",
     "iqraRead": "Read",
@@ -88,19 +89,19 @@
   },
   "steps": {
     "eyebrow": "How it works",
-    "heading": "Start in 3 Simple Steps",
+    "heading": "Your Journey to the Quran",
     "items": [
       {
-        "title": "Fill the free trial form",
-        "text": "Tell us about the student and the course you're interested in."
+        "title": "Tell us about your child",
+        "text": "A 2-minute form. Age, level, goals. We read every word — this shapes who we match you with."
       },
       {
-        "title": "Schedule a trial session",
-        "text": "We'll match you with a tutor and a time that works for you."
+        "title": "Meet your tutor",
+        "text": "We handpick a certified tutor for your child's age and goals. A free 30-minute session — no card, no commitment."
       },
       {
-        "title": "Download the meeting app",
-        "text": "Join your lessons easily over Zoom or Skype, from anywhere."
+        "title": "Begin a lifelong journey",
+        "text": "Your first real lesson starts. Your child recites. The chain of knowledge that reaches the Prophet ﷺ passes through them."
       }
     ]
   },
@@ -217,8 +218,8 @@
     "getStarted": "Get Started",
     "mostPopular": "Most popular",
     "sub": "Affordable monthly plans billed per student. Cancel anytime.",
-    "banner": "🎉 Limited Time",
-    "bannerText": "Save 25% OFF on all plans — discount already applied below",
+    "banner": "🎓 Founding Rate",
+    "bannerText": "Founding-member pricing locked for life — rate increases as we grow",
     "youSave": "You save",
     "perHour": "/ hour equivalent",
     "cancelNote": "Cancel anytime — no contracts"
@@ -227,7 +228,7 @@
     "eyebrow": "Testimonials",
     "heading": "What Our Students Say",
     "sub": "Real experiences from real students — in their own words.",
-    "happyStudents": "happy students worldwide",
+    "happyStudents": "lessons delivered worldwide",
     "joinToday": "Join them today →"
   },
   "trial": {
@@ -266,14 +267,17 @@
     "planMessage": "I'm interested in the {plan} plan."
   },
   "newsletter": {
-    "heading": "Subscribe to our newsletter",
-    "sub": "Get Islamic articles and academy updates straight to your inbox.",
-    "placeholder": "Enter your email",
-    "btn": "Subscribe",
-    "subscribing": "Subscribing...",
-    "subscribed": "Subscribed ✓",
-    "success": "✓ Subscribed! Jazak Allah khair.",
-    "error": "Something went wrong. Please try again."
+    "badge": "FREE DOWNLOAD",
+    "heading": "Free Tajweed Starter Guide",
+    "sub": "Learn the 5 most important Tajweed rules before your child's first lesson — in plain language, no Arabic background required.",
+    "placeholder": "Your email address",
+    "btn": "Send Me the Free Guide →",
+    "subscribing": "Sending…",
+    "subscribed": "Sent ✓",
+    "successHeading": "Check your inbox!",
+    "successSub": "Your free Tajweed Starter Guide is on its way. It may take a minute or two.",
+    "error": "Something went wrong. Please try again.",
+    "privacy": "No spam. Unsubscribe any time."
   },
   "footer": {
     "about": "Authentic online Quran, Arabic and Islamic education for students of all ages, anywhere in the world.",
@@ -486,23 +490,24 @@
     ]
   },
   "joinCta": {
-    "eyebrow": "Start Today",
-    "heading": "Join 500+ Students Worldwide",
-    "sub": "Learn the Quran from the comfort of your home with Al-Azhar certified tutors. Flexible schedules, personalised lessons — for every age and level.",
+    "eyebrow": "Give Your Child the Gift of the Quran",
+    "heading": "In 6 months, your child will recite Al-Fatiha perfectly.",
+    "sub": "1,200+ families across Europe already made this choice. Two free trial lessons — no card, no commitment. Cancel anytime.",
+    "promise": "🕌 Connected to a 1,400-year unbroken chain of Quran transmission",
     "stats": [
-      "30+ Countries",
+      "40+ Countries",
       "4.9★ Rating",
-      "Al-Azhar Certified",
-      "24/7 Available"
+      "Ijazah Certified",
+      "2 Free Lessons"
     ],
-    "cta": "Book Your Free Trial →"
+    "cta": "Start Free — No Card Needed →"
   },
   "stats": {
     "labels": [
-      "Expert Tutors",
+      "Al-Azhar Certified Tutors",
       "Average Rating",
-      "Always Available",
-      "Languages"
+      "Lessons Delivered",
+      "Countries Worldwide"
     ]
   },
   "blog": {
@@ -557,7 +562,8 @@
       "createOne": "Create one",
       "forgot": "Forgot your password?",
       "back": "← Back to website",
-      "networkError": "Network error — please check your connection and try again."
+      "networkError": "Network error — please check your connection and try again.",
+      "errorFallback": "Login failed. Please try again."
     },
     "register": {
       "title": "Create your account",
@@ -571,7 +577,8 @@
       "signIn": "Sign in",
       "back": "← Back to website",
       "gdprConsent": "I agree to the <a href=\"/privacy\" style=\"color:var(--green)\">Privacy Policy</a> and consent to Al-Rahma Academy processing my personal data to manage my account and lessons.",
-      "gdprRequired": "Please accept the privacy policy to continue."
+      "gdprRequired": "Please accept the privacy policy to continue.",
+      "errorFallback": "Registration failed. Please try again."
     },
     "profile": {
       "myAccount": "My Account",
@@ -649,7 +656,8 @@
       "btn": "Send reset link",
       "busy": "Sending…",
       "success": "Check your inbox — we sent a reset link!",
-      "back": "← Back to login"
+      "back": "← Back to login",
+      "errorFallback": "Could not send reset email. Please try again."
     },
     "resetPwd": {
       "title": "Set a new password",
@@ -750,11 +758,20 @@
     },
     "success": {
       "icon": "🎉",
-      "title": "Enrollment Received!",
-      "thankYouPre": "Thank you, ",
-      "thankYouPost": ". We'll be in touch within 24 hours to confirm your schedule.",
-      "emailNote": "Check your email for a confirmation message.",
-      "backHome": "Back to Home"
+      "title": "Welcome to Al-Rahma Academy!",
+      "blessing": "بارك الله فيك",
+      "blessingSub": "May Allah bless your learning journey",
+      "thankYouPre": "Your enrollment has been received, ",
+      "thankYouPost": ". Our team will contact you within 24 hours to confirm your schedule.",
+      "emailNote": "A confirmation has been sent to your email.",
+      "backHome": "Back to Home",
+      "goToDashboard": "Go to Dashboard",
+      "nextTitle": "What happens next",
+      "nextSteps": [
+        { "icon": "📧", "title": "Confirmation email", "text": "Check your inbox — we'll confirm your enrollment details within a few hours." },
+        { "icon": "👨‍🏫", "title": "Meet your tutor", "text": "We'll assign a certified tutor who matches your goals and schedule preferences." },
+        { "icon": "🎓", "title": "First lesson", "text": "Your first live session will be scheduled within 2–3 days. Your journey begins." }
+      ]
     },
     "nav": {
       "back": "← Back",
@@ -846,7 +863,11 @@
     "forStudent": "for",
     "messages": "Messages",
     "planLabel": "Plan:",
-    "quranReader": "Quran Reader"
+    "quranReader": "Quran Reader",
+    "greetingNight": "Good night",
+    "greetingMorning": "Good morning",
+    "greetingAfternoon": "Good afternoon",
+    "greetingEvening": "Good evening"
   },
   "billing": {
     "bar": "Al-Rahma · Billing",

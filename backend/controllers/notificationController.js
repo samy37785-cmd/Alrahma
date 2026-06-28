@@ -1,10 +1,9 @@
-import { asyncHandler } from '../middleware/asyncHandler.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
+import { parsePagination } from '../utils/pagination.js';
 import Notification from '../models/Notification.js';
 
 export const getMyNotifications = asyncHandler(async (req, res) => {
-  const page  = Math.max(1, parseInt(req.query.page) || 1);
-  const limit = Math.min(50, parseInt(req.query.limit) || 20);
-  const skip  = (page - 1) * limit;
+  const { page, limit, skip } = parsePagination(req.query, { defaultLimit: 20, maxLimit: 50 });
 
   const filter = { recipient: req.user._id };
   if (req.query.unread === 'true') filter.read = false;

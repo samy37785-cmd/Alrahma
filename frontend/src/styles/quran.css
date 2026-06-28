@@ -1,10 +1,6 @@
 ﻿/* ===== Quran reader page ===== */
+/* .quran__bar rules live in styles/layout/header.css (global cascade) */
 .quran { background: var(--cream); min-height: 100vh; }
-.quran__bar { background: var(--green-deep); padding: 14px 0; position: sticky; top: 0; z-index: 20; }
-.quran__bar-inner { display: flex; justify-content: space-between; align-items: center; }
-.quran__bar .brand__text strong { color: #fff; }
-.quran__bar .brand__text small { color: #9fc0b3; }
-.quran__bar .btn--ghost { color: #fff; }
 
 .quran__layout { display: grid; grid-template-columns: 320px 1fr; gap: 24px; padding: 24px 0 60px; }
 

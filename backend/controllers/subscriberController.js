@@ -1,5 +1,5 @@
-import Subscriber from '../models/Subscriber.js';
-import { asyncHandler } from '../middleware/asyncHandler.js';
+﻿import Subscriber from '../models/Subscriber.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
 
 // @route  POST /api/newsletter
 // @access Public

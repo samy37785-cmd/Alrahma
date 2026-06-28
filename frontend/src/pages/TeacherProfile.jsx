@@ -154,6 +154,52 @@ export default function TeacherProfile() {
                   </li>
                 ))}
               </ul>
+
+              {/* Verification proof section */}
+              <div className="tp__proof">
+                <div className="tp__proof-header">
+                  <span className="tp__proof-icon">🔍</span>
+                  <strong>Verified Credentials</strong>
+                </div>
+                <div className="tp__proof-badges">
+                  <div className="tp__proof-badge tp__proof-badge--azhar">
+                    <span className="tp__proof-badge-seal">الأزهر</span>
+                    <div>
+                      <strong>Al-Azhar University</strong>
+                      <span>Cairo, Egypt — verified graduate</span>
+                    </div>
+                    <span className="tp__proof-check" aria-label="Verified">✓</span>
+                  </div>
+                  <div className="tp__proof-badge">
+                    <span className="tp__proof-badge-icon">📜</span>
+                    <div>
+                      <strong>Ijazah Certificate</strong>
+                      <span>Continuous sanad to the Prophet ﷺ — on file with academy</span>
+                    </div>
+                    <span className="tp__proof-check" aria-label="Verified">✓</span>
+                  </div>
+                  <div className="tp__proof-badge">
+                    <span className="tp__proof-badge-icon">🆔</span>
+                    <div>
+                      <strong>Identity Verified</strong>
+                      <span>Government ID verified by Al-Rahma Academy</span>
+                    </div>
+                    <span className="tp__proof-check" aria-label="Verified">✓</span>
+                  </div>
+                  <div className="tp__proof-badge">
+                    <span className="tp__proof-badge-icon">🧒</span>
+                    <div>
+                      <strong>Child Safety Cleared</strong>
+                      <span>Background check completed — safe to teach minors</span>
+                    </div>
+                    <span className="tp__proof-check" aria-label="Verified">✓</span>
+                  </div>
+                </div>
+                <p className="tp__proof-note">
+                  Copies of all certificates are held securely by Al-Rahma Academy.
+                  Parents may request verification by contacting support.
+                </p>
+              </div>
             </div>
 
             <div className="tp__section">

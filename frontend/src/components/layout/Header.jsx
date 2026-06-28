@@ -1,22 +1,40 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import Brand from "./Brand";
 import { useAuth } from "../../context/AuthContext";
 import { useLang } from "../../context/LangContext";
 import { useTheme } from "../../context/ThemeContext";
 import LangSwitcher from "../ui/LangSwitcher";
+import Avatar from "../ui/Avatar";
+import {
+  BookOpenIcon, StarIcon, ScrollIcon, MosqueIcon, AlphabetIcon,
+  BeadsIcon, LibraryIcon, CompassIcon, CalendarIcon, HandIcon, VerseIcon,
+  EditIcon, MessageIcon, AboutIcon, TeacherIcon, LockIcon,
+  HomeIcon, CardIcon, SettingsIcon, ShieldIcon, LogoutIcon,
+  UsersIcon, MoonIcon, SunIconOutline, ChevronDownIcon, BellIcon,
+} from "../ui/Icons";
+import { getUnreadCount } from "../../api/messageApi";
 
 function useDropdown() {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   useEffect(() => {
     if (!open) return;
-    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    const onMouse = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    const onKey   = (e) => { if (e.key === "Escape") setOpen(false); };
+    document.addEventListener("mousedown", onMouse);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onMouse);
+      document.removeEventListener("keydown", onKey);
+    };
   }, [open]);
   return { open, setOpen, ref };
 }
+
+/* Icon size used consistently throughout the nav */
+const ICON_SIZE = 15;
 
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -33,83 +51,102 @@ export default function Header() {
   const academy   = useDropdown();
   const userMenu  = useDropdown();
 
-  const closeAll = () => {
+  const { data: unreadData } = useQuery({
+    queryKey: ["messages", "unread"],
+    queryFn: getUnreadCount,
+    enabled: Boolean(user),
+    refetchInterval: 30000,
+    staleTime: 15000,
+  });
+  const unreadCount = unreadData?.count ?? 0;
+
+  const closeAll = useCallback(() => {
     setMobileOpen(false);
     [courses, tools, resources, academy, userMenu].forEach((d) => d.setOpen(false));
-  };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const isActive = (path) => location.pathname === path || location.pathname.startsWith(path + "/");
   const handleLogout = () => { closeAll(); logout(); navigate("/"); };
 
   const COURSES_ITEMS = [
-    { to: "/courses/quran",           label: n.quranTajweed,   icon: "📖" },
-    { to: "/courses/quran",           label: n.hifzMem,        icon: "🧠" },
-    { to: "/courses/ijazah",          label: n.quranIjazah,    icon: "📜" },
-    { to: "/courses/islamic-studies", label: n.islamicStudies, icon: "🕌" },
-    { to: "/courses/arabic",          label: n.arabicAlphabet, icon: "🔤" },
+    { to: "/courses/quran",           label: n.quranTajweed,   Icon: BookOpenIcon },
+    { to: "/courses/quran",           label: n.hifzMem,        Icon: StarIcon },
+    { to: "/courses/ijazah",          label: n.quranIjazah,    Icon: ScrollIcon },
+    { to: "/courses/islamic-studies", label: n.islamicStudies, Icon: MosqueIcon },
+    { to: "/courses/arabic",          label: n.arabicAlphabet, Icon: AlphabetIcon },
   ];
   const TOOLS_ITEMS = [
-    { to: "/tools/quran-reader",      label: n.quranReader,     icon: "📖" },
-    { to: "/tools/adhkar",            label: n.adhkar,          icon: "📿" },
-    { to: "/tools/hadith",            label: n.hadith,          icon: "📚" },
-    { to: "/tools/prayer-times",      label: n.prayerTimes,     icon: "🕌" },
-    { to: "/tools/qibla",             label: n.qibla,           icon: "🧭" },
-    { to: "/tools/islamic-calendar",  label: n.islamicCalendar, icon: "📅" },
-    { to: "/tools/verse-of-the-day",  label: n.verseOfDay,      icon: "🌟" },
-    { to: "/tools/tasbeeh",           label: n.tasbeehCounter,  icon: "✋" },
-    { to: "/tools/arabic-alphabet",   label: n.arabicAlphabet,  icon: "🔤" },
+    { to: "/tools/quran-reader",      label: n.quranReader,     Icon: BookOpenIcon },
+    { to: "/tools/adhkar",            label: n.adhkar,          Icon: BeadsIcon },
+    { to: "/tools/hadith",            label: n.hadith,          Icon: LibraryIcon },
+    { to: "/tools/prayer-times",      label: n.prayerTimes,     Icon: MosqueIcon },
+    { to: "/tools/qibla",             label: n.qibla,           Icon: CompassIcon },
+    { to: "/tools/islamic-calendar",  label: n.islamicCalendar, Icon: CalendarIcon },
+    { to: "/tools/verse-of-the-day",  label: n.verseOfDay,      Icon: VerseIcon },
+    { to: "/tools/tasbeeh",           label: n.tasbeehCounter,  Icon: HandIcon },
+    { to: "/tools/arabic-alphabet",   label: n.arabicAlphabet,  Icon: AlphabetIcon },
   ];
   const RESOURCES_ITEMS = [
-    { to: "/resources/blog", label: n.blog, icon: "✍️" },
-    { to: "/resources/faq",  label: n.faq,  icon: "❓" },
+    { to: "/resources/blog", label: n.blog, Icon: EditIcon },
+    { to: "/resources/faq",  label: n.faq,  Icon: MessageIcon },
   ];
   const ACADEMY_ITEMS = [
-    { to: "/academy/about",    label: n.about,    icon: "🌿" },
-    { to: "/academy/teachers", label: n.teachers, icon: "👨‍🏫" },
-    { to: "/academy/privacy",  label: n.privacy,  icon: "🔒" },
+    { to: "/academy/about",    label: n.about,    Icon: AboutIcon },
+    { to: "/academy/teachers", label: n.teachers, Icon: TeacherIcon },
+    { to: "/academy/privacy",  label: n.privacy,  Icon: LockIcon },
   ];
 
   function NavDropdown({ state, label, items, hubTo }) {
     return (
-      <div className="nav__dropdown" ref={state.ref}>
+      <div className={`nav__dropdown${state.open ? " nav__dropdown--expanded" : ""}`} ref={state.ref}>
         <button
           className={`nav__dropdown-trigger${state.open ? " nav__dropdown-trigger--open" : ""}${isActive(hubTo) ? " nav__active" : ""}`}
           onClick={() => state.setOpen((v) => !v)}
           aria-expanded={state.open}
+          aria-haspopup="true"
         >
           {label}
-          <svg className="nav__dropdown-chevron" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-            <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
+          <ChevronDownIcon
+            size={11}
+            className={`nav__dropdown-chevron${state.open ? " nav__dropdown-chevron--open" : ""}`}
+          />
         </button>
         {state.open && (
-          <ul className="nav__dropdown-menu nav__dropdown-menu--mega">
+          <ul className="nav__dropdown-menu nav__dropdown-menu--mega" role="menu">
             {items.map((item) => (
-              <li key={item.to + item.label}>
+              <li key={item.to + item.label} role="none">
                 <Link
                   to={item.to}
                   className={isActive(item.to) ? "nav__dropdown-item nav__dropdown-item--active" : "nav__dropdown-item"}
                   onClick={closeAll}
+                  role="menuitem"
                 >
-                  <span>{item.icon}</span> {item.label}
+                  <span className="nav__dropdown-item-icon" aria-hidden="true">
+                    <item.Icon size={ICON_SIZE} />
+                  </span>
+                  {item.label}
                 </Link>
               </li>
             ))}
-            <li className="nav__megamenu-footer">
-              <Link to={hubTo} onClick={closeAll}>{n.viewAll} {label} →</Link>
+            <li className="nav__megamenu-footer" role="none">
+              <Link to={hubTo} onClick={closeAll} role="menuitem">{n.viewAll} {label} →</Link>
             </li>
           </ul>
         )}
+        {/* Mobile: always-visible accordion */}
         <ul className="nav__dropdown-mobile">
           {items.map((item) => (
             <li key={item.to + item.label}>
               <Link to={item.to} className="nav__dropdown-item" onClick={closeAll}>
-                <span>{item.icon}</span> {item.label}
+                <span className="nav__dropdown-item-icon" aria-hidden="true">
+                  <item.Icon size={ICON_SIZE} />
+                </span>
+                {item.label}
               </Link>
             </li>
           ))}
           <li>
-            <Link to={hubTo} className="nav__dropdown-item" onClick={closeAll} style={{ fontWeight: 700, color: "var(--green-deep)" }}>
+            <Link to={hubTo} className="nav__dropdown-item" onClick={closeAll} style={{ fontWeight: 700, color: "var(--text-brand-strong)" }}>
               {n.allLabel} {label} →
             </Link>
           </li>
@@ -122,7 +159,7 @@ export default function Header() {
     <header className="header" id="top">
       <div className="container header__inner">
         <Brand />
-        <nav className={`nav${mobileOpen ? " open" : ""}`} id="nav">
+        <nav className={`nav${mobileOpen ? " open" : ""}`} id="nav" aria-label="Main navigation">
           <NavDropdown state={courses}   label={n.courses}   items={COURSES_ITEMS}   hubTo="/courses" />
           <NavDropdown state={tools}     label={n.tools}     items={TOOLS_ITEMS}     hubTo="/tools" />
           <NavDropdown state={resources} label={n.resources} items={RESOURCES_ITEMS} hubTo="/resources" />
@@ -131,38 +168,112 @@ export default function Header() {
         </nav>
 
         <div className="header__right">
-          <button className="nav__theme-toggle" onClick={toggleDark}
-            aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}>
-            {dark ? "☀️" : "🌙"}
+          {/* Notification bell */}
+          {user && (
+            <Link
+              to="/messages"
+              className="nav__bell"
+              aria-label={unreadCount > 0 ? `${unreadCount} unread messages` : "Messages"}
+              onClick={closeAll}
+            >
+              <BellIcon size={18} />
+              {unreadCount > 0 && (
+                <span className="nav__bell-badge" aria-hidden="true">
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
+              )}
+            </Link>
+          )}
+
+          {/* Dark mode toggle */}
+          <button
+            className="nav__theme-toggle btn btn--icon btn--ghost btn--sm"
+            onClick={toggleDark}
+            aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
+            title={dark ? "Light mode" : "Dark mode"}
+          >
+            {dark
+              ? <SunIconOutline size={18} />
+              : <MoonIcon size={18} />
+            }
           </button>
+
           <LangSwitcher />
 
           {isParent && (
-            <Link to="/parent" className="header__role-btn" onClick={closeAll}>
-              👨‍👩‍👧 <span>{n.myChildren}</span>
+            <Link to="/parent" className="header__role-btn btn btn--outline btn--sm" onClick={closeAll}>
+              <UsersIcon size={15} />
+              <span>{n.myChildren}</span>
             </Link>
           )}
 
           {user ? (
             <div className="nav__dropdown nav__dropdown--user" ref={userMenu.ref}>
-              <button className={`nav__user-btn${userMenu.open ? " nav__user-btn--open" : ""}`}
-                onClick={() => userMenu.setOpen((v) => !v)} aria-expanded={userMenu.open}>
-                <span className="nav__user-avatar">{user.name[0].toUpperCase()}</span>
+              <button
+                className={`nav__user-btn${userMenu.open ? " nav__user-btn--open" : ""}`}
+                onClick={() => userMenu.setOpen((v) => !v)}
+                aria-expanded={userMenu.open}
+                aria-haspopup="true"
+                aria-label={`Account menu for ${user.name.split(" ")[0]}`}
+              >
+                <Avatar name={user.name} size="xs" />
                 <span className="nav__user-name">{user.name.split(" ")[0]}</span>
-                <svg className="nav__dropdown-chevron" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-                  <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
+                <ChevronDownIcon
+                  size={11}
+                  className={`nav__dropdown-chevron${userMenu.open ? " nav__dropdown-chevron--open" : ""}`}
+                />
               </button>
               {userMenu.open && (
-                <ul className="nav__dropdown-menu nav__dropdown-menu--right">
-                  <li><Link to="/dashboard" className="nav__dropdown-item" onClick={closeAll}>🏠 {n.dashboard}</Link></li>
-                  <li><Link to="/billing"   className="nav__dropdown-item" onClick={closeAll}>💳 {n.invoices}</Link></li>
-                  <li><Link to="/profile"   className="nav__dropdown-item" onClick={closeAll}>⚙️ {n.profile}</Link></li>
-                  {isTeacher && <li><Link to="/teacher" className="nav__dropdown-item" onClick={closeAll}>👨‍🏫 {n.teacher}</Link></li>}
-                  {isParent  && <li><Link to="/parent"  className="nav__dropdown-item" onClick={closeAll}>👨‍👩‍👧 {n.myChildren}</Link></li>}
-                  {isAdmin   && <li><Link to="/admin"   className="nav__dropdown-item" onClick={closeAll}>🛡 {n.dashboard}</Link></li>}
-                  <li className="nav__dropdown-divider" />
-                  <li><button className="nav__dropdown-item nav__dropdown-item--danger" onClick={handleLogout}>↩ {n.logout}</button></li>
+                <ul className="nav__dropdown-menu nav__dropdown-menu--right" role="menu">
+                  <li role="none">
+                    <Link to="/dashboard" className="nav__dropdown-item" onClick={closeAll} role="menuitem">
+                      <span className="nav__dropdown-item-icon" aria-hidden="true"><HomeIcon size={ICON_SIZE} /></span>
+                      {n.dashboard}
+                    </Link>
+                  </li>
+                  <li role="none">
+                    <Link to="/billing" className="nav__dropdown-item" onClick={closeAll} role="menuitem">
+                      <span className="nav__dropdown-item-icon" aria-hidden="true"><CardIcon size={ICON_SIZE} /></span>
+                      {n.invoices}
+                    </Link>
+                  </li>
+                  <li role="none">
+                    <Link to="/profile" className="nav__dropdown-item" onClick={closeAll} role="menuitem">
+                      <span className="nav__dropdown-item-icon" aria-hidden="true"><SettingsIcon size={ICON_SIZE} /></span>
+                      {n.profile}
+                    </Link>
+                  </li>
+                  {isTeacher && (
+                    <li role="none">
+                      <Link to="/teacher" className="nav__dropdown-item" onClick={closeAll} role="menuitem">
+                        <span className="nav__dropdown-item-icon" aria-hidden="true"><TeacherIcon size={ICON_SIZE} /></span>
+                        {n.teacher}
+                      </Link>
+                    </li>
+                  )}
+                  {isParent && (
+                    <li role="none">
+                      <Link to="/parent" className="nav__dropdown-item" onClick={closeAll} role="menuitem">
+                        <span className="nav__dropdown-item-icon" aria-hidden="true"><UsersIcon size={ICON_SIZE} /></span>
+                        {n.myChildren}
+                      </Link>
+                    </li>
+                  )}
+                  {isAdmin && (
+                    <li role="none">
+                      <Link to="/admin" className="nav__dropdown-item" onClick={closeAll} role="menuitem">
+                        <span className="nav__dropdown-item-icon" aria-hidden="true"><ShieldIcon size={ICON_SIZE} /></span>
+                        {n.dashboard}
+                      </Link>
+                    </li>
+                  )}
+                  <li className="nav__dropdown-divider" role="separator" />
+                  <li role="none">
+                    <button className="nav__dropdown-item nav__dropdown-item--danger" onClick={handleLogout} role="menuitem">
+                      <span className="nav__dropdown-item-icon" aria-hidden="true"><LogoutIcon size={ICON_SIZE} /></span>
+                      {n.logout}
+                    </button>
+                  </li>
                 </ul>
               )}
             </div>
@@ -170,8 +281,13 @@ export default function Header() {
             <Link to="/login" className="btn btn--ghost btn--sm">{n.login}</Link>
           )}
 
-          <button className="nav-toggle" aria-label={n.courses} aria-expanded={mobileOpen}
-            onClick={() => setMobileOpen((v) => !v)}>
+          <button
+            className="nav-toggle"
+            aria-label={mobileOpen ? "Close navigation menu" : "Open navigation menu"}
+            aria-expanded={mobileOpen}
+            aria-controls="nav"
+            onClick={() => setMobileOpen((v) => !v)}
+          >
             <span className={mobileOpen ? "nav-toggle__x" : ""} />
             <span className={mobileOpen ? "nav-toggle__x nav-toggle__x--mid" : ""} />
             <span className={mobileOpen ? "nav-toggle__x" : ""} />

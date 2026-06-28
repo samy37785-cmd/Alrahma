@@ -32,4 +32,15 @@ const paymentSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// ── Query indexes ─────────────────────────────────────────────────────────────
+// gatewayOrderId is the primary lookup key (webhook reconciliation) — already indexed above
+// User payment history
+paymentSchema.index({ userId: 1 }, { sparse: true });
+// Admin: filter by status + sort
+paymentSchema.index({ status: 1, createdAt: -1 });
+// Stripe renewal webhook: find payment by subscription id
+paymentSchema.index({ stripeSubscriptionId: 1 }, { sparse: true });
+// Stripe customer lookup (renewal/cancellation webhooks)
+paymentSchema.index({ stripeCustomerId: 1 }, { sparse: true });
+
 export default mongoose.model('Payment', paymentSchema);

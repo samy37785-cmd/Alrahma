@@ -1,6 +1,6 @@
-import Message from '../models/Message.js';
+﻿import Message from '../models/Message.js';
 import User from '../models/User.js';
-import { asyncHandler } from '../middleware/asyncHandler.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
 
 // Returns true if `me` is allowed to message `otherId`. The only permitted
 // channel is between a student and their assigned teacher (either direction).

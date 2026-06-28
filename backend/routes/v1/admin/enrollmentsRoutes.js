@@ -1,8 +1,8 @@
-import { Router } from 'express';
+﻿import { Router } from 'express';
 import Enrollment from '../../../models/Enrollment.js';
 import { createCRUDController } from '../../../controllers/crudController.js';
 import { requirePermissions } from '../../../middleware/rbac.js';
-import { asyncHandler } from '../../../middleware/asyncHandler.js';
+import { asyncHandler } from '../../../utils/asyncHandler.js';
 
 const router = Router();
 

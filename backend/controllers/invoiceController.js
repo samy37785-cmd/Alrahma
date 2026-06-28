@@ -1,14 +1,22 @@
-import Invoice from '../models/Invoice.js';
-import { asyncHandler } from '../middleware/asyncHandler.js';
+﻿import Invoice from '../models/Invoice.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
+import { parsePagination, sendPaginated } from '../utils/pagination.js';
 
-// @desc  Admin: get ALL invoices across all users
-// @route GET /api/invoices/admin
+// @desc  Admin: get invoices across all users (paginated)
+// @route GET /api/invoices/admin?page=1&limit=50
 // @access Admin
 export const getAdminInvoices = asyncHandler(async (req, res) => {
-  const invoices = await Invoice.find()
-    .populate('user', 'name email')
-    .sort({ createdAt: -1 });
-  res.json(invoices);
+  const { page, limit, skip } = parsePagination(req.query, { defaultLimit: 50, maxLimit: 200 });
+  const [data, total] = await Promise.all([
+    Invoice.find()
+      .populate('user', 'name email')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean(),
+    Invoice.countDocuments(),
+  ]);
+  return sendPaginated(res, { data, total, page, limit });
 });
 
 // @desc  Get all invoices for the logged-in user
@@ -20,7 +28,9 @@ export const getMyInvoices = asyncHandler(async (req, res) => {
       { user: req.user._id },
       { customerEmail: req.user.email },
     ],
-  }).sort({ createdAt: -1 });
+  })
+    .sort({ createdAt: -1 })
+    .lean();
 
   res.json(invoices);
 });
@@ -32,7 +42,7 @@ export const getInvoice = asyncHandler(async (req, res) => {
   const invoice = await Invoice.findOne({
     _id: req.params.id,
     $or: [{ user: req.user._id }, { customerEmail: req.user.email }],
-  });
+  }).lean();
 
   if (!invoice) {
     res.status(404);

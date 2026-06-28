@@ -5,8 +5,8 @@ import mongoose from 'mongoose';
 // by the resource URL (effectively a unique identifier per lesson item).
 const courseProgressSchema = new mongoose.Schema(
   {
-    user:   { type: mongoose.Schema.Types.ObjectId, ref: 'User',   required: true, index: true },
-    course: { type: mongoose.Schema.Types.ObjectId, ref: 'Course', required: true, index: true },
+    user:   { type: mongoose.Schema.Types.ObjectId, ref: 'User',   required: true },
+    course: { type: mongoose.Schema.Types.ObjectId, ref: 'Course', required: true },
     completed: { type: [String], default: [] }, // resource URLs marked done
     lastActivity: { type: Date, default: Date.now },
   },

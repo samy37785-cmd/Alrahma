@@ -1,4 +1,4 @@
-import { asyncHandler } from '../middleware/asyncHandler.js';
+﻿import { asyncHandler } from '../utils/asyncHandler.js';
 import Wishlist from '../models/Wishlist.js';
 
 export const getWishlist = asyncHandler(async (req, res) => {

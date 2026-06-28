@@ -1,5 +1,8 @@
-import { body, validationResult } from 'express-validator';
-import { asyncHandler } from '../middleware/asyncHandler.js';
+import { body } from 'express-validator';
+import { asyncHandler } from '../utils/asyncHandler.js';
+import { handleValidationErrors } from '../utils/validationHelper.js';
+import { parsePagination } from '../utils/pagination.js';
+import { contactAdminEmail } from '../config/emailTemplates.js';
 import ContactMessage from '../models/ContactMessage.js';
 import { sendMail } from '../config/mailer.js';
 import logger from '../config/logger.js';
@@ -13,10 +16,7 @@ export const contactValidation = [
 ];
 
 export const submitContact = asyncHandler(async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(422).json({ errors: errors.array() });
-  }
+  if (handleValidationErrors(req, res)) return;
 
   const { name, email, phone, subject, message } = req.body;
 
@@ -32,11 +32,7 @@ export const submitContact = asyncHandler(async (req, res) => {
       await sendMail({
         to: adminEmail,
         subject: `[Contact] ${subject}`,
-        html: `<p><strong>From:</strong> ${name} &lt;${email}&gt;</p>
-               ${phone ? `<p><strong>Phone:</strong> ${phone}</p>` : ''}
-               <p><strong>Subject:</strong> ${subject}</p>
-               <p><strong>Message:</strong></p>
-               <p>${message.replace(/\n/g, '<br>')}</p>`,
+        html: contactAdminEmail({ name, email, phone, subject, message }),
       });
     } catch (err) {
       logger.warn('Contact notification email failed', { error: err.message });
@@ -47,9 +43,7 @@ export const submitContact = asyncHandler(async (req, res) => {
 });
 
 export const getContacts = asyncHandler(async (req, res) => {
-  const page   = Math.max(1, parseInt(req.query.page) || 1);
-  const limit  = Math.min(50, parseInt(req.query.limit) || 20);
-  const skip   = (page - 1) * limit;
+  const { page, limit, skip } = parsePagination(req.query, { defaultLimit: 20, maxLimit: 50 });
   const status = req.query.status;
 
   const filter = status ? { status } : {};

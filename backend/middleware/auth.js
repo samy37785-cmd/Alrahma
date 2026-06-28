@@ -12,28 +12,41 @@ function getToken(req) {
   return null;
 }
 
-// Protects routes: requires a valid auth token (cookie or Bearer header).
-export async function protect(req, res, next) {
+// Shared auth core used by protect() and requireRole().
+// Verifies the JWT, loads the user from the DB, and checks tokenVersion.
+// On any failure it writes the 401 response and returns null so callers
+// can return immediately without touching `res` again.
+async function _loadUser(req, res) {
   const token = getToken(req);
-
   if (!token) {
-    return res.status(401).json({ message: 'Not authorized, no token' });
+    res.status(401).json({ message: 'Not authorized, no token' });
+    return null;
   }
-
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = await User.findById(decoded.id).select('-password');
-    if (!req.user) {
-      return res.status(401).json({ message: 'User no longer exists' });
+    const user = await User.findById(decoded.id).select('-password');
+    if (!user) {
+      res.status(401).json({ message: 'User no longer exists' });
+      return null;
     }
     // Reject tokens issued before a password change (tokenVersion mismatch).
-    if ((decoded.v ?? 0) !== (req.user.tokenVersion ?? 0)) {
-      return res.status(401).json({ message: 'Session expired — please log in again' });
+    if ((decoded.v ?? 0) !== (user.tokenVersion ?? 0)) {
+      res.status(401).json({ message: 'Session expired — please log in again' });
+      return null;
     }
-    next();
+    return user;
   } catch {
-    return res.status(401).json({ message: 'Not authorized, token failed' });
+    res.status(401).json({ message: 'Not authorized, token failed' });
+    return null;
   }
+}
+
+// Protects routes: requires a valid auth token (cookie or Bearer header).
+export async function protect(req, res, next) {
+  const user = await _loadUser(req, res);
+  if (!user) return;
+  req.user = user;
+  next();
 }
 
 // Restricts a route to admins only. Use after `protect`.
@@ -87,22 +100,12 @@ export async function softProtect(req, res, next) {
 // Usage: router.get('/admin-route', requireRole('admin'), handler)
 export function requireRole(...roles) {
   return async (req, res, next) => {
-    const token = getToken(req);
-    if (!token) return res.status(401).json({ message: 'Not authorized, no token' });
-    try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      const user = await User.findById(decoded.id).select('-password');
-      if (!user) return res.status(401).json({ message: 'User no longer exists' });
-      if ((decoded.v ?? 0) !== (user.tokenVersion ?? 0)) {
-        return res.status(401).json({ message: 'Session expired — please log in again' });
-      }
-      if (!roles.includes(user.role)) {
-        return res.status(403).json({ message: `Access restricted to: ${roles.join(', ')}` });
-      }
-      req.user = user;
-      next();
-    } catch {
-      return res.status(401).json({ message: 'Not authorized, token failed' });
+    const user = await _loadUser(req, res);
+    if (!user) return;
+    if (!roles.includes(user.role)) {
+      return res.status(403).json({ message: `Access restricted to: ${roles.join(', ')}` });
     }
+    req.user = user;
+    next();
   };
 }

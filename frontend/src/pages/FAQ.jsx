@@ -1,7 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import Brand from '../components/layout/Brand';
-import '../styles/quran.css';
+import PageBar from '../components/layout/PageBar';
 import useSEO from '../hooks/useSEO';
 import Breadcrumbs from '../components/ui/Breadcrumbs';
 import { useLang } from '../context/LangContext';
@@ -23,12 +21,7 @@ export default function FAQ() {
 
   return (
     <div className="faq-page">
-      <header className="quran__bar">
-        <div className="container quran__bar-inner">
-          <Brand />
-          <Link to="/" className="btn btn--ghost btn--sm">{pg.backToSite}</Link>
-        </div>
-      </header>
+      <PageBar to="/" label={pg.backToSite} />
 
       <Breadcrumbs items={[{ label: 'Resources', to: '/resources' }, { label: pg.heading }]} />
 

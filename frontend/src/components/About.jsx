@@ -53,6 +53,41 @@ export default function About() {
             );
           })}
         </div>
+
+        {/* ── Founder Story ── */}
+        <Reveal className="founder">
+          <div className="founder__avatar" aria-hidden="true">
+            <span>م س</span>
+          </div>
+          <div className="founder__content">
+            <p className="eyebrow">Our Story</p>
+            <h2 className="founder__title">Why We Built Al-Rahma Academy</h2>
+            <p className="founder__body">
+              I am an Egyptian educator who moved to Europe and watched my children struggle to
+              find a qualified Quran teacher — someone who could teach correctly, speak their
+              language, and understand their world. Every option I found was either too expensive,
+              too unreliable, or simply not qualified.
+            </p>
+            <p className="founder__body">
+              That frustration became Al-Rahma Academy. We started with a handful of hand-picked
+              Al-Azhar graduates and one clear rule: <strong>every tutor must be someone I would
+              trust to teach my own children.</strong>
+            </p>
+            <p className="founder__body">
+              Today, over 1,200 families across 40+ countries trust us with the most important
+              thing they own — the Quran education of their children. Every tutor holds a verified
+              Ijazah. Every lesson is one-to-one. Every family can change their tutor, pause their
+              subscription, or request a refund — without any friction.
+            </p>
+            <p className="founder__body">
+              We didn't build a platform. We built the academy we needed and couldn't find.
+            </p>
+            <div className="founder__sig">
+              <span className="founder__sig-name" dir="rtl">— Mahmoud Samy, Founder</span>
+              <span className="founder__sig-sub">Al-Rahma Academy</span>
+            </div>
+          </div>
+        </Reveal>
       </div>
     </section>
   );

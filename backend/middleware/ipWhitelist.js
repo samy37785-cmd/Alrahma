@@ -10,6 +10,10 @@
  *
  * If the env var is empty or not set, all IPs are allowed (permissive fallback
  * so development works out of the box without extra config).
+ *
+ * The whitelist is parsed once at module load, not on every request.
+ * Under serverless each cold start pays the parse cost once and every
+ * subsequent warm request reads from the cached array.
  */
 
 function ipv4ToInt(ip) {
@@ -39,12 +43,6 @@ function normalizeIp(ip) {
   return ip.startsWith('::ffff:') ? ip.slice(7) : ip; // strip IPv6-mapped IPv4 prefix
 }
 
-function parseWhitelist() {
-  const raw = process.env.ADMIN_IP_WHITELIST ?? '';
-  if (!raw.trim()) return null; // null = no restriction
-  return raw.split(',').map((s) => s.trim()).filter(Boolean);
-}
-
 function ipMatchesEntry(ip, entry) {
   if (entry.includes('/')) {
     // CIDR — only IPv4 implemented natively; ignore IPv6 CIDRs (allow if not matched)
@@ -56,14 +54,21 @@ function ipMatchesEntry(ip, entry) {
   return ip === entry;
 }
 
+// Parse once at module evaluation — env vars are immutable at runtime.
+// null = no whitelist configured (allow all).
+const _whitelist = (() => {
+  const raw = process.env.ADMIN_IP_WHITELIST ?? '';
+  if (!raw.trim()) return null;
+  return raw.split(',').map((s) => s.trim()).filter(Boolean);
+})();
+
 export function ipWhitelist(req, res, next) {
-  const list = parseWhitelist();
-  if (!list) return next(); // no whitelist configured — allow all
+  if (!_whitelist) return next(); // no whitelist configured — allow all
 
   const raw = req.ip || req.socket?.remoteAddress || '';
   const ip  = normalizeIp(raw);
 
-  const allowed = list.some((entry) => ipMatchesEntry(ip, entry) || ipMatchesEntry(raw, entry));
+  const allowed = _whitelist.some((entry) => ipMatchesEntry(ip, entry) || ipMatchesEntry(raw, entry));
   if (allowed) return next();
 
   return res.status(403).json({

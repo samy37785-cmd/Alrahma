@@ -1,9 +1,11 @@
 import { Router } from 'express';
 import {
-  register, login, logout, getMe, updateMe, listUsers, forgotPassword, resetPassword,
-  updateUserSubscription, listTeachers, adminCreateUser, updateUserRole,
-  assignTeacher, getLinkCode, setFamilyName,
+  register, login, logout, getMe, updateMe, forgotPassword, resetPassword, getLinkCode, googleAuth,
 } from '../controllers/authController.js';
+import {
+  listUsers, listTeachers, adminCreateUser, updateUserRole,
+  assignTeacher, setFamilyName, updateUserSubscription,
+} from '../controllers/userAdminController.js';
 import { protect, adminOnly } from '../middleware/auth.js';
 
 const router = Router();
@@ -15,6 +17,9 @@ router.get('/me', protect, getMe);
 router.put('/me', protect, updateMe);
 router.post('/forgot-password', forgotPassword);
 router.post('/reset-password', resetPassword);
+
+// Google One-Tap / Sign In with Google
+router.post('/google', googleAuth);
 
 // Student: code a parent uses to link to them.
 router.get('/link-code', protect, getLinkCode);

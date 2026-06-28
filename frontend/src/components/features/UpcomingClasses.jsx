@@ -1,31 +1,29 @@
-import { useEffect, useState } from 'react';
-import { getClasses } from '../../api/client';
+import { useQuery } from '@tanstack/react-query';
+import { getClasses } from '../../api/classApi';
 import { useLang } from '../../context/LangContext';
 
-// Renders a viewer's upcoming live classes. Times are formatted with the
-// browser's LOCAL timezone (toLocaleString with no timeZone arg), so each
-// student/parent sees the class in their own time — the server stores UTC.
-// `showStudent` adds the child's name (used in the parent portal).
+// Times formatted in the browser's LOCAL timezone so each student sees their
+// own wall-clock time. The server stores UTC.
 const fmt = (d) =>
   new Date(d).toLocaleString(undefined, {
     weekday: 'short', day: 'numeric', month: 'short',
     hour: '2-digit', minute: '2-digit',
   });
 
+const UPCOMING_KEY = ['classes', 'upcoming'];
+
 export default function UpcomingClasses({ showStudent = false, title }) {
   const { t } = useLang();
   const d = t.dashboard;
-  const [classes, setClasses] = useState([]);
-  const [loaded, setLoaded]   = useState(false);
 
-  useEffect(() => {
-    getClasses({ upcoming: 1 })
-      .then(setClasses)
-      .catch(() => {})
-      .finally(() => setLoaded(true));
-  }, []);
+  const { data: classes = [], isLoading } = useQuery({
+    queryKey: UPCOMING_KEY,
+    queryFn:  () => getClasses({ upcoming: 1 }),
+    staleTime: 1000 * 60 * 2, // 2 min — classes are time-sensitive
+    retry: false,
+  });
 
-  if (!loaded || classes.length === 0) return null; // hide the card when empty
+  if (isLoading || classes.length === 0) return null;
 
   return (
     <section className="admin__panel" style={{ marginBottom: '1.5rem' }}>

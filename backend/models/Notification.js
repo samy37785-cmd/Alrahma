@@ -23,7 +23,8 @@ const notificationSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: true,
-      index: true,
+      // No standalone index here — the compound index below covers all recipient
+      // lookups via its leftmost prefix, making a single-field index redundant.
     },
     type: {
       type: String,

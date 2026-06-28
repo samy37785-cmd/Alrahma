@@ -42,8 +42,9 @@
   },
   "hero": {
     "eyebrow": "Corán • Árabe • Estudios Islámicos",
-    "title": "Aprende el Corán en Línea",
-    "sub": "La mejor academia online de Corán y árabe para niños y adultos — clases individuales con profesores nativos cualificados, cuando tú quieras.",
+    "title": "Dale a Tu Hijo el Regalo del Corán",
+    "titleHighlight": "el Regalo del Corán",
+    "sub": "Profesores certificados por Al-Azhar enseñan a tu hijo de forma individual — con un conocimiento auténtico y una cadena que llega al Profeta ﷺ.",
     "cta1": "Reserva una Prueba Gratuita",
     "cta2": "📚 Ver Cursos",
     "cta3": "Ver Cursos",
@@ -88,19 +89,19 @@
   },
   "steps": {
     "eyebrow": "Cómo funciona",
-    "heading": "Empieza en 3 Sencillos Pasos",
+    "heading": "Tu Viaje hacia el Corán",
     "items": [
       {
-        "title": "Rellena el formulario de prueba gratuita",
-        "text": "Cuéntanos sobre el estudiante y el curso que te interesa."
+        "title": "Cuéntanos sobre tu hijo",
+        "text": "Un formulario de 2 minutos — edad, nivel, objetivos. Leemos cada palabra para encontrar al profesor ideal."
       },
       {
-        "title": "Programa una sesión de prueba",
-        "text": "Te asignaremos un profesor y un horario que se adapte a ti."
+        "title": "Conoce a tu profesor",
+        "text": "Seleccionamos un profesor certificado adecuado para la edad y los objetivos de tu hijo. Sesión gratuita de 30 minutos — sin tarjeta, sin compromiso."
       },
       {
-        "title": "Descarga la aplicación de reuniones",
-        "text": "Únete a tus clases fácilmente por Zoom o Skype, desde cualquier lugar."
+        "title": "Comienza un viaje sin fin",
+        "text": "La primera lección real. Tu hijo recita. La cadena del conocimiento que llega al Profeta ﷺ pasa a través de él."
       }
     ]
   },
@@ -217,8 +218,8 @@
     "getStarted": "Empezar",
     "mostPopular": "Más popular",
     "sub": "Planes mensuales asequibles por estudiante. Cancela en cualquier momento.",
-    "banner": "🎉 Tiempo Limitado",
-    "bannerText": "Ahorra un 25% en todos los planes — descuento ya aplicado abajo",
+    "banner": "🎓 Tarifa Fundadores",
+    "bannerText": "Tarifa fundadores bloqueada de por vida — los precios suben a medida que crecemos",
     "youSave": "Ahorras",
     "perHour": "/ hora equivalente",
     "cancelNote": "Cancela cuando quieras — sin contratos"
@@ -227,7 +228,7 @@
     "eyebrow": "Testimonios",
     "heading": "Lo Que Dicen Nuestros Estudiantes",
     "sub": "Experiencias reales de estudiantes reales — con sus propias palabras.",
-    "happyStudents": "estudiantes felices en todo el mundo",
+    "happyStudents": "lecciones impartidas en todo el mundo",
     "joinToday": "Únete a ellos hoy →"
   },
   "trial": {
@@ -501,8 +502,8 @@
     "labels": [
       "Profesores Expertos",
       "Valoración Media",
-      "Siempre Disponible",
-      "Idiomas"
+      "Lecciones Impartidas",
+      "Países Atendidos"
     ]
   },
   "blog": {
@@ -557,7 +558,8 @@
       "createOne": "Crea una",
       "forgot": "¿Olvidaste tu contraseña?",
       "back": "← Volver al sitio",
-      "networkError": "Error de red — comprueba tu conexión e inténtalo de nuevo."
+      "networkError": "Error de red — comprueba tu conexión e inténtalo de nuevo.",
+      "errorFallback": "Error al iniciar sesión. Por favor, inténtalo de nuevo."
     },
     "register": {
       "title": "Crea tu cuenta",
@@ -571,7 +573,8 @@
       "signIn": "Iniciar sesión",
       "back": "← Volver al sitio",
       "gdprConsent": "Acepto la <a href=\"/privacy\" style=\"color:var(--green)\">Política de Privacidad</a> y consiento que Al-Rahma Academy procese mis datos personales para gestionar mi cuenta y las clases.",
-      "gdprRequired": "Por favor acepta la política de privacidad para continuar."
+      "gdprRequired": "Por favor acepta la política de privacidad para continuar.",
+      "errorFallback": "Error al registrarse. Por favor, inténtalo de nuevo."
     },
     "profile": {
       "myAccount": "Mi Cuenta",
@@ -649,7 +652,8 @@
       "btn": "Enviar enlace",
       "busy": "Enviando…",
       "success": "¡Revisa tu bandeja de entrada — enviamos un enlace de restablecimiento!",
-      "back": "← Volver al inicio de sesión"
+      "back": "← Volver al inicio de sesión",
+      "errorFallback": "No se pudo enviar el email. Por favor, inténtalo de nuevo."
     },
     "resetPwd": {
       "title": "Establece una nueva contraseña",
@@ -750,11 +754,20 @@
     },
     "success": {
       "icon": "🎉",
-      "title": "¡Inscripción Recibida!",
-      "thankYouPre": "Gracias, ",
-      "thankYouPost": ". Nos pondremos en contacto en 24 horas para confirmar tu horario.",
-      "emailNote": "Revisa tu correo para un mensaje de confirmación.",
-      "backHome": "Volver al Inicio"
+      "title": "¡Bienvenido a la Academia Al-Rahma!",
+      "blessing": "بارك الله فيك",
+      "blessingSub": "Que Allah bendiga tu camino de aprendizaje",
+      "thankYouPre": "Tu inscripción ha sido recibida, ",
+      "thankYouPost": ". Nuestro equipo se pondrá en contacto contigo en 24 horas para confirmar tu horario.",
+      "emailNote": "Se ha enviado una confirmación a tu correo electrónico.",
+      "backHome": "Volver al Inicio",
+      "goToDashboard": "Ir al Panel",
+      "nextTitle": "¿Qué sucede a continuación?",
+      "nextSteps": [
+        { "icon": "📧", "title": "Email de confirmación", "text": "Revisa tu bandeja de entrada — confirmaremos los detalles de tu inscripción en pocas horas." },
+        { "icon": "👨‍🏫", "title": "Conoce a tu tutor", "text": "Asignaremos un tutor certificado que se ajuste a tus objetivos y preferencias de horario." },
+        { "icon": "🎓", "title": "Primera lección", "text": "Tu primera sesión en vivo se programará en 2–3 días. Tu viaje comienza." }
+      ]
     },
     "nav": {
       "back": "← Atrás",
@@ -846,7 +859,11 @@
     "forStudent": "para",
     "messages": "Mensajes",
     "planLabel": "Plan:",
-    "quranReader": "Lector del Corán"
+    "quranReader": "Lector del Corán",
+    "greetingNight": "Buenas noches",
+    "greetingMorning": "Buenos días",
+    "greetingAfternoon": "Buenas tardes",
+    "greetingEvening": "Buenas noches"
   },
   "billing": {
     "bar": "Al-Rahma · Facturación",

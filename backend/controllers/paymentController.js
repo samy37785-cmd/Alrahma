@@ -1,29 +1,11 @@
+﻿import mongoose from 'mongoose';
 import Payment from '../models/Payment.js';
-import Invoice from '../models/Invoice.js';
 import { getPlan } from '../config/plans.js';
-import { enrollUser } from '../config/enrollment.js';
+import { enrollUser } from '../services/subscriptionService.js';
+import { createInvoice } from '../services/invoiceService.js';
 import { siteOrigin } from '../config/site.js';
-import { asyncHandler } from '../middleware/asyncHandler.js';
-
-// Creates an Invoice from a confirmed Payment record.
-async function createInvoice(payment) {
-  const plan = getPlan(payment.plan);
-  const period = new Date(payment.createdAt || Date.now())
-    .toISOString().slice(0, 7); // "2025-06"
-  await Invoice.create({
-    user:           payment.userId,
-    customerEmail:  payment.customer?.email,
-    customerName:   payment.customer?.name,
-    plan:           payment.plan,
-    amount:         payment.amount,
-    originalAmount: plan?.originalAmount ?? payment.amount,
-    discountPct:    plan?.discountPct ?? 0,
-    currency:       payment.currency,
-    billingPeriod:  period,
-    status:         'paid',
-    payment:        payment._id,
-  });
-}
+import { asyncHandler } from '../utils/asyncHandler.js';
+import logger from '../config/logger.js';
 
 /*
  * Payment controller — PayPal for international subscribers, plus the shared
@@ -124,27 +106,74 @@ export const createPaypalOrder = asyncHandler(async (req, res) => {
     res.json({ type: 'redirect', url: approve, orderId: order.id });
 });
 
-// Idempotently finalise a PayPal order: mark the Payment paid and fulfil
-// (invoice + enrolment) EXACTLY ONCE, even if both the browser capture and the
-// webhook reach us. Safe to call multiple times for the same order.
+/**
+ * Idempotently finalises a PayPal order inside a single MongoDB transaction.
+ *
+ * All three mutations — marking the Payment paid, creating the Invoice, and
+ * activating the subscription — execute atomically. If any step throws, the
+ * session aborts and the database is left in a fully consistent state.
+ *
+ * Safe to call multiple times for the same order (idempotent: a payment that
+ * is already 'paid' exits before the transaction begins).
+ */
 async function finalizePaypalOrder(orderId, capture) {
-  const payment = await Payment.findOne({ gatewayOrderId: orderId });
-  if (!payment) return { status: capture?.status, fulfilled: false };
-  if (payment.status === 'paid') return { status: 'COMPLETED', fulfilled: false }; // already done
+  // Fast-path idempotency check outside the transaction to avoid overhead.
+  const existing = await Payment.findOne({ gatewayOrderId: orderId });
+  if (!existing) {
+    logger.warn('PayPal finalize: no payment record found', { orderId });
+    return { status: capture?.status, fulfilled: false };
+  }
+  if (existing.status === 'paid') {
+    logger.debug('PayPal finalize: already paid — idempotent skip', { orderId });
+    return { status: 'COMPLETED', fulfilled: false };
+  }
 
   const completed = capture?.status === 'COMPLETED';
-  payment.status       = completed ? 'paid' : 'failed';
-  payment.gatewayTxnId = capture?.purchase_units?.[0]?.payments?.captures?.[0]?.id;
-  payment.raw          = capture;
-  await payment.save();
 
-  if (completed) {
-    await createInvoice(payment).catch((err) =>
-      console.error('[paypal] createInvoice failed:', { orderId, err: err.message }));
-    await enrollUser(payment.userId, payment.plan).catch((err) =>
-      console.error('[paypal] enrollUser failed:', { orderId, userId: String(payment.userId), plan: payment.plan, err: err.message }));
+  const session = await mongoose.startSession();
+  try {
+    let result;
+    await session.withTransaction(async () => {
+      // Re-fetch inside the transaction for a consistent, locked snapshot.
+      const payment = await Payment.findOne({ gatewayOrderId: orderId }).session(session);
+      if (!payment || payment.status === 'paid') {
+        result = { status: capture?.status, fulfilled: false };
+        return;
+      }
+
+      payment.status       = completed ? 'paid' : 'failed';
+      payment.gatewayTxnId = capture?.purchase_units?.[0]?.payments?.captures?.[0]?.id;
+      payment.raw          = capture;
+      await payment.save({ session });
+
+      if (completed) {
+        await createInvoice({
+          userId:    payment.userId,
+          email:     payment.customer?.email,
+          name:      payment.customer?.name,
+          planName:  payment.plan,
+          paymentId: payment._id,
+          createdAt: payment.createdAt,
+          session,
+        });
+
+        await enrollUser(payment.userId, payment.plan, session);
+        logger.info('PayPal payment finalized', {
+          orderId,
+          paymentId: String(payment._id),
+          plan:      payment.plan,
+          userId:    String(payment.userId),
+        });
+      } else {
+        logger.warn('PayPal capture not completed', { orderId, captureStatus: capture?.status });
+      }
+
+      result = { status: capture?.status, fulfilled: completed };
+    });
+    return result;
+  } finally {
+    session.endSession();
   }
-  return { status: capture?.status, fulfilled: completed };
 }
 
 // @desc   Capture an approved PayPal order (called by the browser after approval)

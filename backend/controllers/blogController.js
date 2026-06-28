@@ -1,5 +1,7 @@
-import { body, validationResult } from 'express-validator';
-import { asyncHandler } from '../middleware/asyncHandler.js';
+﻿import { body } from 'express-validator';
+import { asyncHandler } from '../utils/asyncHandler.js';
+import { handleValidationErrors } from '../utils/validationHelper.js';
+import { parsePagination } from '../utils/pagination.js';
 import Blog from '../models/Blog.js';
 
 export const blogValidation = [
@@ -11,9 +13,7 @@ export const blogValidation = [
 ];
 
 export const listPosts = asyncHandler(async (req, res) => {
-  const page     = Math.max(1, parseInt(req.query.page) || 1);
-  const limit    = Math.min(20, parseInt(req.query.limit) || 9);
-  const skip     = (page - 1) * limit;
+  const { page, limit, skip } = parsePagination(req.query, { defaultLimit: 9, maxLimit: 20 });
   const { category, tag } = req.query;
 
   const filter = { published: true };
@@ -29,6 +29,9 @@ export const listPosts = asyncHandler(async (req, res) => {
     Blog.countDocuments(filter),
   ]);
 
+  // Blog listings change infrequently; cache for 5 min, serve stale for 60 s
+  // while revalidating in the background.
+  res.set('Cache-Control', 'public, max-age=300, stale-while-revalidate=60');
   res.json({ posts, total, page, pages: Math.ceil(total / limit) });
 });
 
@@ -44,9 +47,7 @@ export const getPost = asyncHandler(async (req, res) => {
 });
 
 export const createPost = asyncHandler(async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) return res.status(422).json({ errors: errors.array() });
-
+  if (handleValidationErrors(req, res)) return;
   const post = await Blog.create(req.body);
   res.status(201).json({ post });
 });

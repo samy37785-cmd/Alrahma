@@ -3,5 +3,4 @@ export * from './data/site';
 export * from './data/courses';
 export * from './data/home';
 export * from './data/about';
-export * from './data/billing';
 export * from './data/teachers';

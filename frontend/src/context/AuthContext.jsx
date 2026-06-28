@@ -60,6 +60,7 @@ export function AuthProvider({ children }) {
 
   const value = {
     user, login, register, logout, updateProfile,
+    setUser: persist,
     isAdmin:   user?.role === 'admin',
     isTeacher: user?.role === 'teacher',
     isParent:  user?.role === 'parent',

@@ -1,691 +1,563 @@
-/* ════════════════════════════════════════════════════════════════
-   SITE-WIDE DARK MODE  —  html.dark
-   Strategy: override CSS variables first (covers most components),
-   then patch specific hardcoded colours class by class.
-   ════════════════════════════════════════════════════════════════ */
+/* ════════════════════════════════════════════════════════════════════
+   AL-RAHMA ACADEMY — DARK MODE LEGACY SHIM
+   ════════════════════════════════════════════════════════════════════
+   Semantic tokens are now flipped in tokens.css (html.dark block).
+   This file only patches legacy components that use hardcoded colors
+   or old primitive tokens not yet migrated to semantic tokens.
+   New components should reference semantic tokens and need NO entries
+   here — they get dark mode automatically.
+   ════════════════════════════════════════════════════════════════════ */
 
-html.dark {
-  /* ── Core palette overrides ── */
-  --cream:       #0d1712;
-  --white:       #152010;
-  --surface:     #1a2820;
-  --ink:         #dceee5;
-  --muted:       #7aad95;
-  --line:        #253d2c;
-  --green-light: #162518;
-  --gold-light:  #1c1800;
-
-  /* ── Shadows ── */
-  --shadow:    0 4px 24px rgba(0, 0, 0, 0.4);
-  --shadow-md: 0 8px 32px rgba(0, 0, 0, 0.55);
-  --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.7);
-}
-
-/* ── Base ─────────────────────────────────────────────────────── */
+/* ── Global base ───────────────────────────────────────────────────── */
 html.dark body {
-  background: var(--cream);
-  color: var(--ink);
+  background: var(--bg-page);
+  color: var(--text-primary);
 }
 
-/* ── Header / Nav ─────────────────────────────────────────────── */
+/* ── Headings: --green-deep (#06372a) is near-invisible on dark bg ── */
+html.dark h1, html.dark h2, html.dark h3,
+html.dark h4, html.dark h5 { color: var(--text-primary); }
+html.dark h2 { color: var(--text-primary); }
+
+/* ── Header / Nav ──────────────────────────────────────────────────── */
 html.dark .header {
-  background: #0e1a11;
-  border-bottom-color: var(--line);
+  background: rgba(14, 26, 17, 0.97);
+  border-bottom-color: var(--border-default);
 }
 html.dark .nav a,
-html.dark .nav__dropdown-trigger {
-  color: var(--ink);
-}
+html.dark .nav__dropdown-trigger { color: var(--text-primary); }
 html.dark .nav a:hover,
-html.dark .nav__dropdown-trigger:hover {
-  color: var(--gold);
-}
+html.dark .nav__dropdown-trigger:hover { color: var(--color-accent); }
 html.dark .nav__dropdown-menu {
-  background: #162018;
-  border-color: var(--line);
-  box-shadow: var(--shadow-md);
+  background: var(--bg-surface-raised);
+  border-color: var(--border-default);
+  box-shadow: var(--shadow-lg);
 }
-html.dark .nav__dropdown-item {
-  color: var(--ink);
-}
+html.dark .nav__dropdown-item { color: var(--text-primary); }
 html.dark .nav__dropdown-item:hover {
-  background: #1e2e22;
-  color: var(--gold);
+  background: var(--bg-surface-hover);
+  color: var(--color-accent);
 }
 html.dark .nav__dropdown-item--danger:hover {
-  background: #2e1515;
-  color: #ff6b6b;
+  background: var(--color-danger-surface);
+  color: var(--p-danger-400);
 }
-html.dark .nav__user-avatar {
-  background: var(--green);
+html.dark .nav__user-avatar { background: var(--color-primary); }
+html.dark .nav__user-btn {
+  background: var(--bg-surface-raised);
+  border-color: var(--border-default);
+  color: var(--text-primary);
 }
+html.dark .nav__user-btn:hover { border-color: var(--border-brand); }
 html.dark .nav__theme-toggle {
-  background: #1e2e22;
-  border-color: var(--line);
+  background: var(--bg-surface-raised);
+  border-color: var(--border-default);
 }
-html.dark .nav__theme-toggle:hover {
-  background: #253d2c;
-}
+html.dark .nav__theme-toggle:hover { background: var(--bg-surface-hover); }
 
-/* ── Theme toggle button styles (light + dark) ─────────────────── */
-.nav__theme-toggle {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  border: 1px solid var(--line);
-  background: transparent;
-  cursor: pointer;
-  font-size: 1rem;
-  transition: background .2s, border-color .2s, transform .2s;
-  flex-shrink: 0;
-}
-.nav__theme-toggle:hover {
-  transform: rotate(15deg) scale(1.1);
-}
-
-/* ── Lang switcher ────────────────────────────────────────────── */
+/* ── Lang switcher ─────────────────────────────────────────────────── */
 html.dark .ls__trigger {
-  background: #1a2820;
-  border-color: var(--line);
-  color: var(--ink);
+  background: var(--bg-surface-raised);
+  border-color: var(--border-default);
+  color: var(--text-primary);
 }
 html.dark .ls__trigger:hover,
 html.dark .ls__trigger--open {
-  border-color: var(--green);
-  background: var(--green-light);
-  color: var(--green);
+  border-color: var(--border-brand);
+  background: var(--bg-surface-hover);
+  color: var(--text-brand);
 }
 html.dark .ls__menu {
-  background: #162018;
-  border-color: var(--line);
+  background: var(--bg-surface-raised);
+  border-color: var(--border-default);
 }
-html.dark .ls__option { color: var(--ink); }
-html.dark .ls__option:hover { background: #1f3228; }
+html.dark .ls__option { color: var(--text-primary); }
+html.dark .ls__option:hover { background: var(--bg-surface-hover); }
 html.dark .ls__option--active {
-  background: #1f3228;
-  color: var(--green);
+  background: var(--bg-surface-hover);
+  color: var(--text-brand);
 }
 
-/* ── About section ────────────────────────────────────────────── */
-html.dark .about { background: var(--cream); }
-html.dark .about__stat { color: var(--ink); }
-html.dark .about__stat-num { color: var(--gold); }
-
-/* ── Features ─────────────────────────────────────────────────── */
-html.dark .features { background: #111a14; }
-html.dark .features__card {
-  background: #1a2820;
-  border-color: var(--line);
+/* ── Form inputs (catch-all for legacy forms) ──────────────────────── */
+html.dark input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+html.dark select,
+html.dark textarea {
+  background: var(--bg-input);
+  border-color: var(--border-input);
+  color: var(--text-primary);
 }
-html.dark .features__card h3,
-html.dark .features__card p { color: var(--ink); }
+html.dark input::placeholder,
+html.dark textarea::placeholder { color: var(--text-secondary); }
 
-/* ── Steps ────────────────────────────────────────────────────── */
-html.dark .steps { background: var(--cream); }
-html.dark .steps__card {
-  background: #1a2820;
-  border-color: var(--line);
+/* ── Generic card catch-all ────────────────────────────────────────── */
+html.dark .card,
+html.dark .card--white {
+  background: var(--bg-surface);
+  border-color: var(--border-default);
 }
-html.dark .steps__num { background: var(--green-dark); }
 
-/* ── Teachers (home section) ──────────────────────────────────── */
-html.dark .tc2__card {
-  background: #1a2820;
-  border-color: var(--line);
+/* ── Page wrappers ─────────────────────────────────────────────────── */
+html.dark [class$="-page"],
+html.dark .dash,
+html.dark .it__main,
+html.dark .values,
+html.dark .admin {
+  background: var(--bg-page);
+  color: var(--text-primary);
 }
-html.dark .tc2__name { color: var(--ink); }
-html.dark .tc2__spec { color: var(--muted); }
-html.dark .tc2__star { color: #5a7a60; }
-html.dark .tc2__star.lit { color: var(--gold); }
 
-/* ── Pricing plans ────────────────────────────────────────────── */
-html.dark .plans-grid { background: var(--cream); }
-html.dark .plan {
-  background: #1a2820;
-  border-color: var(--line);
+/* ── Features / cards ──────────────────────────────────────────────── */
+html.dark .feature,
+html.dark .features__card,
+html.dark .steps__card,
+html.dark .timeline-step__card,
+html.dark .tc2__card,
+html.dark .tst__featured,
+html.dark .tst__mini,
+html.dark .plan,
+html.dark .blog-card,
+html.dark .faq__item,
+html.dark .faq-item,
+html.dark .adhkar__card,
+html.dark .tpg__card,
+html.dark .tp__card,
+html.dark .hadith__card,
+html.dark .hl__card,
+html.dark .hl__hadith,
+html.dark .billing__card,
+html.dark .admin__card,
+html.dark .admin__panel,
+html.dark .enroll__tcard,
+html.dark .enroll__plan-card,
+html.dark .enroll__card,
+html.dark .hub-card,
+html.dark .value-card,
+html.dark .video-card,
+html.dark .course {
+  background: var(--bg-surface);
+  border-color: var(--border-default);
+  color: var(--text-primary);
 }
-html.dark .plan__body { background: #1a2820; }
-html.dark .plan__price-row { color: var(--ink); }
-html.dark .plan__per-hour { color: var(--muted); }
-html.dark .plan__cancel-note { color: var(--muted); }
-html.dark .plan li { color: var(--ink); }
+
+/* Hover state for interactive cards */
+html.dark .faq__item.open,
+html.dark .faq-item--open,
+html.dark .dash__lesson-row:hover,
+html.dark .billing__row:hover,
+html.dark .admin__table tr:hover td,
+html.dark .billing-page__row:hover { background: var(--bg-surface-hover); }
+
+/* ── Dashboard ─────────────────────────────────────────────────────── */
+html.dark .dash__stat,
+html.dark .dash__panel,
+html.dark .dash__tutor-card,
+html.dark .dash__course-card { background: var(--bg-surface); border-color: var(--border-default); }
+html.dark .dash__stat-label,
+html.dark .dash__tutor-sub,
+html.dark .dash__course-title { color: var(--text-secondary); }
+html.dark .dash__stat-value { color: var(--text-primary); }
+
+/* ── Admin ─────────────────────────────────────────────────────────── */
+html.dark .admin__table th {
+  background: var(--bg-surface-raised);
+  color: var(--text-secondary);
+  border-color: var(--border-default);
+}
+html.dark .admin__table td {
+  border-color: var(--border-default);
+  color: var(--text-primary);
+}
+
+/* ── Auth ──────────────────────────────────────────────────────────── */
+html.dark .auth { background: var(--p-green-900); }
+html.dark .auth__card {
+  background: var(--bg-input);
+  border-color: var(--border-default);
+}
+html.dark .auth__label,
+html.dark .auth__gdpr-label { color: var(--text-secondary); }
+html.dark .auth__card input,
+html.dark .auth__card select {
+  background: var(--bg-surface);
+  border-color: var(--border-input);
+  color: var(--text-primary);
+}
+
+/* ── Billing page ──────────────────────────────────────────────────── */
+html.dark .billing-page__head h1 { color: var(--text-primary); }
+html.dark .billing-page__table { background: var(--bg-surface); }
+html.dark .billing-page__table td { color: var(--text-primary); border-color: var(--border-default); }
+html.dark .billing-page__amount { color: #6fc79e; }
+html.dark .billing-page__id,
+html.dark .billing-page__strike { color: var(--text-secondary); }
+
+/* ── Enrollment ─────────────────────────────────────────────────────── */
+html.dark .enroll__plan-card.selected {
+  border-color: var(--border-brand);
+  background: var(--bg-input-focus);
+}
+html.dark .enroll__form-group input,
+html.dark .enroll__form-group select,
+html.dark .enroll__form-group textarea {
+  background: var(--bg-input);
+  border-color: var(--border-input);
+  color: var(--text-primary);
+}
+html.dark .enroll__time-btn,
+html.dark .enroll__subject-btn,
+html.dark .enroll__lang-btn,
+html.dark .enroll__pref-btn {
+  background: var(--bg-surface);
+  border-color: var(--border-default);
+  color: var(--text-primary);
+}
+html.dark .enroll__time-btn.selected,
+html.dark .enroll__subject-btn.selected { background: var(--bg-input-focus); border-color: var(--border-brand); }
+html.dark .enroll__lang-btn.selected,
+html.dark .enroll__pref-btn.selected { background: var(--color-primary); border-color: var(--color-primary); color: #fff; }
+
+/* ── Blog ──────────────────────────────────────────────────────────── */
+html.dark .blog-card__title { color: var(--text-primary); }
+html.dark .blog-card__excerpt,
+html.dark .blog-card__author-name,
+html.dark .blog-card__author-role,
+html.dark .blog-card__date,
+html.dark .blog-card__read-time { color: var(--text-secondary); }
+html.dark .blog-filter-btn {
+  background: var(--bg-surface);
+  border-color: var(--border-default);
+  color: var(--text-secondary);
+}
+html.dark .blog-filter-btn.active,
+html.dark .blog-filter-btn:hover { background: var(--color-primary); color: #fff; border-color: var(--color-primary); }
+
+html.dark .blog-post__body {
+  background: var(--bg-surface);
+  border-color: var(--border-default);
+  color: var(--text-primary);
+}
+html.dark .blog-post__body h2,
+html.dark .blog-post__body h3 { color: var(--text-primary); }
+html.dark .blog-post__body p { color: var(--text-secondary); }
+html.dark .blog-post__body a { color: var(--text-brand); }
+html.dark .blog-post__body blockquote {
+  border-color: var(--border-brand);
+  background: var(--bg-input-focus);
+  color: var(--text-secondary);
+}
+
+/* ── Teachers ──────────────────────────────────────────────────────── */
+html.dark .tpg__name { color: var(--text-primary); }
+html.dark .tpg__bio,
+html.dark .tpg__specialty { color: var(--text-secondary); }
+html.dark .tpg__filter-btn {
+  background: var(--bg-surface);
+  border-color: var(--border-default);
+  color: var(--text-secondary);
+}
+html.dark .tpg__filter-btn.active,
+html.dark .tpg__filter-btn:hover { background: var(--color-primary); color: #fff; border-color: var(--color-primary); }
+html.dark .tpg__filters { background: var(--bg-input); border-bottom-color: var(--border-default); }
+html.dark .tp__name { color: var(--text-primary); }
+html.dark .tp__bio,
+html.dark .tp__meta-item { color: var(--text-secondary); }
+
+/* ── FAQ ────────────────────────────────────────────────────────────── */
+html.dark .faq-item__q {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+}
+html.dark .faq-item__q:hover,
+html.dark .faq-item--open .faq-item__q { background: var(--bg-surface-hover); }
+html.dark .faq-item__a { background: var(--bg-surface-raised); }
+html.dark .faq-item__a p,
+html.dark .faq-page__sub { color: var(--text-secondary); }
+html.dark .faq-item--open { border-color: var(--border-brand); }
+html.dark .faq__question { color: var(--text-primary); }
+html.dark .faq__answer { color: var(--text-secondary); }
+
+/* ── Newsletter ─────────────────────────────────────────────────────── */
+html.dark .newsletter {
+  background: #1a1800;
+  border-color: rgba(212,175,55,.2);
+}
+html.dark .newsletter h2 { color: var(--color-accent); }
+html.dark .newsletter p { color: #9a8a50; }
+html.dark .newsletter__input {
+  background: #0e1200;
+  border-color: rgba(212,175,55,.3);
+  color: var(--text-primary);
+}
+html.dark .newsletter__input::placeholder { color: #6a5a30; }
+
+/* ── Adhkar ─────────────────────────────────────────────────────────── */
+html.dark .adhkar__main { background: var(--bg-page); }
+html.dark .adhkar__sidebar {
+  background: var(--bg-surface);
+  border-color: var(--border-default);
+}
+html.dark .adhkar__cat-btn {
+  background: var(--bg-surface);
+  border-color: var(--border-default);
+  color: var(--text-primary);
+}
+html.dark .adhkar__cat-btn:hover { background: var(--bg-surface-hover); }
+html.dark .adhkar__cat-btn.active { background: var(--bg-input-focus); }
+html.dark .adhkar__search {
+  background: var(--bg-input);
+  border-color: var(--border-input);
+  color: var(--text-primary);
+}
+html.dark .adhkar__search::placeholder { color: var(--text-secondary); }
+html.dark .adhkar__card.done { background: var(--bg-input-focus); }
+html.dark .adhkar__ar { color: var(--text-primary); }
+html.dark .adhkar__translation,
+html.dark .adhkar__fadl,
+html.dark .adhkar__source { color: var(--text-secondary); }
+html.dark .adhkar__tap { background: var(--border-default); color: var(--text-primary); }
+html.dark .adhkar__tap:hover { background: var(--color-primary); color: #fff; }
+html.dark .adhkar__tap--done { background: var(--color-primary); color: #fff; }
+html.dark .adhkar__cat-header { background: var(--bg-surface); }
+html.dark .adhkar__context-badge { background: var(--bg-input-focus); border-color: var(--border-strong); color: var(--text-brand); }
+html.dark .adhkar__count-target { background: var(--bg-input-focus); }
+
+/* ── Islamic Tools ──────────────────────────────────────────────────── */
+html.dark .it__tabs-bar { background: var(--bg-input); border-bottom-color: var(--border-default); }
+html.dark .it__tab { color: var(--text-secondary); }
+html.dark .it__tab:hover,
+html.dark .it__tab.active { color: var(--text-brand); }
+html.dark .it__prayer-item { background: var(--bg-surface); border-color: var(--border-default); }
+html.dark .it__prayer-item--next {
+  background: linear-gradient(135deg, var(--bg-input-focus) 0%, var(--bg-surface) 100%);
+  border-color: var(--border-brand);
+}
+html.dark .it__extra-card,
+html.dark .it__qibla-card,
+html.dark .it__verse-card,
+html.dark .it__kaaba-info { background: var(--bg-surface); border-color: var(--border-default); color: var(--text-primary); }
+html.dark .it__verse-ar { background: var(--bg-input); }
+html.dark .it__month-toggle { background: var(--bg-input-focus); }
+html.dark .it__month-toggle:hover { background: var(--bg-surface-hover); }
+html.dark .it__month-wrap { border-color: var(--border-default); }
+html.dark .it__month-table td { border-bottom-color: var(--border-default); color: var(--text-primary); }
+html.dark .it__month-chip { background: var(--bg-surface); border-color: var(--border-default); }
+html.dark .it__compass { background: radial-gradient(circle, var(--bg-input-focus), var(--bg-input)); }
+html.dark .it__notify-btn { background: transparent; }
+html.dark .it__fmt-btn { background: var(--bg-surface); color: var(--text-secondary); }
+html.dark .it__fmt-btn.active { background: var(--color-primary); color: #fff; }
+html.dark .it__month-today { background: var(--bg-surface-hover); }
+html.dark .it__toggle { background: var(--border-default); }
+
+/* ── Hadith ─────────────────────────────────────────────────────────── */
+html.dark .hadith__text { color: var(--text-primary); }
+html.dark .hadith__meta { color: var(--text-secondary); }
+html.dark .hadith__search,
+html.dark .hl__hadith-en { color: var(--text-secondary); }
+html.dark .hl__card-title { color: var(--text-primary); }
+html.dark .hl__card-note { color: var(--text-secondary); }
+html.dark .hadith__search {
+  background: var(--bg-input);
+  border-color: var(--border-input);
+  color: var(--text-primary);
+}
+html.dark .hadith__search::placeholder { color: var(--text-secondary); }
+
+/* ── About ──────────────────────────────────────────────────────────── */
+html.dark .about__stat { color: var(--text-primary); }
+html.dark .about__stat-num { color: var(--color-accent); }
+html.dark .value-card__title { color: var(--text-primary); }
+html.dark .value-card__desc { color: var(--text-secondary); }
+
+/* ── Testimonials ───────────────────────────────────────────────────── */
+html.dark .tst__name,
+html.dark .tst__mini-top strong { color: var(--text-primary); }
+html.dark .tst__text,
+html.dark .tst__mini-text,
+html.dark .tst__loc,
+html.dark .tst__mini-top span { color: var(--text-secondary); }
+html.dark .tst__quote-mark { color: var(--border-strong); }
+
+/* ── Teachers (home) ────────────────────────────────────────────────── */
+html.dark .tc2__name { color: var(--text-primary); }
+html.dark .tc2__spec { color: var(--text-secondary); }
+
+/* ── Pricing ────────────────────────────────────────────────────────── */
+html.dark .plan__price-row { color: var(--text-primary); }
+html.dark .plan__per-hour,
+html.dark .plan__cancel-note { color: var(--text-secondary); }
+html.dark .plan li { color: var(--text-primary); }
 html.dark .plan__discount-banner {
   background: #1c1800;
   border-color: rgba(212,175,55,.25);
 }
 
-/* ── Social proof / Testimonials ──────────────────────────────── */
-html.dark .social-proof { background: var(--cream); }
-html.dark .review-card {
-  background: #1a2820;
-  border-color: var(--line);
-}
-html.dark .review-card__name { color: var(--ink); }
-html.dark .review-card__body { color: var(--muted); }
+/* ── Hub cards ──────────────────────────────────────────────────────── */
+html.dark .hub-card__title { color: var(--text-primary); }
+html.dark .hub-card__desc  { color: var(--text-secondary); }
+html.dark .hub-card--cta   { background: var(--bg-input-focus); border-color: var(--border-brand); }
 
-/* ── Newsletter ───────────────────────────────────────────────── */
-html.dark .newsletter {
-  background: #1a1800;
-  border-color: rgba(212,175,55,.2);
-}
-html.dark .newsletter h2 { color: var(--gold); }
-html.dark .newsletter p { color: #9a8a50; }
-html.dark .newsletter__input {
-  background: #0e1200;
-  border-color: rgba(212,175,55,.3);
-  color: var(--ink);
-}
-html.dark .newsletter__input::placeholder { color: #6a5a30; }
-
-/* ── FAQ ──────────────────────────────────────────────────────── */
-html.dark .faq { background: var(--cream); }
-html.dark .faq__item {
-  background: #1a2820;
-  border-color: var(--line);
-}
-html.dark .faq__item.open { background: #1f3228; }
-html.dark .faq__question { color: var(--ink); }
-html.dark .faq__answer { color: var(--muted); }
-
-/* ── Blog ─────────────────────────────────────────────────────── */
-html.dark .blog-page { background: var(--cream); }
-html.dark .blog-card {
-  background: #1a2820;
-  border-color: var(--line);
-}
-html.dark .blog-card__title { color: var(--ink); }
-html.dark .blog-card__excerpt { color: var(--muted); }
-html.dark .blog-card__author-name { color: var(--ink); }
-html.dark .blog-card__author-role { color: var(--muted); }
-html.dark .blog-card__read-time { color: var(--muted); }
-html.dark .blog-filter-btn {
-  background: #1a2820;
-  border-color: var(--line);
-  color: var(--muted);
-}
-html.dark .blog-filter-btn.active,
-html.dark .blog-filter-btn:hover {
-  background: var(--green);
-  color: #fff;
-  border-color: var(--green);
+/* ── Mobile nav ─────────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  html.dark .nav {
+    background: var(--bg-input);
+    border-bottom-color: var(--border-default);
+  }
+  html.dark .nav__dropdown-mobile .nav__dropdown-item { color: var(--text-primary); }
+  html.dark .nav__dropdown-mobile .nav__dropdown-item:hover {
+    background: var(--bg-surface-hover);
+    color: var(--color-accent);
+  }
+  html.dark .nav > a,
+  html.dark .nav__dropdown-trigger,
+  html.dark .nav__cta { border-bottom-color: var(--border-default); }
 }
 
-/* ── Blog post page ───────────────────────────────────────────── */
-html.dark .blog-post { background: var(--cream); }
-html.dark .blog-post__body {
-  background: #1a2820;
-  border-color: var(--line);
-  color: var(--ink);
-}
-html.dark .blog-post__body h2,
-html.dark .blog-post__body h3 { color: var(--ink); }
-html.dark .blog-post__body p { color: var(--muted); }
-html.dark .blog-post__body a { color: var(--green); }
-html.dark .blog-post__body blockquote {
-  border-color: var(--green);
-  background: #162518;
-  color: var(--muted);
+/* ── Profile ────────────────────────────────────────────────────────── */
+html.dark .profile-page { background: var(--bg-page); }
+html.dark .profile__card,
+html.dark .profile-page .admin__panel { background: var(--bg-surface); border-color: var(--border-default); }
+html.dark .profile__input,
+html.dark .profile-page input,
+html.dark .profile-page select,
+html.dark .profile-page textarea {
+  background: var(--bg-input);
+  border-color: var(--border-input);
+  color: var(--text-primary);
 }
 
-/* ── Teachers page ────────────────────────────────────────────── */
-html.dark .teachers-page { background: var(--cream); }
-html.dark .tpg__card {
-  background: #1a2820;
-  border-color: var(--line);
-}
-html.dark .tpg__name { color: var(--ink); }
-html.dark .tpg__bio { color: var(--muted); }
-html.dark .tpg__specialty { color: var(--muted); }
-html.dark .tpg__star { color: #3a5a40; }
-html.dark .tpg__star.lit { color: var(--gold); }
-html.dark .tpg__filter-btn {
-  background: #1a2820;
-  border-color: var(--line);
-  color: var(--muted);
-}
-html.dark .tpg__filter-btn.active,
-html.dark .tpg__filter-btn:hover {
-  background: var(--green);
-  color: #fff;
-  border-color: var(--green);
-}
+/* ── Scrollbar ──────────────────────────────────────────────────────── */
+html.dark ::-webkit-scrollbar-track { background: var(--bg-input); }
+html.dark ::-webkit-scrollbar-thumb { background: var(--border-default); }
+html.dark ::-webkit-scrollbar-thumb:hover { background: var(--border-strong); }
 
-/* ── Teacher profile ──────────────────────────────────────────── */
-html.dark .tp__card {
-  background: #1a2820;
-  border-color: var(--line);
-}
-html.dark .tp__name { color: var(--ink); }
-html.dark .tp__bio { color: var(--muted); }
-html.dark .tp__meta-item { color: var(--muted); }
-
-/* ── Enroll / Checkout ────────────────────────────────────────── */
-html.dark .enroll { background: var(--cream); }
-html.dark .enroll__tcard {
-  background: #1a2820;
-  border-color: var(--line);
-}
-html.dark .enroll__plan-card {
-  background: #1a2820;
-  border-color: var(--line);
-}
-html.dark .enroll__plan-card.selected {
-  border-color: var(--green);
-  background: #162518;
-}
-html.dark .enroll__form-group input,
-html.dark .enroll__form-group select,
-html.dark .enroll__form-group textarea {
-  background: #0e1a11;
-  border-color: var(--line);
-  color: var(--ink);
-}
-html.dark .enroll__form-group input::placeholder { color: var(--muted); }
-
-/* ── Auth pages ───────────────────────────────────────────────── */
-html.dark .auth { background: var(--green-deep); }
-html.dark .auth__card {
-  background: #0e1a11;
-  border-color: var(--line);
-}
-html.dark .auth__card input,
-html.dark .auth__card select {
-  background: #152010;
-  border-color: var(--line);
-  color: var(--ink);
-}
-html.dark .auth__card input::placeholder { color: var(--muted); }
-html.dark .auth__label { color: var(--muted); }
-html.dark .auth__gdpr-label { color: var(--muted); }
-
-/* ── Dashboard ────────────────────────────────────────────────── */
-html.dark .dashboard { background: var(--cream); }
-html.dark .dash__card {
-  background: #1a2820;
-  border-color: var(--line);
-}
-html.dark .dash__stat {
-  background: #1a2820;
-  border-color: var(--line);
-}
-html.dark .dash__stat-label { color: var(--muted); }
-html.dark .dash__stat-value { color: var(--ink); }
-html.dark .dash__section-title { color: var(--ink); }
-html.dark .dash__lesson-row {
-  background: #1a2820;
-  border-color: var(--line);
-}
-html.dark .dash__lesson-row:hover { background: #1f3228; }
-
-/* ── Profile ──────────────────────────────────────────────────── */
-html.dark .profile { background: var(--cream); }
-html.dark .profile__card {
-  background: #1a2820;
-  border-color: var(--line);
-}
-html.dark .profile__input {
-  background: #0e1a11;
-  border-color: var(--line);
-  color: var(--ink);
-}
-html.dark .profile__input::placeholder { color: var(--muted); }
-
-/* ── Billing ──────────────────────────────────────────────────── */
-html.dark .billing { background: var(--cream); }
-html.dark .billing__card {
-  background: #1a2820;
-  border-color: var(--line);
-}
-html.dark .billing__row {
-  border-bottom-color: var(--line);
-}
-html.dark .billing__row:hover { background: #1f3228; }
-
-/* ── Admin dashboard ──────────────────────────────────────────── */
-html.dark .admin { background: var(--cream); }
-html.dark .admin__card {
-  background: #1a2820;
-  border-color: var(--line);
-}
-html.dark .admin__table th {
-  background: #162518;
-  color: var(--muted);
-  border-color: var(--line);
-}
-html.dark .admin__table td {
-  border-color: var(--line);
-  color: var(--ink);
-}
-html.dark .admin__table tr:hover td { background: #1f3228; }
-
-/* ── Adhkar ───────────────────────────────────────────────────── */
-html.dark .adhkar__main { background: var(--cream); }
-html.dark .adhkar__sidebar {
-  background: #1a2820;
-  border-color: var(--line);
-}
-html.dark .adhkar__cat-btn {
-  background: #1a2820;
-  border-color: var(--line);
-  color: var(--ink);
-}
-html.dark .adhkar__cat-btn:hover { background: #1f3228; }
-html.dark .adhkar__cat-btn.active { background: #162518; }
-html.dark .adhkar__search {
-  background: #0e1a11;
-  border-color: var(--line);
-  color: var(--ink);
-}
-html.dark .adhkar__search::placeholder { color: var(--muted); }
-html.dark .adhkar__card {
-  background: #1a2820;
-  border-color: var(--line);
-}
-html.dark .adhkar__card.done { background: #162518; }
-html.dark .adhkar__ar { color: var(--ink); }
-html.dark .adhkar__translation { color: var(--muted); }
-html.dark .adhkar__fadl { color: var(--muted); }
-html.dark .adhkar__source { color: var(--muted); }
-html.dark .adhkar__tap { background: #253d2c; color: var(--ink); }
-html.dark .adhkar__tap:hover { background: var(--green); color: #fff; }
-html.dark .adhkar__tap--done { background: var(--green); color: #fff; }
-html.dark .adhkar__cat-header { background: #1a2820; }
-html.dark .adhkar__context-badge { background: #16261b; border-color: #2a4a3a; color: var(--green); }
-html.dark .adhkar__count-target { background: #16261b; }
-
-/* ── Hadith Library (real classes are .hl__*; not the .hadith__* reader) ─ */
-html.dark .hl__card { background: #1a2820; border-color: var(--line); }
-html.dark .hl__card-title { color: var(--ink); }
-html.dark .hl__card-note { color: var(--muted); }
-html.dark .hl__hadith { background: #1a2820; border-color: var(--line); }
-html.dark .hl__hadith-en { color: var(--muted); }
-
-/* ── Islamic Tools (real classes are .it__*; old .it-* never matched) ─ */
-html.dark .it__tabs-bar { background: #0e1a11; border-bottom-color: var(--line); }
-html.dark .it__tab { color: var(--muted); }
-html.dark .it__tab:hover,
-html.dark .it__tab.active { color: var(--green); }
-html.dark .it__prayer-item { background: #1a2820; border-color: var(--line); }
-html.dark .it__prayer-item--next {
-  background: linear-gradient(135deg, #16261b 0%, #1a2820 100%);
-  border-color: var(--green);
-}
-html.dark .it__extra-card { background: #1a2820; border-color: var(--line); }
-html.dark .it__verse-ar { background: #11211a; }
-html.dark .it__month-toggle { background: #16261b; }
-html.dark .it__month-toggle:hover { background: #1f3228; }
-html.dark .it__month-wrap { border-color: var(--line); }
-html.dark .it__month-table td { border-bottom-color: var(--line); color: var(--ink); }
-html.dark .it__month-chip { background: #1a2820; border-color: var(--line); }
-html.dark .it__compass { background: radial-gradient(circle, #16261b, #0e1a11); }
-html.dark .it__notify-btn { background: transparent; }
-html.dark .it__fmt-btn { background: #1a2820; color: var(--muted); }
-html.dark .it__fmt-btn.active { background: var(--green); color: #fff; }
-
-/* ── Hadith Library ───────────────────────────────────────────── */
-html.dark .hadith-page { background: var(--cream); }
-html.dark .hadith__card {
-  background: #1a2820;
-  border-color: var(--line);
-}
-html.dark .hadith__text { color: var(--ink); }
-html.dark .hadith__meta { color: var(--muted); }
-html.dark .hadith__search {
-  background: #0e1a11;
-  border-color: var(--line);
-  color: var(--ink);
-}
-html.dark .hadith__search::placeholder { color: var(--muted); }
-
-/* ── Hifz / Khatm ─────────────────────────────────────────────── */
-html.dark .hifz-page { background: var(--cream); }
-html.dark .hifz__card {
-  background: #1a2820;
-  border-color: var(--line);
-}
-html.dark .khatm-page { background: var(--cream); }
-html.dark .khatm__card {
-  background: #1a2820;
-  border-color: var(--line);
-}
-
-/* ── Quran reader (inner dark mode unaffected — it manages its own) ─ */
-/* The Quran page has its own qlc--dark class; global dark mode just
-   handles the chrome around the reader (header, hero, etc.)          */
-html.dark .quran-page { background: var(--cream); }
-html.dark .quran__hero { background: #0e1a11; }
-
-/* ── Form inputs (global catch-all) ──────────────────────────── */
-html.dark input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
-html.dark select,
-html.dark textarea {
-  background: #0e1a11;
-  border-color: var(--line);
-  color: var(--ink);
-}
-html.dark input::placeholder,
-html.dark textarea::placeholder { color: var(--muted); }
-
-/* ── Generic white card catch-all ────────────────────────────── */
-html.dark .card,
-html.dark .card--white {
-  background: #1a2820;
-  border-color: var(--line);
-}
-
-/* ── Scrollbar ────────────────────────────────────────────────── */
-html.dark ::-webkit-scrollbar-track { background: #0e1a11; }
-html.dark ::-webkit-scrollbar-thumb { background: #253d2c; }
-html.dark ::-webkit-scrollbar-thumb:hover { background: #2e4d36; }
-
-/* ── Selection ────────────────────────────────────────────────── */
+/* ── Text selection ─────────────────────────────────────────────────── */
 html.dark ::selection {
   background: rgba(11, 110, 79, 0.5);
   color: #fff;
 }
 
-/* ════════════════════════════════════════════════════════════════
-   COMPLETENESS PASS — make dark mode reach EVERY page & surface.
-   (purely additive; light mode is untouched)
-   ════════════════════════════════════════════════════════════════ */
+/* ── PHASE 3 — New landing-page elements ────────────────────────────── */
 
-/* Headings use brand green-deep (#06372a) — almost invisible on a dark
-   background. Default them to light ink; sections that need a custom
-   colour (hero, newsletter…) already override with higher specificity. */
-html.dark h1, html.dark h2, html.dark h3, html.dark h4, html.dark h5 { color: var(--ink); }
+/* Section heading underline (gold accent) — no change needed, var(--gold) adapts */
 
-/* Any standalone page wrapper (…-page) → dark page background */
-html.dark [class$="-page"] { background: var(--cream); color: var(--ink); }
-
-/* Page wrappers that don't end in "-page" */
-html.dark .dash,
-html.dark .it__main,
-html.dark .values { background: var(--cream); color: var(--ink); }
-
-/* ── Lessons / billing tables (CourseContent + Billing pages) ── */
-html.dark .billing-page__head h1 { color: var(--ink); }
-html.dark .billing-page__table { background: #1a2820; }
-html.dark .billing-page__table td { color: var(--ink); border-color: var(--line); }
-html.dark .billing-page__row:hover { background: #1f3228; }
-html.dark .billing-page__amount { color: #6fc79e; }
-html.dark .billing-page__id,
-html.dark .billing-page__strike { color: var(--muted); }
-html.dark .billing-page__discount-notice { background: #162518; border-color: rgba(212,175,55,.2); }
-html.dark .billing-page__discount-notice strong { color: #6fc79e; }
-
-/* ── Dashboard extra surfaces ── */
-html.dark .dash__tutor-card { background: #1a2820; border-color: var(--line); color: var(--ink); }
-html.dark .dash__tutor-sub { color: var(--muted); }
-html.dark .dash__course-title { color: var(--ink); }
-
-/* ── Islamic Tools ── */
-html.dark .it__qibla-card,
-html.dark .it__verse-card,
-html.dark .it__kaaba-info { background: #1a2820; border-color: var(--line); color: var(--ink); }
-html.dark .it__month-today { background: #1f3228; }
-html.dark .it__toggle { background: #253d2c; }
-html.dark .it__verse-ar,
-html.dark .it__pi-ar,
-html.dark .it__next-name,
-html.dark .it__cal-hijri-date,
-html.dark .it__hijri-ar,
-html.dark .it__oc-name { color: var(--ink); }
-
-/* ── About page (mission & values) ── */
-html.dark .value-card { background: #1a2820; border-color: var(--line); }
-html.dark .value-card__title { color: var(--ink); }
-html.dark .value-card__desc { color: var(--muted); }
-
-/* ── Standalone FAQ page ── */
-html.dark .faq-item { background: #1a2820; border-color: var(--line); }
-html.dark .faq-item__q { background: #1a2820; color: var(--ink); }
-html.dark .faq-item__q:hover { background: #1f3228; }
-html.dark .faq-item__a { background: #162018; }
-html.dark .faq-item__a p { color: var(--muted); }
-html.dark .faq-item--open { border-color: var(--green); }
-html.dark .faq-page__sub { color: var(--muted); }
-
-/* ── Video reviews / generic content cards ── */
-html.dark .video-card { background: #1a2820; border-color: var(--line); }
-
-/* ── Home: "Why families choose us" cards (real class is .feature,
-   the old .features__card patch above never matched anything) ── */
-html.dark .feature { background: #1a2820; border-color: var(--line); }
-html.dark .feature h3 { color: var(--ink); }
-html.dark .feature p { color: var(--muted); }
-
-/* ── Home: Course cards (white .course card → dark) ── */
-html.dark .course { background: #1a2820; border-color: var(--line); }
-html.dark .course__body h3 { color: var(--ink); }
-html.dark .course__body > p { color: var(--muted); opacity: 1; }
-html.dark .course__points li { color: var(--ink); }
-
-/* ── Home: "Start in 3 Simple Steps" cards (real class is
-   .timeline-step__card; the old .steps__card patch never matched) ── */
-html.dark .timeline-step__card { background: #1a2820; border-color: var(--line); }
-html.dark .timeline-step__card h3 { color: var(--ink); }
-html.dark .timeline-step__card p { color: var(--muted); }
-
-/* ── Home: Testimonials (real classes are .tst__*; the old .review-card
-   patch never matched) ── */
-html.dark .tst__featured,
-html.dark .tst__mini { background: #1a2820; border-color: var(--line); }
-html.dark .tst__name,
-html.dark .tst__mini-top strong { color: var(--ink); }
-html.dark .tst__text,
-html.dark .tst__mini-text,
-html.dark .tst__loc,
-html.dark .tst__mini-top span { color: var(--muted); }
-html.dark .tst__quote-mark { color: #2a4736; }
-
-/* ── Smooth transition on theme switch ──────────────────────────  */
-html.dark body,
-html.dark .header,
-html.dark .plan,
-html.dark .blog-card,
-html.dark .faq__item,
-html.dark .adhkar__card,
-html.dark .tpg__card,
-html.dark .features__card,
-html.dark .steps__card,
-html.dark .tc2__card,
-html.dark .it-card,
-html.dark .hadith__card,
-html.dark .dash__card,
-html.dark .billing__card,
-html.dark .admin__card {
-  transition: background .25s, border-color .25s, color .25s;
+/* Testimonials verified badge */
+html.dark .tst__verified {
+  color: var(--text-brand);
+  background: rgba(11,110,79,.25);
+  border-color: rgba(11,110,79,.35);
 }
 
-/* ════════════════════════════════════════════════════════════════
-   DARK MODE — MOBILE-SPECIFIC OVERRIDES
-   (The mobile nav has `background: #fff` hardcoded in media
-   queries; without these rules the drawer stays white in dark mode)
-   ════════════════════════════════════════════════════════════════ */
-
-/* Mobile nav drawer (≤640px + tablet 641-900px) */
-@media (max-width: 900px) {
-  html.dark .nav {
-    background: #0e1a11;
-    border-bottom-color: var(--line);
-  }
-  /* Inline sub-links inside the mobile drawer */
-  html.dark .nav__dropdown-mobile .nav__dropdown-item {
-    color: var(--ink);
-  }
-  html.dark .nav__dropdown-mobile .nav__dropdown-item:hover {
-    background: #1e2e22;
-    color: var(--gold);
-  }
-  /* Divider line between top nav items */
-  html.dark .nav > a,
-  html.dark .nav__dropdown-trigger,
-  html.dark .nav__cta {
-    border-bottom-color: var(--line);
-  }
+/* Pricing trust row */
+html.dark .pricing__trust { border-top-color: var(--border-default); }
+html.dark .pricing__trust-item { color: var(--text-secondary); }
+html.dark .pricing__trust-icon {
+  background: rgba(11,110,79,.2);
+  border-color: rgba(11,110,79,.25);
+}
+html.dark .pricing__trust-svg {
+  background: rgba(11,110,79,.2);
+  border-color: rgba(11,110,79,.25);
+  color: var(--color-primary);
 }
 
-/* h2 uses hard-coded var(--green-deep) which becomes near-invisible on
-   dark backgrounds; override globally and let individual sections that
-   need a specific shade use higher-specificity selectors. */
-html.dark h2 { color: var(--ink); }
+/* Stats banner numbers — gradient text still works in dark; label color fix */
+html.dark .stats-item__label { color: rgba(207,224,216,.75); }
 
-/* Hub cards benefit from the --surface override already in :root above,
-   but keep an explicit fallback so existing cards always have a bg. */
-html.dark .hub-card {
-  background: var(--surface);
-  border-color: var(--line);
-  color: var(--ink);
-}
-html.dark .hub-card__title { color: var(--ink); }
-html.dark .hub-card__desc  { color: var(--muted); }
-html.dark .hub-card--cta   { background: #162518; border-color: var(--green); }
+/* Feature top-accent line — colors don't need dark override (uses opaque gradients) */
 
-/* ── Enrollment wizard (main card + interactive buttons) ──────── */
-html.dark .enroll__card { background: #1a2820; border-color: var(--line); }
-html.dark .enroll__time-btn,
-html.dark .enroll__subject-btn {
-  background: #1a2820;
-  border-color: var(--line);
-  color: var(--ink);
-}
-html.dark .enroll__time-btn strong { color: var(--ink); }
-html.dark .enroll__time-btn span,
-html.dark .enroll__subject-btn { color: var(--muted); }
-html.dark .enroll__time-btn.selected,
-html.dark .enroll__subject-btn.selected {
-  background: var(--green-light);
-  border-color: var(--green);
-}
-html.dark .enroll__time-btn.selected strong { color: var(--ink); }
-html.dark .enroll__lang-btn,
-html.dark .enroll__pref-btn {
-  background: #1a2820;
-  border-color: var(--line);
-  color: var(--ink);
-}
-html.dark .enroll__lang-btn.selected,
-html.dark .enroll__pref-btn.selected {
-  background: var(--green);
-  border-color: var(--green);
-  color: #fff;
+/* Footer trust strip — already on dark footer background, fine as-is */
+
+/* Live badge — on dark hero background, fine as-is */
+
+/* ── Hero wave SVG ──────────────────────────────────────────────────── */
+html.dark .hero__wave path { fill: var(--bg-page); }
+
+/* ── Course cards (home) ────────────────────────────────────────────── */
+html.dark .course__body h3 { color: var(--text-primary); }
+html.dark .course__body > p { color: var(--text-secondary); opacity: 1; }
+html.dark .course__points li { color: var(--text-primary); }
+
+/* ── Smooth transition on theme switch ──────────────────────────────── */
+body,
+.header, .nav__dropdown-menu, .plan, .blog-card,
+.faq__item, .faq-item, .adhkar__card, .tpg__card,
+.tc2__card, .hadith__card, .dash__stat, .dash__panel,
+.billing__card, .admin__card, .admin__panel, .hub-card,
+.value-card, .feature, .course, .enroll__card {
+  transition: background-color var(--duration-slow) var(--ease-default),
+              border-color var(--duration-slow) var(--ease-default),
+              color var(--duration-slow) var(--ease-default);
 }
 
-/* ── Teachers page filter bar (sticky; hardcoded #fff) ──────────── */
-html.dark .tpg__filters {
-  background: #0e1a11;
-  border-bottom-color: var(--line);
+/* ── Conversion layer dark patches ─────────────────────────────────── */
+/* QuickTrialModal + ExitIntentPopup — use semantic tokens, only hardcoded
+   colors need overriding. The dark bg-surface token handles most of it. */
+
+html.dark .qtm { background: var(--bg-surface-raised); }
+html.dark .qtm__field input { background: var(--bg-page); color: var(--text-primary); border-color: var(--border-default); }
+html.dark .qtm__field input:focus { border-color: var(--color-primary); }
+html.dark .qtm__close { color: var(--text-secondary); }
+html.dark .qtm__close:hover { background: var(--bg-surface-hover); }
+
+html.dark .exit-popup { background: var(--bg-surface-raised); }
+html.dark .exit-popup__form-title { color: var(--text-primary); }
+html.dark .exit-popup__input { background: var(--bg-page); color: var(--text-primary); border-color: var(--border-default); }
+html.dark .exit-popup__input:focus { border-color: var(--color-primary); }
+
+html.dark .vcard-modal { background: var(--bg-surface-raised); }
+html.dark .vcard-modal__close { color: var(--text-secondary); }
+html.dark .vcard-modal__close:hover { background: var(--bg-surface-hover); }
+
+html.dark .pricing__currency-toggle { background: var(--bg-surface-raised); border-color: var(--border-default); }
+html.dark .pricing__currency-btn:not(.active):hover { background: var(--bg-surface-hover); color: var(--text-primary); }
+
+/* ── Part 3 dark patches ────────────────────────────────────────────── */
+
+/* Verse of the Day — the card itself is dark green, renders fine in both modes.
+   Only the action buttons and surrounding page strips need adjustment. */
+html.dark .votd-btn--copy {
+  background: var(--bg-surface-raised);
+  border-color: var(--border-default);
+  color: var(--text-primary);
+}
+html.dark .votd-btn--share {
+  background: var(--color-primary-surface);
+  border-color: var(--border-brand);
+  color: var(--color-primary);
+}
+html.dark .votd-btn.done {
+  background: var(--color-success-surface);
+  border-color: var(--color-success);
+  color: var(--color-success);
+}
+html.dark .votd-enroll-cta {
+  background: var(--bg-surface-raised);
+  border-color: var(--border-default);
 }
 
-/* ── Admin panel class fix (.admin__panel vs .admin__card mismatch) ─ */
-html.dark .admin__panel {
-  background: #1a2820;
-  border-color: var(--line);
+/* Trial urgency badge — uses amber tones that need to stay visible in dark */
+html.dark .trial__urgency {
+  background: rgba(212,175,55,.12);
+  border-color: rgba(212,175,55,.25);
+  color: #c9a035;
 }
-html.dark .admin__panel h2 { color: var(--ink); }
 
-/* ── Hero wave — fill was hardcoded white; match dark body background ── */
-html.dark .hero__wave path { fill: var(--cream); }
+/* Join CTA secondary link and guarantee strip — section is dark green so
+   inherits white text from the section background; no change needed.
+   Guard just in case page context is light. */
+html.dark .join-cta__secondary { color: rgba(255,255,255,.55); }
+html.dark .join-cta__secondary:hover { color: #fff; }
+html.dark .join-cta__guarantee { color: rgba(255,255,255,.45); }
+
+/* Hub badges — adjust contrast in dark mode */
+html.dark .hub-badge--gold  { background: rgba(212,175,55,.1); color: #c9a035; border-color: rgba(212,175,55,.25); }
+html.dark .hub-badge--green { background: var(--color-primary-surface); color: var(--color-primary); }
+html.dark .hub-badge--blue  { background: rgba(33,118,199,.1); color: #5ba3e0; border-color: rgba(33,118,199,.2); }
+html.dark .hub-card__stat   { color: var(--text-tertiary); }
+
+/* tools-enroll-cta — gradient section; dark mode should not invert the
+   intentional dark green branding, so no background override needed.
+   Only text sub-colors need a slight boost. */
+html.dark .tools-enroll-cta p { color: rgba(255,255,255,.75); }
+html.dark .tools-enroll-cta__note { color: rgba(255,255,255,.55); }
+html.dark .tools-enroll-cta__social-proof { color: rgba(255,255,255,.6); }

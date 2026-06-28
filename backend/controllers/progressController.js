@@ -1,6 +1,56 @@
-import CourseProgress from '../models/CourseProgress.js';
+﻿import CourseProgress from '../models/CourseProgress.js';
 import Course from '../models/Course.js';
-import { asyncHandler } from '../middleware/asyncHandler.js';
+import User from '../models/User.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
+
+const XP_PER_LESSON = 20;
+const LEVEL_THRESHOLDS = [0, 100, 250, 500, 900, 1400, 2100, 3000, 4200, 6000, 9000];
+
+function calcLevel(xp) {
+  for (let i = LEVEL_THRESHOLDS.length - 1; i >= 0; i--) {
+    if (xp >= LEVEL_THRESHOLDS[i]) return i + 1;
+  }
+  return 1;
+}
+
+const BADGES = {
+  first_lesson:  { key: 'first_lesson',  xpRequired: 0,    label: 'First Step' },
+  level_5:       { key: 'level_5',       xpRequired: 900,  label: 'Rising Scholar' },
+  streak_7:      { key: 'streak_7',      streakRequired: 7, label: '7-Day Streak' },
+  streak_30:     { key: 'streak_30',     streakRequired: 30, label: '30-Day Streak' },
+};
+
+async function awardXP(userId, amount) {
+  const user = await User.findById(userId).select('+xp +level +streak +lastStudyDate +badges');
+  if (!user) return;
+
+  user.xp = (user.xp || 0) + amount;
+
+  // Streak logic: consecutive calendar days
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const lastDay = user.lastStudyDate ? new Date(user.lastStudyDate) : null;
+  if (lastDay) { lastDay.setHours(0, 0, 0, 0); }
+  const dayDiff = lastDay ? Math.round((today - lastDay) / 86400000) : 9;
+  if (dayDiff === 1) {
+    user.streak = (user.streak || 0) + 1;
+  } else if (dayDiff > 1) {
+    user.streak = 1;
+  }
+  user.lastStudyDate = new Date();
+
+  user.level = calcLevel(user.xp);
+
+  // Badge checks
+  const earned = new Set(user.badges || []);
+  if (!earned.has('first_lesson')) earned.add('first_lesson');
+  if (user.level >= 5 && !earned.has('level_5')) earned.add('level_5');
+  if (user.streak >= 7 && !earned.has('streak_7')) earned.add('streak_7');
+  if (user.streak >= 30 && !earned.has('streak_30')) earned.add('streak_30');
+  user.badges = [...earned];
+
+  await user.save({ validateBeforeSave: false });
+  return { xp: user.xp, level: user.level, streak: user.streak, badges: user.badges };
+}
 
 // @desc  Admin/teacher: a student's progress across all their courses.
 // @route GET /api/progress/user/:userId
@@ -74,9 +124,13 @@ export const toggleProgress = asyncHandler(async (req, res) => {
   if (done) set.add(key);
   else      set.delete(key);
 
+  const wasNew = done && !row.completed.includes(key);
   row.completed     = [...set];
   row.lastActivity  = new Date();
   await row.save();
 
-  res.json({ completed: row.completed });
+  let gamification = null;
+  if (wasNew) gamification = await awardXP(req.user._id, XP_PER_LESSON);
+
+  res.json({ completed: row.completed, gamification });
 });

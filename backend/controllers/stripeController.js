@@ -1,13 +1,15 @@
+﻿import mongoose from 'mongoose';
 import Stripe from 'stripe';
 import { siteOrigin } from '../config/site.js';
 import Payment from '../models/Payment.js';
-import Invoice from '../models/Invoice.js';
 import { getPlan } from '../config/plans.js';
 import {
   activateRecurringSubscription,
   deactivateSubscription,
-} from '../config/enrollment.js';
-import { asyncHandler } from '../middleware/asyncHandler.js';
+} from '../services/subscriptionService.js';
+import { createInvoice } from '../services/invoiceService.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
+import logger from '../config/logger.js';
 
 // Module-level singleton — avoids creating a new Stripe client (and its HTTP
 // connection pool) on every request. Safe for serverless: each warm instance
@@ -17,24 +19,6 @@ function getStripe() {
   if (!process.env.STRIPE_SECRET_KEY) throw new Error('Stripe is not configured');
   if (!_stripe) _stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
   return _stripe;
-}
-
-// Records a paid invoice for a given plan + customer (initial or renewal).
-async function recordInvoice({ userId, email, name, planName }) {
-  const plan = getPlan(planName);
-  const period = new Date().toISOString().slice(0, 7); // "2025-06"
-  await Invoice.create({
-    user:           userId || undefined,
-    customerEmail:  email,
-    customerName:   name,
-    plan:           planName,
-    amount:         plan?.amount ?? 0,
-    originalAmount: plan?.originalAmount ?? plan?.amount ?? 0,
-    discountPct:    plan?.discountPct ?? 0,
-    currency:       plan?.currency ?? 'EUR',
-    billingPeriod:  period,
-    status:         'paid',
-  });
 }
 
 // @desc   Create a Stripe Checkout Session for a MONTHLY recurring subscription
@@ -109,72 +93,102 @@ export const stripeWebhook = asyncHandler(async (req, res) => {
     switch (event.type) {
       // ---- Initial subscription purchase ----
       case 'checkout.session.completed': {
-        const session = event.data.object;
-        if (session.mode !== 'subscription') break;
+        const stripeSession = event.data.object;
+        if (stripeSession.mode !== 'subscription') break;
 
-        const subscription = await stripe.subscriptions.retrieve(session.subscription);
-        const planName = session.metadata?.plan || subscription.metadata?.plan;
-        const userId   = session.metadata?.userId || subscription.metadata?.userId || null;
+        const subscription = await stripe.subscriptions.retrieve(stripeSession.subscription);
+        const planName   = stripeSession.metadata?.plan || subscription.metadata?.plan;
+        const userId     = stripeSession.metadata?.userId || subscription.metadata?.userId || null;
         const validUntil = new Date(subscription.current_period_end * 1000);
 
-        const updated = await Payment.findOneAndUpdate(
-          { gatewayOrderId: session.id },
-          {
-            status:               'paid',
-            gatewayTxnId:         session.payment_intent || subscription.id,
-            stripeCustomerId:     session.customer,
-            stripeSubscriptionId: subscription.id,
-          },
-          { new: true }
-        );
+        // All three mutations run atomically: mark payment paid, activate
+        // subscription, and record the invoice.
+        const dbSession = await mongoose.startSession();
+        try {
+          await dbSession.withTransaction(async () => {
+            // Filter by status: 'pending' so that a duplicate webhook delivery
+            // for an already-paid session returns null and exits immediately —
+            // preventing a second invoice and second subscription activation.
+            const updated = await Payment.findOneAndUpdate(
+              { gatewayOrderId: stripeSession.id, status: { $ne: 'paid' } },
+              {
+                status:               'paid',
+                gatewayTxnId:         stripeSession.payment_intent || subscription.id,
+                stripeCustomerId:     stripeSession.customer,
+                stripeSubscriptionId: subscription.id,
+              },
+              { new: true, session: dbSession },
+            );
 
-        if (userId) {
-          await activateRecurringSubscription(userId, {
-            plan: planName,
-            validUntil,
-            stripeCustomerId: session.customer,
-            stripeSubscriptionId: subscription.id,
-          }).catch((err) =>
-            console.error('[stripe] activateRecurringSubscription failed:', { userId, planName, err: err.message }));
+            // Guard: no pending payment found — either a race condition, a
+            // duplicate delivery (already processed), or a missing record.
+            if (!updated) return;
+
+            if (userId) {
+              await activateRecurringSubscription(userId, {
+                plan: planName,
+                validUntil,
+                stripeCustomerId:     stripeSession.customer,
+                stripeSubscriptionId: subscription.id,
+                session: dbSession,
+              });
+            }
+
+            await createInvoice({
+              userId,
+              email:     stripeSession.customer_email || updated.customer?.email,
+              name:      updated.customer?.name,
+              planName,
+              paymentId: updated._id,
+              session:   dbSession,
+            });
+          });
+        } finally {
+          dbSession.endSession();
         }
-        await recordInvoice({
-          userId,
-          email: session.customer_email || updated?.customer?.email,
-          name:  updated?.customer?.name,
-          planName,
-        }).catch((err) =>
-          console.error('[stripe] recordInvoice failed:', { userId, planName, err: err.message }));
         break;
       }
 
       // ---- Monthly renewal (Stripe auto-charged the saved card) ----
       case 'invoice.paid': {
-        const invoice = event.data.object;
+        const stripeInvoice = event.data.object;
         // Skip the very first invoice — already handled by checkout.session.completed.
-        if (invoice.billing_reason !== 'subscription_cycle') break;
-        if (!invoice.subscription) break;
+        if (stripeInvoice.billing_reason !== 'subscription_cycle') break;
+        if (!stripeInvoice.subscription) break;
 
-        const subscription = await stripe.subscriptions.retrieve(invoice.subscription);
-        const planName = subscription.metadata?.plan;
-        const userId   = subscription.metadata?.userId || null;
+        const subscription = await stripe.subscriptions.retrieve(stripeInvoice.subscription);
+        const planName   = subscription.metadata?.plan;
+        const userId     = subscription.metadata?.userId || null;
         const validUntil = new Date(subscription.current_period_end * 1000);
 
-        if (userId) {
-          await activateRecurringSubscription(userId, {
-            plan: planName,
-            validUntil,
-            stripeCustomerId: invoice.customer,
-            stripeSubscriptionId: subscription.id,
-          }).catch((err) =>
-            console.error('[stripe] activateRecurringSubscription failed (renewal):', { userId, planName, err: err.message }));
+        // Activate subscription extension and record the renewal invoice atomically.
+        // gatewayInvoiceId = Stripe invoice ID ensures a duplicate webhook
+        // delivery never creates a second invoice for the same renewal.
+        const dbSession = await mongoose.startSession();
+        try {
+          await dbSession.withTransaction(async () => {
+            if (userId) {
+              await activateRecurringSubscription(userId, {
+                plan: planName,
+                validUntil,
+                stripeCustomerId:     stripeInvoice.customer,
+                stripeSubscriptionId: subscription.id,
+                session: dbSession,
+              });
+            }
+
+            await createInvoice({
+              userId,
+              email:            stripeInvoice.customer_email,
+              name:             stripeInvoice.customer_name,
+              planName,
+              gatewayInvoiceId: stripeInvoice.id,
+              session:          dbSession,
+            });
+          });
+        } finally {
+          dbSession.endSession();
         }
-        await recordInvoice({
-          userId,
-          email: invoice.customer_email,
-          name:  invoice.customer_name,
-          planName,
-        }).catch((err) =>
-          console.error('[stripe] recordInvoice failed (renewal):', { userId, planName, err: err.message }));
         break;
       }
 
@@ -182,7 +196,7 @@ export const stripeWebhook = asyncHandler(async (req, res) => {
       case 'customer.subscription.deleted': {
         const subscription = event.data.object;
         await deactivateSubscription(subscription.id).catch((err) =>
-          console.error('[stripe] deactivateSubscription failed:', { subscriptionId: subscription.id, err: err.message }));
+          logger.error('Stripe deactivateSubscription failed', { subscriptionId: subscription.id, message: err.message }));
         break;
       }
 

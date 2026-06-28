@@ -1,4 +1,5 @@
-import { asyncHandler } from '../middleware/asyncHandler.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
+import { parsePagination } from '../utils/pagination.js';
 import Course from '../models/Course.js';
 import Blog from '../models/Blog.js';
 import User from '../models/User.js';
@@ -32,11 +33,9 @@ export const globalSearch = asyncHandler(async (req, res) => {
 });
 
 export const searchCourses = asyncHandler(async (req, res) => {
-  const q      = (req.query.q || '').trim();
-  const level  = req.query.level;
-  const page   = Math.max(1, parseInt(req.query.page) || 1);
-  const limit  = Math.min(20, parseInt(req.query.limit) || 12);
-  const skip   = (page - 1) * limit;
+  const q     = (req.query.q || '').trim();
+  const level = req.query.level;
+  const { page, limit, skip } = parsePagination(req.query, { defaultLimit: 12, maxLimit: 20 });
 
   const filter = {};
   if (q) {
@@ -59,9 +58,7 @@ export const searchTeachers = asyncHandler(async (req, res) => {
   const subject  = req.query.subject;
   const gender   = req.query.gender;
   const language = req.query.language;
-  const page     = Math.max(1, parseInt(req.query.page) || 1);
-  const limit    = Math.min(20, parseInt(req.query.limit) || 12);
-  const skip     = (page - 1) * limit;
+  const { page, limit, skip } = parsePagination(req.query, { defaultLimit: 12, maxLimit: 20 });
 
   const filter = { role: 'teacher' };
   if (q) {

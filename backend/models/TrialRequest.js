@@ -13,4 +13,10 @@ const trialRequestSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// ── Query indexes ─────────────────────────────────────────────────────────────
+// Admin: filter new/contacted/scheduled trials, sorted by date
+trialRequestSchema.index({ status: 1, createdAt: -1 });
+// Duplicate-submission guard
+trialRequestSchema.index({ email: 1 });
+
 export default mongoose.model('TrialRequest', trialRequestSchema);

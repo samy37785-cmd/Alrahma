@@ -1,33 +1,10 @@
 import SystemConfig   from '../models/SystemConfig.js';
 import SystemAuditLog from '../models/SystemAuditLog.js';
 import AdminUser      from '../models/AdminUser.js';
-import { anonymizeIp } from '../config/encryption.js';
-import { body, query, validationResult } from 'express-validator';
-
-// ── Helpers ──────────────────────────────────────────────────────────────────
-function validationErrors(req, res) {
-  const errs = validationResult(req);
-  if (!errs.isEmpty()) {
-    res.status(422).json({ errors: errs.array() });
-    return true;
-  }
-  return false;
-}
-
-async function writeAuditLog(req, action, before, after, severity = 'warning') {
-  await SystemAuditLog.create({
-    adminId:    req.adminId,
-    adminEmail: req.adminUser.email,
-    action,
-    resource:   'SystemConfig',
-    resourceId: null,
-    before,
-    after,
-    severity,
-    userAgent:  req.headers['user-agent'] ?? null,
-    ipAnon:     anonymizeIp(req.ip ?? ''),
-  });
-}
+import { body, query } from 'express-validator';
+import { handleValidationErrors } from '../utils/validationHelper.js';
+import { auditFromReq, createAuditLog } from '../services/auditService.js';
+import { parsePagination, sendPaginated } from '../utils/pagination.js';
 
 // ── GET /api/v1/admin/system/status ──────────────────────────────────────────
 export async function getSystemStatus(req, res) {
@@ -49,7 +26,7 @@ export const toggleMaintenanceModeValidation = [
 ];
 
 export async function toggleMaintenanceMode(req, res) {
-  if (validationErrors(req, res)) return;
+  if (handleValidationErrors(req, res)) return;
 
   const { enable } = req.body;
   const before = await SystemConfig.get('maintenance_mode', 'false');
@@ -59,9 +36,11 @@ export async function toggleMaintenanceMode(req, res) {
     description: 'System maintenance mode flag',
   });
 
-  await writeAuditLog(
+  await auditFromReq(
     req,
     enable ? 'system.maintenance_enabled' : 'system.maintenance_disabled',
+    'SystemConfig',
+    null,
     { maintenance_mode: before },
     { maintenance_mode: String(enable) },
     'critical'
@@ -79,7 +58,7 @@ export const toggleFinancialFreezeValidation = [
 ];
 
 export async function toggleFinancialFreeze(req, res) {
-  if (validationErrors(req, res)) return;
+  if (handleValidationErrors(req, res)) return;
 
   const { enable } = req.body;
   const before = await SystemConfig.get('financials_frozen', 'false');
@@ -89,9 +68,11 @@ export async function toggleFinancialFreeze(req, res) {
     description: 'Financial operations freeze flag',
   });
 
-  await writeAuditLog(
+  await auditFromReq(
     req,
     enable ? 'system.financials_frozen' : 'system.financials_unfrozen',
+    'SystemConfig',
+    null,
     { financials_frozen: before },
     { financials_frozen: String(enable) },
     'critical'
@@ -113,11 +94,9 @@ export const getAuditLogValidation = [
 ];
 
 export async function getAuditLog(req, res) {
-  if (validationErrors(req, res)) return;
+  if (handleValidationErrors(req, res)) return;
 
-  const page  = Math.max(1, parseInt(req.query.page  ?? 1,  10));
-  const limit = Math.min(200, Math.max(1, parseInt(req.query.limit ?? 50, 10)));
-  const skip  = (page - 1) * limit;
+  const { page, limit, skip } = parsePagination(req.query, { defaultLimit: 50, maxLimit: 200 });
 
   const filter = {};
   if (req.query.severity) filter.severity = req.query.severity;
@@ -140,7 +119,7 @@ export async function getAuditLog(req, res) {
     SystemAuditLog.countDocuments(filter),
   ]);
 
-  return res.json({ data, total, page, pages: Math.ceil(total / limit) });
+  return sendPaginated(res, { data, total, page, limit });
 }
 
 // ── DELETE /api/v1/admin/system/audit-log ────────────────────────────────────
@@ -157,27 +136,23 @@ export const purgeOldAuditLogsValidation = [
 ];
 
 export async function purgeOldAuditLogs(req, res) {
-  if (validationErrors(req, res)) return;
+  if (handleValidationErrors(req, res)) return;
 
   const days   = parseInt(req.body.olderThanDays ?? 365, 10);
   const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
   const result = await SystemAuditLog.deleteMany({ createdAt: { $lt: cutoff } });
 
-  // Write an audit entry for the purge itself (must use critical severity)
-  await SystemAuditLog.create({
-    adminId:    req.adminId,
-    adminEmail: req.adminUser.email,
-    action:     'system.audit_purge',
-    resource:   'SystemAuditLog',
-    resourceId: null,
-    before:     null,
-    after:      { purgedCount: result.deletedCount, olderThanDays: days, cutoff },
-    severity:   'critical',
-    userAgent:  req.headers['user-agent'] ?? null,
-    ipAnon:     anonymizeIp(req.ip ?? ''),
-    metadata:   { purgedCount: result.deletedCount },
-  });
+  await auditFromReq(
+    req,
+    'system.audit_purge',
+    'SystemAuditLog',
+    null,
+    null,
+    { purgedCount: result.deletedCount, olderThanDays: days, cutoff },
+    'critical',
+    { purgedCount: result.deletedCount },
+  );
 
   return res.json({
     message:      `Purged ${result.deletedCount} audit log entries older than ${days} days`,
@@ -212,7 +187,7 @@ export const createAdminValidation = [
 ];
 
 export async function createAdmin(req, res) {
-  if (validationErrors(req, res)) return;
+  if (handleValidationErrors(req, res)) return;
 
   const { name, email, password, role } = req.body;
 
@@ -223,18 +198,15 @@ export async function createAdmin(req, res) {
 
   const admin = await AdminUser.create({ name, email, password, role });
 
-  await SystemAuditLog.create({
-    adminId:    req.adminId,
-    adminEmail: req.adminUser.email,
-    action:     'system.admin_created',
-    resource:   'AdminUser',
-    resourceId: String(admin._id),
-    before:     null,
-    after:      { name: admin.name, email: admin.email, role: admin.role },
-    severity:   'critical',
-    userAgent:  req.headers['user-agent'] ?? null,
-    ipAnon:     anonymizeIp(req.ip ?? ''),
-  });
+  await auditFromReq(
+    req,
+    'system.admin_created',
+    'AdminUser',
+    admin._id,
+    null,
+    { name: admin.name, email: admin.email, role: admin.role },
+    'critical',
+  );
 
   return res.status(201).json({
     id:    String(admin._id),

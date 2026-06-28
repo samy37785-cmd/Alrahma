@@ -1,5 +1,7 @@
-import { body, validationResult } from 'express-validator';
-import { asyncHandler } from '../middleware/asyncHandler.js';
+import { body } from 'express-validator';
+import { asyncHandler } from '../utils/asyncHandler.js';
+import { handleValidationErrors } from '../utils/validationHelper.js';
+import { parsePagination } from '../utils/pagination.js';
 import Review from '../models/Review.js';
 
 export const reviewValidation = [
@@ -9,8 +11,7 @@ export const reviewValidation = [
 ];
 
 export const createReview = asyncHandler(async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) return res.status(422).json({ errors: errors.array() });
+  if (handleValidationErrors(req, res)) return;
 
   const { rating, title, body: reviewBody, teacherId, courseId } = req.body;
 
@@ -36,9 +37,7 @@ export const createReview = asyncHandler(async (req, res) => {
 });
 
 export const getTeacherReviews = asyncHandler(async (req, res) => {
-  const page  = Math.max(1, parseInt(req.query.page) || 1);
-  const limit = Math.min(20, parseInt(req.query.limit) || 10);
-  const skip  = (page - 1) * limit;
+  const { page, limit, skip } = parsePagination(req.query, { defaultLimit: 10, maxLimit: 20 });
 
   const [reviews, total, stats] = await Promise.all([
     Review.find({ teacher: req.params.teacherId, status: 'approved' })
@@ -55,9 +54,7 @@ export const getTeacherReviews = asyncHandler(async (req, res) => {
 });
 
 export const getCourseReviews = asyncHandler(async (req, res) => {
-  const page  = Math.max(1, parseInt(req.query.page) || 1);
-  const limit = Math.min(20, parseInt(req.query.limit) || 10);
-  const skip  = (page - 1) * limit;
+  const { page, limit, skip } = parsePagination(req.query, { defaultLimit: 10, maxLimit: 20 });
 
   const [reviews, total] = await Promise.all([
     Review.find({ course: req.params.courseId, status: 'approved' })

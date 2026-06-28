@@ -1,6 +1,6 @@
 import logger from '../config/logger.js';
 
-const SKIP_PATHS = new Set(['/', '/health']);
+const SKIP_PATHS = new Set(['/', '/health', '/ready']);
 
 export function requestLogger(req, res, next) {
   if (SKIP_PATHS.has(req.path)) return next();
@@ -15,8 +15,9 @@ export function requestLogger(req, res, next) {
     logger[level](`${req.method} ${req.originalUrl}`, {
       status,
       ms,
-      ip:     req.ip,
-      userId: req.user?._id?.toString?.() ?? null,
+      ip:        req.ip,
+      userId:    req.user?._id?.toString?.() ?? null,
+      requestId: req.requestId ?? null,
     });
   });
 

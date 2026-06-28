@@ -1,0 +1,55 @@
+﻿/* ── RTL (Arabic) overrides ─────────────────────────────────────── */
+[dir="rtl"] body { font-family: 'Segoe UI', Tahoma, Arial, sans-serif; }
+[dir="rtl"] .topbar__contact a { margin-right: 0; margin-left: 18px; }
+[dir="rtl"] .hero__inner { direction: rtl; }
+[dir="rtl"] .hero__badges { flex-direction: row-reverse; flex-wrap: wrap; }
+[dir="rtl"] .steps__grid { direction: rtl; }
+[dir="rtl"] .step__num { margin-left: 0; margin-right: auto; }
+[dir="rtl"] .footer__grid { direction: rtl; }
+[dir="rtl"] .footer__contact { direction: rtl; }
+[dir="rtl"] .nav { direction: rtl; }
+[dir="rtl"] .whatsapp-fab { left: 24px; right: auto; }
+[dir="rtl"] .plan__features li { direction: rtl; text-align: right; }
+[dir="rtl"] .about__inner { direction: rtl; }
+[dir="rtl"] .testimonials__grid { direction: rtl; }
+[dir="rtl"] .trial__inner { direction: rtl; }
+[dir="rtl"] .field label { text-align: right; }
+[dir="rtl"] .field input, [dir="rtl"] .field textarea, [dir="rtl"] .field select { text-align: right; direction: rtl; }
+[dir="rtl"] .lang-switcher { direction: ltr; }
+[dir="rtl"] .faq__question { text-align: right; flex-direction: row-reverse; }
+[dir="rtl"] .about__mission { border-left: 0; border-right: 3px solid var(--gold); padding-left: 0; padding-right: 14px; }
+[dir="rtl"] .quote figcaption { direction: rtl; }
+[dir="rtl"] .stats-banner__grid { direction: rtl; }
+[dir="rtl"] .hero__verse-card { left: auto; right: -20px; }
+[dir="rtl"] .steps__timeline { direction: rtl; }
+[dir="rtl"] .timeline-step__line { background: linear-gradient(270deg, var(--green) 0%, var(--line) 100%); }
+[dir="rtl"] .timeline-step__arrow { transform: scaleX(-1); }
+[dir="rtl"] .course__badges { direction: ltr; }
+[dir="rtl"] .join-cta__stats { direction: rtl; }
+[dir="rtl"] .plan__tag { right: auto; left: 12px; }
+[dir="rtl"] .plan__discount-badge { left: auto; right: 12px; }
+[dir="rtl"] .plan ul { text-align: right; }
+[dir="rtl"] .plan li::before { margin-right: 0; margin-left: 10px; }
+[dir="rtl"] .tc2__creds-bar { direction: rtl; }
+[dir="rtl"] .tc2__cred { border-right: 0; border-left: 1px solid rgba(255,255,255,.12); }
+[dir="rtl"] .tc2__cred:last-child { border-left: 0; }
+[dir="rtl"] .tc2__rate-wrap { direction: ltr; }
+[dir="rtl"] .tc2__tags { direction: ltr; }
+
+/* ── Phase 3 RTL overrides ───────────────────────────────────────── */
+
+/* Feature card top-accent line: flip transform-origin for RTL */
+[dir="rtl"] .feature::before { transform-origin: right; }
+
+/* Hero live badge — direction-neutral, no change needed */
+
+/* Scroll indicator — centered, no RTL issue */
+
+/* Section heading underline — centered (translateX(-50%)), fine in RTL */
+
+/* Pricing trust row — flex center, wraps naturally */
+
+/* Footer trust strip — flex center, wraps naturally */
+
+/* Testimonials verified badge — inline-flex, adjust spacing */
+[dir="rtl"] .tst__verified { margin-left: 0; margin-right: 6px; }

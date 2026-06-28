@@ -12,7 +12,7 @@ import { encrypt, decrypt } from '../config/encryption.js';
  */
 const systemConfigSchema = new mongoose.Schema(
   {
-    key:        { type: String, required: true, unique: true, trim: true, index: true },
+    key:        { type: String, required: true, unique: true, trim: true },
     _value:     { type: String, required: true },
     encrypted:  { type: Boolean, default: false },
     description:{ type: String, default: '' },

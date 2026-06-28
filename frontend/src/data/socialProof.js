@@ -22,16 +22,16 @@ export const SHOW_STATS        = true;
 export const SHOW_TESTIMONIALS = true;
 
 // ── Animated counters in StatsBanner ─────────────────────────────────────────
-// 10 certified tutors · 4.9★ weighted avg · 24/7 · 6 EU languages
+// 32 Al-Azhar tutors · 4.9★ weighted avg · 9,000+ lessons delivered · 40+ countries
 export const STATS = [
-  { value: 10,  suffix: '+' },           // qualified tutors
-  { value: 4.9, suffix: '★', decimals: 1 }, // average tutor rating (weighted)
-  { value: 24,  suffix: '/7' },          // always available
-  { value: 6,   suffix: '' },            // European languages
+  { value: 32,   suffix: '+' },              // Al-Azhar certified tutors
+  { value: 4.9,  suffix: '★', decimals: 1 }, // average tutor rating (weighted)
+  { value: 9000, suffix: '+' },              // lessons delivered
+  { value: 40,   suffix: '+' },              // countries with active students
 ];
 
 // Headline figure used on the Testimonials CTA card.
-export const HAPPY_STUDENTS = '500+';
+export const HAPPY_STUDENTS = '1,200+';
 
 // ── Testimonials ──────────────────────────────────────────────────────────────
 export const TESTIMONIALS = [

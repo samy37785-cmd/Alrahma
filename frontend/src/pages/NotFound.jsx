@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom';
-import Brand from '../components/layout/Brand';
-import '../styles/quran.css';
+import PageBar from '../components/layout/PageBar';
 import useSEO from '../hooks/useSEO';
 import { useLang } from '../context/LangContext';
 
@@ -10,12 +9,7 @@ export default function NotFound() {
   useSEO({ title: nf.title, noindex: true });
   return (
     <div className="notfound-page">
-      <header className="quran__bar">
-        <div className="container quran__bar-inner">
-          <Brand />
-          <Link to="/" className="btn btn--ghost btn--sm">← {nf.goHome}</Link>
-        </div>
-      </header>
+      <PageBar to="/" label={`← ${nf.goHome}`} />
 
       <main className="container notfound-page__main">
         <div className="notfound-page__inner">

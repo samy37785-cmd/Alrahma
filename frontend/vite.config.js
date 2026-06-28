@@ -73,10 +73,28 @@ export default defineConfig({
     target: ['es2015', 'safari11'],
     rollupOptions: {
       output: {
-        // Split rarely-changing vendor code into its own chunk so it stays
-        // cached across deploys (only app code re-downloads each release).
-        manualChunks: {
-          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+        // Function form lets us pattern-match node_modules paths, which is more
+        // reliable than the object form for packages with sub-packages (e.g. Sentry
+        // has @sentry/core, @sentry/browser, etc. all needing the same chunk).
+        manualChunks(id) {
+          // Normalise to forward slashes so patterns work on Windows and Unix.
+          const fwd = id.replaceAll('\\', '/');
+          // Core UI runtime — changes only on React/Router upgrades
+          if (fwd.includes('/node_modules/react/') ||
+              fwd.includes('/node_modules/react-dom/') ||
+              fwd.includes('/node_modules/react-router-dom/') ||
+              fwd.includes('/node_modules/react-router/') ||
+              fwd.includes('/node_modules/scheduler/')) {
+            return 'react-vendor';
+          }
+          // Data-fetching SDK — changes independently of UI runtime
+          if (fwd.includes('/node_modules/@tanstack/')) {
+            return 'query-vendor';
+          }
+          // Sentry error/analytics SDK — large and very rarely updated
+          if (fwd.includes('/node_modules/@sentry/')) {
+            return 'sentry-vendor';
+          }
         },
       },
     },

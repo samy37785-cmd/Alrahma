@@ -9,6 +9,8 @@ import ScrollToTop from './components/ui/ScrollToTop';
 import Analytics from './components/ui/Analytics';
 import ErrorBoundary from './components/ErrorBoundary';
 import ContentGuard from './components/ContentGuard';
+import { ToastProvider } from './components/ui/Toast';
+import LiveChat from './components/ui/LiveChat';
 
 // Route-level code splitting
 const Home               = lazy(() => import('./pages/Home'));
@@ -21,6 +23,8 @@ const BlogPost           = lazy(() => import('./pages/BlogPost'));
 const FAQ                = lazy(() => import('./pages/FAQ'));
 const AboutPage          = lazy(() => import('./pages/About'));
 const Privacy            = lazy(() => import('./pages/Privacy'));
+const TermsOfService     = lazy(() => import('./pages/TermsOfService'));
+const RefundPolicy       = lazy(() => import('./pages/RefundPolicy'));
 const PaymentResult      = lazy(() => import('./pages/PaymentResult'));
 const Billing            = lazy(() => import('./pages/Billing'));
 const Dashboard          = lazy(() => import('./pages/Dashboard'));
@@ -39,6 +43,9 @@ const HadithLibrary      = lazy(() => import('./pages/HadithLibrary'));
 const TeacherDashboard   = lazy(() => import('./pages/TeacherDashboard'));
 const ParentDashboard    = lazy(() => import('./pages/ParentDashboard'));
 const Messages           = lazy(() => import('./pages/Messages'));
+const CalendarPage       = lazy(() => import('./pages/CalendarPage'));
+const AttendancePage     = lazy(() => import('./pages/AttendancePage'));
+const HomeworkPage       = lazy(() => import('./pages/HomeworkPage'));
 const NotFound           = lazy(() => import('./pages/NotFound'));
 
 // Hub pages (new IA)
@@ -56,6 +63,8 @@ const PrayerTimesPage      = lazy(() => import('./pages/tools/PrayerTimesPage'))
 const QiblaPage            = lazy(() => import('./pages/tools/QiblaPage'));
 const IslamicCalendarPage  = lazy(() => import('./pages/tools/IslamicCalendarPage'));
 const VerseOfTheDayPage    = lazy(() => import('./pages/tools/VerseOfTheDayPage'));
+const TajweedCheckerPage   = lazy(() => import('./pages/tools/TajweedCheckerPage'));
+const HifzReviewPage       = lazy(() => import('./pages/tools/HifzReviewPage'));
 
 // Param-aware redirects for old slug/id routes
 function RedirectBlogSlug() {
@@ -81,10 +90,12 @@ export default function App() {
     <QueryProvider>
     <ThemeProvider>
     <LangProvider>
+    <ToastProvider>
     <AuthProvider>
       <BrowserRouter>
         <ScrollToTop />
         <Analytics />
+        <LiveChat />
         <ContentGuard />
         <a href="#main-content" className="skip-link">Skip to main content</a>
         <Suspense fallback={<PageFallback />}>
@@ -112,6 +123,8 @@ export default function App() {
           <Route path="/tools/verse-of-the-day" element={<VerseOfTheDayPage />} />
           <Route path="/tools/tasbeeh" element={<TasbeehPage />} />
           <Route path="/tools/arabic-alphabet" element={<ArabicAlphabetPage />} />
+          <Route path="/tools/tajweed-checker" element={<TajweedCheckerPage />} />
+          <Route path="/tools/hifz-review" element={<HifzReviewPage />} />
           <Route path="/tools/quran" element={<Navigate to="/tools/quran-reader" replace />} />
 
           {/* ── Resources hierarchy ── */}
@@ -126,6 +139,10 @@ export default function App() {
           <Route path="/academy/teachers" element={<Teachers />} />
           <Route path="/academy/teachers/:id" element={<TeacherProfile />} />
           <Route path="/academy/privacy" element={<Privacy />} />
+          <Route path="/academy/terms" element={<TermsOfService />} />
+          <Route path="/academy/refund-policy" element={<RefundPolicy />} />
+          <Route path="/terms" element={<Navigate to="/academy/terms" replace />} />
+          <Route path="/refund-policy" element={<Navigate to="/academy/refund-policy" replace />} />
 
           {/* ── Auth ── */}
           <Route path="/login" element={<Login />} />
@@ -146,6 +163,9 @@ export default function App() {
           <Route path="/admin" element={<ProtectedRoute adminOnly><AdminDashboard /></ProtectedRoute>} />
           <Route path="/teacher" element={<ProtectedRoute role="teacher"><TeacherDashboard /></ProtectedRoute>} />
           <Route path="/parent" element={<ProtectedRoute role="parent"><ParentDashboard /></ProtectedRoute>} />
+          <Route path="/calendar" element={<ProtectedRoute><CalendarPage /></ProtectedRoute>} />
+          <Route path="/attendance" element={<ProtectedRoute><AttendancePage /></ProtectedRoute>} />
+          <Route path="/homework" element={<ProtectedRoute><HomeworkPage /></ProtectedRoute>} />
 
           {/* ── Legacy redirects (old flat URLs → new hierarchy) ── */}
           <Route path="/quran" element={<Navigate to="/tools/quran-reader" replace />} />
@@ -168,6 +188,7 @@ export default function App() {
         </Suspense>
       </BrowserRouter>
     </AuthProvider>
+    </ToastProvider>
     </LangProvider>
     </ThemeProvider>
     </QueryProvider>

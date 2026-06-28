@@ -1,5 +1,5 @@
-import Course from '../models/Course.js';
-import { asyncHandler } from '../middleware/asyncHandler.js';
+﻿import Course from '../models/Course.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
 
 // Removes all paid material from a course object for users without an active
 // subscription: clears flat resources and strips every lesson body, leaving
@@ -30,6 +30,10 @@ export const getCourses = asyncHandler(async (req, res) => {
   const courses = await Course.find({ published: true })
     .select('-resources -modules.lessons')
     .sort('-createdAt');
+  // Safe to cache publicly: no user-specific data, no paid content.
+  // 5-min fresh window + 60-s stale-while-revalidate means CDN and the
+  // browser serve this instantly on repeat visits while staying up to date.
+  res.set('Cache-Control', 'public, max-age=300, stale-while-revalidate=60');
   res.json(courses);
 });
 

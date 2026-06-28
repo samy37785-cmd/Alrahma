@@ -1,8 +1,8 @@
-import Certificate from '../models/Certificate.js';
+﻿import Certificate from '../models/Certificate.js';
 import User from '../models/User.js';
 import { sendMail } from '../config/mailer.js';
 import { certificateIssuedEmail } from '../config/emailTemplates.js';
-import { asyncHandler } from '../middleware/asyncHandler.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
 
 // @desc  Admin/teacher: issue a certificate to a student.
 // @route POST /api/certificates

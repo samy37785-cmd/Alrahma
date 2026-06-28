@@ -1,7 +1,7 @@
 import { useParams, Link, Navigate } from 'react-router-dom';
-import Brand from '../components/layout/Brand';
-import '../styles/quran.css';
-import { posts, CATEGORY_COLORS } from '../data/blogPosts';
+import PageBar from '../components/layout/PageBar';
+import { CATEGORY_COLORS } from '../data/blogPosts';
+import { useBlogPost, useBlogPosts } from '../hooks/useBlog';
 import useSEO from '../hooks/useSEO';
 import Breadcrumbs from '../components/ui/Breadcrumbs';
 
@@ -90,10 +90,14 @@ function parseInline(text) {
 
 export default function BlogPost() {
   const { slug } = useParams();
-  const post = posts.find((p) => p.slug === slug);
-  const idx  = posts.findIndex((p) => p.slug === slug);
-  const prev = idx > 0 ? posts[idx - 1] : null;
-  const next = idx < posts.length - 1 ? posts[idx + 1] : null;
+
+  const { data: post, isLoading, isError } = useBlogPost(slug);
+
+  // Fetch the full list to determine prev/next neighbours.
+  const { data: allPosts = [] } = useBlogPosts();
+  const idx  = allPosts.findIndex((p) => p.slug === slug);
+  const prev = idx > 0 ? allPosts[idx - 1] : null;
+  const next = idx < allPosts.length - 1 ? allPosts[idx + 1] : null;
 
   useSEO({
     title: post?.title,
@@ -118,18 +122,24 @@ export default function BlogPost() {
     } : null,
   });
 
-  if (!post) return <Navigate to="/resources/blog" replace />;
+  if (isLoading) {
+    return (
+      <div className="blog-post-page">
+        <PageBar to="/resources/blog" label="← Blog" />
+        <main id="main-content" className="container blog-post__main">
+          <p style={{ textAlign: 'center', padding: '4rem 0', color: 'var(--muted)' }}>Loading…</p>
+        </main>
+      </div>
+    );
+  }
+
+  if (isError || !post) return <Navigate to="/resources/blog" replace />;
 
   const catColor = CATEGORY_COLORS[post.category] || '#0b6e4f';
 
   return (
     <div className="blog-post-page">
-      <header className="quran__bar">
-        <div className="container quran__bar-inner">
-          <Brand />
-          <Link to="/resources/blog" className="btn btn--ghost btn--sm">← Blog</Link>
-        </div>
-      </header>
+      <PageBar to="/resources/blog" label="← Blog" />
 
       <Breadcrumbs items={[{ label: 'Blog', to: '/blog' }, { label: post.title }]} />
 

@@ -10,13 +10,15 @@ export const features = [
 export const steps = [
   { num: 1, title: 'Fill the free trial form',    text: "Tell us about the student and the course you're interested in." },
   { num: 2, title: 'Schedule a trial session',    text: "We'll match you with a tutor and a time that works for you." },
-  { num: 3, title: 'Download the meeting app',    text: 'Join your lessons easily over Zoom or Skype, from anywhere.' },
+  { num: 3, title: 'Join your secure session',    text: 'Your tutor sends a secure video link 30 minutes before class — one click to join from any device.' },
 ];
 
 
 export const plans = [
   {
-    name: 'Starter',
+    name: 'Noorani',
+    arabicName: 'نوراني',
+    tagline: 'Begin your light',
     originalPrice: '€75',
     price: '€56',
     pricePerHour: '€7',
@@ -27,7 +29,9 @@ export const plans = [
     features: ['2 classes / week', '8 sessions / month', '1 hour per class', 'One-to-one tutoring', 'Zoom or Skype'],
   },
   {
-    name: 'Standard',
+    name: 'Huffaz',
+    arabicName: 'حُفَّاظ',
+    tagline: 'Carry the Quran',
     originalPrice: '€112',
     price: '€84',
     pricePerHour: '€7',
@@ -39,7 +43,9 @@ export const plans = [
     features: ['3 classes / week', '12 sessions / month', '1 hour per class', 'One-to-one tutoring', 'Progress reports'],
   },
   {
-    name: 'Premium',
+    name: 'Ijazah',
+    arabicName: 'إجازة',
+    tagline: 'Earn your chain',
     originalPrice: '€149',
     price: '€112',
     pricePerHour: '€7',

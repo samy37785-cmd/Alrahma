@@ -124,10 +124,11 @@ export default function Teachers() {
   const isAr = lang === 'ar';
 
   useSEO({
-    title: isAr ? 'معلمونا' : 'Our Teachers',
+    title: isAr ? 'معلمونا المعتمدون من الأزهر' : 'Al-Azhar Certified Quran Tutors',
     description: isAr
-      ? 'تعرف على معلمينا المعتمدين من الأزهر، خبراء في القرآن والتجويد والدراسات الإسلامية.'
-      : 'Meet our qualified Al-Azhar certified Quran and Arabic tutors. All teachers hold an Ijazah with a verified sanad.',
+      ? 'تعرف على معلمينا المعتمدين من الأزهر — 32 معلماً ومعلمة، كل منهم يحمل إجازة بسند متصل. يُدرّسون القرآن والتجويد والدراسات الإسلامية لأطفالك بالإنجليزية والإيطالية والفرنسية والألمانية والإسبانية.'
+      : 'Meet our 32 Al-Azhar certified tutors — every one holds a verified Ijazah with a continuous sanad. Available 24/7 in English, Italian, French, German and Spanish. Identity-verified and safe for children.',
+    keywords: 'al-azhar certified quran tutor, online quran teacher, ijazah tutor, female quran teacher, quran teacher for children',
   });
 
   const navigate = useNavigate();

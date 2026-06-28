@@ -23,4 +23,10 @@ const manualPaymentSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// ── Query indexes ─────────────────────────────────────────────────────────────
+// User payment history lookup
+manualPaymentSchema.index({ userId: 1 }, { sparse: true });
+// Admin: filter by status (pending review) + sort by date
+manualPaymentSchema.index({ status: 1, createdAt: -1 });
+
 export default mongoose.model('ManualPayment', manualPaymentSchema);

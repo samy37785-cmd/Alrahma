@@ -1,0 +1,117 @@
+﻿/* ═══════════════════════════════════════════════════════════════
+   TEACHERS PAGE  (tpg__)
+═══════════════════════════════════════════════════════════════ */
+.tpg__hero {
+  background: var(--grad-hero); color: #eef6f1;
+  padding: 80px 0 64px; text-align: center;
+}
+.tpg__hero h1 { color: #fff; margin-bottom: 12px; }
+.tpg__hero-sub { color: #cde5d8; max-width: 640px; margin: 0 auto 24px; font-size: 1.05rem; line-height: 1.7; }
+.tpg__hero-badges {
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 12px;
+}
+.tpg__hero-badges span {
+  background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.22);
+  color: #eef6f1; padding: 7px 18px; border-radius: 999px; font-size: .88rem; font-weight: 500;
+  backdrop-filter: blur(4px);
+}
+
+.tpg__stats-bar { background: var(--green-deep); padding: 24px 0; }
+.tpg__stats-inner { display: flex; justify-content: center; gap: 0; }
+.tpg__stat { text-align: center; padding: 0 40px; border-right: 1px solid rgba(255,255,255,.12); }
+.tpg__stat:last-child { border-right: 0; }
+.tpg__stat strong { display: block; font-size: 1.8rem; font-weight: 800; color: var(--gold); }
+.tpg__stat span { color: #cfe0d8; font-size: .85rem; }
+
+/* Filters */
+.tpg__filters { background: #fff; border-bottom: 1px solid var(--line); padding: 16px 0; position: sticky; top: 64px; z-index: 40; }
+.tpg__filters-inner { display: flex; flex-wrap: wrap; gap: 16px 32px; }
+.tpg__filter-group { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.tpg__filter-label { font-size: .8rem; font-weight: 700; color: var(--muted); white-space: nowrap; }
+.tpg__filter-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+.tpg__filter-btn {
+  background: none; border: 1.5px solid var(--line); border-radius: 999px;
+  padding: 5px 14px; font-size: .8rem; font-weight: 600; color: var(--muted);
+  cursor: pointer; transition: all .2s; white-space: nowrap;
+}
+.tpg__filter-btn:hover { border-color: var(--green); color: var(--green); }
+.tpg__filter-btn.active { background: var(--green); border-color: var(--green); color: #fff; }
+
+/* Teacher list */
+.tpg__section { padding: 60px 0 90px; }
+.tpg__list { display: flex; flex-direction: column; gap: 28px; }
+.tpg__empty { text-align: center; color: var(--muted); font-size: 1rem; padding: 40px 0; }
+.tpg__reset { background: none; border: 0; color: var(--green); font-weight: 600; cursor: pointer; margin-left: 8px; text-decoration: underline; }
+
+/* Teacher card (horizontal layout) */
+.tpg__card {
+  display: flex; background: #fff; border-radius: var(--radius-lg);
+  border: 1px solid var(--line); box-shadow: var(--shadow); overflow: hidden;
+  transition: transform .25s ease, box-shadow .25s ease;
+}
+.tpg__card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); }
+
+.tpg__avatar-col {
+  width: 140px; flex-shrink: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 10px; padding: 28px 16px;
+}
+.tpg__avatar {
+  width: 80px; height: 80px; border-radius: 50%;
+  background: rgba(255,255,255,.22); border: 3px solid rgba(255,255,255,.55);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.8rem; font-weight: 800; color: #fff;
+  font-family: var(--serif); text-shadow: 0 2px 6px rgba(0,0,0,.2);
+  box-shadow: 0 8px 24px rgba(8,77,55,.22);
+}
+.tpg__gender-badge, .tpg__az-badge {
+  font-size: .7rem; font-weight: 700; color: rgba(255,255,255,.85);
+  background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.28);
+  border-radius: 999px; padding: 4px 10px; text-align: center;
+  backdrop-filter: blur(3px);
+}
+
+/* Info panel */
+.tpg__info { flex: 1; padding: 28px 32px; display: flex; flex-direction: column; gap: 12px; }
+.tpg__names { }
+.tpg__name-ar { font-size: 1.35rem; font-weight: 800; color: var(--green-deep); margin-bottom: 2px; font-family: var(--serif); }
+.tpg__name-en { font-size: .88rem; color: var(--muted); margin-bottom: 2px; }
+.tpg__role { font-size: .9rem; color: var(--green); font-weight: 600; }
+
+/* Rating */
+.tpg__rating { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.tpg__stars { display: inline-flex; gap: 1px; }
+.tpg__star { color: #ddd; font-size: .88rem; }
+.tpg__star.on { color: var(--gold); }
+.tpg__avg { font-weight: 700; font-size: .95rem; color: var(--green-deep); }
+.tpg__cnt { font-size: .8rem; color: var(--muted); }
+.tpg__rate { display: flex; align-items: center; gap: 4px; margin-left: 12px; font-size: .78rem; color: var(--muted); }
+.tpg__rate-btn { background: none; border: 0; cursor: pointer; font-size: 1rem; color: #ccc; padding: 0; transition: color .15s; }
+.tpg__rate-btn:hover, .tpg__rate-btn.lit { color: var(--gold); }
+.tpg__thanks { color: var(--green); font-weight: 700; font-size: .8rem; }
+
+/* Langs */
+.tpg__langs { display: flex; flex-wrap: wrap; gap: 6px; }
+.tpg__lang { background: var(--green-light); color: var(--green-deep); font-size: .72rem; font-weight: 600; padding: 3px 10px; border-radius: 999px; border: 1px solid rgba(11,110,79,.15); }
+.tpg__lang--hours { background: #fff7e6; color: #a05000; border-color: rgba(160,80,0,.2); }
+
+/* Tags */
+.tpg__tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.tpg__tag { background: var(--gold-light); color: var(--gold-dark); font-size: .72rem; font-weight: 600; padding: 3px 10px; border-radius: 999px; border: 1px solid rgba(212,175,55,.25); }
+
+/* Bio */
+.tpg__bio { max-height: 0; overflow: hidden; transition: max-height .35s ease, opacity .35s ease; opacity: 0; }
+.tpg__bio.open { max-height: 200px; opacity: 1; }
+.tpg__bio p { font-size: .88rem; color: var(--muted); line-height: 1.7; }
+.tpg__bio-toggle { background: none; border: 0; color: var(--green); font-size: .8rem; font-weight: 600; cursor: pointer; padding: 0; }
+
+/* Credentials */
+.tpg__creds { display: flex; flex-wrap: wrap; gap: 8px 24px; list-style: none; }
+.tpg__creds li { font-size: .82rem; color: var(--muted); display: flex; align-items: center; gap: 5px; }
+
+.tpg__enroll-btn { align-self: flex-start; margin-top: auto; }
+
+/* CTA */
+.tpg__cta { background: var(--grad-hero); padding: 70px 0; text-align: center; }
+.tpg__cta h2 { color: #fff; margin-bottom: 10px; }
+.tpg__cta p { color: #cde5d8; margin-bottom: 28px; font-size: 1.05rem; }

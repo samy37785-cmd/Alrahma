@@ -1,8 +1,8 @@
-import LiveClass from '../models/LiveClass.js';
+﻿import LiveClass from '../models/LiveClass.js';
 import User from '../models/User.js';
 import { sendMail } from '../config/mailer.js';
 import { liveClassScheduledEmail } from '../config/emailTemplates.js';
-import { asyncHandler } from '../middleware/asyncHandler.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
 
 // Populates teacher/student names for the API response.
 const POPULATE = [

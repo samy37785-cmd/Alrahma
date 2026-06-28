@@ -42,8 +42,9 @@
   },
   "hero": {
     "eyebrow": "Corano • Arabo • Studi Islamici",
-    "title": "Impara il Corano Online",
-    "sub": "La migliore accademia online di Corano e arabo per bambini e adulti — lezioni individuali con insegnanti madrelingua qualificati, quando vuoi.",
+    "title": "Dona a Tuo Figlio il Dono del Corano",
+    "titleHighlight": "il Dono del Corano",
+    "sub": "Insegnanti certificati Al-Azhar insegnano a tuo figlio uno a uno — con una conoscenza autentica e una catena che risale al Profeta ﷺ.",
     "cta1": "Prenota una Prova Gratuita",
     "cta2": "📚 Esplora i Corsi",
     "cta3": "Esplora i Corsi",
@@ -88,19 +89,19 @@
   },
   "steps": {
     "eyebrow": "Come funziona",
-    "heading": "Inizia in 3 Semplici Passi",
+    "heading": "Il Tuo Viaggio verso il Corano",
     "items": [
       {
-        "title": "Compila il modulo di prova gratuita",
-        "text": "Dicci dello studente e del corso che ti interessa."
+        "title": "Raccontaci di tuo figlio",
+        "text": "Un modulo da 2 minuti — età, livello, obiettivi. Leggiamo ogni parola per scegliere l'insegnante giusto."
       },
       {
-        "title": "Programma una sessione di prova",
-        "text": "Ti abbineremo a un insegnante e a un orario adatto a te."
+        "title": "Incontra il tuo insegnante",
+        "text": "Selezioniamo un insegnante certificato adatto all'età e agli obiettivi di tuo figlio. Sessione gratuita di 30 minuti — senza carta, senza impegno."
       },
       {
-        "title": "Scarica l'app per le riunioni",
-        "text": "Partecipa facilmente alle lezioni tramite Zoom o Skype, da qualsiasi luogo."
+        "title": "Inizia un viaggio senza fine",
+        "text": "La prima lezione vera. Tuo figlio recita. La catena del sapere che risale al Profeta ﷺ passa attraverso di lui."
       }
     ]
   },
@@ -217,8 +218,8 @@
     "getStarted": "Inizia Ora",
     "mostPopular": "Più popolare",
     "sub": "Piani mensili convenienti per studente. Cancella in qualsiasi momento.",
-    "banner": "🎉 Tempo Limitato",
-    "bannerText": "Risparmia il 25% su tutti i piani — sconto già applicato di seguito",
+    "banner": "🎓 Tariffa Fondatori",
+    "bannerText": "Tariffa fondatori bloccata a vita — i prezzi aumentano con la nostra crescita",
     "youSave": "Risparmi",
     "perHour": "/ ora equivalente",
     "cancelNote": "Annulla quando vuoi — nessun contratto"
@@ -227,7 +228,7 @@
     "eyebrow": "Testimonianze",
     "heading": "Cosa Dicono i Nostri Studenti",
     "sub": "Esperienze reali da studenti reali — con le loro parole.",
-    "happyStudents": "studenti soddisfatti in tutto il mondo",
+    "happyStudents": "lezioni erogate in tutto il mondo",
     "joinToday": "Unisciti a loro oggi →"
   },
   "trial": {
@@ -501,8 +502,8 @@
     "labels": [
       "Insegnanti Esperti",
       "Valutazione Media",
-      "Sempre Disponibile",
-      "Lingue"
+      "Lezioni Erogate",
+      "Paesi Serviti"
     ]
   },
   "blog": {
@@ -557,7 +558,8 @@
       "createOne": "Creane uno",
       "forgot": "Hai dimenticato la password?",
       "back": "← Torna al sito",
-      "networkError": "Errore di rete — controlla la connessione e riprova."
+      "networkError": "Errore di rete — controlla la connessione e riprova.",
+      "errorFallback": "Accesso non riuscito. Riprova."
     },
     "register": {
       "title": "Crea il tuo account",
@@ -571,7 +573,8 @@
       "signIn": "Accedi",
       "back": "← Torna al sito",
       "gdprConsent": "Accetto l'<a href=\"/privacy\" style=\"color:var(--green)\">Informativa sulla Privacy</a> e acconsento che Al-Rahma Academy tratti i miei dati personali per gestire il mio account e le lezioni.",
-      "gdprRequired": "Accetta l'informativa sulla privacy per continuare."
+      "gdprRequired": "Accetta l'informativa sulla privacy per continuare.",
+      "errorFallback": "Registrazione non riuscita. Riprova."
     },
     "profile": {
       "myAccount": "Il Mio Account",
@@ -649,7 +652,8 @@
       "btn": "Invia link di reset",
       "busy": "Invio…",
       "success": "Controlla la tua casella — abbiamo inviato un link di reset!",
-      "back": "← Torna al login"
+      "back": "← Torna al login",
+      "errorFallback": "Impossibile inviare l'email. Riprova."
     },
     "resetPwd": {
       "title": "Imposta una nuova password",
@@ -750,11 +754,20 @@
     },
     "success": {
       "icon": "🎉",
-      "title": "Iscrizione Ricevuta!",
-      "thankYouPre": "Grazie, ",
-      "thankYouPost": ". Ti contatteremo entro 24 ore per confermare il tuo programma.",
-      "emailNote": "Controlla la tua email per un messaggio di conferma.",
-      "backHome": "Torna alla Home"
+      "title": "Benvenuto all'Accademia Al-Rahma!",
+      "blessing": "بارك الله فيك",
+      "blessingSub": "Che Allah benedica il tuo percorso di apprendimento",
+      "thankYouPre": "La tua iscrizione è stata ricevuta, ",
+      "thankYouPost": ". Il nostro team ti contatterà entro 24 ore per confermare il tuo programma.",
+      "emailNote": "Una conferma è stata inviata alla tua email.",
+      "backHome": "Torna alla Home",
+      "goToDashboard": "Vai alla Dashboard",
+      "nextTitle": "Cosa succede dopo",
+      "nextSteps": [
+        { "icon": "📧", "title": "Email di conferma", "text": "Controlla la tua casella di posta — confermeremo i dettagli dell'iscrizione entro poche ore." },
+        { "icon": "👨‍🏫", "title": "Incontra il tuo insegnante", "text": "Assegneremo un insegnante certificato in base ai tuoi obiettivi e preferenze di orario." },
+        { "icon": "🎓", "title": "Prima lezione", "text": "La tua prima sessione dal vivo sarà programmata entro 2–3 giorni. Il tuo viaggio inizia." }
+      ]
     },
     "nav": {
       "back": "← Indietro",
@@ -846,7 +859,11 @@
     "forStudent": "per",
     "messages": "Messaggi",
     "planLabel": "Piano:",
-    "quranReader": "Lettore del Corano"
+    "quranReader": "Lettore del Corano",
+    "greetingNight": "Buona notte",
+    "greetingMorning": "Buongiorno",
+    "greetingAfternoon": "Buon pomeriggio",
+    "greetingEvening": "Buona sera"
   },
   "billing": {
     "bar": "Al-Rahma · Fatturazione",

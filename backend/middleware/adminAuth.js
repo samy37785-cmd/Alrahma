@@ -1,38 +1,20 @@
 import jwt from 'jsonwebtoken';
 import AdminUser from '../models/AdminUser.js';
+import {
+  ACCESS_TOKEN_COOKIE,
+  REFRESH_TOKEN_COOKIE,
+  accessCookieOptions,
+  refreshCookieOptions,
+  signAccessToken,
+} from '../utils/adminAuthTokens.js';
 
-export const ACCESS_TOKEN_COOKIE  = 'admin_at';
-export const REFRESH_TOKEN_COOKIE = 'admin_rt';
-
-// Access token: short-lived (15 min), scoped to /api/v1/admin path
-export function accessCookieOptions() {
-  return {
-    httpOnly: true,
-    secure:   process.env.NODE_ENV === 'production',
-    sameSite: 'strict',                // SameSite=Strict — no cross-site delivery
-    maxAge:   15 * 60 * 1000,          // 15 minutes
-    path:     '/api/v1/admin',
-  };
-}
-
-// Refresh token: longer-lived (7 days), path-restricted to the refresh endpoint only
-export function refreshCookieOptions() {
-  return {
-    httpOnly: true,
-    secure:   process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
-    maxAge:   7 * 24 * 60 * 60 * 1000, // 7 days
-    path:     '/api/v1/admin/auth/refresh',
-  };
-}
-
-export function signAccessToken(adminId, role, mfaVerified = false) {
-  return jwt.sign(
-    { id: String(adminId), role, mfaVerified },
-    process.env.ADMIN_JWT_ACCESS_SECRET,
-    { expiresIn: '15m' }
-  );
-}
+export {
+  ACCESS_TOKEN_COOKIE,
+  REFRESH_TOKEN_COOKIE,
+  accessCookieOptions,
+  refreshCookieOptions,
+  signAccessToken,
+};
 
 /**
  * Verifies the admin access token cookie.

@@ -1,4 +1,5 @@
 import rateLimit from 'express-rate-limit';
+import logger from './logger.js';
 
 /*
  * Rate limiters with an OPTIONAL Redis-backed store.
@@ -15,7 +16,9 @@ import rateLimit from 'express-rate-limit';
 
 // makeStore(prefix) returns a configured RedisStore, or undefined to let
 // express-rate-limit use its built-in MemoryStore.
-let makeStore = () => undefined;
+// Exported so adminRateLimits.js can share the same Redis connection and
+// namespace its admin counters in the same global store.
+export let makeStore = () => undefined;
 
 if (process.env.REDIS_URL) {
   try {
@@ -26,15 +29,15 @@ if (process.env.REDIS_URL) {
       maxRetriesPerRequest: 1,
       enableOfflineQueue: false,
     });
-    client.on('error', (e) => console.error('Redis (rate-limit) error:', e.message));
+    client.on('error', (e) => logger.error('Redis rate-limit error', { message: e.message }));
 
     // Each limiter needs its own key namespace so their counters don't collide.
     makeStore = (prefix) =>
       new RedisStore({ prefix, sendCommand: (...args) => client.call(...args) });
 
-    console.log('Rate limiting: Redis store enabled (global across instances).');
+    logger.info('Rate limiting: Redis store enabled (global across instances)');
   } catch (err) {
-    console.error('Rate limiting: Redis unavailable, using in-memory store.', err.message);
+    logger.warn('Rate limiting: Redis unavailable, falling back to in-memory store', { error: err.message });
     makeStore = () => undefined;
   }
 }

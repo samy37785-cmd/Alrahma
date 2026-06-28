@@ -38,17 +38,18 @@ const rotatingFile = (filename, level) =>
   });
 
 const logger = createLogger({
-  level:  process.env.LOG_LEVEL || (IS_PROD ? 'info' : 'debug'),
-  silent: IS_TEST,
-  format: IS_PROD ? prodFormat : devFormat,
+  level:       process.env.LOG_LEVEL || (IS_PROD ? 'info' : 'debug'),
+  silent:      IS_TEST,
+  exitOnError: false,
+  format:      IS_PROD ? prodFormat : devFormat,
   transports: [
     new transports.Console(),
     ...(IS_PROD
       ? [rotatingFile('app', 'info'), rotatingFile('error', 'error')]
       : []),
   ],
-  exceptionHandlers: IS_PROD ? [rotatingFile('exceptions', 'error')] : [],
-  rejectionHandlers: IS_PROD ? [rotatingFile('rejections', 'error')] : [],
+  exceptionHandlers: IS_PROD ? [rotatingFile('exceptions', 'error')] : [new transports.Console()],
+  rejectionHandlers: IS_PROD ? [rotatingFile('rejections', 'error')] : [new transports.Console()],
 });
 
 export default logger;

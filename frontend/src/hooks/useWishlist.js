@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getWishlist, addToWishlist, removeFromWishlist, clearWishlist } from '../api/client.js';
+import { getWishlist, addToWishlist, removeFromWishlist, clearWishlist } from '../api/wishlistApi';
 
 const WISHLIST_KEY = ['wishlist'];
 

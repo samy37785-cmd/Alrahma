@@ -16,7 +16,11 @@ export function errorHandler(err, req, res, _next) {
   });
 
   if (err.code === 11000) {
-    return res.status(409).json({ message: 'This email is already registered' });
+    const field = Object.keys(err.keyValue ?? {})[0] ?? 'field';
+    const msg = field === 'email'
+      ? 'This email is already registered'
+      : `A record with that ${field} already exists`;
+    return res.status(409).json({ message: msg });
   }
   if (err.name === 'ValidationError') {
     const messages = Object.values(err.errors).map((e) => e.message);

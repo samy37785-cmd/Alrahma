@@ -1,7 +1,7 @@
-import { Router } from 'express';
+﻿import { Router } from 'express';
 import { requireAdminRole } from '../../../middleware/rbac.js';
 import { requirePermissions } from '../../../middleware/rbac.js';
-import { asyncHandler } from '../../../middleware/asyncHandler.js';
+import { asyncHandler } from '../../../utils/asyncHandler.js';
 import {
   getSystemStatus,
   toggleMaintenanceMode,   toggleMaintenanceModeValidation,

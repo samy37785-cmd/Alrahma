@@ -1,8 +1,8 @@
-import User from '../models/User.js';
+﻿import User from '../models/User.js';
 import StudentRecord from '../models/StudentRecord.js';
 import HifzProgress from '../models/HifzProgress.js';
 import CourseProgress from '../models/CourseProgress.js';
-import { asyncHandler } from '../middleware/asyncHandler.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
 
 async function courseReport(studentId) {
   const rows = await CourseProgress.find({ user: studentId })

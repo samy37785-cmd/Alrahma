@@ -31,4 +31,10 @@ const enrollmentSchema = new Schema({
   notes:  { type: String, default: '' },
 }, { timestamps: true });
 
+// ── Query indexes ─────────────────────────────────────────────────────────────
+// getMyEnrollment: find by student email, newest first
+enrollmentSchema.index({ email: 1, createdAt: -1 });
+// Admin: filter by status + sort by date
+enrollmentSchema.index({ status: 1, createdAt: -1 });
+
 export default mongoose.model('Enrollment', enrollmentSchema);

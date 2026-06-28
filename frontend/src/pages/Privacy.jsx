@@ -1,6 +1,4 @@
-import { Link } from 'react-router-dom';
-import Brand from '../components/layout/Brand';
-import '../styles/quran.css';
+import PageBar from '../components/layout/PageBar';
 import { site } from '../data';
 import useSEO from '../hooks/useSEO';
 import Breadcrumbs from '../components/ui/Breadcrumbs';
@@ -9,12 +7,7 @@ export default function Privacy() {
   useSEO({ title: 'Privacy Policy', description: 'Read the AL-Rahma Academy privacy policy to understand how we collect, use and protect your personal data.' });
   return (
     <div className="legal">
-      <header className="quran__bar">
-        <div className="container quran__bar-inner">
-          <Brand />
-          <Link to="/" className="btn btn--ghost btn--sm">← Back to site</Link>
-        </div>
-      </header>
+      <PageBar to="/" />
 
       <Breadcrumbs items={[{ label: 'Academy', to: '/academy' }, { label: 'Privacy Policy' }]} />
 

@@ -5,7 +5,7 @@ import {
   markNotifRead,
   markAllNotifsRead,
   deleteNotif,
-} from '../api/client.js';
+} from '../api/notificationApi';
 
 export const NOTIF_KEYS = {
   all:    ['notifications'],

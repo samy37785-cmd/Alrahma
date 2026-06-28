@@ -1,11 +1,25 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext';
-import api, { getCourseProgress, toggleLessonDone } from '../api/client';
+import { getCourse, getCourseProgress, toggleLessonDone } from '../api/courseApi';
 import { useLang } from '../context/LangContext';
 
 const ICONS = { youtube: '▶', pdf: '📄', link: '🔗', video: '▶', text: '📖' };
 const lessonKey = (l) => `lesson:${l._id}`;
+
+function CheckBtn({ isDone, onClick, markDone, markUndone }) {
+  return (
+    <button
+      onClick={onClick}
+      title={isDone ? markUndone : markDone}
+      aria-label={isDone ? markUndone : markDone}
+      style={{ width: 26, height: 26, flexShrink: 0, borderRadius: '50%', border: `2px solid ${isDone ? '#0b6e4f' : '#c7d4cd'}`, background: isDone ? '#0b6e4f' : '#fff', color: '#fff', cursor: 'pointer', fontSize: '.8rem', lineHeight: 1, display: 'grid', placeItems: 'center' }}
+    >
+      {isDone ? '✓' : ''}
+    </button>
+  );
+}
 
 export default function CourseContent() {
   const { id }       = useParams();
@@ -13,81 +27,84 @@ export default function CourseContent() {
   const navigate     = useNavigate();
   const { t }        = useLang();
   const cc           = t.courseContent;
-  const [course, setCourse]   = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError]     = useState('');
-  const [completed, setCompleted] = useState(new Set()); // resource urls + lesson:<id> keys
-  const [openText, setOpenText]   = useState(null);      // _id of an expanded text lesson
+  const queryClient  = useQueryClient();
 
-  useEffect(() => {
-    if (!user) { navigate('/login'); return; }
-    api.get(`/courses/${id}`)
-      .then((r) => {
-        setCourse(r.data);
-        if (!r.data.locked) {
-          getCourseProgress(id)
-            .then((p) => setCompleted(new Set(p.completed || [])))
-            .catch(() => {});
-        }
-      })
-      .catch(() => setError(cc.notFound))
-      .finally(() => setLoading(false));
-  }, [id, user, navigate, cc]);
+  const [openText, setOpenText] = useState(null);
+
+  useEffect(() => { if (!user) navigate('/login'); }, [user, navigate]);
+
+  const { data: course, isLoading, isError } = useQuery({
+    queryKey: ['courses', 'detail', id],
+    queryFn:  () => getCourse(id),
+    enabled:  Boolean(user),
+    staleTime: 1000 * 60 * 5,
+    retry:    false,
+  });
+
+  const { data: progressData } = useQuery({
+    queryKey: ['courses', 'progress', id],
+    queryFn:  () => getCourseProgress(id),
+    enabled:  Boolean(user) && Boolean(course) && !course.locked,
+    staleTime: 0,
+  });
+
+  // Memoize the Set so it's only recreated when progressData changes,
+  // not on every render triggered by openText or other local state.
+  const completed = useMemo(() => new Set(progressData?.completed || []), [progressData]);
+
+  const toggleMutation = useMutation({
+    mutationFn: ({ payload, done }) => toggleLessonDone(id, { ...payload, done }),
+    onMutate: async ({ key, done }) => {
+      await queryClient.cancelQueries({ queryKey: ['courses', 'progress', id] });
+      const previous = queryClient.getQueryData(['courses', 'progress', id]);
+      queryClient.setQueryData(['courses', 'progress', id], (old) => {
+        const next = new Set(old?.completed || []);
+        if (done) next.add(key); else next.delete(key);
+        return { ...(old ?? {}), completed: [...next] };
+      });
+      return { previous };
+    },
+    onSuccess: (res) => {
+      queryClient.setQueryData(['courses', 'progress', id], (old) => ({
+        ...(old ?? {}),
+        completed: res.completed || [],
+      }));
+    },
+    onError: (err, vars, ctx) => {
+      if (ctx?.previous !== undefined) {
+        queryClient.setQueryData(['courses', 'progress', id], ctx.previous);
+      }
+    },
+  });
 
   // Trust the server's `locked` flag (it re-checks subscription + expiry) rather
   // than the cached user, which can be stale.
   const isActive = course ? !course.locked : false;
   const modules  = course?.modules || [];
 
-  // Toggle any completable item. `key` is what's stored in progress.completed;
-  // `payload` is what the API needs to validate it ({ url } or { lessonId }).
-  const toggleItem = async (key, payload) => {
-    const done = !completed.has(key);
-    setCompleted((prev) => {
-      const next = new Set(prev);
-      if (done) next.add(key); else next.delete(key);
-      return next;
-    });
-    try {
-      const res = await toggleLessonDone(id, { ...payload, done });
-      setCompleted(new Set(res.completed || []));
-    } catch {
-      setCompleted((prev) => {
-        const next = new Set(prev);
-        if (done) next.delete(key); else next.add(key);
-        return next;
-      });
-    }
-  };
-
-  // Progress spans BOTH the structured module lessons and the legacy resources.
-  const lessons      = modules.flatMap((m) => m.lessons || []);
-  const total        = lessons.length + (course?.resources?.length || 0);
-  const doneCount     =
+  const lessons   = modules.flatMap((m) => m.lessons || []);
+  const total     = lessons.length + (course?.resources?.length || 0);
+  const doneCount =
     lessons.filter((l) => completed.has(lessonKey(l))).length +
     (course?.resources?.filter((r) => completed.has(r.url)).length || 0);
-  const percent       = total ? Math.round((doneCount / total) * 100) : 0;
+  const percent   = total ? Math.round((doneCount / total) * 100) : 0;
 
-  if (loading) return <div className="auth"><div className="auth__card"><p>{cc.loading}</p></div></div>;
-  if (error)   return <div className="auth"><div className="auth__card"><p className="auth__error">{error}</p><Link to="/">← {cc.myAccount}</Link></div></div>;
+  const toggleItem = (key, payload) => {
+    const done = !completed.has(key);
+    toggleMutation.mutate({ key, payload, done });
+  };
+
+  const markDone   = cc.markDone   || 'Mark as done';
+  const markUndone = cc.markUndone || 'Mark as not done';
+
+  if (isLoading) return <div className="auth"><div className="auth__card"><p>{cc.loading}</p></div></div>;
+  if (isError || !course) return <div className="auth"><div className="auth__card"><p className="auth__error">{cc.notFound}</p><Link to="/">← {cc.myAccount}</Link></div></div>;
 
   const getLabel = (type) => {
     if (type === 'youtube' || type === 'video') return cc.watch;
     if (type === 'pdf')     return cc.download;
     return cc.open;
   };
-
-  // A round check button reused by lessons and resources.
-  const CheckBtn = ({ isDone, onClick }) => (
-    <button
-      onClick={onClick}
-      title={isDone ? (cc.markUndone || 'Mark as not done') : (cc.markDone || 'Mark as done')}
-      aria-label={isDone ? (cc.markUndone || 'Mark as not done') : (cc.markDone || 'Mark as done')}
-      style={{ width: 26, height: 26, flexShrink: 0, borderRadius: '50%', border: `2px solid ${isDone ? '#0b6e4f' : '#c7d4cd'}`, background: isDone ? '#0b6e4f' : '#fff', color: '#fff', cursor: 'pointer', fontSize: '.8rem', lineHeight: 1, display: 'grid', placeItems: 'center' }}
-    >
-      {isDone ? '✓' : ''}
-    </button>
-  );
 
   return (
     <div className="billing-page">
@@ -136,7 +153,7 @@ export default function CourseContent() {
                     return (
                       <li key={l._id} style={{ background: isDone ? '#f0f8f4' : '#fff', border: `1px solid ${isDone ? '#bfe0cf' : '#e0e8e4'}`, borderRadius: 10, padding: '14px 20px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                          <CheckBtn isDone={isDone} onClick={() => toggleItem(lessonKey(l), { lessonId: l._id })} />
+                          <CheckBtn isDone={isDone} onClick={() => toggleItem(lessonKey(l), { lessonId: l._id })} markDone={markDone} markUndone={markUndone} />
                           <span style={{ fontSize: '1.3rem' }}>{ICONS[l.type] || '▶'}</span>
                           <div style={{ flex: 1 }}>
                             <p style={{ margin: 0, fontWeight: 600, textDecoration: isDone ? 'line-through' : 'none', color: isDone ? '#5a7a6a' : 'inherit' }}>{l.title}</p>
@@ -180,7 +197,7 @@ export default function CourseContent() {
                     const isDone = completed.has(r.url);
                     return (
                       <li key={i} style={{ background: isDone ? '#f0f8f4' : '#fff', border: `1px solid ${isDone ? '#bfe0cf' : '#e0e8e4'}`, borderRadius: 10, padding: '14px 20px', display: 'flex', alignItems: 'center', gap: '14px' }}>
-                        <CheckBtn isDone={isDone} onClick={() => toggleItem(r.url, { url: r.url })} />
+                        <CheckBtn isDone={isDone} onClick={() => toggleItem(r.url, { url: r.url })} markDone={markDone} markUndone={markUndone} />
                         <span style={{ fontSize: '1.4rem' }}>{ICONS[r.type] || '🔗'}</span>
                         <div style={{ flex: 1 }}>
                           <p style={{ margin: 0, fontWeight: 600, textDecoration: isDone ? 'line-through' : 'none', color: isDone ? '#5a7a6a' : 'inherit' }}>{r.label}</p>

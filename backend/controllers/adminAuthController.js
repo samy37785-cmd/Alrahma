@@ -2,34 +2,32 @@ import crypto    from 'crypto';
 import speakeasy from 'speakeasy';
 import qrcode    from 'qrcode';
 import jwt       from 'jsonwebtoken';
-import { body, validationResult } from 'express-validator';
+import { body } from 'express-validator';
 
-import AdminUser   from '../models/AdminUser.js';
-import RefreshToken from '../models/RefreshToken.js';
-import SystemAuditLog from '../models/SystemAuditLog.js';
+import AdminUser    from '../models/AdminUser.js';
+import RefreshToken  from '../models/RefreshToken.js';
 import {
   ACCESS_TOKEN_COOKIE,
   REFRESH_TOKEN_COOKIE,
   accessCookieOptions,
   refreshCookieOptions,
   signAccessToken,
-} from '../middleware/adminAuth.js';
+} from '../utils/adminAuthTokens.js';
 import { anonymizeIp } from '../config/encryption.js';
+import { hashToken } from '../utils/hashToken.js';
+import { handleValidationErrors } from '../utils/validationHelper.js';
+import { auditFromAdmin } from '../services/auditService.js';
 
 // ── Constants ────────────────────────────────────────────────────────────────
 const REFRESH_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
-function hashToken(raw) {
-  return crypto.createHash('sha256').update(raw).digest('hex');
-}
-
 function generateRawRefreshToken() {
   return crypto.randomBytes(48).toString('hex');
 }
 
 async function issueRefreshToken(adminId, family, req) {
-  const raw      = generateRawRefreshToken();
+  const raw       = generateRawRefreshToken();
   const tokenHash = hashToken(raw);
   await RefreshToken.create({
     tokenHash,
@@ -40,29 +38,6 @@ async function issueRefreshToken(adminId, family, req) {
     ipAnon:    anonymizeIp(req.ip ?? ''),
   });
   return raw;
-}
-
-async function writeAuditLog(adminUser, action, req, extra = {}) {
-  await SystemAuditLog.create({
-    adminId:    adminUser._id,
-    adminEmail: adminUser.email,
-    action,
-    resource:   'AdminAuth',
-    resourceId: String(adminUser._id),
-    severity:   extra.severity ?? 'info',
-    userAgent:  req.headers['user-agent'] ?? null,
-    ipAnon:     anonymizeIp(req.ip ?? ''),
-    metadata:   extra.metadata ?? null,
-  });
-}
-
-function validationErrors(req, res) {
-  const errs = validationResult(req);
-  if (!errs.isEmpty()) {
-    res.status(422).json({ errors: errs.array() });
-    return true;
-  }
-  return false;
 }
 
 // ── Validation chains ────────────────────────────────────────────────────────
@@ -85,7 +60,7 @@ export const mfaTokenValidation = [
  * If MFA is not yet set up, returns stage: 'mfa_setup' instead.
  */
 export async function login(req, res) {
-  if (validationErrors(req, res)) return;
+  if (handleValidationErrors(req, res)) return;
 
   const { email, password } = req.body;
 
@@ -105,7 +80,7 @@ export async function login(req, res) {
   const passwordOk = await admin.matchPassword(password);
   if (!passwordOk) {
     await admin.incrementFailedAttempts();
-    await writeAuditLog(admin, 'auth.login_failed', req, {
+    await auditFromAdmin(admin, 'auth.login_failed', req, {
       severity: 'warning',
       metadata: { reason: 'bad_password' },
     });
@@ -129,7 +104,7 @@ export async function login(req, res) {
     maxAge: 10 * 60 * 1000, // 10 min pre-auth window
   });
 
-  await writeAuditLog(admin, 'auth.login_stage1', req);
+  await auditFromAdmin(admin, 'auth.login_stage1', req);
 
   return res.json({ stage });
 }
@@ -183,7 +158,7 @@ export async function setupMfa(req, res) {
  * On success, activates MFA and promotes the pre-auth token to a full access token.
  */
 export async function confirmMfaSetup(req, res) {
-  if (validationErrors(req, res)) return;
+  if (handleValidationErrors(req, res)) return;
 
   const preToken = req.cookies?.[ACCESS_TOKEN_COOKIE];
   if (!preToken) return res.status(401).json({ message: 'Pre-auth token missing' });
@@ -236,7 +211,7 @@ export async function confirmMfaSetup(req, res) {
     .cookie(ACCESS_TOKEN_COOKIE,  accessToken, accessCookieOptions())
     .cookie(REFRESH_TOKEN_COOKIE, rawRefresh,  refreshCookieOptions());
 
-  await writeAuditLog(admin, 'auth.mfa_activated', req);
+  await auditFromAdmin(admin, 'auth.mfa_activated', req);
 
   return res.json({ message: '2FA activated and session started' });
 }
@@ -247,7 +222,7 @@ export async function confirmMfaSetup(req, res) {
  * Verifies the TOTP code and issues full tokens.
  */
 export async function verifyMfaLogin(req, res) {
-  if (validationErrors(req, res)) return;
+  if (handleValidationErrors(req, res)) return;
 
   const preToken = req.cookies?.[ACCESS_TOKEN_COOKIE];
   if (!preToken) return res.status(401).json({ message: 'Pre-auth token missing' });
@@ -287,7 +262,7 @@ export async function verifyMfaLogin(req, res) {
 
   if (!valid) {
     await admin.incrementFailedAttempts();
-    await writeAuditLog(admin, 'auth.mfa_failed', req, {
+    await auditFromAdmin(admin, 'auth.mfa_failed', req, {
       severity: 'warning',
       metadata: { reason: 'bad_totp' },
     });
@@ -309,7 +284,7 @@ export async function verifyMfaLogin(req, res) {
     .cookie(ACCESS_TOKEN_COOKIE,  accessToken, accessCookieOptions())
     .cookie(REFRESH_TOKEN_COOKIE, rawRefresh,  refreshCookieOptions());
 
-  await writeAuditLog(admin, 'auth.login_success', req);
+  await auditFromAdmin(admin, 'auth.login_success', req);
 
   return res.json({
     message: 'Login successful',
@@ -391,7 +366,7 @@ export async function logout(req, res) {
   }
 
   if (req.adminUser) {
-    await writeAuditLog(req.adminUser, 'auth.logout', req);
+    await auditFromAdmin(req.adminUser, 'auth.logout', req);
   }
 
   res.clearCookie(ACCESS_TOKEN_COOKIE,  { path: '/api/v1/admin' });

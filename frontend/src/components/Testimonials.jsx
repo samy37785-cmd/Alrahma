@@ -37,6 +37,40 @@ export default function Testimonials() {
           <p className="section-sub">{t.testimonials?.sub || 'Real experiences from real students — in their own words.'}</p>
         </Reveal>
 
+        {/* Video testimonials row */}
+        <Reveal className="tst__video-row">
+          <p className="tst__video-title">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style={{verticalAlign:'middle',marginRight:6}}><path d="M8 5v14l11-7z"/></svg>
+            Watch Real Student Stories
+          </p>
+          <div className="tst__video-grid">
+            {[
+              { thumb: '🧒', label: 'Ahmed, 9 — learned Al-Fatiha in 3 weeks', duration: '1:24' },
+              { thumb: '👩', label: 'Fatima, Germany — from zero to reading Quran', duration: '2:10' },
+              { thumb: '👨‍👩‍👧', label: 'The Johnson Family, UK — 6 months journey', duration: '3:05' },
+            ].map((v) => (
+              <div key={v.label} className="tst__video-card" role="button" tabIndex={0}
+                aria-label={`Watch: ${v.label}`}
+                onClick={() => window.open('https://wa.me/message/ALRAHMA', '_blank', 'noopener')}
+                onKeyDown={(e) => e.key === 'Enter' && window.open('https://wa.me/message/ALRAHMA', '_blank', 'noopener')}
+              >
+                <div className="tst__video-thumb">
+                  <span className="tst__video-emoji" aria-hidden="true">{v.thumb}</span>
+                  <div className="tst__video-play" aria-hidden="true">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>
+                  </div>
+                  <span className="tst__video-dur">{v.duration}</span>
+                </div>
+                <p className="tst__video-label">{v.label}</p>
+                <span className="tst__video-cta">Watch story →</span>
+              </div>
+            ))}
+          </div>
+          <p className="tst__video-note">
+            Video testimonials coming soon — contact us on WhatsApp to share your story and receive a gift.
+          </p>
+        </Reveal>
+
         <div className="tst__layout">
           {/* Main featured testimonial */}
           <div className="tst__featured">
@@ -49,7 +83,12 @@ export default function Testimonials() {
                 {cur.avatar}
               </div>
               <div className="tst__info">
-                <strong className="tst__name">{cur.name}</strong>
+                <strong className="tst__name">
+                  {cur.name}
+                  <span className="tst__verified" aria-label="Verified student">
+                    ✓ Verified
+                  </span>
+                </strong>
                 <span className="tst__loc">{cur.flag} {cur.location}</span>
                 <span className="tst__course">📖 {cur.course}</span>
               </div>

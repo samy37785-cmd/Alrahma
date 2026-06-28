@@ -146,23 +146,106 @@ img, video, svg, canvas { max-width: 100%; }
 /* ── 6c) Header — the desktop nav doesn't fit ≤900px (iPad portrait
    = 768 overflowed). Show the hamburger + drawer for tablets too. The
    ≤640 block already styles the drawer; this extends it to 641–900. */
+/* ── Mobile nav drawer + accordion sub-sections ──────────────── */
 @media (min-width: 641px) and (max-width: 900px) {
   .nav-toggle { display: flex; }
   .nav {
-    position: fixed; inset: 64px 0 auto 0; flex-direction: column;
+    position: fixed;
+    top: calc(64px + env(safe-area-inset-top, 0px));
+    left: 0; right: 0;
+    flex-direction: column;
     align-items: stretch; gap: 0; background: var(--white);
-    border-bottom: 1px solid var(--line); padding: 8px 16px 20px;
+    border-bottom: 1px solid var(--line); padding: 8px 0 20px;
     transform: translateY(-130%); transition: transform .3s ease;
-    box-shadow: var(--shadow); max-height: calc(100vh - 64px); overflow-y: auto;
+    box-shadow: var(--shadow);
+    max-height: calc(100vh - 64px - env(safe-area-inset-top, 0px));
+    overflow-y: auto;
   }
   .nav.open { transform: translateY(0); }
   .nav > a, .nav__dropdown-trigger {
-    padding: 12px 10px; width: 100%;
+    padding: 14px 20px; width: 100%; min-height: 48px;
     border-bottom: 1px solid var(--line); border-radius: 0; background: none !important;
+    font-size: 0.95rem; font-weight: 600;
   }
-  .nav__dropdown { position: static; }
+  .nav__dropdown { position: static; border-bottom: 1px solid var(--line); }
+  .nav__dropdown-trigger { border-bottom: none; }
   .nav__dropdown-menu { display: none; }
-  .nav__dropdown-mobile { display: block; list-style: none; padding-left: 16px; }
+  /* Accordion: sub-items hidden by default, visible when parent is expanded */
+  .nav__dropdown-mobile {
+    display: none;
+    list-style: none;
+    padding: 4px 0 8px;
+    background: var(--green-light);
+    border-top: 1px solid var(--line);
+  }
+  .nav__dropdown--expanded .nav__dropdown-mobile { display: block; }
+  .nav__dropdown-mobile .nav__dropdown-item {
+    padding: 11px 20px 11px 36px;
+    font-size: 0.88rem;
+    border-radius: 0;
+    border-bottom: 1px solid rgba(0,0,0,.04);
+    min-height: 44px;
+  }
+  .nav__dropdown-mobile .nav__dropdown-item:last-child { border-bottom: none; }
+  /* Trigger chevron indicates collapsed/expanded */
+  .nav__dropdown--expanded .nav__dropdown-trigger .nav__dropdown-chevron { transform: rotate(180deg); }
+}
+
+@media (max-width: 640px) {
+  .nav-toggle { display: flex; }
+  .nav {
+    position: fixed;
+    top: calc(58px + env(safe-area-inset-top, 0px));
+    left: 0; right: 0;
+    flex-direction: column;
+    align-items: stretch; gap: 0;
+    background: var(--white);
+    border-bottom: 1px solid var(--line);
+    padding: 4px 0 24px;
+    transform: translateY(-130%); transition: transform .3s ease;
+    box-shadow: 0 8px 32px rgba(0,0,0,.12);
+    max-height: calc(100vh - 58px - env(safe-area-inset-top, 0px));
+    overflow-y: auto;
+  }
+  .nav.open { transform: translateY(0); }
+  .nav > a, .nav__dropdown-trigger {
+    padding: 14px 20px; width: 100%; min-height: 48px;
+    border-bottom: 1px solid var(--line); border-radius: 0; background: none !important;
+    font-size: 0.95rem; font-weight: 600;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .nav__cta {
+    margin: 12px 20px 0;
+    display: block;
+    text-align: center;
+    border-radius: 999px !important;
+    background: var(--gold) !important;
+    color: #3a2e05 !important;
+    padding: 12px 20px !important;
+    border-bottom: none !important;
+    min-height: 48px;
+  }
+  .nav__dropdown { position: static; border-bottom: 1px solid var(--line); }
+  .nav__dropdown-trigger { border-bottom: none; }
+  .nav__dropdown-menu { display: none; }
+  /* Accordion sub-items */
+  .nav__dropdown-mobile {
+    display: none;
+    list-style: none;
+    padding: 4px 0 8px;
+    background: var(--green-light);
+    border-top: 1px solid var(--line);
+  }
+  .nav__dropdown--expanded .nav__dropdown-mobile { display: block; }
+  .nav__dropdown-mobile .nav__dropdown-item {
+    padding: 12px 20px 12px 36px;
+    font-size: 0.88rem;
+    border-radius: 0;
+    border-bottom: 1px solid rgba(0,0,0,.04);
+    min-height: 44px;
+  }
+  .nav__dropdown-mobile .nav__dropdown-item:last-child { border-bottom: none; }
+  .nav__dropdown--expanded .nav__dropdown-trigger .nav__dropdown-chevron { transform: rotate(180deg); }
 }
 
 /* Small phones: slim the right-hand cluster so it never spills past the
@@ -239,10 +322,16 @@ img, video, svg, canvas { max-width: 100%; }
 }
 
 /* ── 9) NEWSLETTER — column layout on small screens ──────────────── */
+@media (max-width: 768px) {
+  .newsletter__inner--guide { grid-template-columns: 1fr; gap: 28px; }
+  .newsletter__guide-preview { display: none; }
+}
 @media (max-width: 640px) {
   .newsletter__inner { flex-direction: column; align-items: flex-start; gap: 20px; }
   .newsletter__form  { width: 100%; }
   .newsletter__form input { min-width: 0; width: 100%; box-sizing: border-box; }
+  .hero__visual--medallion { height: 280px; }
+  .hero__medallion { width: 240px !important; height: 240px !important; }
 }
 
 /* ── 10) TOPBAR — hide contact links on very small phones to save
@@ -292,9 +381,11 @@ img, video, svg, canvas { max-width: 100%; }
    these rules are completely harmless everywhere else.
    ══════════════════════════════════════════════════════════════════ */
 
-/* WhatsApp FAB: lift above the home-bar indicator */
+/* WhatsApp FAB: lift above home-bar indicator and, on dashboard
+   mobile, above the bottom navigation bar (--ds-bottom-nav-h).
+   The CSS var defaults to 0px on non-dashboard / large-screen pages. */
 .whatsapp-fab {
-  bottom: calc(22px + env(safe-area-inset-bottom, 0px));
+  bottom: calc(22px + env(safe-area-inset-bottom, 0px) + var(--ds-bottom-nav-h, 0px));
 }
 
 /* Quran Hifz floating bar: add internal padding so text clears the bar */
@@ -321,4 +412,53 @@ img, video, svg, canvas { max-width: 100%; }
 
   /* Dashboard stat value */
   .dash__stat-value { font-size: 1.1rem; }
+
+  /* DS stat cards: force single column on very small phones */
+  .ds-stats { grid-template-columns: 1fr !important; }
+}
+
+/* ── 20) HERO VISUAL PILLS — hide overflow on mobile ─────────────── */
+@media (max-width: 760px) {
+  /* The hero visual is order:-1 and height:300px; the absolute-positioned
+     pills extend beyond the container. Clip the visual to prevent the pills
+     from overflowing the section. */
+  .hero__visual { overflow: visible; position: relative; }
+  .hero__pill { font-size: .82rem; padding: 10px 12px; min-width: auto; }
+  .hero__pill--top    { top: 10px;  right: 0; }
+  .hero__pill--bottom { bottom: 10px; left: 0; }
+}
+@media (max-width: 480px) {
+  /* On very small phones, hide the decorative pills entirely to save space */
+  .hero__pill { display: none; }
+  .hero__verse { display: none; }
+}
+
+/* ── 21) MOBILE NAV DRAWER — larger touch area for mobile items ───── */
+@media (max-width: 900px) {
+  .nav > a, .nav__dropdown-trigger {
+    padding: 14px 10px;
+    min-height: 44px;
+  }
+}
+
+/* ── 22) STICKY HEADER SAFE AREA — pin below Dynamic Island ─────── */
+.header {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+/* ── 23) HUB CARDS — single column on phones ─────────────────────── */
+@media (max-width: 480px) {
+  .hub-cards__grid { grid-template-columns: 1fr; }
+  .hub-card { padding: 20px 18px; }
+}
+
+/* ── 24) FOOTER SAFE AREA ─────────────────────────────────────────── */
+.footer {
+  padding-bottom: calc(var(--space-10, 40px) + env(safe-area-inset-bottom, 0px));
+}
+
+/* ── 25) MOBILE LANDSCAPE: compress hero so content is visible ─────── */
+@media (max-height: 500px) and (orientation: landscape) {
+  .hero__inner { padding: 20px 0 28px; }
+  .hero__visual { display: none; }
 }

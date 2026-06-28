@@ -191,3 +191,106 @@ export function manualPaymentRejectedEmail({ name, adminNote }) {
     </div>
   `);
 }
+
+// ── Enrollment: admin notification ───────────────────────────────────────
+const LANG_LABELS = { en: 'English', ar: 'Arabic', it: 'Italian', fr: 'French', de: 'German', es: 'Spanish' };
+
+const esc = (s) =>
+  String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;') || '—';
+
+export function enrollmentAdminEmail(d) {
+  const subjects = (d.subjects || []).map(esc).join(', ') || '—';
+  const times    = (d.times    || []).map(esc).join(', ') || '—';
+  const lang     = LANG_LABELS[d.lang] || esc(d.lang);
+  return base(`
+    <h2 style="color:#0b6e4f;margin-top:0;">📋 New Enrollment Request</h2>
+    <table style="width:100%;border-collapse:collapse;font-size:14px;">
+      <tr style="background:#f0f8f4;"><td style="padding:10px 14px;font-weight:700;width:40%;">Name</td><td style="padding:10px 14px;">${esc(d.name)}</td></tr>
+      <tr><td style="padding:10px 14px;font-weight:700;">Email</td><td style="padding:10px 14px;"><a href="mailto:${esc(d.email)}">${esc(d.email)}</a></td></tr>
+      <tr style="background:#f0f8f4;"><td style="padding:10px 14px;font-weight:700;">WhatsApp</td><td style="padding:10px 14px;">${esc(d.whatsapp)}</td></tr>
+      <tr><td style="padding:10px 14px;font-weight:700;">Country / City</td><td style="padding:10px 14px;">${esc(d.country)} / ${esc(d.city)}</td></tr>
+      <tr style="background:#f0f8f4;"><td style="padding:10px 14px;font-weight:700;">Time Zone</td><td style="padding:10px 14px;">${esc(d.timezone)}</td></tr>
+      <tr><td style="padding:10px 14px;font-weight:700;">Available Times</td><td style="padding:10px 14px;">${times}</td></tr>
+      <tr style="background:#f0f8f4;"><td style="padding:10px 14px;font-weight:700;">Subjects</td><td style="padding:10px 14px;">${subjects}</td></tr>
+      <tr><td style="padding:10px 14px;font-weight:700;">Instruction Language</td><td style="padding:10px 14px;">${lang}</td></tr>
+      <tr style="background:#f0f8f4;"><td style="padding:10px 14px;font-weight:700;">Level</td><td style="padding:10px 14px;">${esc(d.level)}</td></tr>
+      <tr><td style="padding:10px 14px;font-weight:700;">Age Group</td><td style="padding:10px 14px;">${esc(d.ageGroup)}</td></tr>
+      <tr style="background:#f0f8f4;"><td style="padding:10px 14px;font-weight:700;">Teacher Preference</td><td style="padding:10px 14px;">${d.genderPref === 'f' ? 'Female only' : d.genderPref === 'm' ? 'Male only' : 'No preference'}</td></tr>
+      <tr><td style="padding:10px 14px;font-weight:700;">Chosen Teacher</td><td style="padding:10px 14px;">${esc(d.teacherName)}</td></tr>
+      <tr style="background:#f0f8f4;"><td style="padding:10px 14px;font-weight:700;">Chosen Plan</td><td style="padding:10px 14px;">${esc(d.plan)}</td></tr>
+    </table>
+    <p style="margin-top:20px;font-size:13px;color:#888;">Submitted via the Enrollment Wizard — AL-Rahma Academy</p>
+  `);
+}
+
+// ── Enrollment: student confirmation ─────────────────────────────────────
+export function enrollmentStudentEmail({ name, teacherName, plan }) {
+  return base(`
+    <h2 style="color:#0b6e4f;margin-top:0;">Thank you, ${esc(name)}! 🎉</h2>
+    <p style="font-size:15px;line-height:1.7;color:#444;">
+      We have received your enrollment request and one of our team members will be in touch within <strong>24 hours</strong> to confirm your schedule.
+    </p>
+    ${teacherName ? `<p style="font-size:14px;color:#444;">Your chosen teacher: <strong>${esc(teacherName)}</strong></p>` : ''}
+    ${plan ? `<p style="font-size:14px;color:#444;">Chosen plan: <strong>${esc(plan)}</strong></p>` : ''}
+    <p style="font-size:15px;color:#444;">Meanwhile, feel free to reply to this email with any questions.</p>
+    <p style="margin-top:24px;font-size:14px;color:#666;">
+      Barakallahu feekum,<br/>
+      <strong>AL-Rahma Academy Team</strong>
+    </p>
+  `);
+}
+
+// ── Admin: contact form notification ─────────────────────────────────────
+export function contactAdminEmail({ name, email, phone, subject, message }) {
+  return base(`
+    <h2 style="margin:0 0 8px;color:#0b6e4f;">New Contact Message 📬</h2>
+    <table cellpadding="0" cellspacing="0" width="100%">
+      ${row('From', `${esc(name)} &lt;<a href="mailto:${esc(email)}" style="color:#0b6e4f;">${esc(email)}</a>&gt;`)}
+      ${phone ? row('Phone', esc(phone)) : ''}
+      ${row('Subject', esc(subject))}
+    </table>
+    <div style="margin-top:16px;padding:12px 16px;background:#f4f7f4;border-radius:6px;font-size:14px;color:#333;white-space:pre-wrap;">${esc(message)}</div>
+  `);
+}
+
+// ── User: forgot password reset link ─────────────────────────────────────
+export function weeklyParentReportEmail({ parentName, children }) {
+  const childRows = children.map(({ childName, streak, lessonsThisWeek, xp, level, nextClass }) => `
+    <div style="background:#f9fafb;border:1px solid #e0e0e0;border-radius:10px;padding:16px 20px;margin-bottom:14px;">
+      <p style="margin:0 0 10px;font-size:16px;font-weight:700;color:#0b6e4f;">${esc(childName)}</p>
+      <table width="100%" cellpadding="0" cellspacing="0">
+        ${row('Lessons this week', lessonsThisWeek)}
+        ${row('Day streak', streak)}
+        ${row('XP earned', xp + ' XP · Level ' + level)}
+        ${nextClass ? row('Next class', new Date(nextClass).toLocaleString('en-GB', { weekday: 'long', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })) : ''}
+      </table>
+    </div>
+  `).join('');
+
+  return base(`
+    <p>As-salamu alaykum ${esc(parentName)},</p>
+    <p style="color:#555;font-size:15px;line-height:1.7;">
+      Here is your weekly learning report from <strong>Al-Rahma Academy</strong>.
+    </p>
+    ${childRows}
+    <p style="color:#888;font-size:13px;margin-top:20px;">
+      Keep up the great work! Regular study is the key to Quran mastery. 🌙
+    </p>
+    <div style="margin:24px 0;">
+      <a href="${process.env.CLIENT_URL || 'https://alrahmaacademy.com'}/parent" style="background:#0b6e4f;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;display:inline-block;">View Full Progress</a>
+    </div>
+  `);
+}
+
+export function forgotPasswordEmail({ name, link }) {
+  return base(`
+    <p>Hi ${esc(name)},</p>
+    <p style="color:#555;font-size:15px;line-height:1.7;">
+      Click the button below to reset your password. The link expires in <strong>1 hour</strong>.
+    </p>
+    <div style="margin:24px 0;">
+      <a href="${link}" style="background:#0b6e4f;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;display:inline-block;">Reset Password</a>
+    </div>
+    <p style="color:#888;font-size:12px;">If you didn't request this, ignore this email.</p>
+  `);
+}

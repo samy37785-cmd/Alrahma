@@ -1,41 +1,6 @@
 import mongoose from 'mongoose';
-import SystemAuditLog from '../models/SystemAuditLog.js';
-import { anonymizeIp } from '../config/encryption.js';
-
-// Fields that must never appear in before/after audit snapshots
-const SENSITIVE_FIELDS = new Set([
-  'password', '_mfaSecret', '_mfaPendingSecret', 'token', 'tokenHash',
-]);
-
-function stripSensitive(obj) {
-  if (!obj || typeof obj !== 'object') return obj;
-  const out = {};
-  for (const [k, v] of Object.entries(obj)) {
-    if (SENSITIVE_FIELDS.has(k)) continue;
-    out[k] = v;
-  }
-  return out;
-}
-
-function toPlain(doc) {
-  if (!doc) return null;
-  return typeof doc.toObject === 'function' ? doc.toObject() : doc;
-}
-
-async function audit(req, action, resource, resourceId, before, after, severity = 'info') {
-  await SystemAuditLog.create({
-    adminId:    req.adminId,
-    adminEmail: req.adminUser.email,
-    action,
-    resource,
-    resourceId: resourceId ? String(resourceId) : null,
-    before:     before ? stripSensitive(toPlain(before)) : null,
-    after:      after  ? stripSensitive(toPlain(after))  : null,
-    severity,
-    userAgent:  req.headers['user-agent'] ?? null,
-    ipAnon:     anonymizeIp(req.ip ?? ''),
-  });
-}
+import { auditFromReq, toPlain } from '../services/auditService.js';
+import { parsePagination, sendPaginated } from '../utils/pagination.js';
 
 /**
  * createCRUDController(Model, options)
@@ -69,12 +34,7 @@ export function createCRUDController(Model, options = {}) {
 
   // ── LIST ──────────────────────────────────────────────────────────────────
   async function list(req, res) {
-    const page  = Math.max(1, parseInt(req.query.page  ?? 1,  10));
-    const limit = Math.min(
-      maxLimit,
-      Math.max(1, parseInt(req.query.limit ?? defaultLimit, 10))
-    );
-    const skip  = (page - 1) * limit;
+    const { page, limit, skip } = parsePagination(req.query, { defaultLimit, maxLimit });
 
     const filter = {};
 
@@ -93,10 +53,10 @@ export function createCRUDController(Model, options = {}) {
     }
 
     // Sort: validate against allowed fields to prevent injection
-    let sortKey   = req.query.sort   ?? 'createdAt';
-    let sortOrder = req.query.order  ?? 'desc';
-    if (!sortable.includes(sortKey))           sortKey   = 'createdAt';
-    if (!['asc', 'desc'].includes(sortOrder))  sortOrder = 'desc';
+    let sortKey   = req.query.sort  ?? 'createdAt';
+    let sortOrder = req.query.order ?? 'desc';
+    if (!sortable.includes(sortKey))          sortKey   = 'createdAt';
+    if (!['asc', 'desc'].includes(sortOrder)) sortOrder = 'desc';
 
     let query = Model.find(filter)
       .sort({ [sortKey]: sortOrder === 'desc' ? -1 : 1 })
@@ -107,7 +67,7 @@ export function createCRUDController(Model, options = {}) {
 
     const [data, total] = await Promise.all([query.exec(), Model.countDocuments(filter)]);
 
-    return res.json({ data, total, page, pages: Math.ceil(total / limit) });
+    return sendPaginated(res, { data, total, page, limit });
   }
 
   // ── GET ONE ───────────────────────────────────────────────────────────────
@@ -131,7 +91,7 @@ export function createCRUDController(Model, options = {}) {
 
     const doc = await Model.create(body);
 
-    await audit(req, `${resourceName.toLowerCase()}.create`, resourceName, doc._id, null, doc, 'info');
+    await auditFromReq(req, `${resourceName.toLowerCase()}.create`, resourceName, doc._id, null, doc, 'info');
 
     return res.status(201).json(doc);
   }
@@ -152,7 +112,7 @@ export function createCRUDController(Model, options = {}) {
     Object.assign(doc, body);
     await doc.save();
 
-    await audit(req, `${resourceName.toLowerCase()}.update`, resourceName, doc._id, before, doc);
+    await auditFromReq(req, `${resourceName.toLowerCase()}.update`, resourceName, doc._id, before, doc);
 
     return res.json(doc);
   }
@@ -166,7 +126,7 @@ export function createCRUDController(Model, options = {}) {
     const doc = await Model.findByIdAndDelete(req.params.id);
     if (!doc) return res.status(404).json({ message: `${resourceName} not found` });
 
-    await audit(req, `${resourceName.toLowerCase()}.delete`, resourceName, doc._id, doc, null, 'warning');
+    await auditFromReq(req, `${resourceName.toLowerCase()}.delete`, resourceName, doc._id, doc, null, 'warning');
 
     return res.json({ message: `${resourceName} deleted successfully` });
   }

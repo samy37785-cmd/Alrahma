@@ -10,6 +10,8 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 
+import { validateEnv } from './config/validateEnv.js';
+
 import connectDB from './config/db.js';
 import { apiLimiter, authLimiter } from './config/rateLimit.js';
 import authRoutes from './routes/authRoutes.js';
@@ -35,11 +37,17 @@ import wishlistRoutes from './routes/wishlistRoutes.js';
 import reviewRoutes from './routes/reviewRoutes.js';
 import blogRoutes from './routes/blogRoutes.js';
 import searchRoutes from './routes/searchRoutes.js';
+import referralRoutes from './routes/referralRoutes.js';
 import { notFound, errorHandler } from './middleware/errorHandler.js';
 import { sanitizeMongo } from './middleware/sanitizeMongo.js';
 import { requestLogger } from './middleware/requestLogger.js';
+import { correlationId } from './middleware/correlationId.js';
 import { issueCsrfToken, verifyCsrfToken } from './middleware/csrf.js';
 import logger from './config/logger.js';
+
+// Validate required environment variables immediately — fails fast with a
+// clear error rather than surfacing a cryptic runtime failure later.
+validateEnv();
 
 const app = express();
 
@@ -75,6 +83,7 @@ app.use(
 // Register this route BEFORE the JSON body-parser middleware.
 app.use('/api/payments/stripe/webhook', express.raw({ type: 'application/json' }));
 
+app.use(correlationId);   // assign x-request-id to every request (tracing)
 app.use(express.json({ limit: '100kb' }));
 app.use(express.urlencoded({ extended: true, limit: '100kb' }));
 app.use(cookieParser()); // parses the httpOnly auth cookie into req.cookies
@@ -85,19 +94,30 @@ app.use(requestLogger);
 
 // Rate limiters live in config/rateLimit.js — they use a shared Redis store
 // when REDIS_URL is set (global across serverless instances), else in-memory.
-// Health-check endpoints — BEFORE the DB middleware so a platform health check
-// never blocks on a cold DB connection and the service stays marked as healthy.
+// ── Health / readiness probes ─────────────────────────────────────────────────
+// /health  — liveness probe: is the process alive?  No DB check; always fast.
+//            Load balancers and Render use this to mark the instance as up.
+// /ready   — readiness probe: is the service ready to handle requests?
+//            Checks the DB connection so a container orchestrator can hold
+//            traffic until the DB is reachable.
 app.get('/', (_req, res) => res.json({ status: 'ok', service: 'Al-Rahma Academy API' }));
 app.get('/health', (_req, res) => {
-  const healthy = {
+  res.json({
     status:  'ok',
     uptime:  Math.floor(process.uptime()),
     memory:  process.memoryUsage().heapUsed,
     version: process.env.npm_package_version || '1.0.0',
     env:     process.env.NODE_ENV || 'development',
     ts:      new Date().toISOString(),
-  };
-  res.json(healthy);
+  });
+});
+app.get('/ready', async (_req, res) => {
+  try {
+    await connectDB();
+    res.json({ status: 'ready' });
+  } catch {
+    res.status(503).json({ status: 'not ready', reason: 'database' });
+  }
 });
 
 app.use('/api', apiLimiter);
@@ -135,6 +155,7 @@ app.use('/api/wishlist',      wishlistRoutes);
 app.use('/api/reviews',       reviewRoutes);
 app.use('/api/blog',          blogRoutes);
 app.use('/api/search',        searchRoutes);
+app.use('/api/referrals',     referralRoutes);
 
 // Admin dashboard — zero-trust, MFA-required, RBAC-enforced
 // All security middleware (IP whitelist, Helmet CSP, rate limit, sanitization,

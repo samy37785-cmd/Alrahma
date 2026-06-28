@@ -48,6 +48,7 @@ const courseSchema = new mongoose.Schema(
       default: 'All levels',
     },
     price: { type: Number, default: 0 },
+    tags: [{ type: String, lowercase: true, trim: true }],  // used by searchController
     resources: { type: [resourceSchema], default: [] }, // legacy flat links (still supported)
     modules: { type: [moduleSchema], default: [] },     // structured chapters → lessons
     published: { type: Boolean, default: true },

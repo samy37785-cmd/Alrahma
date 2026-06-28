@@ -56,17 +56,44 @@ function StarRating({ teacher }) {
 }
 
 function TutorCard({ t: teacher }) {
-  const navigate           = useNavigate();
-  const { lang, t: i18n } = useLang();
-  const tp                 = i18n.tp;
-  const ut                 = i18n.tutors;
-  const initials           = teacher.nameAr.split(' ').slice(0, 2).map((w) => w[0]).join('');
-  const grad               = `linear-gradient(145deg, ${teacher.color}dd, ${teacher.color}88)`;
-  const title              = teacher.title[lang]       || teacher.title.en;
-  const specialties        = teacher.specialties[lang] || teacher.specialties.en;
+  const navigate              = useNavigate();
+  const { lang, t: i18n }    = useLang();
+  const tp                    = i18n.tp;
+  const ut                    = i18n.tutors;
+  const initials              = teacher.nameAr.split(' ').slice(0, 2).map((w) => w[0]).join('');
+  const grad                  = `linear-gradient(145deg, ${teacher.color}dd, ${teacher.color}88)`;
+  const title                 = teacher.title[lang]       || teacher.title.en;
+  const specialties           = teacher.specialties[lang] || teacher.specialties.en;
+  const [videoOpen, setVideoOpen] = useState(false);
 
   return (
     <Reveal as="article" className="tc2__card" style={{ '--card-color': teacher.color }}>
+      {/* Video modal */}
+      {videoOpen && teacher.videoUrl && (
+        <div
+          className="tc2__video-overlay"
+          onClick={() => setVideoOpen(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Introduction video for ${teacher.nameEn}`}
+        >
+          <div className="tc2__video-wrap" onClick={(e) => e.stopPropagation()}>
+            <button
+              className="tc2__video-close"
+              onClick={() => setVideoOpen(false)}
+              aria-label="Close video"
+            >×</button>
+            <iframe
+              src={teacher.videoUrl}
+              title={`${teacher.nameEn} introduction`}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              style={{ width: '100%', height: '100%', border: 'none', borderRadius: 12 }}
+            />
+          </div>
+        </div>
+      )}
+
       <Link to={`/teachers/${teacher.id}`} className="tc2__top" style={{ background: grad }}>
         <div className="tc2__ring tc2__ring--1" />
         <div className="tc2__ring tc2__ring--2" />
@@ -74,6 +101,19 @@ function TutorCard({ t: teacher }) {
         <div className="tc2__avatar">
           <span className="tc2__initials" dir="rtl">{initials}</span>
         </div>
+        {/* Video play button */}
+        {teacher.videoUrl && (
+          <button
+            className="tc2__video-play"
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setVideoOpen(true); }}
+            aria-label={`Watch ${teacher.nameEn}'s introduction`}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M8 5v14l11-7z"/>
+            </svg>
+            Intro video
+          </button>
+        )}
         <div className="tc2__gender">
           {teacher.gender === 'f' ? tp.femaleBadge : tp.maleBadge}
         </div>

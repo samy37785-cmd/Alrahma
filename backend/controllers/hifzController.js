@@ -1,5 +1,5 @@
-import HifzProgress from '../models/HifzProgress.js';
-import { asyncHandler } from '../middleware/asyncHandler.js';
+﻿import HifzProgress from '../models/HifzProgress.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
 
 // @desc  Get the logged-in student's full memorization progress (all surahs)
 // @route GET /api/hifz

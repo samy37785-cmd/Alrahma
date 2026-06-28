@@ -7,36 +7,43 @@
    ══════════════════════════════════════════════════════════════════ */
 
 /* ── Pricing plans: name + feature list (3 plans, in data order) ── */
+/*
+  Plan names use authentic Islamic educational terms across all languages.
+  The Arabic names appear as subtitles; primary display names stay Islamic.
+  Noorani  (نوراني)  = "filled with light" — the Noorani Qaida is the classic beginner Quran reading book
+  Huffaz   (حُفَّاظ) = "guardians/memorizers of the Quran"
+  Ijazah   (إجازة)  = formal certification with unbroken chain of knowledge
+*/
 export const PLAN_TEXT = {
   en: [
-    { name: 'Starter',  features: ['2 classes / week', '8 sessions / month', '1 hour per class', 'One-to-one tutoring', 'Zoom or Skype'] },
-    { name: 'Standard', features: ['3 classes / week', '12 sessions / month', '1 hour per class', 'One-to-one tutoring', 'Progress reports'] },
-    { name: 'Premium',  features: ['4 classes / week', '16 sessions / month', '1 hour per class', 'One-to-one tutoring', 'Ijazah pathway support'] },
+    { name: 'Noorani',  sub: 'Begin your light',   features: ['2 classes / week', '8 sessions / month', '1 hour per class', 'One-to-one tutoring', 'Zoom or Skype'] },
+    { name: 'Huffaz',   sub: 'Carry the Quran',    features: ['3 classes / week', '12 sessions / month', '1 hour per class', 'One-to-one tutoring', 'Progress reports'] },
+    { name: 'Ijazah',   sub: 'Earn your chain',    features: ['4 classes / week', '16 sessions / month', '1 hour per class', 'One-to-one tutoring', 'Ijazah pathway support'] },
   ],
   ar: [
-    { name: 'البداية',  features: ['حصتان أسبوعياً', '8 حصص شهرياً', 'ساعة لكل حصة', 'تعليم فردي', 'Zoom أو Skype'] },
-    { name: 'القياسية', features: ['3 حصص أسبوعياً', '12 حصة شهرياً', 'ساعة لكل حصة', 'تعليم فردي', 'تقارير متابعة'] },
-    { name: 'المميزة',  features: ['4 حصص أسبوعياً', '16 حصة شهرياً', 'ساعة لكل حصة', 'تعليم فردي', 'دعم مسار الإجازة'] },
+    { name: 'نوراني',   sub: 'ابدأ رحلة نورك',    features: ['حصتان أسبوعياً', '8 حصص شهرياً', 'ساعة لكل حصة', 'تعليم فردي', 'Zoom أو Skype'] },
+    { name: 'حُفَّاظ',  sub: 'احمل القرآن',        features: ['3 حصص أسبوعياً', '12 حصة شهرياً', 'ساعة لكل حصة', 'تعليم فردي', 'تقارير متابعة'] },
+    { name: 'إجازة',    sub: 'احصل على سندك',      features: ['4 حصص أسبوعياً', '16 حصة شهرياً', 'ساعة لكل حصة', 'تعليم فردي', 'دعم مسار الإجازة'] },
   ],
   it: [
-    { name: 'Base',     features: ['2 lezioni / settimana', '8 sessioni / mese', '1 ora per lezione', 'Lezioni individuali', 'Zoom o Skype'] },
-    { name: 'Standard', features: ['3 lezioni / settimana', '12 sessioni / mese', '1 ora per lezione', 'Lezioni individuali', 'Report sui progressi'] },
-    { name: 'Premium',  features: ['4 lezioni / settimana', '16 sessioni / mese', '1 ora per lezione', 'Lezioni individuali', 'Supporto al percorso Ijazah'] },
+    { name: 'Noorani',  sub: 'Inizia la tua luce', features: ['2 lezioni / settimana', '8 sessioni / mese', '1 ora per lezione', 'Lezioni individuali', 'Zoom o Skype'] },
+    { name: 'Huffaz',   sub: 'Porta il Corano',    features: ['3 lezioni / settimana', '12 sessioni / mese', '1 ora per lezione', 'Lezioni individuali', 'Report sui progressi'] },
+    { name: 'Ijazah',   sub: 'Guadagna la catena', features: ['4 lezioni / settimana', '16 sessioni / mese', '1 ora per lezione', 'Lezioni individuali', 'Supporto al percorso Ijazah'] },
   ],
   es: [
-    { name: 'Inicial',  features: ['2 clases / semana', '8 sesiones / mes', '1 hora por clase', 'Clases individuales', 'Zoom o Skype'] },
-    { name: 'Estándar', features: ['3 clases / semana', '12 sesiones / mes', '1 hora por clase', 'Clases individuales', 'Informes de progreso'] },
-    { name: 'Premium',  features: ['4 clases / semana', '16 sesiones / mes', '1 hora por clase', 'Clases individuales', 'Apoyo para la Ijazah'] },
+    { name: 'Noorani',  sub: 'Empieza tu luz',     features: ['2 clases / semana', '8 sesiones / mes', '1 hora por clase', 'Clases individuales', 'Zoom o Skype'] },
+    { name: 'Huffaz',   sub: 'Lleva el Corán',     features: ['3 clases / semana', '12 sesiones / mes', '1 hora por clase', 'Clases individuales', 'Informes de progreso'] },
+    { name: 'Ijazah',   sub: 'Gana tu cadena',     features: ['4 clases / semana', '16 sesiones / mes', '1 hora por clase', 'Clases individuales', 'Apoyo para la Ijazah'] },
   ],
   de: [
-    { name: 'Einstieg', features: ['2 Stunden / Woche', '8 Einheiten / Monat', '1 Stunde pro Unterricht', 'Einzelunterricht', 'Zoom oder Skype'] },
-    { name: 'Standard', features: ['3 Stunden / Woche', '12 Einheiten / Monat', '1 Stunde pro Unterricht', 'Einzelunterricht', 'Fortschrittsberichte'] },
-    { name: 'Premium',  features: ['4 Stunden / Woche', '16 Einheiten / Monat', '1 Stunde pro Unterricht', 'Einzelunterricht', 'Unterstützung auf dem Ijazah-Weg'] },
+    { name: 'Noorani',  sub: 'Beginne dein Licht', features: ['2 Stunden / Woche', '8 Einheiten / Monat', '1 Stunde pro Unterricht', 'Einzelunterricht', 'Zoom oder Skype'] },
+    { name: 'Huffaz',   sub: 'Trage den Koran',    features: ['3 Stunden / Woche', '12 Einheiten / Monat', '1 Stunde pro Unterricht', 'Einzelunterricht', 'Fortschrittsberichte'] },
+    { name: 'Ijazah',   sub: 'Erwirb deine Kette', features: ['4 Stunden / Woche', '16 Einheiten / Monat', '1 Stunde pro Unterricht', 'Einzelunterricht', 'Unterstützung auf dem Ijazah-Weg'] },
   ],
   fr: [
-    { name: 'Débutant', features: ['2 cours / semaine', '8 séances / mois', '1 heure par cours', 'Cours individuels', 'Zoom ou Skype'] },
-    { name: 'Standard', features: ['3 cours / semaine', '12 séances / mois', '1 heure par cours', 'Cours individuels', 'Rapports de progression'] },
-    { name: 'Premium',  features: ['4 cours / semaine', '16 séances / mois', '1 heure par cours', 'Cours individuels', 'Accompagnement vers l\'Ijazah'] },
+    { name: 'Noorani',  sub: 'Commence ta lumière', features: ['2 cours / semaine', '8 séances / mois', '1 heure par cours', 'Cours individuels', 'Zoom ou Skype'] },
+    { name: 'Huffaz',   sub: 'Porte le Coran',      features: ['3 cours / semaine', '12 séances / mois', '1 heure par cours', 'Cours individuels', 'Rapports de progression'] },
+    { name: 'Ijazah',   sub: 'Gagne ta chaîne',     features: ['4 cours / semaine', '16 séances / mois', '1 heure par cours', 'Cours individuels', 'Accompagnement vers l\'Ijazah'] },
   ],
 };
 

@@ -107,8 +107,14 @@
 .modal {
   position: fixed; inset: 0; z-index: 100;
   background: rgba(6, 55, 42, .55); backdrop-filter: blur(3px);
-  display: flex; align-items: center; justify-content: center; padding: 20px;
+  -webkit-backdrop-filter: blur(3px);
+  display: flex; align-items: center; justify-content: center;
+  padding: max(20px, env(safe-area-inset-top, 20px))
+           max(20px, env(safe-area-inset-right, 20px))
+           max(20px, env(safe-area-inset-bottom, 20px))
+           max(20px, env(safe-area-inset-left, 20px));
   animation: modalFade .2s ease;
+  overflow-y: auto;
 }
 @keyframes modalFade { from { opacity: 0; } to { opacity: 1; } }
 .modal__card {
@@ -118,9 +124,13 @@
 }
 @keyframes modalPop { from { transform: translateY(14px) scale(.98); } to { transform: none; } }
 .modal__close {
-  position: absolute; top: 14px; right: 16px; background: none; border: 0;
+  position: absolute; top: 10px; right: 12px; background: none; border: 0;
   font-size: 1.6rem; line-height: 1; color: var(--muted); cursor: pointer;
+  min-width: 44px; min-height: 44px; display: flex; align-items: center; justify-content: center;
+  border-radius: 8px; transition: background .15s;
+  -webkit-tap-highlight-color: transparent;
 }
+.modal__close:active { background: rgba(0,0,0,.06); }
 .modal__close:hover { color: var(--green-deep); }
 .modal__title { color: var(--green-deep); font-size: 1.3rem; margin-bottom: 4px; }
 .modal__sub { color: var(--muted); font-size: .92rem; margin-bottom: 22px; }

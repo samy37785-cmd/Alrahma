@@ -1,5 +1,7 @@
-import { body, validationResult } from 'express-validator';
-import { asyncHandler } from '../middleware/asyncHandler.js';
+﻿import { body } from 'express-validator';
+import { asyncHandler } from '../utils/asyncHandler.js';
+import { handleValidationErrors } from '../utils/validationHelper.js';
+import { parsePagination } from '../utils/pagination.js';
 import Coupon from '../models/Coupon.js';
 
 export const couponValidation = [
@@ -14,15 +16,22 @@ export const validateCoupon = asyncHandler(async (req, res) => {
   const code = (req.body.code || req.query.code || '').trim().toUpperCase();
   if (!code) return res.status(400).json({ message: 'Coupon code is required' });
 
-  const coupon = await Coupon.findOne({ code });
+  // Exclude the potentially large usedBy array from the main fetch; check it
+  // with a separate indexed query so we never load thousands of subdocuments.
+  const [coupon, alreadyUsedDoc] = await Promise.all([
+    Coupon.findOne({ code }).select('-usedBy'),
+    req.user?._id
+      ? Coupon.findOne({ code, 'usedBy.user': req.user._id }, '_id').lean()
+      : Promise.resolve(null),
+  ]);
+
   if (!coupon) return res.status(404).json({ message: 'Invalid coupon code' });
 
   if (!coupon.isValid()) {
     return res.status(400).json({ message: 'This coupon is expired or no longer valid' });
   }
 
-  const alreadyUsed = coupon.usedBy.some((u) => u.user?.toString() === req.user?._id?.toString());
-  if (alreadyUsed) {
+  if (alreadyUsedDoc) {
     return res.status(400).json({ message: 'You have already used this coupon' });
   }
 
@@ -36,16 +45,19 @@ export const validateCoupon = asyncHandler(async (req, res) => {
 });
 
 export const createCoupon = asyncHandler(async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) return res.status(422).json({ errors: errors.array() });
+  if (handleValidationErrors(req, res)) return;
 
   const coupon = await Coupon.create(req.body);
   res.status(201).json({ coupon });
 });
 
 export const listCoupons = asyncHandler(async (req, res) => {
-  const coupons = await Coupon.find().sort({ createdAt: -1 }).lean();
-  res.json({ coupons });
+  const { page, limit, skip } = parsePagination(req.query, { defaultLimit: 100, maxLimit: 200 });
+  const [coupons, total] = await Promise.all([
+    Coupon.find().sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+    Coupon.countDocuments(),
+  ]);
+  res.json({ coupons, total, page, pages: Math.ceil(total / limit) });
 });
 
 export const updateCoupon = asyncHandler(async (req, res) => {

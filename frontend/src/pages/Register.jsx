@@ -5,7 +5,6 @@ import Brand from '../components/layout/Brand';
 import useSEO from '../hooks/useSEO';
 import { useLang } from '../context/LangContext';
 
-// Parse "prefix <a href="...">label</a> suffix" from an i18n string safely.
 function GdprText({ raw }) {
   const m = raw.match(/^([\s\S]*?)<a[^>]*>([\s\S]*?)<\/a>([\s\S]*)$/);
   if (!m) return <span>{raw}</span>;
@@ -31,7 +30,7 @@ export default function Register() {
   const [gdpr, setGdpr] = useState(false);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
-
+  const [showPwd, setShowPwd] = useState(false);
 
   const handleChange = (e) => setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
 
@@ -42,9 +41,9 @@ export default function Register() {
     setBusy(true);
     try {
       await register(form);
-      navigate(form.role === 'parent' ? '/parent' : '/');
+      navigate(form.role === 'parent' ? '/parent' : '/dashboard', { replace: true });
     } catch (err) {
-      setError(err.response?.data?.message || (!err.response ? networkError : rg.btn));
+      setError(err.response?.data?.message || (!err.response ? networkError : rg.errorFallback));
     } finally {
       setBusy(false);
     }
@@ -59,7 +58,7 @@ export default function Register() {
         <h1>{rg.title}</h1>
         <p className="auth__sub">{rg.sub}</p>
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} noValidate>
           <div className="field">
             <label htmlFor="role">{profile.accountType}</label>
             <select id="role" name="role" value={form.role} onChange={handleChange}>
@@ -69,23 +68,65 @@ export default function Register() {
           </div>
           <div className="field">
             <label htmlFor="name">{rg.name}</label>
-            <input type="text" id="name" name="name" value={form.name} onChange={handleChange} required />
+            <input
+              type="text"
+              id="name"
+              name="name"
+              value={form.name}
+              onChange={handleChange}
+              autoComplete="name"
+              enterKeyHint="next"
+              required
+            />
           </div>
           <div className="field">
             <label htmlFor="email">{rg.email}</label>
-            <input type="email" id="email" name="email" value={form.email} onChange={handleChange} required />
+            <input
+              type="email"
+              id="email"
+              name="email"
+              value={form.email}
+              onChange={handleChange}
+              autoComplete="email"
+              inputMode="email"
+              enterKeyHint="next"
+              required
+            />
           </div>
           <div className="field">
             <label htmlFor="password">{rg.password}</label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              value={form.password}
-              onChange={handleChange}
-              minLength={8}
-              required
-            />
+            <div style={{ position: 'relative' }}>
+              <input
+                type={showPwd ? 'text' : 'password'}
+                id="password"
+                name="password"
+                value={form.password}
+                onChange={handleChange}
+                autoComplete="new-password"
+                enterKeyHint="go"
+                minLength={8}
+                required
+                style={{ paddingRight: '2.75rem' }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPwd((v) => !v)}
+                aria-label={showPwd ? 'Hide password' : 'Show password'}
+                style={{
+                  position: 'absolute', right: 6, top: '50%', transform: 'translateY(-50%)',
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  color: 'var(--text-secondary)', padding: '0', lineHeight: 1,
+                  minWidth: 44, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  WebkitTapHighlightColor: 'transparent',
+                }}
+              >
+                {showPwd ? (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                ) : (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                )}
+              </button>
+            </div>
           </div>
           <div className="field field--checkbox">
             <label className="auth__gdpr-label">
@@ -97,8 +138,13 @@ export default function Register() {
               <GdprText raw={rg.gdprConsent} />
             </label>
           </div>
-          {error && <p className="auth__error">{error}</p>}
-          <button type="submit" className="btn btn--green btn--block" disabled={busy}>
+          {error && <p className="auth__error" role="alert">{error}</p>}
+          <button
+            type="submit"
+            className={`btn btn--green btn--block${busy ? ' btn--loading' : ''}`}
+            disabled={busy}
+            aria-busy={busy || undefined}
+          >
             {busy ? rg.busy : rg.btn}
           </button>
         </form>

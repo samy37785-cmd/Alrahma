@@ -5,7 +5,7 @@ import mongoose from 'mongoose';
 // of who sent which message.
 const messageSchema = new mongoose.Schema(
   {
-    from: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+    from: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     to:   { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
     body: { type: String, required: true, trim: true, maxlength: 4000 },
     readAt: { type: Date, default: null },

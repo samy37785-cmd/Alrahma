@@ -1,0 +1,44 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Get-ChildItem \"d:\\\\mahmoud-samy\\\\backend\\\\routes\" -File | Where-Object { $_.Name -ne \"index.js\" } | ForEach-Object { $name = $_.Name; $count = \\(Get-Content $_.FullName | Measure-Object -Line\\).Lines; \"$count lines - $name\" } | Sort-Object { [int]\\($_ -split ' '\\)[0] } -Descending | Select-Object -First 10)",
+      "PowerShell(Get-ChildItem \"d:\\\\mahmoud-samy\\\\frontend\\\\src\\\\styles\" -File | ForEach-Object { $n = $_.Name; $c = \\(Get-Content $_.FullName | Measure-Object -Line\\).Lines; \"$c lines - $n\" } | Sort-Object { [int]\\($_ -split ' '\\)[0] } -Descending)",
+      "Bash(awk '{print $5 \" \" $9}')",
+      "Bash(cat eslint.config.js)",
+      "Bash(cat .eslintrc.js)",
+      "Bash(cat .eslintrc.json)",
+      "Bash(grep -v \"//\\\\|translation\\\\|fontSize\\\\|maxWidth\\\\|minWidth\\\\|duration\\\\|timeout:\\\\|height:\\\\|width:\\\\|flex:\\\\|borderRadius\\\\|margin\\\\|padding\\\\|gap\\\\|font-size\\\\|lineHeight\\\\|animation\\\\|transition\\\\|ms\\\\|zIndex\\\\|count\\\\|verse\\\\|font\\\\|start\\\\|end\\\\|index\\\\|i18n\\\\|key\\\\|page\\\\|juz\\\\|repeat\\\\|delay\\\\|range\\\\|from\\\\|step\\\\|version\\\\|limit\\\\|max\\\\|min\\\\b\")",
+      "Bash(grep -rn \"catch.*{$\" d:/mahmoud-samy/frontend/src/ --include=\"*.jsx\" --include=\"*.js\" -A1)",
+      "Bash(grep -B1 \"^\\\\s*}\\\\s*$\\\\|^\\\\s*\\\\/\\\\*.*\\\\*\\\\/\\\\s*$\")",
+      "Bash(xargs grep -l \"import\")",
+      "Bash(read f *)",
+      "Bash(python3 -c ' *)",
+      "Bash(grep -v \"//\\\\|children\\\\|className\\\\|style\\\\|key\\\\|id\\\\|type\\\\|name\\\\|value\\\\|onChange\\\\|onClick\\\\|href\\\\|src\\\\|alt\\\\|title\\\\|role\\\\|aria\\\\|data-\\\\|ref\\\\|disabled\\\\|checked\\\\|placeholder\\\\|htmlFor\\\\|target\\\\|rel\\\\|onSubmit\\\\|onBlur\\\\|onKeyDown\\\\|min\\\\|max\\\\|rows\")",
+      "Bash(grep -v \"//\\\\|import\\\\|context/\\\\|//.*create\")",
+      "Bash(grep -v \"//\\\\|definition\\\\|export\")",
+      "Bash(grep -v \"//\\\\|process.env\\\\.\")",
+      "Bash(awk -F\"process.env.\" '{print $2}')",
+      "Bash(awk '{print $1}')",
+      "Bash(grep -v \"//\\\\|import\\\\|filter\\(\\(p\\)\")",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(json.dumps\\(list\\(d.get\\('dependencies',{}\\).keys\\(\\)\\), indent=2\\)\\)\")",
+      "Bash(grep -v \"//\\\\|test\\\\|spec\")",
+      "Bash(awk -F: '{print $1}')",
+      "Bash(xargs grep -l \"asyncHandler\")",
+      "Bash(xargs grep -rL \"asyncHandler\")",
+      "Bash(Remove-Item \"d:/mahmoud-samy/backend/config/enrollment.js\")",
+      "Bash(xargs ls -lh)",
+      "Bash(awk '{print $9, $5}')",
+      "Bash(xargs ls -la)",
+      "Bash(awk '{print $9}')",
+      "PowerShell(New-Item -ItemType Directory -Force \"d:\\\\mahmoud-samy\\\\frontend\\\\src\\\\styles\\\\layout\")",
+      "Bash(grep -n \"api\\\\\\\\.get\\\\\\\\|api\\\\\\\\.post\\\\\\\\|api\\\\\\\\.put\\\\\\\\|api\\\\\\\\.patch\\\\\\\\|api\\\\\\\\.delete\" frontend/src/pages/*.jsx)",
+      "PowerShell(cd \"d:\\\\mahmoud-samy\\\\frontend\" ; npm run build 2>&1 | Where-Object { $_ -match \"error|warning|✓|✗|built|transform\" } | Select-Object -Last 20)",
+      "PowerShell(npm list -g --depth=0 2>$null)",
+      "PowerShell(& \"C:\\\\Program Files\\\\nodejs\\\\npm.cmd\" list -g --depth=0 2>&1)",
+      "WebFetch(domain:github.com)"
+    ],
+    "additionalDirectories": [
+      "d:\\mahmoud-samy\\frontend\\src\\components\\features"
+    ]
+  }
+}

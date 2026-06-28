@@ -1,0 +1,500 @@
+/* ════════════════════════════════════════════════════════════════
+   SITE-WIDE DARK MODE  —  html.dark
+   Strategy: override CSS variables first (covers most components),
+   then patch specific hardcoded colours class by class.
+   ════════════════════════════════════════════════════════════════ */
+
+html.dark {
+  /* ── Core palette overrides ── */
+  --cream:       #0d1712;
+  --white:       #152010;
+  --ink:         #dceee5;
+  --muted:       #7aad95;
+  --line:        #253d2c;
+  --green-light: #162518;
+  --gold-light:  #1c1800;
+
+  /* ── Shadows ── */
+  --shadow:    0 4px 24px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 8px 32px rgba(0, 0, 0, 0.55);
+  --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.7);
+}
+
+/* ── Base ─────────────────────────────────────────────────────── */
+html.dark body {
+  background: var(--cream);
+  color: var(--ink);
+}
+
+/* ── Header / Nav ─────────────────────────────────────────────── */
+html.dark .header {
+  background: #0e1a11;
+  border-bottom-color: var(--line);
+}
+html.dark .nav a,
+html.dark .nav__dropdown-trigger {
+  color: var(--ink);
+}
+html.dark .nav a:hover,
+html.dark .nav__dropdown-trigger:hover {
+  color: var(--gold);
+}
+html.dark .nav__dropdown-menu {
+  background: #162018;
+  border-color: var(--line);
+  box-shadow: var(--shadow-md);
+}
+html.dark .nav__dropdown-item {
+  color: var(--ink);
+}
+html.dark .nav__dropdown-item:hover {
+  background: #1e2e22;
+  color: var(--gold);
+}
+html.dark .nav__dropdown-item--danger:hover {
+  background: #2e1515;
+  color: #ff6b6b;
+}
+html.dark .nav__user-avatar {
+  background: var(--green);
+}
+html.dark .nav__theme-toggle {
+  background: #1e2e22;
+  border-color: var(--line);
+}
+html.dark .nav__theme-toggle:hover {
+  background: #253d2c;
+}
+
+/* ── Theme toggle button styles (light + dark) ─────────────────── */
+.nav__theme-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: transparent;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background .2s, border-color .2s, transform .2s;
+  flex-shrink: 0;
+}
+.nav__theme-toggle:hover {
+  transform: rotate(15deg) scale(1.1);
+}
+
+/* ── Lang switcher ────────────────────────────────────────────── */
+html.dark .ls__trigger {
+  background: #1a2820;
+  border-color: var(--line);
+  color: var(--ink);
+}
+html.dark .ls__trigger:hover,
+html.dark .ls__trigger--open {
+  border-color: var(--green);
+  background: var(--green-light);
+  color: var(--green);
+}
+html.dark .ls__menu {
+  background: #162018;
+  border-color: var(--line);
+}
+html.dark .ls__option { color: var(--ink); }
+html.dark .ls__option:hover { background: #1f3228; }
+html.dark .ls__option--active {
+  background: #1f3228;
+  color: var(--green);
+}
+
+/* ── About section ────────────────────────────────────────────── */
+html.dark .about { background: var(--cream); }
+html.dark .about__stat { color: var(--ink); }
+html.dark .about__stat-num { color: var(--gold); }
+
+/* ── Features ─────────────────────────────────────────────────── */
+html.dark .features { background: #111a14; }
+html.dark .features__card {
+  background: #1a2820;
+  border-color: var(--line);
+}
+html.dark .features__card h3,
+html.dark .features__card p { color: var(--ink); }
+
+/* ── Steps ────────────────────────────────────────────────────── */
+html.dark .steps { background: var(--cream); }
+html.dark .steps__card {
+  background: #1a2820;
+  border-color: var(--line);
+}
+html.dark .steps__num { background: var(--green-dark); }
+
+/* ── Teachers (home section) ──────────────────────────────────── */
+html.dark .tc2__card {
+  background: #1a2820;
+  border-color: var(--line);
+}
+html.dark .tc2__name { color: var(--ink); }
+html.dark .tc2__spec { color: var(--muted); }
+html.dark .tc2__star { color: #5a7a60; }
+html.dark .tc2__star.lit { color: var(--gold); }
+
+/* ── Pricing plans ────────────────────────────────────────────── */
+html.dark .plans-grid { background: var(--cream); }
+html.dark .plan {
+  background: #1a2820;
+  border-color: var(--line);
+}
+html.dark .plan__body { background: #1a2820; }
+html.dark .plan__price-row { color: var(--ink); }
+html.dark .plan__per-hour { color: var(--muted); }
+html.dark .plan__cancel-note { color: var(--muted); }
+html.dark .plan li { color: var(--ink); }
+html.dark .plan__discount-banner {
+  background: #1c1800;
+  border-color: rgba(212,175,55,.25);
+}
+
+/* ── Social proof / Testimonials ──────────────────────────────── */
+html.dark .social-proof { background: var(--cream); }
+html.dark .review-card {
+  background: #1a2820;
+  border-color: var(--line);
+}
+html.dark .review-card__name { color: var(--ink); }
+html.dark .review-card__body { color: var(--muted); }
+
+/* ── Newsletter ───────────────────────────────────────────────── */
+html.dark .newsletter {
+  background: #1a1800;
+  border-color: rgba(212,175,55,.2);
+}
+html.dark .newsletter h2 { color: var(--gold); }
+html.dark .newsletter p { color: #9a8a50; }
+html.dark .newsletter__input {
+  background: #0e1200;
+  border-color: rgba(212,175,55,.3);
+  color: var(--ink);
+}
+html.dark .newsletter__input::placeholder { color: #6a5a30; }
+
+/* ── FAQ ──────────────────────────────────────────────────────── */
+html.dark .faq { background: var(--cream); }
+html.dark .faq__item {
+  background: #1a2820;
+  border-color: var(--line);
+}
+html.dark .faq__item.open { background: #1f3228; }
+html.dark .faq__question { color: var(--ink); }
+html.dark .faq__answer { color: var(--muted); }
+
+/* ── Blog ─────────────────────────────────────────────────────── */
+html.dark .blog-page { background: var(--cream); }
+html.dark .blog-card {
+  background: #1a2820;
+  border-color: var(--line);
+}
+html.dark .blog-card__title { color: var(--ink); }
+html.dark .blog-card__excerpt { color: var(--muted); }
+html.dark .blog-card__author-name { color: var(--ink); }
+html.dark .blog-card__author-role { color: var(--muted); }
+html.dark .blog-card__read-time { color: var(--muted); }
+html.dark .blog-filter-btn {
+  background: #1a2820;
+  border-color: var(--line);
+  color: var(--muted);
+}
+html.dark .blog-filter-btn.active,
+html.dark .blog-filter-btn:hover {
+  background: var(--green);
+  color: #fff;
+  border-color: var(--green);
+}
+
+/* ── Blog post page ───────────────────────────────────────────── */
+html.dark .blog-post { background: var(--cream); }
+html.dark .blog-post__content {
+  background: #1a2820;
+  border-color: var(--line);
+  color: var(--ink);
+}
+html.dark .blog-post__content h2,
+html.dark .blog-post__content h3 { color: var(--ink); }
+html.dark .blog-post__content a { color: var(--green); }
+html.dark .blog-post__content blockquote {
+  border-color: var(--green);
+  background: #162518;
+  color: var(--muted);
+}
+
+/* ── Teachers page ────────────────────────────────────────────── */
+html.dark .teachers-page { background: var(--cream); }
+html.dark .tpg__card {
+  background: #1a2820;
+  border-color: var(--line);
+}
+html.dark .tpg__name { color: var(--ink); }
+html.dark .tpg__bio { color: var(--muted); }
+html.dark .tpg__specialty { color: var(--muted); }
+html.dark .tpg__star { color: #3a5a40; }
+html.dark .tpg__star.lit { color: var(--gold); }
+html.dark .tpg__filter-btn {
+  background: #1a2820;
+  border-color: var(--line);
+  color: var(--muted);
+}
+html.dark .tpg__filter-btn.active,
+html.dark .tpg__filter-btn:hover {
+  background: var(--green);
+  color: #fff;
+  border-color: var(--green);
+}
+
+/* ── Teacher profile ──────────────────────────────────────────── */
+html.dark .tp__card {
+  background: #1a2820;
+  border-color: var(--line);
+}
+html.dark .tp__name { color: var(--ink); }
+html.dark .tp__bio { color: var(--muted); }
+html.dark .tp__meta-item { color: var(--muted); }
+
+/* ── Enroll / Checkout ────────────────────────────────────────── */
+html.dark .enroll { background: var(--cream); }
+html.dark .enroll__tcard {
+  background: #1a2820;
+  border-color: var(--line);
+}
+html.dark .enroll__plan-card {
+  background: #1a2820;
+  border-color: var(--line);
+}
+html.dark .enroll__plan-card.selected {
+  border-color: var(--green);
+  background: #162518;
+}
+html.dark .enroll__form-group input,
+html.dark .enroll__form-group select,
+html.dark .enroll__form-group textarea {
+  background: #0e1a11;
+  border-color: var(--line);
+  color: var(--ink);
+}
+html.dark .enroll__form-group input::placeholder { color: var(--muted); }
+
+/* ── Auth pages ───────────────────────────────────────────────── */
+html.dark .auth { background: var(--green-deep); }
+html.dark .auth__card {
+  background: #0e1a11;
+  border-color: var(--line);
+}
+html.dark .auth__card input,
+html.dark .auth__card select {
+  background: #152010;
+  border-color: var(--line);
+  color: var(--ink);
+}
+html.dark .auth__card input::placeholder { color: var(--muted); }
+html.dark .auth__label { color: var(--muted); }
+html.dark .auth__gdpr-label { color: var(--muted); }
+
+/* ── Dashboard ────────────────────────────────────────────────── */
+html.dark .dashboard { background: var(--cream); }
+html.dark .dash__card {
+  background: #1a2820;
+  border-color: var(--line);
+}
+html.dark .dash__stat {
+  background: #1a2820;
+  border-color: var(--line);
+}
+html.dark .dash__stat-label { color: var(--muted); }
+html.dark .dash__stat-value { color: var(--ink); }
+html.dark .dash__section-title { color: var(--ink); }
+html.dark .dash__lesson-row {
+  background: #1a2820;
+  border-color: var(--line);
+}
+html.dark .dash__lesson-row:hover { background: #1f3228; }
+
+/* ── Profile ──────────────────────────────────────────────────── */
+html.dark .profile { background: var(--cream); }
+html.dark .profile__card {
+  background: #1a2820;
+  border-color: var(--line);
+}
+html.dark .profile__input {
+  background: #0e1a11;
+  border-color: var(--line);
+  color: var(--ink);
+}
+html.dark .profile__input::placeholder { color: var(--muted); }
+
+/* ── Billing ──────────────────────────────────────────────────── */
+html.dark .billing { background: var(--cream); }
+html.dark .billing__card {
+  background: #1a2820;
+  border-color: var(--line);
+}
+html.dark .billing__row {
+  border-bottom-color: var(--line);
+}
+html.dark .billing__row:hover { background: #1f3228; }
+
+/* ── Admin dashboard ──────────────────────────────────────────── */
+html.dark .admin { background: var(--cream); }
+html.dark .admin__card {
+  background: #1a2820;
+  border-color: var(--line);
+}
+html.dark .admin__table th {
+  background: #162518;
+  color: var(--muted);
+  border-color: var(--line);
+}
+html.dark .admin__table td {
+  border-color: var(--line);
+  color: var(--ink);
+}
+html.dark .admin__table tr:hover td { background: #1f3228; }
+
+/* ── Adhkar ───────────────────────────────────────────────────── */
+html.dark .adhkar__main { background: var(--cream); }
+html.dark .adhkar__sidebar {
+  background: #1a2820;
+  border-color: var(--line);
+}
+html.dark .adhkar__cat-btn {
+  background: #1a2820;
+  border-color: var(--line);
+  color: var(--ink);
+}
+html.dark .adhkar__cat-btn:hover { background: #1f3228; }
+html.dark .adhkar__cat-btn.active { background: #162518; }
+html.dark .adhkar__search {
+  background: #0e1a11;
+  border-color: var(--line);
+  color: var(--ink);
+}
+html.dark .adhkar__search::placeholder { color: var(--muted); }
+html.dark .adhkar__card {
+  background: #1a2820;
+  border-color: var(--line);
+}
+html.dark .adhkar__card.done { background: #162518; }
+html.dark .adhkar__ar { color: var(--ink); }
+html.dark .adhkar__translation { color: var(--muted); }
+html.dark .adhkar__fadl { color: var(--muted); }
+html.dark .adhkar__source { color: var(--muted); }
+html.dark .adhkar__tap { background: #253d2c; color: var(--ink); }
+html.dark .adhkar__tap:hover { background: var(--green); color: #fff; }
+html.dark .adhkar__tap--done { background: var(--green); color: #fff; }
+
+/* ── Islamic Tools ────────────────────────────────────────────── */
+html.dark .it-page { background: var(--cream); }
+html.dark .it-card {
+  background: #1a2820;
+  border-color: var(--line);
+}
+html.dark .it-card h2, html.dark .it-card h3 { color: var(--ink); }
+html.dark .it-tabs button {
+  background: #1a2820;
+  border-color: var(--line);
+  color: var(--muted);
+}
+html.dark .it-tabs button.active {
+  background: var(--green);
+  color: #fff;
+}
+html.dark .it-input {
+  background: #0e1a11;
+  border-color: var(--line);
+  color: var(--ink);
+}
+html.dark .it-input::placeholder { color: var(--muted); }
+html.dark .it-prayer-row { border-bottom-color: var(--line); }
+html.dark .it-prayer-name { color: var(--muted); }
+html.dark .it-prayer-time { color: var(--ink); }
+html.dark .it-prayer-row.current { background: #162518; }
+
+/* ── Hadith Library ───────────────────────────────────────────── */
+html.dark .hadith-page { background: var(--cream); }
+html.dark .hadith__card {
+  background: #1a2820;
+  border-color: var(--line);
+}
+html.dark .hadith__text { color: var(--ink); }
+html.dark .hadith__meta { color: var(--muted); }
+html.dark .hadith__search {
+  background: #0e1a11;
+  border-color: var(--line);
+  color: var(--ink);
+}
+html.dark .hadith__search::placeholder { color: var(--muted); }
+
+/* ── Hifz / Khatm ─────────────────────────────────────────────── */
+html.dark .hifz-page { background: var(--cream); }
+html.dark .hifz__card {
+  background: #1a2820;
+  border-color: var(--line);
+}
+html.dark .khatm-page { background: var(--cream); }
+html.dark .khatm__card {
+  background: #1a2820;
+  border-color: var(--line);
+}
+
+/* ── Quran reader (inner dark mode unaffected — it manages its own) ─ */
+/* The Quran page has its own qlc--dark class; global dark mode just
+   handles the chrome around the reader (header, hero, etc.)          */
+html.dark .quran-page { background: var(--cream); }
+html.dark .quran__hero { background: #0e1a11; }
+
+/* ── Form inputs (global catch-all) ──────────────────────────── */
+html.dark input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+html.dark select,
+html.dark textarea {
+  background: #0e1a11;
+  border-color: var(--line);
+  color: var(--ink);
+}
+html.dark input::placeholder,
+html.dark textarea::placeholder { color: var(--muted); }
+
+/* ── Generic white card catch-all ────────────────────────────── */
+html.dark .card,
+html.dark .card--white {
+  background: #1a2820;
+  border-color: var(--line);
+}
+
+/* ── Scrollbar ────────────────────────────────────────────────── */
+html.dark ::-webkit-scrollbar-track { background: #0e1a11; }
+html.dark ::-webkit-scrollbar-thumb { background: #253d2c; }
+html.dark ::-webkit-scrollbar-thumb:hover { background: #2e4d36; }
+
+/* ── Selection ────────────────────────────────────────────────── */
+html.dark ::selection {
+  background: rgba(11, 110, 79, 0.5);
+  color: #fff;
+}
+
+/* ── Smooth transition on theme switch ──────────────────────────  */
+html.dark body,
+html.dark .header,
+html.dark .plan,
+html.dark .blog-card,
+html.dark .faq__item,
+html.dark .adhkar__card,
+html.dark .tpg__card,
+html.dark .features__card,
+html.dark .steps__card,
+html.dark .tc2__card,
+html.dark .it-card,
+html.dark .hadith__card,
+html.dark .dash__card,
+html.dark .billing__card,
+html.dark .admin__card {
+  transition: background .25s, border-color .25s, color .25s;
+}

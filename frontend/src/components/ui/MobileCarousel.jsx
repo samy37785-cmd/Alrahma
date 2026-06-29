@@ -16,8 +16,9 @@ export default function MobileCarousel({ trackClassName = '', children, ariaLabe
   const scroll = (dir) => {
     const el = trackRef.current;
     if (!el) return;
-    // Scroll by ~85% of the visible width so the next card snaps into view.
-    el.scrollBy({ left: dir * el.clientWidth * 0.85, behavior: 'smooth' });
+    // In RTL the scroll axis is mirrored, so flip the sign.
+    const rtl = document.documentElement.dir === 'rtl';
+    el.scrollBy({ left: dir * (rtl ? -1 : 1) * el.clientWidth * 0.85, behavior: 'smooth' });
   };
 
   return (

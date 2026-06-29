@@ -1,10 +1,11 @@
 services:
   - type: web
     name: Alrahma-1
-    runtime: node
+    env: node
     rootDir: backend
     buildCommand: npm install
     startCommand: node server.js
+    healthCheckPath: /health
     envVars:
       - key: NODE_ENV
         value: production

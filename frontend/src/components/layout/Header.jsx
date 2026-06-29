@@ -263,23 +263,42 @@ export default function Header() {
             onTouchEnd={handleTouchEnd}
           >
 
-            {/* ── Mobile-only: signed-in user profile strip ── */}
+            {/* ── Mobile-only: signed-in user profile strip + account links ── */}
             {user && (
-              <div className="nav__mobile-profile">
-                <Avatar name={user.name} size="sm" />
-                <div className="nav__mobile-profile-info">
-                  <span className="nav__mobile-profile-name">{user.name}</span>
-                  <span className="nav__mobile-profile-role">{user.role}</span>
+              <>
+                <div className="nav__mobile-profile">
+                  <Avatar name={user.name} size="sm" />
+                  <div className="nav__mobile-profile-info">
+                    <span className="nav__mobile-profile-name">{user.name}</span>
+                    <span className="nav__mobile-profile-role">{user.role}</span>
+                  </div>
+                  <Link
+                    to="/profile"
+                    className="nav__mobile-profile-edit"
+                    onClick={closeAll}
+                    aria-label="Edit profile"
+                  >
+                    <SettingsIcon size={16} />
+                  </Link>
                 </div>
-                <Link
-                  to="/profile"
-                  className="nav__mobile-profile-edit"
-                  onClick={closeAll}
-                  aria-label="Edit profile"
-                >
-                  <SettingsIcon size={16} />
-                </Link>
-              </div>
+                <div className="nav__mobile-account">
+                  <span className="nav__mobile-account-label">My Account</span>
+                  <Link
+                    to={isAdmin ? '/admin' : isTeacher ? '/teacher' : isParent ? '/parent' : '/dashboard'}
+                    className="nav__mobile-account-link"
+                    onClick={closeAll}
+                  >
+                    <span className="nav__mobile-account-icon">
+                      {isAdmin ? <ShieldIcon size={ICON_SIZE} /> : isTeacher ? <TeacherIcon size={ICON_SIZE} /> : isParent ? <UsersIcon size={ICON_SIZE} /> : <HomeIcon size={ICON_SIZE} />}
+                    </span>
+                    <span>{n.dashboard}</span>
+                  </Link>
+                  <Link to="/billing" className="nav__mobile-account-link" onClick={closeAll}>
+                    <span className="nav__mobile-account-icon"><CardIcon size={ICON_SIZE} /></span>
+                    <span>{n.invoices}</span>
+                  </Link>
+                </div>
+              </>
             )}
 
             {/* ── Main nav items ── */}
@@ -299,39 +318,6 @@ export default function Header() {
               <span>Search pages, tools…</span>
               <kbd>Ctrl K</kbd>
             </button>
-
-            {/* ── Mobile-only: account links (dashboard, billing, role pages) ── */}
-            {user && (
-              <div className="nav__mobile-account">
-                <span className="nav__mobile-account-label">My Account</span>
-                <Link to="/dashboard" className="nav__mobile-account-link" onClick={closeAll}>
-                  <span className="nav__mobile-account-icon"><HomeIcon size={ICON_SIZE} /></span>
-                  <span>{n.dashboard}</span>
-                </Link>
-                <Link to="/billing" className="nav__mobile-account-link" onClick={closeAll}>
-                  <span className="nav__mobile-account-icon"><CardIcon size={ICON_SIZE} /></span>
-                  <span>{n.invoices}</span>
-                </Link>
-                {isTeacher && (
-                  <Link to="/teacher" className="nav__mobile-account-link" onClick={closeAll}>
-                    <span className="nav__mobile-account-icon"><TeacherIcon size={ICON_SIZE} /></span>
-                    <span>{n.teacher}</span>
-                  </Link>
-                )}
-                {isParent && (
-                  <Link to="/parent" className="nav__mobile-account-link" onClick={closeAll}>
-                    <span className="nav__mobile-account-icon"><UsersIcon size={ICON_SIZE} /></span>
-                    <span>{n.myChildren}</span>
-                  </Link>
-                )}
-                {isAdmin && (
-                  <Link to="/admin" className="nav__mobile-account-link" onClick={closeAll}>
-                    <span className="nav__mobile-account-icon"><ShieldIcon size={ICON_SIZE} /></span>
-                    <span>Admin Panel</span>
-                  </Link>
-                )}
-              </div>
-            )}
 
             {/* ── Mobile-only: theme toggle + language picker ── */}
             <div className="nav__mobile-settings">
@@ -439,8 +425,15 @@ export default function Header() {
                 {userMenu.open && (
                   <ul className="nav__dropdown-menu nav__dropdown-menu--right" role="menu">
                     <li role="none">
-                      <Link to="/dashboard" className="nav__dropdown-item" onClick={closeAll} role="menuitem">
-                        <span className="nav__dropdown-item-icon" aria-hidden="true"><HomeIcon size={ICON_SIZE} /></span>
+                      <Link
+                        to={isAdmin ? '/admin' : isTeacher ? '/teacher' : isParent ? '/parent' : '/dashboard'}
+                        className="nav__dropdown-item"
+                        onClick={closeAll}
+                        role="menuitem"
+                      >
+                        <span className="nav__dropdown-item-icon" aria-hidden="true">
+                          {isAdmin ? <ShieldIcon size={ICON_SIZE} /> : isTeacher ? <TeacherIcon size={ICON_SIZE} /> : isParent ? <UsersIcon size={ICON_SIZE} /> : <HomeIcon size={ICON_SIZE} />}
+                        </span>
                         {n.dashboard}
                       </Link>
                     </li>
@@ -456,30 +449,6 @@ export default function Header() {
                         {n.profile}
                       </Link>
                     </li>
-                    {isTeacher && (
-                      <li role="none">
-                        <Link to="/teacher" className="nav__dropdown-item" onClick={closeAll} role="menuitem">
-                          <span className="nav__dropdown-item-icon" aria-hidden="true"><TeacherIcon size={ICON_SIZE} /></span>
-                          {n.teacher}
-                        </Link>
-                      </li>
-                    )}
-                    {isParent && (
-                      <li role="none">
-                        <Link to="/parent" className="nav__dropdown-item" onClick={closeAll} role="menuitem">
-                          <span className="nav__dropdown-item-icon" aria-hidden="true"><UsersIcon size={ICON_SIZE} /></span>
-                          {n.myChildren}
-                        </Link>
-                      </li>
-                    )}
-                    {isAdmin && (
-                      <li role="none">
-                        <Link to="/admin" className="nav__dropdown-item" onClick={closeAll} role="menuitem">
-                          <span className="nav__dropdown-item-icon" aria-hidden="true"><ShieldIcon size={ICON_SIZE} /></span>
-                          Admin Panel
-                        </Link>
-                      </li>
-                    )}
                     <li className="nav__dropdown-divider" role="separator" />
                     <li role="none">
                       <button className="nav__dropdown-item nav__dropdown-item--danger" onClick={handleLogout} role="menuitem">

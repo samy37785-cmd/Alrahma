@@ -88,3 +88,22 @@
 
 /* Avatar group: stacking direction flips in RTL */
 [dir="rtl"] .avatar-group__item { margin-left: 0; margin-right: -8px; }
+
+/* ── Mobile carousel RTL ─────────────────────────────────────────── */
+/* Swap arrow positions so prev is on the right (visual start) and
+   next is on the left (visual end) in a right-to-left carousel. */
+[dir="rtl"] .mcar__arrow--prev { left: auto; right: -2px; }
+[dir="rtl"] .mcar__arrow--next { right: auto; left: -2px; }
+
+/* ── Hero eyebrow: strip letter-spacing that breaks Arabic joins ─── */
+[dir="rtl"] .hero__eyebrow { letter-spacing: 0; text-transform: none; }
+
+/* ── Hero stat dividers: flip the border side ───────────────────── */
+[dir="rtl"] .hero__stat { border-right: none; border-left: 1px solid rgba(255,255,255,.1); }
+[dir="rtl"] .hero__stat:first-child { border-left: none; }
+
+/* ── Hero pills desktop: mirror the negative offsets ────────────── */
+/* In RTL, the visual column is on the LEFT side, so physical
+   left/right positions must mirror to avoid viewport overflow. */
+[dir="rtl"] .hero__pill--top    { right: auto; left: -10px; }
+[dir="rtl"] .hero__pill--bottom { left: auto;  right: -20px; }

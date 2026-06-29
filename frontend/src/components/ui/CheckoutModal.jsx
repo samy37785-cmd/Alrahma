@@ -99,7 +99,7 @@ export default function CheckoutModal({ plan, onClose }) {
 
         {/* Success state */}
         {success ? (
-          <div className="checkout__success">
+          <div className="checkout__success" role="status" aria-live="polite">
             <p>{success}</p>
             <button type="button" className="btn btn--green btn--block" onClick={onClose}>{c.close}</button>
           </div>
@@ -180,12 +180,13 @@ export default function CheckoutModal({ plan, onClose }) {
               </div>
             )}
 
-            {error && <p className="checkout__error">{error}</p>}
+            {error && <p className="checkout__error" role="alert">{error}</p>}
 
             <button
               type="submit"
               className="btn btn--gold btn--block checkout__submit"
               disabled={loading}
+              aria-busy={loading}
             >
               {loading
                 ? c.processing

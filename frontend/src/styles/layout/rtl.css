@@ -82,3 +82,9 @@
 /* Adhkar card tap count badge RTL fix */
 [dir="rtl"] .adhkar__ar { padding-right: 0; padding-left: 28px; }
 [dir="rtl"] .adhkar__context-badge { margin-right: 0; margin-left: 28px; }
+
+/* Avatar: status badge mirrors to bottom-left in RTL */
+[dir="rtl"] .avatar__status { right: auto; left: 1px; }
+
+/* Avatar group: stacking direction flips in RTL */
+[dir="rtl"] .avatar-group__item { margin-left: 0; margin-right: -8px; }

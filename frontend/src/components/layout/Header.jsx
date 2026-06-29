@@ -8,13 +8,14 @@ import { useLang } from "../../context/LangContext";
 import { useTheme } from "../../context/ThemeContext";
 import LangSwitcher from "../ui/LangSwitcher";
 import Avatar from "../ui/Avatar";
+import CommandPalette from "../ui/CommandPalette";
 import { LANGS } from "../../i18n";
 import {
   BookOpenIcon, StarIcon, ScrollIcon, MosqueIcon, AlphabetIcon,
   BeadsIcon, LibraryIcon, CompassIcon, CalendarIcon, HandIcon, VerseIcon,
   EditIcon, MessageIcon, AboutIcon, TeacherIcon, LockIcon,
   HomeIcon, CardIcon, SettingsIcon, ShieldIcon, LogoutIcon,
-  UsersIcon, MoonIcon, SunIconOutline, ChevronDownIcon, BellIcon,
+  UsersIcon, MoonIcon, SunIconOutline, ChevronDownIcon, BellIcon, SearchIcon,
 } from "../ui/Icons";
 import { getUnreadCount } from "../../api/messageApi";
 
@@ -35,6 +36,29 @@ function useDropdown() {
     };
   }, [open]);
   return { open, setOpen, ref };
+}
+
+function useFocusTrap(ref, active) {
+  useEffect(() => {
+    if (!active || !ref.current) return;
+    const el = ref.current;
+    const focusable = el.querySelectorAll(
+      'a[href], button:not([disabled]), input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+    const first = focusable[0];
+    const last  = focusable[focusable.length - 1];
+    first?.focus();
+    const trap = (e) => {
+      if (e.key !== "Tab") return;
+      if (e.shiftKey) {
+        if (document.activeElement === first) { e.preventDefault(); last?.focus(); }
+      } else {
+        if (document.activeElement === last)  { e.preventDefault(); first?.focus(); }
+      }
+    };
+    el.addEventListener("keydown", trap);
+    return () => el.removeEventListener("keydown", trap);
+  }, [active, ref]);
 }
 
 const ICON_SIZE = 15;
@@ -108,12 +132,17 @@ function NavDropdown({ state, label, items, hubTo, wide, isActive, closeAll, vie
 
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [cmdOpen, setCmdOpen]       = useState(false);
   const { user, isAdmin, isTeacher, isParent, logout } = useAuth();
   const { t, lang, setLang } = useLang();
   const { dark, toggle: toggleDark } = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
   const n = t.nav;
+
+  const navRef      = useRef(null);
+  const touchStartY = useRef(0);
+  const touchStartX = useRef(0);
 
   const courses   = useDropdown();
   const tools     = useDropdown();
@@ -129,6 +158,9 @@ export default function Header() {
     staleTime: 15000,
   });
   const unreadCount = unreadData?.count ?? 0;
+
+  /* Focus trap inside the open mobile drawer */
+  useFocusTrap(navRef, mobileOpen);
 
   /* Close mobile drawer on route change */
   useEffect(() => { setMobileOpen(false); }, [location.pathname]);
@@ -146,13 +178,25 @@ export default function Header() {
     return () => window.removeEventListener("scroll", close);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  /* Escape closes the mobile drawer (dropdown-level Escape handled inside useDropdown) */
+  /* Escape closes the mobile drawer */
   useEffect(() => {
     if (!mobileOpen) return;
     const handler = (e) => { if (e.key === "Escape") setMobileOpen(false); };
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
   }, [mobileOpen]);
+
+  /* Ctrl+K / ⌘+K opens the command palette */
+  useEffect(() => {
+    const handler = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "k") {
+        e.preventDefault();
+        setCmdOpen((v) => !v);
+      }
+    };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, []);
 
   const closeAll = useCallback(() => {
     setMobileOpen(false);
@@ -161,6 +205,18 @@ export default function Header() {
 
   const isActive = (path) => location.pathname === path || location.pathname.startsWith(path + "/");
   const handleLogout = () => { closeAll(); logout(); navigate("/"); };
+
+  /* Swipe-up gesture closes the mobile drawer */
+  const handleTouchStart = useCallback((e) => {
+    touchStartY.current = e.touches[0].clientY;
+    touchStartX.current = e.touches[0].clientX;
+  }, []);
+
+  const handleTouchEnd = useCallback((e) => {
+    const dy = e.changedTouches[0].clientY - touchStartY.current;
+    const dx = Math.abs(e.changedTouches[0].clientX - touchStartX.current);
+    if (dy < -70 && Math.abs(dy) > dx * 1.5) setMobileOpen(false);
+  }, []);
 
   const COURSES_ITEMS = useMemo(() => [
     { to: "/courses/quran",           label: n.quranTajweed,   Icon: BookOpenIcon },
@@ -198,7 +254,14 @@ export default function Header() {
         <div className="container header__inner">
           <Brand />
 
-          <nav className={`nav${mobileOpen ? " open" : ""}`} id="nav" aria-label="Main navigation">
+          <nav
+            className={`nav${mobileOpen ? " open" : ""}`}
+            id="nav"
+            aria-label="Main navigation"
+            ref={navRef}
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+          >
 
             {/* ── Mobile-only: signed-in user profile strip ── */}
             {user && (
@@ -225,6 +288,17 @@ export default function Header() {
             <NavDropdown state={resources} label={n.resources} items={RESOURCES_ITEMS} hubTo="/resources" isActive={isActive} closeAll={closeAll} viewAllLabel={n.viewAll} allLabel={n.allLabel} />
             <NavDropdown state={academy}   label={n.academy}   items={ACADEMY_ITEMS}   hubTo="/academy"   isActive={isActive} closeAll={closeAll} viewAllLabel={n.viewAll} allLabel={n.allLabel} />
             <Link to="/enroll" className="nav__cta" onClick={closeAll}>{n.trial}</Link>
+
+            {/* ── Mobile-only: search / command palette trigger ── */}
+            <button
+              className="nav__mobile-search"
+              onClick={() => { setCmdOpen(true); setMobileOpen(false); }}
+              aria-label="Search pages and tools"
+            >
+              <span className="nav__mobile-search-icon"><SearchIcon size={16} /></span>
+              <span>Search pages, tools…</span>
+              <kbd>Ctrl K</kbd>
+            </button>
 
             {/* ── Mobile-only: account links (dashboard, billing, role pages) ── */}
             {user && (
@@ -420,6 +494,16 @@ export default function Header() {
               <Link to="/login" className="btn btn--ghost btn--sm">{n.login}</Link>
             )}
 
+            {/* Search / Command Palette — desktop only; mobile has its own in the drawer */}
+            <button
+              className="nav__search-btn btn btn--icon btn--ghost btn--sm"
+              onClick={() => setCmdOpen(true)}
+              aria-label="Search (Ctrl+K)"
+              title="Search (Ctrl+K)"
+            >
+              <SearchIcon size={18} />
+            </button>
+
             {/* Hamburger — shown only on mobile */}
             <button
               className="nav-toggle"
@@ -445,6 +529,9 @@ export default function Header() {
         />,
         document.body
       )}
+
+      {/* Command Palette */}
+      {cmdOpen && <CommandPalette onClose={() => setCmdOpen(false)} />}
     </>
   );
 }

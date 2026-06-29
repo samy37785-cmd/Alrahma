@@ -158,7 +158,7 @@ export function SkeletonDashboard() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(185px, 1fr))', gap: 14 }}>
         {[1,2,3,4].map((k) => <SkeletonStatCard key={k} />)}
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 18 }}>
+      <div className="ds-grid ds-grid-main-side">
         <SkeletonCard rows={6} />
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <SkeletonCard rows={3} />

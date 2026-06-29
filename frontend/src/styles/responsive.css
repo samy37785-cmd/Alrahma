@@ -159,15 +159,20 @@ img, video, svg, canvas { max-width: 100%; }
 
   /* Show mobile-only drawer sections */
   .nav__mobile-profile    { display: flex; }
+  .nav__mobile-search     { display: flex; }
   .nav__mobile-account    { display: block; }
   .nav__mobile-settings   { display: flex; }
   .nav__mobile-logout     { display: flex; }
   .nav__mobile-login-link { display: flex; }
 
-  /* Drawer panel: slides down from header bottom */
+  /* Hide desktop search button — mobile drawer has its own */
+  .nav__search-btn { display: none !important; }
+
+  /* Drawer panel: slides down from header bottom.
+     Header = 14px padding × 2 + 44px hamburger + 1px border = 73px → use 74px for safety. */
   .nav {
     position: fixed;
-    top: calc(64px + env(safe-area-inset-top, 0px));
+    top: calc(74px + env(safe-area-inset-top, 0px));
     left: 0; right: 0;
     z-index: 48;
     flex-direction: column;
@@ -177,14 +182,14 @@ img, video, svg, canvas { max-width: 100%; }
     border-bottom: 1px solid var(--line);
     padding: 0 0 20px;
     transform: translateY(-110%);
-    transition: transform .3s cubic-bezier(.4,0,.2,1);
+    transition: transform .22s cubic-bezier(.4,0,.6,1);
     box-shadow: 0 16px 48px rgba(0,0,0,.18);
-    max-height: calc(100dvh - 64px - env(safe-area-inset-top, 0px));
+    max-height: calc(100dvh - 74px - env(safe-area-inset-top, 0px));
     overflow-y: auto;
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
   }
-  .nav.open { transform: translateY(0); }
+  .nav.open { transform: translateY(0); transition: transform .38s cubic-bezier(0.22,1,0.36,1); }
 
   /* Nav link rows */
   .nav > a, .nav__dropdown-trigger {
@@ -246,11 +251,13 @@ img, video, svg, canvas { max-width: 100%; }
   }
 }
 
-/* Phone-specific: smaller header height → adjust drawer top offset */
+/* Phone-specific: tighten header padding on small screens for more content space.
+   10px × 2 + 44px hamburger + 1px border = 65px → nav drawer starts at 65px. */
 @media (max-width: 640px) {
+  .header__inner { padding: 10px 0; }
   .nav {
-    top: calc(58px + env(safe-area-inset-top, 0px));
-    max-height: calc(100dvh - 58px - env(safe-area-inset-top, 0px));
+    top: calc(65px + env(safe-area-inset-top, 0px));
+    max-height: calc(100dvh - 65px - env(safe-area-inset-top, 0px));
   }
 }
 

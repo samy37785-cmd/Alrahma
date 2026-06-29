@@ -100,7 +100,7 @@ export default function Newsletter() {
             </p>
           </form>
           {status === 'error' && (
-            <p className="newsletter__error">{n.error || 'Something went wrong. Please try again.'}</p>
+            <p className="newsletter__error" role="alert">{n.error || 'Something went wrong. Please try again.'}</p>
           )}
         </div>
 

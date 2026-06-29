@@ -170,7 +170,7 @@ export default function Trial() {
             />
           </div>
 
-          <button type="submit" className="btn btn--gold btn--block" disabled={sending}>
+          <button type="submit" className="btn btn--gold btn--block" disabled={sending} aria-busy={sending}>
             {sending ? tr.sending : tr.submit}
           </button>
 
@@ -184,7 +184,7 @@ export default function Trial() {
           )}
 
           {error === 'network' && (
-            <div className="form-note form-note--error">
+            <div className="form-note form-note--error" role="alert">
               <p>{tr.errorOffline}</p>
               <div style={{ display: 'flex', gap: '8px', marginTop: '10px', flexWrap: 'wrap' }}>
                 <a
@@ -207,7 +207,7 @@ export default function Trial() {
             </div>
           )}
           {error && error !== 'network' && (
-            <p className="form-note form-note--error">{error}</p>
+            <p className="form-note form-note--error" role="alert">{error}</p>
           )}
         </form>
 

@@ -630,3 +630,54 @@ html.dark .nav__bell-badge { border-color: var(--bg-page); }
 [dir="rtl"] .nav__mobile-account-link { flex-direction: row-reverse; }
 [dir="rtl"] .nav__mobile-theme-btn { flex-direction: row-reverse; text-align: right; }
 [dir="rtl"] .nav__mobile-account-label { text-align: right; }
+
+/* ── Desktop search / command-palette button ─────────────────────── */
+.nav__search-btn {
+  color: var(--ink);
+}
+
+/* ── Mobile search row (hidden on desktop, shown in drawer ≤900px) ── */
+.nav__mobile-search {
+  display: none;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 20px;
+  min-height: 48px;
+  border: none;
+  border-top: 1px solid var(--line);
+  background: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: .9rem;
+  font-weight: 500;
+  color: var(--ink);
+  text-align: left;
+  -webkit-tap-highlight-color: transparent;
+  transition: background .15s;
+}
+.nav__mobile-search:hover,
+.nav__mobile-search:active { background: var(--green-light); }
+.nav__mobile-search-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: var(--green-light);
+  color: var(--green);
+  flex-shrink: 0;
+}
+.nav__mobile-search span:not(.nav__mobile-search-icon) { flex: 1; }
+.nav__mobile-search kbd {
+  font-size: .72rem;
+  font-family: inherit;
+  padding: 2px 7px;
+  border: 1.5px solid var(--line);
+  border-radius: 5px;
+  color: var(--muted);
+  background: var(--surface);
+}
+
+[dir="rtl"] .nav__mobile-search { flex-direction: row-reverse; text-align: right; }

@@ -126,7 +126,7 @@ export default function QuickTrialModal({ open, onClose }) {
 
               {error && <p className="qtm__error" role="alert">{error}</p>}
 
-              <button type="submit" className="btn btn--gold btn--block" disabled={loading}>
+              <button type="submit" className="btn btn--gold btn--block" disabled={loading} aria-busy={loading}>
                 {loading ? 'Booking…' : 'Book my free trial →'}
               </button>
             </form>

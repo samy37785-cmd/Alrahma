@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext';
@@ -56,6 +56,7 @@ function printCertificate(cert, typeLabel) {
     </div>
   </body></html>`);
   w.document.close();
+  w.focus();
 }
 
 export default function Profile() {
@@ -106,6 +107,18 @@ export default function Profile() {
   const [passErr, setPassErr]   = useState('');
   const [saving, setSaving]     = useState(false);
 
+  useEffect(() => {
+    if (!infoMsg) return;
+    const id = setTimeout(() => setInfoMsg(''), 5000);
+    return () => clearTimeout(id);
+  }, [infoMsg]);
+
+  useEffect(() => {
+    if (!passMsg) return;
+    const id = setTimeout(() => setPassMsg(''), 5000);
+    return () => clearTimeout(id);
+  }, [passMsg]);
+
   const handleInfo = async (e) => {
     e.preventDefault();
     setInfoMsg(''); setInfoErr('');
@@ -124,7 +137,7 @@ export default function Profile() {
     e.preventDefault();
     setPassMsg(''); setPassErr('');
     if (pass.newPassword !== pass.confirm) return setPassErr(pg.passNoMatch);
-    if (pass.newPassword.length < 6)       return setPassErr(pg.passShort);
+    if (pass.newPassword.length < 8)       return setPassErr(pg.passShort);
     setSaving(true);
     try {
       await updateProfile({ currentPassword: pass.currentPassword, newPassword: pass.newPassword });
@@ -185,12 +198,12 @@ export default function Profile() {
             </div>
             <div className="ds-card__body">
               {infoMsg && (
-                <div style={{ background: 'var(--color-success-surface)', border: '1px solid var(--color-success-border)', borderRadius: 8, padding: '8px 12px', marginBottom: 14, fontSize: '0.82rem', color: 'var(--color-success-text)' }}>
+                <div role="status" aria-live="polite" style={{ background: 'var(--color-success-surface)', border: '1px solid var(--color-success-border)', borderRadius: 8, padding: '8px 12px', marginBottom: 14, fontSize: '0.82rem', color: 'var(--color-success-text)' }}>
                   ✓ {infoMsg}
                 </div>
               )}
               {infoErr && (
-                <div style={{ background: 'var(--color-danger-surface)', border: '1px solid var(--color-danger-border)', borderRadius: 8, padding: '8px 12px', marginBottom: 14, fontSize: '0.82rem', color: 'var(--color-danger-text)' }}>
+                <div role="alert" style={{ background: 'var(--color-danger-surface)', border: '1px solid var(--color-danger-border)', borderRadius: 8, padding: '8px 12px', marginBottom: 14, fontSize: '0.82rem', color: 'var(--color-danger-text)' }}>
                   {infoErr}
                 </div>
               )}
@@ -207,7 +220,7 @@ export default function Profile() {
                   <label>{pg.accountType}</label>
                   <input value={roleLabel} disabled style={{ background: 'var(--bg-disabled)', cursor: 'not-allowed' }} />
                 </div>
-                <button type="submit" className="btn btn--green" style={{ alignSelf: 'flex-start', borderRadius: 9 }} disabled={saving}>
+                <button type="submit" className="btn btn--green" style={{ alignSelf: 'flex-start', borderRadius: 9 }} disabled={saving} aria-busy={saving}>
                   {saving ? pg.saving : pg.saveChanges}
                 </button>
               </form>
@@ -221,12 +234,12 @@ export default function Profile() {
             </div>
             <div className="ds-card__body">
               {passMsg && (
-                <div style={{ background: 'var(--color-success-surface)', border: '1px solid var(--color-success-border)', borderRadius: 8, padding: '8px 12px', marginBottom: 14, fontSize: '0.82rem', color: 'var(--color-success-text)' }}>
+                <div role="status" aria-live="polite" style={{ background: 'var(--color-success-surface)', border: '1px solid var(--color-success-border)', borderRadius: 8, padding: '8px 12px', marginBottom: 14, fontSize: '0.82rem', color: 'var(--color-success-text)' }}>
                   ✓ {passMsg}
                 </div>
               )}
               {passErr && (
-                <div style={{ background: 'var(--color-danger-surface)', border: '1px solid var(--color-danger-border)', borderRadius: 8, padding: '8px 12px', marginBottom: 14, fontSize: '0.82rem', color: 'var(--color-danger-text)' }}>
+                <div role="alert" style={{ background: 'var(--color-danger-surface)', border: '1px solid var(--color-danger-border)', borderRadius: 8, padding: '8px 12px', marginBottom: 14, fontSize: '0.82rem', color: 'var(--color-danger-text)' }}>
                   {passErr}
                 </div>
               )}
@@ -243,7 +256,7 @@ export default function Profile() {
                   <label htmlFor="conf-pass">{pg.confirmPass}</label>
                   <input id="conf-pass" type="password" value={pass.confirm} onChange={(e) => setPass((p) => ({ ...p, confirm: e.target.value }))} required />
                 </div>
-                <button type="submit" className="btn btn--green" style={{ alignSelf: 'flex-start', borderRadius: 9 }} disabled={saving}>
+                <button type="submit" className="btn btn--green" style={{ alignSelf: 'flex-start', borderRadius: 9 }} disabled={saving} aria-busy={saving}>
                   {saving ? pg.saving : pg.changeBtn}
                 </button>
               </form>

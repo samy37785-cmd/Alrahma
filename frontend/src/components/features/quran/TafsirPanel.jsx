@@ -64,7 +64,7 @@ export default function TafsirPanel({ verseKey, tafsirId, onClose, ui }) {
           <span>{ui.tafsirLoading || 'جاري التحميل…'}</span>
         </div>
       )}
-      {err && <p className="qlc__tafsir-err">⚠ {err}</p>}
+      {err && <p className="qlc__tafsir-err" role="alert">⚠ {err}</p>}
       {text && (
         <div className="qlc__tafsir-body" dir={entry?.lang === 'ar' ? 'rtl' : 'ltr'} lang={entry?.lang}>
           {isHtml

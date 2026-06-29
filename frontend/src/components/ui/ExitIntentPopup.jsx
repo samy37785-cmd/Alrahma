@@ -139,7 +139,7 @@ export default function ExitIntentPopup() {
 
               {error && <p className="exit-popup__error" role="alert">{error}</p>}
 
-              <button type="submit" className="btn btn--gold btn--block" disabled={loading}>
+              <button type="submit" className="btn btn--gold btn--block" disabled={loading} aria-busy={loading}>
                 {loading ? 'Sending…' : 'Get my free lesson →'}
               </button>
 

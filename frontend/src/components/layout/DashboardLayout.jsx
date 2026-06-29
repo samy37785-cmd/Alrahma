@@ -157,6 +157,8 @@ export default function DashboardLayout({ children }) {
 
   const userBtnRef  = useRef(null);
   const notifBtnRef = useRef(null);
+  const sidebarRef  = useRef(null);
+  const burgerRef   = useRef(null);
 
   // Shared React Query cache with Header — same key means zero extra requests
   const { data: unreadData } = useQuery({
@@ -180,6 +182,36 @@ export default function DashboardLayout({ children }) {
 
   // Close mobile sidebar on every route change
   useEffect(() => { setMobileOpen(false); }, [location.pathname]);
+
+  // Mobile drawer: focus management + focus trap
+  useEffect(() => {
+    if (!mobileOpen) {
+      burgerRef.current?.focus();
+      return;
+    }
+    const sidebar = sidebarRef.current;
+    if (!sidebar) return;
+    const focusable = sidebar.querySelectorAll(
+      'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    );
+    if (focusable.length) focusable[0].focus();
+
+    const trap = (e) => {
+      if (e.key !== 'Tab') return;
+      const els = [...sidebar.querySelectorAll(
+        'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      )];
+      if (!els.length) return;
+      const first = els[0], last = els[els.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault(); last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault(); first.focus();
+      }
+    };
+    document.addEventListener('keydown', trap);
+    return () => document.removeEventListener('keydown', trap);
+  }, [mobileOpen]);
 
   // Global keyboard shortcut — Ctrl+K / Cmd+K opens command palette
   useEffect(() => {
@@ -223,10 +255,21 @@ export default function DashboardLayout({ children }) {
   return (
     <div className={`ds${collapsed ? ' ds--collapsed' : ''}${mobileOpen ? ' ds--mobile-open' : ''}`}>
       {/* Mobile overlay */}
-      <div className="ds-overlay" onClick={() => setMobileOpen(false)} />
+      <button
+        type="button"
+        className="ds-overlay"
+        onClick={() => setMobileOpen(false)}
+        aria-label="Close navigation"
+        tabIndex={mobileOpen ? 0 : -1}
+      />
 
       {/* ── SIDEBAR ─────────────────────────────────────────────────── */}
-      <aside className="ds-sidebar" aria-label="Main navigation">
+      <aside
+        ref={sidebarRef}
+        className="ds-sidebar"
+        aria-label="Main navigation"
+        aria-modal={mobileOpen ? 'true' : undefined}
+      >
         {/* Brand */}
         <Link to="/" className="ds-brand">
           <div className="ds-brand__logo">ر</div>
@@ -352,11 +395,12 @@ export default function DashboardLayout({ children }) {
       </aside>
 
       {/* ── MAIN AREA ───────────────────────────────────────────────── */}
-      <div className="ds-main">
+      <div className="ds-main" aria-hidden={mobileOpen ? 'true' : undefined}>
         {/* Top header */}
         <header className="ds-header">
           {/* Mobile burger */}
           <button
+            ref={burgerRef}
             className="ds-header__burger"
             onClick={() => setMobileOpen((o) => !o)}
             aria-label={mobileOpen ? 'Close navigation' : 'Open navigation'}

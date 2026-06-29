@@ -80,6 +80,8 @@ export default function Quran() {
   const [loadingVA, setLoadingVA]           = useState(false);
   const [revealed, setRevealed]             = useState({});
   const [showTrans, setShowTrans]           = useState(true);
+  const [hifzTime, setHifzTime]             = useState(0);
+  const [hifzDuration, setHifzDuration]     = useState(0);
   const [khatmDone, setKhatmDone]           = useState(
     () => { try { return JSON.parse(localStorage.getItem('khatm-done') || '[]'); } catch { return []; } }
   );
@@ -207,8 +209,10 @@ export default function Quran() {
   /* ══════════════════════════════════════════════════════════════
      RENDER
      ══════════════════════════════════════════════════════════════ */
+  const showFloatBar = tab === 'hifz' && hifzMode === 'repeat' && isPlaying && !!selectedVerses[curIdx];
+
   return (
-    <div className={`qlc${darkMode ? ' qlc--dark' : ''}`}>
+    <div className={`qlc${darkMode ? ' qlc--dark' : ''}${showFloatBar ? ' qlc--float' : ''}`}>
 
       <KbdSidePanel open={kbdPanelOpen} onToggle={() => setKbdPanelOpen((v) => !v)} />
 
@@ -290,6 +294,9 @@ export default function Quran() {
               handleHifzEnded={handleHifzEnded}
               onRevealAll={revealAll}
               onHideAll={hideAll}
+              onVerseTimeUpdate={(e) => setHifzTime(e.target.currentTime)}
+              onVerseDurationLoad={(e) => { const d = e.target.duration; setHifzDuration(isFinite(d) ? d : 0); }}
+              onVerseEnded={() => { setHifzTime(0); setHifzDuration(0); }}
             />
           )}
 
@@ -318,6 +325,7 @@ export default function Quran() {
         tab={tab} hifzMode={hifzMode} isPlaying={isPlaying} selectedVerses={selectedVerses}
         curIdx={curIdx} playCount={playCount} repeatCount={repeatCount}
         rangeIteration={rangeIteration} rangeRepeat={rangeRepeat} ui={ui} stopHifz={stopHifz}
+        verseTime={hifzTime} verseDuration={hifzDuration}
       />
 
       <VerseCardModal

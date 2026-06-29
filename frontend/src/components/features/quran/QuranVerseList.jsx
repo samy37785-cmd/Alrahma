@@ -20,7 +20,7 @@ export default function QuranVerseList({
   return (
     <>
       {loading && <div className="qlc__loading"><div className="qlc__spinner" /></div>}
-      {error && <p className="qlc__error">{error}</p>}
+      {error && <p className="qlc__error" role="alert">{error}</p>}
 
       {!loading && !error && displayVerses.length > 0 && (
         <div className="qlc__jump-bar">

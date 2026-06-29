@@ -39,12 +39,7 @@
 }
 .nav__cta:hover { background: var(--gold-dark); }
 
-.skip-link {
-  position: absolute; left: -9999px; top: 8px; z-index: 9999;
-  background: var(--green); color: #fff; padding: 8px 18px; border-radius: 6px;
-  font-size: .9rem; font-weight: 600; text-decoration: none;
-}
-.skip-link:focus { left: 8px; }
+/* Skip link styles live in global.css — no duplicate here */
 
 /* Dropdown shared */
 .nav__dropdown { position: relative; }
@@ -83,8 +78,25 @@
 .nav__dropdown-item:hover { background: var(--green-light); color: var(--green-deep); }
 .nav__dropdown-item--active { background: var(--green-light); color: var(--green-deep); font-weight: 700; }
 .nav__dropdown-item--danger { color: #c0392b; }
-.nav__dropdown-item--danger:hover { background: #fff1f1; color: #c0392b; }
+.nav__dropdown-item--danger:hover,
+.nav__dropdown-item--danger:focus-visible { background: #fff1f1; color: #c0392b; outline-color: #c0392b; }
 .nav__dropdown-divider { height: 1px; background: var(--line); margin: 4px 0; }
+
+/* Focus-visible states for all interactive nav elements */
+.nav__dropdown-trigger:focus-visible,
+.nav__dropdown-item:focus-visible,
+.nav__cta:focus-visible,
+.nav__bell:focus-visible,
+.nav__user-btn:focus-visible,
+.nav-toggle:focus-visible {
+  outline: var(--ring-width, 2px) solid var(--ring-color, #0b6e4f);
+  outline-offset: var(--ring-offset, 2px);
+}
+.nav > a:focus-visible {
+  outline: var(--ring-width, 2px) solid var(--ring-color, #0b6e4f);
+  outline-offset: var(--ring-offset, 2px);
+  border-radius: 8px;
+}
 
 /* Mega-menu dropdown — wider, 2-col grid for Courses */
 .nav__dropdown-menu--mega {
@@ -338,3 +350,283 @@ html.dark .nav__bell-badge { border-color: var(--bg-page); }
 .quran__bar .brand__text strong { color: #fff; }
 .quran__bar .brand__text small { color: #9fc0b3; }
 .quran__bar .btn--ghost { color: #fff; }
+
+/* ════════════════════════════════════════════════════════════════════
+   MOBILE DRAWER ENHANCEMENTS
+   All .nav__mobile-* rules are hidden on desktop and shown only when
+   the responsive.css ≤900px block sets display.
+   ════════════════════════════════════════════════════════════════════ */
+
+/* ── Backdrop overlay ────────────────────────────────────────────── */
+.nav-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 44;
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  animation: navFadeIn .2s ease forwards;
+}
+@keyframes navFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ── Desktop mega-menu: 2-column grid for Tools (9 items) ───────── */
+.nav__dropdown-menu--wide {
+  min-width: 420px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+.nav__dropdown-menu--wide .nav__megamenu-footer {
+  grid-column: 1 / -1;
+}
+
+/* ── Desktop-only element hidden on mobile ───────────────────────── */
+/* .header__user-desktop visibility controlled in responsive.css     */
+
+/* ── Mobile-only sections: hidden on desktop ─────────────────────── */
+.nav__mobile-profile,
+.nav__mobile-account,
+.nav__mobile-settings,
+.nav__mobile-logout,
+.nav__mobile-login-link { display: none; }
+
+/* ── Mobile profile strip ────────────────────────────────────────── */
+.nav__mobile-profile {
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--line);
+  background: var(--green-light);
+}
+.nav__mobile-profile-info {
+  flex: 1;
+  min-width: 0;
+}
+.nav__mobile-profile-name {
+  display: block;
+  font-weight: 700;
+  font-size: .95rem;
+  color: var(--green-deep);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.nav__mobile-profile-role {
+  display: block;
+  font-size: .78rem;
+  color: var(--muted);
+  text-transform: capitalize;
+  margin-top: 1px;
+}
+.nav__mobile-profile-edit {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--green);
+  border: 1.5px solid var(--line);
+  text-decoration: none;
+  transition: background .2s, border-color .2s, color .2s;
+}
+.nav__mobile-profile-edit:hover {
+  background: var(--green);
+  border-color: var(--green);
+  color: #fff;
+}
+
+/* ── Mobile account links ────────────────────────────────────────── */
+.nav__mobile-account {
+  padding: 4px 0 8px;
+  border-top: 1px solid var(--line);
+}
+.nav__mobile-account-label {
+  display: block;
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 10px 20px 6px;
+}
+.nav__mobile-account-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  min-height: 48px;
+  color: var(--ink);
+  font-size: .9rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background .15s, color .15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.nav__mobile-account-link:hover,
+.nav__mobile-account-link:active {
+  background: var(--green-light);
+  color: var(--green-deep);
+}
+.nav__mobile-account-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: var(--green-light);
+  color: var(--green);
+  flex-shrink: 0;
+}
+
+/* ── Mobile settings: theme toggle + language grid ───────────────── */
+.nav__mobile-settings {
+  flex-direction: column;
+  gap: 0;
+  border-top: 1px solid var(--line);
+  padding: 12px 20px 16px;
+}
+
+/* Theme toggle row */
+.nav__mobile-theme-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: .9rem;
+  font-weight: 600;
+  color: var(--ink);
+  text-align: left;
+  -webkit-tap-highlight-color: transparent;
+}
+.nav__mobile-theme-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--green-light);
+  color: var(--green);
+  flex-shrink: 0;
+}
+.nav__mobile-theme-label { flex: 1; font-size: .88rem; }
+
+/* Toggle switch pill */
+.nav__mobile-toggle {
+  position: relative;
+  width: 42px;
+  height: 24px;
+  border-radius: 999px;
+  background: var(--line);
+  flex-shrink: 0;
+  transition: background .25s;
+}
+.nav__mobile-toggle::after {
+  content: '';
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0,0,0,.2);
+  transition: transform .25s;
+}
+.nav__mobile-toggle--on { background: var(--green); }
+.nav__mobile-toggle--on::after { transform: translateX(18px); }
+
+/* Language button grid */
+.nav__mobile-langs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+.nav__mobile-lang-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 13px;
+  border-radius: 999px;
+  border: 1.5px solid var(--line);
+  background: none;
+  font-family: inherit;
+  font-size: .82rem;
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+  transition: border-color .15s, background .15s, color .15s;
+  -webkit-tap-highlight-color: transparent;
+  min-height: 36px;
+}
+.nav__mobile-lang-btn:hover {
+  border-color: var(--green);
+  background: var(--green-light);
+  color: var(--green-deep);
+}
+.nav__mobile-lang-btn--active {
+  border-color: var(--green);
+  background: var(--green);
+  color: #fff;
+}
+
+/* ── Mobile logout button ────────────────────────────────────────── */
+.nav__mobile-logout {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 14px 20px;
+  border: none;
+  border-top: 1px solid var(--line);
+  background: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: .9rem;
+  font-weight: 600;
+  color: #c0392b;
+  text-align: left;
+  min-height: 52px;
+  -webkit-tap-highlight-color: transparent;
+  transition: background .15s;
+}
+.nav__mobile-logout:hover { background: #fff1f1; }
+.nav__mobile-logout:active { background: #ffe0e0; }
+
+/* ── Mobile login link (for guests in the drawer) ────────────────── */
+.nav__mobile-login-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 12px 20px 20px;
+  padding: 12px 20px;
+  border-radius: 999px;
+  border: 2px solid var(--green);
+  color: var(--green);
+  font-weight: 700;
+  font-size: .92rem;
+  text-decoration: none;
+  min-height: 48px;
+  transition: background .15s, color .15s;
+}
+.nav__mobile-login-link:hover {
+  background: var(--green);
+  color: #fff;
+}
+
+/* RTL: flip the profile-edit button and account icon spacing */
+[dir="rtl"] .nav__mobile-profile { flex-direction: row-reverse; }
+[dir="rtl"] .nav__mobile-account-link { flex-direction: row-reverse; }
+[dir="rtl"] .nav__mobile-theme-btn { flex-direction: row-reverse; text-align: right; }
+[dir="rtl"] .nav__mobile-account-label { text-align: right; }

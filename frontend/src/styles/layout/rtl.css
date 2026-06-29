@@ -1,5 +1,5 @@
 ﻿/* ── RTL (Arabic) overrides ─────────────────────────────────────── */
-[dir="rtl"] body { font-family: 'Segoe UI', Tahoma, Arial, sans-serif; }
+[dir="rtl"] body { font-family: "Amiri", "Noto Naskh Arabic", "Segoe UI", Tahoma, Arial, sans-serif; }
 [dir="rtl"] .topbar__contact a { margin-right: 0; margin-left: 18px; }
 [dir="rtl"] .hero__inner { direction: rtl; }
 [dir="rtl"] .hero__badges { flex-direction: row-reverse; flex-wrap: wrap; }
@@ -53,3 +53,32 @@
 
 /* Testimonials verified badge — inline-flex, adjust spacing */
 [dir="rtl"] .tst__verified { margin-left: 0; margin-right: 6px; }
+
+/* ── Additional RTL fixes ────────────────────────────────────────── */
+
+/* Bell badge: flip from top-right to top-left in RTL */
+[dir="rtl"] .nav__bell-badge { right: auto; left: -3px; }
+
+/* Hub card badge: flip from right to left in RTL */
+[dir="rtl"] .hub-card__badge { right: auto; left: 16px; }
+
+/* Plan tag badges (Pricing): flip side in RTL */
+[dir="rtl"] .plan__tag { right: auto; left: 12px; }
+
+/* Dropdown menus: left-aligned in RTL, right-aligned in LTR */
+[dir="rtl"] .nav__dropdown-menu { left: auto; right: 0; }
+[dir="rtl"] .nav__dropdown-menu--right { right: auto; left: 0; }
+
+/* Notification bell: flip position */
+[dir="rtl"] .nav__bell { margin-right: 0; margin-left: 4px; }
+
+/* Skip link: use logical property for RTL compatibility */
+/* (global.css handles skip-link; this ensures RTL doesn't offset it wrong) */
+[dir="rtl"] .skip-link { left: auto; right: -9999px; }
+[dir="rtl"] .skip-link:focus { right: var(--space-2); left: auto; }
+
+/* WhatsApp FAB: already handled in base rtl.css (left: 24px; right: auto) */
+
+/* Adhkar card tap count badge RTL fix */
+[dir="rtl"] .adhkar__ar { padding-right: 0; padding-left: 28px; }
+[dir="rtl"] .adhkar__context-badge { margin-right: 0; margin-left: 28px; }

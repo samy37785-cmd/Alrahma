@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Brand from '../components/layout/Brand';
 import useSEO from '../hooks/useSEO';
@@ -24,7 +24,7 @@ export default function Register() {
   const profile = t.authPg.profile;
   const networkError = t.authPg.login.networkError;
   useSEO({ title: rg.title, noindex: true });
-  const { register } = useAuth();
+  const { register, user } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState({ name: '', email: '', password: '', role: 'student' });
   const [gdpr, setGdpr] = useState(false);
@@ -48,6 +48,8 @@ export default function Register() {
       setBusy(false);
     }
   };
+
+  if (user) return <Navigate to="/dashboard" replace />;
 
   return (
     <div className="auth">

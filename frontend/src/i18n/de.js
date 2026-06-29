@@ -52,7 +52,10 @@
     "badge2": "✓ Verfügbar 24/7",
     "badge3": "✓ Lehrerinnen verfügbar",
     "verseQuote": "\"Lies im Namen deines Herrn, der erschaffen hat.\"",
-    "verseRef": "Surah Al-'Alaq · 96:1"
+    "verseRef": "Surah Al-'Alaq · 96:1",
+    "iqraRead": "Lies",
+    "studentsCount": "1.200+ Schüler",
+    "certifiedTutors": "Zertifizierte Lehrer"
   },
   "features": {
     "eyebrow": "Warum wir",
@@ -307,7 +310,9 @@
     "faqLink": "FAQ",
     "freeTrialLink": "Kostenlose Probestunde",
     "aboutUs": "Über uns",
-    "teachersLink": "Unsere Lehrer"
+    "teachersLink": "Unsere Lehrer",
+    "terms": "Nutzungsbedingungen",
+    "refundPolicy": "Rückerstattungsrichtlinie"
   },
   "teachersPg": {
     "eyebrow": "Lern unser Team kennen",

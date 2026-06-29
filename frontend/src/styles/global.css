@@ -57,13 +57,16 @@ input, select, textarea { font-family: inherit; }
 
 /* ── Skip link ──────────────────────────────────────────────────────── */
 .skip-link {
-  position: absolute; left: -9999px; top: var(--space-2); z-index: var(--z-top);
+  position: absolute;
+  inset-inline-start: -9999px;
+  top: var(--space-2);
+  z-index: var(--z-top);
   background: var(--color-primary); color: var(--color-primary-text);
   padding: var(--space-2) var(--space-5); border-radius: var(--radius-sm);
   font-size: var(--text-base); font-weight: var(--weight-semibold);
   text-decoration: none;
 }
-.skip-link:focus { left: var(--space-2); }
+.skip-link:focus { inset-inline-start: var(--space-2); }
 
 /* ── Selection ──────────────────────────────────────────────────────── */
 ::selection {

@@ -810,7 +810,7 @@ export default function Dashboard() {
                     else navigator.clipboard?.writeText(txt);
                   }}
                 >
-                  Share streak →
+                  Share streak <span aria-hidden="true" dir="ltr">→</span>
                 </button>
               )}
             </div>

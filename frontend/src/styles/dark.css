@@ -396,7 +396,7 @@ html.dark .hub-card__title { color: var(--text-primary); }
 html.dark .hub-card__desc  { color: var(--text-secondary); }
 html.dark .hub-card--cta   { background: var(--bg-input-focus); border-color: var(--border-brand); }
 
-/* ── Mobile nav ─────────────────────────────────────────────────────── */
+/* ── Mobile nav drawer ──────────────────────────────────────────────── */
 @media (max-width: 900px) {
   html.dark .nav {
     background: var(--bg-input);
@@ -410,6 +410,76 @@ html.dark .hub-card--cta   { background: var(--bg-input-focus); border-color: va
   html.dark .nav > a,
   html.dark .nav__dropdown-trigger,
   html.dark .nav__cta { border-bottom-color: var(--border-default); }
+
+  /* Mobile profile strip */
+  html.dark .nav__mobile-profile {
+    background: var(--bg-surface-raised);
+    border-bottom-color: var(--border-default);
+  }
+  html.dark .nav__mobile-profile-name { color: var(--text-primary); }
+  html.dark .nav__mobile-profile-role { color: var(--text-secondary); }
+  html.dark .nav__mobile-profile-edit {
+    border-color: var(--border-default);
+    color: var(--text-brand);
+  }
+  html.dark .nav__mobile-profile-edit:hover {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: #fff;
+  }
+
+  /* Mobile account links */
+  html.dark .nav__mobile-account { border-top-color: var(--border-default); }
+  html.dark .nav__mobile-account-label { color: var(--text-secondary); }
+  html.dark .nav__mobile-account-link { color: var(--text-primary); }
+  html.dark .nav__mobile-account-link:hover { background: var(--bg-surface-hover); color: var(--text-brand); }
+  html.dark .nav__mobile-account-icon { background: var(--bg-surface-raised); color: var(--text-brand); }
+
+  /* Mobile settings */
+  html.dark .nav__mobile-settings { border-top-color: var(--border-default); }
+  html.dark .nav__mobile-theme-btn { color: var(--text-primary); }
+  html.dark .nav__mobile-theme-icon { background: var(--bg-surface-raised); color: var(--text-brand); }
+  html.dark .nav__mobile-toggle { background: var(--border-default); }
+  html.dark .nav__mobile-toggle--on { background: var(--color-primary); }
+
+  html.dark .nav__mobile-lang-btn {
+    border-color: var(--border-default);
+    color: var(--text-primary);
+  }
+  html.dark .nav__mobile-lang-btn:hover {
+    border-color: var(--border-brand);
+    background: var(--bg-surface-hover);
+    color: var(--text-brand);
+  }
+  html.dark .nav__mobile-lang-btn--active {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: #fff;
+  }
+
+  /* Mobile logout */
+  html.dark .nav__mobile-logout {
+    border-top-color: var(--border-default);
+    color: var(--p-danger-400, #f87171);
+  }
+  html.dark .nav__mobile-logout:hover { background: rgba(248, 113, 113, .08); }
+
+  /* Mobile login link */
+  html.dark .nav__mobile-login-link {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+  html.dark .nav__mobile-login-link:hover {
+    background: var(--color-primary);
+    color: #fff;
+  }
+
+  /* Dropdown mobile sub-menu background */
+  html.dark .nav__dropdown-mobile {
+    background: var(--bg-surface-raised);
+    border-top-color: var(--border-default);
+  }
+  html.dark .nav__dropdown { border-bottom-color: var(--border-default); }
 }
 
 /* ── Profile ────────────────────────────────────────────────────────── */

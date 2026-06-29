@@ -64,7 +64,7 @@ export default function Footer() {
           <ul>
             <li><Link to="/courses">{f.allCourses}</Link></li>
             <li><Link to="/courses/quran">{f.quranTajweed}</Link></li>
-            <li><Link to="/courses/quran">{f.hifzMem}</Link></li>
+            <li><Link to="/courses/quran#hifz">{f.hifzMem}</Link></li>
             <li><Link to="/courses/ijazah">{f.quranIjazah}</Link></li>
             <li><Link to="/courses/islamic-studies">{f.islamicStudies}</Link></li>
             <li><Link to="/courses/arabic">{f.arabicAlphabet}</Link></li>
@@ -79,7 +79,7 @@ export default function Footer() {
             <li><Link to="/tools/quran-reader">{f.quranReader}</Link></li>
             <li><Link to="/tools/adhkar">{f.adhkarLink}</Link></li>
             <li><Link to="/tools/hadith">{f.hadithLibLink}</Link></li>
-            <li><Link to="/tools/prayer">{f.prayerLink}</Link></li>
+            <li><Link to="/tools/prayer-times">{f.prayerLink}</Link></li>
           </ul>
         </div>
 
@@ -96,8 +96,8 @@ export default function Footer() {
             <li><Link to="/academy/about">{f.aboutUs}</Link></li>
             <li><Link to="/academy/teachers">{f.teachersLink}</Link></li>
             <li><Link to="/academy/privacy">{f.privacy}</Link></li>
-            <li><Link to="/academy/terms">Terms of Service</Link></li>
-            <li><Link to="/academy/refund-policy">🛡️ Refund Policy</Link></li>
+            <li><Link to="/academy/terms">{f.terms || "Terms of Service"}</Link></li>
+            <li><Link to="/academy/refund-policy"><span aria-hidden="true">🛡️ </span>{f.refundPolicy || "Refund Policy"}</Link></li>
           </ul>
         </div>
 
@@ -109,9 +109,9 @@ export default function Footer() {
           <p>
             <Link to="/academy/privacy">{f.privacy}</Link>
             {" · "}
-            <Link to="/academy/terms">Terms</Link>
+            <Link to="/academy/terms">{f.terms || "Terms"}</Link>
             {" · "}
-            <Link to="/academy/refund-policy">Refund Policy</Link>
+            <Link to="/academy/refund-policy">{f.refundPolicy || "Refund Policy"}</Link>
             {" · "}
             <a href={"mailto:" + site.email}>{f.contact}</a>
           </p>

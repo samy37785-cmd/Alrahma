@@ -311,7 +311,9 @@
     "faqLink": "الأسئلة الشائعة",
     "freeTrialLink": "درس تجريبي مجاني",
     "aboutUs": "من نحن",
-    "teachersLink": "معلمونا"
+    "teachersLink": "معلمونا",
+    "terms": "شروط الخدمة",
+    "refundPolicy": "سياسة الاسترداد"
   },
   "teachersPg": {
     "eyebrow": "تعرف على فريقنا",

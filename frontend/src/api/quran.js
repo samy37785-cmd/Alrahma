@@ -18,21 +18,21 @@ const quran = axios.create({ baseURL: 'https://api.quran.com/api/v4' });
  * `verseId` → used for /recitations  (null = no per-verse audio available)
  */
 export const RECITERS = [
-  { id: 7,  verseId: 7,    name: 'Mishari Rashid al-Afasy' },
-  { id: 2,  verseId: 2,    name: 'AbdulBaset AbdulSamad (Murattal)' },
-  { id: 1,  verseId: 1,    name: 'AbdulBaset AbdulSamad (Mujawwad)' },
-  { id: 3,  verseId: 3,    name: 'Abdur-Rahman as-Sudais' },
-  { id: 4,  verseId: 4,    name: 'Abu Bakr al-Shatri' },
-  { id: 5,  verseId: 5,    name: 'Hani ar-Rifai' },
-  { id: 6,  verseId: 6,    name: 'Mahmoud Khalil Al-Husary' },
-  { id: 12, verseId: 12,   name: 'Al-Husary (Muallim / Teaching)' },
-  { id: 8,  verseId: 8,    name: 'Minshawi (Mujawwad)' },
-  { id: 9,  verseId: 9,    name: 'Minshawi (Murattal)' },
-  { id: 10, verseId: 10,   name: 'Saud ash-Shuraym' },
-  { id: 13, verseId: null, name: "Sa'd al-Ghamidi" },
-  { id: 14, verseId: null, name: 'Fares Abbad' },
-  { id: 15, verseId: null, name: 'Nasser Al-Qatami' },
-  { id: 11, verseId: null, name: 'Abdul Muhsin Al-Qasim' },
+  { id: 7,  verseId: 7,    name: 'Mishari Rashid al-Afasy',         flag: '🇰🇼', style: 'Murattal' },
+  { id: 2,  verseId: 2,    name: 'AbdulBaset AbdulSamad',           flag: '🇪🇬', style: 'Murattal' },
+  { id: 1,  verseId: 1,    name: 'AbdulBaset AbdulSamad',           flag: '🇪🇬', style: 'Mujawwad' },
+  { id: 3,  verseId: 3,    name: 'Abdur-Rahman as-Sudais',          flag: '🇸🇦', style: 'Murattal' },
+  { id: 4,  verseId: 4,    name: 'Abu Bakr al-Shatri',              flag: '🇸🇦', style: 'Murattal' },
+  { id: 5,  verseId: 5,    name: 'Hani ar-Rifai',                   flag: '🇸🇦', style: 'Murattal' },
+  { id: 6,  verseId: 6,    name: 'Mahmoud Khalil Al-Husary',        flag: '🇪🇬', style: 'Murattal' },
+  { id: 12, verseId: 12,   name: 'Mahmoud Khalil Al-Husary',        flag: '🇪🇬', style: 'Muallim' },
+  { id: 8,  verseId: 8,    name: 'Mohamed Siddiq Al-Minshawi',      flag: '🇪🇬', style: 'Mujawwad' },
+  { id: 9,  verseId: 9,    name: 'Mohamed Siddiq Al-Minshawi',      flag: '🇪🇬', style: 'Murattal' },
+  { id: 10, verseId: 10,   name: 'Saud ash-Shuraym',                flag: '🇸🇦', style: 'Murattal' },
+  { id: 13, verseId: null, name: "Sa'd al-Ghamidi",                 flag: '🇸🇦', style: 'Murattal' },
+  { id: 14, verseId: null, name: 'Fares Abbad',                     flag: '🇩🇿', style: 'Murattal' },
+  { id: 15, verseId: null, name: 'Nasser Al-Qatami',                flag: '🇸🇦', style: 'Murattal' },
+  { id: 11, verseId: null, name: 'Abdul Muhsin Al-Qasim',           flag: '🇸🇦', style: 'Murattal' },
 ];
 
 // Map chapter recitation ID → verse recitation ID

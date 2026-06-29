@@ -111,10 +111,12 @@ const ICONS = {
 
 function ToastItem({ toast, onDismiss }) {
   const { title, description, variant = 'default', action } = toast;
+  // 'alert' (assertive) for error/warning; 'status' (polite) for everything else
+  const role = (variant === 'error' || variant === 'warning') ? 'alert' : 'status';
   return (
     <div
       className={`toast toast--${variant}`}
-      role="alert"
+      role={role}
       aria-atomic="true"
     >
       <div className="toast__body">

@@ -1,5 +1,7 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { getUnreadCount } from '../../api/messageApi';
 import {
   LayoutDashboard, MessageSquare, Users, BookOpen, CreditCard, Target,
   UserCog, Book, User, ExternalLink, Menu, Search, Bell, Sun, Moon,
@@ -8,7 +10,6 @@ import {
   Mail, FileText, BookMarked,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { useLang } from '../../context/LangContext';
 import { useTheme } from '../../context/ThemeContext';
 import CommandPalette from '../ui/CommandPalette';
 import NotificationPanel from '../ui/NotificationPanel';
@@ -142,31 +143,43 @@ function MobileBottomNav({ isAdmin, isTeacher, isParent, unreadCount }) {
 
 export default function DashboardLayout({ children }) {
   const { user, logout, isAdmin, isTeacher, isParent } = useAuth();
-  const { lang }   = useLang();
   const { dark, toggle } = useTheme();
-  const navigate   = useNavigate();
+  const navigate  = useNavigate();
+  const location  = useLocation();
 
-  const [collapsed,   setCollapsed]   = useState(() => {
+  const [collapsed,  setCollapsed]  = useState(() => {
     try { return localStorage.getItem('ds-collapsed') === '1'; } catch { return false; }
   });
-  const [mobileOpen,  setMobileOpen]  = useState(false);
-  const [cmdOpen,     setCmdOpen]     = useState(false);
-  const [notifOpen,   setNotifOpen]   = useState(false);
-  const [userMenu,    setUserMenu]    = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [cmdOpen,    setCmdOpen]    = useState(false);
+  const [notifOpen,  setNotifOpen]  = useState(false);
+  const [userMenu,   setUserMenu]   = useState(false);
 
-  const userBtnRef = useRef(null);
+  const userBtnRef  = useRef(null);
   const notifBtnRef = useRef(null);
-  const dir = lang === 'ar' ? 'rtl' : 'ltr';
 
-  const items = navFor(isAdmin, isTeacher, isParent, unreadCount);
+  // Shared React Query cache with Header — same key means zero extra requests
+  const { data: unreadData } = useQuery({
+    queryKey: ['messages', 'unread'],
+    queryFn: getUnreadCount,
+    enabled: Boolean(user),
+    refetchInterval: 30000,
+    staleTime: 15000,
+  });
+  const unreadCount = unreadData?.count ?? 0;
+
+  // Memoized so nav items only re-allocate when role or badge changes
+  const items = useMemo(
+    () => navFor(isAdmin, isTeacher, isParent, unreadCount),
+    [isAdmin, isTeacher, isParent, unreadCount]
+  );
 
   useEffect(() => {
     try { localStorage.setItem('ds-collapsed', collapsed ? '1' : '0'); } catch { /* noop */ }
   }, [collapsed]);
 
-  // Close mobile sidebar on route change
-  useEffect(() => { setMobileOpen(false); }, []);
+  // Close mobile sidebar on every route change
+  useEffect(() => { setMobileOpen(false); }, [location.pathname]);
 
   // Global keyboard shortcut — Ctrl+K / Cmd+K opens command palette
   useEffect(() => {
@@ -188,24 +201,12 @@ export default function DashboardLayout({ children }) {
   // Close dropdowns on outside click
   useEffect(() => {
     const handler = (e) => {
-      if (userMenu && userBtnRef.current && !userBtnRef.current.contains(e.target)) {
-        setUserMenu(false);
-      }
-      if (notifOpen && notifBtnRef.current && !notifBtnRef.current.contains(e.target)) {
-        setNotifOpen(false);
-      }
+      if (userMenu  && userBtnRef.current  && !userBtnRef.current.contains(e.target))  setUserMenu(false);
+      if (notifOpen && notifBtnRef.current && !notifBtnRef.current.contains(e.target)) setNotifOpen(false);
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, [userMenu, notifOpen]);
-
-  // Fetch unread message count
-  useEffect(() => {
-    if (!user) return;
-    import('../../api/messageApi').then(({ getUnreadCount }) => {
-      getUnreadCount().then((n) => setUnreadCount(typeof n === 'number' ? n : n?.count ?? 0)).catch(() => {});
-    });
-  }, [user]);
 
   const handleLogout = () => {
     setUserMenu(false);
@@ -217,18 +218,17 @@ export default function DashboardLayout({ children }) {
     ? user.name.split(' ').map((n) => n[0]).slice(0, 2).join('').toUpperCase()
     : '?';
 
+  const userName = user?.name?.split(' ')[0] ?? 'Account';
+
   return (
-    <div
-      className={`ds${collapsed ? ' ds--collapsed' : ''}${mobileOpen ? ' ds--mobile-open' : ''}`}
-      dir={dir}
-    >
+    <div className={`ds${collapsed ? ' ds--collapsed' : ''}${mobileOpen ? ' ds--mobile-open' : ''}`}>
       {/* Mobile overlay */}
       <div className="ds-overlay" onClick={() => setMobileOpen(false)} />
 
       {/* ── SIDEBAR ─────────────────────────────────────────────────── */}
       <aside className="ds-sidebar" aria-label="Main navigation">
         {/* Brand */}
-        <Link to="/" className="ds-brand" tabIndex={-1}>
+        <Link to="/" className="ds-brand">
           <div className="ds-brand__logo">ر</div>
           <div className="ds-brand__text">
             <span className="ds-brand__name">Al-Rahma</span>
@@ -284,9 +284,19 @@ export default function DashboardLayout({ children }) {
                   `ds-nav__item${isActive ? ' ds-nav__item--active' : ''}`
                 }
                 title={collapsed ? item.label : undefined}
-                aria-label={collapsed ? item.label : undefined}
+                aria-label={
+                  collapsed
+                    ? (item.badge > 0 ? `${item.label} (${item.badge} unread)` : item.label)
+                    : undefined
+                }
               >
-                <span className="ds-nav__icon"><NavIcon icon={item.icon} /></span>
+                <span className="ds-nav__icon">
+                  <NavIcon icon={item.icon} />
+                  {/* Dot indicator keeps badge visible when sidebar is collapsed */}
+                  {collapsed && item.badge > 0 && (
+                    <span className="ds-nav__icon-dot" aria-hidden="true" />
+                  )}
+                </span>
                 {!collapsed && (
                   <>
                     <span className="ds-nav__label">{item.label}</span>
@@ -379,7 +389,7 @@ export default function DashboardLayout({ children }) {
                 onClick={() => setNotifOpen((o) => !o)}
                 aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
                 aria-expanded={notifOpen}
-                aria-haspopup="true"
+                aria-haspopup="dialog"
               >
                 <Bell size={17} aria-hidden="true" />
                 {unreadCount > 0 && (
@@ -398,10 +408,10 @@ export default function DashboardLayout({ children }) {
                 onClick={() => setUserMenu((o) => !o)}
                 aria-label="User menu"
                 aria-expanded={userMenu}
-                aria-haspopup="true"
+                aria-haspopup="menu"
               >
                 <div className="ds-user-btn__avatar" aria-hidden="true">{initials}</div>
-                <span className="ds-user-btn__name">{user?.name?.split(' ')[0]}</span>
+                <span className="ds-user-btn__name">{userName}</span>
                 <ChevronRight
                   size={12}
                   aria-hidden="true"

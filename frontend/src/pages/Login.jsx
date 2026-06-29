@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Brand from '../components/layout/Brand';
 import useSEO from '../hooks/useSEO';
@@ -12,7 +12,7 @@ export default function Login() {
   const { t } = useLang();
   const lg = t.authPg.login;
   useSEO({ title: lg.title, noindex: true });
-  const { login, setUser } = useAuth();
+  const { login, setUser, user } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [form, setForm] = useState({ email: '', password: '' });
@@ -23,7 +23,9 @@ export default function Login() {
 
   const goToRole = (user) => {
     const roleDest = { admin: '/admin', teacher: '/teacher', parent: '/parent' }[user?.role] || '/dashboard';
-    const redirect = searchParams.get('redirect');
+    const raw = searchParams.get('redirect') || '';
+    // Only allow relative internal paths (prevents open redirect to external URLs)
+    const redirect = raw.startsWith('/') && !raw.startsWith('//') ? raw : null;
     navigate(redirect || roleDest, { replace: true });
   };
 
@@ -80,6 +82,11 @@ export default function Login() {
       setBusy(false);
     }
   };
+
+  if (user) {
+    const dest = { admin: '/admin', teacher: '/teacher', parent: '/parent' }[user.role] || '/dashboard';
+    return <Navigate to={dest} replace />;
+  }
 
   return (
     <div className="auth">

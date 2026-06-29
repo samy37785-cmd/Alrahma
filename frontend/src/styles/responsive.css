@@ -143,91 +143,84 @@ img, video, svg, canvas { max-width: 100%; }
   .about__stats { grid-template-columns: 1fr !important; }
 }
 
-/* ── 6c) Header — the desktop nav doesn't fit ≤900px (iPad portrait
-   = 768 overflowed). Show the hamburger + drawer for tablets too. The
-   ≤640 block already styles the drawer; this extends it to 641–900. */
-/* ── Mobile nav drawer + accordion sub-sections ──────────────── */
-@media (min-width: 641px) and (max-width: 900px) {
+/* ── 6c) Header — unified mobile nav drawer for ≤900px ───────────
+   Single block covers tablets (641–900) and phones (≤640) so we don't
+   duplicate rules. Phone-specific overrides (smaller top offset) are
+   inside the inner ≤640 media query. */
+@media (max-width: 900px) {
+  /* Show hamburger */
   .nav-toggle { display: flex; }
+
+  /* Hide desktop-only controls; their mobile equivalents live in the drawer */
+  .nav__theme-toggle,
+  .ls,
+  .header__role-btn,
+  .header__user-desktop { display: none !important; }
+
+  /* Show mobile-only drawer sections */
+  .nav__mobile-profile    { display: flex; }
+  .nav__mobile-account    { display: block; }
+  .nav__mobile-settings   { display: flex; }
+  .nav__mobile-logout     { display: flex; }
+  .nav__mobile-login-link { display: flex; }
+
+  /* Drawer panel: slides down from header bottom */
   .nav {
     position: fixed;
     top: calc(64px + env(safe-area-inset-top, 0px));
     left: 0; right: 0;
+    z-index: 48;
     flex-direction: column;
-    align-items: stretch; gap: 0; background: var(--white);
-    border-bottom: 1px solid var(--line); padding: 8px 0 20px;
-    transform: translateY(-130%); transition: transform .3s ease;
-    box-shadow: var(--shadow);
-    max-height: calc(100vh - 64px - env(safe-area-inset-top, 0px));
-    overflow-y: auto;
-  }
-  .nav.open { transform: translateY(0); }
-  .nav > a, .nav__dropdown-trigger {
-    padding: 14px 20px; width: 100%; min-height: 48px;
-    border-bottom: 1px solid var(--line); border-radius: 0; background: none !important;
-    font-size: 0.95rem; font-weight: 600;
-  }
-  .nav__dropdown { position: static; border-bottom: 1px solid var(--line); }
-  .nav__dropdown-trigger { border-bottom: none; }
-  .nav__dropdown-menu { display: none; }
-  /* Accordion: sub-items hidden by default, visible when parent is expanded */
-  .nav__dropdown-mobile {
-    display: none;
-    list-style: none;
-    padding: 4px 0 8px;
-    background: var(--green-light);
-    border-top: 1px solid var(--line);
-  }
-  .nav__dropdown--expanded .nav__dropdown-mobile { display: block; }
-  .nav__dropdown-mobile .nav__dropdown-item {
-    padding: 11px 20px 11px 36px;
-    font-size: 0.88rem;
-    border-radius: 0;
-    border-bottom: 1px solid rgba(0,0,0,.04);
-    min-height: 44px;
-  }
-  .nav__dropdown-mobile .nav__dropdown-item:last-child { border-bottom: none; }
-  /* Trigger chevron indicates collapsed/expanded */
-  .nav__dropdown--expanded .nav__dropdown-trigger .nav__dropdown-chevron { transform: rotate(180deg); }
-}
-
-@media (max-width: 640px) {
-  .nav-toggle { display: flex; }
-  .nav {
-    position: fixed;
-    top: calc(58px + env(safe-area-inset-top, 0px));
-    left: 0; right: 0;
-    flex-direction: column;
-    align-items: stretch; gap: 0;
+    align-items: stretch;
+    gap: 0;
     background: var(--white);
     border-bottom: 1px solid var(--line);
-    padding: 4px 0 24px;
-    transform: translateY(-130%); transition: transform .3s ease;
-    box-shadow: 0 8px 32px rgba(0,0,0,.12);
-    max-height: calc(100vh - 58px - env(safe-area-inset-top, 0px));
+    padding: 0 0 20px;
+    transform: translateY(-110%);
+    transition: transform .3s cubic-bezier(.4,0,.2,1);
+    box-shadow: 0 16px 48px rgba(0,0,0,.18);
+    max-height: calc(100dvh - 64px - env(safe-area-inset-top, 0px));
     overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
   }
   .nav.open { transform: translateY(0); }
+
+  /* Nav link rows */
   .nav > a, .nav__dropdown-trigger {
-    padding: 14px 20px; width: 100%; min-height: 48px;
-    border-bottom: 1px solid var(--line); border-radius: 0; background: none !important;
-    font-size: 0.95rem; font-weight: 600;
-    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 20px;
+    width: 100%;
+    min-height: 48px;
+    border-bottom: 1px solid var(--line);
+    border-radius: 0;
+    background: none !important;
+    font-size: 0.95rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
   }
+
+  /* CTA button: full-width pill inside drawer */
   .nav__cta {
-    margin: 12px 20px 0;
+    margin: 12px 20px 4px;
     display: block;
     text-align: center;
     border-radius: 999px !important;
     background: var(--gold) !important;
     color: #3a2e05 !important;
-    padding: 12px 20px !important;
+    padding: 13px 20px !important;
     border-bottom: none !important;
     min-height: 48px;
+    font-weight: 700;
   }
+
+  /* Dropdown sections: static, accordion-style */
   .nav__dropdown { position: static; border-bottom: 1px solid var(--line); }
   .nav__dropdown-trigger { border-bottom: none; }
-  .nav__dropdown-menu { display: none; }
+  .nav__dropdown-menu { display: none !important; }
+  .nav__dropdown-menu--wide { grid-template-columns: 1fr; min-width: 0; }
+
   /* Accordion sub-items */
   .nav__dropdown-mobile {
     display: none;
@@ -246,6 +239,19 @@ img, video, svg, canvas { max-width: 100%; }
   }
   .nav__dropdown-mobile .nav__dropdown-item:last-child { border-bottom: none; }
   .nav__dropdown--expanded .nav__dropdown-trigger .nav__dropdown-chevron { transform: rotate(180deg); }
+
+  /* RTL: flip accordion indent */
+  [dir="rtl"] .nav__dropdown-mobile .nav__dropdown-item {
+    padding: 12px 36px 12px 20px;
+  }
+}
+
+/* Phone-specific: smaller header height → adjust drawer top offset */
+@media (max-width: 640px) {
+  .nav {
+    top: calc(58px + env(safe-area-inset-top, 0px));
+    max-height: calc(100dvh - 58px - env(safe-area-inset-top, 0px));
+  }
 }
 
 /* Small phones: slim the right-hand cluster so it never spills past the
@@ -347,7 +353,8 @@ img, video, svg, canvas { max-width: 100%; }
 }
 
 /* ── 12) RTL FIX — mobile dropdown sub-menu indentation ──────────── */
-[dir="rtl"] .nav__dropdown-mobile { padding-left: 0; padding-right: 16px; }
+/* Item-level RTL padding is set inside the ≤900px block above (6c). */
+[dir="rtl"] .nav__dropdown-mobile { padding-left: 0; padding-right: 0; }
 
 /* RTL: enrollment teacher card tags align to right (avatar is on the right) */
 [dir="rtl"] .enroll__tcard-tags { padding-left: 0; padding-right: 66px; }
@@ -433,13 +440,9 @@ img, video, svg, canvas { max-width: 100%; }
   .hero__verse { display: none; }
 }
 
-/* ── 21) MOBILE NAV DRAWER — larger touch area for mobile items ───── */
-@media (max-width: 900px) {
-  .nav > a, .nav__dropdown-trigger {
-    padding: 14px 10px;
-    min-height: 44px;
-  }
-}
+/* ── 21) MOBILE NAV DRAWER — touch targets already set in 6c block ── */
+/* Padding and min-height for .nav > a and .nav__dropdown-trigger are
+   defined in the unified ≤900px block above (section 6c). */
 
 /* ── 22) STICKY HEADER SAFE AREA — pin below Dynamic Island ─────── */
 .header {

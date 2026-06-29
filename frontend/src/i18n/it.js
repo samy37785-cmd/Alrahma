@@ -311,7 +311,9 @@
     "faqLink": "FAQ",
     "freeTrialLink": "Prova gratuita",
     "aboutUs": "Chi siamo",
-    "teachersLink": "I nostri insegnanti"
+    "teachersLink": "I nostri insegnanti",
+    "terms": "Termini di servizio",
+    "refundPolicy": "Politica di rimborso"
   },
   "teachersPg": {
     "eyebrow": "Conosci il team",

@@ -4,9 +4,11 @@ import { forgotPassword } from '../api/client';
 import { useLang } from '../context/LangContext';
 import useSEO from '../hooks/useSEO';
 
+
 export default function ForgotPassword() {
   const { t } = useLang();
   const fp = t.authPg.forgotPwd;
+  const networkError = t.authPg.login.networkError;
   useSEO({ title: fp.title, noindex: true });
   const [email, setEmail]     = useState('');
   const [msg, setMsg]         = useState('');
@@ -20,8 +22,8 @@ export default function ForgotPassword() {
     try {
       const res = await forgotPassword(email);
       setMsg(res.message || fp.success);
-    } catch {
-      setErr(fp.errorFallback);
+    } catch (e) {
+      setErr(e.response?.data?.message || (!e.response ? networkError : fp.errorFallback));
     } finally {
       setLoading(false);
     }

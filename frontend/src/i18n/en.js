@@ -314,7 +314,9 @@
     "faqLink": "FAQ",
     "freeTrialLink": "Free Trial",
     "aboutUs": "About Us",
-    "teachersLink": "Our Teachers"
+    "teachersLink": "Our Teachers",
+    "terms": "Terms of Service",
+    "refundPolicy": "Refund Policy"
   },
   "teachersPg": {
     "eyebrow": "Meet the team",

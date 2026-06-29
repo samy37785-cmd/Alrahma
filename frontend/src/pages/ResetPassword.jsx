@@ -2,10 +2,13 @@ import { useState } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { resetPassword } from '../api/client';
 import { useLang } from '../context/LangContext';
+import useSEO from '../hooks/useSEO';
 
 export default function ResetPassword() {
   const { t } = useLang();
   const rp = t.authPg.resetPwd;
+  const networkError = t.authPg.login.networkError;
+  useSEO({ title: rp.title, noindex: true });
   const [params]            = useSearchParams();
   const token               = params.get('token') || '';
   const navigate            = useNavigate();
@@ -19,14 +22,14 @@ export default function ResetPassword() {
     e.preventDefault();
     setMsg(''); setErr('');
     if (password !== confirm) return setErr(rp.noMatch);
-    if (password.length < 6)  return setErr(t.authPg.profile.passShort);
+    if (password.length < 8)  return setErr(t.authPg.profile.passShort);
     setLoading(true);
     try {
       const res = await resetPassword({ token, password });
       setMsg(res.message || rp.success);
       setTimeout(() => navigate('/login'), 2500);
     } catch (e) {
-      setErr(e.response?.data?.message || rp.noMatch);
+      setErr(e.response?.data?.message || (!e.response ? networkError : rp.errorFallback || rp.noMatch));
     } finally {
       setLoading(false);
     }
@@ -36,7 +39,7 @@ export default function ResetPassword() {
     return (
       <div className="auth">
         <div className="auth__card">
-          <p className="auth__error">{rp.noMatch} <Link to="/forgot-password">{rp.btn}</Link>.</p>
+          <p className="auth__error" role="alert">{rp.noMatch} <Link to="/forgot-password">{rp.btn}</Link>.</p>
         </div>
       </div>
     );
@@ -47,10 +50,10 @@ export default function ResetPassword() {
       <div className="auth__card">
         <h1 className="auth__title">{rp.title}</h1>
         <p className="auth__sub">{rp.sub}</p>
-        {msg && <p className="profile-page__success">{msg}</p>}
-        {err && <p className="auth__error">{err}</p>}
+        {msg && <p className="profile-page__success" role="status">{msg}</p>}
+        {err && <p className="auth__error" role="alert">{err}</p>}
         {!msg && (
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit} noValidate>
             <div className="field">
               <label htmlFor="new-pass">{rp.newPass}</label>
               <input
@@ -58,6 +61,9 @@ export default function ResetPassword() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                autoComplete="new-password"
+                minLength={8}
+                placeholder="At least 8 characters"
                 required
               />
             </div>
@@ -68,10 +74,17 @@ export default function ResetPassword() {
                 type="password"
                 value={confirm}
                 onChange={(e) => setConfirm(e.target.value)}
+                autoComplete="new-password"
+                minLength={8}
                 required
               />
             </div>
-            <button type="submit" className="btn btn--green btn--block" disabled={loading}>
+            <button
+              type="submit"
+              className={`btn btn--green btn--block${loading ? ' btn--loading' : ''}`}
+              disabled={loading}
+              aria-busy={loading || undefined}
+            >
               {loading ? rp.busy : rp.btn}
             </button>
           </form>

@@ -101,6 +101,7 @@ export default defineConfig({
   },
   server: {
     port: 5173,
+    strictPort: true, // fail rather than auto-increment; a port bump breaks HMR WebSocket
     open: true,
     host: true, // expose on the local network so phones on the same Wi-Fi can open it
     proxy: {

@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import {
   LayoutDashboard, Users, BookOpen, CreditCard, Target, UserCog,
   Mail, Settings, TrendingUp, BarChart3, Activity, CheckCircle,
-  RefreshCw, Download,
+  RefreshCw, Download, CalendarDays,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getCourses } from '../api/courseApi';
@@ -17,6 +17,7 @@ import AdminPaymentsTab   from '../components/features/admin/AdminPaymentsTab';
 import AdminNewsletterTab from '../components/features/admin/AdminNewsletterTab';
 import AdminUsersTab      from '../components/features/admin/AdminUsersTab';
 import AdminStaffTab      from '../components/features/admin/AdminStaffTab';
+import AdminClassesTab   from '../components/features/admin/AdminClassesTab';
 import AdminProgressModal from '../components/features/admin/AdminProgressModal';
 import DashboardLayout    from '../components/layout/DashboardLayout';
 import { DsBarChart, DsAreaChart, DsChartEmpty } from '../components/ui/DsChart';
@@ -157,6 +158,7 @@ const TABS = [
   { key: 'trials',      label: 'Trials',      Icon: Target },
   { key: 'newsletter',  label: 'Newsletter',  Icon: Mail },
   { key: 'staff',       label: 'Staff',       Icon: UserCog },
+  { key: 'classes',     label: 'Classes',     Icon: CalendarDays },
 ];
 
 export default function AdminDashboard() {
@@ -635,6 +637,13 @@ export default function AdminDashboard() {
               onError={setError}
             />
           </div>
+        </div>
+      </div>
+
+      {/* ── CLASSES TAB ────────────────────────────────────────────── */}
+      <div id="tabpanel-classes" role="tabpanel" aria-labelledby="tab-classes" hidden={activeTab !== 'classes'}>
+        <div className="ds-card" style={{ padding: 0, overflow: 'hidden' }}>
+          <AdminClassesTab users={users} onError={setError} />
         </div>
       </div>
 

@@ -58,7 +58,7 @@ app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 const allowedOrigins = [
   // Explicit list from CLIENT_URL env var (comma-separated)
   ...(process.env.CLIENT_URL || 'http://localhost:5173').split(',').map((o) => o.trim()),
-  // Vercel auto-injects VERCEL_URL (e.g. "alrahma-xi.vercel.app") — add https:// prefix
+  // VERCEL_URL is set during Vercel preview builds — allow those origins too
   ...(process.env.VERCEL_URL ? [`https://${process.env.VERCEL_URL}`] : []),
 ];
 

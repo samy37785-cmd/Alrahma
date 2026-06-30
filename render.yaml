@@ -9,20 +9,20 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
-      - key: PORT
-        value: 5000
+
+      # ── Core ──────────────────────────────────────────────────────────────────
       - key: MONGO_URI
         sync: false
       - key: JWT_SECRET
         sync: false
       - key: JWT_EXPIRES_IN
         sync: false
+
+      # ── CORS ─────────────────────────────────────────────────────────────────
       - key: CLIENT_URL
         sync: false
-      - key: CRON_SECRET
-        sync: false
-      - key: RENEWAL_REMINDER_DAYS
-        sync: false
+
+      # ── Email (SMTP) ──────────────────────────────────────────────────────────
       - key: SMTP_HOST
         sync: false
       - key: SMTP_PORT
@@ -33,10 +33,23 @@ services:
         sync: false
       - key: ADMIN_EMAIL
         sync: false
+
+      # ── Cron jobs ─────────────────────────────────────────────────────────────
+      # Trigger renewal reminders via an external scheduler (UptimeRobot, GitHub
+      # Actions, etc.) that sends GET https://<render-url>/api/cron/renewal-reminders
+      # with header  "Authorization: Bearer <CRON_SECRET>"  every day at 09:00 UTC.
+      - key: CRON_SECRET
+        sync: false
+      - key: RENEWAL_REMINDER_DAYS
+        sync: false
+
+      # ── Stripe ────────────────────────────────────────────────────────────────
       - key: STRIPE_SECRET_KEY
         sync: false
       - key: STRIPE_WEBHOOK_SECRET
         sync: false
+
+      # ── PayPal (API) ──────────────────────────────────────────────────────────
       - key: PAYPAL_MODE
         sync: false
       - key: PAYPAL_CLIENT_ID
@@ -45,9 +58,37 @@ services:
         sync: false
       - key: PAYPAL_WEBHOOK_ID
         sync: false
+
+      # ── Manual payment display details ────────────────────────────────────────
+      - key: PAYPAL_RECEIVER_EMAIL
+        sync: false
+      - key: PAYPAL_ME_LINK
+        sync: false
+      - key: WU_RECEIVER_NAME
+        sync: false
+      - key: WU_RECEIVER_COUNTRY
+        sync: false
+      - key: WU_RECEIVER_CITY
+        sync: false
+      - key: MG_RECEIVER_NAME
+        sync: false
+      - key: MG_RECEIVER_COUNTRY
+        sync: false
+      - key: MG_RECEIVER_CITY
+        sync: false
+
+      # ── Admin dashboard (zero-trust) ──────────────────────────────────────────
       - key: ADMIN_JWT_ACCESS_SECRET
         sync: false
-      - key: ENCRYPTION_KEY
+      - key: ADMIN_ENCRYPTION_KEY
         sync: false
       - key: ADMIN_IP_WHITELIST
+        sync: false
+
+      # ── Google Sign-In ────────────────────────────────────────────────────────
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+
+      # ── Redis (optional — enables distributed rate limiting) ──────────────────
+      - key: REDIS_URL
         sync: false

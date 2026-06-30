@@ -1,5 +1,5 @@
-// Local development entry point — NOT used by Vercel.
-// Vercel uses api/index.js which imports server/app.js directly.
+// Local development entry point — NOT used in production.
+// Production: Render runs "node server.js" directly (see render.yaml).
 import app from './app.js';
 import connectDB from './config/db.js';
 import { startKeepAlive } from './config/keepAlive.js';

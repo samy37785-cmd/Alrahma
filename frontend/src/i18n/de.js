@@ -665,7 +665,8 @@
       "busy": "Zurücksetzen…",
       "success": "Passwort zurückgesetzt! Du kannst dich jetzt anmelden.",
       "back": "← Zurück zur Anmeldung",
-      "noMatch": "Passwörter stimmen nicht überein."
+      "noMatch": "Passwörter stimmen nicht überein.",
+      "errorFallback": "Passwort konnte nicht zurückgesetzt werden. Der Link ist möglicherweise abgelaufen — fordere einen neuen an."
     }
   },
   "enroll": {

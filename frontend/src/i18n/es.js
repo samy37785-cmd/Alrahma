@@ -666,7 +666,8 @@
       "busy": "Restableciendo…",
       "success": "¡Contraseña restablecida! Ahora puedes iniciar sesión.",
       "back": "← Volver al inicio de sesión",
-      "noMatch": "Las contraseñas no coinciden."
+      "noMatch": "Las contraseñas no coinciden.",
+      "errorFallback": "No se pudo restablecer la contraseña. El enlace puede haber expirado — solicita uno nuevo."
     }
   },
   "enroll": {

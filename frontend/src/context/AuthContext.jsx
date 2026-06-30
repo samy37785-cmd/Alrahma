@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { loginUser, registerUser, logoutUser, updateMe, getMe } from '../api/client';
 
 const AuthContext = createContext(null);
@@ -8,6 +9,8 @@ const AuthContext = createContext(null);
 // in localStorage, purely so the UI can render instantly on refresh before the
 // server confirms the session. The cached profile is not a credential.
 export function AuthProvider({ children }) {
+  const queryClient = useQueryClient();
+
   const [user, setUser] = useState(() => {
     try {
       const saved = localStorage.getItem('user');
@@ -16,6 +19,10 @@ export function AuthProvider({ children }) {
       return null;
     }
   });
+
+  // True while the initial server session check is in-flight.
+  // Consumers can gate redirects on this to prevent the stale-cache flicker.
+  const [authLoading, setAuthLoading] = useState(!!localStorage.getItem('user'));
 
   // Cache (or clear) the public profile for instant render on next load.
   const persist = useCallback((profile) => {
@@ -33,7 +40,8 @@ export function AuthProvider({ children }) {
       .then((fresh) => persist(fresh))
       .catch((err) => {
         if (err.response?.status === 401) persist(null);
-      });
+      })
+      .finally(() => setAuthLoading(false));
   }, [persist]);
 
   const login = useCallback(async (credentials) => {
@@ -50,8 +58,9 @@ export function AuthProvider({ children }) {
 
   const logout = useCallback(async () => {
     try { await logoutUser(); } catch { /* clear locally regardless */ }
+    queryClient.clear();
     persist(null);
-  }, [persist]);
+  }, [persist, queryClient]);
 
   const updateProfile = useCallback(async (data) => {
     const updated = await updateMe(data);
@@ -61,6 +70,7 @@ export function AuthProvider({ children }) {
   const value = {
     user, login, register, logout, updateProfile,
     setUser: persist,
+    authLoading,
     isAdmin:   user?.role === 'admin',
     isTeacher: user?.role === 'teacher',
     isParent:  user?.role === 'parent',

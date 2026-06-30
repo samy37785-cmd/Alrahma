@@ -670,7 +670,8 @@
       "busy": "Resetting…",
       "success": "Password reset! You can now log in.",
       "back": "← Back to login",
-      "noMatch": "Passwords do not match."
+      "noMatch": "Passwords do not match.",
+      "errorFallback": "Could not reset password. The link may have expired — request a new one."
     }
   },
   "enroll": {

@@ -12,7 +12,7 @@ export default function Login() {
   const { t } = useLang();
   const lg = t.authPg.login;
   useSEO({ title: lg.title, noindex: true });
-  const { login, setUser, user } = useAuth();
+  const { login, setUser, user, authLoading } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [form, setForm] = useState({ email: '', password: '' });
@@ -83,6 +83,10 @@ export default function Login() {
     }
   };
 
+  // Wait for the server session check to complete before redirecting.
+  // Without this guard a stale localStorage profile triggers an immediate
+  // Navigate before getMe() confirms the cookie is still valid.
+  if (authLoading) return null;
   if (user) {
     const dest = { admin: '/admin', teacher: '/teacher', parent: '/parent' }[user.role] || '/dashboard';
     return <Navigate to={dest} replace />;

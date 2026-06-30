@@ -88,7 +88,11 @@ export async function softProtect(req, res, next) {
     const token = getToken(req);
     if (token) {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      req.user = await User.findById(decoded.id).select('-password');
+      const user = await User.findById(decoded.id).select('-password');
+      // Honour tokenVersion so a post-password-reset token doesn't persist here either.
+      if (user && (decoded.v ?? 0) === (user.tokenVersion ?? 0)) {
+        req.user = user;
+      }
     }
   } catch { /* no-op — unauthenticated access is fine here */ }
   next();

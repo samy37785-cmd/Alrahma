@@ -67,7 +67,7 @@ export const register = asyncHandler(async (req, res) => {
   const exists = await User.findOne({ email });
   if (exists) {
     res.status(409);
-    throw new Error('This email is already registered');
+    throw new Error('An account with that email already exists. Try signing in instead.');
   }
 
   const user = await User.create({ name, email, password, role: safeRole });
@@ -139,7 +139,7 @@ export const forgotPassword = asyncHandler(async (req, res) => {
   const link = `${siteOrigin()}/reset-password?token=${rawToken}`;
   await sendMail({
     to: email,
-    subject: 'Reset your password — AL-Rahma Academy',
+    subject: 'Reset your password — Al-Rahma Academy',
     html: forgotPasswordEmail({ name: user.name, link }),
   });
 
@@ -233,7 +233,11 @@ export const googleAuth = asyncHandler(async (req, res) => {
   const payload = await info.json();
 
   const clientId = process.env.GOOGLE_CLIENT_ID;
-  if (clientId && payload.aud !== clientId) {
+  if (!clientId) {
+    res.status(503);
+    throw new Error('Google Sign-In is not configured on this server');
+  }
+  if (payload.aud !== clientId) {
     res.status(401);
     throw new Error('Token audience mismatch');
   }

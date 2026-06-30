@@ -1,14 +1,16 @@
 /* Al-Rahma Academy — Service Worker
-   Strategy: Network-first for API; Cache-first for static assets.
-   Version bump clears the old cache. */
+   Strategy: Network-first for API and HTML; Cache-first for truly static assets
+   (fonts, images, versioned JS/CSS chunks).
+   IMPORTANT: bump CACHE version on every deployment to clear stale caches. */
 
-const CACHE = 'alrahma-v1';
+const CACHE = 'alrahma-v2';
 
+// Only precache assets that never change between deployments.
+// HTML (including '/') must NOT be precached — Vite embeds new chunk hashes in
+// each build, so serving a cached HTML with old chunk names causes 404s.
 const STATIC_PRECACHE = [
-  '/',
-  '/tools/quran-reader',
-  '/tools/prayer-times',
-  '/tools/adhkar',
+  '/favicon.svg',
+  '/manifest.json',
 ];
 
 self.addEventListener('install', (e) => {
@@ -40,7 +42,17 @@ self.addEventListener('fetch', (e) => {
     return;
   }
 
-  // Static assets: cache-first
+  // HTML documents: always network-first so the latest index.html is served.
+  // A cached HTML pointing to old Vite chunk hashes is the #1 cause of mobile crashes.
+  const isHtml = request.headers.get('accept')?.includes('text/html');
+  if (isHtml || !url.pathname.includes('.')) {
+    e.respondWith(
+      fetch(request).catch(() => caches.match(request))
+    );
+    return;
+  }
+
+  // Versioned static assets (JS/CSS chunks have content-hash in filename): cache-first
   e.respondWith(
     caches.match(request).then((cached) => {
       if (cached) return cached;

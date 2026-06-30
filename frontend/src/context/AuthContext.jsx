@@ -22,7 +22,9 @@ export function AuthProvider({ children }) {
 
   // True while the initial server session check is in-flight.
   // Consumers can gate redirects on this to prevent the stale-cache flicker.
-  const [authLoading, setAuthLoading] = useState(!!localStorage.getItem('user'));
+  // Reuse the already-safely-initialised `user` value to avoid a second
+  // localStorage call that has no try/catch protection.
+  const [authLoading, setAuthLoading] = useState(!!user);
 
   // Cache (or clear) the public profile for instant render on next load.
   const persist = useCallback((profile) => {
@@ -35,13 +37,14 @@ export function AuthProvider({ children }) {
   // the server who we are so subscription status/expiry is current. A 401 means
   // the cookie is gone or expired → drop the stale cached profile.
   useEffect(() => {
-    if (!localStorage.getItem('user')) return;
+    if (!user) { setAuthLoading(false); return; }
     getMe()
       .then((fresh) => persist(fresh))
       .catch((err) => {
         if (err.response?.status === 401) persist(null);
       })
       .finally(() => setAuthLoading(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [persist]);
 
   const login = useCallback(async (credentials) => {

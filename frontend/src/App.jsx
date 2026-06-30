@@ -7,6 +7,7 @@ import { QueryProvider } from './context/QueryProvider';
 import ProtectedRoute from './components/ui/ProtectedRoute';
 import ScrollToTop from './components/ui/ScrollToTop';
 import Analytics from './components/ui/Analytics';
+import { Analytics as VercelAnalytics } from '@vercel/analytics/react';
 import ErrorBoundary from './components/ErrorBoundary';
 import ContentGuard from './components/ContentGuard';
 import { ToastProvider } from './components/ui/Toast';
@@ -95,6 +96,7 @@ export default function App() {
       <BrowserRouter>
         <ScrollToTop />
         <Analytics />
+        <VercelAnalytics />
         <LiveChat />
         <ContentGuard />
         <a href="#main-content" className="skip-link">Skip to main content</a>

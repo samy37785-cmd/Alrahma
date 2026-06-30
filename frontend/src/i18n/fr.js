@@ -666,7 +666,8 @@
       "busy": "Réinitialisation…",
       "success": "Mot de passe réinitialisé ! Vous pouvez maintenant vous connecter.",
       "back": "← Retour à la connexion",
-      "noMatch": "Les mots de passe ne correspondent pas."
+      "noMatch": "Les mots de passe ne correspondent pas.",
+      "errorFallback": "Impossible de réinitialiser le mot de passe. Le lien a peut-être expiré — demandez-en un nouveau."
     }
   },
   "enroll": {

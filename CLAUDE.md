@@ -115,7 +115,7 @@ No Docker. No GitHub Actions CI — deployments are platform-triggered.
 
 Backend (see `backend/.env.example`):
 - `MONGO_URI`, `JWT_SECRET`, `JWT_EXPIRES_IN`
-- `ADMIN_JWT_ACCESS_SECRET` (64-byte hex), `ENCRYPTION_KEY` (64-char hex, for TOTP secrets)
+- `ADMIN_JWT_ACCESS_SECRET` (64-byte hex), `ADMIN_ENCRYPTION_KEY` (64-char hex, for TOTP secrets)
 - `CLIENT_URL` — must match the frontend origin for CORS
 - `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`
 - `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`, `PAYPAL_WEBHOOK_ID`

@@ -666,7 +666,8 @@
       "busy": "Reimpostazione…",
       "success": "Password reimpostata! Ora puoi accedere.",
       "back": "← Torna al login",
-      "noMatch": "Le password non corrispondono."
+      "noMatch": "Le password non corrispondono.",
+      "errorFallback": "Impossibile reimpostare la password. Il link potrebbe essere scaduto — richiedine uno nuovo."
     }
   },
   "enroll": {

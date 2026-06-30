@@ -29,7 +29,7 @@ export default function ResetPassword() {
       setMsg(res.message || rp.success);
       setTimeout(() => navigate('/login'), 2500);
     } catch (e) {
-      setErr(e.response?.data?.message || (!e.response ? networkError : rp.errorFallback || rp.noMatch));
+      setErr(e.response?.data?.message || (!e.response ? networkError : rp.errorFallback));
     } finally {
       setLoading(false);
     }

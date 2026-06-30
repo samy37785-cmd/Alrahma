@@ -4,13 +4,7 @@ import { useLang } from "../../context/LangContext";
 import { site, socials } from "../../data";
 import { ShieldIcon, BookOpenIcon, GlobeIcon, StarIcon, CalendarIcon } from '../ui/Icons';
 
-const TRUST_BADGES = [
-  { Icon: ShieldIcon,   label: '14-Day Money-Back Guarantee' },
-  { Icon: BookOpenIcon, label: '32 Al-Azhar Certified Tutors' },
-  { Icon: GlobeIcon,    label: 'Students from 40+ Countries' },
-  { Icon: StarIcon,     label: '4.9★ Average Rating' },
-  { Icon: CalendarIcon, label: 'Reply within 2 hours' },
-];
+const TRUST_ICONS = [ShieldIcon, BookOpenIcon, GlobeIcon, StarIcon, CalendarIcon];
 
 export default function Footer() {
   const { t } = useLang();
@@ -21,12 +15,15 @@ export default function Footer() {
 
       {/* Trust badges strip */}
       <div className="footer__trust" aria-label="Trust credentials">
-        {TRUST_BADGES.map(({ Icon, label }) => (
-          <span key={label} className="footer__trust-badge">
-            <Icon size={16} aria-hidden="true" />
-            {label}
-          </span>
-        ))}
+        {f.trustBadges.map((label, i) => {
+          const Icon = TRUST_ICONS[i];
+          return (
+            <span key={i} className="footer__trust-badge">
+              <Icon size={16} aria-hidden="true" />
+              {label}
+            </span>
+          );
+        })}
       </div>
 
       <div className="container footer__grid">
@@ -43,8 +40,8 @@ export default function Footer() {
               </a>
             </li>
             <li className="footer__support-hours">
-              <span>Support: Sat–Thu · 08:00–23:00 (Cairo)</span>
-              <span className="footer__response-badge">Reply ≤ 2h</span>
+              <span>{f.supportHours}</span>
+              <span className="footer__response-badge">{f.replyBadge}</span>
             </li>
           </ul>
           <div className="footer__social">

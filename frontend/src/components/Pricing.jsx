@@ -86,7 +86,7 @@ export default function Pricing() {
 
         {/* Currency toggle */}
         <Reveal className="pricing__currency-row">
-          <span className="pricing__currency-label">Show prices in:</span>
+          <span className="pricing__currency-label">{p.showPricesIn}</span>
           <div className="pricing__currency-toggle" role="group" aria-label="Currency selector">
             {CURRENCIES.map((c) => (
               <button
@@ -108,7 +108,7 @@ export default function Pricing() {
           <span className="pricing__banner-text">
             {p.bannerText}&ensp;—&ensp;
             <strong style={{ color: '#fff' }}>
-              {p.offerEnds || 'Offer ends Sunday'}:
+              {p.offerEnds}:
             </strong>
           </span>
           <div className="pricing__countdown" aria-live="polite" aria-label="Time remaining">
@@ -124,9 +124,7 @@ export default function Pricing() {
         <Reveal style={{ textAlign: 'center', marginBottom: 8 }}>
           <p className="pricing__spots">
             <span className="pricing__spots-dot" aria-hidden="true" />
-            {p.spotsLeft
-              ? p.spotsLeft.replace('{n}', spots)
-              : `Only ${spots} discounted spots remaining this week`}
+            {p.spotsLeft.replace('{n}', spots)}
           </p>
         </Reveal>
 

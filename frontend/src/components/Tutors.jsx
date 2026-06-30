@@ -111,7 +111,7 @@ function TutorCard({ t: teacher }) {
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
               <path d="M8 5v14l11-7z"/>
             </svg>
-            Intro video
+            {ut.introVideo}
           </button>
         )}
         <div className="tc2__gender">
@@ -135,7 +135,7 @@ function TutorCard({ t: teacher }) {
         <StarRating teacher={teacher} />
 
         {teacher.hours && (
-          <div className="tc2__hours">⏱ {teacher.hours} teaching hrs</div>
+          <div className="tc2__hours">⏱ {teacher.hours} {ut.teachingHrs}</div>
         )}
 
         <div className="tc2__actions">

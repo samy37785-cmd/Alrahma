@@ -55,7 +55,23 @@
     "verseRef": "Surah Al-'Alaq · 96:1",
     "iqraRead": "Lis",
     "studentsCount": "1 200+ étudiants",
-    "certifiedTutors": "Enseignants certifiés"
+    "certifiedTutors": "Enseignants certifiés",
+    "watchDemo": "Voir un cours en direct",
+    "liveSessions": "Cours individuels en direct",
+    "scroll": "Défiler",
+    "microcopy": ["Sans carte bancaire", "Séance gratuite 30 min", "Annulez à tout moment"],
+    "statsLabels": ["Leçons", "Note", "Pays", "Tuteurs"],
+    "activityFrom": "de",
+    "activityActions": [
+      "vient de réserver un cours d'essai",
+      "s'est inscrit(e) en Tajweed",
+      "a commencé le programme de Hifz",
+      "a terminé son premier cours",
+      "vient de réserver un cours d'essai",
+      "s'est inscrit(e) au cours d'arabe",
+      "a commencé la lecture du Coran",
+      "vient de réserver un cours d'essai"
+    ]
   },
   "features": {
     "eyebrow": "Pourquoi nous choisir",
@@ -222,7 +238,19 @@
     "bannerText": "Tarif fondateurs verrouillé à vie — les prix augmentent avec notre croissance",
     "youSave": "Vous économisez",
     "perHour": "/ heure équivalent",
-    "cancelNote": "Annulez à tout moment — sans contrat"
+    "cancelNote": "Annulez à tout moment — sans contrat",
+    "refundInline": "Remboursement complet sous 14 jours si insatisfait",
+    "refundTitle": "Garantie de remboursement de 14 jours",
+    "refundSub": "Pas satisfait ? Nous remboursons chaque centime sous 14 jours — sans questions.",
+    "securePayment": "Paiement sécurisé",
+    "cancelAnytime": "Annulez à tout moment",
+    "azharCertified": "32 enseignants certifiés Al-Azhar",
+    "familiesServed": "+9 000 leçons données",
+    "countries": "Étudiants de 40+ pays",
+    "gdprNote": "Conforme RGPD — vos données sont en sécurité",
+    "offerEnds": "L'offre se termine dimanche",
+    "spotsLeft": "Seulement {n} places restantes cette semaine",
+    "showPricesIn": "Afficher les prix en :"
   },
   "testimonials": {
     "eyebrow": "Témoignages",
@@ -313,7 +341,10 @@
     "aboutUs": "À propos de nous",
     "teachersLink": "Nos enseignants",
     "terms": "Conditions d'utilisation",
-    "refundPolicy": "Politique de remboursement"
+    "refundPolicy": "Politique de remboursement",
+    "trustBadges": ["Garantie de remboursement 14 jours", "32 enseignants certifiés Al-Azhar", "Étudiants de 40+ pays", "Note moyenne 4,9★", "Réponse en 2 heures"],
+    "supportHours": "Support : Sam–Jeu · 08h00–23h00 (Le Caire)",
+    "replyBadge": "Réponse ≤ 2h"
   },
   "teachersPg": {
     "eyebrow": "Rencontrez l'équipe",
@@ -455,7 +486,9 @@
     "enroll": "S'inscrire →",
     "viewAll": "Voir Tous les Enseignants →",
     "yourRating": "Votre note :",
-    "rate": "Noter :"
+    "rate": "Noter :",
+    "introVideo": "Vidéo de présentation",
+    "teachingHrs": "heures d'enseignement"
   },
   "faq": {
     "eyebrow": "FAQ",
@@ -507,6 +540,37 @@
       "Leçons Dispensées",
       "Pays Servis"
     ]
+  },
+  "trust": {
+    "eyebrow": "Pourquoi les familles nous font confiance",
+    "heading": "Construit sur la Transparence et l'Authenticité",
+    "sub": "Chaque affirmation sur cette page est vérifiable. Nous croyons que la confiance se gagne par des preuves.",
+    "items": [
+      { "stat": "32", "label": "Enseignants certifiés Al-Azhar", "desc": "Chaque enseignant détient un Ijazah vérifié avec une chaîne de savoir jusqu'au Prophète ﷺ." },
+      { "stat": "< 2h", "label": "Temps de réponse du support", "desc": "Nous répondons à chaque message en 2 heures — votre parcours d'apprentissage ne peut pas attendre." },
+      { "stat": "40+", "label": "Pays", "desc": "Des familles de plus de 40 pays font confiance à Al-Rahma Academy pour une éducation coranique authentique." },
+      { "stat": "14", "label": "Jours de garantie de remboursement", "desc": "Pas satisfait ? Nous remboursons 100% en 14 jours — sans questions, sans paperasse." }
+    ],
+    "gdprTitle": "Conforme RGPD",
+    "gdprDesc": "Vos données sont protégées par la réglementation européenne. Aucune donnée vendue. Jamais.",
+    "sslTitle": "Chiffrement SSL",
+    "sslDesc": "Tous les paiements et données personnelles sont chiffrés de bout en bout.",
+    "supportTitle": "Support en 2 heures",
+    "supportDesc": "De vraies personnes, pas des bots. Nous répondons en 2 heures, 7 jours sur 7.",
+    "azharTitle": "Vérifié Al-Azhar",
+    "azharDesc": "Partenariat officiel avec des enseignants certifiés par l'Université Al-Azhar, Le Caire.",
+    "countriesLabel": "Des étudiants de 40+ pays font confiance à Al-Rahma Academy"
+  },
+  "trustBar": {
+    "countries": "Pays",
+    "activeStudents": "Étudiants actifs",
+    "azharTutors": "Enseignants certifiés Al-Azhar",
+    "moneyBack": "Garantie de remboursement",
+    "supportOnline": "Support en ligne",
+    "leaveMessage": "Laisser un message",
+    "repliesMinutes": "Répond généralement en quelques minutes",
+    "repliesHours": "Nous répondons en quelques heures",
+    "badges": ["Sans engagement long terme", "Annulez à tout moment", "Chaîne Ijazah certifiée", "Enseignantes disponibles", "Planification 24 / 7", "Conforme", "Réponse en 2 heures"]
   },
   "blog": {
     "eyebrow": "Notre Blog",

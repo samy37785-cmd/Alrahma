@@ -51,7 +51,7 @@ export default function Hero({ onTrialClick }) {
           {/* Live sessions badge */}
           <div className="hero__live-badge" aria-label="Live sessions available now">
             <span className="live-dot" aria-hidden="true" />
-            Live one-to-one lessons
+            {h.liveSessions}
           </div>
 
           <p className="hero__eyebrow">
@@ -84,17 +84,17 @@ export default function Hero({ onTrialClick }) {
               aria-haspopup="dialog"
             >
               <span className="hero__play-icon" aria-hidden="true">▶</span>
-              {h.watchDemo || 'Watch a live lesson'}
+              {h.watchDemo}
             </button>
           </div>
 
           {/* Micro-copy: kill conversion objections instantly */}
           <p className="hero__microcopy">
-            <span>✓ No credit card</span>
+            <span>✓ {h.microcopy[0]}</span>
             <span className="hero__microcopy-dot" aria-hidden="true">·</span>
-            <span>✓ 30-min free session</span>
+            <span>✓ {h.microcopy[1]}</span>
             <span className="hero__microcopy-dot" aria-hidden="true">·</span>
-            <span>✓ Cancel anytime</span>
+            <span>✓ {h.microcopy[2]}</span>
           </p>
 
           <ul className="hero__badges">
@@ -105,15 +105,10 @@ export default function Hero({ onTrialClick }) {
 
           {/* Stats bar */}
           <div className="hero__stats-bar" aria-label="Al-Rahma Academy statistics">
-            {[
-              { value: '9,000+', label: 'Lessons' },
-              { value: '4.9★',   label: 'Rating' },
-              { value: '40+',    label: 'Countries' },
-              { value: '32',     label: 'Tutors' },
-            ].map((s) => (
-              <div key={s.value} className="hero__stat">
-                <strong>{s.value}</strong>
-                <span>{s.label}</span>
+            {['9,000+', '4.9★', '40+', '32'].map((value, i) => (
+              <div key={value} className="hero__stat">
+                <strong>{value}</strong>
+                <span>{h.statsLabels[i]}</span>
               </div>
             ))}
           </div>
@@ -123,8 +118,8 @@ export default function Hero({ onTrialClick }) {
             <span className="hero__activity-dot" aria-hidden="true" />
             <span className="hero__activity-text">
               <strong>{LIVE_ACTIVITY[activityIdx].name}</strong>
-              {' '}from {LIVE_ACTIVITY[activityIdx].location}{' '}
-              {LIVE_ACTIVITY[activityIdx].action}
+              {' '}{h.activityFrom}{' '}{LIVE_ACTIVITY[activityIdx].location}{' '}
+              {h.activityActions[activityIdx]}
             </span>
           </div>
         </div>
@@ -164,7 +159,7 @@ export default function Hero({ onTrialClick }) {
 
       {/* Scroll indicator */}
       <a href="#courses" className="hero__scroll-cue" aria-label="Scroll down to explore courses">
-        <span>Scroll</span>
+        <span>{h.scroll}</span>
         <div className="hero__scroll-icon" />
       </a>
 

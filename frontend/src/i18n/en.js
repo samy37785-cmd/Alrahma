@@ -55,7 +55,23 @@
     "verseRef": "Surah Al-'Alaq · 96:1",
     "iqraRead": "Read",
     "studentsCount": "1,200+ students",
-    "certifiedTutors": "Certified tutors"
+    "certifiedTutors": "Certified tutors",
+    "watchDemo": "Watch a live lesson",
+    "liveSessions": "Live one-to-one lessons",
+    "scroll": "Scroll",
+    "microcopy": ["No credit card", "30-min free session", "Cancel anytime"],
+    "statsLabels": ["Lessons", "Rating", "Countries", "Tutors"],
+    "activityFrom": "from",
+    "activityActions": [
+      "just booked a free trial",
+      "enrolled in Tajweed",
+      "started Hifz programme",
+      "completed her first lesson",
+      "just booked a free trial",
+      "enrolled in Arabic course",
+      "started Quran Reading",
+      "just booked a free trial"
+    ]
   },
   "features": {
     "eyebrow": "Why choose us",
@@ -222,7 +238,19 @@
     "bannerText": "Founding-member pricing locked for life — rate increases as we grow",
     "youSave": "You save",
     "perHour": "/ hour equivalent",
-    "cancelNote": "Cancel anytime — no contracts"
+    "cancelNote": "Cancel anytime — no contracts",
+    "refundInline": "14-day full refund if unsatisfied",
+    "refundTitle": "14-Day Money-Back Guarantee",
+    "refundSub": "Not happy with your subscription? We'll refund every penny within 14 days — no questions asked.",
+    "securePayment": "Secure payment",
+    "cancelAnytime": "Cancel anytime",
+    "azharCertified": "32 Al-Azhar certified tutors",
+    "familiesServed": "9,000+ lessons delivered",
+    "countries": "Students from 40+ countries",
+    "gdprNote": "GDPR compliant — your data is safe",
+    "offerEnds": "Offer ends Sunday",
+    "spotsLeft": "Only {n} discounted spots remaining this week",
+    "showPricesIn": "Show prices in:"
   },
   "testimonials": {
     "eyebrow": "Testimonials",
@@ -316,7 +344,10 @@
     "aboutUs": "About Us",
     "teachersLink": "Our Teachers",
     "terms": "Terms of Service",
-    "refundPolicy": "Refund Policy"
+    "refundPolicy": "Refund Policy",
+    "trustBadges": ["14-Day Money-Back Guarantee", "32 Al-Azhar Certified Tutors", "Students from 40+ Countries", "4.9★ Average Rating", "Reply within 2 hours"],
+    "supportHours": "Support: Sat–Thu · 08:00–23:00 (Cairo)",
+    "replyBadge": "Reply ≤ 2h"
   },
   "teachersPg": {
     "eyebrow": "Meet the team",
@@ -458,7 +489,9 @@
     "enroll": "Enroll →",
     "viewAll": "View All Tutors & Full Profiles →",
     "yourRating": "Your rating:",
-    "rate": "Rate:"
+    "rate": "Rate:",
+    "introVideo": "Intro video",
+    "teachingHrs": "teaching hrs"
   },
   "faq": {
     "eyebrow": "FAQ",
@@ -511,6 +544,37 @@
       "Lessons Delivered",
       "Countries Worldwide"
     ]
+  },
+  "trust": {
+    "eyebrow": "Why families trust us",
+    "heading": "Built on Transparency & Authenticity",
+    "sub": "Every claim on this page is verifiable. We believe trust is earned through evidence, not promises.",
+    "items": [
+      { "stat": "32", "label": "Al-Azhar Certified Tutors", "desc": "Every tutor holds a verified Ijazah with an unbroken chain of knowledge traced back to the Prophet ﷺ." },
+      { "stat": "< 2h", "label": "Support Response Time", "desc": "We answer every message within 2 hours — because your learning journey cannot wait." },
+      { "stat": "40+", "label": "Countries", "desc": "Families from over 40 countries trust Al-Rahma Academy for authentic Quran education." },
+      { "stat": "14", "label": "Day Refund Guarantee", "desc": "Not satisfied? We refund 100% within 14 days — no questions, no paperwork, no risk." }
+    ],
+    "gdprTitle": "GDPR Compliant",
+    "gdprDesc": "Your data is protected under EU regulation. No data sold. Ever.",
+    "sslTitle": "SSL Encrypted",
+    "sslDesc": "All payments and personal data are encrypted end-to-end.",
+    "supportTitle": "2-Hour Support",
+    "supportDesc": "Real humans, not bots. We respond within 2 hours, 7 days a week.",
+    "azharTitle": "Al-Azhar Verified",
+    "azharDesc": "Official partnership with tutors certified by Al-Azhar University, Cairo.",
+    "countriesLabel": "Students from 40+ countries trust Al-Rahma Academy"
+  },
+  "trustBar": {
+    "countries": "Countries",
+    "activeStudents": "Active students",
+    "azharTutors": "Al-Azhar certified tutors",
+    "moneyBack": "Money-back guarantee",
+    "supportOnline": "Support online",
+    "leaveMessage": "Leave a message",
+    "repliesMinutes": "Typically replies in minutes",
+    "repliesHours": "We reply within a few hours",
+    "badges": ["No long-term contract", "Cancel anytime", "Ijazah-certified chain", "Female tutors available", "24 / 7 scheduling", "Compliant", "Reply within 2 hours"]
   },
   "blog": {
     "eyebrow": "Our Blog",

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useLang } from '../context/LangContext';
 
 const COUNTRIES = [
   { flag: '🇬🇧', name: 'UK' },
@@ -28,6 +29,8 @@ const COUNTRIES = [
   { flag: '🇿🇦', name: 'South Africa' },
 ];
 
+const BADGE_ICONS = ['🔒', '💳', '🎓', '👩‍🏫', '🕐', 'GDPR', '⚡'];
+
 function useIsBusinessHours() {
   const [status, setStatus] = useState('checking');
   useEffect(() => {
@@ -50,6 +53,8 @@ function useIsBusinessHours() {
 export default function TrustBar() {
   const trackRef = useRef(null);
   const waStatus = useIsBusinessHours();
+  const { t } = useLang();
+  const tb = t.trustBar;
 
   // Duplicate flags for seamless infinite scroll
   const doubled = [...COUNTRIES, ...COUNTRIES];
@@ -62,22 +67,22 @@ export default function TrustBar() {
         <div className="trust-bar__stats">
           <div className="trust-bar__stat">
             <span className="trust-bar__stat-num">40+</span>
-            <span className="trust-bar__stat-label">Countries</span>
+            <span className="trust-bar__stat-label">{tb.countries}</span>
           </div>
           <div className="trust-bar__divider" aria-hidden="true" />
           <div className="trust-bar__stat">
             <span className="trust-bar__stat-num">1,200+</span>
-            <span className="trust-bar__stat-label">Active students</span>
+            <span className="trust-bar__stat-label">{tb.activeStudents}</span>
           </div>
           <div className="trust-bar__divider" aria-hidden="true" />
           <div className="trust-bar__stat">
             <span className="trust-bar__stat-num">32</span>
-            <span className="trust-bar__stat-label">Al-Azhar certified tutors</span>
+            <span className="trust-bar__stat-label">{tb.azharTutors}</span>
           </div>
           <div className="trust-bar__divider" aria-hidden="true" />
           <div className="trust-bar__stat">
             <span className="trust-bar__stat-num">14-day</span>
-            <span className="trust-bar__stat-label">Money-back guarantee</span>
+            <span className="trust-bar__stat-label">{tb.moneyBack}</span>
           </div>
           <div className="trust-bar__divider" aria-hidden="true" />
           <div className="trust-bar__stat">
@@ -93,9 +98,9 @@ export default function TrustBar() {
                 aria-hidden="true"
               />
               <span>
-                <strong>{waStatus === 'online' ? 'Support online' : 'Leave a message'}</strong>
+                <strong>{waStatus === 'online' ? tb.supportOnline : tb.leaveMessage}</strong>
                 <span className="trust-bar__wa-sub">
-                  {waStatus === 'online' ? 'Typically replies in minutes' : 'We reply within a few hours'}
+                  {waStatus === 'online' ? tb.repliesMinutes : tb.repliesHours}
                 </span>
               </span>
             </a>
@@ -116,34 +121,16 @@ export default function TrustBar() {
 
         {/* Trust badges row */}
         <div className="trust-bar__badges">
-          <div className="trust-bar__badge">
-            <span className="trust-bar__badge-icon">🔒</span>
-            <span>No long-term contract</span>
-          </div>
-          <div className="trust-bar__badge">
-            <span className="trust-bar__badge-icon">💳</span>
-            <span>Cancel anytime</span>
-          </div>
-          <div className="trust-bar__badge">
-            <span className="trust-bar__badge-icon">🎓</span>
-            <span>Ijazah-certified chain</span>
-          </div>
-          <div className="trust-bar__badge">
-            <span className="trust-bar__badge-icon">👩‍🏫</span>
-            <span>Female tutors available</span>
-          </div>
-          <div className="trust-bar__badge">
-            <span className="trust-bar__badge-icon">🕐</span>
-            <span>24 / 7 scheduling</span>
-          </div>
-          <div className="trust-bar__badge">
-            <span className="trust-bar__badge trust-bar__badge--gdpr-tag" aria-label="GDPR Compliant">GDPR</span>
-            <span>Compliant</span>
-          </div>
-          <div className="trust-bar__badge">
-            <span className="trust-bar__badge-icon">⚡</span>
-            <span>Reply within 2 hours</span>
-          </div>
+          {tb.badges.map((label, i) => (
+            <div className="trust-bar__badge" key={i}>
+              {BADGE_ICONS[i] === 'GDPR' ? (
+                <span className="trust-bar__badge trust-bar__badge--gdpr-tag" aria-label="GDPR Compliant">GDPR</span>
+              ) : (
+                <span className="trust-bar__badge-icon">{BADGE_ICONS[i]}</span>
+              )}
+              <span>{label}</span>
+            </div>
+          ))}
         </div>
 
       </div>

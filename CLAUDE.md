@@ -90,6 +90,8 @@ Entry: `main.jsx` → `App.jsx` (routes + context providers).
 
 **Dark mode:** `ThemeContext` toggles a CSS class on `<html>`; dark overrides are in `styles/dark.css`.
 
+**Quran module** (`pages/Quran.jsx` + `components/features/quran/`): premium Mushaf reading experience built on top of `api/quran.js` (quran.com API v4 + alquran.cloud). Nav modes: Surah / Page / Juz / Hizb. Page mode renders via `QuranMushafPage.jsx` (continuous flowing RTL text with ornamental frame/margins, `styles/quran-mushaf.css`); other modes use the list-based `QuranVerseList.jsx`. `QuranQuickNav.jsx` is a Ctrl+K / `/` command palette for jumping to surah:verse, page, juz or hizb. Bookmarks, reading goals/streak/history and last-read position persist via `/api/quran-bookmarks` and `/api/quran-progress` (backend models `QuranBookmark`, `QuranReadingProgress`), fetched with React Query hooks (`hooks/useQuranBookmarks.js`, `useQuranProgress.js`) — a different data-fetching approach from the rest of `Quran.jsx`, which still uses raw `useState`/`useEffect` for verse data. `useQuranAudioEngine.js` is a **separate, additive** verse-queue audio engine (Media Session integration, sleep timer, resume-on-reopen) that powers `QuranSyncPlayer.jsx` for Reading-tab verse-sync/repeat-page/repeat-selection playback — it deliberately does not replace `useQuranHifz.js`, which remains the untouched, already-proven Hifz repeat/test engine, to avoid regressing that feature. The Hifz tab's third sub-mode, "Record" (`QuranRecordingStudio.jsx` + `useQuranRecorder.js`), records practice recitations via MediaRecorder and stores them client-side in IndexedDB (`utils/recordingStore.js`, never uploaded) for toggle-playback comparison against the reciter's audio; practice stats persist via `/api/quran-memo` (`QuranMemorizationStats`).
+
 ### Models worth knowing
 
 | Model | Purpose |
@@ -99,6 +101,9 @@ Entry: `main.jsx` → `App.jsx` (routes + context providers).
 | `Course.js` | Nested structure: modules → lessons |
 | `CourseProgress.js` | Per-student lesson completion state |
 | `HifzProgress.js` | Quran memorization tracking (surah/verse level) |
+| `QuranBookmark.js` | Per-verse Quran bookmarks (one row per user+verse) |
+| `QuranReadingProgress.js` | Reading resume position, daily goal, streak/history (one row per user) |
+| `QuranMemorizationStats.js` | Recording-studio practice goal/stats/streak (one row per user, separate from `HifzProgress`) |
 | `RefreshToken.js` | JWT refresh family rotation (detects reuse) |
 | `SystemConfig.js` | Key-value runtime configuration |
 | `SystemAuditLog.js` | Immutable admin action log |

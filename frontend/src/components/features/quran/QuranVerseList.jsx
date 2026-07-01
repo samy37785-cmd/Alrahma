@@ -16,6 +16,7 @@ export default function QuranVerseList({
   onToggleReveal, onToggleTafsir, onCopyVerse, onShareVerse, onShowCard,
   onSetTafsirPicker, onSetTafsirId, onPlayVerseByIndex,
   onJumpVerseChange, onJump,
+  isBookmarked, onToggleBookmark,
 }) {
   return (
     <>
@@ -99,6 +100,16 @@ export default function QuranVerseList({
                     )}
 
                     <div className="qlc__verse-actions">
+                      {onToggleBookmark && (
+                        <button
+                          className={`qlc__bookmark-btn${isBookmarked?.(v.verse_key) ? ' active' : ''}`}
+                          onClick={() => onToggleBookmark(v)}
+                          title={isBookmarked?.(v.verse_key) ? (ui.removeBookmark || 'Remove bookmark') : (ui.addBookmark || 'Bookmark this verse')}
+                          aria-pressed={!!isBookmarked?.(v.verse_key)}
+                        >
+                          {isBookmarked?.(v.verse_key) ? '★' : '☆'}
+                        </button>
+                      )}
                       <button
                         className={`qlc__actbtn${copiedKey === `copy-${v.verse_key}` ? ' copied' : ''}`}
                         onClick={() => onCopyVerse(v)}

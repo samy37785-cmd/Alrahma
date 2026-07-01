@@ -1,0 +1,111 @@
+/*
+ * Mushaf page-mode ("real book" reading view). Kept in its own stylesheet,
+ * lazily imported only where used (same pattern as hifz.css), because it
+ * introduces a different visual language (ornamental frame, continuous
+ * flowing RTL text, margin badges) from the list-based quran.css rendering.
+ * Reuses the same light/dark palette as quran.css rather than redefining one.
+ */
+
+.mushaf-frame {
+  position: relative;
+  margin: 0 0 24px;
+  padding: 28px clamp(16px, 4vw, 48px) 36px;
+  background: #fffdf6;
+  border: 1px solid #e7dcc0;
+  border-radius: 14px;
+  box-shadow: inset 0 0 0 6px #fffef9, inset 0 0 0 7px #d8c896;
+}
+
+.mushaf-margin {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 18px; direction: rtl;
+}
+.mushaf-margin__badge {
+  font-size: .72rem; letter-spacing: .03em; color: #8a7440;
+  padding: 3px 10px; border: 1px solid #e7dcc0; border-radius: 999px;
+  background: #fbf6e8;
+}
+.mushaf-margin__badge--page { font-weight: 700; color: #6a5620; }
+
+.mushaf-segment + .mushaf-segment { margin-top: 22px; }
+
+.mushaf-surah-banner {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  text-align: center; margin: 4px 0 10px; padding: 12px 10px;
+  background: linear-gradient(135deg, #fbf3da, #f3e6bd);
+  border: 1px solid #d8c896; border-radius: 10px;
+}
+.mushaf-surah-banner__ar {
+  font-family: var(--serif); font-size: 1.7rem; color: #5a4816;
+}
+.mushaf-surah-banner__meta { font-size: .72rem; color: #8a7440; }
+
+.mushaf-basmalah {
+  text-align: center; font-family: var(--serif); font-size: 1.6rem;
+  color: #5a4816; margin: 4px 0 14px;
+}
+
+.mushaf-flow {
+  font-family: var(--serif);
+  line-height: 2.35;
+  text-align: justify;
+  color: #1e1a10;
+  direction: rtl;
+  unicode-bidi: plaintext;
+}
+
+.mushaf-ayah { }
+
+.mushaf-ayah-num {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 1.6em; height: 1.6em; padding: 0 3px;
+  border: 1px solid #cdb96e; border-radius: 50%;
+  background: #fbf3da; color: #8a6d1a;
+  font-size: .55em; line-height: 1; vertical-align: middle;
+  cursor: pointer;
+}
+.mushaf-ayah-num:hover { background: #f3e6bd; }
+.mushaf-ayah-num.bookmarked { background: #f0c040; border-color: #d9a800; color: #5a4200; }
+
+.mushaf-translation {
+  margin-top: 14px; padding-top: 12px; border-top: 1px dashed #e7dcc0;
+  font-size: .88rem; color: #5a5040; line-height: 1.7;
+}
+.mushaf-translation p { margin: 0 0 8px; }
+.mushaf-translation b { color: #8a7440; font-weight: 700; margin-inline-end: 6px; }
+
+/* Playing-verse highlight (class toggled by QuranSyncPlayer) reuses the
+   existing .qlc__verse--active convention but Mushaf verses are inline
+   <span> nodes, not list items, so style the span form here. */
+span.mushaf-ayah.qlc__verse--active {
+  background: #fdf0c0;
+  border-radius: 4px;
+  box-shadow: 0 0 0 2px #f0c040;
+}
+
+/* ── Dark mode ─────────────────────────────────────────────────────── */
+.qlc--dark .mushaf-frame {
+  background: #171208; border-color: #3a2f14;
+  box-shadow: inset 0 0 0 6px #1a1509, inset 0 0 0 7px #4a3d1c;
+}
+.qlc--dark .mushaf-margin__badge { background: #221b0c; border-color: #3a2f14; color: #c8ab5a; }
+.qlc--dark .mushaf-margin__badge--page { color: #e8c840; }
+.qlc--dark .mushaf-surah-banner {
+  background: linear-gradient(135deg, #221b0c, #2a2210); border-color: #4a3d1c;
+}
+.qlc--dark .mushaf-surah-banner__ar { color: #e8c840; }
+.qlc--dark .mushaf-surah-banner__meta { color: #a8935a; }
+.qlc--dark .mushaf-basmalah { color: #e8c840; }
+.qlc--dark .mushaf-flow { color: #f0e6c8; }
+.qlc--dark .mushaf-ayah-num { background: #221b0c; border-color: #4a3d1c; color: #e0c060; }
+.qlc--dark .mushaf-ayah-num:hover { background: #2a2210; }
+.qlc--dark .mushaf-ayah-num.bookmarked { background: #e8c840; border-color: #c8ab5a; color: #241d08; }
+.qlc--dark .mushaf-translation { border-color: #3a2f14; color: #b8ac8a; }
+.qlc--dark .mushaf-translation b { color: #c8ab5a; }
+.qlc--dark span.mushaf-ayah.qlc__verse--active { background: #3a2f14; box-shadow: 0 0 0 2px #e8c840; }
+
+@media (max-width: 640px) {
+  .mushaf-frame { padding: 18px 14px 26px; }
+  .mushaf-surah-banner__ar { font-size: 1.4rem; }
+  .mushaf-basmalah { font-size: 1.3rem; }
+}

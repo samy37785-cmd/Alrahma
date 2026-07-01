@@ -5,17 +5,20 @@ export function useQuranKeyboard({
   startHifz, stopHifz, audioRef, toggleDark,
   setShowShortcuts, setShowSettings, setKbdPanelOpen,
   setActiveId, setJuzNum, setFontSize, setShowTrans, goPage,
+  onQuickNavToggle,
 }) {
   useEffect(() => {
     const handler = (e) => {
       if (['INPUT', 'SELECT', 'TEXTAREA'].includes(e.target.tagName)) return;
       switch (e.key) {
+        case '/': e.preventDefault(); onQuickNavToggle?.((v) => !v); break;
         case '?': setShowShortcuts((v) => !v); break;
         case 'g': case 'G': setShowSettings((v) => !v); break;
         case 'k': case 'K': setKbdPanelOpen((v) => !v); break;
         case 'p': case 'P': window.print(); break;
         case 'Escape':
           setShowShortcuts(false); setShowSettings(false); setKbdPanelOpen(false); stopHifz();
+          onQuickNavToggle?.(false);
           break;
         case ' ':
           e.preventDefault();
@@ -47,5 +50,5 @@ export function useQuranKeyboard({
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [tab, isPlaying, navMode, activeId, pageNum, juzNum, startHifz, stopHifz, toggleDark]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [tab, isPlaying, navMode, activeId, pageNum, juzNum, startHifz, stopHifz, toggleDark, onQuickNavToggle]); // eslint-disable-line react-hooks/exhaustive-deps
 }

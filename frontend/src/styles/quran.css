@@ -1073,3 +1073,105 @@
   .qplayer__speeds { display: none; }   /* hide speed on very small screens */
   .qlc__float-centre { display: none; } /* simplify bar on tiny screens */
 }
+
+/* ════  VERSE-SYNCED PLAYER (QuranSyncPlayer)  ═══════════════════════ */
+.qlc__syncplayer {
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 10px 16px; margin: 0 0 14px;
+  background: #fff; border: 1px solid #e2ece6; border-radius: 12px;
+}
+.qlc__syncplayer-row {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 10px;
+}
+.qlc__syncplayer-field {
+  display: flex; align-items: center; gap: 6px;
+  font-size: .78rem; color: #4a6a58;
+}
+.qlc__syncplayer-field select {
+  border: 1px solid #cfe3d8; border-radius: 6px; padding: 3px 6px; font-size: .8rem;
+}
+.qlc__syncplayer-speeds { display: flex; gap: 4px; }
+.qlc__syncplayer-sleep { position: relative; }
+.qlc__syncplayer-sleep-menu {
+  position: absolute; top: 100%; left: 0; z-index: 20; margin-top: 4px;
+  display: flex; flex-direction: column; min-width: 140px;
+  background: #fff; border: 1px solid #dcebe3; border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.12); overflow: hidden;
+}
+.qlc__syncplayer-sleep-menu button {
+  padding: 8px 12px; text-align: left; border: none; background: none;
+  font-size: .8rem; cursor: pointer;
+}
+.qlc__syncplayer-sleep-menu button:hover { background: #eef7f1; }
+.qlc__syncplayer-resume { font-weight: 600; }
+.qlc__syncplayer-status {
+  font-size: .72rem; color: #6a8a78; letter-spacing: .02em;
+}
+
+.qlc--dark .qlc__syncplayer { background: #151f1a; border-color: #1e3028; }
+.qlc--dark .qlc__syncplayer-field { color: #7ac898; }
+.qlc--dark .qlc__syncplayer-field select { background: #1e2d24; border-color: #2a4035; color: #c8e0d4; }
+.qlc--dark .qlc__syncplayer-sleep-menu { background: #1a2820; border-color: #2a4035; }
+.qlc--dark .qlc__syncplayer-sleep-menu button { color: #c8e0d4; }
+.qlc--dark .qlc__syncplayer-sleep-menu button:hover { background: #1e3028; }
+.qlc--dark .qlc__syncplayer-status { color: #5a9a78; }
+
+@media (max-width: 640px) {
+  .qlc__syncplayer-row { gap: 6px; }
+  .qlc__syncplayer-field { font-size: .72rem; }
+}
+
+/* ════  QUICK NAVIGATION (Ctrl+K command palette)  ══════════════════ */
+.qlc__quicknav {
+  background: #fff; border-radius: 14px; overflow: hidden;
+  width: min(100%, 480px); box-shadow: 0 20px 60px rgba(0,0,0,.25);
+  animation: qlc-pop .25s ease; display: flex; flex-direction: column; max-height: 70vh;
+}
+.qlc__quicknav-input {
+  padding: 16px 20px; border: none; border-bottom: 1px solid #e8f0eb;
+  font-size: 1rem; outline: none;
+}
+.qlc__quicknav-results { list-style: none; margin: 0; padding: 6px; overflow-y: auto; }
+.qlc__quicknav-result {
+  display: block; width: 100%; text-align: left; padding: 10px 14px;
+  border: none; background: none; border-radius: 8px; font-size: .9rem; cursor: pointer;
+}
+.qlc__quicknav-result:hover { background: #eef7f1; }
+.qlc__quicknav-empty { padding: 14px; color: #8a9a92; font-size: .85rem; text-align: center; }
+
+.qlc--dark .qlc__quicknav { background: #151f1a; }
+.qlc--dark .qlc__quicknav-input { background: #151f1a; border-color: #1e3028; color: #c8e0d4; }
+.qlc--dark .qlc__quicknav-result { color: #c8e0d4; }
+.qlc--dark .qlc__quicknav-result:hover { background: #1a2820; }
+.qlc--dark .qlc__quicknav-empty { color: #5a7a68; }
+
+/* ════  RECORDING STUDIO (QuranRecordingStudio)  ════════════════════ */
+.qlc__studio { padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; }
+.qlc__studio--unsupported { color: #b45309; font-size: .85rem; }
+.qlc__studio-record-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.qlc__studio-stats { font-size: .78rem; color: #6a8a78; }
+.qlc__studio-error { color: #c0392b; font-size: .82rem; margin: 0; }
+.qlc__studio-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.qlc__studio-empty { font-size: .82rem; color: #8a9a92; }
+.qlc__studio-item {
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;
+  padding: 8px 12px; border: 1px solid #e2ece6; border-radius: 8px;
+}
+.qlc__studio-item-label { font-size: .82rem; font-weight: 600; color: #2f5344; }
+.qlc__studio-item-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+
+.qlc--dark .qlc__studio-item { border-color: #1e3028; }
+.qlc--dark .qlc__studio-item-label { color: #c8e0d4; }
+.qlc--dark .qlc__studio-stats { color: #5a9a78; }
+.qlc--dark .qlc__studio-empty { color: #5a7a68; }
+
+/* ════  BOOKMARK STAR  ════════════════════════════════════════════════ */
+.qlc__bookmark-btn {
+  border: none; background: none; cursor: pointer; font-size: 1rem;
+  color: #c7d6cd; padding: 2px 4px; line-height: 1;
+}
+.qlc__bookmark-btn:hover { color: #e0a010; }
+.qlc__bookmark-btn.active { color: #e0a010; }
+.qlc--dark .qlc__bookmark-btn { color: #2a4035; }
+.qlc--dark .qlc__bookmark-btn:hover,
+.qlc--dark .qlc__bookmark-btn.active { color: #f0c040; }

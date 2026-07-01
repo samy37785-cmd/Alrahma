@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { CtrlItem } from './QuranControls';
 import { RECITERS } from '../../../api/quran';
+import QuranRecordingStudio from './QuranRecordingStudio';
 
 const HIFZ_RECITERS = RECITERS.filter((r) => r.verseId != null);
 const HIFZ_SPEEDS   = [0.5, 0.75, 1, 1.25, 1.5];
@@ -19,13 +20,14 @@ export default function QuranHifzControls({
   verses, navMode, isPlaying, loadingVA, verseAudios, selectedVerses, curIdx,
   playCount, rangeIteration, showTrans, ui,
   REPEAT_OPTIONS, RANGE_OPTIONS, DELAY_OPTIONS,
-  hifzAudio,
+  hifzAudio, activeId,
   onHifzModeChange, onFromVChange, onToVChange, onRepeatCountChange,
   onRangeRepeatChange, onHifzDelayChange, onHifzReciterChange, onShowTransChange,
   startHifz, stopHifz, handleHifzEnded, onRevealAll, onHideAll,
   /* new: time tracking callbacks (set in Quran.jsx) */
   onVerseTimeUpdate, onVerseDurationLoad, onVerseEnded,
 }) {
+  const audioMap = Object.fromEntries(verseAudios.map((a) => [a.verse_key, a.url]));
   /* ── Local speed state — applied directly to the hifz audio element ── */
   const [speed, setSpeed] = useState(1);
 
@@ -60,6 +62,12 @@ export default function QuranHifzControls({
           onClick={() => onHifzModeChange('test')}
         >
           🧪 {ui.test}
+        </button>
+        <button
+          className={`qlc__hifz-modetab${hifzMode === 'record' ? ' active' : ''}`}
+          onClick={() => onHifzModeChange('record')}
+        >
+          🎙 {ui.record || 'Record'}
         </button>
       </div>
 
@@ -227,6 +235,12 @@ export default function QuranHifzControls({
           </>
         )}
       </div>
+
+      {hifzMode === 'record' && (
+        <QuranRecordingStudio
+          activeId={activeId} fromV={fromV} toV={toV} verses={verses} audioMap={audioMap} ui={ui}
+        />
+      )}
 
       {/* Hidden audio element — drives the hifz playback */}
       <audio

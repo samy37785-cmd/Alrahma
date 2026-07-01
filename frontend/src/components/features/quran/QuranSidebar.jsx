@@ -1,8 +1,8 @@
 import { JUZ_NAMES } from '../../../data/quranLangs';
 
 export default function QuranSidebar({
-  navMode, chapters, activeId, search, pageNum, juzNum, khatmDone, filtered, ui,
-  onNavModeChange, onSurahSelect, onPageNav, onJuzNav,
+  navMode, chapters, activeId, search, pageNum, juzNum, hizbNum, khatmDone, filtered, ui,
+  onNavModeChange, onSurahSelect, onPageNav, onJuzNav, onHizbNav,
   onSearchChange, onKhatmToggle, onKhatmFromSelect, onNewKhatm,
 }) {
   return (
@@ -12,6 +12,7 @@ export default function QuranSidebar({
           { key: 'surah', label: ui.navSurah || 'Surah' },
           { key: 'page',  label: ui.navPage  || 'Page' },
           { key: 'juz',   label: ui.navJuz   || 'Juz' },
+          { key: 'hizb',  label: ui.navHizb  || 'Hizb' },
           { key: 'khatm', label: 'ختمة' },
         ].map((m) => (
           <button
@@ -84,6 +85,25 @@ export default function QuranSidebar({
                 <span className="qlc__snames">
                   <b>{ui.juz || 'Juz'} {i + 1}</b>
                   <small>{name}</small>
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {navMode === 'hizb' && (
+        <ul className="qlc__list">
+          {Array.from({ length: 60 }, (_, i) => i + 1).map((h) => (
+            <li key={h}>
+              <button
+                className={`qlc__surah-btn${hizbNum === h ? ' active' : ''}`}
+                onClick={() => onHizbNav(h)}
+              >
+                <span className="qlc__snum">{h}</span>
+                <span className="qlc__snames">
+                  <b>{ui.hizb || 'Hizb'} {h}</b>
+                  <small>{ui.juz || 'Juz'} {Math.ceil(h / 2)}</small>
                 </span>
               </button>
             </li>

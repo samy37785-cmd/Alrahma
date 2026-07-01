@@ -1,6 +1,6 @@
 import { JUZ_NAMES } from '../../../data/quranLangs';
 
-export default function QuranChapterHeader({ navMode, activeChapter, juzNum, pageNum, ui }) {
+export default function QuranChapterHeader({ navMode, activeChapter, juzNum, pageNum, hizbNum, ui }) {
   return (
     <div className="qlc__chapter-header">
       {(navMode === 'surah' || navMode === 'khatm') && activeChapter ? (
@@ -20,6 +20,8 @@ export default function QuranChapterHeader({ navMode, activeChapter, juzNum, pag
         <h2 className="qlc__chapter-mode-title">
           {navMode === 'juz'
             ? `${ui.juz || 'Juz'} ${juzNum} — ${JUZ_NAMES[juzNum - 1] || ''}`
+            : navMode === 'hizb'
+            ? `${ui.hizb || 'Hizb'} ${hizbNum} — ${ui.juz || 'Juz'} ${Math.ceil(hizbNum / 2)}`
             : `${ui.page || 'Page'} ${pageNum} / 604`}
         </h2>
       )}

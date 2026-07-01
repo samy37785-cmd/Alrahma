@@ -4,7 +4,7 @@ import { TRANSLATIONS } from '../../../data/quranLangs';
 
 export default function QuranTopBar({
   tab, darkMode, kbdPanelOpen, lang, ui,
-  onTabChange, onLangChange, onSettingsToggle, onKbdToggle, onDarkToggle,
+  onTabChange, onLangChange, onSettingsToggle, onKbdToggle, onDarkToggle, onQuickNavToggle,
 }) {
   return (
     <header className="qlc__bar">
@@ -36,6 +36,7 @@ export default function QuranTopBar({
             </select>
           </div>
 
+          <button className="qlc__bar-icon" onClick={onQuickNavToggle} title="Quick navigation (/)">🔎</button>
           <button className="qlc__bar-icon" onClick={onSettingsToggle} title="Settings (G)">⚙</button>
           <button
             className={`qlc__bar-icon${kbdPanelOpen ? ' active' : ''}`}

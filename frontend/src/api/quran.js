@@ -3,6 +3,10 @@ import { withCache, TTL } from './cache';
 
 const quran = axios.create({ baseURL: 'https://api.quran.com/api/v4' });
 
+// Shared verse fields — includes hizb_number (needed by Hizb nav mode and
+// the Mushaf page-mode margin markers) alongside the existing text/page/juz.
+const FIELDS = 'text_uthmani,page_number,juz_number,hizb_number';
+
 /*
  * Two separate endpoints with DIFFERENT ID spaces:
  *
@@ -44,7 +48,7 @@ const VERSE_ID = Object.fromEntries(
 // Verse text is immutable scripture, so cache it for a week with stale fallback.
 export const getVerses = (chapterId, translationId = 20) =>
   withCache(`verses:chapter:${chapterId}:${translationId}`, TTL.WEEK, () => {
-    const params = { fields: 'text_uthmani,page_number,juz_number', per_page: 300 };
+    const params = { fields: FIELDS, per_page: 300 };
     if (translationId) params.translations = translationId;
     return quran.get(`/verses/by_chapter/${chapterId}`, { params }).then((r) => r.data.verses);
   });
@@ -52,7 +56,7 @@ export const getVerses = (chapterId, translationId = 20) =>
 // ── Verses by Mushaf page (1-604) ───────────────────────────────────
 export const getVersesByPage = (pageNum, translationId = 20) =>
   withCache(`verses:page:${pageNum}:${translationId}`, TTL.WEEK, () => {
-    const params = { fields: 'text_uthmani,page_number,juz_number', per_page: 50 };
+    const params = { fields: FIELDS, per_page: 50 };
     if (translationId) params.translations = translationId;
     return quran.get(`/verses/by_page/${pageNum}`, { params }).then((r) => r.data.verses);
   });
@@ -60,9 +64,17 @@ export const getVersesByPage = (pageNum, translationId = 20) =>
 // ── Verses by Juz (1-30) ────────────────────────────────────────────
 export const getVersesByJuz = (juzNum, translationId = 20) =>
   withCache(`verses:juz:${juzNum}:${translationId}`, TTL.WEEK, () => {
-    const params = { fields: 'text_uthmani,page_number,juz_number', per_page: 300 };
+    const params = { fields: FIELDS, per_page: 300 };
     if (translationId) params.translations = translationId;
     return quran.get(`/verses/by_juz/${juzNum}`, { params }).then((r) => r.data.verses);
+  });
+
+// ── Verses by Hizb (1-60, two per Juz) ──────────────────────────────
+export const getVersesByHizb = (hizbNum, translationId = 20) =>
+  withCache(`verses:hizb:${hizbNum}:${translationId}`, TTL.WEEK, () => {
+    const params = { fields: FIELDS, per_page: 300 };
+    if (translationId) params.translations = translationId;
+    return quran.get(`/verses/by_hizb/${hizbNum}`, { params }).then((r) => r.data.verses);
   });
 
 // ── Full-chapter audio  (uses /chapter_recitations/{id})  ───────────
@@ -76,14 +88,30 @@ export const getChapterAudio = (chapterId, reciterId = 7) =>
 export const getVerseAudios = (chapterId, reciterId = 7) => {
   const vid = VERSE_ID[reciterId];
   if (!vid) return Promise.resolve([]);
-  return quran
-    .get(`/recitations/${vid}/by_chapter/${chapterId}`)
-    .then((r) =>
-      (r.data.audio_files || []).map((f) => ({
-        verse_key: f.verse_key,
-        url: f.url.startsWith('http') ? f.url : `https://verses.quran.com/${f.url}`,
-      }))
-    );
+  return withCache(`verse-audios:${chapterId}:${vid}`, TTL.WEEK, () =>
+    quran
+      .get(`/recitations/${vid}/by_chapter/${chapterId}`)
+      .then((r) =>
+        (r.data.audio_files || []).map((f) => ({
+          verse_key: f.verse_key,
+          url: f.url.startsWith('http') ? f.url : `https://verses.quran.com/${f.url}`,
+        }))
+      )
+  );
+};
+
+// ── Per-verse audio map spanning multiple chapters ──────────────────
+// Page/Juz/Hizb views can span a chapter boundary (e.g. a page ending
+// Al-Baqarah and starting Aal-Imran), but /recitations is a by-chapter
+// endpoint. This fetches getVerseAudios once per distinct chapter present
+// in `verses` and merges the results into a single { verseKey: url } map,
+// so the unified audio engine can queue playback across any nav mode.
+export const getVerseAudioMapForVerses = async (verses, reciterId = 7) => {
+  const chapterIds = [...new Set(verses.map((v) => Number(v.verse_key.split(':')[0])))];
+  const lists = await Promise.all(chapterIds.map((id) => getVerseAudios(id, reciterId)));
+  const map = {};
+  lists.flat().forEach((a) => { map[a.verse_key] = a.url; });
+  return map;
 };
 
 // ── Tafsir for a single verse — quran.com API (returns HTML) ────────

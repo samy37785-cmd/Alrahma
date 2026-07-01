@@ -583,7 +583,6 @@ html.dark .nav__bell-badge { border-color: var(--bg-page); }
 
 /* ── Mobile logout button ────────────────────────────────────────── */
 .nav__mobile-logout {
-  display: flex;
   align-items: center;
   gap: 12px;
   width: 100%;

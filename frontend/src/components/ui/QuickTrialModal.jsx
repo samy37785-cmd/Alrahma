@@ -63,14 +63,14 @@ export default function QuickTrialModal({ open, onClose }) {
         {done ? (
           <div className="qtm__success">
             <div className="qtm__success-icon" aria-hidden="true">🎉</div>
-            <h2>You're booked in!</h2>
+            <h2>You&apos;re booked in!</h2>
             <p>
-              We'll message you on WhatsApp within <strong>2 hours</strong> to confirm
+              We&apos;ll message you on WhatsApp within <strong>2 hours</strong> to confirm
               your free 30-minute trial lesson with a certified Al-Azhar tutor.
             </p>
             <p className="qtm__blessing" dir="rtl" lang="ar">بارك الله فيكم</p>
             <button className="btn btn--green btn--block" onClick={onClose}>
-              Got it — can't wait!
+              Got it — can&apos;t wait!
             </button>
           </div>
         ) : (

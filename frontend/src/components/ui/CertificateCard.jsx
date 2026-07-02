@@ -1,5 +1,3 @@
-import { useRef } from 'react';
-
 const TYPE_LABEL = {
   completion: 'Certificate of Completion',
   hifz:       'Certificate of Hifz (Memorisation)',
@@ -105,7 +103,7 @@ function CertificatePrintView({ cert }) {
   </div>
   <div class="cert__number">Certificate No. ${cert.certificateNumber}</div>
 </div>
-<script>window.onload = () => { window.print(); };<\/script>
+<script>window.onload = () => { window.print(); };</script>
 </body>
 </html>`;
 }

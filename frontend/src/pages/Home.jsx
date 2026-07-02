@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { TrialProvider } from '../context/TrialContext';
 import useSEO from '../hooks/useSEO';
-import { useLang } from '../context/LangContext';
 import TopBar from '../components/layout/TopBar';
 import Header from '../components/layout/Header';
 import Hero from '../components/Hero';
@@ -26,7 +25,6 @@ import QuickTrialModal from '../components/ui/QuickTrialModal';
 import ExitIntentPopup from '../components/ui/ExitIntentPopup';
 
 export default function Home() {
-  const { t } = useLang();
   const [trialOpen, setTrialOpen] = useState(false);
   useSEO({
     title: 'Learn the Quran Online — Al-Rahma Academy',

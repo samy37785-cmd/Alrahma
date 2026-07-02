@@ -3,14 +3,14 @@ import { renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useWishlist, useIsWishlisted } from '../hooks/useWishlist';
 
-vi.mock('../api/client.js', () => ({
+vi.mock('../api/wishlistApi.js', () => ({
   getWishlist: vi.fn(),
   addToWishlist: vi.fn(),
   removeFromWishlist: vi.fn(),
   clearWishlist: vi.fn(),
 }));
 
-import * as client from '../api/client.js';
+import * as client from '../api/wishlistApi.js';
 
 function wrapper() {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: 0 } } });

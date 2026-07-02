@@ -45,7 +45,7 @@ export default function RefundPolicy() {
               </li>
               <li>
                 <strong>Not satisfied?</strong> Contact us within 14 days by email or WhatsApp.
-                Tell us what happened — or don't. Either way, we refund you.
+                Tell us what happened — or don&apos;t. Either way, we refund you.
               </li>
               <li>
                 <strong>Receive your refund</strong> within 5–10 business days to your original
@@ -59,7 +59,7 @@ export default function RefundPolicy() {
               <li>✅ First billing period only</li>
               <li>✅ No minimum number of lessons required to qualify</li>
               <li>✅ No deductions for lessons already attended</li>
-              <li>✅ Full 100% refund — no partial refunds, no "store credit"</li>
+              <li>✅ Full 100% refund — no partial refunds, no &quot;store credit&quot;</li>
             </ul>
 
             <h2>What Is Not Covered</h2>
@@ -108,7 +108,7 @@ export default function RefundPolicy() {
             <h2>Our Promise</h2>
             <p>
               We built this refund policy because we believe our tutors and teaching speak for
-              themselves. If they don't meet your expectations, you deserve your money back.
+              themselves. If they don&apos;t meet your expectations, you deserve your money back.
               Simple as that.
             </p>
           </div>

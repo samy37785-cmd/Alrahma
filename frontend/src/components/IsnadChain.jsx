@@ -67,7 +67,7 @@ export default function IsnadChain() {
 
         <Reveal className="isnad__manifesto">
           <blockquote className="isnad__quote">
-            "The best of you are those who learn the Quran and teach it."
+            &quot;The best of you are those who learn the Quran and teach it.&quot;
           </blockquote>
           <cite className="isnad__cite">— Sahih Al-Bukhari</cite>
           <div className="isnad__cta-row">

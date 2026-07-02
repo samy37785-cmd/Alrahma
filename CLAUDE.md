@@ -131,6 +131,11 @@ Backend (see `backend/.env.example`):
 
 Frontend: only `VITE_API_URL=/api` (relative; proxied by Vite in dev).
 
+## Git workflow
+
+- Never commit directly to `main`. Every change goes on a feature branch, gets a descriptive commit message (what changed and why — not placeholders like "fix", "update", "kk"), and opens a PR. Use the `/push` command for this.
+- Before committing, review `git diff` — don't commit changes you haven't looked at.
+
 ## Brand & content conventions
 
 - Brand name: **Al-Rahma** (not "Al Rahma" or "Alrahma")

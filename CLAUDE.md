@@ -7,9 +7,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 **Al-Rahma Academy** — full-stack Islamic education platform. React 18 SPA + Express 4 API + MongoDB Atlas. Deployed as a monorepo: Vercel serves the pre-built frontend SPA only; the backend runs as a standalone, long-running Express process on Render (`backend/`, started via `node server.js`). `vercel.json` rewrites every `/api/*` request to the Render URL — there is no `api/index.js` serverless function in this repo.
 
 ## Commands
-
-All commands run from the repo root unless noted.
-
+when chenge in any new task i wont to create a commit 
+All commands run from the repo root unless 
 ```bash
 # Development (concurrent frontend + backend)
 npm run dev

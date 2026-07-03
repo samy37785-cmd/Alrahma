@@ -1,0 +1,474 @@
+/* ══════════════════════════════════════════════════════════
+   Mobile responsiveness — loaded LAST so its overrides win.
+   Desktop/laptop layout is intentionally left untouched; every
+   rule here is either a global safety net or inside a mobile
+   media query.
+   ══════════════════════════════════════════════════════════ */
+
+/* ── 1) Kill horizontal page shift on phones ──────────────────
+   `clip` prevents sideways scrolling WITHOUT creating a scroll
+   container, so the sticky header keeps working (unlike hidden). */
+html, body { overflow-x: clip; }
+body { max-width: 100%; }
+/* Flex/grid children are allowed to shrink below their content
+   size, which stops long words / wide media forcing overflow. */
+img, video, svg, canvas { max-width: 100%; }
+
+/* ── 2) Mobile carousel (courses / teachers / pricing) ────────
+   Desktop: arrows hidden, the track keeps its original grid class
+   so nothing changes. Mobile: the track becomes a swipeable,
+   scroll-snapping row with peek of the next card + arrow buttons. */
+.mcar { position: relative; }
+.mcar__arrow { display: none; }
+
+@media (max-width: 760px) {
+  .mcar__track {
+    display: flex !important;
+    grid-template-columns: none !important;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: 16px;
+    gap: 14px;
+    padding: 6px 4px 18px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;            /* Firefox */
+  }
+  .mcar__track::-webkit-scrollbar { display: none; } /* WebKit */
+
+  /* one card centred, with a peek of the neighbours so users know
+     there's more to swipe */
+  .mcar__track > * {
+    flex: 0 0 84%;
+    min-width: 84%;
+    scroll-snap-align: center;
+  }
+
+  /* Cards use the scroll-reveal fade (opacity:0 until they intersect the
+     viewport). Off-screen carousel cards never intersect, so they'd stay
+     invisible — force them visible inside the track. */
+  .mcar__track > * { opacity: 1 !important; }
+  .mcar__track > *:not(.visible) { transform: none !important; }
+
+  .mcar__arrow {
+    display: grid;
+    place-items: center;
+    position: absolute;
+    top: 46%;
+    transform: translateY(-50%);
+    z-index: 6;
+    width: 40px;
+    height: 40px;
+    padding: 0 0 4px;
+    border: 2px solid rgba(255, 255, 255, 0.9);
+    border-radius: 50%;
+    background: rgba(11, 110, 79, 0.96);
+    color: #fff;
+    font-size: 1.55rem;
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  }
+  .mcar__arrow:active { transform: translateY(-50%) scale(0.92); }
+  .mcar__arrow--prev { left: -2px; }
+  .mcar__arrow--next { right: -2px; }
+}
+
+/* ── 3) Stats banner — make it fit instead of overflowing ─────── */
+@media (max-width: 600px) {
+  .stats-banner__grid { grid-template-columns: repeat(2, 1fr); gap: 18px 10px; }
+  .stats-item__num { font-size: clamp(1.7rem, 8vw, 2.3rem); }
+  .stats-item__label { font-size: 0.82rem; }
+}
+
+/* ── 4) Less endless scrolling on phones ──────────────────────
+   Tighter section padding + a compact 2-up grid for the feature
+   ("why families…") and value cards so they aren't a tall column. */
+@media (max-width: 760px) {
+  .features, .courses, .pricing, .tutors2, .steps,
+  .about, .testimonials, .join-cta { padding-top: 58px; padding-bottom: 58px; }
+  .section-head { margin-bottom: 28px; }
+}
+
+@media (max-width: 640px) {
+  .features__grid { grid-template-columns: repeat(2, 1fr) !important; gap: 12px; }
+  .feature { padding: 18px 16px; }
+}
+
+/* Very small phones: feature cards stack to avoid cramping. */
+@media (max-width: 380px) {
+  .features__grid { grid-template-columns: 1fr !important; }
+}
+
+/* ── 5) Stop iOS Safari auto-zooming when a field is focused ───────
+   Any input/select/textarea under 16px makes iOS Safari zoom in on
+   tap — very visible (and feels broken) on the booking + checkout
+   forms. Force 16px on phones; desktop sizing is left untouched. */
+@media (max-width: 760px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+
+  /* Comfortable tap targets for small/secondary buttons (Apple's 44px
+     guideline). The primary .btn is already ~45px tall. */
+  .btn--sm { min-height: 44px; }
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   6) OVERFLOW FIXES — verified with an automated audit (Edge/puppeteer)
+   across 320–768px on every public route. Each rule below targets a
+   specific element that pushed the document wider than the viewport.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── 6a) Grid tracks that refuse to shrink ────────────────────────
+   A grid item defaults to `min-width: auto`, so a `1fr` track grows to
+   the item's min-content and overflows narrow phones. `minmax(0, 1fr)`
+   + `min-width: 0` lets the track shrink to the container instead. */
+@media (max-width: 760px) {
+  .tst__layout { grid-template-columns: minmax(0, 1fr); }
+  .tst__featured { min-width: 0; padding: 26px 22px 22px; }
+  .tst__quote-mark { left: 18px; font-size: 5rem; }
+  .tst__meta { flex-wrap: wrap; }
+  .tst__stars { flex-wrap: wrap; }
+}
+
+/* ── 6b) About hero/page — force the two-column layout to stack.
+   A later non-media base rule re-asserted `1fr 1fr`, defeating the
+   existing mobile stack; override it here (responsive.css wins). */
+@media (max-width: 760px) {
+  .about__inner { grid-template-columns: 1fr !important; }
+}
+@media (max-width: 440px) {
+  .about__stats { grid-template-columns: 1fr !important; }
+}
+
+/* ── 6c) Header — unified mobile nav drawer for ≤900px ───────────
+   Single block covers tablets (641–900) and phones (≤640) so we don't
+   duplicate rules. Phone-specific overrides (smaller top offset) are
+   inside the inner ≤640 media query. */
+@media (max-width: 900px) {
+  /* Show hamburger */
+  .nav-toggle { display: flex; }
+
+  /* Hide desktop-only controls; their mobile equivalents live in the drawer */
+  .nav__theme-toggle,
+  .ls,
+  .header__role-btn,
+  .header__user-desktop { display: none !important; }
+
+  /* Show mobile-only drawer sections */
+  .nav__mobile-profile    { display: flex; }
+  .nav__mobile-search     { display: flex; }
+  .nav__mobile-account    { display: block; }
+  .nav__mobile-settings   { display: flex; }
+  .nav__mobile-logout     { display: flex; }
+  .nav__mobile-login-link { display: flex; }
+
+  /* Hide desktop search button — mobile drawer has its own */
+  .nav__search-btn { display: none !important; }
+
+  /* Drawer panel: slides down from header bottom.
+     Header = 14px padding × 2 + 44px hamburger + 1px border = 73px → use 74px for safety. */
+  .nav {
+    position: fixed;
+    top: calc(74px + env(safe-area-inset-top, 0px));
+    left: 0; right: 0;
+    z-index: 48;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    background: var(--white);
+    border-bottom: 1px solid var(--line);
+    padding: 0 0 20px;
+    transform: translateY(-110%);
+    transition: transform .22s cubic-bezier(.4,0,.6,1);
+    box-shadow: 0 16px 48px rgba(0,0,0,.18);
+    max-height: calc(100dvh - 74px - env(safe-area-inset-top, 0px));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+  .nav.open { transform: translateY(0); transition: transform .38s cubic-bezier(0.22,1,0.36,1); }
+
+  /* Nav link rows */
+  .nav > a, .nav__dropdown-trigger {
+    padding: 14px 20px;
+    width: 100%;
+    min-height: 48px;
+    border-bottom: 1px solid var(--line);
+    border-radius: 0;
+    background: none !important;
+    font-size: 0.95rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  /* CTA button: full-width pill inside drawer */
+  .nav__cta {
+    margin: 12px 20px 4px;
+    display: block;
+    text-align: center;
+    border-radius: 999px !important;
+    background: var(--gold) !important;
+    color: #3a2e05 !important;
+    padding: 13px 20px !important;
+    border-bottom: none !important;
+    min-height: 48px;
+    font-weight: 700;
+  }
+
+  /* Dropdown sections: static, accordion-style */
+  .nav__dropdown { position: static; border-bottom: 1px solid var(--line); }
+  .nav__dropdown-trigger { border-bottom: none; }
+  .nav__dropdown-menu { display: none !important; }
+  .nav__dropdown-menu--wide { grid-template-columns: 1fr; min-width: 0; }
+
+  /* Accordion sub-items */
+  .nav__dropdown-mobile {
+    display: none;
+    list-style: none;
+    padding: 4px 0 8px;
+    background: var(--green-light);
+    border-top: 1px solid var(--line);
+  }
+  .nav__dropdown--expanded .nav__dropdown-mobile { display: block; }
+  .nav__dropdown-mobile .nav__dropdown-item {
+    padding: 12px 20px 12px 36px;
+    font-size: 0.88rem;
+    border-radius: 0;
+    border-bottom: 1px solid rgba(0,0,0,.04);
+    min-height: 44px;
+  }
+  .nav__dropdown-mobile .nav__dropdown-item:last-child { border-bottom: none; }
+  .nav__dropdown--expanded .nav__dropdown-trigger .nav__dropdown-chevron { transform: rotate(180deg); }
+
+  /* RTL: flip accordion indent */
+  [dir="rtl"] .nav__dropdown-mobile .nav__dropdown-item {
+    padding: 12px 36px 12px 20px;
+  }
+}
+
+/* Phone-specific: tighten header padding on small screens for more content space.
+   10px × 2 + 44px hamburger + 1px border = 65px → nav drawer starts at 65px. */
+@media (max-width: 640px) {
+  .header__inner { padding: 10px 0; }
+  .nav {
+    top: calc(65px + env(safe-area-inset-top, 0px));
+    max-height: calc(100dvh - 65px - env(safe-area-inset-top, 0px));
+  }
+}
+
+/* Small phones: slim the right-hand cluster so it never spills past the
+   edge (Brand + theme + lang + login + hamburger was ~377px at 320px). */
+@media (max-width: 480px) {
+  .header__right { gap: 5px; }
+  .brand__text small { display: none; }   /* keep the name, drop the tagline */
+}
+@media (max-width: 400px) {
+  .header__right { gap: 4px; }
+  .ls__code { display: none; }             /* language: flag only */
+  .ls__trigger { padding: 6px 8px; }
+  .header__right .btn--sm { padding: 8px 12px; font-size: .82rem; }
+  .brand__mark { font-size: 1.5rem; }
+  .brand__text strong { font-size: 1rem; }
+  .brand { gap: 8px; }
+}
+
+/* ── 6d) Quran reader — control-bar selects (≈505px) overflowed once
+   `.qlc { overflow: visible }` kicks in at ≤900. Let them wrap and let
+   the columns shrink. */
+@media (max-width: 900px) {
+  .qlc__layout { grid-template-columns: minmax(0, 1fr); }
+  .qlc__main, .qlc__sidebar { min-width: 0; }
+  .qlc__cbar-selects { flex-wrap: wrap; }
+  .qlc__cbar-item { min-width: 0; flex: 1 1 45%; }
+  .qlc__cbar-sep { display: none; }
+  /* Top bar: let the 4 tabs scroll sideways instead of forcing page width,
+     and let the right-hand controls wrap onto their own row. */
+  .qlc__tabs {
+    max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .qlc__tabs::-webkit-scrollbar { display: none; }
+  .qlc__tab { flex: 0 0 auto; min-width: auto; }
+  .qlc__bar-right { flex-wrap: wrap; margin-left: 0; }
+  .qlc__lang-select { max-width: 150px; }
+}
+
+/* ── 6e) Islamic Tools — the <select>s have long option labels and no
+   width cap, so they stretched the control row past the screen.
+   NB: islamic-tools.css is a code-split route chunk that loads AFTER
+   responsive.css, so these need extra specificity (descendant selector)
+   to win over the base `.it__control-item { min-width: 200px }`. */
+@media (max-width: 480px) {
+  .it__controls { flex-direction: column; }
+  .it__controls .it__control-item { min-width: 0; width: 100%; max-width: 100%; flex-basis: auto; }
+  .it__control-item .it__ctrl-sel,
+  .it__controls .it__fmt-toggle,
+  .it__controls .it__notify-row,
+  .it__controls .it__city-form { width: 100%; max-width: 100%; min-width: 0; }
+  /* The text input has an intrinsic min-width that pushed its Search button
+     off-screen; let it shrink so the row fits. */
+  .it__controls .it__city-input { min-width: 0; }
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   7) HERO SECTION — reduce tall padding on phones so content sits
+   higher and the scroll-to-first-section feels snappy.
+   ══════════════════════════════════════════════════════════════════ */
+@media (max-width: 760px) {
+  .hero__inner { padding: 52px 0 60px; }
+}
+@media (max-width: 480px) {
+  .hero__inner { padding: 36px 0 44px; }
+  /* Decorative blobs are large (520px / 380px blur). On phones they
+     add rendering overhead with no visible payoff — hide them. */
+  .hero__orb { display: none; }
+}
+
+/* ── 8) HUB HERO — compress the tall hero on phones ──────────────── */
+@media (max-width: 640px) {
+  .hub-hero { padding: 44px 0 36px; }
+}
+
+/* ── 9) NEWSLETTER — column layout on small screens ──────────────── */
+@media (max-width: 768px) {
+  .newsletter__inner--guide { grid-template-columns: 1fr; gap: 28px; }
+  .newsletter__guide-preview { display: none; }
+}
+@media (max-width: 640px) {
+  .newsletter__inner { flex-direction: column; align-items: flex-start; gap: 20px; }
+  .newsletter__form  { width: 100%; }
+  .newsletter__form input { min-width: 0; width: 100%; box-sizing: border-box; }
+  .hero__visual--medallion { height: 280px; }
+  .hero__medallion { width: 240px !important; height: 240px !important; }
+}
+
+/* ── 10) TOPBAR — hide contact links on very small phones to save
+    vertical space; social icons stay so the bar isn't empty. ──────── */
+@media (max-width: 480px) {
+  .topbar__contact { display: none; }
+  .topbar__inner   { justify-content: center; }
+}
+
+/* ── 11) TEACHERS CREDS BAR — tighter padding on small phones ─────── */
+@media (max-width: 480px) {
+  .tc2__creds-bar { padding: 16px; }
+}
+
+/* ── 12) RTL FIX — mobile dropdown sub-menu indentation ──────────── */
+/* Item-level RTL padding is set inside the ≤900px block above (6c). */
+[dir="rtl"] .nav__dropdown-mobile { padding-left: 0; padding-right: 0; }
+
+/* RTL: enrollment teacher card tags align to right (avatar is on the right) */
+[dir="rtl"] .enroll__tcard-tags { padding-left: 0; padding-right: 66px; }
+
+/* RTL: enrollment plan card list items align right */
+[dir="rtl"] .enroll__plan-card ul { text-align: right; }
+
+/* ── 13) ADHKAR — tighter card padding on small phones ───────────── */
+@media (max-width: 480px) {
+  .adhkar__card { padding: 16px; }
+  .adhkar__ar   { padding-right: 28px; }
+  .adhkar__context-badge { margin-right: 28px; }
+}
+
+/* ── 14) ENROLLMENT PAGE — less vertical padding on phones ─────────── */
+@media (max-width: 640px) {
+  .enroll__page { padding: 24px 0 48px; }
+}
+
+/* ── 15) TEACHER PROFILE STRIP — tighter stat cells on phones ──────── */
+@media (max-width: 480px) {
+  .tp__strip-stat { padding: 8px 10px; }
+}
+
+/* ── 16) FAQ QUESTION — break long words to prevent overflow ─────── */
+.faq__question { word-break: break-word; hyphens: auto; }
+
+/* ══════════════════════════════════════════════════════════════════
+   17) IPHONE SAFE-AREA  (home-bar / notch)
+   `env(safe-area-inset-bottom)` is 0 on non-notched devices, so
+   these rules are completely harmless everywhere else.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* WhatsApp FAB: lift above home-bar indicator and, on dashboard
+   mobile, above the bottom navigation bar (--ds-bottom-nav-h).
+   The CSS var defaults to 0px on non-dashboard / large-screen pages. */
+.whatsapp-fab {
+  bottom: calc(22px + env(safe-area-inset-bottom, 0px) + var(--ds-bottom-nav-h, 0px));
+}
+
+/* Quran Hifz floating bar: add internal padding so text clears the bar */
+.qlc__float-bar {
+  padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+}
+
+/* ── 18) QURAN READER — hide keyboard-shortcut side tab on touch
+    devices; keyboard shortcuts serve no purpose without a keyboard.  */
+@media (max-width: 900px) {
+  .qlc__ksp { display: none; }
+}
+
+/* ── 19) 320px SANITY — ultra-small phone safety net ─────────────── */
+@media (max-width: 360px) {
+  /* Prevent any single flex/grid child from forcing the page wider */
+  .container > * { min-width: 0; }
+
+  /* Pricing plan price number is very large; scale down slightly */
+  .plan__price span { font-size: 2rem; }
+
+  /* Stat numbers in the banner would overflow at 2.8rem on 320px */
+  .stats-item__num { font-size: clamp(1.5rem, 7vw, 2rem); }
+
+  /* Dashboard stat value */
+  .dash__stat-value { font-size: 1.1rem; }
+
+  /* DS stat cards: force single column on very small phones */
+  .ds-stats { grid-template-columns: 1fr !important; }
+}
+
+/* ── 20) HERO VISUAL PILLS — hide overflow on mobile ─────────────── */
+@media (max-width: 760px) {
+  /* The hero visual is order:-1 and height:300px; the absolute-positioned
+     pills extend beyond the container. Clip the visual to prevent the pills
+     from overflowing the section. */
+  .hero__visual { overflow: visible; position: relative; }
+  .hero__pill { font-size: .82rem; padding: 10px 12px; min-width: auto; }
+  .hero__pill--top    { top: 10px;  right: 0; }
+  .hero__pill--bottom { bottom: 10px; left: 0; }
+}
+@media (max-width: 480px) {
+  /* On very small phones, hide the decorative pills entirely to save space */
+  .hero__pill { display: none; }
+  .hero__verse { display: none; }
+}
+
+/* ── 21) MOBILE NAV DRAWER — touch targets already set in 6c block ── */
+/* Padding and min-height for .nav > a and .nav__dropdown-trigger are
+   defined in the unified ≤900px block above (section 6c). */
+
+/* ── 22) STICKY HEADER SAFE AREA — pin below Dynamic Island ─────── */
+.header {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+/* ── 23) HUB CARDS — single column on phones ─────────────────────── */
+@media (max-width: 480px) {
+  .hub-cards__grid { grid-template-columns: 1fr; }
+  .hub-card { padding: 20px 18px; }
+}
+
+/* ── 24) FOOTER SAFE AREA ─────────────────────────────────────────── */
+.footer {
+  padding-bottom: calc(var(--space-10, 40px) + env(safe-area-inset-bottom, 0px));
+}
+
+/* ── 25) MOBILE LANDSCAPE: compress hero so content is visible ─────── */
+@media (max-height: 500px) and (orientation: landscape) {
+  .hero__inner { padding: 20px 0 28px; }
+  .hero__visual { display: none; }
+}

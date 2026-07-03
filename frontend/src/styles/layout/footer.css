@@ -1,0 +1,124 @@
+﻿/* Footer */
+.footer {
+  background: var(--green-deep);
+  color: #cfe0d8;
+  padding-top: 60px;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.footer__grid { display: grid; grid-template-columns: 1.4fr 1fr 1fr 1.2fr; gap: 36px; padding-bottom: 40px; }
+.brand--light .brand__text strong { color: #fff; }
+.brand--light .brand__text small { color: #9fc0b3; }
+.footer__about { margin-top: 16px; font-size: .92rem; color: #aecabf; }
+.footer__col h3 { color: #fff; margin-bottom: 16px; font-size: 1.05rem; font-weight: 700; }
+.footer__col ul li { margin-bottom: 10px; }
+.footer__col a { font-size: .93rem; color: #cfe0d8; transition: color .2s; }
+.footer__col a:hover { color: var(--gold); }
+.footer__social { display: flex; gap: 10px; margin-top: 16px; }
+.footer__social a {
+  width: 44px; height: 44px; display: flex; align-items: center; justify-content: center;
+  border: 1px solid rgba(255,255,255,.2); border-radius: 50%; font-weight: 600; font-size: .8rem;
+  color: #fff; transition: background .2s, color .2s, border-color .2s;
+  -webkit-tap-highlight-color: transparent;
+}
+.footer__social a:hover { background: var(--gold); color: #3a2e05; border-color: var(--gold); }
+.footer__social svg { display: block; }
+.footer__bottom { border-top: 1px solid rgba(255,255,255,.12); padding: 20px 0; }
+.footer__bottom .container { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px; font-size: .86rem; color: #9fc0b3; }
+.footer__bottom a:hover { color: var(--gold); }
+
+/* WhatsApp FAB */
+.whatsapp-fab {
+  position: fixed; right: 22px; bottom: 22px; z-index: 60;
+  width: 56px; height: 56px; border-radius: 50%;
+  background: #25d366; color: #fff; font-size: 1.6rem;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 8px 24px rgba(37,211,102,.5);
+  transition: transform .2s;
+}
+.whatsapp-fab:hover { transform: scale(1.08); }
+
+/* Reveal animation — spring easing, bottom-to-top */
+.reveal {
+  opacity: 0;
+  transform: translateY(40px);
+  transition: opacity .65s cubic-bezier(.22,.68,0,1.15), transform .65s cubic-bezier(.22,.68,0,1.15);
+}
+.reveal.visible { opacity: 1; transform: none; }
+
+/* Stagger grid children so they enter one after another */
+.courses__grid .course:nth-child(1),
+.tc2__grid .tc2__card:nth-child(1),
+.pricing__grid .plan:nth-child(1),
+.features__grid > *:nth-child(1) { transition-delay: .0s; }
+
+.courses__grid .course:nth-child(2),
+.tc2__grid .tc2__card:nth-child(2),
+.pricing__grid .plan:nth-child(2),
+.features__grid > *:nth-child(2) { transition-delay: .08s; }
+
+.courses__grid .course:nth-child(3),
+.tc2__grid .tc2__card:nth-child(3),
+.pricing__grid .plan:nth-child(3),
+.features__grid > *:nth-child(3) { transition-delay: .16s; }
+
+.courses__grid .course:nth-child(4),
+.tc2__grid .tc2__card:nth-child(4) { transition-delay: .24s; }
+
+.tc2__grid .tc2__card:nth-child(5) { transition-delay: .08s; }
+.tc2__grid .tc2__card:nth-child(6) { transition-delay: .16s; }
+.tc2__grid .tc2__card:nth-child(7) { transition-delay: .24s; }
+.tc2__grid .tc2__card:nth-child(8) { transition-delay: .08s; }
+.tc2__grid .tc2__card:nth-child(9) { transition-delay: .16s; }
+.tc2__grid .tc2__card:nth-child(10) { transition-delay: .24s; }
+
+/* Responsive */
+@media (max-width: 960px) {
+  .hero__inner, .about__inner, .trial__inner { grid-template-columns: 1fr; }
+  .hero__visual { order: -1; height: 300px; }
+  .hero__circle { width: 180px; height: 180px; }
+  .hero__circle-inner { width: 150px; height: 150px; }
+  .hero__arabic-big { font-size: 2.8rem; }
+  .hero__ring--1 { width: 200px; height: 200px; }
+  .hero__ring--2 { width: 240px; height: 240px; }
+  .hero__pill--top    { top: 0; right: 0; }
+  .hero__pill--bottom { bottom: 0; left: 0; }
+  .hero__verse { position: static; margin-top: 8px; max-width: 100%; }
+  .hero__art { order: -1; }
+  .features__grid, .courses__grid, .pricing__grid { grid-template-columns: repeat(2, 1fr); }
+  .tc2__grid { grid-template-columns: repeat(2, 1fr); }
+  .tc2__cred { border-right: 0; border-bottom: 1px solid rgba(255,255,255,.12); padding: 10px 16px; }
+  .tc2__cred:last-child { border-bottom: 0; }
+  .steps__timeline { grid-template-columns: 1fr; gap: 32px; }
+  .timeline-step__connector { justify-content: center; }
+  .timeline-step__line { display: none; }
+  .footer__grid { grid-template-columns: 1fr 1fr; }
+  .plan--featured { transform: none; }
+  .stats-banner__grid { grid-template-columns: repeat(2, 1fr); gap: 24px; }
+  .stats-item { border-right: 0; border-bottom: 1px solid rgba(255,255,255,.12); padding-bottom: 24px; }
+  .stats-item:nth-child(2n) { border-bottom: 0; }
+  .tcar__track { grid-template-columns: 1fr; }
+  .tcar__track .quote:not(.quote--center) { display: none; }
+  .values__grid { grid-template-columns: repeat(2, 1fr); }
+  .join-cta__stats { gap: 20px; }
+}
+@media (max-width: 640px) {
+  .nav__cta { margin: 12px 20px 0 !important; display: block; text-align: center; }
+
+  /* Tools: hide popup, show inline accordion */
+  .nav__dropdown { position: static; border-bottom: 1px solid var(--line); }
+  .nav__dropdown-trigger { border-bottom: none; }
+  .nav__dropdown-menu { display: none; }
+  .nav__dropdown-mobile { display: none; list-style: none; padding: 4px 0 8px; background: var(--green-light); border-top: 1px solid var(--line); }
+  .nav__dropdown--expanded .nav__dropdown-mobile { display: block; }
+  .nav__dropdown-mobile .nav__dropdown-item { padding: 12px 20px 12px 36px; font-size: .88rem; color: var(--ink); min-height: 44px; border-bottom: 1px solid rgba(0,0,0,.04); }
+  .nav__dropdown-mobile .nav__dropdown-item:last-child { border-bottom: none; }
+  .nav__dropdown--expanded .nav__dropdown-trigger .nav__dropdown-chevron { transform: rotate(180deg); }
+
+  .nav-toggle { display: flex; }
+  .features__grid, .courses__grid, .pricing__grid, .footer__grid, .about__stats, .values__grid { grid-template-columns: 1fr; }
+  .tc2__grid { grid-template-columns: 1fr; }
+  .features { margin-top: -30px; }
+  .topbar__inner { justify-content: center; text-align: center; }
+  .stats-banner__grid { grid-template-columns: repeat(2, 1fr); }
+  .join-cta__stats { flex-direction: column; align-items: center; gap: 14px; }
+}

@@ -1,0 +1,162 @@
+﻿/* ── Course Landing Pages (cl__) ───────────────────────────────── */
+.cl__hero { padding: 72px 0 80px; }
+.cl__hero-inner { max-width: 740px; }
+.cl__hero-badge {
+  display: inline-block; background: rgba(255,255,255,.15);
+  border: 1px solid rgba(255,255,255,.3); border-radius: 999px;
+  padding: 6px 16px; font-size: .8rem; font-weight: 700; color: #fff;
+  margin-bottom: 16px; backdrop-filter: blur(4px);
+}
+.cl__hero-title { font-size: 2.6rem; font-weight: 800; color: #fff; margin-bottom: 16px; line-height: 1.15; }
+.cl__hero-sub { font-size: 1.05rem; color: rgba(255,255,255,.82); line-height: 1.7; margin-bottom: 28px; max-width: 620px; }
+.cl__hero-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+
+/* Stats strip */
+.cl__stats { padding: 0; }
+.cl__stats-inner { display: flex; justify-content: center; }
+.cl__stat { text-align: center; padding: 16px 36px; border-right: 1px solid rgba(255,255,255,.1); }
+.cl__stat:last-child { border-right: 0; }
+.cl__stat strong { display: block; font-size: 1.3rem; font-weight: 800; color: var(--gold); }
+.cl__stat span { font-size: .78rem; color: rgba(255,255,255,.6); }
+
+/* Body layout */
+.cl__body { display: grid; grid-template-columns: 1fr 300px; gap: 48px; padding: 56px 0 90px; align-items: start; }
+.cl__left { display: flex; flex-direction: column; gap: 48px; }
+.cl__section {}
+.cl__section-title {
+  font-size: 1.25rem; font-weight: 800; color: var(--green-deep);
+  margin-bottom: 20px; padding-bottom: 10px;
+  border-bottom: 2px solid var(--green-light);
+}
+
+/* What You'll Learn */
+.cl__learn-list { list-style: none; display: grid; grid-template-columns: 1fr 1fr; gap: 10px 24px; }
+.cl__learn-item { display: flex; gap: 10px; align-items: flex-start; font-size: .92rem; color: var(--ink); line-height: 1.5; }
+.cl__check { color: var(--green); font-weight: 800; font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
+
+/* Stages / Modules accordion */
+.cl__stages { display: flex; flex-direction: column; gap: 8px; }
+.cl__stage { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; transition: box-shadow .2s; }
+.cl__stage.open { box-shadow: 0 4px 20px rgba(0,0,0,.08); border-color: var(--stage-color, var(--green)); }
+.cl__stage-header {
+  display: flex; align-items: center; gap: 14px; width: 100%;
+  padding: 16px 20px; background: #fff; border: 0; cursor: pointer;
+  font-family: inherit; text-align: start;
+  transition: background .15s;
+}
+.cl__stage-header:hover { background: var(--cream); }
+.cl__stage-num {
+  width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: .78rem; font-weight: 800; color: #fff;
+}
+.cl__stage-meta { flex: 1; text-align: start; }
+.cl__stage-meta strong { display: block; font-size: .95rem; color: var(--green-deep); }
+.cl__stage-meta span { font-size: .8rem; color: var(--muted); }
+.cl__stage-source { font-size: .78rem; color: var(--muted); max-width: 200px; text-align: end; }
+.cl__stage-source--ar { font-family: var(--serif); font-size: .88rem; }
+.cl__stage-chevron { font-size: .75rem; color: var(--muted); flex-shrink: 0; margin-inline-start: 8px; }
+.cl__stage-body { padding: 0 20px 18px; background: var(--cream); }
+.cl__stage-author { font-size: .82rem; color: var(--green); font-weight: 600; margin-bottom: 10px; margin-top: 4px; }
+.cl__stage-points { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.cl__stage-points li { font-size: .88rem; color: var(--ink); padding-inline-start: 18px; position: relative; }
+.cl__stage-points li::before { content: '·'; position: absolute; inset-inline-start: 4px; color: var(--stage-color, var(--green)); font-weight: 800; font-size: 1.1rem; }
+
+/* Source books (expandable) */
+.cl__books { display: flex; flex-direction: column; gap: 10px; }
+.cl__book { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; transition: border-color .2s, box-shadow .2s; }
+.cl__book.open { border-color: var(--green); box-shadow: 0 3px 16px rgba(11,110,79,.1); }
+.cl__book-trigger {
+  display: flex; align-items: center; gap: 14px; width: 100%;
+  padding: 14px 18px; background: var(--cream); border: 0; cursor: pointer;
+  font-family: inherit; text-align: start; transition: background .15s;
+}
+.cl__book-trigger:hover { background: #e8f0ec; }
+.cl__book-icon { font-size: 1.8rem; flex-shrink: 0; }
+.cl__book-info { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+.cl__book-info strong { font-size: .95rem; color: var(--green-deep); }
+.cl__book-ar { font-family: var(--serif); font-size: .88rem; color: var(--ink); }
+.cl__book-author { font-size: .78rem; color: var(--muted); }
+.cl__book-note { font-size: .76rem; color: var(--green); font-weight: 600; }
+.cl__book-chevron { font-size: .72rem; color: var(--muted); flex-shrink: 0; }
+.cl__book-body { padding: 14px 18px 18px; background: #fff; border-top: 1px solid var(--line); }
+.cl__book-desc { font-size: .88rem; color: var(--muted); line-height: 1.65; margin-bottom: 12px; }
+.cl__book-topics { list-style: none; display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
+.cl__book-topics li { font-size: .84rem; color: var(--ink); padding-inline-start: 16px; position: relative; }
+.cl__book-topics li::before { content: '✓'; position: absolute; inset-inline-start: 0; color: var(--green); font-weight: 700; font-size: .8rem; }
+.cl__book-link { display: inline-flex; align-items: center; gap: 6px; font-size: .82rem; font-weight: 600; color: var(--green); text-decoration: none; padding: 6px 14px; background: var(--green-light); border-radius: 999px; }
+.cl__book-link:hover { background: var(--green); color: #fff; }
+.cl__book-link--muted { color: var(--muted); background: var(--cream); }
+.cl__book-library-link { display: inline-flex; align-items: center; gap: 6px; font-size: .82rem; font-weight: 600; color: var(--gold-dark); text-decoration: none; padding: 6px 14px; background: var(--gold-light); border: 1px solid rgba(212,175,55,.3); border-radius: 999px; margin-top: 4px; }
+.cl__book-library-link:hover { background: var(--gold); color: #fff; border-color: var(--gold); }
+
+/* Prerequisites */
+.cl__prereqs { display: flex; flex-direction: column; gap: 10px; }
+.cl__prereq { display: flex; align-items: center; gap: 14px; padding: 14px 18px; background: var(--cream); border: 1px solid var(--line); border-radius: 10px; font-size: .9rem; color: var(--ink); }
+.cl__prereq-icon { font-size: 1.2rem; }
+
+/* Who is it for */
+.cl__for-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.cl__for-item { display: flex; gap: 12px; align-items: flex-start; padding: 14px 16px; background: var(--cream); border: 1px solid var(--line); border-radius: 10px; font-size: .88rem; color: var(--ink); }
+.cl__for-item span:first-child { font-size: 1.3rem; flex-shrink: 0; }
+
+/* Hadith card */
+.cl__hadith-card {
+  background: linear-gradient(135deg, var(--green-deep), #0d4d36);
+  border-radius: var(--radius-lg); padding: 32px 36px;
+}
+.cl__hadith-arabic {
+  font-family: var(--serif); font-size: 1.4rem; color: var(--gold);
+  line-height: 1.9; margin-bottom: 16px; text-align: center;
+}
+.cl__hadith-text {
+  font-size: 1rem; color: rgba(255,255,255,.9); font-style: italic;
+  line-height: 1.75; margin-bottom: 16px; border-inline-start: 3px solid var(--gold);
+  padding-inline-start: 16px;
+}
+.cl__hadith-meta { display: flex; flex-direction: column; gap: 3px; }
+.cl__hadith-narrator { font-size: .84rem; color: var(--gold); font-weight: 700; }
+.cl__hadith-source { font-size: .78rem; color: rgba(255,255,255,.55); }
+.cl__hadith-link {
+  display: inline-block; margin-top: 14px; font-size: .8rem; font-weight: 600;
+  color: var(--gold); text-decoration: none; border: 1px solid rgba(212,175,55,.4);
+  padding: 5px 14px; border-radius: 999px; transition: all .2s;
+}
+.cl__hadith-link:hover { background: var(--gold); color: #1a1a1a; }
+
+/* Sticky enroll card */
+.cl__right { position: sticky; top: 84px; }
+.cl__enroll-card { background: #fff; border: 1px solid var(--line); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-md); }
+.cl__enroll-card-top { padding: 32px; text-align: center; }
+.cl__enroll-icon { font-size: 2.8rem; display: block; margin-bottom: 10px; }
+.cl__enroll-title { font-size: 1.2rem; font-weight: 800; color: #fff; margin-bottom: 4px; }
+.cl__enroll-sub { font-size: .84rem; color: rgba(255,255,255,.75); }
+.cl__enroll-body { padding: 22px 22px 26px; }
+.cl__enroll-trial { font-size: .9rem; font-weight: 700; color: var(--green); margin-bottom: 14px; }
+.cl__enroll-perks { list-style: none; display: flex; flex-direction: column; gap: 7px; margin-bottom: 18px; }
+.cl__enroll-perks li { font-size: .86rem; color: var(--ink); }
+.cl__enroll-link { display: block; text-align: center; margin-top: 12px; font-size: .84rem; color: var(--muted); text-decoration: none; }
+.cl__enroll-link:hover { color: var(--green); }
+
+/* ── Responsive ─── */
+@media (max-width: 900px) {
+  .tst__layout { grid-template-columns: 1fr; }
+  .tst__side { display: none; }
+  .tp__hero-inner { grid-template-columns: 1fr; text-align: center; }
+  .tp__hero-avatar { margin: 0 auto; }
+  .tp__hero-actions { justify-content: center; }
+  .tp__body { grid-template-columns: 1fr; }
+  .tp__right { position: static; }
+  .tp__strip-inner { flex-wrap: wrap; }
+  .tp__strip-stat { border-right: 0; padding: 8px 20px; }
+
+  /* Course landing pages */
+  .cl__body { grid-template-columns: 1fr; }
+  .cl__right { position: static; }
+  .cl__learn-list { grid-template-columns: 1fr; }
+  .cl__for-grid { grid-template-columns: 1fr; }
+  .cl__stats-inner { flex-wrap: wrap; }
+  .cl__stat { border-right: 0; padding: 10px 20px; }
+  .cl__hero-title { font-size: 1.9rem; }
+  .cl__stage-source { display: none; }
+}

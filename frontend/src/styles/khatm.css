@@ -71,6 +71,6 @@
   color: inherit;
 }
 .qlc__khatm-snum  { font-size: .68rem; color: var(--muted); min-width: 20px; flex-shrink: 0; }
-.qlc__khatm-sname { flex: 1; font-size: .78rem; font-weight: 500; }
+.qlc__khatm-sname { flex: 1; font-size: .78rem; font-weight: 600; }
 .qlc__khatm-sar   { font-family: var(--serif); font-size: .92rem; color: var(--green); flex-shrink: 0; }
 

@@ -7,7 +7,7 @@ const VERSE_DESIGNS = [
   { bg: 'linear-gradient(135deg, #7c3a00 0%, #b35400 100%)', accent: '#ffd700', text: '#fff' },
 ];
 
-export default function ShareVerseCard({ verse, translation, reference, lang, onClose }) {
+export default function ShareVerseCard({ verse, translation, reference, onClose }) {
   const cardRef = useRef(null);
   const [design, setDesign] = useState(0);
   const [copied, setCopied] = useState(false);
@@ -62,7 +62,7 @@ export default function ShareVerseCard({ verse, translation, reference, lang, on
     ctx.font = `bold ${70}px serif`;
     ctx.textAlign = 'center';
     ctx.direction = 'rtl';
-    const verseLines = wrapText(ctx, verse, canvas.width - 160, 70);
+    const verseLines = wrapText(ctx, verse, canvas.width - 160);
     let y = 240;
     verseLines.forEach((line) => { ctx.fillText(line, canvas.width / 2, y); y += 90; });
 
@@ -77,7 +77,7 @@ export default function ShareVerseCard({ verse, translation, reference, lang, on
     ctx.fillStyle = 'rgba(255,255,255,0.85)';
     ctx.font = `${36}px sans-serif`;
     ctx.direction = 'ltr';
-    const transLines = wrapText(ctx, translation, canvas.width - 180, 36);
+    const transLines = wrapText(ctx, translation, canvas.width - 180);
     y += 70;
     transLines.forEach((line) => { ctx.fillText(line, canvas.width / 2, y); y += 50; });
 
@@ -164,7 +164,7 @@ export default function ShareVerseCard({ verse, translation, reference, lang, on
   );
 }
 
-function wrapText(ctx, text, maxWidth, fontSize) {
+function wrapText(ctx, text, maxWidth) {
   const words = text.split(' ');
   const lines = [];
   let current = '';

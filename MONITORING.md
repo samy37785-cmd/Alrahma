@@ -60,8 +60,8 @@ Use this endpoint with any uptime monitoring service (UptimeRobot, Better Uptime
 |-------|---------|--------|
 | Health check down | `/health` returns non-200 for 2+ consecutive checks | PagerDuty / email |
 | Error rate spike | Sentry error rate > 10/min | Investigate `logs/error-*` |
-| Memory > 400 MB | `health.memory` > 419430400 | Restart serverless function |
-| Cron job missed | No email sent by 10:00 UTC | Check Vercel Cron logs |
+| Memory > 400 MB | `health.memory` > 419430400 | Restart the Render service |
+| Cron job missed | No email sent by 10:00 UTC | Check the external scheduler's run log (UptimeRobot/GitHub Actions — there is no Vercel Cron; see `CLAUDE.md` Deployment section) |
 
 ## Backup Strategy
 

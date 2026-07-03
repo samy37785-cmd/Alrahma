@@ -73,7 +73,17 @@ export function ShortcutsModal({ onClose }) {
   );
 }
 
-export function SettingsPanel({ fontSize, setFontSize, darkMode, setDarkMode, showTrans, setShowTrans, onClose }) {
+const THEMES = [
+  { key: 'light', icon: '☀️', label: 'Light' },
+  { key: 'sepia', icon: '📜', label: 'Sepia' },
+  { key: 'dark',  icon: '🌙', label: 'Dark'  },
+];
+
+export function SettingsPanel({
+  fontSize, setFontSize, darkMode, setDarkMode, showTrans, setShowTrans,
+  readingTheme, setReadingTheme, lineHeight, setLineHeight, contentWidth, setContentWidth,
+  onClose,
+}) {
   return (
     <div className="qlc__overlay" onClick={onClose}>
       <div className="qlc__settings" onClick={(e) => e.stopPropagation()}>
@@ -94,14 +104,61 @@ export function SettingsPanel({ fontSize, setFontSize, darkMode, setDarkMode, sh
               بِسۡمِ ٱللَّهِ ٱلرَّحۡمَٰنِ ٱلرَّحِيمِ
             </p>
           </div>
+
+          {readingTheme !== undefined && setReadingTheme && (
+            <div className="qlc__settings-section">
+              <p className="qlc__settings-label">Reading Theme</p>
+              <div className="qlc__theme-row">
+                {THEMES.map((t) => (
+                  <button
+                    key={t.key}
+                    className={`qlc__theme-btn qlc__theme-btn--${t.key}${readingTheme === t.key ? ' active' : ''}`}
+                    onClick={() => setReadingTheme(t.key)}
+                  >
+                    <span>{t.icon}</span> {t.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {setLineHeight && (
+            <div className="qlc__settings-section">
+              <p className="qlc__settings-label">Line Spacing</p>
+              <div className="qlc__fontsize-row">
+                <button className="qlc__fontsize-btn" onClick={() => setLineHeight((v) => Math.max(1.6, +(v - 0.1).toFixed(1)))}>−</button>
+                <input type="range" min={1.6} max={3.0} step={0.1} value={lineHeight} className="qlc__fontsize-slider"
+                  onChange={(e) => setLineHeight(Number(e.target.value))} />
+                <button className="qlc__fontsize-btn" onClick={() => setLineHeight((v) => Math.min(3.0, +(v + 0.1).toFixed(1)))}>+</button>
+              </div>
+            </div>
+          )}
+
+          {setContentWidth && (
+            <div className="qlc__settings-section">
+              <p className="qlc__settings-label">Content Width</p>
+              <div className="qlc__theme-row">
+                {[['narrow', 'Narrow'], ['medium', 'Medium'], ['wide', 'Wide']].map(([key, label]) => (
+                  <button
+                    key={key}
+                    className={`qlc__theme-btn${contentWidth === key ? ' active' : ''}`}
+                    onClick={() => setContentWidth(key)}
+                  >{label}</button>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="qlc__settings-section">
             <p className="qlc__settings-label">Appearance</p>
-            <label className="qlc__toggle-row">
-              <span>🌙 Dark mode</span>
-              <div className={`qlc__switch${darkMode ? ' on' : ''}`} onClick={() => setDarkMode((v) => !v)}>
-                <div className="qlc__switch-knob" />
-              </div>
-            </label>
+            {!(readingTheme !== undefined && setReadingTheme) && (
+              <label className="qlc__toggle-row">
+                <span>🌙 Dark mode</span>
+                <div className={`qlc__switch${darkMode ? ' on' : ''}`} onClick={() => setDarkMode((v) => !v)}>
+                  <div className="qlc__switch-knob" />
+                </div>
+              </label>
+            )}
             <label className="qlc__toggle-row">
               <span>🌐 Show translation</span>
               <div className={`qlc__switch${showTrans ? ' on' : ''}`} onClick={() => setShowTrans((v) => !v)}>

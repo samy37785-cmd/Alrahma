@@ -14,7 +14,7 @@ Set the following in the Render dashboard under **Environment → Environment Va
 | `MONGO_URI` | YES | Atlas connection string: `mongodb+srv://...` |
 | `JWT_SECRET` | YES | Min 64 random characters |
 | `JWT_EXPIRES_IN` | YES | e.g. `7d` |
-| `CLIENT_URL` | YES | Exact Netlify domain: `https://al-rahmaacademy.com` |
+| `CLIENT_URL` | YES | Exact Vercel-hosted production domain: `https://al-rahmaacademy.com` |
 | `CRON_SECRET` | YES | Long random string |
 | `RENEWAL_REMINDER_DAYS` | YES | `3` (or desired value) |
 | `SMTP_HOST` | YES | `smtp.gmail.com` |
@@ -29,7 +29,7 @@ Set the following in the Render dashboard under **Environment → Environment Va
 | `PAYPAL_CLIENT_SECRET` | YES | From PayPal developer console |
 | `PAYPAL_WEBHOOK_ID` | YES | From PayPal → Webhooks |
 | `ADMIN_JWT_ACCESS_SECRET` | YES | 64-byte hex (run: `node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"`) |
-| `ENCRYPTION_KEY` | YES | 64 hex chars / 32 bytes (run: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`) |
+| `ADMIN_ENCRYPTION_KEY` | YES | 64 hex chars / 32 bytes (run: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`) — note the exact name: `backend/config/encryption.js` reads `ADMIN_ENCRYPTION_KEY`, not `ENCRYPTION_KEY` |
 | `ADMIN_IP_WHITELIST` | Optional | Comma-separated IPs to restrict /api/v1/admin/* |
 | `REDIS_URL` | Optional | Upstash Redis URL for cross-instance rate limiting |
 
@@ -44,57 +44,67 @@ Set the following in the Render dashboard under **Environment → Environment Va
 
 ---
 
-## Phase 2 — Netlify (Frontend) Setup
+## Phase 2 — Vercel (Frontend) Setup
+
+`vercel.json` already rewrites `/api/*` to the Render backend, so the
+frontend does **not** need `VITE_API_URL` set — it calls the relative `/api`
+path and Vercel forwards it server-side. Before the first deploy, confirm
+`vercel.json`'s `rewrites` entry points at the correct Render URL for this
+environment.
 
 ### 2.1 Environment Variables
-Set in Netlify → **Site Settings → Environment Variables**:
+Set in Vercel → **Project Settings → Environment Variables**:
 
 | Variable | Required | Value |
 |---|---|---|
-| `VITE_API_URL` | YES | `https://<your-render-service>.onrender.com/api` |
 | `VITE_GA_ID` | YES (for analytics) | `G-XXXXXXXXXX` from GA4 property |
 
-- [ ] `VITE_API_URL` set to production Render URL
 - [ ] `VITE_GA_ID` set to GA4 Measurement ID
+- [ ] `vercel.json`'s `/api/:path*` rewrite target matches the live Render URL
 
 ### 2.2 Build Settings
-Confirm in Netlify → **Site Settings → Build & Deploy**:
+Confirm in Vercel → **Project Settings → Build & Development Settings**
+(these are already defined by `vercel.json` at the repo root, but verify):
 
 | Setting | Value |
 |---|---|
-| Base directory | `frontend` |
-| Build command | `npm run build` |
-| Publish directory | `frontend/dist` |
-| Node version | `18` or `20` |
+| Install command | `npm install --prefix frontend` |
+| Build command | `npm run build --prefix frontend` |
+| Output directory | `frontend/dist` |
 
 - [ ] Build settings confirmed
 
 ### 2.3 Deploy Frontend
-- [ ] Trigger deploy from Netlify dashboard or push to main
+- [ ] Trigger deploy from Vercel dashboard or push to main
 - [ ] Build completes without errors
 - [ ] `sitemap.xml` is accessible: `https://al-rahmaacademy.com/sitemap.xml`
 - [ ] `robots.txt` is accessible: `https://al-rahmaacademy.com/robots.txt`
-- [ ] `_redirects` is active — confirm deep links work (navigate to `/tools/quran-reader` directly)
+- [ ] SPA deep links work (navigate directly to `/tools/quran-reader` — served via `vercel.json`'s catch-all rewrite to `index.html`)
 
 ---
 
 ## Phase 3 — Domain & HTTPS
 
-- [ ] DNS A/CNAME records point to Netlify (check in domain registrar)
-- [ ] Custom domain `al-rahmaacademy.com` configured in Netlify → Domain Management
-- [ ] Netlify SSL certificate issued and active (auto via Let's Encrypt)
-- [ ] `www.al-rahmaacademy.com` redirects to `https://al-rahmaacademy.com` (no-www redirect)
-- [ ] HTTP → HTTPS redirect is enforced (Netlify → HTTPS → Force HTTPS: ON)
-- [ ] Backend Render URL also on HTTPS — verify `CLIENT_URL` matches exactly
+- [ ] DNS A/CNAME records point to Vercel (check in domain registrar)
+- [ ] Custom domain `al-rahmaacademy.com` configured in Vercel → Project → Domains
+- [ ] Vercel SSL certificate issued and active (automatic)
+- [ ] `alrahma-xi.vercel.app` (or your project's `.vercel.app` domain) redirects to `https://al-rahmaacademy.com` — already handled by `vercel.json`'s `redirects` entries; confirm it fires for your actual `.vercel.app` hostname
+- [ ] HTTP → HTTPS redirect is enforced (automatic on Vercel)
+- [ ] Backend Render URL also on HTTPS — verify `CLIENT_URL` on Render matches the Vercel production domain exactly
 
 ---
 
 ## Phase 4 — Verify CORS
 
+Because `vercel.json` rewrites `/api/*` to Render server-side, the browser
+should never see this as a cross-origin request (it only ever talks to
+`al-rahmaacademy.com`). A CORS error here usually means the rewrite isn't
+active or something is calling the Render URL directly.
+
 - [ ] Open browser DevTools → Network tab
 - [ ] Log in as a user → confirm no CORS errors in console
-- [ ] API calls to `/api/*` return 200 (not blocked)
-- [ ] Confirm `CLIENT_URL` on Render matches the exact production domain including protocol (no trailing slash)
+- [ ] API calls to `/api/*` return 200 (not blocked), and the request URL shown in DevTools is `al-rahmaacademy.com/api/...`, not the `.onrender.com` URL
+- [ ] Confirm `CLIENT_URL` on Render matches the exact production domain including protocol (no trailing slash) — this is Render's own CORS allowlist, used as a fallback for any direct API access
 
 ---
 
@@ -102,7 +112,7 @@ Confirm in Netlify → **Site Settings → Build & Deploy**:
 
 - [ ] Log in → DevTools → Application → Cookies → confirm `httpOnly` auth cookie is present
 - [ ] Confirm cookie has `Secure` flag (requires HTTPS — will fail on HTTP)
-- [ ] Confirm cookie has `SameSite=None` or `SameSite=Lax` as appropriate for cross-origin (Render + Netlify are different origins)
+- [ ] Confirm cookie is `SameSite=Lax` (the code's actual setting, `backend/controllers/authController.js`) — this only works because Vercel's rewrite makes the request same-origin from the browser's perspective; it would need `SameSite=None` if the frontend ever called the Render URL directly instead of through the rewrite
 - [ ] Log out → confirm cookie is cleared
 - [ ] Test "Remember me" / token refresh flow
 
@@ -112,12 +122,13 @@ Confirm in Netlify → **Site Settings → Build & Deploy**:
 
 ### Stripe
 - [ ] Switch Stripe keys from test to **live** in Render env vars
-- [ ] Register a Stripe webhook endpoint pointing to: `https://<render-url>/api/webhooks/stripe`
+- [ ] Register a Stripe webhook endpoint pointing to: `https://<render-url>/api/payments/stripe/webhook` (matches `backend/routes/paymentRoutes.js` — not `/api/webhooks/stripe`)
 - [ ] Test a real £1 / €1 charge through the enrollment flow
 - [ ] Confirm Stripe webhook fires and subscription is created in DB
 
 ### PayPal
 - [ ] Set `PAYPAL_MODE=live` in Render
+- [ ] Register a PayPal webhook endpoint pointing to: `https://<render-url>/api/payments/paypal/webhook`
 - [ ] Test PayPal checkout flow end-to-end
 - [ ] Confirm PayPal webhook fires correctly
 
@@ -177,6 +188,7 @@ Run manually after deploy:
 - [ ] Configure alert emails for downtime
 - [ ] Enable MongoDB Atlas automated backups (Daily, 7-day retention minimum)
 - [ ] Confirm Render service health checks are enabled
+- [ ] **Renewal-reminder cron:** add a *second* UptimeRobot monitor (or a GitHub Actions scheduled workflow) that calls `GET https://<render-url>/api/cron/renewal-reminders` once daily with header `Authorization: Bearer <CRON_SECRET>`. Nothing else in this stack triggers this endpoint — skipping this step means renewal reminders silently never send.
 
 ---
 

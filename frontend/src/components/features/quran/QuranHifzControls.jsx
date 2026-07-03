@@ -6,12 +6,6 @@ import QuranRecordingStudio from './QuranRecordingStudio';
 const HIFZ_RECITERS = RECITERS.filter((r) => r.verseId != null);
 const HIFZ_SPEEDS   = [0.5, 0.75, 1, 1.25, 1.5];
 
-const fmt = (s) => {
-  if (!isFinite(s) || s < 0) return '0:00';
-  const m = Math.floor(s / 60);
-  return `${m}:${Math.floor(s % 60).toString().padStart(2, '0')}`;
-};
-
 const reciterLabel = (r) =>
   `${r.flag ?? ''} ${r.name}${r.style ? ` · ${r.style}` : ''}`.trim();
 

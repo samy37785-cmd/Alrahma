@@ -4,9 +4,17 @@ export default function QuranSidebar({
   navMode, chapters, activeId, search, pageNum, juzNum, hizbNum, khatmDone, filtered, ui,
   onNavModeChange, onSurahSelect, onPageNav, onJuzNav, onHizbNav,
   onSearchChange, onKhatmToggle, onKhatmFromSelect, onNewKhatm,
+  open, onClose,
 }) {
   return (
-    <aside className="qlc__sidebar">
+    <>
+      <div
+        className={`qlc__sidebar-backdrop${open ? ' open' : ''}`}
+        onClick={onClose}
+        aria-hidden="true"
+      />
+      <aside className={`qlc__sidebar${open ? ' qlc__sidebar--open' : ''}`}>
+      <button className="qlc__sidebar-close" onClick={onClose} aria-label={ui.close || 'Close'}>✕</button>
       <div className="qlc__nav-tabs">
         {[
           { key: 'surah', label: ui.navSurah || 'Surah' },
@@ -142,6 +150,7 @@ export default function QuranSidebar({
           </ul>
         </div>
       )}
-    </aside>
+      </aside>
+    </>
   );
 }

@@ -2,14 +2,14 @@
 
 ## Overview
 
-Al-Rahma Academy is a full-stack online Islamic education platform built as a monorepo with a React SPA frontend and an Express.js REST API backend, deployed on Vercel.
+Al-Rahma Academy is a full-stack online Islamic education platform built as a monorepo with a React SPA frontend deployed on Vercel and an Express.js REST API backend deployed as a standalone process on Render.
 
 ```
 d:\mahmoud-samy/
-├── frontend/          React 18 + Vite + React Router 7 + React Query
-├── backend/           Express 5 + Mongoose + Winston
-├── api/index.js       Vercel serverless entry point (imports backend/app.js)
-├── vercel.json        Deployment config (headers, rewrites, cron)
+├── frontend/          React 18 + Vite + React Router 7 + React Query — built by Vercel
+├── backend/           Express 4 + Mongoose + Winston — run by Render as `node server.js`
+├── vercel.json        Frontend deploy config (headers, redirects, /api/* rewrite → Render)
+├── render.yaml        Backend service config for Render
 └── package.json       Monorepo root scripts
 ```
 
@@ -135,10 +135,10 @@ GET    /api/v1/admin/*        (admin — MFA required)
 |---------|---------------|
 | Auth | httpOnly JWT cookies + refresh token rotation |
 | CSRF | Double-submit cookie (readable `csrf_token` + `X-CSRF-Token` header) |
-| Rate Limiting | Global (100/min) + Auth (20/15min) — Redis-backed in prod |
+| Rate Limiting | Global (300/15min) + Auth (20/15min) — Redis-backed in prod |
 | Input Sanitisation | sanitizeMongo strips `$` operators; express-validator on controllers |
 | NoSQL Injection | sanitizeMongo middleware |
-| Password Hashing | bcrypt (12 rounds admin / 10 rounds user) |
+| Password Hashing | bcrypt (12 rounds, both admin and regular users) |
 | Secrets | AES-256-GCM encryption for TOTP secrets |
 | Admin MFA | TOTP (speakeasy) enforced on every admin session |
 | Audit Logging | Immutable SystemAuditLog for every admin action |
@@ -148,11 +148,10 @@ GET    /api/v1/admin/*        (admin — MFA required)
 
 ## Deployment
 
-- **Platform:** Vercel (serverless functions + CDN edge)
-- **API:** Single serverless function at `api/index.js` (30 s max)
-- **Frontend:** Pre-built Vite SPA served from `frontend/dist`
+- **Frontend platform:** Vercel — pre-built Vite SPA served from `frontend/dist`, plus CDN edge and its rewrite of `/api/*` to the Render backend
+- **Backend platform:** Render — `backend/` runs as a standalone, always-on `node server.js` process (see `render.yaml`), not a serverless function
 - **Database:** MongoDB Atlas (shared M0 or dedicated)
-- **Cron:** Vercel Cron — daily renewal reminders at 09:00 UTC
+- **Cron:** No scheduler is configured in this repo. `render.yaml` documents that `GET /api/cron/renewal-reminders` needs an **external** scheduler (e.g. UptimeRobot, GitHub Actions) hitting the Render URL daily with `CRON_SECRET` — whether one is actually wired up is unconfirmed from source
 - **Logging:** Winston (console in dev, rotating file + console in prod)
 - **Error Tracking:** Sentry (frontend browser errors)
-- **CDN:** Vercel Edge Network (automatic)
+- **CDN:** Vercel Edge Network (frontend assets only)

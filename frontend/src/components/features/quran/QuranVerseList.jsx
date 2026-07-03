@@ -1,5 +1,8 @@
+import { useState } from 'react';
 import TafsirPanel from './TafsirPanel';
 import TafsirPicker from './TafsirPicker';
+
+const HIGHLIGHT_COLORS = ['#f6e05e', '#68d391', '#63b3ed', '#f687b3', '#fc8181'];
 
 const clean = (html = '') =>
   html.replace(/<br\s*\/?>/gi, '\n').replace(/<\/p>/gi, '\n\n').replace(/<\/div>/gi, '\n')
@@ -16,8 +19,19 @@ export default function QuranVerseList({
   onToggleReveal, onToggleTafsir, onCopyVerse, onShareVerse, onShowCard,
   onSetTafsirPicker, onSetTafsirId, onPlayVerseByIndex,
   onJumpVerseChange, onJump,
-  isBookmarked, onToggleBookmark,
+  isBookmarked, onToggleBookmark, getBookmark, onSaveNote, onSetHighlight,
 }) {
+  const [noteOpenKey, setNoteOpenKey]           = useState('');
+  const [noteDraft, setNoteDraft]               = useState('');
+  const [highlightOpenKey, setHighlightOpenKey] = useState('');
+
+  const openNote = (v) => {
+    setNoteDraft(getBookmark?.(v.verse_key)?.note || '');
+    setNoteOpenKey(v.verse_key);
+    setHighlightOpenKey('');
+  };
+  const saveNote = (v) => { onSaveNote?.(v, noteDraft); setNoteOpenKey(''); };
+
   return (
     <>
       {loading && <div className="qlc__loading"><div className="qlc__spinner" /></div>}
@@ -57,12 +71,15 @@ export default function QuranVerseList({
               const prevV     = idx > 0 ? displayVerses[idx - 1] : null;
               const surahBroke = prevV ? v.verse_key.split(':')[0] !== prevV.verse_key.split(':')[0] : true;
               const vNum = Number(v.verse_key.split(':')[1]);
+              const bookmarkRow = getBookmark?.(v.verse_key);
+              const highlightColor = bookmarkRow?.color;
 
               return (
                 <li
                   key={v.id}
                   id={`v-${v.verse_key}`}
-                  className={`qlc__verse${isActive ? ' qlc__verse--active' : ''}`}
+                  className={`qlc__verse${isActive ? ' qlc__verse--active' : ''}${highlightColor ? ' qlc__verse--highlighted' : ''}`}
+                  style={highlightColor ? { '--verse-highlight': highlightColor } : undefined}
                 >
                   {navMode !== 'surah' && surahBroke && (() => {
                     const ch = chapters.find((c) => c.id === Number(v.verse_key.split(':')[0]));
@@ -110,6 +127,23 @@ export default function QuranVerseList({
                           {isBookmarked?.(v.verse_key) ? '★' : '☆'}
                         </button>
                       )}
+
+                      {onSaveNote && (
+                        <button
+                          className={`qlc__actbtn${bookmarkRow?.note ? ' active' : ''}`}
+                          onClick={() => (noteOpenKey === v.verse_key ? setNoteOpenKey('') : openNote(v))}
+                          title={ui.note || 'Note'}
+                        >📝</button>
+                      )}
+
+                      {onSetHighlight && (
+                        <button
+                          className={`qlc__actbtn${highlightColor ? ' active' : ''}`}
+                          onClick={() => { setHighlightOpenKey((k) => (k === v.verse_key ? '' : v.verse_key)); setNoteOpenKey(''); }}
+                          title={ui.highlight || 'Highlight'}
+                        >🖍️</button>
+                      )}
+
                       <button
                         className={`qlc__actbtn${copiedKey === `copy-${v.verse_key}` ? ' copied' : ''}`}
                         onClick={() => onCopyVerse(v)}
@@ -172,6 +206,42 @@ export default function QuranVerseList({
                     <div className="qlc__progress-bar">
                       <div className="qlc__progress-fill"
                         style={{ width: `${(playCount / repeatCount) * 100}%` }} />
+                    </div>
+                  )}
+
+                  {noteOpenKey === v.verse_key && (
+                    <div className="qlc__note-popover">
+                      <textarea
+                        className="qlc__note-textarea"
+                        rows={3}
+                        placeholder={ui.notePlaceholder || 'Write a private note for this verse…'}
+                        value={noteDraft}
+                        onChange={(e) => setNoteDraft(e.target.value)}
+                        autoFocus
+                      />
+                      <div className="qlc__note-actions">
+                        <button className="qlc__note-cancel" onClick={() => setNoteOpenKey('')}>{ui.cancel || 'Cancel'}</button>
+                        <button className="qlc__note-save" onClick={() => saveNote(v)}>{ui.save || 'Save'}</button>
+                      </div>
+                    </div>
+                  )}
+
+                  {highlightOpenKey === v.verse_key && (
+                    <div className="qlc__highlight-popover">
+                      {HIGHLIGHT_COLORS.map((c) => (
+                        <button
+                          key={c}
+                          className={`qlc__highlight-swatch${highlightColor === c ? ' active' : ''}`}
+                          style={{ backgroundColor: c }}
+                          onClick={() => { onSetHighlight(v, c); setHighlightOpenKey(''); }}
+                          aria-label={`${ui.highlight || 'Highlight'} ${c}`}
+                        />
+                      ))}
+                      <button
+                        className="qlc__highlight-swatch qlc__highlight-swatch--none"
+                        onClick={() => { onSetHighlight(v, ''); setHighlightOpenKey(''); }}
+                        title={ui.removeHighlight || 'Remove highlight'}
+                      >✕</button>
                     </div>
                   )}
 

@@ -6,6 +6,7 @@ import { ThemeProvider } from './context/ThemeContext';
 import { QueryProvider } from './context/QueryProvider';
 import ProtectedRoute from './components/ui/ProtectedRoute';
 import ScrollToTop from './components/ui/ScrollToTop';
+import RoutePrefetcher from './components/ui/RoutePrefetcher';
 import Analytics from './components/ui/Analytics';
 import { Analytics as VercelAnalytics } from '@vercel/analytics/react';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -95,6 +96,7 @@ export default function App() {
     <AuthProvider>
       <BrowserRouter>
         <ScrollToTop />
+        <RoutePrefetcher />
         <Analytics />
         <VercelAnalytics />
         <LiveChat />

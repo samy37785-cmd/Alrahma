@@ -1,5 +1,5 @@
-import { useEffect, useState, useMemo } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useState, useMemo } from 'react';
+import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext';
 import { getCourse, getCourseProgress, toggleLessonDone } from '../api/courseApi';
@@ -24,15 +24,16 @@ function CheckBtn({ isDone, onClick, markDone, markUndone }) {
 export default function CourseContent() {
   const { id }       = useParams();
   const { user }     = useAuth();
-  const navigate     = useNavigate();
   const { t }        = useLang();
   const cc           = t.courseContent;
   const queryClient  = useQueryClient();
 
   const [openText, setOpenText] = useState(null);
 
-  useEffect(() => { if (!user) navigate('/login'); }, [user, navigate]);
-
+  // No local "redirect if not logged in" effect here — this route is always
+  // wrapped in <ProtectedRoute> (App.jsx), which already owns that decision
+  // and (unlike a local check) correctly waits for server confirmation when
+  // there's no cached profile instead of assuming !user means logged out.
   const { data: course, isLoading, isError } = useQuery({
     queryKey: ['courses', 'detail', id],
     queryFn:  () => getCourse(id),

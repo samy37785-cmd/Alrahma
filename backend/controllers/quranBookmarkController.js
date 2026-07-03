@@ -12,12 +12,12 @@ export const getMyBookmarks = asyncHandler(async (req, res) => {
   res.json(bookmarks);
 });
 
-// @desc  Bookmark a verse (or update its note if already bookmarked).
+// @desc  Bookmark a verse (or update its note/highlight color if already bookmarked).
 // @route POST /api/quran-bookmarks
-// @body  { verseKey, chapterId, verseNum, note }
+// @body  { verseKey, chapterId, verseNum, note, color }
 // @access Private
 export const addBookmark = asyncHandler(async (req, res) => {
-  const { verseKey, chapterId, verseNum, note = '' } = req.body;
+  const { verseKey, chapterId, verseNum, note = '', color = '' } = req.body;
   if (!verseKey || !chapterId || !verseNum) {
     res.status(400);
     throw new Error('verseKey, chapterId and verseNum are required');
@@ -25,7 +25,7 @@ export const addBookmark = asyncHandler(async (req, res) => {
 
   const doc = await QuranBookmark.findOneAndUpdate(
     { user: req.user._id, verseKey },
-    { $set: { chapterId, verseNum, note } },
+    { $set: { chapterId, verseNum, note, color } },
     { new: true, upsert: true, setDefaultsOnInsert: true }
   );
 

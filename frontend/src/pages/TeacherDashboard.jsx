@@ -797,7 +797,7 @@ export default function TeacherDashboard() {
               <button
                 className="ds-card__link"
                 onClick={() => setShowSched(true)}
-                style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-brand)', fontSize: '0.75rem', fontWeight: 500 }}
+                style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-brand)', fontSize: '0.75rem', fontWeight: 600 }}
               >
                 + Add
               </button>

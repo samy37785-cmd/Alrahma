@@ -196,7 +196,7 @@
   border-top: 1px solid var(--line); padding: 56px 0;
   text-align: center;
 }
-.hl__cta p { font-size: 1.15rem; color: var(--ink); margin-bottom: 20px; font-weight: 500; }
+.hl__cta p { font-size: 1.15rem; color: var(--ink); margin-bottom: 20px; font-weight: 600; }
 
 /* Responsive */
 @media (max-width: 700px) {

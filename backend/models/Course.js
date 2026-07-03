@@ -56,4 +56,9 @@ const courseSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Matches the public catalogue query in `getCourses` (courseController.js):
+// find({ published: true }).sort('-createdAt') — same compound-index shape
+// used for the same filter+sort pattern on the Blog model.
+courseSchema.index({ published: 1, createdAt: -1 });
+
 export default mongoose.model('Course', courseSchema);

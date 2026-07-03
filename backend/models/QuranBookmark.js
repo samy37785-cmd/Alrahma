@@ -10,6 +10,9 @@ const quranBookmarkSchema = new mongoose.Schema(
     chapterId: { type: Number, required: true, min: 1, max: 114 },
     verseNum:  { type: Number, required: true },
     note:      { type: String, default: '' },
+    // Optional highlight color tag (hex string, e.g. "#f0c040"); empty/unset
+    // means "bookmarked but not highlighted".
+    color:     { type: String, default: '' },
   },
   { timestamps: true }
 );

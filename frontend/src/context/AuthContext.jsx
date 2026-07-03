@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { loginUser, registerUser, logoutUser, updateMe, getMe } from '../api/client';
 
@@ -20,11 +20,23 @@ export function AuthProvider({ children }) {
     }
   });
 
-  // True while the initial server session check is in-flight.
+  // True while a server-side session check is in-flight.
   // Consumers can gate redirects on this to prevent the stale-cache flicker.
   // Reuse the already-safely-initialised `user` value to avoid a second
   // localStorage call that has no try/catch protection.
   const [authLoading, setAuthLoading] = useState(!!user);
+
+  // True once we've confirmed, one way or another, whether a session really
+  // exists — via the mount-time check below (cached profile) or an on-demand
+  // ensureSession() call (nothing cached). A visitor can have no cached
+  // profile (cleared storage, a new browser profile) but a still-valid
+  // session cookie, so ProtectedRoute needs to tell "confirmed no session"
+  // apart from "haven't checked yet" instead of treating `!user` as an
+  // immediate "not logged in".
+  const [sessionChecked, setSessionChecked] = useState(false);
+  // Dedupes concurrent ensureSession() calls (e.g. more than one
+  // ProtectedRoute mounting during the same navigation) into one request.
+  const sessionCheckPromise = useRef(null);
 
   // Cache (or clear) the public profile for instant render on next load.
   const persist = useCallback((profile) => {
@@ -33,19 +45,37 @@ export function AuthProvider({ children }) {
     setUser(profile);
   }, []);
 
-  // On first load, if a profile was cached we likely have a valid cookie — ask
-  // the server who we are so subscription status/expiry is current. A 401 means
-  // the cookie is gone or expired → drop the stale cached profile.
-  useEffect(() => {
-    if (!user) { setAuthLoading(false); return; }
-    getMe()
-      .then((fresh) => persist(fresh))
+  // Asks the server who we are (if we don't already know) and updates state
+  // accordingly. Safe to call from multiple places at once.
+  const ensureSession = useCallback(() => {
+    if (sessionCheckPromise.current) return sessionCheckPromise.current;
+    setAuthLoading(true);
+    const promise = getMe()
+      .then((fresh) => { persist(fresh); return fresh; })
       .catch((err) => {
         if (err.response?.status === 401) persist(null);
+        return null;
       })
-      .finally(() => setAuthLoading(false));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+      .finally(() => {
+        setSessionChecked(true);
+        setAuthLoading(false);
+        sessionCheckPromise.current = null;
+      });
+    sessionCheckPromise.current = promise;
+    return promise;
   }, [persist]);
+
+  // On first load, if a profile was cached we likely have a valid cookie —
+  // confirm it now so subscription status/expiry is current. If nothing was
+  // cached we don't check yet here — most page loads are anonymous public
+  // pages, and an unauthenticated /api/auth/me call on every single one would
+  // be wasted server work. ProtectedRoute calls ensureSession() itself the
+  // moment a route actually requires auth, so a visitor with no cache but a
+  // valid cookie still gets revalidated instead of a false "not logged in".
+  useEffect(() => {
+    if (user) ensureSession();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const login = useCallback(async (credentials) => {
     const profile = await loginUser(credentials);
@@ -63,6 +93,7 @@ export function AuthProvider({ children }) {
     try { await logoutUser(); } catch { /* clear locally regardless */ }
     queryClient.clear();
     persist(null);
+    setSessionChecked(true); // we just confirmed there's no session — no need to re-check
   }, [persist, queryClient]);
 
   const updateProfile = useCallback(async (data) => {
@@ -74,6 +105,8 @@ export function AuthProvider({ children }) {
     user, login, register, logout, updateProfile,
     setUser: persist,
     authLoading,
+    sessionChecked,
+    ensureSession,
     isAdmin:   user?.role === 'admin',
     isTeacher: user?.role === 'teacher',
     isParent:  user?.role === 'parent',

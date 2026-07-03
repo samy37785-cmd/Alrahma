@@ -1,10 +1,10 @@
 import { useEffect } from 'react';
 
 export function useQuranKeyboard({
-  tab, isPlaying, navMode, activeId, pageNum, juzNum,
+  tab, isPlaying, navMode,
   startHifz, stopHifz, audioRef, toggleDark,
   setShowShortcuts, setShowSettings, setKbdPanelOpen,
-  setActiveId, setJuzNum, setFontSize, setShowTrans, goPage,
+  setActiveId, setFontSize, setShowTrans, goRelative,
   onQuickNavToggle,
 }) {
   useEffect(() => {
@@ -27,16 +27,8 @@ export function useQuranKeyboard({
             audioRef.current.paused ? audioRef.current.play().catch(() => {}) : audioRef.current.pause();
           }
           break;
-        case 'ArrowRight':
-          if (navMode === 'surah') setActiveId((v) => Math.max(1, v - 1));
-          else if (navMode === 'page') goPage(pageNum - 1);
-          else if (navMode === 'juz') setJuzNum((v) => Math.max(1, v - 1));
-          break;
-        case 'ArrowLeft':
-          if (navMode === 'surah') setActiveId((v) => Math.min(114, v + 1));
-          else if (navMode === 'page') goPage(pageNum + 1);
-          else if (navMode === 'juz') setJuzNum((v) => Math.min(30, v + 1));
-          break;
+        case 'ArrowRight': goRelative(-1); break;
+        case 'ArrowLeft':  goRelative(1);  break;
         case 'd': case 'D': toggleDark(); break;
         case 't': case 'T': setShowTrans((v) => !v); break;
         case '+': case '=': setFontSize((v) => Math.min(v + 2, 52)); break;
@@ -50,5 +42,5 @@ export function useQuranKeyboard({
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [tab, isPlaying, navMode, activeId, pageNum, juzNum, startHifz, stopHifz, toggleDark, onQuickNavToggle]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [tab, isPlaying, navMode, startHifz, stopHifz, toggleDark, onQuickNavToggle, goRelative]); // eslint-disable-line react-hooks/exhaustive-deps
 }

@@ -108,7 +108,7 @@ export default function Trial() {
           {/* Form header with guarantee */}
           <div className="trial__form-head">
             <h3 className="trial__form-title">Book your free lesson</h3>
-            <p className="trial__form-sub">We'll contact you within 2 hours to schedule.</p>
+            <p className="trial__form-sub">We&apos;ll contact you within 2 hours to schedule.</p>
           </div>
 
           <div className="field">

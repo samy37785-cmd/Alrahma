@@ -80,7 +80,7 @@ export default function About() {
               subscription, or request a refund — without any friction.
             </p>
             <p className="founder__body">
-              We didn't build a platform. We built the academy we needed and couldn't find.
+              We didn&apos;t build a platform. We built the academy we needed and couldn&apos;t find.
             </p>
             <div className="founder__sig">
               <span className="founder__sig-name" dir="rtl">— Mahmoud Samy, Founder</span>

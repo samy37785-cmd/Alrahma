@@ -12,7 +12,6 @@ function getLiveCount() {
 function getLessonsThisMonth() {
   const now = new Date();
   const dayOfMonth = now.getDate();
-  const totalDays = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
   /* Approx 12 lessons per day on average → project to end of month */
   const completed = dayOfMonth * 12;
   return completed.toLocaleString();

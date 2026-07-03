@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useLang } from '../context/LangContext';
 
 const STEPS = [
   {
@@ -67,7 +66,6 @@ const RECOMMENDATIONS = {
 
 export default function LevelQuiz() {
   const navigate = useNavigate();
-  const { t } = useLang();
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState({});
   const [done, setDone] = useState(false);

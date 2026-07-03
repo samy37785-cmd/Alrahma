@@ -463,7 +463,7 @@ export default function ParentDashboard() {
           <div className="ds-card">
             <div className="ds-card__hd">
               <span className="ds-card__title"><span className="ds-card__title-icon"><Clock size={14} aria-hidden="true" /></span> Upcoming Classes</span>
-              <Link to="/calendar" style={{ fontSize: '0.75rem', color: 'var(--text-brand)', fontWeight: 500, textDecoration: 'none' }}>View all</Link>
+              <Link to="/calendar" style={{ fontSize: '0.75rem', color: 'var(--text-brand)', fontWeight: 600, textDecoration: 'none' }}>View all</Link>
             </div>
             <div className="ds-card__body" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {classes.length === 0 ? (
@@ -581,7 +581,7 @@ export default function ParentDashboard() {
               <div style={{ color: 'rgba(255,255,255,.7)', fontSize: '0.7rem', fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: 8 }}>
                 Weekly Progress Report — {new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
               </div>
-              <h2 style={{ color: '#fff', fontWeight: 900, fontSize: '1.4rem', margin: 0 }}>
+              <h2 style={{ color: '#fff', fontWeight: 800, fontSize: '1.4rem', margin: 0 }}>
                 Al-Rahma Academy
               </h2>
               <p style={{ color: 'rgba(255,255,255,.75)', margin: '6px 0 0', fontSize: '0.88rem' }}>
@@ -603,7 +603,7 @@ export default function ParentDashboard() {
               ].map((k) => (
                 <div key={k.label} style={{ background: 'var(--bg-surface)', padding: '20px', textAlign: 'center' }}>
                   <div style={{ fontSize: '1.5rem', marginBottom: 6 }}>{k.icon}</div>
-                  <div style={{ fontSize: '1.6rem', fontWeight: 900, color: 'var(--color-primary)', lineHeight: 1 }}>{k.value}</div>
+                  <div style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--color-primary)', lineHeight: 1 }}>{k.value}</div>
                   <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: 4, textTransform: 'uppercase', letterSpacing: '.04em' }}>{k.label}</div>
                 </div>
               ))}

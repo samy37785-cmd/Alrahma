@@ -24,9 +24,9 @@ export default function TermsOfService() {
             <p className="legal-page__meta">Last updated: {LAST_UPDATED}</p>
 
             <p>
-              These Terms of Service ("Terms") govern your access to and use of Al-Rahma Academy's
+              These Terms of Service (&quot;Terms&quot;) govern your access to and use of Al-Rahma Academy&apos;s
               online education platform, including all lessons, courses, tools, and related services
-              (collectively, the "Services"). By registering or using the Services, you agree to be
+              (collectively, the &quot;Services&quot;). By registering or using the Services, you agree to be
               bound by these Terms.
             </p>
 
@@ -115,7 +115,7 @@ export default function TermsOfService() {
 
             <h2>11. Limitation of Liability</h2>
             <p>
-              Al-Rahma Academy's total liability to you for any claim arising from these Terms
+              Al-Rahma Academy&apos;s total liability to you for any claim arising from these Terms
               shall not exceed the amount you paid us in the 30 days preceding the claim.
               We are not liable for indirect, incidental, or consequential damages.
             </p>

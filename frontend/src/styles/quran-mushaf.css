@@ -8,7 +8,8 @@
 
 .mushaf-frame {
   position: relative;
-  margin: 0 0 24px;
+  margin: 0 auto 24px;
+  max-width: var(--reading-max-width, 100%);
   padding: 28px clamp(16px, 4vw, 48px) 36px;
   background: #fffdf6;
   border: 1px solid #e7dcc0;
@@ -47,7 +48,7 @@
 
 .mushaf-flow {
   font-family: var(--serif);
-  line-height: 2.35;
+  line-height: var(--reading-line-height, 2.35);
   text-align: justify;
   color: #1e1a10;
   direction: rtl;
@@ -109,3 +110,55 @@ span.mushaf-ayah.qlc__verse--active {
   .mushaf-surah-banner__ar { font-size: 1.4rem; }
   .mushaf-basmalah { font-size: 1.3rem; }
 }
+
+/* ── Reading viewport: tap zones, page-turn buttons, progress chip ──── */
+.mushaf-viewport {
+  position: relative;
+  flex: 1;
+  padding: 0 clamp(8px, 3vw, 28px) 16px;
+  cursor: pointer;
+}
+
+.mushaf-progress {
+  position: sticky; top: 0; z-index: 4;
+  display: inline-block; margin: 8px auto 4px; padding: 3px 12px;
+  font-size: .72rem; font-weight: 700; letter-spacing: .03em; color: #8a7440;
+  background: #fbf6e8ee; border: 1px solid #e7dcc0; border-radius: 999px;
+  backdrop-filter: blur(3px);
+  transition: opacity .25s ease;
+}
+.mushaf-viewport--immersive .mushaf-progress { opacity: 0; pointer-events: none; }
+
+.mushaf-navbtn {
+  position: absolute; top: 50%; transform: translateY(-50%); z-index: 3;
+  width: 40px; height: 40px; border-radius: 50%;
+  border: 1px solid #e7dcc0; background: #fffdf6cc; color: #8a7440;
+  font-size: 1.4rem; line-height: 1; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; transition: opacity .2s ease, background .15s ease;
+  backdrop-filter: blur(3px);
+}
+.mushaf-viewport:hover .mushaf-navbtn { opacity: .85; }
+.mushaf-navbtn:hover:not(:disabled) { background: #fbf3da; opacity: 1 !important; }
+.mushaf-navbtn:disabled { opacity: 0 !important; cursor: default; }
+.mushaf-navbtn--prev { right: 4px; }
+.mushaf-navbtn--next { left: 4px; }
+
+@media (max-width: 900px) {
+  /* On touch devices there's no hover to reveal the buttons — keep them
+     faintly visible so the affordance is discoverable without a tap-and-see. */
+  .mushaf-navbtn { opacity: .55; width: 36px; height: 36px; font-size: 1.25rem; }
+}
+
+@keyframes mushaf-turn-in {
+  from { opacity: 0; transform: translateX(var(--mushaf-turn-x, 0)) scale(.99); }
+  to   { opacity: 1; transform: translateX(0) scale(1); }
+}
+.mushaf-frame--turn { animation: mushaf-turn-in .22s ease-out; }
+@media (prefers-reduced-motion: reduce) {
+  .mushaf-frame--turn { animation: none; }
+}
+
+.qlc--dark .mushaf-progress { background: #221b0cee; border-color: #3a2f14; color: #c8ab5a; }
+.qlc--dark .mushaf-navbtn { background: #171208cc; border-color: #3a2f14; color: #c8ab5a; }
+.qlc--dark .mushaf-navbtn:hover:not(:disabled) { background: #2a2210; }

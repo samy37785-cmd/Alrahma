@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext';
 import { useLang } from '../context/LangContext';
@@ -29,15 +28,16 @@ export default function Messages() {
   const { user } = useAuth();
   const { lang } = useLang();
   const L = TXT[lang === 'ar' ? 'ar' : 'en'];
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   const [activeId, setActiveId] = useState(null);
   const [text, setText] = useState('');
   const endRef = useRef(null);
 
-  useEffect(() => { if (!user) navigate('/login'); }, [user, navigate]);
-
+  // No local "redirect if not logged in" effect here — this route is always
+  // wrapped in <ProtectedRoute> (App.jsx), which already owns that decision
+  // and (unlike a local check) correctly waits for server confirmation when
+  // there's no cached profile instead of assuming !user means logged out.
   const { data: contacts = [] } = useQuery({
     queryKey: ['messages', 'contacts'],
     queryFn: getContacts,

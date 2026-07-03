@@ -6,6 +6,12 @@ import useSEO from '../hooks/useSEO';
 import Breadcrumbs from '../components/ui/Breadcrumbs';
 import { useLang } from '../context/LangContext';
 import { TEACHERS, TEACHER_CREDENTIALS as CREDENTIALS } from '../data';
+import { loadArabicFontsNow } from '../utils/loadArabicFonts';
+
+// Every card renders an Arabic name (dir="rtl"); trigger the Amiri swap
+// immediately rather than waiting for the generic idle-callback in main.jsx —
+// measured as this page's largest source of layout shift on mobile.
+loadArabicFontsNow();
 
 const FLAG = { en:'🇬🇧', ar:'🇪🇬', it:'🇮🇹', fr:'🇫🇷', de:'🇩🇪', es:'🇪🇸' };
 

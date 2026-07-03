@@ -57,7 +57,7 @@
   background: linear-gradient(135deg, var(--p-gold-500), var(--p-gold-700));
   box-shadow: 0 2px 10px rgba(212, 175, 55, 0.45);
   color: #000;
-  font-weight: 900;
+  font-weight: 800;
   letter-spacing: -0.03em;
 }
 
@@ -140,7 +140,7 @@
   text-decoration: none;
   color: rgba(255, 255, 255, 0.58);
   font-size: 0.855rem;
-  font-weight: 500;
+  font-weight: 600;
   transition: color var(--duration-base) var(--ease-default),
               background var(--duration-base) var(--ease-default);
   white-space: nowrap;
@@ -505,7 +505,7 @@
   text-decoration: none;
   transition: var(--transition-colors);
   font-family: var(--font-sans);
-  font-weight: 500;
+  font-weight: 600;
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -716,7 +716,7 @@
   font-size: 0.75rem;
   color: var(--text-brand);
   text-decoration: none;
-  font-weight: 500;
+  font-weight: 600;
   white-space: nowrap;
 }
 
@@ -1303,7 +1303,7 @@
   border: 1px solid var(--border-subtle);
 }
 
-.ds-cmd__item-label { font-size: 0.855rem; font-weight: 500; flex: 1; }
+.ds-cmd__item-label { font-size: 0.855rem; font-weight: 600; flex: 1; }
 .ds-cmd__item-sub   { font-size: 0.72rem; color: var(--text-secondary); }
 
 .ds-cmd__empty {
@@ -1373,7 +1373,7 @@
   background: none;
   border: none;
   cursor: pointer;
-  font-weight: 500;
+  font-weight: 600;
   font-family: var(--font-sans);
 }
 
@@ -1448,7 +1448,7 @@
   text-decoration: none;
   color: var(--text-primary);
   font-size: 0.82rem;
-  font-weight: 500;
+  font-weight: 600;
   transition: var(--transition-base);
   cursor: pointer;
   font-family: var(--font-sans);

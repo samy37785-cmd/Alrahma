@@ -84,7 +84,7 @@ export default function ExitIntentPopup() {
         {done ? (
           <div className="exit-popup__done">
             <p className="exit-popup__done-emoji" aria-hidden="true">🎉</p>
-            <h3>We'll be in touch soon!</h3>
+            <h3>We&apos;ll be in touch soon!</h3>
             <p>Check your email — your free trial details are on the way.</p>
           </div>
         ) : (
@@ -96,7 +96,7 @@ export default function ExitIntentPopup() {
                 Wait — your free lesson is still available!
               </h2>
               <p className="exit-popup__body">
-                Don't miss your chance for a free 30-minute session with a
+                Don&apos;t miss your chance for a free 30-minute session with a
                 certified Al-Azhar tutor.
               </p>
               <ul className="exit-popup__perks">
@@ -144,7 +144,7 @@ export default function ExitIntentPopup() {
               </button>
 
               <button type="button" className="exit-popup__skip" onClick={close}>
-                No thanks, I'll pass
+                No thanks, I&apos;ll pass
               </button>
             </form>
           </>

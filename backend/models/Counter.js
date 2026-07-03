@@ -8,7 +8,19 @@ const counterSchema = new mongoose.Schema({
   seq: { type: Number, default: 0 },
 });
 
-counterSchema.statics.nextSeq = async function (id) {
+// `seed`, if given, initializes the counter to that value the first time
+// it's used — safe under concurrency because $setOnInsert only takes effect
+// on the single upsert that actually creates the document; callers racing
+// the very first call never overwrite each other or the real increment.
+// Existing callers that omit `seed` are unaffected (no-op, same as before).
+counterSchema.statics.nextSeq = async function (id, seed = 0) {
+  if (seed) {
+    await this.findOneAndUpdate(
+      { _id: id },
+      { $setOnInsert: { seq: seed } },
+      { upsert: true },
+    );
+  }
   const doc = await this.findOneAndUpdate(
     { _id: id },
     { $inc: { seq: 1 } },

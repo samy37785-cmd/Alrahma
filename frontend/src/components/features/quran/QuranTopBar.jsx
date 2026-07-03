@@ -5,10 +5,17 @@ import { TRANSLATIONS } from '../../../data/quranLangs';
 export default function QuranTopBar({
   tab, darkMode, kbdPanelOpen, lang, ui,
   onTabChange, onLangChange, onSettingsToggle, onKbdToggle, onDarkToggle, onQuickNavToggle,
+  onSidebarToggle,
 }) {
   return (
     <header className="qlc__bar">
       <div className="qlc__bar-inner">
+        <button
+          className="qlc__sidebar-toggle"
+          onClick={onSidebarToggle}
+          aria-label={ui.browseMenu || 'Browse'}
+          title={ui.browseMenu || 'Browse'}
+        >☰</button>
         <Brand />
 
         <nav className="qlc__tabs">

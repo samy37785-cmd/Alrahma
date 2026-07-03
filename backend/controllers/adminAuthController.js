@@ -363,6 +363,15 @@ export async function logout(req, res) {
     if (stored) {
       await RefreshToken.updateMany({ family: stored.family }, { revoked: true });
     }
+  } else if (req.adminId) {
+    // The refresh cookie is deliberately path-scoped to /auth/refresh only
+    // (refreshCookieOptions), so a real browser never actually sends it on a
+    // request to /logout -- meaning the branch above never ran in practice,
+    // and refresh tokens were never revoked on logout at all. Without the
+    // cookie we can't identify one specific family, so fall back to revoking
+    // every active refresh token for this admin: logging out everywhere is
+    // safer than the previous behavior of silently revoking nothing.
+    await RefreshToken.updateMany({ adminId: req.adminId, revoked: false }, { revoked: true });
   }
 
   if (req.adminUser) {

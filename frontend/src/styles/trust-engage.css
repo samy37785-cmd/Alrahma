@@ -142,7 +142,7 @@
   display: inline-flex; align-items: center; justify-content: center;
   width: 42px; height: 42px; border-radius: 8px;
   background: linear-gradient(135deg,#003399,#0055cc);
-  color: #fff; font-size: 0.6rem; font-weight: 900;
+  color: #fff; font-size: 0.6rem; font-weight: 800;
   letter-spacing: 0.5px; flex-shrink: 0;
   box-shadow: 0 2px 8px rgba(0,51,153,.3);
 }
@@ -153,7 +153,7 @@
   padding: 2px 7px; border-radius: 4px;
   background: linear-gradient(135deg,#003399,#0055cc);
   color: #fff !important; font-size: 0.6rem !important;
-  font-weight: 900 !important; letter-spacing: 0.5px;
+  font-weight: 800 !important; letter-spacing: 0.5px;
 }
 
 /* Country flags marquee */
@@ -205,7 +205,7 @@
   display: inline-flex; align-items: center; justify-content: center;
   width: 32px; height: 20px; border-radius: 4px;
   background: linear-gradient(135deg,#003399,#0055cc);
-  color: #fff; font-size: 0.55rem; font-weight: 900;
+  color: #fff; font-size: 0.55rem; font-weight: 800;
   letter-spacing: 0.5px; flex-shrink: 0;
 }
 
@@ -516,7 +516,7 @@
   display: inline-flex; align-items: center; justify-content: center;
   width: 38px; height: 38px; border-radius: 8px; flex-shrink: 0;
   background: linear-gradient(135deg, #0b6e4f, #1a9e72);
-  color: #fff; font-size: 0.65rem; font-weight: 900;
+  color: #fff; font-size: 0.65rem; font-weight: 800;
   font-family: 'Amiri', serif;
 }
 

@@ -1,4 +1,5 @@
 import '../../styles/islamic-tools.css';
+import '../../styles/hifz.css';
 import { useState, useEffect, useCallback } from 'react';
 import Header from '../../components/layout/Header';
 import Footer from '../../components/layout/Footer';

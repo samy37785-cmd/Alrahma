@@ -22,6 +22,7 @@ import CertificateCard from '../components/ui/CertificateCard';
 import ReferralCard from '../components/ui/ReferralCard';
 import HifzLeaderboard from '../components/ui/HifzLeaderboard';
 import '../styles/dashboard-shell.css';
+import '../styles/trust-engage.css';
 
 /* ── helpers ──────────────────────────────────────────────────── */
 const SESSIONS_BY_PLAN = {

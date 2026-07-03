@@ -82,46 +82,88 @@ export const sendRenewalReminders = asyncHandler(async (_req, res) => {
 // @desc   Send weekly progress email to parents summarising each child's activity.
 // @route  GET /api/cron/weekly-parent-reports
 // @access Cron secret
+// Builds one child's report data from already-batch-fetched lookup maps
+// (see sendWeeklyParentReports below) instead of querying per child.
+// lessonsThisWeek's calculation is unchanged from the original per-child
+// implementation — it is not "lessons completed in the last 7 days" (despite
+// the name); it counts every completed lesson in a course whose lastActivity
+// falls in the last 7 days. Preserved as-is: that's a report-accuracy
+// question, not part of the N+1 query-performance fix this function makes.
+export function buildChildReportData(childId, { childById, progressByChild, nextClassByChild, oneWeekAgo }) {
+  const child = childById.get(String(childId));
+  if (!child) return null;
+
+  const progress = progressByChild.get(String(childId)) || [];
+  const lessonsThisWeek = progress.reduce((n, p) => {
+    return n + (p.completed?.filter ? p.completed.filter((_, idx) =>
+      p.lastActivity && new Date(p.lastActivity) > oneWeekAgo ? true : false
+    ).length : 0);
+  }, 0);
+
+  const nextClass = nextClassByChild.get(String(childId));
+
+  return {
+    childName: child.name,
+    streak: child.streak || 0,
+    lessonsThisWeek,
+    xp: child.xp || 0,
+    level: child.level || 1,
+    nextClass: nextClass?.startsAt || null,
+  };
+}
+
 export const sendWeeklyParentReports = asyncHandler(async (_req, res) => {
   const parents = await User.find({ role: 'parent', children: { $not: { $size: 0 } } })
     .select('name email children')
     .lean();
 
   const oneWeekAgo = new Date(Date.now() - 7 * DAY);
+  const now = new Date();
+
+  // Batch-fetch every child's profile, course progress, and next scheduled
+  // class in three queries total — not three PER child. The previous
+  // implementation ran one User.findById + one CourseProgress.find + one
+  // LiveClass.findOne per child (an N+1 pattern), which the discovery-audit
+  // report flagged as the most timeout-prone job in the codebase: query
+  // count scaled linearly with total children across all parents. Grouping
+  // is done in-memory below.
+  const allChildIds = [...new Set(parents.flatMap((p) => p.children.map(String)))];
+
+  const [children, allProgress, upcomingClasses] = await Promise.all([
+    User.find({ _id: { $in: allChildIds } }).select('name xp level streak').lean(),
+    CourseProgress.find({ user: { $in: allChildIds } }).select('user completed lastActivity').lean(),
+    LiveClass.find({ student: { $in: allChildIds }, startsAt: { $gte: now } })
+      .select('student startsAt').sort({ startsAt: 1 }).lean(),
+  ]);
+
+  const childById = new Map(children.map((c) => [String(c._id), c]));
+
+  const progressByChild = new Map();
+  for (const p of allProgress) {
+    const key = String(p.user);
+    if (!progressByChild.has(key)) progressByChild.set(key, []);
+    progressByChild.get(key).push(p);
+  }
+
+  // upcomingClasses is sorted by startsAt ascending, so the first entry seen
+  // per student is their earliest upcoming class — the same result
+  // findOne(...).sort({startsAt:1}) gave per child before.
+  const nextClassByChild = new Map();
+  for (const c of upcomingClasses) {
+    const key = String(c.student);
+    if (!nextClassByChild.has(key)) nextClassByChild.set(key, c);
+  }
+
+  const lookups = { childById, progressByChild, nextClassByChild, oneWeekAgo };
   let sent = 0;
 
   for (let i = 0; i < parents.length; i += BATCH_SIZE) {
     const batch = parents.slice(i, i + BATCH_SIZE);
     await Promise.allSettled(batch.map(async (parent) => {
       try {
-        const childrenData = await Promise.all(parent.children.map(async (childId) => {
-          const child = await User.findById(childId).select('name xp level streak').lean();
-          if (!child) return null;
-
-          // Lessons completed in the last 7 days
-          const progress = await CourseProgress.find({ user: childId }).select('completed lastActivity').lean();
-          const lessonsThisWeek = progress.reduce((n, p) => {
-            return n + (p.completed?.filter ? p.completed.filter((_, idx) =>
-              p.lastActivity && new Date(p.lastActivity) > oneWeekAgo ? true : false
-            ).length : 0);
-          }, 0);
-
-          // Next scheduled class
-          const nextClass = await LiveClass.findOne({
-            student: childId, startsAt: { $gte: new Date() },
-          }).select('startsAt').sort({ startsAt: 1 }).lean();
-
-          return {
-            childName: child.name,
-            streak: child.streak || 0,
-            lessonsThisWeek,
-            xp: child.xp || 0,
-            level: child.level || 1,
-            nextClass: nextClass?.startsAt || null,
-          };
-        }));
-
-        const validChildren = childrenData.filter(Boolean);
+        const validChildren = parent.children
+          .map((childId) => buildChildReportData(childId, lookups))
+          .filter(Boolean);
         if (!validChildren.length) return;
 
         await sendMail({

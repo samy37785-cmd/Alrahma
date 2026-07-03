@@ -7,10 +7,8 @@ import Breadcrumbs from '../../components/ui/Breadcrumbs';
 import WhatsappFab from '../../components/ui/WhatsappFab';
 import useSEO from '../../hooks/useSEO';
 import { useLang } from '../../context/LangContext';
-import { TOOLS_TEXT, pick } from '../../i18n/content';
 import { getVerse } from '../../api/quran';
 import { DAILY_VERSE_KEYS } from '../../utils/islamicToolsUtils';
-import { site } from '../../data/site';
 
 const clean = (html = '') =>
   html.replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<')
@@ -18,7 +16,6 @@ const clean = (html = '') =>
 
 export default function VerseOfTheDayPage() {
   const { lang } = useLang();
-  const tx = pick(TOOLS_TEXT, lang);
   const isAr = lang === 'ar';
 
   useSEO({
@@ -108,9 +105,9 @@ export default function VerseOfTheDayPage() {
                   </p>
                   {trans && (
                     <p className="votd-card__trans">
-                      <span className="votd-card__quote">"</span>
+                      <span className="votd-card__quote">&quot;</span>
                       {trans}
-                      <span className="votd-card__quote">"</span>
+                      <span className="votd-card__quote">&quot;</span>
                     </p>
                   )}
                   <p className="votd-card__ref">Quran · {verseKey}</p>

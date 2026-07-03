@@ -86,9 +86,9 @@ export default function VerseCardModal({ verse, chapterName, onClose }) {
 
           {trans && (
             <p className="vcard__trans">
-              <span className="vcard__quote-mark">"</span>
+              <span className="vcard__quote-mark">&quot;</span>
               {trans}
-              <span className="vcard__quote-mark">"</span>
+              <span className="vcard__quote-mark">&quot;</span>
             </p>
           )}
 

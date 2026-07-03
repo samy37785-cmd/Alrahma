@@ -1578,7 +1578,7 @@
 
 .hub-card__stat {
   font-size: .72rem; color: var(--text-secondary);
-  margin: -4px 0 4px; font-weight: 500;
+  margin: -4px 0 4px; font-weight: 600;
 }
 
 /* Tools Hub — free trial CTA strip */

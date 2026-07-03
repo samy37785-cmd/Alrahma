@@ -63,7 +63,7 @@ export default function CancelSurvey({ onConfirmCancel, onClose }) {
         <div className="cancel-survey__card">
           <button className="cancel-survey__x" onClick={onClose} aria-label="Close">×</button>
           <div className="cancel-survey__offer-icon" aria-hidden="true">😔</div>
-          <h3 className="cancel-survey__title">We're sorry to see you go</h3>
+          <h3 className="cancel-survey__title">We&apos;re sorry to see you go</h3>
           <p className="cancel-survey__offer-text">
             Your progress is saved. You can return any time and continue from where you left off.
             Remember: our <strong>14-day money-back guarantee</strong> means you can also request a
@@ -90,9 +90,9 @@ export default function CancelSurvey({ onConfirmCancel, onClose }) {
     <div className="cancel-survey" role="dialog" aria-modal="true" aria-label="Cancellation survey">
       <div className="cancel-survey__card">
         <button className="cancel-survey__x" onClick={onClose} aria-label="Close">×</button>
-        <h3 className="cancel-survey__title">We're sorry to hear that</h3>
+        <h3 className="cancel-survey__title">We&apos;re sorry to hear that</h3>
         <p className="cancel-survey__sub">
-          Help us improve — what's the main reason you're cancelling?
+          Help us improve — what&apos;s the main reason you&apos;re cancelling?
         </p>
         <div className="cancel-survey__reasons">
           {REASONS.map((r) => (

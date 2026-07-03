@@ -1,7 +1,7 @@
 import { useState } from 'react';
+import '../styles/trust-engage.css';
 import { TrialProvider } from '../context/TrialContext';
 import useSEO from '../hooks/useSEO';
-import { useLang } from '../context/LangContext';
 import TopBar from '../components/layout/TopBar';
 import Header from '../components/layout/Header';
 import Hero from '../components/Hero';
@@ -21,12 +21,12 @@ import Trial from '../components/Trial';
 import Newsletter from '../components/Newsletter';
 import TrustBadges from '../components/TrustBadges';
 import Footer from '../components/layout/Footer';
+import DeferredSection from '../components/ui/DeferredSection';
 import WhatsappFab from '../components/ui/WhatsappFab';
 import QuickTrialModal from '../components/ui/QuickTrialModal';
 import ExitIntentPopup from '../components/ui/ExitIntentPopup';
 
 export default function Home() {
-  const { t } = useLang();
   const [trialOpen, setTrialOpen] = useState(false);
   useSEO({
     title: 'Learn the Quran Online — Al-Rahma Academy',
@@ -51,18 +51,21 @@ export default function Home() {
         <TrustBar />
         <LevelQuiz />
         <StatsBanner />
-        <Courses />
-        <Features />
-        <Steps />
-        <Tutors />
-        <IsnadChain />
-        <Testimonials />
-        <TrustBadges />
-        <Pricing />
-        <JoinCTA onTrialClick={() => setTrialOpen(true)} />
-        <FAQ />
-        <Trial />
-        <Newsletter />
+        {/* Below-the-fold: deferred until they're about to scroll into view
+            (see DeferredSection) so first render doesn't pay to mount all
+            ~16 sections of the landing page at once. */}
+        <DeferredSection><Courses /></DeferredSection>
+        <DeferredSection><Features /></DeferredSection>
+        <DeferredSection><Steps /></DeferredSection>
+        <DeferredSection><Tutors /></DeferredSection>
+        <DeferredSection><IsnadChain /></DeferredSection>
+        <DeferredSection><Testimonials /></DeferredSection>
+        <DeferredSection><TrustBadges /></DeferredSection>
+        <DeferredSection><Pricing /></DeferredSection>
+        <DeferredSection><JoinCTA onTrialClick={() => setTrialOpen(true)} /></DeferredSection>
+        <DeferredSection><FAQ /></DeferredSection>
+        <DeferredSection><Trial /></DeferredSection>
+        <DeferredSection><Newsletter /></DeferredSection>
       </main>
       <Footer />
       <WhatsappFab />

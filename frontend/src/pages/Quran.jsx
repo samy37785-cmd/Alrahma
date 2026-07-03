@@ -2,7 +2,13 @@ import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import '../styles/quran.css';
 import '../styles/khatm.css';
 import '../styles/quran-mushaf.css';
+import '../styles/hifz.css';
+import { loadArabicFontsNow } from '../utils/loadArabicFonts';
 import { useTheme } from '../context/ThemeContext';
+
+// Verse text is Arabic almost end-to-end here — trigger the Amiri font swap
+// immediately instead of waiting for the generic idle-callback in main.jsx.
+loadArabicFontsNow();
 import useSEO from '../hooks/useSEO';
 import {
   getChapters, getVerses, getVersesByPage, getVersesByJuz, getVersesByHizb,
@@ -17,6 +23,7 @@ import QuranReadingControls from '../components/features/quran/QuranReadingContr
 import QuranHifzControls   from '../components/features/quran/QuranHifzControls';
 import QuranVerseList      from '../components/features/quran/QuranVerseList';
 import QuranMushafPage     from '../components/features/quran/QuranMushafPage';
+import ReadingModeSwitch   from '../components/features/quran/ReadingModeSwitch';
 import QuranSyncPlayer     from '../components/features/quran/QuranSyncPlayer';
 import QuranQuickNav       from '../components/features/quran/QuranQuickNav';
 import QuranFloatingBar    from '../components/features/quran/QuranFloatingBar';
@@ -43,6 +50,22 @@ export default function Quran() {
   };
   const [fontSize, setFontSize] = useState(() => Number(localStorage.getItem('qlc-font') || 34));
   useEffect(() => { localStorage.setItem('qlc-font', String(fontSize)); }, [fontSize]);
+  const [readingMode, setReadingMode] = useState(() => localStorage.getItem('qlc-reading-mode') || 'continuous');
+  useEffect(() => { localStorage.setItem('qlc-reading-mode', readingMode); }, [readingMode]);
+  const [chromeHidden, setChromeHidden] = useState(false);
+  const [sidebarOpen, setSidebarOpen]   = useState(false);
+  const [sepia, setSepia] = useState(() => localStorage.getItem('qlc-sepia') === '1');
+  useEffect(() => { localStorage.setItem('qlc-sepia', sepia ? '1' : '0'); }, [sepia]);
+  const [lineHeight, setLineHeight] = useState(() => Number(localStorage.getItem('qlc-line-height') || 2.3));
+  useEffect(() => { localStorage.setItem('qlc-line-height', String(lineHeight)); }, [lineHeight]);
+  const [contentWidth, setContentWidth] = useState(() => localStorage.getItem('qlc-content-width') || 'wide');
+  useEffect(() => { localStorage.setItem('qlc-content-width', contentWidth); }, [contentWidth]);
+  const CONTENT_WIDTHS = { narrow: '640px', medium: '820px', wide: '100%' };
+  const readingTheme = darkMode ? 'dark' : sepia ? 'sepia' : 'light';
+  const setReadingTheme = (theme) => {
+    setDarkMode(theme === 'dark');
+    setSepia(theme === 'sepia');
+  };
 
   /* ── Panel / UI state ────────────────────────────────────────── */
   const [showShortcuts, setShowShortcuts] = useState(false);
@@ -188,10 +211,33 @@ export default function Quran() {
   const goPage      = useCallback((n)  => { setPageNum(Math.max(1, Math.min(604, n))); setNavMode('page'); setOpenTafsir({}); }, []);
   const goJuz       = useCallback((n)  => { setJuzNum(n); setNavMode('juz'); setOpenTafsir({}); }, []);
   const goHizb      = useCallback((n)  => { setHizbNum(Math.max(1, Math.min(60, n))); setNavMode('hizb'); setOpenTafsir({}); }, []);
-  const selectSurah     = (id) => { setActiveId(id); setNavMode('surah'); stopHifz(); setRevealed({}); setOpenTafsir({}); };
-  const selectFromKhatm = (id) => { setActiveId(id); stopHifz(); setRevealed({}); setOpenTafsir({}); };
+  const selectSurah     = (id) => { setActiveId(id); setNavMode('surah'); stopHifz(); setRevealed({}); setOpenTafsir({}); setSidebarOpen(false); };
+  const selectFromKhatm = (id) => { setActiveId(id); stopHifz(); setRevealed({}); setOpenTafsir({}); setSidebarOpen(false); };
   const toggleKhatm     = (id) => setKhatmDone((p) => p.includes(id) ? p.filter((x) => x !== id) : [...p, id]);
   const changeLang  = (l)  => { setLang(l); stopHifz(); };
+
+  /* ── Page-turn navigation: one prev/next handler shared by keyboard
+     arrows, tap zones and swipe gestures — reuses each nav mode's existing
+     "unit" semantics (prev/next surah, page, juz or hizb). ──────────── */
+  const goRelative = useCallback((dir) => {
+    if (navMode === 'surah') setActiveId((v) => Math.max(1, Math.min(114, v + dir)));
+    else if (navMode === 'page') goPage(pageNum + dir);
+    else if (navMode === 'juz') setJuzNum((v) => Math.max(1, Math.min(30, v + dir)));
+    else if (navMode === 'hizb') setHizbNum((v) => Math.max(1, Math.min(60, v + dir)));
+  }, [navMode, pageNum, goPage]);
+  const canGoPrev =
+    navMode === 'surah' ? activeId > 1 :
+    navMode === 'page'  ? pageNum > 1  :
+    navMode === 'juz'   ? juzNum > 1   :
+    navMode === 'hizb'  ? hizbNum > 1  : false;
+  const canGoNext =
+    navMode === 'surah' ? activeId < 114 :
+    navMode === 'page'  ? pageNum < 604  :
+    navMode === 'juz'   ? juzNum < 30    :
+    navMode === 'hizb'  ? hizbNum < 60   : false;
+
+  /* ── Reading Mode / immersive chrome ────────────────────────────── */
+  useEffect(() => { setChromeHidden(false); }, [tab, readingMode]);
 
   /* ── Quick-nav "jump to surah:verse" — reuses the same scroll retry
      loop as the initial deep-link effect above. ────────────────────── */
@@ -210,7 +256,9 @@ export default function Quran() {
   const addBookmarkMutation    = useAddBookmark();
   const removeBookmarkMutation = useRemoveBookmark();
   const bookmarkedKeys = useMemo(() => new Set((bookmarks ?? []).map((b) => b.verseKey)), [bookmarks]);
+  const bookmarksByKey = useMemo(() => new Map((bookmarks ?? []).map((b) => [b.verseKey, b])), [bookmarks]);
   const isBookmarked   = useCallback((verseKey) => bookmarkedKeys.has(verseKey), [bookmarkedKeys]);
+  const getBookmark    = useCallback((verseKey) => bookmarksByKey.get(verseKey), [bookmarksByKey]);
   const toggleBookmark = useCallback((verse) => {
     if (bookmarkedKeys.has(verse.verse_key)) {
       removeBookmarkMutation.mutate(verse.verse_key);
@@ -220,15 +268,38 @@ export default function Quran() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bookmarkedKeys]);
+  // Notes and highlights live on the same bookmark row — saving either one
+  // auto-bookmarks the verse (there's no note/highlight-only row in the
+  // schema) and must carry the other field forward so it isn't wiped out.
+  const saveNote = useCallback((verse, note) => {
+    const existing = bookmarksByKey.get(verse.verse_key);
+    const [chId, vNum] = verse.verse_key.split(':').map(Number);
+    addBookmarkMutation.mutate({ verseKey: verse.verse_key, chapterId: chId, verseNum: vNum, note, color: existing?.color || '' });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bookmarksByKey]);
+  const setHighlight = useCallback((verse, color) => {
+    const existing = bookmarksByKey.get(verse.verse_key);
+    const [chId, vNum] = verse.verse_key.split(':').map(Number);
+    addBookmarkMutation.mutate({ verseKey: verse.verse_key, chapterId: chId, verseNum: vNum, note: existing?.note || '', color });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bookmarksByKey]);
 
   /* ── Keyboard shortcuts (logic extracted to hook) ─────────────── */
   useQuranKeyboard({
-    tab, isPlaying, navMode, activeId, pageNum, juzNum,
+    tab, isPlaying, navMode,
     startHifz, stopHifz, audioRef, toggleDark,
     setShowShortcuts, setShowSettings, setKbdPanelOpen,
-    setActiveId, setJuzNum, setFontSize, setShowTrans, goPage,
+    setActiveId, setFontSize, setShowTrans, goRelative,
     onQuickNavToggle: setQuickNavOpen,
   });
+
+  /* ── Continuous-mode progress indicator ("Page 145 / 604" etc.) ─── */
+  const progressLabel =
+    !verses.length ? '' :
+    navMode === 'page'  ? `${ui.page  || 'Page'} ${pageNum} / 604` :
+    navMode === 'juz'   ? `${ui.juz   || 'Juz'} ${juzNum} / 30`    :
+    navMode === 'hizb'  ? `${ui.hizb  || 'Hizb'} ${hizbNum} / 60`  :
+    navMode === 'surah' ? `${ui.navSurah || 'Surah'} ${activeId} / 114` : '';
 
   /* ── Verse actions (logic extracted to hook) ─────────────────── */
   const { toggleReveal, revealAll, hideAll, toggleTafsir, copyVerse, shareVerse, doJumpVerse, cardVerse, showCard, closeCard } =
@@ -250,7 +321,10 @@ export default function Quran() {
   const showFloatBar = tab === 'hifz' && hifzMode === 'repeat' && isPlaying && !!selectedVerses[curIdx];
 
   return (
-    <div className={`qlc${darkMode ? ' qlc--dark' : ''}${showFloatBar ? ' qlc--float' : ''}`}>
+    <div
+      className={`qlc${darkMode ? ' qlc--dark' : ''}${sepia && !darkMode ? ' qlc--sepia' : ''}${showFloatBar ? ' qlc--float' : ''}${chromeHidden ? ' qlc--chrome-hidden' : ''}`}
+      style={{ '--reading-line-height': lineHeight, '--reading-max-width': CONTENT_WIDTHS[contentWidth] }}
+    >
 
       <KbdSidePanel open={kbdPanelOpen} onToggle={() => setKbdPanelOpen((v) => !v)} />
 
@@ -261,6 +335,9 @@ export default function Quran() {
           fontSize={fontSize} setFontSize={setFontSize}
           darkMode={darkMode} setDarkMode={setDarkMode}
           showTrans={showTrans} setShowTrans={setShowTrans}
+          readingTheme={readingTheme} setReadingTheme={setReadingTheme}
+          lineHeight={lineHeight} setLineHeight={setLineHeight}
+          contentWidth={contentWidth} setContentWidth={setContentWidth}
           onClose={() => setShowSettings(false)}
         />
       )}
@@ -273,6 +350,7 @@ export default function Quran() {
         onKbdToggle={() => setKbdPanelOpen((v) => !v)}
         onDarkToggle={() => setDarkMode((v) => !v)}
         onQuickNavToggle={() => setQuickNavOpen((v) => !v)}
+        onSidebarToggle={() => setSidebarOpen((v) => !v)}
       />
 
       {quickNavOpen && (
@@ -292,6 +370,7 @@ export default function Quran() {
         <QuranSidebar
           navMode={navMode} chapters={chapters} activeId={activeId} search={search}
           pageNum={pageNum} juzNum={juzNum} hizbNum={hizbNum} khatmDone={khatmDone} filtered={filtered} ui={ui}
+          open={sidebarOpen} onClose={() => setSidebarOpen(false)}
           onNavModeChange={(key) => {
             if (key === 'page') goPage(pageNum);
             else if (key === 'juz') goJuz(juzNum);
@@ -300,8 +379,8 @@ export default function Quran() {
           }}
           onSurahSelect={selectSurah}
           onPageNav={goPage}
-          onJuzNav={goJuz}
-          onHizbNav={goHizb}
+          onJuzNav={(n) => { goJuz(n); setSidebarOpen(false); }}
+          onHizbNav={(n) => { goHizb(n); setSidebarOpen(false); }}
           onSearchChange={setSearch}
           onKhatmToggle={toggleKhatm}
           onKhatmFromSelect={selectFromKhatm}
@@ -313,6 +392,10 @@ export default function Quran() {
             navMode={navMode} activeChapter={activeChapter}
             juzNum={juzNum} pageNum={pageNum} hizbNum={hizbNum} ui={ui}
           />
+
+          {tab === 'reading' && (
+            <ReadingModeSwitch mode={readingMode} onChange={setReadingMode} ui={ui} />
+          )}
 
           {tab === 'reading' && (
             <QuranReadingControls
@@ -363,11 +446,15 @@ export default function Quran() {
             />
           )}
 
-          {tab === 'reading' && navMode === 'page' && !loading && !error ? (
+          {tab === 'reading' && readingMode === 'continuous' && !loading && !error ? (
             <QuranMushafPage
-              verses={verses} chapters={chapters} pageNum={pageNum}
+              verses={verses} chapters={chapters} pageNum={pageNum} navMode={navMode}
               fontSize={fontSize} showTrans={showTrans} ui={ui}
-              isBookmarked={isBookmarked} onToggleBookmark={toggleBookmark}
+              isBookmarked={isBookmarked} onToggleBookmark={toggleBookmark} getBookmark={getBookmark}
+              onPrev={() => goRelative(-1)} onNext={() => goRelative(1)}
+              canPrev={canGoPrev} canNext={canGoNext}
+              chromeHidden={chromeHidden} onToggleChrome={() => setChromeHidden((v) => !v)}
+              progressLabel={progressLabel}
             />
           ) : (
             <QuranVerseList
@@ -389,6 +476,9 @@ export default function Quran() {
               onJump={doJumpVerse}
               isBookmarked={isBookmarked}
               onToggleBookmark={toggleBookmark}
+              getBookmark={getBookmark}
+              onSaveNote={saveNote}
+              onSetHighlight={setHighlight}
             />
           )}
         </main>

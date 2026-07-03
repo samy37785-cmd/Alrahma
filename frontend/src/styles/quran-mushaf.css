@@ -1,0 +1,164 @@
+/*
+ * Mushaf page-mode ("real book" reading view). Kept in its own stylesheet,
+ * lazily imported only where used (same pattern as hifz.css), because it
+ * introduces a different visual language (ornamental frame, continuous
+ * flowing RTL text, margin badges) from the list-based quran.css rendering.
+ * Reuses the same light/dark palette as quran.css rather than redefining one.
+ */
+
+.mushaf-frame {
+  position: relative;
+  margin: 0 auto 24px;
+  max-width: var(--reading-max-width, 100%);
+  padding: 28px clamp(16px, 4vw, 48px) 36px;
+  background: #fffdf6;
+  border: 1px solid #e7dcc0;
+  border-radius: 14px;
+  box-shadow: inset 0 0 0 6px #fffef9, inset 0 0 0 7px #d8c896;
+}
+
+.mushaf-margin {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 18px; direction: rtl;
+}
+.mushaf-margin__badge {
+  font-size: .72rem; letter-spacing: .03em; color: #8a7440;
+  padding: 3px 10px; border: 1px solid #e7dcc0; border-radius: 999px;
+  background: #fbf6e8;
+}
+.mushaf-margin__badge--page { font-weight: 700; color: #6a5620; }
+
+.mushaf-segment + .mushaf-segment { margin-top: 22px; }
+
+.mushaf-surah-banner {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  text-align: center; margin: 4px 0 10px; padding: 12px 10px;
+  background: linear-gradient(135deg, #fbf3da, #f3e6bd);
+  border: 1px solid #d8c896; border-radius: 10px;
+}
+.mushaf-surah-banner__ar {
+  font-family: var(--serif); font-size: 1.7rem; color: #5a4816;
+}
+.mushaf-surah-banner__meta { font-size: .72rem; color: #8a7440; }
+
+.mushaf-basmalah {
+  text-align: center; font-family: var(--serif); font-size: 1.6rem;
+  color: #5a4816; margin: 4px 0 14px;
+}
+
+.mushaf-flow {
+  font-family: var(--serif);
+  line-height: var(--reading-line-height, 2.35);
+  text-align: justify;
+  color: #1e1a10;
+  direction: rtl;
+  unicode-bidi: plaintext;
+}
+
+.mushaf-ayah { }
+
+.mushaf-ayah-num {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 1.6em; height: 1.6em; padding: 0 3px;
+  border: 1px solid #cdb96e; border-radius: 50%;
+  background: #fbf3da; color: #8a6d1a;
+  font-size: .55em; line-height: 1; vertical-align: middle;
+  cursor: pointer;
+}
+.mushaf-ayah-num:hover { background: #f3e6bd; }
+.mushaf-ayah-num.bookmarked { background: #f0c040; border-color: #d9a800; color: #5a4200; }
+
+.mushaf-translation {
+  margin-top: 14px; padding-top: 12px; border-top: 1px dashed #e7dcc0;
+  font-size: .88rem; color: #5a5040; line-height: 1.7;
+}
+.mushaf-translation p { margin: 0 0 8px; }
+.mushaf-translation b { color: #8a7440; font-weight: 700; margin-inline-end: 6px; }
+
+/* Playing-verse highlight (class toggled by QuranSyncPlayer) reuses the
+   existing .qlc__verse--active convention but Mushaf verses are inline
+   <span> nodes, not list items, so style the span form here. */
+span.mushaf-ayah.qlc__verse--active {
+  background: #fdf0c0;
+  border-radius: 4px;
+  box-shadow: 0 0 0 2px #f0c040;
+}
+
+/* ── Dark mode ─────────────────────────────────────────────────────── */
+.qlc--dark .mushaf-frame {
+  background: #171208; border-color: #3a2f14;
+  box-shadow: inset 0 0 0 6px #1a1509, inset 0 0 0 7px #4a3d1c;
+}
+.qlc--dark .mushaf-margin__badge { background: #221b0c; border-color: #3a2f14; color: #c8ab5a; }
+.qlc--dark .mushaf-margin__badge--page { color: #e8c840; }
+.qlc--dark .mushaf-surah-banner {
+  background: linear-gradient(135deg, #221b0c, #2a2210); border-color: #4a3d1c;
+}
+.qlc--dark .mushaf-surah-banner__ar { color: #e8c840; }
+.qlc--dark .mushaf-surah-banner__meta { color: #a8935a; }
+.qlc--dark .mushaf-basmalah { color: #e8c840; }
+.qlc--dark .mushaf-flow { color: #f0e6c8; }
+.qlc--dark .mushaf-ayah-num { background: #221b0c; border-color: #4a3d1c; color: #e0c060; }
+.qlc--dark .mushaf-ayah-num:hover { background: #2a2210; }
+.qlc--dark .mushaf-ayah-num.bookmarked { background: #e8c840; border-color: #c8ab5a; color: #241d08; }
+.qlc--dark .mushaf-translation { border-color: #3a2f14; color: #b8ac8a; }
+.qlc--dark .mushaf-translation b { color: #c8ab5a; }
+.qlc--dark span.mushaf-ayah.qlc__verse--active { background: #3a2f14; box-shadow: 0 0 0 2px #e8c840; }
+
+@media (max-width: 640px) {
+  .mushaf-frame { padding: 18px 14px 26px; }
+  .mushaf-surah-banner__ar { font-size: 1.4rem; }
+  .mushaf-basmalah { font-size: 1.3rem; }
+}
+
+/* ── Reading viewport: tap zones, page-turn buttons, progress chip ──── */
+.mushaf-viewport {
+  position: relative;
+  flex: 1;
+  padding: 0 clamp(8px, 3vw, 28px) 16px;
+  cursor: pointer;
+}
+
+.mushaf-progress {
+  position: sticky; top: 0; z-index: 4;
+  display: inline-block; margin: 8px auto 4px; padding: 3px 12px;
+  font-size: .72rem; font-weight: 700; letter-spacing: .03em; color: #8a7440;
+  background: #fbf6e8ee; border: 1px solid #e7dcc0; border-radius: 999px;
+  backdrop-filter: blur(3px);
+  transition: opacity .25s ease;
+}
+.mushaf-viewport--immersive .mushaf-progress { opacity: 0; pointer-events: none; }
+
+.mushaf-navbtn {
+  position: absolute; top: 50%; transform: translateY(-50%); z-index: 3;
+  width: 40px; height: 40px; border-radius: 50%;
+  border: 1px solid #e7dcc0; background: #fffdf6cc; color: #8a7440;
+  font-size: 1.4rem; line-height: 1; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; transition: opacity .2s ease, background .15s ease;
+  backdrop-filter: blur(3px);
+}
+.mushaf-viewport:hover .mushaf-navbtn { opacity: .85; }
+.mushaf-navbtn:hover:not(:disabled) { background: #fbf3da; opacity: 1 !important; }
+.mushaf-navbtn:disabled { opacity: 0 !important; cursor: default; }
+.mushaf-navbtn--prev { right: 4px; }
+.mushaf-navbtn--next { left: 4px; }
+
+@media (max-width: 900px) {
+  /* On touch devices there's no hover to reveal the buttons — keep them
+     faintly visible so the affordance is discoverable without a tap-and-see. */
+  .mushaf-navbtn { opacity: .55; width: 36px; height: 36px; font-size: 1.25rem; }
+}
+
+@keyframes mushaf-turn-in {
+  from { opacity: 0; transform: translateX(var(--mushaf-turn-x, 0)) scale(.99); }
+  to   { opacity: 1; transform: translateX(0) scale(1); }
+}
+.mushaf-frame--turn { animation: mushaf-turn-in .22s ease-out; }
+@media (prefers-reduced-motion: reduce) {
+  .mushaf-frame--turn { animation: none; }
+}
+
+.qlc--dark .mushaf-progress { background: #221b0cee; border-color: #3a2f14; color: #c8ab5a; }
+.qlc--dark .mushaf-navbtn { background: #171208cc; border-color: #3a2f14; color: #c8ab5a; }
+.qlc--dark .mushaf-navbtn:hover:not(:disabled) { background: #2a2210; }

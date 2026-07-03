@@ -1,0 +1,43 @@
+{
+  "version": 2,
+  "installCommand": "npm install --prefix frontend",
+  "buildCommand": "npm run build --prefix frontend",
+  "outputDirectory": "frontend/dist",
+  "redirects": [
+    {
+      "source": "/",
+      "has": [{ "type": "host", "value": "alrahma-xi.vercel.app" }],
+      "destination": "https://al-rahmaacademy.com/",
+      "permanent": true
+    },
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "alrahma-xi.vercel.app" }],
+      "destination": "https://al-rahmaacademy.com/:path*",
+      "permanent": true
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://alrahma-1.onrender.com/api/:path*"
+    },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "Strict-Transport-Security",    "value": "max-age=63072000; includeSubDomains; preload" },
+        { "key": "X-Content-Type-Options",       "value": "nosniff" },
+        { "key": "X-Frame-Options",              "value": "SAMEORIGIN" },
+        { "key": "X-XSS-Protection",             "value": "1; mode=block" },
+        { "key": "Referrer-Policy",              "value": "strict-origin-when-cross-origin" },
+        { "key": "Cross-Origin-Opener-Policy",   "value": "same-origin-allow-popups" },
+        { "key": "Cross-Origin-Resource-Policy", "value": "cross-origin" },
+        { "key": "Content-Security-Policy",      "value": "default-src 'self'; script-src 'self' 'unsafe-inline' https://js.stripe.com https://www.paypal.com https://www.googletagmanager.com https://www.google-analytics.com https://accounts.google.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://alrahma-1.onrender.com https://api.quran.com https://api.alquran.cloud https://verses.quran.com https://js.stripe.com https://api.stripe.com https://www.paypal.com https://api.paypal.com https://www.google-analytics.com https://analytics.google.com https://oauth2.googleapis.com https://sentry.io https://*.sentry.io wss:; media-src 'self' https://download.quranicaudio.com https://verses.quran.com; frame-src https://js.stripe.com https://www.paypal.com https://accounts.google.com; frame-ancestors 'self'; object-src 'none'; base-uri 'self'; form-action 'self' https://www.paypal.com; upgrade-insecure-requests;" },
+        { "key": "Permissions-Policy",           "value": "camera=(), microphone=(), geolocation=(self), payment=(self), interest-cohort=()" }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,1336 @@
+﻿/* ===== Quran reader page ===== */
+/* .quran__bar rules live in styles/layout/header.css (global cascade) */
+.quran { background: var(--cream); min-height: 100vh; }
+
+.quran__layout { display: grid; grid-template-columns: 320px 1fr; gap: 24px; padding: 24px 0 60px; }
+
+/* Sidebar */
+.quran__sidebar {
+  background: #fff; border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 14px; height: calc(100vh - 110px); position: sticky; top: 86px;
+  display: flex; flex-direction: column; box-shadow: var(--shadow);
+}
+.quran__search {
+  width: 100%; padding: 11px 14px; border: 1px solid var(--line); border-radius: 10px;
+  font-family: inherit; font-size: .92rem; margin-bottom: 12px; background: #fbfaf5;
+}
+.quran__search:focus { outline: none; border-color: var(--green); }
+.quran__list { overflow-y: auto; display: flex; flex-direction: column; gap: 4px; padding-right: 4px; }
+.quran__surah {
+  width: 100%; display: flex; align-items: center; gap: 12px; text-align: left;
+  background: none; border: 0; padding: 10px 12px; border-radius: 10px; cursor: pointer;
+  font-family: inherit; transition: background .15s;
+}
+.quran__surah:hover { background: var(--cream); }
+.quran__surah.active { background: var(--green); }
+.quran__surah.active strong, .quran__surah.active small,
+.quran__surah.active .quran__num, .quran__surah.active .quran__arabicName { color: #fff; }
+.quran__num {
+  flex-shrink: 0; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;
+  background: var(--cream); border-radius: 8px; font-size: .8rem; font-weight: 700; color: var(--green-deep);
+  transform: rotate(45deg);
+}
+.quran__num { transform: none; } /* keep simple */
+.quran__names { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.quran__names strong { color: var(--green-deep); font-size: .95rem; }
+.quran__names small { color: var(--muted); font-size: .76rem; }
+.quran__arabicName { font-family: var(--serif); font-size: 1.2rem; color: var(--gold-dark); }
+
+/* Reader */
+.quran__reader {
+  background: #fff; border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 30px 34px; box-shadow: var(--shadow); min-height: 60vh;
+}
+.quran__head { text-align: center; border-bottom: 1px solid var(--line); padding-bottom: 22px; margin-bottom: 14px; }
+.quran__head h1 { font-family: var(--serif); font-size: 2.6rem; color: var(--green-deep); }
+.quran__head p { color: var(--muted); font-size: .9rem; margin-top: 6px; text-transform: capitalize; }
+.quran__reciter-row { display: flex; align-items: center; gap: 10px; justify-content: center; margin-top: 16px; }
+.quran__reciter-label { font-size: .85rem; font-weight: 600; color: var(--green-deep); white-space: nowrap; }
+.quran__reciter-select { padding: 6px 12px; border: 1px solid var(--line); border-radius: 6px; font-size: .9rem; background: #fff; color: var(--ink); cursor: pointer; max-width: 280px; }
+.quran__reciter-select:focus { outline: none; border-color: var(--green); }
+.quran__audio { margin-top: 12px; width: 100%; max-width: 480px; }
+.quran__msg { text-align: center; color: var(--muted); padding: 30px; }
+.quran__msg--err { color: #c0392b; }
+
+.quran__verses { list-style: none; }
+.quran__verse { padding: 22px 0; border-bottom: 1px dashed var(--line); }
+.quran__badge {
+  display: inline-block; background: #eaf4ef; color: var(--green); font-size: .78rem;
+  font-weight: 600; padding: 3px 12px; border-radius: 999px; margin-bottom: 12px;
+}
+.quran__arabic {
+  font-family: var(--serif); font-size: 1.9rem; line-height: 2.2; color: var(--ink);
+  text-align: right; margin-bottom: 10px;
+}
+.quran__translation { color: var(--muted); font-size: 1rem; line-height: 1.7; }
+.alphabet-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.55);
+  z-index: 200; display: flex; align-items: center; justify-content: center; padding: 16px;
+}
+.alphabet-overlay__box {
+  background: #fff; border-radius: 16px; width: 100%; max-width: 860px;
+  max-height: 90vh; overflow-y: auto; box-shadow: 0 24px 60px rgba(0,0,0,.3);
+}
+.hifz-overlay__box { max-width: 820px; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   QLC — Quran Learning Center  (KSU-style layout)
+   ═══════════════════════════════════════════════════════════════════ */
+
+.qlc { display: flex; flex-direction: column; height: 100vh; background: #fff; overflow: hidden; }
+
+/* ════════════════════  TOP BAR  ════════════════════════════════════ */
+.qlc__bar {
+  background: var(--green-deep); padding: 0 16px; flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(0,0,0,.25);
+}
+.qlc__bar-inner {
+  display: flex; align-items: center; gap: 0; height: 52px; max-width: 1440px; margin: 0 auto;
+}
+.qlc__bar .brand__text strong { color: #fff; font-size: .95rem; }
+.qlc__bar .brand__text small  { color: rgba(255,255,255,.55); font-size: .7rem; }
+
+/* Main tabs */
+.qlc__tabs   { display: flex; gap: 0; margin: 0 6px 0 16px; height: 100%; }
+.qlc__tab {
+  display: flex; align-items: center; gap: 6px;
+  background: none; border: none; border-bottom: 3px solid transparent;
+  color: rgba(255,255,255,.6); padding: 0 16px;
+  font-size: .82rem; font-weight: 700; cursor: pointer; height: 100%;
+  white-space: nowrap; transition: all .15s; letter-spacing: .2px;
+}
+.qlc__tab-icon  { font-size: .9rem; }
+.qlc__tab:hover   { color: #fff; background: rgba(255,255,255,.07); }
+.qlc__tab--active { color: #fff; border-bottom-color: var(--gold); background: rgba(255,255,255,.1); }
+
+/* Right side of bar */
+.qlc__bar-right   { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+.qlc__lang-wrap   { display: flex; align-items: center; gap: 5px; }
+.qlc__lang-label  { font-size: .9rem; }
+.qlc__lang-select {
+  background: rgba(0,0,0,.25); color: #fff; border: 1px solid rgba(255,255,255,.2);
+  border-radius: 6px; padding: 4px 8px; font-size: .78rem; cursor: pointer; max-width: 120px;
+}
+.qlc__lang-select option { background: #1a4a36; color: #fff; }
+.qlc__back { font-size: .78rem; padding: 5px 12px; }
+
+/* ════════════════════  LAYOUT  ══════════════════════════════════════ */
+.qlc__alphabet-wrap { padding: 24px 0 60px; overflow-y: auto; flex: 1; }
+.qlc__layout {
+  display: grid; grid-template-columns: 270px 1fr;
+  flex: 1; overflow: hidden;
+}
+
+/* ════════════════════  SIDEBAR  ════════════════════════════════════ */
+.qlc__sidebar {
+  display: flex; flex-direction: column;
+  border-right: 1px solid #cfdbd5; background: #fff; overflow: hidden;
+}
+
+/* ❶ Nav tabs — full-width in sidebar, KSU-style */
+.qlc__nav-tabs {
+  display: flex; gap: 0; background: var(--green-deep); flex-shrink: 0;
+}
+.qlc__nav-tab {
+  flex: 1; padding: 11px 4px; font-size: .8rem; font-weight: 800;
+  background: rgba(0,0,0,.15); border: none; border-bottom: 3px solid transparent;
+  color: rgba(255,255,255,.65); cursor: pointer; letter-spacing: .3px;
+  transition: all .2s; text-align: center;
+}
+.qlc__nav-tab:hover  { background: rgba(255,255,255,.1); color: #fff; }
+.qlc__nav-tab.active { background: #fff; color: var(--green-deep); border-bottom-color: var(--gold); }
+
+/* ❷ Search */
+.qlc__sidebar-search { padding: 8px; background: #f7faf8; border-bottom: 1px solid #e0ebe5; flex-shrink: 0; }
+.qlc__search {
+  width: 100%; padding: 8px 11px; border: 1px solid #cfdbd5; border-radius: 7px;
+  font-family: inherit; font-size: .82rem; background: #fff; box-sizing: border-box;
+}
+.qlc__search:focus { outline: none; border-color: var(--green); box-shadow: 0 0 0 2px rgba(11,110,79,.1); }
+
+/* ❸ Surah/Juz list */
+.qlc__list {
+  flex: 1; overflow-y: auto; padding: 4px; display: flex; flex-direction: column; gap: 1px;
+  scrollbar-width: thin; scrollbar-color: #c8ddd5 transparent;
+}
+.qlc__surah-btn {
+  width: 100%; display: flex; align-items: center; gap: 7px; text-align: left;
+  background: none; border: 0; padding: 7px 8px; border-radius: 6px; cursor: pointer;
+  font-family: inherit; transition: background .1s;
+}
+.qlc__surah-btn:hover { background: #f0f7f3; }
+.qlc__surah-btn.active { background: var(--green-deep); }
+.qlc__surah-btn.active .qlc__snum,
+.qlc__surah-btn.active b,
+.qlc__surah-btn.active small,
+.qlc__surah-btn.active .qlc__sar { color: #fff !important; }
+.qlc__snum {
+  flex-shrink: 0; width: 26px; height: 26px; border-radius: 5px;
+  background: #edf6f1; font-size: .7rem; font-weight: 800; color: var(--green-deep);
+  display: flex; align-items: center; justify-content: center;
+}
+.qlc__surah-btn.active .qlc__snum { background: rgba(255,255,255,.18); }
+.qlc__snames { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.qlc__snames b     { color: var(--green-deep); font-size: .82rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.qlc__snames small { color: var(--muted); font-size: .66rem; margin-top: 1px; }
+.qlc__sar          { font-family: var(--serif); font-size: 1rem; color: var(--gold-dark); flex-shrink: 0; }
+
+/* ❹ Page nav */
+.qlc__page-nav { padding: 10px; overflow-y: auto; flex: 1; }
+.qlc__page-label { font-size: .72rem; color: var(--muted); margin: 0 0 8px; font-weight: 800; text-transform: uppercase; letter-spacing: .6px; }
+.qlc__page-row { display: flex; align-items: center; gap: 5px; margin-bottom: 10px; }
+.qlc__page-input {
+  flex: 1; text-align: center; border: 1.5px solid #cfdbd5; border-radius: 7px;
+  padding: 7px 4px; font-size: 1rem; font-weight: 800; color: var(--green-deep);
+  -moz-appearance: textfield;
+}
+.qlc__page-input::-webkit-inner-spin-button,
+.qlc__page-input::-webkit-outer-spin-button { -webkit-appearance: none; }
+.qlc__page-input:focus { outline: none; border-color: var(--green); }
+.qlc__page-arrow {
+  width: 32px; height: 32px; border: 1px solid #cfdbd5; border-radius: 6px;
+  background: #fff; font-size: 1.15rem; cursor: pointer; color: var(--green-deep);
+  display: flex; align-items: center; justify-content: center; transition: all .15s;
+}
+.qlc__page-arrow:hover:not(:disabled) { background: var(--green-deep); color: #fff; }
+.qlc__page-arrow:disabled { color: #ccc; cursor: not-allowed; }
+.qlc__page-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 3px; }
+.qlc__page-chip {
+  padding: 5px 2px; font-size: .68rem; border: 1px solid #e0ebe5; border-radius: 4px;
+  background: #fff; color: #7a9a8a; cursor: pointer; font-weight: 700; transition: all .12s;
+}
+.qlc__page-chip:hover  { background: #f0f7f3; color: var(--green-deep); }
+.qlc__page-chip.active { background: var(--green-deep); color: #fff; }
+
+/* ════════════════════  MAIN AREA  ══════════════════════════════════ */
+.qlc__main { display: flex; flex-direction: column; overflow-y: auto; background: #fff; }
+
+/* ════  ❶  CHAPTER HEADER  ═══════════════════════════════════════ */
+.qlc__chapter-header {
+  text-align: center; padding: 20px 24px 14px; flex-shrink: 0;
+  border-bottom: 1px solid #e8f0eb; background: #fff;
+}
+.qlc__chapter-ar {
+  font-family: var(--serif); font-size: 2.8rem; color: var(--green-deep);
+  margin: 0 0 4px; letter-spacing: 3px; line-height: 1.4;
+}
+.qlc__chapter-en {
+  font-size: .82rem; color: #7a9a8a; margin: 0; letter-spacing: .3px;
+}
+.qlc__chapter-dot { color: #c0d8cc; margin: 0 2px; }
+.qlc__chapter-mode-title {
+  font-size: 1.4rem; font-weight: 800; color: var(--green-deep); margin: 0;
+}
+
+/* ════  ❶.5  READING MODE SWITCH  ════════════════════════════════ */
+.qlc__mode-switch {
+  display: flex; justify-content: center; gap: 4px;
+  padding: 8px; flex-shrink: 0;
+  background: #f7faf8; border-bottom: 1px solid #e8f0eb;
+}
+.qlc__mode-switch-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 7px 18px; border: 1.5px solid transparent; border-radius: 999px;
+  background: none; color: #5a8a70; font-size: .82rem; font-weight: 700;
+  cursor: pointer; transition: all .15s;
+}
+.qlc__mode-switch-btn:hover { background: #eaf4ef; }
+.qlc__mode-switch-btn.active {
+  background: var(--green-deep); color: #fff; border-color: var(--green-deep);
+  box-shadow: 0 2px 6px rgba(11,110,79,.25);
+}
+.qlc__mode-switch-icon { font-size: .95rem; }
+.qlc--dark .qlc__mode-switch { background: #151f1a; border-color: #1e3028; }
+.qlc--dark .qlc__mode-switch-btn { color: #8fb8a4; }
+.qlc--dark .qlc__mode-switch-btn:hover { background: #1e3028; }
+
+@media (max-width: 480px) {
+  .qlc__mode-switch-label { display: none; }
+  .qlc__mode-switch-btn { padding: 8px 14px; }
+  .qlc__mode-switch-icon { font-size: 1.1rem; }
+}
+
+/* ════  Immersive reading: hide chrome, keep just the flowing page ═ */
+.qlc__bar, .qlc__mode-switch, .qlc__cbar {
+  transition: max-height .25s ease, opacity .2s ease, padding .25s ease;
+  max-height: 500px; overflow: hidden;
+}
+.qlc--chrome-hidden .qlc__bar,
+.qlc--chrome-hidden .qlc__mode-switch,
+.qlc--chrome-hidden .qlc__cbar {
+  max-height: 0; opacity: 0; padding-top: 0; padding-bottom: 0; border: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .qlc__bar, .qlc__mode-switch, .qlc__cbar { transition: none; }
+}
+
+/* ════  ❷  CONTROLS BAR  ════════════════════════════════════════ */
+.qlc__cbar {
+  flex-shrink: 0; background: #f7faf8; border-bottom: 2px solid #dce8e2;
+  padding: 0;
+}
+
+/* Horizontal selectors row */
+.qlc__cbar-selects {
+  display: flex; align-items: stretch;
+  border-bottom: 1px solid #dce8e2;
+}
+.qlc__cbar-selects--hifz { flex-wrap: wrap; border-bottom: none; border-top: 1px solid #dce8e2; }
+.qlc__cbar-item {
+  display: flex; flex-direction: column; gap: 3px;
+  padding: 10px 16px; flex: 1; min-width: 150px;
+}
+.qlc__cbar-label {
+  font-size: .68rem; font-weight: 800; color: #5a8a70;
+  text-transform: uppercase; letter-spacing: .7px; white-space: nowrap;
+}
+.qlc__cbar-select {
+  border: 1.5px solid #cfdbd5; border-radius: 7px; padding: 7px 10px;
+  font-size: .83rem; background: #fff; color: var(--ink); cursor: pointer; width: 100%;
+  transition: border-color .15s;
+}
+.qlc__cbar-select:focus { outline: none; border-color: var(--green); }
+.qlc__cbar-sep {
+  width: 1px; background: #dce8e2; flex-shrink: 0; align-self: stretch; margin: 0;
+}
+.qlc__cbar-toggle {
+  display: flex; align-items: center; gap: 6px; cursor: pointer;
+  font-size: .85rem; font-weight: 700; color: var(--green-deep); padding-top: 4px;
+}
+
+/* Audio player row */
+.qlc__cbar-player {
+  display: flex; align-items: center; gap: 12px; padding: 8px 16px;
+  background: #1e4d38;
+}
+.qlc__cbar-reciter-name {
+  font-size: .78rem; color: rgba(255,255,255,.75); white-space: nowrap; font-weight: 600;
+}
+.qlc__audio { flex: 1; height: 34px; min-width: 0; }
+
+/* ════  HIFZ CONTROLS  ══════════════════════════════════════════ */
+.qlc__cbar--hifz { padding: 10px 16px; }
+.qlc__hifz-modetabs { display: flex; gap: 6px; margin-bottom: 10px; }
+.qlc__hifz-modetab {
+  background: #e8f4ef; border: 1.5px solid #b8d8c8; border-radius: 20px;
+  padding: 6px 18px; font-size: .8rem; font-weight: 800; cursor: pointer;
+  color: #5a8a70; transition: all .15s;
+}
+.qlc__hifz-modetab.active { background: var(--green-deep); color: #fff; border-color: var(--green-deep); }
+
+.qlc__hifz-playbar {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+  margin-top: 10px; padding: 10px 14px;
+  background: #fff; border: 1.5px solid #dce8e2; border-radius: 8px;
+}
+.qlc__hifz-startbtn {
+  display: flex; align-items: center; gap: 12px; padding: 9px 20px !important; font-size: .88rem;
+}
+.qlc__hifz-startinfo {
+  font-size: .75rem; opacity: .85; border-left: 1px solid rgba(255,255,255,.5); padding-left: 12px;
+}
+.qlc__hifz-stopbtn { padding: 8px 18px !important; }
+.qlc__hifz-progress-wrap { display: flex; align-items: center; gap: 10px; }
+.qlc__hifz-verse-label { font-size: .88rem; font-weight: 800; color: var(--green-deep); white-space: nowrap; }
+.qlc__hifz-dots { display: flex; gap: 4px; }
+.qlc__hdot { width: 9px; height: 9px; border-radius: 50%; background: #d0e8dc; transition: background .18s; }
+.qlc__hdot.on { background: var(--green); }
+.qlc__hdot-more { font-size: .78rem; color: var(--green-deep); font-weight: 700; margin-left: 4px; }
+.qlc__hifz-range {
+  font-size: .78rem; font-weight: 800; color: var(--gold-dark);
+  background: #fffbec; border: 1px solid #e8d89a; padding: 3px 10px; border-radius: 20px;
+}
+.qlc__hifz-warn { font-size: .82rem; color: #c0392b; font-weight: 700; }
+.qlc__hifz-status { font-size: .85rem; font-weight: 700; color: var(--green-deep); }
+
+/* ════  ❸  BASMALAH  ════════════════════════════════════════════ */
+.qlc__basmalah-wrap { text-align: center; padding: 26px 20px 6px; }
+.qlc__basmalah {
+  font-family: var(--serif); font-size: 1.8rem; color: var(--green-deep);
+  direction: rtl; margin: 0; letter-spacing: 2px; line-height: 1.8;
+  display: inline-block;
+}
+
+/* ════  LOADING  ════════════════════════════════════════════════ */
+.qlc__loading { display: flex; justify-content: center; padding: 60px 0; }
+.qlc__spinner {
+  width: 38px; height: 38px; border: 3px solid #d8ece3;
+  border-top-color: var(--green); border-radius: 50%; animation: qlc-spin .7s linear infinite;
+}
+@keyframes qlc-spin { to { transform: rotate(360deg); } }
+.qlc__error { text-align: center; color: #c0392b; padding: 40px; font-size: .9rem; }
+
+/* ════  ❹  VERSE LIST  ══════════════════════════════════════════ */
+.qlc__verses-wrap { flex: 1; max-width: var(--reading-max-width, 100%); margin: 0 auto; }
+.qlc__verses { list-style: none; padding: 0; margin: 0; }
+
+.qlc__verse {
+  padding: 22px 28px;
+  border-bottom: 1px solid #edf3ef;
+  position: relative; transition: background .12s;
+}
+.qlc__verse:last-child { border-bottom: none; }
+.qlc__verse:hover { background: #fafcfb; }
+.qlc__verse--active {
+  background: linear-gradient(to right, #f0fbf5, #fafffe);
+  border-bottom: none; border-left: 4px solid var(--green);
+}
+/* Persistent user highlight (distinct from the ephemeral --active audio-sync
+   highlight above): a soft tint + left stripe in the chosen color. */
+.qlc__verse--highlighted {
+  background: #fffdf0; /* fallback for browsers without color-mix() */
+  background: color-mix(in srgb, var(--verse-highlight) 12%, #fff);
+  border-inline-start: 4px solid var(--verse-highlight);
+}
+.qlc--dark .qlc__verse--highlighted {
+  background: #1e2317;
+  background: color-mix(in srgb, var(--verse-highlight) 18%, #111b17);
+}
+
+/* Arabic text — verse number inline as ﴿n﴾ */
+.qlc__arabic-wrap { position: relative; }
+.qlc__arabic {
+  font-family: var(--serif); font-size: 2.1rem; line-height: var(--reading-line-height, 2.6);
+  color: #111; text-align: right; margin: 0 0 6px; direction: rtl;
+  position: relative;
+}
+.qlc__arabic.hidden .qlc__vnum { display: none; }
+.qlc__vnum {
+  font-family: var(--serif); font-size: 1rem; color: var(--green);
+  font-weight: 700; margin-right: 6px; letter-spacing: 0;
+  display: inline;
+}
+.qlc__dots { color: #c0c0c0; letter-spacing: 6px; font-size: 1.2rem; }
+
+/* Translation — clean text, no box */
+.qlc__trans {
+  font-size: .92rem; color: #5a7a6a; line-height: 1.85; margin: 0;
+  padding-right: 2px;
+}
+
+/* Footer of verse: badge + meta + actions */
+.qlc__verse-foot {
+  display: flex; align-items: center; gap: 8px; margin-top: 10px;
+}
+.qlc__vbadge {
+  font-size: .68rem; font-weight: 800; color: #7a9a8a;
+  background: #edf6f1; border-radius: 20px; padding: 2px 10px;
+  flex-shrink: 0;
+}
+.qlc__vmeta { font-size: .65rem; color: #aac5b4; }
+.qlc__verse-actions { display: flex; align-items: center; gap: 5px; margin-left: auto; }
+
+/* Verse action buttons */
+.qlc__playbtn {
+  background: var(--green); color: #fff; border: none; border-radius: 50%;
+  width: 30px; height: 30px; cursor: pointer; font-size: .78rem;
+  display: flex; align-items: center; justify-content: center; transition: all .15s;
+  box-shadow: 0 2px 6px rgba(11,110,79,.3);
+}
+.qlc__playbtn:hover { background: var(--green-deep); transform: scale(1.08); }
+.qlc__playbtn:disabled { background: #ccc; cursor: not-allowed; transform: none; box-shadow: none; }
+.qlc__revealbtn {
+  background: #f0faf5; color: var(--green-deep); border: 1px solid #b8d8c8;
+  border-radius: 6px; padding: 4px 12px; font-size: .75rem; font-weight: 800;
+  cursor: pointer; white-space: nowrap; transition: all .15s;
+}
+.qlc__revealbtn:hover { background: var(--green-deep); color: #fff; }
+.qlc__tafsirbtn {
+  padding: 4px 11px; font-size: .75rem; font-weight: 800;
+  background: #fffbec; border: 1px solid #e0c86a; border-radius: 6px;
+  cursor: pointer; color: #8a6a00; transition: all .15s; white-space: nowrap;
+}
+.qlc__tafsirbtn.active,
+.qlc__tafsirbtn:hover { background: #c89a00; color: #fff; border-color: #c89a00; }
+
+/* Surah divider (page/juz modes) */
+.qlc__divider {
+  display: flex; align-items: center; gap: 14px;
+  padding: 10px 28px; margin: 0 -28px 8px;
+  background: linear-gradient(to right, #e4f4ec, #f0faf5);
+  border-top: 1px solid #d0e8da; border-bottom: 1px solid #d0e8da;
+}
+.qlc__divider-ar { font-family: var(--serif); font-size: 1.4rem; font-weight: 700; color: var(--green-deep); direction: rtl; }
+.qlc__divider-en { font-size: .78rem; color: #7a9a8a; }
+
+/* ════  TAFSIR PANEL (KSU-style) ════════════════════════════════════ */
+.qlc__tafsir-panel {
+  margin-top: 16px; border: 1px solid #d8c87a; border-radius: 10px;
+  overflow: hidden; box-shadow: 0 2px 12px rgba(180,150,0,.1);
+}
+.qlc__tafsir-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 16px; background: linear-gradient(135deg, #fffbe8, #fff8d4);
+  border-bottom: 2px solid #e8d070; gap: 10px;
+}
+.qlc__tafsir-head-left { display: flex; flex-direction: column; gap: 2px; }
+.qlc__tafsir-head-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.qlc__tafsir-name { font-size: .82rem; font-weight: 800; color: #7a5a00; }
+.qlc__tafsir-name-en { font-size: .68rem; color: #9a7a20; }
+.qlc__tafsir-key {
+  font-size: .7rem; font-weight: 800; color: #b8941f;
+  background: #fff3c0; border-radius: 12px; padding: 2px 8px; border: 1px solid #e0c84a;
+}
+.qlc__tafsir-close {
+  background: #e8d070; border: 1px solid #c8a840; color: #7a5a00;
+  border-radius: 5px; width: 24px; height: 24px; cursor: pointer; font-size: .8rem;
+  display: flex; align-items: center; justify-content: center; transition: all .15s; flex-shrink: 0;
+}
+.qlc__tafsir-close:hover { background: #c0392b; color: #fff; border-color: #c0392b; }
+.qlc__tafsir-body {
+  padding: 18px 22px; background: #fffff8; max-height: 600px; overflow-y: auto;
+  scrollbar-width: thin; scrollbar-color: #d8c870 transparent;
+}
+.qlc__tafsir-para {
+  font-family: var(--serif); font-size: 1rem; line-height: 2.2;
+  color: #1a1a0a; margin: 0 0 12px;
+}
+.qlc__tafsir-para:last-child { margin-bottom: 0; }
+/* HTML tafsir from quran.com API */
+.qlc__tafsir-html {
+  font-family: var(--serif); font-size: 1rem; line-height: 2.2; color: #1a1a0a;
+}
+.qlc__tafsir-html p { margin: 0 0 16px; }
+.qlc__tafsir-html p:last-child { margin-bottom: 0; }
+.qlc__tafsir-html .blue { color: #1a4a8a; font-weight: 700; }
+.qlc__tafsir-html .arabic,
+.qlc__tafsir-html .qpc-hafs { font-family: var(--serif); font-size: 1.1em; }
+.qlc__tafsir-html .brown,
+.qlc__tafsir-html .reference { color: #7a4500; font-size: .9em; }
+.qlc__tafsir-loading-wrap {
+  display: flex; align-items: center; gap: 10px;
+  padding: 16px 18px; background: #fffff8;
+  font-size: .82rem; color: var(--muted);
+}
+.qlc__tafsir-spinner {
+  width: 18px; height: 18px; border: 2px solid #e0d09a;
+  border-top-color: #b8941f; border-radius: 50%; animation: qlc-spin .7s linear infinite; flex-shrink: 0;
+}
+.qlc__tafsir-err { font-size: .82rem; color: #c0392b; margin: 0; padding: 12px 18px; background: #fffff8; }
+
+/* ════  TAFSIR PICKER (inline per-verse) ════════════════════════════ */
+.qlc__tafsir-picker {
+  margin-top: 12px; border: 1px solid #d8e8d0; border-radius: 10px; overflow: hidden;
+  background: #fff; box-shadow: 0 6px 22px rgba(8,77,55,.12);
+  animation: qlc-pop .2s ease;
+}
+.qlc__tafsir-picker-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 16px; background: var(--green-deep); color: #fff;
+  font-size: .82rem; font-weight: 800;
+}
+.qlc__tafsir-picker-head button {
+  background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.3);
+  color: #fff; border-radius: 5px; width: 24px; height: 24px; cursor: pointer;
+  font-size: .8rem; display: flex; align-items: center; justify-content: center;
+}
+.qlc__tafsir-picker-group { padding: 8px 0; }
+.qlc__tafsir-picker-cat {
+  font-size: .65rem; font-weight: 800; text-transform: uppercase;
+  letter-spacing: .7px; color: #5a8a70; padding: 4px 14px 6px; margin: 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+.qlc__tafsir-picker-item {
+  display: flex; align-items: center; justify-content: space-between;
+  width: 100%; padding: 9px 16px; background: none; border: none;
+  cursor: pointer; transition: background .1s; gap: 10px;
+  border-bottom: 1px solid #f7f7f7;
+}
+.qlc__tafsir-picker-item:hover { background: #f0faf5; }
+.qlc__tafsir-picker-item:last-child { border-bottom: none; }
+.qlc__tafsir-picker-name { font-size: .88rem; font-weight: 700; color: var(--green-deep); }
+.qlc__tafsir-picker-en   { font-size: .72rem; color: var(--muted); }
+
+/* Hifz progress */
+.qlc__progress-bar  { height: 3px; background: #d8ece3; margin-top: 12px; overflow: hidden; }
+.qlc__progress-fill { height: 100%; background: var(--green); transition: width .4s ease; }
+
+/* ════  ACTIVE VERSE GLOW (KSU-style enhanced lighting) ════════════ */
+.qlc__verse--active {
+  background: linear-gradient(135deg, #e8faf1, #f0fff7);
+  border-left: 5px solid var(--green);
+  box-shadow: 0 2px 20px rgba(11,110,79,.12);
+  animation: qlc-verse-glow 2s ease-in-out infinite;
+}
+@keyframes qlc-verse-glow {
+  0%,100% { background: linear-gradient(135deg, #e8faf1, #f0fff7); box-shadow: 0 2px 20px rgba(11,110,79,.12); }
+  50%      { background: linear-gradient(135deg, #d4f5e4, #e8fff2); box-shadow: 0 4px 28px rgba(11,110,79,.2); }
+}
+
+/* Now-playing badge */
+.qlc__now-playing {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: #e8faf1; border: 1px solid #b0e4c8;
+  border-radius: 20px; padding: 3px 10px 3px 7px;
+  font-size: .68rem; font-weight: 800; color: var(--green-deep);
+  margin-bottom: 8px;
+}
+.qlc__np-dot {
+  width: 7px; height: 7px; border-radius: 50%; background: var(--green);
+  animation: qlc-np-pulse 1s ease-in-out infinite;
+}
+@keyframes qlc-np-pulse {
+  0%,100% { transform: scale(1); opacity: 1; }
+  50%      { transform: scale(1.5); opacity: .6; }
+}
+
+/* ════  JUMP-TO-VERSE BAR ═══════════════════════════════════════════ */
+.qlc__jump-bar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 20px; background: #f7faf8;
+  border-bottom: 1px solid #dce8e2; flex-shrink: 0;
+}
+.qlc__jump-label { font-size: .72rem; font-weight: 800; color: #5a8a70; white-space: nowrap; letter-spacing: .3px; }
+.qlc__jump-input {
+  width: 64px; padding: 5px 8px; border: 1.5px solid #cfdbd5; border-radius: 6px;
+  font-size: .82rem; font-weight: 700; text-align: center; color: var(--green-deep);
+  -moz-appearance: textfield;
+}
+.qlc__jump-input::-webkit-inner-spin-button,
+.qlc__jump-input::-webkit-outer-spin-button { -webkit-appearance: none; }
+.qlc__jump-input:focus { outline: none; border-color: var(--green); }
+.qlc__jump-of { font-size: .72rem; color: #9ab8a8; white-space: nowrap; }
+.qlc__jump-btn {
+  background: var(--green-deep); color: #fff; border: none; border-radius: 6px;
+  padding: 5px 12px; font-size: .78rem; font-weight: 800; cursor: pointer;
+  transition: background .15s; white-space: nowrap;
+}
+.qlc__jump-btn:hover { background: #041f18; }
+
+/* ════  FONT SIZE CONTROL IN READING BAR ════════════════════════════ */
+.qlc__cbar-font-row {
+  display: flex; align-items: center; gap: 5px; padding-top: 2px;
+}
+.qlc__cbar-font-btn {
+  background: #e8f4ef; border: 1px solid #c0d8c8; color: var(--green-deep);
+  border-radius: 5px; width: 26px; height: 26px; font-size: .78rem; font-weight: 800;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: all .12s; flex-shrink: 0;
+}
+.qlc__cbar-font-btn:hover { background: var(--green-deep); color: #fff; border-color: var(--green-deep); }
+.qlc__cbar-font-val { font-size: .7rem; font-weight: 800; color: #7a9a8a; min-width: 32px; text-align: center; }
+
+/* ════  KSU-STYLE KEYBOARD SHORTCUTS SIDE PANEL ════════════════════ */
+.qlc__ksp {
+  position: fixed;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 400;
+  display: flex;
+  flex-direction: row-reverse; /* tab visible on right, body slides left */
+  pointer-events: none;
+  user-select: none;
+}
+.qlc__ksp > * { pointer-events: auto; }
+
+.qlc__ksp-tab {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 8px; background: var(--green-deep); color: rgba(255,255,255,.9);
+  border: none; padding: 16px 10px; cursor: pointer;
+  border-radius: 10px 0 0 10px;
+  box-shadow: -3px 0 14px rgba(0,0,0,.22);
+  transition: background .18s; writing-mode: vertical-rl;
+}
+.qlc__ksp-tab:hover { background: var(--green); }
+.qlc__ksp-tab-icon { font-size: 1.15rem; writing-mode: horizontal-tb; }
+.qlc__ksp-tab-text { font-size: .62rem; font-weight: 800; letter-spacing: 1px; writing-mode: vertical-rl; }
+
+.qlc__ksp-body {
+  display: none; /* shown when .open */
+  background: #fff; min-width: 230px;
+  box-shadow: -6px 0 24px rgba(0,0,0,.18);
+  border-left: 4px solid var(--gold);
+  max-height: 80vh; overflow-y: auto;
+  flex-direction: column;
+  padding: 16px 14px 12px;
+  border-radius: 10px 0 0 10px;
+  margin-right: -1px; /* overlap tab slightly */
+}
+.qlc__ksp.open .qlc__ksp-body { display: flex; animation: qlc-ksp-in .22s ease; }
+@keyframes qlc-ksp-in { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: none; } }
+
+.qlc__ksp-title {
+  font-size: .72rem; font-weight: 800; color: var(--green-deep);
+  text-transform: uppercase; letter-spacing: .6px;
+  margin: 0 0 10px; padding-bottom: 8px;
+  border-bottom: 2px solid #e0ebe5;
+}
+.qlc__ksp-row {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 10px; padding: 7px 6px; border-radius: 6px; transition: background .1s;
+}
+.qlc__ksp-row:hover { background: #f5faf7; }
+.qlc__ksp-label { font-size: .8rem; color: #334; flex: 1; }
+.qlc__ksp-close {
+  margin-top: 12px; background: #f0faf5; border: 1px solid #b8d8c8;
+  color: var(--green-deep); border-radius: 6px; padding: 6px 12px;
+  font-size: .75rem; font-weight: 800; cursor: pointer; width: 100%; text-align: center;
+  transition: all .15s;
+}
+.qlc__ksp-close:hover { background: var(--green-deep); color: #fff; }
+
+/* ════  TOP BAR ICON BUTTONS ════════════════════════════════════════ */
+.qlc__bar-icon {
+  background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.18);
+  color: rgba(255,255,255,.8); border-radius: 7px;
+  width: 34px; height: 34px; cursor: pointer; font-size: .95rem;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .15s; flex-shrink: 0;
+}
+.qlc__bar-icon:hover { background: rgba(255,255,255,.2); color: #fff; }
+.qlc__bar-icon.active { background: rgba(255,255,255,.25); color: #fff; }
+
+/* ════  ACTION BUTTONS ON VERSE (copy, play-verse) ══════════════════ */
+.qlc__actbtn {
+  background: #edf6f1; border: 1px solid #c8ddd5; border-radius: 6px;
+  color: #6a9a7a; cursor: pointer; font-size: .78rem;
+  width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;
+  transition: all .15s; flex-shrink: 0;
+}
+.qlc__actbtn:hover { background: var(--green); color: #fff; border-color: var(--green); }
+.qlc__actbtn.copied { background: #2ecc71; color: #fff; border-color: #2ecc71; }
+.qlc__actbtn.active { background: var(--gold); color: #fff; border-color: var(--gold); }
+.qlc__actbtn--play  { background: var(--green); color: #fff; border-color: var(--green); }
+.qlc__actbtn--play:hover { background: var(--green-deep); border-color: var(--green-deep); }
+
+/* ════  NOTE POPOVER  ════════════════════════════════════════════════ */
+.qlc__note-popover {
+  margin-top: 10px; padding: 10px; background: #fffef9;
+  border: 1px solid #e7dcc0; border-radius: 10px;
+  animation: qlc-pop .15s ease;
+}
+.qlc__note-textarea {
+  width: 100%; box-sizing: border-box; resize: vertical; min-height: 60px;
+  border: 1px solid #cfdbd5; border-radius: 8px; padding: 8px 10px;
+  font-family: inherit; font-size: .85rem; color: var(--ink);
+}
+.qlc__note-textarea:focus { outline: none; border-color: var(--green); }
+.qlc__note-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px; }
+.qlc__note-cancel, .qlc__note-save {
+  padding: 5px 14px; border-radius: 6px; font-size: .78rem; font-weight: 700; cursor: pointer;
+}
+.qlc__note-cancel { background: none; border: 1px solid #cfdbd5; color: #6a8a78; }
+.qlc__note-cancel:hover { background: #f0f7f3; }
+.qlc__note-save { background: var(--green-deep); border: 1px solid var(--green-deep); color: #fff; }
+.qlc__note-save:hover { background: var(--green); }
+
+/* ════  HIGHLIGHT SWATCH PICKER  ═════════════════════════════════════ */
+.qlc__highlight-popover {
+  display: flex; align-items: center; gap: 8px; margin-top: 10px;
+  animation: qlc-pop .15s ease;
+}
+.qlc__highlight-swatch {
+  width: 26px; height: 26px; border-radius: 50%; cursor: pointer;
+  border: 2px solid transparent; box-shadow: 0 0 0 1px rgba(0,0,0,.08);
+  transition: transform .12s;
+}
+.qlc__highlight-swatch:hover { transform: scale(1.12); }
+.qlc__highlight-swatch.active { border-color: var(--ink); }
+.qlc__highlight-swatch--none {
+  background: #fff; display: flex; align-items: center; justify-content: center;
+  color: #9aa; font-size: .7rem; border: 1px solid #cfdbd5; box-shadow: none;
+}
+
+.qlc--dark .qlc__note-popover { background: #171208; border-color: #3a2f14; }
+.qlc--dark .qlc__note-textarea { background: #1a1509; border-color: #2a4035; color: #d5e8de; }
+.qlc--dark .qlc__note-cancel { border-color: #2a4035; color: #7ac898; }
+.qlc--dark .qlc__highlight-swatch.active { border-color: #f0e6c8; }
+.qlc--dark .qlc__highlight-swatch--none { background: #1a2820; border-color: #2a4035; color: #7ac898; }
+
+/* ════  MODAL OVERLAY  ══════════════════════════════════════════════ */
+.qlc__overlay {
+  position: fixed; inset: 0; z-index: 500;
+  background: rgba(6,55,42,.45); backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+  animation: qlc-fade .2s ease;
+}
+@keyframes qlc-fade { from { opacity: 0; } to { opacity: 1; } }
+
+/* Panel head (shared) */
+.qlc__panel-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px; border-bottom: 1px solid #e8f0eb; flex-shrink: 0;
+  background: var(--green-deep);
+}
+.qlc__panel-head span { font-weight: 800; color: #fff; font-size: .95rem; letter-spacing: .3px; }
+.qlc__panel-close {
+  background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.25);
+  color: rgba(255,255,255,.85); border-radius: 6px;
+  width: 30px; height: 30px; cursor: pointer; font-size: .9rem;
+  display: flex; align-items: center; justify-content: center; transition: all .15s;
+}
+.qlc__panel-close:hover { background: rgba(255,255,255,.3); color: #fff; }
+
+/* ════  KEYBOARD SHORTCUTS PANEL ════════════════════════════════════ */
+.qlc__shortcuts {
+  background: #fff; border-radius: 14px; overflow: hidden;
+  width: min(100%, 440px); box-shadow: 0 20px 60px rgba(0,0,0,.25);
+  animation: qlc-pop .25s ease; display: flex; flex-direction: column; max-height: 90vh;
+}
+@keyframes qlc-pop { from { transform: translateY(12px) scale(.97); opacity: 0; } to { transform: none; opacity: 1; } }
+
+.qlc__shortcuts-body { padding: 16px 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; }
+.qlc__shortcuts-group { display: flex; flex-direction: column; gap: 6px; }
+.qlc__shortcuts-cat {
+  font-size: .68rem; font-weight: 800; text-transform: uppercase; letter-spacing: .8px;
+  color: #5a8a70; margin: 0 0 4px;
+}
+.qlc__shortcut-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 7px 12px; border-radius: 8px;
+  background: #f7faf8; border: 1px solid #e4ede8;
+}
+.qlc__shortcut-row span { font-size: .85rem; color: #445; }
+.qlc__kbd {
+  display: inline-flex; align-items: center; justify-content: center;
+  background: #fff; border: 1.5px solid #c8d8d0; border-radius: 5px;
+  padding: 3px 9px; font-size: .75rem; font-weight: 800; font-family: monospace;
+  color: var(--green-deep); box-shadow: 0 2px 0 #c0d0c8; min-width: 36px;
+  flex-shrink: 0; letter-spacing: .2px;
+}
+.qlc__kbd--sm { padding: 2px 6px; font-size: .68rem; min-width: auto; }
+
+/* ════  SETTINGS PANEL ══════════════════════════════════════════════ */
+.qlc__settings {
+  background: #fff; border-radius: 14px; overflow: hidden;
+  width: min(100%, 400px); box-shadow: 0 20px 60px rgba(0,0,0,.25);
+  animation: qlc-pop .25s ease; display: flex; flex-direction: column; max-height: 90vh;
+}
+.qlc__settings-body { padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; }
+.qlc__settings-section { display: flex; flex-direction: column; gap: 10px; }
+.qlc__settings-label {
+  font-size: .7rem; font-weight: 800; text-transform: uppercase;
+  letter-spacing: .7px; color: #5a8a70; margin: 0;
+}
+.qlc__settings-hint { font-size: .78rem; color: #999; background: #f9fafb; border-radius: 8px; padding: 10px 12px; border: 1px solid #e8ede9; margin: 0; }
+
+/* Font size */
+.qlc__fontsize-row {
+  display: flex; align-items: center; gap: 10px;
+  background: #f7faf8; border: 1px solid #dce8e2; border-radius: 8px; padding: 8px 12px;
+}
+.qlc__fontsize-btn {
+  background: var(--green-deep); color: #fff; border: none; border-radius: 5px;
+  width: 30px; height: 30px; font-size: .82rem; font-weight: 800; cursor: pointer;
+  flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+  transition: background .15s;
+}
+.qlc__fontsize-btn:hover { background: #041f18; }
+.qlc__fontsize-slider {
+  flex: 1; accent-color: var(--green); cursor: pointer;
+}
+.qlc__fontsize-preview {
+  text-align: center; color: var(--green-deep); font-family: var(--serif);
+  line-height: 1.8; background: #f0faf5; border-radius: 8px;
+  padding: 10px 14px; border: 1px solid #d0eada; margin: 0;
+}
+
+/* Reading theme / content-width chip row */
+.qlc__theme-row { display: flex; gap: 8px; }
+.qlc__theme-btn {
+  flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 9px 6px; border: 1.5px solid #dce8e2; border-radius: 8px;
+  background: #f7faf8; color: #4a6a58; font-size: .78rem; font-weight: 700; cursor: pointer;
+  transition: all .15s;
+}
+.qlc__theme-btn:hover { background: #eaf4ef; }
+.qlc__theme-btn.active { border-color: var(--green-deep); background: var(--green-deep); color: #fff; }
+.qlc__theme-btn--sepia.active { border-color: #b8934a; background: #b8934a; }
+.qlc__theme-btn--dark.active  { border-color: #1a2820; background: #1a2820; }
+
+/* Toggle row */
+.qlc__toggle-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 12px; background: #f7faf8; border: 1px solid #dce8e2;
+  border-radius: 8px; cursor: pointer;
+}
+.qlc__toggle-row span { font-size: .88rem; font-weight: 700; color: #334; }
+
+/* Toggle switch */
+.qlc__switch {
+  width: 40px; height: 22px; border-radius: 20px; background: #ccc;
+  position: relative; cursor: pointer; transition: background .2s; flex-shrink: 0;
+}
+.qlc__switch.on { background: var(--green); }
+.qlc__switch-knob {
+  position: absolute; top: 3px; left: 3px;
+  width: 16px; height: 16px; border-radius: 50%; background: #fff;
+  transition: transform .2s; box-shadow: 0 1px 4px rgba(0,0,0,.2);
+}
+.qlc__switch.on .qlc__switch-knob { transform: translateX(18px); }
+
+/* ════  FLOATING HIFZ BAR (bottom) ══════════════════════════════════ */
+.qlc__float-bar {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
+  background: var(--green-deep);
+  display: flex; align-items: center; gap: 16px;
+  padding: 10px 20px;
+  box-shadow: 0 -4px 20px rgba(0,0,0,.25);
+  animation: qlc-bar-in .25s ease;
+}
+@keyframes qlc-bar-in { from { transform: translateY(100%); } to { transform: none; } }
+.qlc__float-info { display: flex; flex-direction: column; flex: 1; min-width: 0; gap: 2px; }
+.qlc__float-key { font-size: .65rem; color: rgba(255,255,255,.55); font-weight: 800; letter-spacing: .5px; }
+.qlc__float-ar {
+  font-family: var(--serif); font-size: .95rem; color: rgba(255,255,255,.9);
+  direction: rtl; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.qlc__float-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.qlc__float-count { font-size: .8rem; font-weight: 800; color: var(--gold); }
+.qlc__float-range { font-size: .75rem; color: rgba(255,255,255,.65); }
+.qlc__float-stop {
+  background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.3);
+  color: #fff; border-radius: 7px; padding: 5px 14px;
+  font-size: .8rem; font-weight: 800; cursor: pointer; transition: all .15s;
+}
+.qlc__float-stop:hover { background: rgba(255,255,255,.25); }
+.qlc__float-progress {
+  position: absolute; bottom: 0; left: 0; right: 0; height: 3px; background: rgba(255,255,255,.12);
+}
+.qlc__float-fill { height: 100%; background: var(--gold); transition: width .5s ease; }
+
+/* ════  SEPIA READING THEME (`.qlc--sepia`) ═════════════════════════
+   A warm, paper-like alternative to light/dark — Kindle/Books-style. Kept
+   deliberately light-touch: retints the reading surfaces rather than
+   re-skinning every control, since it's meant for the reading pane. */
+.qlc--sepia { background: #f4ecd8; color: #3b2f1e; }
+.qlc--sepia .qlc__main, .qlc--sepia .qlc__sidebar, .qlc--sepia .qlc__chapter-header,
+.qlc--sepia .qlc__cbar, .qlc--sepia .qlc__mode-switch { background: #f4ecd8; border-color: #e3d5b8; }
+.qlc--sepia .qlc__verse { border-color: #e3d5b8; }
+.qlc--sepia .qlc__verse:hover { background: #efe4c8; }
+.qlc--sepia .qlc__arabic { color: #2b2114; }
+.qlc--sepia .qlc__trans { color: #6b5c42; }
+.qlc--sepia .qlc__chapter-ar { color: #7a5a1e; }
+.qlc--sepia .mushaf-frame { background: #f7f0dc; border-color: #ddc98e; }
+.qlc--sepia .mushaf-flow { color: #2b2114; }
+.qlc--sepia .qlc__mode-switch-btn { color: #7a6a4a; }
+.qlc--sepia .qlc__mode-switch-btn.active { background: #8a6d1a; border-color: #8a6d1a; }
+
+/* ════  DARK MODE (`.qlc--dark`) ════════════════════════════════════ */
+.qlc--dark { background: #111b17; color: #d5e8de; }
+.qlc--dark .qlc__sidebar  { background: #151f1a; border-color: #1e3028; }
+.qlc--dark .qlc__sidebar-close { background: #1e3028; color: #c8e0d4; }
+.qlc--dark .qlc__main     { background: #111b17; }
+.qlc--dark .qlc__nav-tab.active { background: #111b17; }
+.qlc--dark .qlc__chapter-header { background: #111b17; border-color: #1e3028; }
+.qlc--dark .qlc__chapter-ar { color: #81d8a8; }
+.qlc--dark .qlc__chapter-en { color: #607a6a; }
+.qlc--dark .qlc__cbar { background: #151f1a; border-color: #1e3028; }
+.qlc--dark .qlc__cbar-selects { border-color: #1e3028; }
+.qlc--dark .qlc__cbar-sep { background: #1e3028; }
+.qlc--dark .qlc__cbar-label { color: #5a9a78; }
+.qlc--dark .qlc__cbar-select {
+  background: #1e2d24; border-color: #2a4035; color: #c8e0d4;
+}
+.qlc--dark .qlc__cbar-select option { background: #1e2d24; }
+.qlc--dark .qlc__search { background: #1e2d24; border-color: #2a4035; color: #c8e0d4; }
+.qlc--dark .qlc__surah-btn:hover { background: #1a2d22; }
+.qlc--dark .qlc__snum { background: #1e3028; color: #7ac898; }
+.qlc--dark .qlc__snames b { color: #c0dcd0; }
+.qlc--dark .qlc__snames small { color: #5a7a68; }
+.qlc--dark .qlc__verse { border-color: #1e2d24; }
+.qlc--dark .qlc__verse:hover { background: #141e19; }
+.qlc--dark .qlc__verse--active {
+  background: linear-gradient(135deg, #0e1f18, #111e17);
+  border-left-color: #2ecc71;
+}
+.qlc--dark .qlc__arabic { color: #e8f5ee; }
+.qlc--dark .qlc__vnum { color: #2ecc71; }
+.qlc--dark .qlc__trans { color: #6a9a7a; }
+.qlc--dark .qlc__vbadge { background: #1a2d22; color: #5a9a78; }
+.qlc--dark .qlc__actbtn { background: #1a2d22; border-color: #2a4035; color: #5a9a78; }
+.qlc--dark .qlc__divider { background: linear-gradient(to right, #0e1f18, #131e17); border-color: #1e3028; }
+.qlc--dark .qlc__divider-ar { color: #81d8a8; }
+.qlc--dark .qlc__basmalah { color: #81d8a8; }
+.qlc--dark .qlc__page-input { background: #1e2d24; border-color: #2a4035; color: #c8e0d4; }
+.qlc--dark .qlc__page-arrow { background: #1e2d24; border-color: #2a4035; color: #c8e0d4; }
+.qlc--dark .qlc__page-chip { background: #1a2820; border-color: #2a4035; color: #5a9a78; }
+.qlc--dark .qlc__page-chip.active { background: #1e5c3a; }
+.qlc--dark .qlc__hifz-playbar { background: #151f1a; border-color: #1e3028; }
+.qlc--dark .qlc__tafsir-panel { border-color: #3a3010; }
+.qlc--dark .qlc__tafsir-head { background: #1e1a08; border-color: #4a4010; }
+.qlc--dark .qlc__tafsir-name { color: #e8c840; }
+.qlc--dark .qlc__tafsir-name-en { color: #b8a040; }
+.qlc--dark .qlc__tafsir-key { background: #2a2008; border-color: #4a4010; color: #e8c840; }
+.qlc--dark .qlc__tafsir-body { background: #0e0e08; }
+.qlc--dark .qlc__tafsir-para { color: #e0dcc0; }
+.qlc--dark .qlc__tafsir-html { color: #e0dcc0; }
+.qlc--dark .qlc__tafsir-html .blue { color: #7ab4e8; }
+.qlc--dark .qlc__tafsir-html .brown,
+.qlc--dark .qlc__tafsir-html .reference { color: #d4a060; }
+.qlc--dark .qlc__tafsir-picker { background: #151f1a; border-color: #1e3028; }
+.qlc--dark .qlc__tafsir-picker-item:hover { background: #1a2820; }
+.qlc--dark .qlc__tafsir-picker-name { color: #81d8a8; }
+.qlc--dark .qlc__tafsir-picker-en { color: #5a7a68; }
+.qlc--dark .qlc__shortcuts { background: #151f1a; }
+.qlc--dark .qlc__shortcut-row { background: #1a2820; border-color: #2a4035; }
+.qlc--dark .qlc__shortcut-row span { color: #c0dcd0; }
+.qlc--dark .qlc__settings { background: #151f1a; }
+.qlc--dark .qlc__settings-hint { background: #1a2820; border-color: #2a4035; color: #6a9a7a; }
+.qlc--dark .qlc__fontsize-row { background: #1a2820; border-color: #2a4035; }
+.qlc--dark .qlc__fontsize-preview { background: #0e1f18; border-color: #2a4035; color: #81d8a8; }
+.qlc--dark .qlc__toggle-row { background: #1a2820; border-color: #2a4035; }
+.qlc--dark .qlc__toggle-row span { color: #c0dcd0; }
+.qlc--dark .qlc__progress-bar { background: #1e3028; }
+.qlc--dark .qlc__now-playing { background: #0e1f18; border-color: #2a4035; color: #81d8a8; }
+.qlc--dark .qlc__jump-bar { background: #151f1a; border-color: #1e3028; }
+.qlc--dark .qlc__jump-input { background: #1e2d24; border-color: #2a4035; color: #c8e0d4; }
+.qlc--dark .qlc__jump-of { color: #3a5a48; }
+.qlc--dark .qlc__cbar-font-btn { background: #1a2d22; border-color: #2a4035; color: #81d8a8; }
+.qlc--dark .qlc__cbar-font-val { color: #5a9a78; }
+.qlc--dark .qlc__ksp-body { background: #151f1a; border-color: #b8941f; }
+.qlc--dark .qlc__ksp-title { color: #81d8a8; border-color: #1e3028; }
+.qlc--dark .qlc__ksp-label { color: #c0dcd0; }
+.qlc--dark .qlc__ksp-row:hover { background: #1a2820; }
+.qlc--dark .qlc__ksp-close { background: #1a2820; border-color: #2a4035; color: #81d8a8; }
+
+/* ════  FLOATING BAR — updated layout (centre column added) ═════════ */
+.qlc__float-bar {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
+  background: linear-gradient(to right, #0e2d22, var(--green-deep));
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  grid-template-rows: auto 3px;
+  align-items: center;
+  gap: 0 14px;
+  padding: 10px 20px 13px;
+  box-shadow: 0 -4px 24px rgba(0,0,0,.3);
+  animation: qlc-bar-in .25s ease;
+}
+/* verse info — full width on mobile, left col on desktop */
+.qlc__float-info {
+  display: flex; flex-direction: column; min-width: 0; gap: 2px;
+  grid-column: 1; grid-row: 1;
+}
+.qlc__float-key {
+  font-size: .62rem; color: rgba(255,255,255,.5); font-weight: 800; letter-spacing: .5px;
+}
+.qlc__float-ar {
+  font-family: var(--serif); font-size: .9rem; color: rgba(255,255,255,.9);
+  direction: rtl; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+/* centre: verse seek bar + time */
+.qlc__float-centre {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  grid-column: 2; grid-row: 1; min-width: 140px;
+}
+.qlc__float-verse-seek {
+  width: 100%; height: 3px; background: rgba(255,255,255,.15);
+  border-radius: 99px; overflow: hidden;
+}
+.qlc__float-verse-fill {
+  height: 100%; background: var(--gold); border-radius: 99px;
+  transition: width .15s linear;
+}
+.qlc__float-time {
+  font-size: .62rem; color: rgba(255,255,255,.5);
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+/* right: counts + stop */
+.qlc__float-right {
+  display: flex; align-items: center; gap: 9px; flex-shrink: 0;
+  grid-column: 3; grid-row: 1;
+}
+.qlc__float-count { font-size: .8rem; font-weight: 800; color: var(--gold); }
+.qlc__float-range { font-size: .72rem; color: rgba(255,255,255,.55); }
+.qlc__float-stop {
+  background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.28);
+  color: #fff; border-radius: 7px; padding: 5px 13px;
+  font-size: .78rem; font-weight: 800; cursor: pointer; transition: all .15s;
+}
+.qlc__float-stop:hover { background: rgba(255,255,255,.25); }
+/* range progress bar — spans all columns */
+.qlc__float-progress {
+  grid-column: 1 / -1; grid-row: 2;
+  height: 3px; background: rgba(255,255,255,.1); margin: 0 -20px;
+}
+.qlc__float-fill { height: 100%; background: var(--gold); transition: width .5s ease; }
+
+/* Padding on verse list so last verse isn't hidden behind the floating bar */
+.qlc--float .qlc__verses-wrap { padding-bottom: 72px; }
+
+/* ════  HIFZ SPEED SELECTOR ═════════════════════════════════════════ */
+.qlc__hifz-speeds {
+  display: flex; align-items: center; gap: 2px;
+  background: #edf6f1; border: 1px solid #c8ddd5; border-radius: 20px;
+  padding: 2px 4px;
+}
+.qlc__hifz-speed-btn {
+  padding: 3px 8px; font-size: .68rem; font-weight: 800;
+  border: none; border-radius: 20px; background: transparent;
+  color: #5a8a70; cursor: pointer; transition: all .15s; white-space: nowrap;
+}
+.qlc__hifz-speed-btn.active { background: var(--green-deep); color: #fff; }
+.qlc__hifz-speed-btn:hover:not(.active) { background: #d4ede0; color: var(--green-deep); }
+.qlc--dark .qlc__hifz-speeds { background: #1a2d22; border-color: #2a4035; }
+.qlc--dark .qlc__hifz-speed-btn { color: #5a9a78; }
+.qlc--dark .qlc__hifz-speed-btn.active { background: #2a6a48; }
+.qlc--dark .qlc__hifz-speed-btn:hover:not(.active) { background: #1e3a2a; }
+
+/* ════  QURAN READING PLAYER (custom — replaces native audio) ═══════ */
+.qplayer {
+  background: linear-gradient(135deg, #193d2e, #1e4d38);
+  padding: 10px 16px 13px;
+}
+/* Row 1: reciter + time */
+.qplayer__top {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 8px; margin-bottom: 8px;
+}
+.qplayer__meta { display: flex; align-items: center; gap: 5px; min-width: 0; }
+.qplayer__meta svg { color: rgba(255,255,255,.45); flex-shrink: 0; }
+.qplayer__reciter {
+  font-size: .78rem; color: rgba(255,255,255,.82); font-weight: 600;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 260px;
+}
+.qplayer__time {
+  font-size: .72rem; color: rgba(255,255,255,.45);
+  font-variant-numeric: tabular-nums; white-space: nowrap; flex-shrink: 0;
+}
+.qplayer__time-sep { color: rgba(255,255,255,.22); }
+
+/* Seek bar */
+.qplayer__seek {
+  position: relative; height: 4px; background: rgba(255,255,255,.14);
+  border-radius: 99px; cursor: pointer; margin-bottom: 10px;
+  transition: height .15s; touch-action: none;
+}
+.qplayer__seek:hover,
+.qplayer__seek:focus-visible { height: 6px; outline: none; }
+.qplayer__seek:focus-visible {
+  box-shadow: 0 0 0 2px rgba(212,179,71,.55);
+}
+.qplayer__seek-buf {
+  position: absolute; height: 100%; background: rgba(255,255,255,.18);
+  border-radius: 99px; pointer-events: none; transition: width .5s linear;
+}
+.qplayer__seek-fill {
+  position: absolute; height: 100%; background: var(--gold);
+  border-radius: 99px; pointer-events: none; transition: width .1s linear;
+}
+.qplayer__seek-thumb {
+  position: absolute; top: 50%; transform: translate(-50%, -50%);
+  width: 13px; height: 13px; border-radius: 50%; background: #fff;
+  opacity: 0; pointer-events: none; transition: opacity .15s;
+  box-shadow: 0 1px 6px rgba(0,0,0,.45);
+}
+.qplayer__seek:hover .qplayer__seek-thumb,
+.qplayer__seek:focus-visible .qplayer__seek-thumb { opacity: 1; }
+
+/* Bottom row */
+.qplayer__bottom {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+}
+.qplayer__ctrls { display: flex; align-items: center; gap: 6px; }
+
+/* Play / pause button */
+.qplayer__play-btn {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: rgba(255,255,255,.92); border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  color: #1e4d38; transition: all .15s; flex-shrink: 0;
+}
+.qplayer__play-btn:hover  { background: #fff; transform: scale(1.07); }
+.qplayer__play-btn:active { transform: scale(.93); }
+.qplayer__play-btn:focus-visible {
+  outline: 2px solid rgba(255,255,255,.65); outline-offset: 2px;
+}
+
+/* Skip ±10s buttons */
+.qplayer__skip-btn {
+  display: flex; align-items: center; gap: 2px;
+  background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.13);
+  border-radius: 20px; color: rgba(255,255,255,.68);
+  font-size: .7rem; font-weight: 800; padding: 5px 10px;
+  cursor: pointer; transition: all .15s;
+}
+.qplayer__skip-btn:hover { background: rgba(255,255,255,.2); color: #fff; }
+.qplayer__skip-btn:focus-visible { outline: 1px solid rgba(255,255,255,.4); outline-offset: 2px; }
+
+/* Loading spinner */
+.qplayer__spin {
+  width: 18px; height: 18px; border-radius: 50%;
+  border: 2px solid rgba(30,77,56,.3); border-top-color: #1e4d38;
+  animation: qlc-spin .7s linear infinite; display: inline-block;
+}
+
+/* Speed selector */
+.qplayer__speeds {
+  display: flex; align-items: center; gap: 1px;
+  background: rgba(0,0,0,.22); border-radius: 20px; padding: 3px 4px;
+}
+.qplayer__speed {
+  padding: 3px 8px; font-size: .68rem; font-weight: 800;
+  border: none; border-radius: 20px; background: transparent;
+  color: rgba(255,255,255,.42); cursor: pointer; transition: all .15s; white-space: nowrap;
+}
+.qplayer__speed.active { background: rgba(255,255,255,.9); color: #1e4d38; }
+.qplayer__speed:hover:not(.active) { color: rgba(255,255,255,.82); }
+
+/* ════  SIDEBAR TOGGLE / CLOSE / BACKDROP (mobile off-canvas drawer) ═ */
+.qlc__sidebar-toggle {
+  display: none; flex-shrink: 0; width: 34px; height: 34px; margin-right: 6px;
+  border: none; border-radius: 8px; background: rgba(255,255,255,.1);
+  color: #fff; font-size: 1.1rem; cursor: pointer;
+}
+.qlc__sidebar-toggle:hover { background: rgba(255,255,255,.18); }
+.qlc__sidebar-close { display: none; }
+.qlc__sidebar-backdrop { display: none; }
+
+/* ════  MOBILE  ════════════════════════════════════════════════════ */
+@media (max-width: 900px) {
+  .qlc { height: 100vh; overflow: hidden; }
+  .qlc__layout { grid-template-columns: 1fr; overflow: hidden; }
+  .qlc__main    { overflow-y: auto; }
+  .qlc__sidebar-toggle { display: inline-flex; align-items: center; justify-content: center; }
+  .qlc__sidebar {
+    position: fixed; top: 0; left: 0; bottom: 0; z-index: 60;
+    width: min(84vw, 320px); height: 100vh;
+    border-right: none; box-shadow: 10px 0 32px rgba(0,0,0,.28);
+    transform: translateX(-100%);
+    transition: transform .25s ease;
+  }
+  .qlc__sidebar--open { transform: translateX(0); }
+  .qlc__sidebar-close {
+    display: flex; align-items: center; justify-content: center;
+    position: absolute; top: 8px; right: 8px; z-index: 2;
+    width: 30px; height: 30px; border: none; border-radius: 50%;
+    background: #eef5f0; color: #4a6a58; font-size: .9rem; cursor: pointer;
+  }
+  .qlc__sidebar-backdrop {
+    display: block; position: fixed; inset: 0; z-index: 55;
+    background: rgba(10,20,15,.45); opacity: 0; pointer-events: none;
+    transition: opacity .25s ease;
+  }
+  .qlc__sidebar-backdrop.open { opacity: 1; pointer-events: auto; }
+  .qlc__bar-inner { flex-wrap: wrap; height: auto; padding: 8px 0; gap: 6px; }
+  .qlc__tabs    { margin-left: 0; }
+  .qlc__cbar-selects { flex-wrap: wrap; }
+  .qlc__cbar-item { min-width: 140px; }
+  .qlc__verse   { padding: 18px 14px; }
+  .qlc__arabic  { font-size: 1.65rem; }
+  /* Float bar collapses to two rows on mobile */
+  .qlc__float-bar {
+    grid-template-columns: 1fr auto;
+    grid-template-rows: auto auto 3px;
+    padding: 8px 14px 11px; gap: 0 10px;
+  }
+  .qlc__float-info   { grid-column: 1; grid-row: 1; }
+  .qlc__float-right  { grid-column: 2; grid-row: 1; }
+  .qlc__float-centre { grid-column: 1 / -1; grid-row: 2; min-width: 0; margin-top: 6px; }
+  .qlc__float-ar     { font-size: .82rem; }
+  /* Player compact on mobile */
+  .qplayer { padding: 8px 12px 11px; }
+  .qplayer__reciter { max-width: 150px; }
+  .qplayer__skip-btn { padding: 4px 8px; }
+  .qplayer__speed { padding: 2px 5px; font-size: .62rem; }
+  .qplayer__play-btn { width: 36px; height: 36px; }
+}
+
+@media (max-width: 480px) {
+  .qplayer__speeds { display: none; }   /* hide speed on very small screens */
+  .qlc__float-centre { display: none; } /* simplify bar on tiny screens */
+}
+
+/* ════  VERSE-SYNCED PLAYER (QuranSyncPlayer)  ═══════════════════════ */
+.qlc__syncplayer {
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 10px 16px; margin: 0 0 14px;
+  background: #fff; border: 1px solid #e2ece6; border-radius: 12px;
+}
+.qlc__syncplayer-row {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 10px;
+}
+.qlc__syncplayer-field {
+  display: flex; align-items: center; gap: 6px;
+  font-size: .78rem; color: #4a6a58;
+}
+.qlc__syncplayer-field select {
+  border: 1px solid #cfe3d8; border-radius: 6px; padding: 3px 6px; font-size: .8rem;
+}
+.qlc__syncplayer-speeds { display: flex; gap: 4px; }
+.qlc__syncplayer-sleep { position: relative; }
+.qlc__syncplayer-sleep-menu {
+  position: absolute; top: 100%; left: 0; z-index: 20; margin-top: 4px;
+  display: flex; flex-direction: column; min-width: 140px;
+  background: #fff; border: 1px solid #dcebe3; border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.12); overflow: hidden;
+}
+.qlc__syncplayer-sleep-menu button {
+  padding: 8px 12px; text-align: left; border: none; background: none;
+  font-size: .8rem; cursor: pointer;
+}
+.qlc__syncplayer-sleep-menu button:hover { background: #eef7f1; }
+.qlc__syncplayer-resume { font-weight: 600; }
+.qlc__syncplayer-status {
+  font-size: .72rem; color: #6a8a78; letter-spacing: .02em;
+}
+
+.qlc--dark .qlc__syncplayer { background: #151f1a; border-color: #1e3028; }
+.qlc--dark .qlc__syncplayer-field { color: #7ac898; }
+.qlc--dark .qlc__syncplayer-field select { background: #1e2d24; border-color: #2a4035; color: #c8e0d4; }
+.qlc--dark .qlc__syncplayer-sleep-menu { background: #1a2820; border-color: #2a4035; }
+.qlc--dark .qlc__syncplayer-sleep-menu button { color: #c8e0d4; }
+.qlc--dark .qlc__syncplayer-sleep-menu button:hover { background: #1e3028; }
+.qlc--dark .qlc__syncplayer-status { color: #5a9a78; }
+
+@media (max-width: 640px) {
+  .qlc__syncplayer-row { gap: 6px; }
+  .qlc__syncplayer-field { font-size: .72rem; }
+}
+
+/* ════  QUICK NAVIGATION (Ctrl+K command palette)  ══════════════════ */
+.qlc__quicknav {
+  background: #fff; border-radius: 14px; overflow: hidden;
+  width: min(100%, 480px); box-shadow: 0 20px 60px rgba(0,0,0,.25);
+  animation: qlc-pop .25s ease; display: flex; flex-direction: column; max-height: 70vh;
+}
+.qlc__quicknav-input {
+  padding: 16px 20px; border: none; border-bottom: 1px solid #e8f0eb;
+  font-size: 1rem; outline: none;
+}
+.qlc__quicknav-results { list-style: none; margin: 0; padding: 6px; overflow-y: auto; }
+.qlc__quicknav-result {
+  display: block; width: 100%; text-align: left; padding: 10px 14px;
+  border: none; background: none; border-radius: 8px; font-size: .9rem; cursor: pointer;
+}
+.qlc__quicknav-result:hover { background: #eef7f1; }
+.qlc__quicknav-empty { padding: 14px; color: #8a9a92; font-size: .85rem; text-align: center; }
+
+.qlc--dark .qlc__quicknav { background: #151f1a; }
+.qlc--dark .qlc__quicknav-input { background: #151f1a; border-color: #1e3028; color: #c8e0d4; }
+.qlc--dark .qlc__quicknav-result { color: #c8e0d4; }
+.qlc--dark .qlc__quicknav-result:hover { background: #1a2820; }
+.qlc--dark .qlc__quicknav-empty { color: #5a7a68; }
+
+/* ════  RECORDING STUDIO (QuranRecordingStudio)  ════════════════════ */
+.qlc__studio { padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; }
+.qlc__studio--unsupported { color: #b45309; font-size: .85rem; }
+.qlc__studio-record-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.qlc__studio-stats { font-size: .78rem; color: #6a8a78; }
+.qlc__studio-error { color: #c0392b; font-size: .82rem; margin: 0; }
+.qlc__studio-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.qlc__studio-empty { font-size: .82rem; color: #8a9a92; }
+.qlc__studio-item {
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;
+  padding: 8px 12px; border: 1px solid #e2ece6; border-radius: 8px;
+}
+.qlc__studio-item-label { font-size: .82rem; font-weight: 600; color: #2f5344; }
+.qlc__studio-item-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+
+.qlc--dark .qlc__studio-item { border-color: #1e3028; }
+.qlc--dark .qlc__studio-item-label { color: #c8e0d4; }
+.qlc--dark .qlc__studio-stats { color: #5a9a78; }
+.qlc--dark .qlc__studio-empty { color: #5a7a68; }
+
+/* ════  BOOKMARK STAR  ════════════════════════════════════════════════ */
+.qlc__bookmark-btn {
+  border: none; background: none; cursor: pointer; font-size: 1rem;
+  color: #c7d6cd; padding: 2px 4px; line-height: 1;
+}
+.qlc__bookmark-btn:hover { color: #e0a010; }
+.qlc__bookmark-btn.active { color: #e0a010; }
+.qlc--dark .qlc__bookmark-btn { color: #2a4035; }
+.qlc--dark .qlc__bookmark-btn:hover,
+.qlc--dark .qlc__bookmark-btn.active { color: #f0c040; }

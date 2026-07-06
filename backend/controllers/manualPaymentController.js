@@ -148,7 +148,7 @@ export const submitManualPayment = asyncHandler(async (req, res) => {
 export const listManualPayments = asyncHandler(async (req, res) => {
   const { page, limit, skip } = parsePagination(req.query, { defaultLimit: 500, maxLimit: 500 });
   const [data, total] = await Promise.all([
-    ManualPayment.find().sort({ createdAt: -1 }).skip(skip).limit(limit),
+    ManualPayment.find().sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
     ManualPayment.countDocuments(),
   ]);
   return sendPaginated(res, { data, total, page, limit });
@@ -166,7 +166,7 @@ export const reviewManualPayment = asyncHandler(async (req, res) => {
 
     // Load without modifying — the approval transaction performs an atomic
     // status claim so two concurrent approvals can never both succeed.
-    const record = await ManualPayment.findById(req.params.id);
+    const record = await ManualPayment.findById(req.params.id).lean();
     if (!record) {
       res.status(404);
       throw new Error('Manual payment request not found');

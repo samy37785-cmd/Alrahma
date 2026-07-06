@@ -1,0 +1,102 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Cancel a still-running run for the same branch/PR when a newer commit lands,
+# so CI minutes aren't spent on superseded code.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Least-privilege default: this pipeline only reads the repo and never
+# deploys or pushes anything back.
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  backend:
+    name: Backend (lint + test)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      # mongodb-memory-server downloads a real mongod binary (~80-100MB) the
+      # first time the test suite runs a Mongo-backed test. Caching it keeps
+      # every run after the first fast instead of re-downloading every time.
+      - name: Cache mongodb-memory-server binaries
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/mongodb-binaries
+          key: mongodb-binaries-${{ runner.os }}-${{ hashFiles('backend/package-lock.json') }}
+          restore-keys: |
+            mongodb-binaries-${{ runner.os }}-
+
+      - name: Install dependencies
+        working-directory: backend
+        run: npm ci
+
+      - name: Lint
+        working-directory: backend
+        run: npm run lint
+
+      - name: Test
+        working-directory: backend
+        # Invoked directly (not `npm test`) because that script's
+        # `tests/**/*.test.js` glob depends on the shell expanding `**`
+        # (bash doesn't, without `shopt -s globstar`) and would silently skip
+        # tests/helpers/*.test.js on a standard runner shell. A bare
+        # `node --test` uses Node's own recursive test-file discovery instead
+        # of shell globbing, so nothing is silently skipped.
+        run: node --test
+        env:
+          NODE_ENV: test
+          # Test-only placeholder values — never used against any real
+          # service. MONGO_URI is overwritten at runtime by the test suite's
+          # own in-memory MongoDB replica set (tests/helpers/db.js); the
+          # other three only need to satisfy config/validateEnv.js's
+          # startup checks and config/encryption.js's key-length check.
+          JWT_SECRET: ci-test-jwt-secret-not-a-real-secret
+          MONGO_URI: mongodb://127.0.0.1:27017/placeholder
+          ADMIN_ENCRYPTION_KEY: '0000000000000000000000000000000000000000000000000000000000000000'
+          ADMIN_JWT_ACCESS_SECRET: ci-test-admin-jwt-secret-not-a-real-secret
+
+  frontend:
+    name: Frontend (lint + test + build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Lint
+        working-directory: frontend
+        run: npm run lint
+
+      - name: Test
+        working-directory: frontend
+        run: npm test
+
+      - name: Build
+        working-directory: frontend
+        run: npm run build

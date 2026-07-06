@@ -8,7 +8,7 @@ export const getMyBookmarks = asyncHandler(async (req, res) => {
   const filter = { user: req.user._id };
   const chapterId = Number(req.query.chapterId);
   if (chapterId) filter.chapterId = chapterId;
-  const bookmarks = await QuranBookmark.find(filter).sort({ createdAt: -1 });
+  const bookmarks = await QuranBookmark.find(filter).sort({ createdAt: -1 }).lean();
   res.json(bookmarks);
 });
 

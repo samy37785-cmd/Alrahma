@@ -1,9 +1,11 @@
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
+import { body } from 'express-validator';
 import User from '../models/User.js';
 import { sendMail } from '../config/mailer.js';
 import { forgotPasswordEmail } from '../config/emailTemplates.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
+import { handleValidationErrors } from '../utils/validationHelper.js';
 import { hashToken } from '../utils/hashToken.js';
 import { siteOrigin } from '../config/site.js';
 
@@ -11,6 +13,29 @@ import { siteOrigin } from '../config/site.js';
 // also neutralises NoSQL operator injection (e.g. { $gt: '' }) at the boundary —
 // defence-in-depth alongside the global sanitizeMongo middleware.
 const normEmail = (v) => String(v ?? '').toLowerCase().trim();
+
+// Deliberately does NOT use express-validator's .normalizeEmail() — that
+// sanitizer applies provider-specific rewrites (e.g. stripping dots/+tags
+// from Gmail addresses) that would silently change what email a user
+// actually registers with. .isEmail() here is a pure format gate; the
+// existing normEmail() above remains the only source of normalization,
+// unchanged.
+export const registerValidation = [
+  body('name').trim().notEmpty().withMessage('Name is required'),
+  body('email').trim().notEmpty().withMessage('Email is required').isEmail().withMessage('A valid email is required'),
+  body('password').isString().withMessage('Password is required').isLength({ min: 8 }).withMessage('Password must be at least 8 characters'),
+];
+
+// login only needs to guard against malformed *types* reaching
+// user.matchPassword() — bcrypt.compare() throws (not a clean 401) if
+// password isn't a string, e.g. a request with no password field at all, or
+// password sent as a number/object/array. This does not change behavior for
+// any well-formed request: correct/incorrect credentials still resolve to
+// the same 200/401 as before.
+export const loginValidation = [
+  body('email').trim().notEmpty().withMessage('Email is required').isEmail().withMessage('A valid email is required'),
+  body('password').isString().withMessage('Password is required').notEmpty().withMessage('Password is required'),
+];
 
 // Helper: create a signed JWT for a user id.
 // `v` (tokenVersion) is embedded so protect() can reject tokens issued before
@@ -23,24 +48,35 @@ function signToken(id, role, v = 0) {
 }
 
 const AUTH_COOKIE = 'token';
-const COOKIE_MAX_AGE = 7 * 24 * 60 * 60 * 1000; // 7 days, matches JWT default
+
+// Cookie lifetime must always match the JWT's real expiry. Rather than
+// re-parsing JWT_EXPIRES_IN ourselves (a second implementation that could
+// drift from jsonwebtoken's own parsing), decode the token's own `exp`/`iat`
+// claims — jsonwebtoken already resolved whatever format expiresIn was
+// (seconds, "15m", "2h", "7d", ...) into those, so reading them back keeps
+// the cookie exactly in sync with no extra parsing logic to maintain.
+function cookieMaxAgeFor(token) {
+  const { exp, iat } = jwt.decode(token);
+  return (exp - iat) * 1000;
+}
 
 // Sets the auth token as an httpOnly cookie. httpOnly = JS can't read it (XSS
 // can't steal it); sameSite=lax = the browser won't send it on cross-site POSTs
 // (CSRF protection); secure = HTTPS-only in production.
-function authCookieOptions() {
+function authCookieOptions(maxAge) {
   return {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
-    maxAge: COOKIE_MAX_AGE,
+    maxAge,
     path: '/',
   };
 }
 
 // Issues the auth cookie and returns the public user profile (no token in the body).
 function sendAuth(res, user, status = 200) {
-  res.cookie(AUTH_COOKIE, signToken(user._id, user.role, user.tokenVersion ?? 0), authCookieOptions());
+  const token = signToken(user._id, user.role, user.tokenVersion ?? 0);
+  res.cookie(AUTH_COOKIE, token, authCookieOptions(cookieMaxAgeFor(token)));
   return res.status(status).json({
     _id: user._id,
     name: user.name,
@@ -53,18 +89,16 @@ function sendAuth(res, user, status = 200) {
 // @route  POST /api/auth/register
 // @access Public
 export const register = asyncHandler(async (req, res) => {
+  if (handleValidationErrors(req, res)) return;
+
   const { name, password, role } = req.body;
   const email = normEmail(req.body.email);
-  if (!name || !email || !password) {
-    res.status(400);
-    throw new Error('Please provide name, email and password');
-  }
 
   // Public sign-up may only create a student or a parent account.
   // Teacher/admin accounts are created by an admin.
   const safeRole = role === 'parent' ? 'parent' : 'student';
 
-  const exists = await User.findOne({ email });
+  const exists = await User.findOne({ email }).lean();
   if (exists) {
     res.status(409);
     throw new Error('An account with that email already exists. Try signing in instead.');
@@ -78,6 +112,8 @@ export const register = asyncHandler(async (req, res) => {
 // @route  POST /api/auth/login
 // @access Public
 export const login = asyncHandler(async (req, res) => {
+  if (handleValidationErrors(req, res)) return;
+
   const email = normEmail(req.body.email);
   const { password } = req.body;
   // include password explicitly (it's select:false in the model)
@@ -97,7 +133,7 @@ export const login = asyncHandler(async (req, res) => {
 export const logout = asyncHandler(async (_req, res) => {
   // Clear with the same attributes the cookie was set with, or the browser
   // keeps it. maxAge is omitted; expires:past tells the browser to drop it.
-  res.clearCookie(AUTH_COOKIE, { ...authCookieOptions(), maxAge: undefined });
+  res.clearCookie(AUTH_COOKIE, { ...authCookieOptions(0), maxAge: undefined });
   res.json({ message: 'Logged out' });
 });
 
@@ -185,7 +221,7 @@ export const updateMe = asyncHandler(async (req, res) => {
 
   if (name) user.name = name;
   if (email && email !== user.email) {
-    const taken = await User.findOne({ email });
+    const taken = await User.findOne({ email }).lean();
     if (taken) {
       res.status(409);
       throw new Error('That email is already in use');

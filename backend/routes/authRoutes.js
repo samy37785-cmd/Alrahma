@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import {
   register, login, logout, getMe, updateMe, forgotPassword, resetPassword, getLinkCode, googleAuth,
+  registerValidation, loginValidation,
 } from '../controllers/authController.js';
 import {
   listUsers, listTeachers, adminCreateUser, updateUserRole,
@@ -11,8 +12,8 @@ import { ipWhitelist } from '../middleware/ipWhitelist.js';
 
 const router = Router();
 
-router.post('/register', register);
-router.post('/login', login);
+router.post('/register', registerValidation, register);
+router.post('/login', loginValidation, login);
 router.post('/logout', logout);
 router.get('/me', protect, getMe);
 router.put('/me', protect, updateMe);

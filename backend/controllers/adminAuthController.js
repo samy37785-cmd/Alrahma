@@ -330,7 +330,7 @@ export async function refreshTokens(req, res) {
     return res.status(401).json({ message: 'Refresh token expired', code: 'TOKEN_EXPIRED' });
   }
 
-  const admin = await AdminUser.findById(stored.adminId);
+  const admin = await AdminUser.findById(stored.adminId).lean();
   if (!admin || !admin.isActive) {
     return res.status(401).json({ message: 'Account not found or deactivated' });
   }
@@ -359,7 +359,7 @@ export async function logout(req, res) {
 
   if (rawRefresh) {
     const tokenHash = hashToken(rawRefresh);
-    const stored    = await RefreshToken.findOne({ tokenHash });
+    const stored    = await RefreshToken.findOne({ tokenHash }).lean();
     if (stored) {
       await RefreshToken.updateMany({ family: stored.family }, { revoked: true });
     }

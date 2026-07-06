@@ -15,7 +15,7 @@ export const issueCertificate = asyncHandler(async (req, res) => {
     throw new Error('Student and certificate title are required');
   }
 
-  const student = await User.findById(userId);
+  const student = await User.findById(userId).lean();
   if (!student) { res.status(404); throw new Error('Student not found'); }
 
   const cert = await Certificate.create({
@@ -51,7 +51,8 @@ export const issueCertificate = asyncHandler(async (req, res) => {
 export const getMyCertificates = asyncHandler(async (req, res) => {
   const certs = await Certificate.find({ user: req.user._id, revoked: false })
     .populate('course', 'title')
-    .sort({ issuedAt: -1 });
+    .sort({ issuedAt: -1 })
+    .lean();
   res.json(certs);
 });
 
@@ -62,7 +63,8 @@ export const listCertificates = asyncHandler(async (req, res) => {
   const filter = req.query.userId ? { user: req.query.userId } : {};
   const certs = await Certificate.find(filter)
     .populate('course', 'title')
-    .sort({ issuedAt: -1 });
+    .sort({ issuedAt: -1 })
+    .lean();
   res.json(certs);
 });
 

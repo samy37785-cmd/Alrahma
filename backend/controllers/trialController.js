@@ -37,6 +37,6 @@ export const createTrial = asyncHandler(async (req, res) => {
 // @route  GET /api/trials
 // @access Private/Admin
 export const getTrials = asyncHandler(async (req, res) => {
-  const trials = await TrialRequest.find().sort('-createdAt');
+  const trials = await TrialRequest.find().sort('-createdAt').lean();
   res.json(trials);
 });

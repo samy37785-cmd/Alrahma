@@ -70,12 +70,29 @@ export default function QuranMushafPage({
     onToggleChrome?.();
   };
 
+  // Keyboard equivalent for the center-tap "toggle chrome" gesture above —
+  // Enter/Space always trigger the default (center) action, since a keydown
+  // has no tap coordinates to run the same edge-zone ratio check. Page-turn
+  // (prev/next) is already reachable via arrow keys globally through
+  // useQuranKeyboard's goRelative(), so nothing else needs a key handler here.
+  const handleViewportKeyDown = (e) => {
+    if (e.target.closest('.mushaf-ayah-num, .mushaf-navbtn')) return;
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onToggleChrome?.();
+    }
+  };
+
   return (
     <div
       className={`mushaf-viewport${chromeHidden ? ' mushaf-viewport--immersive' : ''}`}
       onClick={handleViewportClick}
+      onKeyDown={handleViewportKeyDown}
       onTouchStart={swipeHandlers.onTouchStart}
       onTouchEnd={swipeHandlers.onTouchEnd}
+      role="button"
+      tabIndex={0}
+      aria-label={ui.toggleReadingControls || 'Toggle reading view controls'}
     >
       {progressLabel && <div className="mushaf-progress">{progressLabel}</div>}
 

@@ -93,6 +93,8 @@ export default function Register() {
               inputMode="email"
               enterKeyHint="next"
               required
+              aria-invalid={error ? 'true' : undefined}
+              aria-describedby={error ? 'register-error' : undefined}
             />
           </div>
           <div className="field">
@@ -136,11 +138,13 @@ export default function Register() {
                 type="checkbox"
                 checked={gdpr}
                 onChange={(e) => setGdpr(e.target.checked)}
+                aria-invalid={error && !gdpr ? 'true' : undefined}
+                aria-describedby={error ? 'register-error' : undefined}
               />
               <GdprText raw={rg.gdprConsent} />
             </label>
           </div>
-          {error && <p className="auth__error" role="alert">{error}</p>}
+          {error && <p id="register-error" className="auth__error" role="alert">{error}</p>}
           <button
             type="submit"
             className={`btn btn--green btn--block${busy ? ' btn--loading' : ''}`}

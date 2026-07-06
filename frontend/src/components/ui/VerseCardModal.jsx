@@ -1,4 +1,5 @@
 import { useRef } from 'react';
+import { useModalA11y } from '../../hooks/useModalA11y';
 
 const clean = (html = '') =>
   html.replace(/<br\s*\/?>/gi, '\n').replace(/<\/p>/gi, ' ').replace(/<\/div>/gi, ' ')
@@ -8,6 +9,7 @@ const clean = (html = '') =>
 
 export default function VerseCardModal({ verse, chapterName, onClose }) {
   const cardRef = useRef(null);
+  const firstFocusRef = useModalA11y(!!verse, onClose);
 
   if (!verse) return null;
 
@@ -70,7 +72,7 @@ export default function VerseCardModal({ verse, chapterName, onClose }) {
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div className="vcard-modal">
-        <button className="vcard-modal__close" onClick={onClose} aria-label="Close">✕</button>
+        <button ref={firstFocusRef} className="vcard-modal__close" onClick={onClose} aria-label="Close">✕</button>
 
         {/* The shareable card */}
         <div className="vcard" ref={cardRef}>

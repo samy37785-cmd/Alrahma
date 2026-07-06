@@ -15,6 +15,14 @@ export const contactValidation = [
   body('message').trim().notEmpty().withMessage('Message is required').isLength({ min: 10, max: 3000 }),
 ];
 
+// updateContactStatus operates on a different field set than contactValidation
+// (admin workflow status, not the submitted message), so it has its own small
+// rule set. Both optional: the controller allows updating adminNote alone.
+export const contactStatusValidation = [
+  body('status').optional().isIn(['new', 'in_progress', 'resolved', 'spam']).withMessage('status must be new, in_progress, resolved, or spam'),
+  body('adminNote').optional().trim().isLength({ max: 1000 }),
+];
+
 export const submitContact = asyncHandler(async (req, res) => {
   if (handleValidationErrors(req, res)) return;
 
@@ -56,6 +64,8 @@ export const getContacts = asyncHandler(async (req, res) => {
 });
 
 export const updateContactStatus = asyncHandler(async (req, res) => {
+  if (handleValidationErrors(req, res)) return;
+
   const { status, adminNote } = req.body;
   const contact = await ContactMessage.findByIdAndUpdate(
     req.params.id,
@@ -64,7 +74,7 @@ export const updateContactStatus = asyncHandler(async (req, res) => {
       ...(adminNote !== undefined && { adminNote }),
       ...(status === 'resolved' && { repliedAt: new Date() }),
     },
-    { new: true },
+    { new: true, runValidators: true },
   );
   if (!contact) return res.status(404).json({ message: 'Contact message not found' });
   res.json({ contact });

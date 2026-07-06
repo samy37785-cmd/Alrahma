@@ -22,7 +22,7 @@ export const listClasses = asyncHandler(async (req, res) => {
   } else if (role === 'teacher') {
     filter = { teacher: req.user._id };
   } else if (role === 'parent') {
-    const parent = await User.findById(req.user._id).select('children');
+    const parent = await User.findById(req.user._id).select('children').lean();
     filter = { student: { $in: parent?.children || [] } };
   } else {
     filter = { student: req.user._id };
@@ -33,7 +33,7 @@ export const listClasses = asyncHandler(async (req, res) => {
     filter.status = { $ne: 'cancelled' };
   }
 
-  const classes = await LiveClass.find(filter).populate(POPULATE).sort('startsAt');
+  const classes = await LiveClass.find(filter).populate(POPULATE).sort('startsAt').lean();
   res.json(classes);
 });
 
@@ -57,7 +57,7 @@ export const createClass = asyncHandler(async (req, res) => {
   const studentQuery = req.user.role === 'admin'
     ? { _id: student, role: 'student' }
     : { _id: student, role: 'student', teacher: req.user._id };
-  const studentDoc = await User.findOne(studentQuery).select('name email');
+  const studentDoc = await User.findOne(studentQuery).select('name email').lean();
   if (!studentDoc) {
     res.status(404);
     throw new Error('Student not found among your students');

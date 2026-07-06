@@ -114,6 +114,8 @@ export default function Login() {
               inputMode="email"
               enterKeyHint="next"
               required
+              aria-invalid={error ? 'true' : undefined}
+              aria-describedby={error ? 'login-error' : undefined}
             />
           </div>
           <div className="field">
@@ -129,6 +131,8 @@ export default function Login() {
                 enterKeyHint="go"
                 required
                 style={{ paddingRight: '2.75rem' }}
+                aria-invalid={error ? 'true' : undefined}
+                aria-describedby={error ? 'login-error' : undefined}
               />
               <button
                 type="button"
@@ -150,7 +154,7 @@ export default function Login() {
               </button>
             </div>
           </div>
-          {error && <p className="auth__error" role="alert">{error}</p>}
+          {error && <p id="login-error" className="auth__error" role="alert">{error}</p>}
           <button
             type="submit"
             className={`btn btn--green btn--block${busy ? ' btn--loading' : ''}`}

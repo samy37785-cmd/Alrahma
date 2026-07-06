@@ -3,6 +3,7 @@ import {
   getUserHifzReport, getUserCourseProgress,
   listCertificates, issueCertificate, revokeCertificate,
 } from '../../../api/client';
+import { useModalA11y } from '../../../hooks/useModalA11y';
 
 const EMPTY_CERT = { type: 'completion', title: '', grade: '', notes: '' };
 
@@ -11,6 +12,7 @@ export default function AdminProgressModal({ user, onClose, onError }) {
   const [certs, setCerts] = useState([]);
   const [certForm, setCertForm] = useState(EMPTY_CERT);
   const [loading, setLoading] = useState(true);
+  const firstFocusRef = useModalA11y(true, onClose);
 
   useEffect(() => {
     setLoading(true);
@@ -48,8 +50,8 @@ export default function AdminProgressModal({ user, onClose, onError }) {
 
   return (
     <div className="modal" onClick={onClose}>
-      <div className="modal__card" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" style={{ maxWidth: 640, width: '92%' }}>
-        <button className="modal__close" onClick={onClose} aria-label="Close">×</button>
+      <div className="modal__card" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label={`${user.name}'s progress`} style={{ maxWidth: 640, width: '92%' }}>
+        <button ref={firstFocusRef} className="modal__close" onClick={onClose} aria-label="Close">×</button>
         <h3 className="modal__title" style={{ marginBottom: 4 }}>📊 {user.name}</h3>
         <p style={{ color: '#888', fontSize: '.85rem', marginTop: 0 }}>{user.email}</p>
 

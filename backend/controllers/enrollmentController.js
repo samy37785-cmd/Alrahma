@@ -53,7 +53,7 @@ export const getMyEnrollment = asyncHandler(async (req, res) => {
 export const getEnrollments = asyncHandler(async (req, res) => {
   const { page, limit, skip } = parsePagination(req.query, { defaultLimit: 500, maxLimit: 500 });
   const [data, total] = await Promise.all([
-    Enrollment.find().sort('-createdAt').skip(skip).limit(limit),
+    Enrollment.find().sort('-createdAt').skip(skip).limit(limit).lean(),
     Enrollment.countDocuments(),
   ]);
   return sendPaginated(res, { data, total, page, limit });

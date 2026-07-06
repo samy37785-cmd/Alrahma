@@ -7,7 +7,8 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 async function courseReport(studentId) {
   const rows = await CourseProgress.find({ user: studentId })
     .populate('course', 'title icon resources')
-    .sort({ lastActivity: -1 });
+    .sort({ lastActivity: -1 })
+    .lean();
   return rows
     .filter((r) => r.course)
     .map((r) => {
@@ -33,7 +34,7 @@ export const linkChild = asyncHandler(async (req, res) => {
   const code = String(req.body.code || '').trim().toUpperCase();
   if (!code) { res.status(400); throw new Error('Please enter the link code'); }
 
-  const child = await User.findOne({ parentLinkCode: code, role: 'student' }).select('name email');
+  const child = await User.findOne({ parentLinkCode: code, role: 'student' }).select('name email').lean();
   if (!child) { res.status(404); throw new Error('No student found for that code'); }
 
   const parent = await User.findById(req.user._id);
@@ -52,7 +53,8 @@ export const linkChild = asyncHandler(async (req, res) => {
 // @access Private/Parent
 export const getChildren = asyncHandler(async (req, res) => {
   const parent = await User.findById(req.user._id)
-    .populate('children', 'name email subscription');
+    .populate('children', 'name email subscription')
+    .lean();
 
   const summaries = await Promise.all(
     (parent.children || []).map(async (c) => {
@@ -78,19 +80,20 @@ export const getChildren = asyncHandler(async (req, res) => {
 // @route GET /api/parent/children/:id
 // @access Private/Parent
 export const getChildDetail = asyncHandler(async (req, res) => {
-  const parent = await User.findById(req.user._id).select('children');
+  const parent = await User.findById(req.user._id).select('children').lean();
   const linked = parent.children.some((c) => c.equals(req.params.id));
   if (!linked) { res.status(404); throw new Error('Child not linked to your account'); }
 
-  const child = await User.findById(req.params.id).select('name email subscription');
+  const child = await User.findById(req.params.id).select('name email subscription').lean();
   if (!child) { res.status(404); throw new Error('Student not found'); }
 
   const [records, hifz, courses] = await Promise.all([
     StudentRecord.find({ student: child._id })
       .populate('course', 'title icon')
       .populate('teacher', 'name')
-      .sort('-date'),
-    HifzProgress.find({ user: child._id }).sort({ chapterId: 1 }),
+      .sort('-date')
+      .lean(),
+    HifzProgress.find({ user: child._id }).sort({ chapterId: 1 }).lean(),
     courseReport(child._id),
   ]);
   res.json({ student: child, records, hifz, courses });

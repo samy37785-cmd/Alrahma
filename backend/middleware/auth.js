@@ -12,7 +12,7 @@ function getToken(req) {
   return null;
 }
 
-// Shared auth core used by protect() and requireRole().
+// Shared auth core used by protect().
 // Verifies the JWT, loads the user from the DB, and checks tokenVersion.
 // On any failure it writes the 401 response and returns null so callers
 // can return immediately without touching `res` again.
@@ -96,20 +96,4 @@ export async function softProtect(req, res, next) {
     }
   } catch { /* no-op — unauthenticated access is fine here */ }
   next();
-}
-
-// Role-guarded protect: verifies JWT, fetches fresh user data from DB (so a
-// role change or password reset immediately locks out the old token), and checks
-// that the user's current role is among the allowed ones.
-// Usage: router.get('/admin-route', requireRole('admin'), handler)
-export function requireRole(...roles) {
-  return async (req, res, next) => {
-    const user = await _loadUser(req, res);
-    if (!user) return;
-    if (!roles.includes(user.role)) {
-      return res.status(403).json({ message: `Access restricted to: ${roles.join(', ')}` });
-    }
-    req.user = user;
-    next();
-  };
 }

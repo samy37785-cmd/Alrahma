@@ -31,7 +31,7 @@ export const listUsers = asyncHandler(async (req, res) => {
   const { page, limit, skip } = parsePagination(req.query, { defaultLimit: 500, maxLimit: 500 });
   const [data, total] = await Promise.all([
     User.find().select('-password').populate('teacher', 'name email')
-        .sort('-createdAt').skip(skip).limit(limit),
+        .sort('-createdAt').skip(skip).limit(limit).lean(),
     User.countDocuments(),
   ]);
   return sendPaginated(res, { data, total, page, limit });
@@ -60,7 +60,7 @@ export const adminCreateUser = asyncHandler(async (req, res) => {
     res.status(400);
     throw new Error('Invalid role');
   }
-  const exists = await User.findOne({ email });
+  const exists = await User.findOne({ email }).lean();
   if (exists) { res.status(409); throw new Error('This email is already registered'); }
 
   const user = await User.create({ name, email, password, role });
@@ -109,7 +109,7 @@ export const assignTeacher = asyncHandler(async (req, res) => {
   const previousTeacher = student.teacher;
 
   if (teacherId) {
-    const teacher = await User.findById(teacherId).select('role');
+    const teacher = await User.findById(teacherId).select('role').lean();
     if (!teacher || teacher.role !== 'teacher') {
       res.status(400);
       throw new Error('Selected user is not a teacher');

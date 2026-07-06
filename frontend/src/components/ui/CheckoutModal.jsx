@@ -3,6 +3,7 @@ import { startStripeSession, startPaypalPayment, getManualMethods, submitManualP
 import { useLang } from '../../context/LangContext';
 import { PLAN_TEXT, CHECKOUT_SUBS, pick } from '../../i18n/content';
 import { plans } from '../../data';
+import { useModalA11y } from '../../hooks/useModalA11y';
 
 // Gateway methods (handled via API). `subKey` resolves a translated subtitle from t.checkout.methods.
 const GATEWAY_METHODS = [
@@ -29,6 +30,8 @@ export default function CheckoutModal({ plan, onClose }) {
     if (!plan) return;
     getManualMethods().then(setManual).catch(() => {});
   }, [plan]);
+
+  const firstFocusRef = useModalA11y(!!plan, onClose);
 
   if (!plan) return null;
 
@@ -82,7 +85,7 @@ export default function CheckoutModal({ plan, onClose }) {
         aria-modal="true"
         aria-label={c.secureCheckout}
       >
-        <button className="modal__close" onClick={onClose} aria-label={c.close}>×</button>
+        <button ref={firstFocusRef} className="modal__close" onClick={onClose} aria-label={c.close}>×</button>
 
         {/* Header */}
         <div className="checkout__head">

@@ -35,7 +35,8 @@ export const getCourses = asyncHandler(async (req, res) => {
   // the public catalogue; only return the lightweight module outline (titles).
   const courses = await Course.find({ published: true })
     .select('-resources -modules.lessons')
-    .sort('-createdAt');
+    .sort('-createdAt')
+    .lean();
   // Safe to cache publicly: no user-specific data, no paid content.
   // 5-min fresh window + 60-s stale-while-revalidate means CDN and the
   // browser serve this instantly on repeat visits while staying up to date.

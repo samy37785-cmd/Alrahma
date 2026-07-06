@@ -10,6 +10,16 @@ export const reviewValidation = [
   body('title').optional().trim().isLength({ max: 120 }),
 ];
 
+// moderateReview operates on a different field set than reviewValidation
+// (moderation status, not review content), so it has its own small rule set.
+// Both fields optional: the controller currently allows updating adminNote
+// alone (status is a no-op if omitted), which this preserves — but status,
+// when present, must be one of the real enum values.
+export const reviewModerationValidation = [
+  body('status').optional().isIn(['pending', 'approved', 'rejected']).withMessage('status must be pending, approved, or rejected'),
+  body('adminNote').optional().trim().isLength({ max: 500 }),
+];
+
 export const createReview = asyncHandler(async (req, res) => {
   if (handleValidationErrors(req, res)) return;
 
@@ -22,7 +32,7 @@ export const createReview = asyncHandler(async (req, res) => {
   const existing = await Review.findOne({
     student: req.user._id,
     ...(teacherId ? { teacher: teacherId } : { course: courseId }),
-  });
+  }).lean();
   if (existing) return res.status(409).json({ message: 'You have already submitted a review' });
 
   const review = await Review.create({
@@ -70,11 +80,13 @@ export const getCourseReviews = asyncHandler(async (req, res) => {
 });
 
 export const moderateReview = asyncHandler(async (req, res) => {
+  if (handleValidationErrors(req, res)) return;
+
   const { status, adminNote } = req.body;
   const review = await Review.findByIdAndUpdate(
     req.params.id,
-    { status, ...(adminNote && { adminNote }) },
-    { new: true },
+    { ...(status && { status }), ...(adminNote && { adminNote }) },
+    { new: true, runValidators: true },
   );
   if (!review) return res.status(404).json({ message: 'Review not found' });
   res.json({ review });

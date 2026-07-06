@@ -1,10 +1,12 @@
 import { plans } from '../../data';
 import { useLang } from '../../context/LangContext';
 import { PLAN_TEXT, INVOICE_TEXT, pick } from '../../i18n/content';
+import { useModalA11y } from '../../hooks/useModalA11y';
 
 export default function InvoiceModal({ invoice, onClose }) {
   const { lang } = useLang();
   const v = pick(INVOICE_TEXT, lang);
+  const firstFocusRef = useModalA11y(!!invoice, onClose);
   if (!invoice) return null;
 
   const FMT = new Intl.DateTimeFormat(v.locale, { year: 'numeric', month: 'long', day: 'numeric' });
@@ -25,7 +27,7 @@ export default function InvoiceModal({ invoice, onClose }) {
         aria-modal="true"
         aria-label={v.invoice}
       >
-        <button className="modal__close" onClick={onClose} aria-label="Close">×</button>
+        <button ref={firstFocusRef} className="modal__close" onClick={onClose} aria-label="Close">×</button>
 
         {/* Academy header */}
         <div className="inv__header">

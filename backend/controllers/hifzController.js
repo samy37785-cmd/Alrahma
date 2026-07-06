@@ -5,7 +5,7 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 // @route GET /api/hifz
 // @access Private
 export const getMyHifz = asyncHandler(async (req, res) => {
-  const progress = await HifzProgress.find({ user: req.user._id }).sort({ chapterId: 1 });
+  const progress = await HifzProgress.find({ user: req.user._id }).sort({ chapterId: 1 }).lean();
   const totalMemorized = progress.reduce((sum, p) => sum + p.memorizedVerses.length, 0);
   const surahsCompleted = progress.filter(
     (p) => p.totalVerses > 0 && p.memorizedVerses.length >= p.totalVerses
@@ -55,6 +55,6 @@ export const markMemorized = asyncHandler(async (req, res) => {
 // @route GET /api/hifz/user/:userId
 // @access Admin
 export const getUserHifz = asyncHandler(async (req, res) => {
-  const progress = await HifzProgress.find({ user: req.params.userId }).sort({ chapterId: 1 });
+  const progress = await HifzProgress.find({ user: req.params.userId }).sort({ chapterId: 1 }).lean();
   res.json(progress);
 });

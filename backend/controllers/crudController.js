@@ -61,7 +61,8 @@ export function createCRUDController(Model, options = {}) {
     let query = Model.find(filter)
       .sort({ [sortKey]: sortOrder === 'desc' ? -1 : 1 })
       .skip(skip)
-      .limit(limit);
+      .limit(limit)
+      .lean();
 
     for (const f of populateFields) query = query.populate(f);
 
@@ -76,7 +77,7 @@ export function createCRUDController(Model, options = {}) {
       return res.status(400).json({ message: 'Invalid ID format' });
     }
 
-    let query = Model.findById(req.params.id);
+    let query = Model.findById(req.params.id).lean();
     for (const f of populateFields) query = query.populate(f);
     const doc = await query.exec();
 

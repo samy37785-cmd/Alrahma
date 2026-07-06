@@ -203,18 +203,33 @@ export default function Profile() {
                 </div>
               )}
               {infoErr && (
-                <div role="alert" style={{ background: 'var(--color-danger-surface)', border: '1px solid var(--color-danger-border)', borderRadius: 8, padding: '8px 12px', marginBottom: 14, fontSize: '0.82rem', color: 'var(--color-danger-text)' }}>
+                <div id="info-error" role="alert" style={{ background: 'var(--color-danger-surface)', border: '1px solid var(--color-danger-border)', borderRadius: 8, padding: '8px 12px', marginBottom: 14, fontSize: '0.82rem', color: 'var(--color-danger-text)' }}>
                   {infoErr}
                 </div>
               )}
               <form onSubmit={handleInfo} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 <div className="field" style={{ margin: 0 }}>
                   <label htmlFor="prof-name">{pg.fullName}</label>
-                  <input id="prof-name" value={info.name} onChange={(e) => setInfo((p) => ({ ...p, name: e.target.value }))} required />
+                  <input
+                    id="prof-name"
+                    value={info.name}
+                    onChange={(e) => setInfo((p) => ({ ...p, name: e.target.value }))}
+                    required
+                    aria-invalid={infoErr ? 'true' : undefined}
+                    aria-describedby={infoErr ? 'info-error' : undefined}
+                  />
                 </div>
                 <div className="field" style={{ margin: 0 }}>
                   <label htmlFor="prof-email">{pg.email}</label>
-                  <input id="prof-email" type="email" value={info.email} onChange={(e) => setInfo((p) => ({ ...p, email: e.target.value }))} required />
+                  <input
+                    id="prof-email"
+                    type="email"
+                    value={info.email}
+                    onChange={(e) => setInfo((p) => ({ ...p, email: e.target.value }))}
+                    required
+                    aria-invalid={infoErr ? 'true' : undefined}
+                    aria-describedby={infoErr ? 'info-error' : undefined}
+                  />
                 </div>
                 <div className="field" style={{ margin: 0 }}>
                   <label>{pg.accountType}</label>
@@ -239,22 +254,46 @@ export default function Profile() {
                 </div>
               )}
               {passErr && (
-                <div role="alert" style={{ background: 'var(--color-danger-surface)', border: '1px solid var(--color-danger-border)', borderRadius: 8, padding: '8px 12px', marginBottom: 14, fontSize: '0.82rem', color: 'var(--color-danger-text)' }}>
+                <div id="pass-error" role="alert" style={{ background: 'var(--color-danger-surface)', border: '1px solid var(--color-danger-border)', borderRadius: 8, padding: '8px 12px', marginBottom: 14, fontSize: '0.82rem', color: 'var(--color-danger-text)' }}>
                   {passErr}
                 </div>
               )}
               <form onSubmit={handlePass} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 <div className="field" style={{ margin: 0 }}>
                   <label htmlFor="cur-pass">{pg.currentPass}</label>
-                  <input id="cur-pass" type="password" value={pass.currentPassword} onChange={(e) => setPass((p) => ({ ...p, currentPassword: e.target.value }))} required />
+                  <input
+                    id="cur-pass"
+                    type="password"
+                    value={pass.currentPassword}
+                    onChange={(e) => setPass((p) => ({ ...p, currentPassword: e.target.value }))}
+                    required
+                    aria-invalid={passErr ? 'true' : undefined}
+                    aria-describedby={passErr ? 'pass-error' : undefined}
+                  />
                 </div>
                 <div className="field" style={{ margin: 0 }}>
                   <label htmlFor="new-pass">{pg.newPass}</label>
-                  <input id="new-pass" type="password" value={pass.newPassword} onChange={(e) => setPass((p) => ({ ...p, newPassword: e.target.value }))} required />
+                  <input
+                    id="new-pass"
+                    type="password"
+                    value={pass.newPassword}
+                    onChange={(e) => setPass((p) => ({ ...p, newPassword: e.target.value }))}
+                    required
+                    aria-invalid={passErr ? 'true' : undefined}
+                    aria-describedby={passErr ? 'pass-error' : undefined}
+                  />
                 </div>
                 <div className="field" style={{ margin: 0 }}>
                   <label htmlFor="conf-pass">{pg.confirmPass}</label>
-                  <input id="conf-pass" type="password" value={pass.confirm} onChange={(e) => setPass((p) => ({ ...p, confirm: e.target.value }))} required />
+                  <input
+                    id="conf-pass"
+                    type="password"
+                    value={pass.confirm}
+                    onChange={(e) => setPass((p) => ({ ...p, confirm: e.target.value }))}
+                    required
+                    aria-invalid={passErr ? 'true' : undefined}
+                    aria-describedby={passErr ? 'pass-error' : undefined}
+                  />
                 </div>
                 <button type="submit" className="btn btn--green" style={{ alignSelf: 'flex-start', borderRadius: 9 }} disabled={saving} aria-busy={saving}>
                   {saving ? pg.saving : pg.changeBtn}

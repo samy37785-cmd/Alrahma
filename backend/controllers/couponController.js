@@ -12,6 +12,31 @@ export const couponValidation = [
   body('validUntil').optional().isISO8601(),
 ];
 
+// Same field rules as couponValidation, but every field is optional — PATCH
+// is a partial update, so a request that only changes e.g. `active` must not
+// be rejected for omitting `discountType`/`discountValue`.
+export const couponUpdateValidation = [
+  body('code').optional().trim().toUpperCase().notEmpty().withMessage('Code cannot be empty').matches(/^[A-Z0-9_-]{3,30}$/),
+  body('discountType').optional().isIn(['percent', 'fixed']).withMessage('discountType must be percent or fixed'),
+  body('discountValue').optional().isFloat({ min: 0 }).withMessage('discountValue must be a positive number'),
+  body('maxUses').optional().isInt({ min: 1 }),
+  body('validUntil').optional().isISO8601(),
+  body('validFrom').optional().isISO8601(),
+  body('description').optional().trim().isLength({ max: 300 }),
+  body('applicablePlans').optional().isArray(),
+  body('minOrderAmount').optional().isFloat({ min: 0 }),
+  body('active').optional().isBoolean(),
+];
+
+// Fields an admin may edit via updateCoupon. `usedCount`/`usedBy` are
+// system-managed (updated only by real redemptions) and must never be
+// settable via this endpoint — req.body was previously passed through to
+// Mongoose unfiltered, which would have allowed exactly that.
+const COUPON_UPDATABLE_FIELDS = [
+  'code', 'description', 'discountType', 'discountValue', 'maxUses',
+  'applicablePlans', 'minOrderAmount', 'validFrom', 'validUntil', 'active',
+];
+
 export const validateCoupon = asyncHandler(async (req, res) => {
   const code = (req.body.code || req.query.code || '').trim().toUpperCase();
   if (!code) return res.status(400).json({ message: 'Coupon code is required' });
@@ -61,7 +86,14 @@ export const listCoupons = asyncHandler(async (req, res) => {
 });
 
 export const updateCoupon = asyncHandler(async (req, res) => {
-  const coupon = await Coupon.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+  if (handleValidationErrors(req, res)) return;
+
+  const updates = {};
+  for (const key of COUPON_UPDATABLE_FIELDS) {
+    if (req.body[key] !== undefined) updates[key] = req.body[key];
+  }
+
+  const coupon = await Coupon.findByIdAndUpdate(req.params.id, updates, { new: true, runValidators: true });
   if (!coupon) return res.status(404).json({ message: 'Coupon not found' });
   res.json({ coupon });
 });

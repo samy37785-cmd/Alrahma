@@ -61,4 +61,12 @@ const courseSchema = new mongoose.Schema(
 // used for the same filter+sort pattern on the Blog model.
 courseSchema.index({ published: 1, createdAt: -1 });
 
+// T7: searchController.searchCourses and the admin course list
+// (routes/v1/admin/coursesRoutes.js, allowedFilters) both filter on `level`
+// as a plain equality match — unrelated to the regex text-search side of
+// those endpoints. Confirmed via explain() at a 5,000-course scale: without
+// this index, a level-only filter is a full COLLSCAN (5000 docs examined);
+// with it, an IXSCAN+FETCH examines only the ~1250 matching documents.
+courseSchema.index({ level: 1 });
+
 export default mongoose.model('Course', courseSchema);

@@ -10,7 +10,7 @@ export const subscribe = asyncHandler(async (req, res) => {
     throw new Error('Email is required');
   }
 
-  const existing = await Subscriber.findOne({ email });
+  const existing = await Subscriber.findOne({ email }).lean();
   if (existing) {
     return res.status(200).json({ message: 'Already subscribed' });
   }
@@ -22,6 +22,6 @@ export const subscribe = asyncHandler(async (req, res) => {
 // @route  GET /api/newsletter
 // @access Private/Admin
 export const listSubscribers = asyncHandler(async (req, res) => {
-  const subscribers = await Subscriber.find().sort('-createdAt');
+  const subscribers = await Subscriber.find().sort('-createdAt').lean();
   res.json(subscribers);
 });

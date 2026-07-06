@@ -118,7 +118,7 @@ export const createPaypalOrder = asyncHandler(async (req, res) => {
  */
 async function finalizePaypalOrder(orderId, capture) {
   // Fast-path idempotency check outside the transaction to avoid overhead.
-  const existing = await Payment.findOne({ gatewayOrderId: orderId });
+  const existing = await Payment.findOne({ gatewayOrderId: orderId }).lean();
   if (!existing) {
     logger.warn('PayPal finalize: no payment record found', { orderId });
     return { status: capture?.status, fulfilled: false };

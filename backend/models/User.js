@@ -51,6 +51,15 @@ const userSchema = new mongoose.Schema(
     // OAuth — Google Sign-In subject identifier
     googleId: { type: String, default: null, index: true, sparse: true },
 
+    // Referral code = last 8 chars of this user's own _id (see
+    // referralController.js). Stored + indexed so trackReferral() can look up
+    // the referrer with a targeted query instead of scanning every user.
+    // Sparse: existing users created before this field existed simply don't
+    // have one yet until they're self-healed (see referralController.js) or
+    // backfilled (scripts/backfillReferralCodes.js) — sparse keeps the unique
+    // index from treating those as colliding nulls.
+    referralCode: { type: String, default: null, unique: true, sparse: true },
+
     // ── Gamification ──────────────────────────────────────────────────────────
     xp:            { type: Number, default: 0, min: 0 },
     level:         { type: Number, default: 1, min: 1 },
@@ -90,6 +99,15 @@ userSchema.pre('save', async function () {
   if (!this.isModified('password')) return;
   const salt = await bcrypt.genSalt(12);
   this.password = await bcrypt.hash(this.password, salt);
+});
+
+// Populate referralCode for every new user. _id is already assigned at this
+// point (Mongoose generates it on document construction, before any hooks
+// run), so this never needs a second round-trip.
+userSchema.pre('save', function () {
+  if (this.isNew && !this.referralCode) {
+    this.referralCode = this._id.toString().slice(-8);
+  }
 });
 
 // Instance method to compare a plain password with the hashed one.

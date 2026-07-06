@@ -10,7 +10,7 @@ async function canMessage(me, otherId) {
     return me.teacher && String(me.teacher) === String(otherId);
   }
   if (me.role === 'teacher') {
-    const student = await User.findOne({ _id: otherId, teacher: me._id }).select('_id');
+    const student = await User.findOne({ _id: otherId, teacher: me._id }).select('_id').lean();
     return !!student;
   }
   return false; // parents/admins use their own portals, not this 1:1 channel
@@ -25,10 +25,10 @@ export const getContacts = asyncHandler(async (req, res) => {
   let contacts = [];
 
   if (me.role === 'student' && me.teacher) {
-    const teacher = await User.findById(me.teacher).select('name email role');
+    const teacher = await User.findById(me.teacher).select('name email role').lean();
     if (teacher) contacts = [teacher];
   } else if (me.role === 'teacher') {
-    contacts = await User.find({ teacher: me._id }).select('name email role').sort('name');
+    contacts = await User.find({ teacher: me._id }).select('name email role').sort('name').lean();
   }
 
   // Attach unread count (messages they sent me, still unread) per contact.
@@ -38,7 +38,7 @@ export const getContacts = asyncHandler(async (req, res) => {
         Message.countDocuments({ from: c._id, to: me._id, readAt: null }),
         Message.findOne({
           $or: [{ from: me._id, to: c._id }, { from: c._id, to: me._id }],
-        }).sort('-createdAt').select('body createdAt from'),
+        }).sort('-createdAt').select('body createdAt from').lean(),
       ]);
       return {
         _id: c._id, name: c.name, email: c.email, role: c.role,
@@ -64,7 +64,7 @@ export const getConversation = asyncHandler(async (req, res) => {
 
   const messages = await Message.find({
     $or: [{ from: me._id, to: otherId }, { from: otherId, to: me._id }],
-  }).sort('createdAt');
+  }).sort('createdAt').lean();
 
   // Mark the incoming ones as read.
   await Message.updateMany(

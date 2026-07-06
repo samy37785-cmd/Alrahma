@@ -58,7 +58,8 @@ async function awardXP(userId, amount) {
 export const getUserProgress = asyncHandler(async (req, res) => {
   const rows = await CourseProgress.find({ user: req.params.userId })
     .populate('course', 'title icon resources modules')
-    .sort({ lastActivity: -1 });
+    .sort({ lastActivity: -1 })
+    .lean();
   const report = rows
     .filter((r) => r.course) // skip deleted courses
     .map((r) => {
@@ -82,7 +83,7 @@ export const getUserProgress = asyncHandler(async (req, res) => {
 // @route GET /api/progress/:courseId
 // @access Private
 export const getCourseProgress = asyncHandler(async (req, res) => {
-  const row = await CourseProgress.findOne({ user: req.user._id, course: req.params.courseId });
+  const row = await CourseProgress.findOne({ user: req.user._id, course: req.params.courseId }).lean();
   res.json({ completed: row?.completed || [], lastActivity: row?.lastActivity || null });
 });
 
@@ -99,7 +100,7 @@ export const toggleProgress = asyncHandler(async (req, res) => {
   const { url, lessonId, done = true } = req.body;
   if (!url && !lessonId) { res.status(400); throw new Error('A resource url or lessonId is required'); }
 
-  const course = await Course.findById(req.params.courseId).select('resources modules');
+  const course = await Course.findById(req.params.courseId).select('resources modules').lean();
   if (!course) { res.status(404); throw new Error('Course not found'); }
 
   // The completion key is the resource URL (legacy flat resources) or

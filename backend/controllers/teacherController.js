@@ -8,7 +8,8 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 async function courseReport(studentId) {
   const rows = await CourseProgress.find({ user: studentId })
     .populate('course', 'title icon resources')
-    .sort({ lastActivity: -1 });
+    .sort({ lastActivity: -1 })
+    .lean();
   return rows
     .filter((r) => r.course)
     .map((r) => {
@@ -29,7 +30,8 @@ async function courseReport(studentId) {
 // Verify the given student is actually assigned to this teacher.
 async function ownStudentOr404(teacherId, studentId, res) {
   const student = await User.findOne({ _id: studentId, teacher: teacherId })
-    .select('-password');
+    .select('-password')
+    .lean();
   if (!student) {
     res.status(404);
     throw new Error('Student not found among your students');
@@ -43,28 +45,56 @@ async function ownStudentOr404(teacherId, studentId, res) {
 export const getMyStudents = asyncHandler(async (req, res) => {
   const students = await User.find({ teacher: req.user._id })
     .select('name email subscription createdAt')
-    .sort('name');
+    .sort('name')
+    .lean();
 
-  // Attach a lightweight record count + last activity per student.
-  const summaries = await Promise.all(
-    students.map(async (s) => {
-      const [recordCount, lastRecord, hifz] = await Promise.all([
-        StudentRecord.countDocuments({ student: s._id }),
-        StudentRecord.findOne({ student: s._id }).sort('-date').select('date grade'),
-        HifzProgress.find({ user: s._id }).select('memorizedVerses'),
-      ]);
-      const memorized = hifz.reduce((sum, h) => sum + (h.memorizedVerses?.length || 0), 0);
-      return {
-        _id: s._id,
-        name: s.name,
-        email: s.email,
-        subscription: s.subscription,
-        recordCount,
-        lastRecordDate: lastRecord?.date || null,
-        memorizedVerses: memorized,
-      };
-    })
-  );
+  const studentIds = students.map((s) => s._id);
+
+  // Two batched aggregations (a constant 2 queries, independent of student
+  // count) replace what was previously 3 queries PER student
+  // (StudentRecord.countDocuments + StudentRecord.findOne + HifzProgress.find)
+  // — see T4 audit. Both $match stages hit an existing index
+  // (StudentRecord: { student: 1, date: -1 }; HifzProgress: { user: 1,
+  // chapterId: 1 }, used here on its prefix field), so no new index is
+  // needed.
+  //
+  // T6: the StudentRecord pipeline's early $project (restricted to the two
+  // fields $group actually needs) lets MongoDB answer the whole query from
+  // the { student: 1, date: -1 } index alone — confirmed via explain():
+  // totalDocsExamined drops from 100 to 0 for a 20-student/5-records-each
+  // fixture (PROJECTION_COVERED instead of FETCH). The same trick does NOT
+  // help the HifzProgress pipeline below — memorizedVerses isn't part of its
+  // { user: 1, chapterId: 1 } index, so MongoDB must fetch the full document
+  // regardless (confirmed via explain(): totalDocsExamined unchanged either
+  // way) — left as-is per "only optimize where there is measurable benefit."
+  const [recordStats, hifzStats] = await Promise.all([
+    StudentRecord.aggregate([
+      { $match: { student: { $in: studentIds } } },
+      { $project: { _id: 0, student: 1, date: 1 } },
+      { $sort: { date: -1 } },
+      { $group: { _id: '$student', recordCount: { $sum: 1 }, lastRecordDate: { $first: '$date' } } },
+    ]),
+    HifzProgress.aggregate([
+      { $match: { user: { $in: studentIds } } },
+      { $group: { _id: '$user', memorizedVerses: { $sum: { $size: { $ifNull: ['$memorizedVerses', []] } } } } },
+    ]),
+  ]);
+
+  const recordStatsById = new Map(recordStats.map((r) => [String(r._id), r]));
+  const memorizedById = new Map(hifzStats.map((h) => [String(h._id), h.memorizedVerses]));
+
+  const summaries = students.map((s) => {
+    const stats = recordStatsById.get(String(s._id));
+    return {
+      _id: s._id,
+      name: s.name,
+      email: s.email,
+      subscription: s.subscription,
+      recordCount: stats?.recordCount || 0,
+      lastRecordDate: stats?.lastRecordDate || null,
+      memorizedVerses: memorizedById.get(String(s._id)) || 0,
+    };
+  });
   res.json(summaries);
 });
 
@@ -76,8 +106,9 @@ export const getStudentDetail = asyncHandler(async (req, res) => {
   const [records, hifz, courses] = await Promise.all([
     StudentRecord.find({ student: student._id })
       .populate('course', 'title icon')
-      .sort('-date'),
-    HifzProgress.find({ user: student._id }).sort({ chapterId: 1 }),
+      .sort('-date')
+      .lean(),
+    HifzProgress.find({ user: student._id }).sort({ chapterId: 1 }).lean(),
     courseReport(student._id),
   ]);
   res.json({

@@ -115,6 +115,7 @@ export async function getAuditLog(req, res) {
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
+      .lean()
       .exec(),
     SystemAuditLog.countDocuments(filter),
   ]);
@@ -168,7 +169,8 @@ export async function purgeOldAuditLogs(req, res) {
 export async function listAdmins(req, res) {
   const admins = await AdminUser.find()
     .select('-password -_mfaSecret -_mfaPendingSecret')
-    .sort({ createdAt: -1 });
+    .sort({ createdAt: -1 })
+    .lean();
   return res.json({ data: admins, total: admins.length });
 }
 
@@ -191,7 +193,7 @@ export async function createAdmin(req, res) {
 
   const { name, email, password, role } = req.body;
 
-  const existing = await AdminUser.findOne({ email });
+  const existing = await AdminUser.findOne({ email }).lean();
   if (existing) {
     return res.status(409).json({ message: 'An admin with this email already exists' });
   }

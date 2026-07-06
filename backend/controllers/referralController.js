@@ -11,7 +11,8 @@ export const getMyReferrals = asyncHandler(async (req, res) => {
   const referrals = await Referral.find({ referrer: req.user._id })
     .populate('referee', 'name createdAt')
     .sort({ createdAt: -1 })
-    .limit(50);
+    .limit(50)
+    .lean();
 
   const stats = {
     code,
@@ -39,15 +40,31 @@ export const trackReferral = asyncHandler(async (req, res) => {
   const { code, refereeId } = req.body;
   if (!code || !refereeId) { res.status(400); throw new Error('code and refereeId required'); }
 
-  // Find the referrer by matching the last 8 chars of their _id
-  const users = await User.find({}).select('_id').lean();
-  const referrer = users.find((u) => u._id.toString().slice(-8) === code);
+  // Fast path: referralCode is indexed (unique, sparse), so this is a single
+  // targeted lookup rather than a full collection scan.
+  let referrer = await User.findOne({ referralCode: code }).select('_id').lean();
+
+  // Self-healing fallback for users created before the referralCode field
+  // existed: their code was never persisted, so fall back to the original
+  // derivation (last 8 chars of _id) — but only scan users who don't have a
+  // referralCode yet, and persist it once found so this user never needs the
+  // scan again. Identical business behavior to before this change; the
+  // scanned set shrinks over time instead of being every user, forever.
+  if (!referrer) {
+    const unmigrated = await User.find({ referralCode: null }).select('_id').lean();
+    const legacyMatch = unmigrated.find((u) => u._id.toString().slice(-8) === code);
+    if (legacyMatch) {
+      await User.updateOne({ _id: legacyMatch._id }, { $set: { referralCode: code } });
+      referrer = legacyMatch;
+    }
+  }
+
   if (!referrer) { res.status(404); throw new Error('Referral code not found'); }
   if (referrer._id.toString() === refereeId) {
     return res.status(400).json({ message: 'Self-referral is not allowed' });
   }
 
-  const existing = await Referral.findOne({ referrer: referrer._id, referee: refereeId });
+  const existing = await Referral.findOne({ referrer: referrer._id, referee: refereeId }).lean();
   if (existing) return res.json(existing);
 
   const referral = await Referral.create({ referrer: referrer._id, referee: refereeId, code });

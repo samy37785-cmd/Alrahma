@@ -12,6 +12,26 @@ export const blogValidation = [
   body('author.name').trim().notEmpty(),
 ];
 
+// Same field rules as blogValidation, but every field is optional — PATCH is
+// a partial update, so a request that only changes e.g. `published` must not
+// be rejected for omitting `slug`/`title`/etc.
+export const blogUpdateValidation = [
+  body('slug').optional().trim().toLowerCase().notEmpty().matches(/^[a-z0-9-]+$/),
+  body('title').optional().trim().notEmpty().isLength({ max: 200 }),
+  body('excerpt').optional().trim().notEmpty().isLength({ max: 500 }),
+  body('body').optional().trim().notEmpty(),
+  body('author.name').optional().trim().notEmpty(),
+];
+
+// Fields an admin may edit via updatePost. `views` is a system-managed
+// counter (incremented by getPost on every read via $inc) and must never be
+// settable via this endpoint — req.body was previously passed through to
+// Mongoose unfiltered, which would have allowed exactly that.
+const BLOG_UPDATABLE_FIELDS = [
+  'slug', 'title', 'excerpt', 'body', 'category', 'tags',
+  'author', 'coverImage', 'readTime', 'published', 'publishedAt', 'seo',
+];
+
 export const listPosts = asyncHandler(async (req, res) => {
   const { page, limit, skip } = parsePagination(req.query, { defaultLimit: 9, maxLimit: 20 });
   const { category, tag } = req.query;
@@ -53,7 +73,14 @@ export const createPost = asyncHandler(async (req, res) => {
 });
 
 export const updatePost = asyncHandler(async (req, res) => {
-  const post = await Blog.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+  if (handleValidationErrors(req, res)) return;
+
+  const updates = {};
+  for (const key of BLOG_UPDATABLE_FIELDS) {
+    if (req.body[key] !== undefined) updates[key] = req.body[key];
+  }
+
+  const post = await Blog.findByIdAndUpdate(req.params.id, updates, { new: true, runValidators: true });
   if (!post) return res.status(404).json({ message: 'Post not found' });
   res.json({ post });
 });

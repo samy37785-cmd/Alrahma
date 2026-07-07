@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import {
   getUserHifzReport, getUserCourseProgress,
   listCertificates, issueCertificate, revokeCertificate,
-} from '../../../api/client';
+} from '../../../api/courseApi';
 import { useModalA11y } from '../../../hooks/useModalA11y';
 
 const EMPTY_CERT = { type: 'completion', title: '', grade: '', notes: '' };

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { startStripeSession, startPaypalPayment, getManualMethods, submitManualPayment } from '../../api/client';
+import { startStripeSession, startPaypalPayment, getManualMethods, submitManualPayment } from '../../api/paymentApi';
 import { useLang } from '../../context/LangContext';
 import { PLAN_TEXT, CHECKOUT_SUBS, pick } from '../../i18n/content';
 import { plans } from '../../data';

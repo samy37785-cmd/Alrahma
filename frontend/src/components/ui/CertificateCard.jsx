@@ -1,3 +1,5 @@
+import { escapeHtml } from '../../utils/escapeHtml';
+
 const TYPE_LABEL = {
   completion: 'Certificate of Completion',
   hifz:       'Certificate of Hifz (Memorisation)',
@@ -14,12 +16,24 @@ const TYPE_COLOR = {
 
 function CertificatePrintView({ cert }) {
   const color = TYPE_COLOR[cert.type] || '#0b6e4f';
+  // cert.title/studentName/issuedBy/course.title/certificateNumber are
+  // admin-supplied free text (issueCertificate accepts them directly from
+  // the admin request body) — interpolating them unescaped into raw HTML
+  // written via document.write() would let a crafted value execute script
+  // in this window's context (which shares the app's origin). Escaped here
+  // the same way Profile.jsx's printCertificate already correctly does for
+  // the same data.
+  const title = escapeHtml(cert.title);
+  const studentName = escapeHtml(cert.studentName);
+  const issuedBy = escapeHtml(cert.issuedBy || 'Al-Rahma Academy');
+  const courseTitle = escapeHtml(cert.course?.title);
+  const certificateNumber = escapeHtml(cert.certificateNumber);
   return `
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
-<title>${cert.title} — Al-Rahma Academy</title>
+<title>${title} — Al-Rahma Academy</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Playfair+Display:wght@400;700&display=swap');
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -79,16 +93,16 @@ function CertificatePrintView({ cert }) {
   <div class="cert__academy">Al-Rahma Academy</div>
   <div class="cert__bismillah">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ</div>
   <div class="cert__label">This is to certify that</div>
-  <div class="cert__name">${cert.studentName}</div>
+  <div class="cert__name">${studentName}</div>
   <div class="cert__presented">has successfully completed</div>
-  <div class="cert__type">${TYPE_LABEL[cert.type] || cert.type}</div>
-  <div class="cert__title">${cert.title}</div>
-  ${cert.course?.title ? `<div class="cert__course">Course: ${cert.course.title}</div>` : ''}
-  ${cert.grade != null ? `<div class="cert__course">Grade: <strong>${cert.grade}/100</strong></div>` : ''}
+  <div class="cert__type">${TYPE_LABEL[cert.type] || escapeHtml(cert.type)}</div>
+  <div class="cert__title">${title}</div>
+  ${courseTitle ? `<div class="cert__course">Course: ${courseTitle}</div>` : ''}
+  ${cert.grade != null ? `<div class="cert__course">Grade: <strong>${Number(cert.grade)}/100</strong></div>` : ''}
   <div class="cert__meta">
     <div class="cert__sig">
       <div class="cert__sig-line"></div>
-      <div class="cert__sig-name">${cert.issuedBy || 'Al-Rahma Academy'}</div>
+      <div class="cert__sig-name">${issuedBy}</div>
       <div class="cert__sig-title">Issuing Authority</div>
       <div class="cert__date">${new Date(cert.issuedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
     </div>
@@ -101,7 +115,7 @@ function CertificatePrintView({ cert }) {
       <div class="cert__sig-title">Al-Rahma Academy</div>
     </div>
   </div>
-  <div class="cert__number">Certificate No. ${cert.certificateNumber}</div>
+  <div class="cert__number">Certificate No. ${certificateNumber}</div>
 </div>
 <script>window.onload = () => { window.print(); };</script>
 </body>

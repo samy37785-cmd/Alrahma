@@ -56,6 +56,8 @@ Entry: `app.js` (Express middleware pipeline) → `server.js` (runner, used both
 4. `requestLogger` (Winston with correlation IDs) → DB connection check
 5. Route handlers → `notFound` → `errorHandler`
 
+**Observability:** `/health` is a liveness probe (always fast, no DB check); `/ready` is a readiness probe that additionally checks `mongoose.connection.readyState`, so it accurately reports 503 if MongoDB drops the connection at runtime, not just before the first successful connect. Winston logs to Console always (Render has no persistent disk configured — see `render.yaml` — so file-only logging in production would be unrecoverable after a restart) plus rotating files when `NODE_ENV=production`; `errorHandler` and `requestLogger` both include `req.requestId` so a request's error log line and its completion log line can be correlated. `config/db.js` logs `mongoose.connection` `disconnected`/`reconnected`/`error` events at runtime, not just the initial connect.
+
 **Patterns:**
 - All async route handlers must be wrapped in `asyncHandler()` (from `utils/asyncHandler.js`)
 - Input validation uses `express-validator` arrays passed inline to routes
@@ -72,6 +74,8 @@ Entry: `main.jsx` → `App.jsx` (routes + context providers).
 
 **Context provider stack** (outer to inner):
 `ErrorBoundary` → `QueryProvider` (React Query v5) → `ThemeProvider` → `LangProvider` → `AuthProvider` → `BrowserRouter`
+
+**Error reporting:** Sentry (`@sentry/react`) is initialized in `main.jsx` (`utils/sentry.js`) whenever `VITE_SENTRY_DSN` is set, and catches uncaught errors/rejections automatically — but `ErrorBoundary.jsx`'s `componentDidCatch` also explicitly calls `captureException`, because a React error boundary catching a render error is exactly what prevents that error from ever reaching Sentry's automatic global handlers.
 
 **State management:**
 - Server state: React Query v5 (`@tanstack/react-query`) — all API calls go through custom hooks in `hooks/`
@@ -128,7 +132,7 @@ The Reading Mode / page-turn / notes / highlights / reading-theme system above a
 - **Renewal-reminder cron** (`GET /api/cron/renewal-reminders`, `CRON_SECRET` auth): must be triggered by a scheduler **external to this repo** (e.g. UptimeRobot, GitHub Actions cron) hitting the Render URL daily — `render.yaml` documents this requirement inline, but no such scheduler is configured anywhere in this repository. Confirm one exists before relying on renewal reminders actually sending.
 - **Netlify** (`netlify.toml`, present but not live): an alternate frontend-hosting config that exists in the repo but isn't referenced by the live CSP/redirect config — status as an active deployment target is unconfirmed.
 
-No Docker. No GitHub Actions CI — deployments are platform-triggered.
+No Docker. Deployments themselves are platform-triggered (Vercel/Render), but `.github/workflows/ci.yml` runs backend + frontend tests, lint, and build on push/PR (two parallel jobs; does not deploy anything).
 
 ## Key environment variables
 
@@ -139,7 +143,7 @@ Backend (see `backend/.env.example`):
 - `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`
 - `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`, `PAYPAL_WEBHOOK_ID`
 - `SMTP_HOST/PORT/USER/PASS/ADMIN_EMAIL`
-- `ADMIN_IP_WHITELIST` — comma-separated IPs/CIDR allowed to hit admin routes
+- `ADMIN_IP_WHITELIST` — comma-separated IPs/CIDR allowed to hit admin routes. If unset: allows all IPs in development/test, but **fails closed (denies all admin requests)** when `NODE_ENV=production` (`backend/middleware/ipWhitelist.js`) — confirm this var is actually set on Render before deploying, or admin access will be locked out
 - `CRON_SECRET` — authenticates the external scheduler's call to `/api/cron/*` (there is no Vercel cron — see Deployment above)
 - `REDIS_URL` — optional; enables distributed rate limiting
 

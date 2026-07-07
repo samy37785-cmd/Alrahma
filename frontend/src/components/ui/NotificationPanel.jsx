@@ -26,8 +26,13 @@ export default function NotificationPanel() {
     queryKey: ['notifications'],
     queryFn: async () => {
       try {
-        const { getNotifications } = await import('../../api/notificationApi');
-        return getNotifications();
+        // The real export is getMyNotifications, and it resolves the full
+        // paginated response body ({ notifications, total, unreadCount, ... }),
+        // not a bare array — both had to match for this to ever return real
+        // data instead of silently falling through to [] below.
+        const { getMyNotifications } = await import('../../api/notificationApi');
+        const res = await getMyNotifications();
+        return res.notifications;
       } catch {
         return [];
       }

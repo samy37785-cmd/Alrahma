@@ -7,7 +7,6 @@ import { useLang } from '../context/LangContext';
 import { useAuth } from '../context/AuthContext';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import { site } from '../data/site';
-import '../styles/dashboard-shell.css';
 
 const LOCALE_MAP = { en: 'en-GB', ar: 'ar-EG', it: 'it-IT', fr: 'fr-FR', de: 'de-DE', es: 'es-ES' };
 

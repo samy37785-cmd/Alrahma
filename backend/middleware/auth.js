@@ -23,7 +23,7 @@ async function _loadUser(req, res) {
     return null;
   }
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
     const user = await User.findById(decoded.id).select('-password');
     if (!user) {
       res.status(401).json({ message: 'User no longer exists' });
@@ -87,7 +87,7 @@ export async function softProtect(req, res, next) {
   try {
     const token = getToken(req);
     if (token) {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const decoded = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
       const user = await User.findById(decoded.id).select('-password');
       // Honour tokenVersion so a post-password-reset token doesn't persist here either.
       if (user && (decoded.v ?? 0) === (user.tokenVersion ?? 0)) {

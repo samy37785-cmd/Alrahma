@@ -18,6 +18,12 @@ Logs are emitted by the Winston logger at `backend/config/logger.js`.
 - `logs/exceptions-YYYY-MM-DD.log` — uncaught exceptions
 - `logs/rejections-YYYY-MM-DD.log` — unhandled promise rejections
 
+Uncaught exceptions and unhandled rejections are also always printed to
+Console in production, not just written to the files above — Render (the
+deployment target) has no persistent disk configured, so those files don't
+survive a restart/redeploy and Console is the only durable channel (Render's
+log viewer streams stdout/stderr).
+
 Files are compressed after rotation and retained for **14 days** (max 20 MB/file).
 
 ### Request Logging
@@ -31,6 +37,11 @@ Every HTTP request is logged after the response is sent with:
 ## Error Tracking (Sentry)
 
 Frontend errors are captured by `@sentry/react` when `VITE_SENTRY_DSN` is set.
+Sentry's own global handlers catch uncaught errors/rejections automatically;
+in addition, the top-level `ErrorBoundary` component explicitly calls
+`captureException` on every React render error it catches, since a caught
+error boundary error is exactly what prevents Sentry's automatic handlers
+from ever seeing it.
 
 - Traces sample rate: 20% (configurable via DSN dashboard)
 - Session replays: 5% normal, 100% on error
@@ -38,9 +49,9 @@ Frontend errors are captured by `@sentry/react` when `VITE_SENTRY_DSN` is set.
 
 To enable, set `VITE_SENTRY_DSN` in Vercel Environment Variables.
 
-## Health Check
+## Health & Readiness Checks
 
-`GET /health` returns:
+`GET /health` — liveness probe, always fast, no DB check. Returns:
 ```json
 {
   "status": "ok",
@@ -52,7 +63,12 @@ To enable, set `VITE_SENTRY_DSN` in Vercel Environment Variables.
 }
 ```
 
-Use this endpoint with any uptime monitoring service (UptimeRobot, Better Uptime, etc.) — check every 5 minutes.
+`GET /ready` — readiness probe. Checks both `connectDB()` and
+`mongoose.connection.readyState`, so it correctly reports `503` if MongoDB
+disconnects at runtime, not just before the first successful connect.
+Returns `{ "status": "ready" }` (200) or `{ "status": "not ready", "reason": "database" }` (503).
+
+Use `/health` with any uptime monitoring service (UptimeRobot, Better Uptime, etc.) — check every 5 minutes.
 
 ## Alerts to Configure
 

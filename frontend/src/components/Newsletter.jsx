@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { subscribeNewsletter } from '../api/client';
+import { subscribeNewsletter } from '../api/contentApi';
 import { useLang } from '../context/LangContext';
 
 const GUIDE_BENEFITS = [

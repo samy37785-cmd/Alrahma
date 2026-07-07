@@ -34,11 +34,17 @@ export const getMyReferrals = asyncHandler(async (req, res) => {
 
 // @desc  Record a referral when a user registers via a ref code
 // @route POST /api/referrals/track
-// @body  { code, refereeId }
-// @access Internal (called server-side during registration)
+// @body  { code }
+// @access Private — the referee can only ever be the caller's own account.
+// SECURITY: refereeId used to be taken from the request body with no
+// authentication at all, so any anonymous caller could attribute an
+// arbitrary user's account to any referral code they chose. It's now
+// derived from the authenticated session instead, so a caller can only ever
+// record a referral for themselves.
 export const trackReferral = asyncHandler(async (req, res) => {
-  const { code, refereeId } = req.body;
-  if (!code || !refereeId) { res.status(400); throw new Error('code and refereeId required'); }
+  const { code } = req.body;
+  const refereeId = req.user._id;
+  if (!code) { res.status(400); throw new Error('code is required'); }
 
   // Fast path: referralCode is indexed (unique, sparse), so this is a single
   // targeted lookup rather than a full collection scan.
@@ -60,7 +66,7 @@ export const trackReferral = asyncHandler(async (req, res) => {
   }
 
   if (!referrer) { res.status(404); throw new Error('Referral code not found'); }
-  if (referrer._id.toString() === refereeId) {
+  if (referrer._id.toString() === refereeId.toString()) {
     return res.status(400).json({ message: 'Self-referral is not allowed' });
   }
 

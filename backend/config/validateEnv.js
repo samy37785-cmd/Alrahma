@@ -62,6 +62,19 @@ export function validateEnv() {
     );
   }
 
+  // T21 security audit: ipWhitelist middleware now fails closed (denies all
+  // admin requests) in production when this is unset, instead of the old
+  // fail-open "allow everyone" default. Logged loudly here — same rationale
+  // as ADMIN_CRITICAL above — so a missing var is an obvious startup log
+  // entry instead of a silent site-wide admin lockout discovered by an admin
+  // getting 403s.
+  if (process.env.NODE_ENV === 'production' && !process.env.ADMIN_IP_WHITELIST) {
+    logger.error(
+      'ADMIN_IP_WHITELIST is not set in production — the admin API will deny ALL requests ' +
+      '(fail-closed). Set ADMIN_IP_WHITELIST to restore admin access.',
+    );
+  }
+
   const absent = RECOMMENDED.filter((k) => !process.env[k]);
   if (absent.length) {
     logger.warn('Recommended environment variables not set — some features will be disabled', { absent });

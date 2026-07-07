@@ -121,7 +121,7 @@ export async function setupMfa(req, res) {
 
   let decoded;
   try {
-    decoded = jwt.verify(token, process.env.ADMIN_JWT_ACCESS_SECRET);
+    decoded = jwt.verify(token, process.env.ADMIN_JWT_ACCESS_SECRET, { algorithms: ['HS256'] });
   } catch {
     return res.status(401).json({ message: 'Invalid or expired pre-auth token' });
   }
@@ -165,7 +165,7 @@ export async function confirmMfaSetup(req, res) {
 
   let decoded;
   try {
-    decoded = jwt.verify(preToken, process.env.ADMIN_JWT_ACCESS_SECRET);
+    decoded = jwt.verify(preToken, process.env.ADMIN_JWT_ACCESS_SECRET, { algorithms: ['HS256'] });
   } catch {
     return res.status(401).json({ message: 'Invalid or expired pre-auth token' });
   }
@@ -229,7 +229,7 @@ export async function verifyMfaLogin(req, res) {
 
   let decoded;
   try {
-    decoded = jwt.verify(preToken, process.env.ADMIN_JWT_ACCESS_SECRET);
+    decoded = jwt.verify(preToken, process.env.ADMIN_JWT_ACCESS_SECRET, { algorithms: ['HS256'] });
   } catch {
     return res.status(401).json({ message: 'Invalid or expired pre-auth token' });
   }

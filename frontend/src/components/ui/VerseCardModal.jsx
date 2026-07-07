@@ -1,5 +1,6 @@
 import { useRef } from 'react';
 import { useModalA11y } from '../../hooks/useModalA11y';
+import { escapeHtml } from '../../utils/escapeHtml';
 
 const clean = (html = '') =>
   html.replace(/<br\s*\/?>/gi, '\n').replace(/<\/p>/gi, ' ').replace(/<\/div>/gi, ' ')
@@ -36,8 +37,17 @@ export default function VerseCardModal({ verse, chapterName, onClose }) {
     const card = cardRef.current;
     if (!card) return;
     const win = window.open('', '_blank', 'width=640,height=480');
+    // arabic/trans/verseKey/chapterName come from the third-party Quran API,
+    // not directly from our own users or admins — but a compromised/malicious
+    // upstream response would still execute script in this window's
+    // same-origin context via document.write() if left unescaped, so this
+    // gets the same treatment as CertificateCard.jsx's admin-supplied data.
+    const safeArabic = escapeHtml(arabic);
+    const safeTrans = escapeHtml(trans);
+    const safeVerseKey = escapeHtml(verseKey);
+    const safeChapterName = escapeHtml(chapterName);
     win.document.write(`
-      <html><head><title>Quran ${verseKey}</title>
+      <html><head><title>Quran ${safeVerseKey}</title>
       <style>
         @import url('https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700&display=swap');
         * { margin:0; padding:0; box-sizing:border-box; }
@@ -52,9 +62,9 @@ export default function VerseCardModal({ verse, chapterName, onClose }) {
       <body>
         <div class="card">
           <div class="brand">Al-Rahma Academy</div>
-          <div class="arabic">${arabic}</div>
-          ${trans ? `<div class="trans">"${trans}"</div>` : ''}
-          <div class="ref">Quran · ${verseKey}${chapterName ? ` · ${chapterName}` : ''}</div>
+          <div class="arabic">${safeArabic}</div>
+          ${safeTrans ? `<div class="trans">"${safeTrans}"</div>` : ''}
+          <div class="ref">Quran · ${safeVerseKey}${safeChapterName ? ` · ${safeChapterName}` : ''}</div>
           <div class="footer">alrahma.academy</div>
         </div>
       </body></html>

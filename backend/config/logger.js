@@ -48,8 +48,16 @@ const logger = createLogger({
       ? [rotatingFile('app', 'info'), rotatingFile('error', 'error')]
       : []),
   ],
-  exceptionHandlers: IS_PROD ? [rotatingFile('exceptions', 'error')] : [new transports.Console()],
-  rejectionHandlers: IS_PROD ? [rotatingFile('rejections', 'error')] : [new transports.Console()],
+  // Console is included even in production: Render (the deployment target —
+  // see render.yaml) has no persistent disk configured, so the rotating log
+  // files below don't survive a restart/redeploy and aren't otherwise
+  // retrievable. Render's log viewer only captures stdout/stderr, which is
+  // exactly what the Console transport writes to — without it, a crash's
+  // exception/rejection detail would be written only to a file that's gone
+  // moments later, leaving the platform's log stream with no diagnostic
+  // information about why the process exited.
+  exceptionHandlers: IS_PROD ? [new transports.Console(), rotatingFile('exceptions', 'error')] : [new transports.Console()],
+  rejectionHandlers: IS_PROD ? [new transports.Console(), rotatingFile('rejections', 'error')] : [new transports.Console()],
 });
 
 export default logger;

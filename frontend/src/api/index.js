@@ -16,5 +16,4 @@ export * from './teacherApi';
 export * from './parentApi';
 export * from './blogApi';
 export * from './searchApi';
-export * from './reviewApi';
 export * from './contentApi';

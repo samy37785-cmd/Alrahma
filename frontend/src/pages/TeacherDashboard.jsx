@@ -18,7 +18,7 @@ import {
   Calendar, CheckSquare, FileText, MessageSquare, X, Save, AlertCircle,
   Video, Clock,
 } from 'lucide-react';
-import '../styles/dashboard-shell.css';
+import { getNameInitials } from '../utils/nameInitials';
 
 /* ── i18n ──────────────────────────────────────────────────────── */
 const TXT = {
@@ -199,7 +199,7 @@ function StudentModal({ studentId, students, courses, L, lang, onClose }) {
 
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
 
-  const initials = student?.name?.split(' ').map((n) => n[0]).slice(0, 2).join('').toUpperCase() || '?';
+  const initials = getNameInitials(student?.name) || '?';
 
   return (
     <div
@@ -697,7 +697,7 @@ export default function TeacherDashboard() {
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                                 color: '#fff', fontWeight: 700, fontSize: '0.78rem', flexShrink: 0,
                               }}>
-                                {s.name?.split(' ').map((n) => n[0]).slice(0, 2).join('').toUpperCase()}
+                                {getNameInitials(s.name)}
                               </div>
                               <div>
                                 <div style={{ fontWeight: 600, fontSize: '0.855rem', color: 'var(--text-primary)' }}>{s.name}</div>

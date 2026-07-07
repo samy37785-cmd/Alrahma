@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { updateUserSubscription, updateUserRole, assignTeacher, setFamilyName } from '../../../api/client';
+import { updateUserSubscription, updateUserRole, assignTeacher, setFamilyName } from '../../../api/adminApi';
 
 export default function AdminUsersTab({ users, usersTotal, teachers, onOpenReport, onUsersChange, onError }) {
   const [userSearch, setUserSearch] = useState('');

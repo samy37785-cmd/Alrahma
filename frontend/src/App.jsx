@@ -11,7 +11,6 @@ import Analytics from './components/ui/Analytics';
 import { Analytics as VercelAnalytics } from '@vercel/analytics/react';
 import ErrorBoundary from './components/ErrorBoundary';
 import ContentGuard from './components/ContentGuard';
-import { ToastProvider } from './components/ui/Toast';
 import LiveChat from './components/ui/LiveChat';
 
 // Route-level code splitting
@@ -92,7 +91,6 @@ export default function App() {
     <QueryProvider>
     <ThemeProvider>
     <LangProvider>
-    <ToastProvider>
     <AuthProvider>
       <BrowserRouter>
         <ScrollToTop />
@@ -192,7 +190,6 @@ export default function App() {
         </Suspense>
       </BrowserRouter>
     </AuthProvider>
-    </ToastProvider>
     </LangProvider>
     </ThemeProvider>
     </QueryProvider>

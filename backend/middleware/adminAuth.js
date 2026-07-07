@@ -28,7 +28,7 @@ export async function verifyAccessToken(req, res, next) {
 
   let decoded;
   try {
-    decoded = jwt.verify(token, process.env.ADMIN_JWT_ACCESS_SECRET);
+    decoded = jwt.verify(token, process.env.ADMIN_JWT_ACCESS_SECRET, { algorithms: ['HS256'] });
   } catch (err) {
     if (err.name === 'TokenExpiredError') {
       return res.status(401).json({ message: 'Access token expired', code: 'TOKEN_EXPIRED' });

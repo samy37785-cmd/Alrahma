@@ -1,4 +1,5 @@
 import { Component } from 'react';
+import { captureException } from '../utils/sentry.js';
 
 const CRASH_STRINGS = {
   ar: { crashed: 'حدث خطأ غير متوقع', crashSub: 'حدث خطأ غير متوقع. يرجى تحديث الصفحة والمحاولة مرة أخرى.', refresh: 'تحديث الصفحة' },
@@ -19,6 +20,13 @@ export default class ErrorBoundary extends Component {
   componentDidCatch(error, info) {
     // Surface the real error so it can be diagnosed (visible in the console).
     console.error('App crash:', error, info);
+    // React error boundaries intentionally stop a caught render error from
+    // ever becoming an uncaught exception, which is also how Sentry's
+    // automatic global handlers detect errors — so without this explicit
+    // call, every crash this boundary catches is invisible in Sentry even
+    // though Sentry is fully initialized (see utils/sentry.js) and reporting
+    // everything else.
+    captureException(error, { extra: { componentStack: info?.componentStack } });
     this.setState({ info });
   }
 

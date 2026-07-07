@@ -4,8 +4,6 @@ import { useAuth } from '../context/AuthContext';
 import { useLang } from '../context/LangContext';
 import { getContacts, getConversation, sendMessage } from '../api/messageApi';
 import DashboardLayout from '../components/layout/DashboardLayout';
-import '../styles/dashboard-shell.css';
-import '../styles/components.css';
 
 const TXT = {
   en: {

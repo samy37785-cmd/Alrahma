@@ -39,7 +39,7 @@ Set the following in the Render dashboard under **Environment → Environment Va
 ### 1.2 Deploy Backend
 - [ ] Trigger deploy from Render dashboard (or push to main branch)
 - [ ] Watch deploy logs — confirm `🚀 Server running` and `✅ MongoDB connected`
-- [ ] Test health: `curl https://<your-render-url>/api/health` → should return 200
+- [ ] Test health: `curl https://<your-render-url>/health` → should return 200
 - [ ] Verify HTTPS is active on the Render URL
 
 ---
@@ -175,7 +175,7 @@ Run manually after deploy:
 
 ## Phase 9 — Analytics
 
-- [ ] `VITE_GA_ID` is set in Netlify and build re-deployed after setting it
+- [ ] `VITE_GA_ID` is set in Vercel and build re-deployed after setting it
 - [ ] Open GA4 → Realtime → confirm page view fires on home page visit
 - [ ] Navigate to `/courses` → confirm second page view fires in GA4 Realtime
 - [ ] Link Google Search Console property to GA4 property
@@ -184,7 +184,7 @@ Run manually after deploy:
 
 ## Phase 10 — Monitoring Setup
 
-- [ ] Set up UptimeRobot (free): monitor `https://al-rahmaacademy.com` + `https://<render-url>/api/health` every 5 minutes
+- [ ] Set up UptimeRobot (free): monitor `https://al-rahmaacademy.com` + `https://<render-url>/health` every 5 minutes
 - [ ] Configure alert emails for downtime
 - [ ] Enable MongoDB Atlas automated backups (Daily, 7-day retention minimum)
 - [ ] Confirm Render service health checks are enabled

@@ -1,10 +1,11 @@
-import { test, before, beforeEach, after } from 'node:test';
+import { test, before, beforeEach, after, mock } from 'node:test';
 import assert from 'node:assert/strict';
 import request from 'supertest';
 import app from '../app.js';
 import User from '../models/User.js';
 import { buildChildReportData } from '../controllers/cronController.js';
 import { setupTestDb, clearTestDb, teardownTestDb } from './helpers/db.js';
+import logger from '../config/logger.js';
 
 // Integration coverage for /api/cron/* (routes/cronRoutes.js, controllers/
 // cronController.js) -- previously untested, and the specific endpoint
@@ -130,4 +131,39 @@ test('buildChildReportData: returns null for a child id not present in the looku
     childById: new Map(), progressByChild: new Map(), nextClassByChild: new Map(), oneWeekAgo: new Date(),
   });
   assert.equal(result, null);
+});
+
+// T23 (monitoring & observability audit): these jobs are only ever invoked by
+// a scheduler external to this repo (see render.yaml) -- previously nothing
+// logged that a run happened at all, only per-item send failures. Without a
+// completion log line, there was no server-side way to confirm from the logs
+// whether/when the daily job actually fired.
+test('renewal-reminders: logs a completion summary with the computed counts', async () => {
+  const infoSpy = mock.method(logger, 'info', () => {});
+  try {
+    const res = await request(app).get('/api/cron/renewal-reminders').set('x-cron-secret', CRON_SECRET);
+    assert.equal(res.status, 200);
+
+    const call = infoSpy.mock.calls.find((c) => c.arguments[0] === 'Cron: renewal-reminders completed');
+    assert.ok(call, 'expected a "Cron: renewal-reminders completed" log line');
+    assert.deepEqual(call.arguments[1], {
+      withinDays: res.body.withinDays, candidates: res.body.candidates, sent: res.body.sent, skipped: res.body.skipped,
+    });
+  } finally {
+    infoSpy.mock.restore();
+  }
+});
+
+test('weekly-parent-reports: logs a completion summary with the computed counts', async () => {
+  const infoSpy = mock.method(logger, 'info', () => {});
+  try {
+    const res = await request(app).get('/api/cron/weekly-parent-reports').set('x-cron-secret', CRON_SECRET);
+    assert.equal(res.status, 200);
+
+    const call = infoSpy.mock.calls.find((c) => c.arguments[0] === 'Cron: weekly-parent-reports completed');
+    assert.ok(call, 'expected a "Cron: weekly-parent-reports completed" log line');
+    assert.deepEqual(call.arguments[1], { parents: res.body.parents, sent: res.body.sent });
+  } finally {
+    infoSpy.mock.restore();
+  }
 });

@@ -9,10 +9,11 @@ export function errorHandler(err, req, res, _next) {
 
   logger.error(err.message, {
     status,
-    method: req.method,
-    path:   req.originalUrl,
-    userId: req.user?._id?.toString?.() ?? null,
-    stack:  err.stack,
+    method:    req.method,
+    path:      req.originalUrl,
+    userId:    req.user?._id?.toString?.() ?? null,
+    requestId: req.requestId ?? null,
+    stack:     err.stack,
   });
 
   if (err.code === 11000) {

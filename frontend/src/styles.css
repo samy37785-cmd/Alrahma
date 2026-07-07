@@ -15,7 +15,6 @@
      tasbeeh.css + khatm.css → pages/Quran.jsx
      islamic-tools.css       → pages/IslamicTools.jsx
      adhkar.css              → pages/Adhkar.jsx
-     dashboard.css           → already imported by Dashboard & co.
      hifz.css (24KB)         → pages/Quran.jsx + pages/tools/HifzReviewPage.jsx
      trust-engage.css (30KB) → pages/Home.jsx + pages/Dashboard.jsx */
 @import './styles/components.css';    /* UI component library (card, badge, form, …) */

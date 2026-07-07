@@ -21,7 +21,7 @@ import AdminClassesTab   from '../components/features/admin/AdminClassesTab';
 import AdminProgressModal from '../components/features/admin/AdminProgressModal';
 import DashboardLayout    from '../components/layout/DashboardLayout';
 import { DsBarChart, DsAreaChart, DsChartEmpty } from '../components/ui/DsChart';
-import '../styles/dashboard-shell.css';
+import { getNameInitials } from '../utils/nameInitials';
 
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
@@ -526,7 +526,7 @@ export default function AdminDashboard() {
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                             color: '#fff', fontWeight: 700, fontSize: '0.72rem', flexShrink: 0,
                           }}>
-                            {t.name?.split(' ').map((n) => n[0]).slice(0, 2).join('').toUpperCase()}
+                            {getNameInitials(t.name)}
                           </div>
                           <div style={{ flex: 1 }}>
                             <div style={{ fontWeight: 600, fontSize: '0.82rem', color: 'var(--text-primary)' }}>{t.name}</div>

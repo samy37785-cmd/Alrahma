@@ -1,4 +1,4 @@
-import { reviewManualPayment } from '../../../api/client';
+import { reviewManualPayment } from '../../../api/paymentApi';
 
 export default function AdminPaymentsTab({ manualPays, manualPaysTotal, onManualPaysChange, onError }) {
   const handleReview = async (id, status) => {

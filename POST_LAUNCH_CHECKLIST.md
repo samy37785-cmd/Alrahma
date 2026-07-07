@@ -13,7 +13,7 @@
 - [ ] Response time < 3 seconds on first load (cold)
 - [ ] `https://al-rahmaacademy.com/sitemap.xml` returns 200 and valid XML
 - [ ] `https://al-rahmaacademy.com/robots.txt` returns 200 and correct content
-- [ ] Backend health: `https://<render-url>/api/health` returns 200
+- [ ] Backend health: `https://<render-url>/health` returns 200
 
 ### Auth & Cookies
 - [ ] Login → cookie is `httpOnly` + `Secure` (DevTools → Application → Cookies)
@@ -31,7 +31,7 @@
 ### Error Monitoring
 - [ ] Check Render logs for any 5xx errors or uncaught exceptions
 - [ ] Check browser DevTools console — zero JS errors on home, courses, tools pages
-- [ ] Check Netlify deploy log — no build warnings for the live deploy
+- [ ] Check Vercel deploy log — no build warnings for the live deploy
 
 ### Request Rate
 - [ ] Check Render metrics — CPU and memory within normal range (< 80%)
@@ -78,7 +78,7 @@
 - [ ] Run Lighthouse (Chrome DevTools) on production URL — Performance score ≥ 80
 - [ ] LCP (Largest Contentful Paint) < 2.5 seconds on desktop
 - [ ] No layout shift (CLS < 0.1) after fonts load
-- [ ] Check Netlify Analytics (if enabled) — bandwidth and request counts normal
+- [ ] Check Vercel Analytics (`@vercel/analytics` is integrated in `App.jsx`) — bandwidth and request counts normal
 
 ### Server Logs
 - [ ] Review Render logs for any recurring error patterns
@@ -124,7 +124,5 @@ These are not blocking but should be addressed within 30 days of launch:
 | Item | Priority | Notes |
 |---|---|---|
 | Cookie consent banner (GDPR) | HIGH | Required for EU users with GA4 active |
-| Error monitoring (Sentry) | MEDIUM | Silent JS errors in production will be invisible |
-| Redis for rate limiting | LOW | Current in-memory rate limiting resets on restart |
-| `manifest.json` (PWA) | LOW | Not blocking; add if installability is desired |
+| Redis for rate limiting | LOW | Current in-memory rate limiting resets on restart; set `REDIS_URL` to enable the already-built distributed limiter |
 | Favicon `.ico` format | LOW | Only `.svg` exists; some legacy browsers show broken tab icon |

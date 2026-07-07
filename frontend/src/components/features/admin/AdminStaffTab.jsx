@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { adminCreateUser } from '../../../api/client';
+import { adminCreateUser } from '../../../api/adminApi';
 
 const EMPTY_STAFF = { name: '', email: '', password: '', role: 'teacher' };
 

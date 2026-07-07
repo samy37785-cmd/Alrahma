@@ -76,6 +76,10 @@ export const sendRenewalReminders = asyncHandler(async (_req, res) => {
     });
   }
 
+  // The only server-side signal that this job actually ran and what it did —
+  // it's invoked by a scheduler external to this repo (see render.yaml), so
+  // without this line there is no record in the logs of whether/when it fired.
+  logger.info('Cron: renewal-reminders completed', { withinDays: REMIND_WITHIN_DAYS, candidates: users.length, sent, skipped });
   res.json({ ok: true, withinDays: REMIND_WITHIN_DAYS, candidates: users.length, sent, skipped });
 });
 
@@ -178,5 +182,6 @@ export const sendWeeklyParentReports = asyncHandler(async (_req, res) => {
     }));
   }
 
+  logger.info('Cron: weekly-parent-reports completed', { parents: parents.length, sent });
   res.json({ ok: true, parents: parents.length, sent });
 });

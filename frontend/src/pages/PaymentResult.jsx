@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import PageBar from '../components/layout/PageBar';
-import { capturePaypalPayment } from '../api/client';
+import { capturePaypalPayment } from '../api/paymentApi';
 import { useLang } from '../context/LangContext';
 
 export default function PaymentResult({ cancelled = false }) {

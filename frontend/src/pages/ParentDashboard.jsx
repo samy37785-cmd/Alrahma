@@ -14,7 +14,7 @@ import {
   BarChart3, X, Check, AlertTriangle, Calendar, CheckSquare, FileText,
   MessageSquare, Clock, Download, Share2,
 } from 'lucide-react';
-import '../styles/dashboard-shell.css';
+import { getNameInitials } from '../utils/nameInitials';
 
 const TXT = {
   en: {
@@ -123,7 +123,7 @@ function ChildModal({ childId, childList, L, onClose }) {
     staleTime: 60000,
   });
   const child = childList.find((c) => c._id === childId);
-  const initials = child?.name?.split(' ').map((n) => n[0]).slice(0, 2).join('').toUpperCase() || '?';
+  const initials = getNameInitials(child?.name) || '?';
 
   return (
     <div
@@ -427,7 +427,7 @@ export default function ParentDashboard() {
                     borderRadius: 12,
                   }}>
                     <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'var(--grad-green)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: '1rem', flexShrink: 0 }}>
-                      {child.name?.split(' ').map((n) => n[0]).slice(0, 2).join('').toUpperCase()}
+                      {getNameInitials(child.name)}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)', marginBottom: 3 }}>{child.name}</div>
@@ -619,7 +619,7 @@ export default function ParentDashboard() {
                   <div key={child._id} style={{ padding: '16px', background: 'var(--bg-page)', borderRadius: 12, border: '1px solid var(--border-subtle)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
                       <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--grad-green)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: '0.9rem', flexShrink: 0 }}>
-                        {child.name?.split(' ').map((n) => n[0]).slice(0,2).join('').toUpperCase()}
+                        {getNameInitials(child.name)}
                       </div>
                       <div>
                         <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)' }}>{child.name}</div>

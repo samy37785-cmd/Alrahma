@@ -9,6 +9,21 @@ if (!globalThis._mongooseCache) {
 }
 const cached = globalThis._mongooseCache;
 
+// Runtime connection-state visibility: once the initial connect() above
+// succeeds, mongoose keeps reusing that same connection object for the rest
+// of the process's life — a later network blip or Atlas maintenance event
+// would previously go completely unlogged until some unrelated query timed
+// out. These listeners are registered once per process (guarded so repeated
+// connectDB() calls / test-file re-imports don't stack up duplicate
+// listeners) and only log; they don't alter reconnection behavior, which
+// mongoose's driver already handles internally.
+if (!globalThis._mongooseConnectionLoggingAttached) {
+  globalThis._mongooseConnectionLoggingAttached = true;
+  mongoose.connection.on('disconnected', () => logger.warn('MongoDB connection lost'));
+  mongoose.connection.on('reconnected', () => logger.info('MongoDB connection restored'));
+  mongoose.connection.on('error', (err) => logger.error('MongoDB connection error', { message: err.message }));
+}
+
 export default async function connectDB() {
   if (cached.conn) return cached.conn;
 

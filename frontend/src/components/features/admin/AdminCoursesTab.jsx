@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { createCourse, updateCourse, deleteCourse } from '../../../api/client';
+import { createCourse, updateCourse, deleteCourse } from '../../../api/courseApi';
 
 const EMPTY_COURSE = { title: '', description: '', icon: '📘', level: 'All levels', resources: [], modules: [] };
 const EMPTY_RES    = { type: 'youtube', label: '', url: '' };

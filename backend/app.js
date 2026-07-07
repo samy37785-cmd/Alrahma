@@ -6,6 +6,7 @@
 import 'dotenv/config';
 
 import express from 'express';
+import mongoose from 'mongoose';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
@@ -117,6 +118,15 @@ app.get('/health', (_req, res) => {
 app.get('/ready', async (_req, res) => {
   try {
     await connectDB();
+    // connectDB() resolves from a cached connection object once the process
+    // has ever connected successfully (see config/db.js) — it does not by
+    // itself re-verify the connection is still live. Checking readyState
+    // here is what makes this probe able to report "not ready" if MongoDB
+    // drops the connection later at runtime, not just before the first
+    // successful connect.
+    if (mongoose.connection.readyState !== 1) {
+      return res.status(503).json({ status: 'not ready', reason: 'database' });
+    }
     res.json({ status: 'ready' });
   } catch {
     res.status(503).json({ status: 'not ready', reason: 'database' });

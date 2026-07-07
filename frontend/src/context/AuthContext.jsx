@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { loginUser, registerUser, logoutUser, updateMe, getMe } from '../api/client';
+import { loginUser, registerUser, logoutUser, updateMe, getMe } from '../api/authApi';
 
 const AuthContext = createContext(null);
 

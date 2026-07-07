@@ -4,7 +4,7 @@ import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 import CheckoutModal from '../components/ui/CheckoutModal';
 import useSEO from '../hooks/useSEO';
-import { submitEnrollment } from '../api/client';
+import { submitEnrollment } from '../api/enrollmentApi';
 import { TEACHERS } from '../data';
 import { plans } from '../data';
 import { useLang } from '../context/LangContext';

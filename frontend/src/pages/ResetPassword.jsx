@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
-import { resetPassword } from '../api/client';
+import { resetPassword } from '../api/authApi';
 import { useLang } from '../context/LangContext';
 import useSEO from '../hooks/useSEO';
 

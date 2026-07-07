@@ -13,6 +13,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import CommandPalette from '../ui/CommandPalette';
 import NotificationPanel from '../ui/NotificationPanel';
+import { getNameInitials } from '../../utils/nameInitials';
 import '../../styles/dashboard-shell.css';
 
 /* Icon renderer — keeps icon size consistent across all nav items */
@@ -246,9 +247,7 @@ export default function DashboardLayout({ children }) {
     navigate('/');
   };
 
-  const initials = user?.name
-    ? user.name.split(' ').map((n) => n[0]).slice(0, 2).join('').toUpperCase()
-    : '?';
+  const initials = user?.name ? getNameInitials(user.name) : '?';
 
   const userName = user?.name?.split(' ')[0] ?? 'Account';
 

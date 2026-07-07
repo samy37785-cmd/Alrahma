@@ -7,17 +7,8 @@ import { getCourses, getMyCertificates } from '../api/courseApi';
 import { COURSE_KEYS } from '../hooks/useCourses';
 import { useLang } from '../context/LangContext';
 import DashboardLayout from '../components/layout/DashboardLayout';
-import '../styles/dashboard-shell.css';
-
-
-function escHtml(str) {
-  return String(str ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
+import { escapeHtml as escHtml } from '../utils/escapeHtml';
+import { getNameInitials } from '../utils/nameInitials';
 
 // Opens a clean printable certificate in a new window and triggers print.
 function printCertificate(cert, typeLabel) {
@@ -150,7 +141,7 @@ export default function Profile() {
     }
   };
 
-  const initials = user?.name?.split(' ').map((n) => n[0]).slice(0, 2).join('').toUpperCase() || '?';
+  const initials = getNameInitials(user?.name) || '?';
   const roleLabel = user?.role === 'admin' ? pg.roleAdmin : user?.role === 'teacher' ? pg.roleTeacher : user?.role === 'parent' ? pg.roleParent : pg.roleStudent;
 
   return (

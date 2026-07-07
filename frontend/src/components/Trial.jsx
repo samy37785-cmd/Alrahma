@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { site, courseOptions } from '../data';
-import { submitTrial } from '../api/client';
+import { submitTrial } from '../api/contentApi';
 import { useTrial } from '../context/TrialContext';
 import { useLang } from '../context/LangContext';
 

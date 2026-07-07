@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { markNotifRead, markAllNotifsRead } from '../../api/notificationApi';
 
 function timeAgo(dateStr) {
   if (!dateStr) return '';
@@ -22,6 +22,7 @@ const ICON_MAP = {
 };
 
 export default function NotificationPanel() {
+  const queryClient = useQueryClient();
   const { data: notifs = [] } = useQuery({
     queryKey: ['notifications'],
     queryFn: async () => {
@@ -40,12 +41,19 @@ export default function NotificationPanel() {
     staleTime: 30000,
   });
 
-  const [read, setRead] = useState(new Set());
+  // Read-state is the server's own `read` field, refreshed via invalidation
+  // after each mutation — previously this was tracked in local component
+  // state only, so a page reload showed every notification as unread again
+  // even though the backend's mark-read endpoints already existed and were
+  // already tested.
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['notifications'] });
+  const markOneMutation = useMutation({ mutationFn: markNotifRead, onSuccess: invalidate });
+  const markAllMutation = useMutation({ mutationFn: markAllNotifsRead, onSuccess: invalidate });
 
-  const markAll = () => setRead(new Set(notifs.map((n) => n._id || n.id)));
+  const markAll = () => markAllMutation.mutate();
 
   const displayed = notifs.slice(0, 20);
-  const unread = displayed.filter((n) => !read.has(n._id || n.id));
+  const unread = displayed.filter((n) => !n.read);
 
   return (
     <div className="ds-notif" role="region" aria-label="Notifications">
@@ -69,16 +77,17 @@ export default function NotificationPanel() {
         ) : (
           displayed.map((n) => {
             const id = n._id || n.id;
-            const isUnread = !read.has(id);
+            const isUnread = !n.read;
             const icon = ICON_MAP[n.type] || ICON_MAP.default;
+            const markThisRead = () => { if (isUnread) markOneMutation.mutate(id); };
             return (
               <div
                 key={id}
                 className={`ds-notif__item${isUnread ? ' ds-notif__item--unread' : ''}`}
                 role="button"
                 tabIndex={0}
-                onClick={() => setRead((r) => new Set([...r, id]))}
-                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setRead((r) => new Set([...r, id])); } }}
+                onClick={markThisRead}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); markThisRead(); } }}
               >
                 <div className="ds-notif__item-icon">{icon}</div>
                 <div className="ds-notif__item-body">

@@ -66,6 +66,8 @@ Entry: `app.js` (Express middleware pipeline) → `server.js` (runner, used both
 - Admin sessions require TOTP MFA (`speakeasy`) + IP whitelist check on every request
 - CSRF: frontend reads `csrf_token` cookie and sends it as `X-CSRF-Token` header on mutations
 
+**Admin API (`/api/v1/admin/*`):** the only privileged-mutation surface — `routes/authRoutes.js` and `routes/paymentRoutes.js` no longer expose any admin mutation routes (the legacy non-MFA `protect+adminOnly` admin paths were fully retired in the SEC-2/SEC-3 migration). All user role/subscription/teacher/family management, staff account creation, and manual-payment review live under `routes/v1/admin/` (`usersRoutes.js`, `paymentsRoutes.js`), gated by `verifyAccessToken` (TOTP-MFA `AdminUser` session, `admin_at`/`admin_rt` cookies) + `requirePermissions()` RBAC + `auditFromReq()` audit logging — no route in this app authenticates privileged mutations via the regular `User`/`protect`/`adminOnly` path anymore. `financialGuard` (`middleware/maintenanceGuard.js`) is wired at the route level on `PATCH /api/v1/admin/payments/manual/:id` only (not router-wide), blocking approve/reject while `financials_frozen` is set, with a `super-admin` emergency override. New `AdminUser` accounts (there is no self-registration endpoint) are provisioned via `backend/scripts/createAdminUser.js` (`npm run create-admin -- --name ... --email ... --password ... --role ...`); first login walks through TOTP setup automatically.
+
 **Rate limiting:** Redis-backed in production (set `REDIS_URL`), in-memory fallback in dev. Configured in `config/rateLimit.js` and `config/adminRateLimits.js`.
 
 ### Frontend (`frontend/src/`)
@@ -87,6 +89,10 @@ Entry: `main.jsx` → `App.jsx` (routes + context providers).
 - `http.js` — low-level HTTP utility that attaches the CSRF token header
 - 15+ domain files: `authApi.js`, `courseApi.js`, `paymentApi.js`, etc.
 - `quran.js` — calls the external Quran.com API (not the backend)
+- `adminHttp.js` — separate axios instance for `/api/v1/admin/*` calls (`adminApi.js`, the admin parts of `paymentApi.js`); on a 401 it clears the cached admin profile and hard-redirects to `/admin/login`, since a stale `admin_at` cookie (15 min lifetime) means a different thing than a regular-session 401 does on `http.js`
+- `adminAuthApi.js` — the admin MFA login/logout calls (`/api/v1/admin/auth/*`)
+
+**Admin console auth (`AdminAuthContext`, `pages/AdminLogin.jsx`):** `/admin` requires two layers — the existing `ProtectedRoute adminOnly` (regular `User` with `role: 'admin'`) still gates who can see the dashboard shell/nav (`DashboardLayout` is unchanged and still keyed off the regular `AuthContext`), and `AdminSessionGate` additionally requires an `AdminUser` + TOTP-MFA session (established at `/admin/login`, itself behind `ProtectedRoute adminOnly`) before any admin data loads or mutates — closing the gap where a stolen regular-session cookie alone used to be enough to grant roles, mint accounts, or approve payments. `AdminAuthProvider` is mounted app-wide (cheap — only reads `localStorage` on mount) so the gate/login page can use it regardless of route nesting.
 
 **Routing** (`App.jsx`): All page components are lazy-loaded with `React.lazy()` + `Suspense`. Route hierarchy uses hub pages (`/courses`, `/tools`, `/resources`, `/academy`) with nested detail routes. Old flat URLs have redirect entries. `RoutePrefetcher` (mounted in `App.jsx`) prefetches a route's chunk ahead of navigation — on link visibility (idle-scheduled `IntersectionObserver`) or on `touchstart`/`pointerdown` — using the path→import map in `routePreloadMap.js`; this closes the serial "entry bundle finishes → then route chunk starts" gap that mobile field testing showed adding 700ms-1.5s+ per navigation on slow connections.
 

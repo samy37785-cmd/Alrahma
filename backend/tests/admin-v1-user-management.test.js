@@ -67,6 +67,33 @@ test('POST /api/v1/admin/users is forbidden for a viewer (no users:write)', asyn
   assert.equal(res.status, 403);
 });
 
+// --- B2 regression: only a super-admin may create/promote to role 'admin' ---
+
+test('POST /api/v1/admin/users: a regular admin-role AdminUser cannot create a legacy admin-role User (403, not created)', async () => {
+  const { agent, csrf, cookieHeader } = await adminAgent('admin');
+  const email = `blocked-admin-${Date.now()}@example.com`;
+
+  const res = await agent.post('/api/v1/admin/users').set({ ...csrf, Cookie: cookieHeader })
+    .send({ name: 'Should Not Exist', email, password: STUDENT_PASSWORD, role: 'admin' });
+
+  assert.equal(res.status, 403);
+  const created = await User.findOne({ email });
+  assert.equal(created, null, 'no User document must be created when the privilege-escalation guard rejects the request');
+});
+
+test('POST /api/v1/admin/users: a super-admin can create a legacy admin-role User', async () => {
+  const { agent, csrf, cookieHeader } = await adminAgent('super-admin');
+  const email = `allowed-admin-${Date.now()}@example.com`;
+
+  const res = await agent.post('/api/v1/admin/users').set({ ...csrf, Cookie: cookieHeader })
+    .send({ name: 'Legit Admin', email, password: STUDENT_PASSWORD, role: 'admin' });
+
+  assert.equal(res.status, 201);
+  const created = await User.findOne({ email });
+  assert.ok(created, 'super-admin must still be able to create an admin-role User');
+  assert.equal(created.role, 'admin');
+});
+
 test('PATCH /api/v1/admin/users/:id/role changes role and unassigns former students when a teacher is demoted', async () => {
   const { agent, csrf, cookieHeader } = await adminAgent();
   const teacher = await makeUser({ role: 'teacher', email: `teacher-${Date.now()}@example.com` });
@@ -79,6 +106,42 @@ test('PATCH /api/v1/admin/users/:id/role changes role and unassigns former stude
 
   const updatedStudent = await User.findById(student._id);
   assert.equal(updatedStudent.teacher, null, 'students must be unassigned when their teacher role is revoked');
+});
+
+test('PATCH /api/v1/admin/users/:id/role: a regular admin-role AdminUser cannot promote a User to the legacy admin role (403, role unchanged)', async () => {
+  const { agent, csrf, cookieHeader } = await adminAgent('admin');
+  const target = await makeUser();
+
+  const res = await agent.patch(`/api/v1/admin/users/${target._id}/role`).set({ ...csrf, Cookie: cookieHeader })
+    .send({ role: 'admin' });
+
+  assert.equal(res.status, 403);
+  const updated = await User.findById(target._id);
+  assert.equal(updated.role, 'student', 'role must not change when the privilege-escalation guard rejects the request');
+});
+
+test('PATCH /api/v1/admin/users/:id/role: a super-admin can promote a User to the legacy admin role', async () => {
+  const { agent, csrf, cookieHeader } = await adminAgent('super-admin');
+  const target = await makeUser();
+
+  const res = await agent.patch(`/api/v1/admin/users/${target._id}/role`).set({ ...csrf, Cookie: cookieHeader })
+    .send({ role: 'admin' });
+
+  assert.equal(res.status, 200);
+  assert.equal(res.body.role, 'admin');
+  const updated = await User.findById(target._id);
+  assert.equal(updated.role, 'admin');
+});
+
+test('PATCH /api/v1/admin/users/:id/role: a regular admin-role AdminUser can still demote a User away from admin (existing behavior preserved)', async () => {
+  const { agent, csrf, cookieHeader } = await adminAgent('admin');
+  const target = await makeUser({ role: 'admin' });
+
+  const res = await agent.patch(`/api/v1/admin/users/${target._id}/role`).set({ ...csrf, Cookie: cookieHeader })
+    .send({ role: 'student' });
+
+  assert.equal(res.status, 200, 'demoting away from admin is not a privilege escalation and must remain allowed');
+  assert.equal(res.body.role, 'student');
 });
 
 test('PATCH /api/v1/admin/users/:id/subscription activates a subscription', async () => {

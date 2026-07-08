@@ -5,6 +5,7 @@ import { parsePagination } from '../utils/pagination.js';
 import { contactAdminEmail } from '../config/emailTemplates.js';
 import ContactMessage from '../models/ContactMessage.js';
 import { sendMail } from '../config/mailer.js';
+import { auditFromReq } from '../services/auditService.js';
 import logger from '../config/logger.js';
 
 export const contactValidation = [
@@ -77,5 +78,6 @@ export const updateContactStatus = asyncHandler(async (req, res) => {
     { new: true, runValidators: true },
   );
   if (!contact) return res.status(404).json({ message: 'Contact message not found' });
+  await auditFromReq(req, 'contact.status.update', 'ContactMessage', contact._id, null, contact, 'info');
   res.json({ contact });
 });

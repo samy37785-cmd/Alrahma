@@ -7,12 +7,18 @@ import { sanitizeMongo }     from '../../../middleware/sanitizeMongo.js';
 import { verifyAccessToken } from '../../../middleware/adminAuth.js';
 import { maintenanceGuard }  from '../../../middleware/maintenanceGuard.js';
 
-import authRoutes        from './authRoutes.js';
-import usersRoutes       from './usersRoutes.js';
-import coursesRoutes     from './coursesRoutes.js';
-import enrollmentsRoutes from './enrollmentsRoutes.js';
-import paymentsRoutes    from './paymentsRoutes.js';
-import systemRoutes      from './systemRoutes.js';
+import authRoutes         from './authRoutes.js';
+import usersRoutes        from './usersRoutes.js';
+import coursesRoutes      from './coursesRoutes.js';
+import enrollmentsRoutes  from './enrollmentsRoutes.js';
+import paymentsRoutes     from './paymentsRoutes.js';
+import blogRoutes         from './blogRoutes.js';
+import couponsRoutes      from './couponsRoutes.js';
+import contactRoutes      from './contactRoutes.js';
+import certificatesRoutes from './certificatesRoutes.js';
+import referralsRoutes    from './referralsRoutes.js';
+import reviewsRoutes      from './reviewsRoutes.js';
+import systemRoutes       from './systemRoutes.js';
 
 const router = Router();
 
@@ -60,10 +66,16 @@ router.use(verifyAccessToken);
 // Maintenance guard: blocks non-super-admins when maintenance mode is on
 router.use(maintenanceGuard);
 
-router.use('/users',       usersRoutes);
-router.use('/courses',     coursesRoutes);
-router.use('/enrollments', enrollmentsRoutes);
-router.use('/payments',    paymentsRoutes);
-router.use('/system',      systemRoutes);
+router.use('/users',        usersRoutes);
+router.use('/courses',      coursesRoutes);
+router.use('/enrollments',  enrollmentsRoutes);
+router.use('/payments',     paymentsRoutes);
+router.use('/blog',         blogRoutes);
+router.use('/coupons',      couponsRoutes);
+router.use('/contact',      contactRoutes);
+router.use('/certificates', certificatesRoutes);
+router.use('/referrals',    referralsRoutes);
+router.use('/reviews',      reviewsRoutes);
+router.use('/system',       systemRoutes);
 
 export default router;

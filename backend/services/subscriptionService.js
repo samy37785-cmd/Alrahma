@@ -79,3 +79,51 @@ export async function deactivateSubscription(stripeSubscriptionId, session = nul
     opts,
   );
 }
+
+/**
+ * Admin-initiated subscription change, keyed by userId (not a Stripe
+ * subscription id, unlike deactivateSubscription — an admin can be changing
+ * a manual/PayPal subscription with no Stripe linkage at all).
+ *
+ * Only the specific fields the requested action changes are $set — every
+ * other subscription field (provider, stripeCustomerId, stripeSubscriptionId,
+ * cancelAtPeriodEnd, renewalReminderSentFor) is left untouched. This must
+ * never be a whole-subscription-object replace: that would silently wipe a
+ * user's live Stripe linkage the next time an admin merely renews/deactivates
+ * their plan from the dashboard.
+ *
+ * @param {*}      userId
+ * @param {object} params
+ * @param {string} params.action              'activate' | 'renew' | 'deactivate' (anything
+ *                                             other than 'deactivate' is treated as an
+ *                                             activate/renew — preserves the exact
+ *                                             fallback behavior this replaces)
+ * @param {string} [params.plan]
+ * @param {object} [params.currentSubscription] - the user's subscription sub-document as
+ *                                                currently persisted, so 'renew' can
+ *                                                preserve the existing activeSince
+ * @param {object} [params.session]           - Mongoose ClientSession for transactions
+ */
+export async function adminSetSubscription(userId, { action, plan, currentSubscription = {}, session = null } = {}) {
+  const opts = session ? { session } : {};
+
+  if (action === 'deactivate') {
+    await User.findByIdAndUpdate(userId, { 'subscription.status': 'inactive' }, opts);
+    return;
+  }
+
+  const activeSince = action === 'renew' ? (currentSubscription.activeSince || new Date()) : new Date();
+  const validUntil  = new Date();
+  validUntil.setDate(validUntil.getDate() + 30);
+
+  await User.findByIdAndUpdate(
+    userId,
+    {
+      'subscription.plan':        plan || currentSubscription.plan || 'Starter',
+      'subscription.status':      'active',
+      'subscription.activeSince': activeSince,
+      'subscription.validUntil':  validUntil,
+    },
+    opts,
+  );
+}

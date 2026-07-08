@@ -174,25 +174,24 @@ export const reviewManualPayment = asyncHandler(async (req, res) => {
       throw new Error('Manual payment request not found');
     }
 
+    // Atomic status claim: only succeeds if the record is still 'pending'.
+    // Rejection must use the exact same claim as approval — otherwise a
+    // reject racing (or arriving after) an approval could silently overwrite
+    // an already-approved, already-enrolled record, and a duplicate
+    // reject/approve attempt would report false-positive success instead of
+    // the 409 the caller needs to know nothing actually changed.
+    let claimed;
+
     if (status === 'approved') {
       const dbSession = await mongoose.startSession();
       try {
         await dbSession.withTransaction(async () => {
-          // Atomic status claim: only succeeds if the record is still 'pending'.
-          // If two admins approve simultaneously, the second findOneAndUpdate
-          // returns null (the first already moved it to 'approved') and the
-          // transaction exits without creating a duplicate invoice or enrollment.
-          const claimed = await ManualPayment.findOneAndUpdate(
+          claimed = await ManualPayment.findOneAndUpdate(
             { _id: req.params.id, status: 'pending' },
             { $set: { status, adminNote } },
             { new: true, session: dbSession },
           );
-          if (!claimed) {
-            logger.warn('Manual payment already processed — duplicate approval ignored', {
-              id: req.params.id,
-            });
-            return;
-          }
+          if (!claimed) return;
 
           await enrollUser(record.userId, record.plan, dbSession);
           await createInvoice({
@@ -206,16 +205,29 @@ export const reviewManualPayment = asyncHandler(async (req, res) => {
       } finally {
         dbSession.endSession();
       }
+    } else {
+      claimed = await ManualPayment.findOneAndUpdate(
+        { _id: req.params.id, status: 'pending' },
+        { $set: { status, adminNote } },
+        { new: true },
+      );
+    }
 
+    if (!claimed) {
+      logger.warn('Manual payment review rejected — record no longer pending', {
+        id: req.params.id, attemptedStatus: status,
+      });
+      res.status(409);
+      throw new Error('This payment request has already been processed');
+    }
+
+    if (status === 'approved') {
       logger.info('Manual payment approved', {
         id:     req.params.id,
         plan:   record.plan,
         userId: String(record.userId),
       });
     } else {
-      // Rejection is a simple status change — no transaction needed.
-      await ManualPayment.findByIdAndUpdate(req.params.id, { status, adminNote });
-
       logger.info('Manual payment rejected', { id: req.params.id });
     }
 

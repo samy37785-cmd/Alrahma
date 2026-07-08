@@ -1,7 +1,8 @@
 import { test, before, beforeEach, after } from 'node:test';
 import assert from 'node:assert/strict';
 import app from '../app.js';
-import User from '../models/User.js';
+import AdminUser from '../models/AdminUser.js';
+import { signAccessToken } from '../utils/adminAuthTokens.js';
 import { setupTestDb, clearTestDb, teardownTestDb } from './helpers/db.js';
 import { agentWithCsrf } from './helpers/csrf.js';
 
@@ -14,6 +15,11 @@ import { agentWithCsrf } from './helpers/csrf.js';
 // express-validator's messages into the same `{ message }` shape as
 // everywhere else. These tests lock that contract in across all of its call
 // sites.
+//
+// couponController.createCoupon and blogController.createPost are now
+// reached via /api/v1/admin/{coupons,blog} (MFA + RBAC) rather than the
+// legacy /api/coupons and /api/blog admin routes — see the B1 legacy-route
+// migration in routes/v1/admin/.
 
 const PASSWORD = 'Str0ngP@ssw0rd!';
 
@@ -21,13 +27,15 @@ before(async () => { await setupTestDb(); }, { timeout: 60_000 });
 after(async () => { await teardownTestDb(); });
 beforeEach(async () => { await clearTestDb(); });
 
-async function makeAdminAgent() {
+async function adminUserAgent(role = 'admin') {
   const { agent, csrf } = await agentWithCsrf(app);
-  const email = `admin${Date.now()}${Math.random()}@example.com`;
-  await User.create({ name: 'Admin', email, password: PASSWORD, role: 'admin' });
-  const login = await agent.post('/api/auth/login').set(csrf).send({ email, password: PASSWORD });
-  assert.equal(login.status, 200);
-  return { agent, csrf };
+  const admin = await AdminUser.create({
+    name: `${role} admin`, email: `${role}-${Date.now()}${Math.random()}@example.com`,
+    password: 'Sup3r-Str0ng-Pass!', role,
+  });
+  const token = signAccessToken(admin._id, admin.role, true);
+  const cookieHeader = `admin_at=${token}; csrf_token=${csrf['x-csrf-token']}`;
+  return { agent, csrf, cookieHeader };
 }
 
 function assertMessageShape(res) {
@@ -38,14 +46,14 @@ function assertMessageShape(res) {
 }
 
 test('couponController.createCoupon: express-validator failure returns { message }, not { errors }', async () => {
-  const { agent, csrf } = await makeAdminAgent();
-  const res = await agent.post('/api/coupons').set(csrf).send({}); // missing every required field
+  const { agent, csrf, cookieHeader } = await adminUserAgent();
+  const res = await agent.post('/api/v1/admin/coupons').set({ ...csrf, Cookie: cookieHeader }).send({}); // missing every required field
   assertMessageShape(res);
 });
 
 test('blogController.createPost: express-validator failure returns { message }, not { errors }', async () => {
-  const { agent, csrf } = await makeAdminAgent();
-  const res = await agent.post('/api/blog').set(csrf).send({});
+  const { agent, csrf, cookieHeader } = await adminUserAgent();
+  const res = await agent.post('/api/v1/admin/blog').set({ ...csrf, Cookie: cookieHeader }).send({});
   assertMessageShape(res);
 });
 
@@ -65,8 +73,8 @@ test('contactController.submitContact: express-validator failure returns { messa
 });
 
 test('combines multiple field errors into one readable message', async () => {
-  const { agent, csrf } = await makeAdminAgent();
-  const res = await agent.post('/api/coupons').set(csrf).send({ discountType: 'bogus' }); // multiple violations: code missing, discountValue missing, discountType invalid
+  const { agent, csrf, cookieHeader } = await adminUserAgent();
+  const res = await agent.post('/api/v1/admin/coupons').set({ ...csrf, Cookie: cookieHeader }).send({ discountType: 'bogus' }); // multiple violations: code missing, discountValue missing, discountType invalid
   assertMessageShape(res);
   assert.ok(res.body.message.includes(','), 'multiple validation failures should be joined into one message');
 });

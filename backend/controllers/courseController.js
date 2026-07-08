@@ -62,34 +62,10 @@ export const getCourse = asyncHandler(async (req, res) => {
   res.json(payload);
 });
 
-// @desc   Create a course
-// @route  POST /api/courses
-// @access Private/Admin
-export const createCourse = asyncHandler(async (req, res) => {
-  const course = await Course.create(req.body);
-  res.status(201).json(course);
-});
-
-// @desc   Update a course
-// @route  PUT /api/courses/:id
-// @access Private/Admin
-export const updateCourse = asyncHandler(async (req, res) => {
-  const course = await Course.findByIdAndUpdate(req.params.id, req.body, {
-    new: true,
-    runValidators: true,
-  });
-  if (!course) {
-    res.status(404);
-    throw new Error('Course not found');
-  }
-  res.json(course);
-});
-
 // Deletes a course and cleans up every other collection that references it,
-// so nothing is left pointing at a course that no longer exists. Both
-// admin-facing delete routes (this file's deleteCourse and the v1 admin CRUD
-// route in routes/v1/admin/coursesRoutes.js) call this — it's the single
-// place course-deletion cascade logic lives.
+// so nothing is left pointing at a course that no longer exists. Used by the
+// v1 admin CRUD route (routes/v1/admin/coursesRoutes.js) — the single place
+// course-deletion cascade logic lives.
 //
 // Cleanup differs by whether the referencing record has value on its own
 // once the course link is gone:
@@ -125,15 +101,3 @@ export async function deleteCourseCascade(courseId) {
     session.endSession();
   }
 }
-
-// @desc   Delete a course
-// @route  DELETE /api/courses/:id
-// @access Private/Admin
-export const deleteCourse = asyncHandler(async (req, res) => {
-  const course = await deleteCourseCascade(req.params.id);
-  if (!course) {
-    res.status(404);
-    throw new Error('Course not found');
-  }
-  res.json({ message: 'Course deleted', id: req.params.id });
-});

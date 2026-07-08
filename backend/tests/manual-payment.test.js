@@ -203,13 +203,11 @@ test('reviewManualPayment: rejecting does not grant a subscription or create an 
 
 // Verifies the atomic-claim guarantee documented in the controller: two
 // concurrent approval requests for the same record must never both succeed
-// in granting a subscription / creating an invoice. This is the realistic
-// failure mode this code actually defends against (a double-click or two
-// admins racing), and is the strongest available proxy for "transaction
-// rollback" / "database consistency" here — there is no other code path
-// in reviewManualPayment that can genuinely fail mid-transaction without
-// mocking internals, which would test synthetic behavior rather than the
-// real implementation.
+// in granting a subscription / creating an invoice. Exactly one request wins
+// the atomic pending-status claim (200); the loser gets 409, not a
+// false-positive 200 — that 409 is itself the fix under test (see the
+// approve-vs-reject and duplicate-reject tests below for the same guard
+// exercised from the other angles).
 test('reviewManualPayment: two concurrent approvals of the same record never double-enroll or double-invoice', async () => {
   const { agent, csrf, cookieHeader } = await makeAdminAgent();
   const student = await makeStudent('race-me@example.com');
@@ -225,12 +223,122 @@ test('reviewManualPayment: two concurrent approvals of the same record never dou
     agent.patch(`/api/v1/admin/payments/manual/${record._id}`).set(headers).send({ status: 'approved' }),
   ]);
 
-  assert.equal(first.status, 200);
-  assert.equal(second.status, 200);
+  const statuses = [first.status, second.status].sort();
+  assert.deepEqual(statuses, [200, 409], 'exactly one concurrent approval must win (200); the other must get 409, not a false-positive 200');
 
   const invoices = await Invoice.find({ user: student._id });
   assert.equal(invoices.length, 1, 'concurrent double-approval must never create more than one invoice');
 
   const finalRecord = await ManualPayment.findById(record._id);
   assert.equal(finalRecord.status, 'approved');
+});
+
+// Regression coverage for the B3 fix: reject() previously had no atomic
+// pending-status guard at all, unlike approve() — so it could silently
+// overwrite an already-approved (enrolled + invoiced) record, and a race
+// between an approve and a reject request (or two reject requests) could
+// leave the DB and the emails sent to the student disagreeing about what
+// actually happened.
+
+test('reviewManualPayment: approve-vs-reject race — exactly one wins (200), the other gets 409, and the DB matches the winner', async () => {
+  const { agent, csrf, cookieHeader } = await makeAdminAgent();
+  const student = await makeStudent('approve-reject-race@example.com');
+  const record = await ManualPayment.create({
+    plan: 'Standard', amount: 84, method: 'moneygram',
+    customer: { email: student.email, name: student.name },
+    userId: student._id, status: 'pending',
+  });
+
+  const headers = { ...csrf, Cookie: cookieHeader };
+  const [approve, reject] = await Promise.all([
+    agent.patch(`/api/v1/admin/payments/manual/${record._id}`).set(headers).send({ status: 'approved' }),
+    agent.patch(`/api/v1/admin/payments/manual/${record._id}`).set(headers).send({ status: 'rejected' }),
+  ]);
+
+  const statuses = [approve.status, reject.status].sort();
+  assert.deepEqual(statuses, [200, 409], 'exactly one of approve/reject must win the race; the other must get 409');
+
+  const finalRecord = await ManualPayment.findById(record._id);
+  const invoices = await Invoice.find({ user: student._id });
+  const updatedUser = await User.findById(student._id);
+
+  if (approve.status === 200) {
+    assert.equal(finalRecord.status, 'approved');
+    assert.equal(invoices.length, 1, 'the winning approval must still create exactly one invoice');
+    assert.equal(updatedUser.subscription.status, 'active');
+  } else {
+    assert.equal(finalRecord.status, 'rejected');
+    assert.equal(invoices.length, 0, 'a winning rejection must never leave an invoice behind');
+    assert.equal(updatedUser.subscription?.status ?? 'inactive', 'inactive');
+  }
+});
+
+test('reviewManualPayment: rejecting an already-approved record returns 409 and does not change its status', async () => {
+  const { agent, csrf, cookieHeader } = await makeAdminAgent();
+  const student = await makeStudent('reject-after-approve@example.com');
+  const record = await ManualPayment.create({
+    plan: 'Standard', amount: 84, method: 'moneygram',
+    customer: { email: student.email, name: student.name },
+    userId: student._id, status: 'pending',
+  });
+  const headers = { ...csrf, Cookie: cookieHeader };
+
+  const approve = await agent.patch(`/api/v1/admin/payments/manual/${record._id}`).set(headers).send({ status: 'approved' });
+  assert.equal(approve.status, 200);
+
+  const lateReject = await agent.patch(`/api/v1/admin/payments/manual/${record._id}`).set(headers)
+    .send({ status: 'rejected', adminNote: 'Too late — already approved' });
+  assert.equal(lateReject.status, 409);
+
+  const finalRecord = await ManualPayment.findById(record._id);
+  assert.equal(finalRecord.status, 'approved', 'a rejection arriving after approval must not overwrite the approved status');
+  assert.equal(finalRecord.adminNote, undefined, 'the rejected note must never be applied once the record is no longer pending');
+
+  const invoices = await Invoice.find({ user: student._id });
+  assert.equal(invoices.length, 1, 'the original approval invoice must be untouched');
+});
+
+test('reviewManualPayment: a duplicate reject attempt after a successful reject returns 409', async () => {
+  const { agent, csrf, cookieHeader } = await makeAdminAgent();
+  const student = await makeStudent('duplicate-reject@example.com');
+  const record = await ManualPayment.create({
+    plan: 'Starter', amount: 56, method: 'bank',
+    customer: { email: student.email, name: student.name },
+    userId: student._id, status: 'pending',
+  });
+  const headers = { ...csrf, Cookie: cookieHeader };
+
+  const first = await agent.patch(`/api/v1/admin/payments/manual/${record._id}`).set(headers)
+    .send({ status: 'rejected', adminNote: 'First rejection' });
+  assert.equal(first.status, 200);
+
+  const second = await agent.patch(`/api/v1/admin/payments/manual/${record._id}`).set(headers)
+    .send({ status: 'rejected', adminNote: 'Second rejection attempt' });
+  assert.equal(second.status, 409);
+
+  const finalRecord = await ManualPayment.findById(record._id);
+  assert.equal(finalRecord.status, 'rejected');
+  assert.equal(finalRecord.adminNote, 'First rejection', 'the second, no-op reject attempt must not overwrite the admin note');
+});
+
+test('reviewManualPayment: two concurrent reject requests for the same record — exactly one wins (200), the other gets 409', async () => {
+  const { agent, csrf, cookieHeader } = await makeAdminAgent();
+  const student = await makeStudent('concurrent-reject@example.com');
+  const record = await ManualPayment.create({
+    plan: 'Starter', amount: 56, method: 'bank',
+    customer: { email: student.email, name: student.name },
+    userId: student._id, status: 'pending',
+  });
+  const headers = { ...csrf, Cookie: cookieHeader };
+
+  const [first, second] = await Promise.all([
+    agent.patch(`/api/v1/admin/payments/manual/${record._id}`).set(headers).send({ status: 'rejected' }),
+    agent.patch(`/api/v1/admin/payments/manual/${record._id}`).set(headers).send({ status: 'rejected' }),
+  ]);
+
+  const statuses = [first.status, second.status].sort();
+  assert.deepEqual(statuses, [200, 409], 'exactly one concurrent rejection must win (200); the other must get 409');
+
+  const finalRecord = await ManualPayment.findById(record._id);
+  assert.equal(finalRecord.status, 'rejected');
 });

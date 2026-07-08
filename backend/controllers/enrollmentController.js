@@ -58,11 +58,3 @@ export const getEnrollments = asyncHandler(async (req, res) => {
   ]);
   return sendPaginated(res, { data, total, page, limit });
 });
-
-// @route  PATCH /api/enrollments/:id
-// @access Admin
-export const updateEnrollment = asyncHandler(async (req, res) => {
-  const enrollment = await Enrollment.findByIdAndUpdate(req.params.id, req.body, { new: true });
-  if (!enrollment) { res.status(404); throw new Error('Not found'); }
-  res.json(enrollment);
-});

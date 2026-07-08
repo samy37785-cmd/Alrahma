@@ -1,6 +1,7 @@
 import User from '../models/User.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { auditFromReq } from '../services/auditService.js';
+import { adminSetSubscription } from '../services/subscriptionService.js';
 
 const normEmail = (v) => String(v ?? '').toLowerCase().trim();
 
@@ -27,6 +28,13 @@ export const adminCreateUser = asyncHandler(async (req, res) => {
     res.status(400);
     throw new Error('Invalid role');
   }
+  // Only a super-admin may mint a legacy admin-role User — a regular 'admin'
+  // AdminUser has users:write and could otherwise create an MFA-free
+  // superuser account outside this hardened stack.
+  if (role === 'admin' && req.adminUser?.role !== 'super-admin') {
+    res.status(403);
+    throw new Error('Only a super-admin may create an account with the admin role');
+  }
   const exists = await User.findOne({ email }).lean();
   if (exists) { res.status(409); throw new Error('This email is already registered'); }
 
@@ -44,6 +52,13 @@ export const updateUserRole = asyncHandler(async (req, res) => {
   if (!['student', 'teacher', 'parent', 'admin'].includes(role)) {
     res.status(400);
     throw new Error('Invalid role');
+  }
+  // Only a super-admin may promote a User to the legacy admin role (see the
+  // matching guard in adminCreateUser). Demoting away from 'admin' is not a
+  // privilege escalation and remains available to any admin with users:write.
+  if (role === 'admin' && req.adminUser?.role !== 'super-admin') {
+    res.status(403);
+    throw new Error('Only a super-admin may grant the admin role');
   }
   const user = await User.findById(req.params.id);
   if (!user) { res.status(404); throw new Error('User not found'); }
@@ -120,18 +135,18 @@ export const updateUserSubscription = asyncHandler(async (req, res) => {
   if (!user) { res.status(404); throw new Error('User not found'); }
   const previousSubscription = user.subscription;
 
-  if (action === 'deactivate') {
-    user.subscription = { plan: user.subscription?.plan, status: 'inactive', activeSince: user.subscription?.activeSince, validUntil: user.subscription?.validUntil };
-  } else {
-    const activeSince = action === 'renew' ? (user.subscription?.activeSince || new Date()) : new Date();
-    const validUntil  = new Date();
-    validUntil.setDate(validUntil.getDate() + 30);
-    user.subscription = { plan: plan || user.subscription?.plan || 'Starter', status: 'active', activeSince, validUntil };
-  }
-  await user.save({ validateBeforeSave: false });
+  // Routed through subscriptionService.js's adminSetSubscription rather than
+  // reassigning user.subscription directly: a whole-object replace here
+  // would silently wipe stripeCustomerId/stripeSubscriptionId/
+  // renewalReminderSentFor (and any other subscription field this action
+  // isn't meant to touch) the next time an admin renews/deactivates a plan
+  // from the dashboard for a user with a live Stripe-billed subscription.
+  await adminSetSubscription(user._id, { action, plan, currentSubscription: user.subscription });
+
+  const updatedUser = await User.findById(user._id);
   await auditFromReq(
-    req, 'user.subscription.update', 'User', user._id,
-    { subscription: previousSubscription }, { subscription: user.subscription },
+    req, 'user.subscription.update', 'User', updatedUser._id,
+    { subscription: previousSubscription }, { subscription: updatedUser.subscription },
   );
-  res.json({ _id: user._id, name: user.name, email: user.email, subscription: user.subscription });
+  res.json({ _id: updatedUser._id, name: updatedUser.name, email: updatedUser.email, subscription: updatedUser.subscription });
 });

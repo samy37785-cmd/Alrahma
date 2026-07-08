@@ -1,12 +1,6 @@
 import { Router } from 'express';
-import {
-  getCourses,
-  getCourse,
-  createCourse,
-  updateCourse,
-  deleteCourse,
-} from '../controllers/courseController.js';
-import { protect, adminOnly } from '../middleware/auth.js';
+import { getCourses, getCourse } from '../controllers/courseController.js';
+import { protect } from '../middleware/auth.js';
 
 const router = Router();
 
@@ -15,9 +9,7 @@ router.get('/', getCourses);
 // Single course WITH resources — requires login; resources gated by subscription
 router.get('/:id', protect, getCourse);
 
-// Admin-only writes (CRUD)
-router.post('/', protect, adminOnly, createCourse);
-router.put('/:id', protect, adminOnly, updateCourse);
-router.delete('/:id', protect, adminOnly, deleteCourse);
+// Admin mutations (create/update/delete) now live at /api/v1/admin/courses
+// (MFA + RBAC + audit-logged — see routes/v1/admin/coursesRoutes.js).
 
 export default router;

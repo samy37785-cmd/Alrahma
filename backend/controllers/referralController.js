@@ -1,6 +1,7 @@
 import Referral from '../models/Referral.js';
 import User from '../models/User.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
+import { auditFromReq } from '../services/auditService.js';
 
 // @desc  Get the authenticated user's referral stats (code + referral list)
 // @route GET /api/referrals/me
@@ -88,6 +89,8 @@ export const convertReferral = asyncHandler(async (req, res) => {
   referral.status      = 'converted';
   referral.convertedAt = new Date();
   await referral.save();
+
+  await auditFromReq(req, 'referral.convert', 'Referral', referral._id, { status: 'pending' }, referral, 'info');
 
   res.json(referral);
 });

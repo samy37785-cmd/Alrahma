@@ -2,6 +2,7 @@
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { handleValidationErrors } from '../utils/validationHelper.js';
 import { parsePagination } from '../utils/pagination.js';
+import { auditFromReq } from '../services/auditService.js';
 import Blog from '../models/Blog.js';
 
 export const blogValidation = [
@@ -69,6 +70,7 @@ export const getPost = asyncHandler(async (req, res) => {
 export const createPost = asyncHandler(async (req, res) => {
   if (handleValidationErrors(req, res)) return;
   const post = await Blog.create(req.body);
+  await auditFromReq(req, 'blog.create', 'Blog', post._id, null, post, 'info');
   res.status(201).json({ post });
 });
 
@@ -82,11 +84,13 @@ export const updatePost = asyncHandler(async (req, res) => {
 
   const post = await Blog.findByIdAndUpdate(req.params.id, updates, { new: true, runValidators: true });
   if (!post) return res.status(404).json({ message: 'Post not found' });
+  await auditFromReq(req, 'blog.update', 'Blog', post._id, null, post, 'info');
   res.json({ post });
 });
 
 export const deletePost = asyncHandler(async (req, res) => {
   const post = await Blog.findByIdAndDelete(req.params.id);
   if (!post) return res.status(404).json({ message: 'Post not found' });
+  await auditFromReq(req, 'blog.delete', 'Blog', post._id, post, null, 'warning');
   res.json({ message: 'Post deleted' });
 });

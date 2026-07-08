@@ -81,6 +81,31 @@ export function staffOnly(req, res, next) {
   next();
 }
 
+// Requires the caller to re-submit their current password in the request
+// body immediately before a highly sensitive mutation proceeds. Use after
+// `protect` (+ `adminOnly` where relevant).
+//
+// This is a stopgap step-up gate for routes/authRoutes.js's legacy admin
+// user-management routes, which — unlike the hardened /api/v1/admin/*
+// stack (TOTP MFA via middleware/adminAuth.js) — have no MFA of their own;
+// a stolen/replayed session cookie alone is currently sufficient to grant
+// roles, mint admin accounts, or activate subscriptions on that path (see
+// the TODO in routes/authRoutes.js). Re-proving the password at the moment
+// of the action closes that gap until those routes are migrated onto the
+// MFA-protected admin API.
+export async function requireStepUp(req, res, next) {
+  const { currentPassword } = req.body;
+  if (!currentPassword) {
+    return res.status(400).json({ message: 'Current password is required to confirm this action' });
+  }
+  const user = await User.findById(req.user._id).select('+password');
+  const matches = user && await user.matchPassword(currentPassword);
+  if (!matches) {
+    return res.status(401).json({ message: 'Current password is incorrect' });
+  }
+  next();
+}
+
 // Attaches req.user if a valid token is present — but never blocks the request.
 // Use on routes that are public but benefit from knowing who the caller is.
 export async function softProtect(req, res, next) {

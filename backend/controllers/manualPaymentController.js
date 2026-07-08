@@ -11,6 +11,7 @@ import {
 } from '../config/emailTemplates.js';
 import { parsePagination, sendPaginated } from '../utils/pagination.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
+import { auditFromReq } from '../services/auditService.js';
 import logger from '../config/logger.js';
 
 // Returns the configured manual payment methods with display info.
@@ -143,8 +144,8 @@ export const submitManualPayment = asyncHandler(async (req, res) => {
 });
 
 // @desc  Admin: list all manual payment requests
-// @route GET /api/payments/manual
-// @access Admin
+// @route GET /api/v1/admin/payments/manual
+// @access Admin (payments:read)
 export const listManualPayments = asyncHandler(async (req, res) => {
   const { page, limit, skip } = parsePagination(req.query, { defaultLimit: 500, maxLimit: 500 });
   const [data, total] = await Promise.all([
@@ -155,8 +156,9 @@ export const listManualPayments = asyncHandler(async (req, res) => {
 });
 
 // @desc  Admin: approve or reject a manual payment
-// @route PATCH /api/payments/manual/:id
-// @access Admin
+// @route PATCH /api/v1/admin/payments/manual/:id
+// @access Admin (payments:write) — blocked by financialGuard while financials
+//         are frozen, except for the super-admin emergency override.
 export const reviewManualPayment = asyncHandler(async (req, res) => {
     const { status, adminNote } = req.body;
     if (!['approved', 'rejected'].includes(status)) {
@@ -220,6 +222,12 @@ export const reviewManualPayment = asyncHandler(async (req, res) => {
     // Reflect the committed changes in the response object.
     record.status    = status;
     record.adminNote = adminNote;
+
+    await auditFromReq(
+      req, 'payment.manual.review', 'ManualPayment', record._id,
+      { status: 'pending' }, { status, adminNote },
+      status === 'approved' ? 'warning' : 'info',
+    );
 
     // Email the student about the decision — fires after the transaction commits.
     const studentEmail = record.customer?.email;

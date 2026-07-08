@@ -1,9 +1,9 @@
-import http from './http';
+import adminHttp from './adminHttp';
 
-export const getUsers               = ()                  => http.get('/auth/users').then((r) => r.data);
-export const adminCreateUser        = (data)              => http.post('/auth/users', data).then((r) => r.data);
-export const updateUserRole         = (id, role)          => http.patch(`/auth/users/${id}/role`, { role }).then((r) => r.data);
-export const assignTeacher          = (id, teacherId)     => http.patch(`/auth/users/${id}/teacher`, { teacherId }).then((r) => r.data);
-export const setFamilyName          = (id, familyName)    => http.patch(`/auth/users/${id}/family`, { familyName }).then((r) => r.data);
-export const listTeachers           = ()                  => http.get('/auth/teachers').then((r) => r.data);
-export const updateUserSubscription = (id, data)          => http.patch(`/auth/users/${id}/subscription`, data).then((r) => r.data);
+export const getUsers               = ()                  => adminHttp.get('/v1/admin/users').then((r) => r.data);
+export const adminCreateUser        = (data)              => adminHttp.post('/v1/admin/users', data).then((r) => r.data);
+export const updateUserRole         = (id, role)          => adminHttp.patch(`/v1/admin/users/${id}/role`, { role }).then((r) => r.data);
+export const assignTeacher          = (id, teacherId)     => adminHttp.patch(`/v1/admin/users/${id}/teacher`, { teacherId }).then((r) => r.data);
+export const setFamilyName          = (id, familyName)    => adminHttp.patch(`/v1/admin/users/${id}/family`, { familyName }).then((r) => r.data);
+export const listTeachers           = ()                  => adminHttp.get('/v1/admin/users/teachers').then((r) => r.data);
+export const updateUserSubscription = (id, data)          => adminHttp.patch(`/v1/admin/users/${id}/subscription`, data).then((r) => r.data);

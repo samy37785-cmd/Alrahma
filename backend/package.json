@@ -11,6 +11,7 @@
     "import:courses": "node importCourses.js",
     "update:resources": "node updateResources.js",
     "backfill:referral-codes": "node backfillReferralCodes.js",
+    "create-admin": "node scripts/createAdminUser.js",
     "test": "node --test tests/**/*.test.js",
     "test:watch": "node --test --watch tests/**/*.test.js",
     "lint": "eslint ."

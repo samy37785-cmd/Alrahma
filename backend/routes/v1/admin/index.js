@@ -11,6 +11,7 @@ import authRoutes        from './authRoutes.js';
 import usersRoutes       from './usersRoutes.js';
 import coursesRoutes     from './coursesRoutes.js';
 import enrollmentsRoutes from './enrollmentsRoutes.js';
+import paymentsRoutes    from './paymentsRoutes.js';
 import systemRoutes      from './systemRoutes.js';
 
 const router = Router();
@@ -62,6 +63,7 @@ router.use(maintenanceGuard);
 router.use('/users',       usersRoutes);
 router.use('/courses',     coursesRoutes);
 router.use('/enrollments', enrollmentsRoutes);
+router.use('/payments',    paymentsRoutes);
 router.use('/system',      systemRoutes);
 
 export default router;

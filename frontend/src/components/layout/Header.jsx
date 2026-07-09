@@ -133,6 +133,7 @@ function NavDropdown({ state, label, items, hubTo, wide, isActive, closeAll, vie
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [cmdOpen, setCmdOpen]       = useState(false);
+  const [scrolled, setScrolled]     = useState(false);
   const { user, isAdmin, isTeacher, isParent, logout } = useAuth();
   const { t, lang, setLang } = useLang();
   const { dark, toggle: toggleDark } = useTheme();
@@ -177,6 +178,16 @@ export default function Header() {
     window.addEventListener("scroll", close, { passive: true });
     return () => window.removeEventListener("scroll", close);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  /* Shrink the header slightly once the page has scrolled past the hero —
+     a small threshold (not 0) avoids flicker from momentum-scroll bounce
+     at the very top on iOS/macOS trackpads. */
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   /* Escape closes the mobile drawer */
   useEffect(() => {
@@ -250,7 +261,7 @@ export default function Header() {
 
   return (
     <>
-      <header className="header" id="top">
+      <header className={`header${scrolled ? " header--scrolled" : ""}`} id="top">
         <div className="container header__inner">
           <Brand />
 

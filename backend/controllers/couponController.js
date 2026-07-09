@@ -2,6 +2,7 @@
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { handleValidationErrors } from '../utils/validationHelper.js';
 import { parsePagination } from '../utils/pagination.js';
+import { auditFromReq } from '../services/auditService.js';
 import Coupon from '../models/Coupon.js';
 
 export const couponValidation = [
@@ -73,6 +74,7 @@ export const createCoupon = asyncHandler(async (req, res) => {
   if (handleValidationErrors(req, res)) return;
 
   const coupon = await Coupon.create(req.body);
+  await auditFromReq(req, 'coupon.create', 'Coupon', coupon._id, null, coupon, 'info');
   res.status(201).json({ coupon });
 });
 
@@ -95,11 +97,13 @@ export const updateCoupon = asyncHandler(async (req, res) => {
 
   const coupon = await Coupon.findByIdAndUpdate(req.params.id, updates, { new: true, runValidators: true });
   if (!coupon) return res.status(404).json({ message: 'Coupon not found' });
+  await auditFromReq(req, 'coupon.update', 'Coupon', coupon._id, null, coupon, 'info');
   res.json({ coupon });
 });
 
 export const deleteCoupon = asyncHandler(async (req, res) => {
   const coupon = await Coupon.findByIdAndDelete(req.params.id);
   if (!coupon) return res.status(404).json({ message: 'Coupon not found' });
+  await auditFromReq(req, 'coupon.delete', 'Coupon', coupon._id, coupon, null, 'warning');
   res.json({ message: 'Coupon deleted' });
 });

@@ -2,6 +2,7 @@ import { body } from 'express-validator';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { handleValidationErrors } from '../utils/validationHelper.js';
 import { parsePagination } from '../utils/pagination.js';
+import { auditFromReq } from '../services/auditService.js';
 import Review from '../models/Review.js';
 
 export const reviewValidation = [
@@ -89,5 +90,6 @@ export const moderateReview = asyncHandler(async (req, res) => {
     { new: true, runValidators: true },
   );
   if (!review) return res.status(404).json({ message: 'Review not found' });
+  await auditFromReq(req, 'review.moderate', 'Review', review._id, null, review, 'info');
   res.json({ review });
 });

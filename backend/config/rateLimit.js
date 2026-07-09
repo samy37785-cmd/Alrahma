@@ -42,6 +42,20 @@ if (process.env.REDIS_URL) {
   }
 }
 
+// Adapts express-rate-limit's Logger interface (error(err, message) /
+// warn(err)) onto this app's centralized Winston logger, so a rate-limit
+// store failure is logged the same structured way (message first, metadata
+// second) as every other error in this app instead of raw console output.
+// Exported so adminRateLimits.js's limiters log through the same adapter.
+export const rateLimitLogger = {
+  warn(err) {
+    logger.warn('express-rate-limit warning', { message: err?.message ?? String(err) });
+  },
+  error(err, message) {
+    logger.error(message ?? 'express-rate-limit error', { message: err?.message ?? String(err) });
+  },
+};
+
 function limiter({ max, message, prefix }) {
   const store = makeStore(prefix);
   return rateLimit({
@@ -55,6 +69,13 @@ function limiter({ max, message, prefix }) {
       return ip.startsWith('::ffff:') ? ip.slice(7) : ip;
     },
     validate: { keyGeneratorIpFallback: false },
+    // A store error (e.g. Redis unreachable) must never take down the whole
+    // API — fail OPEN (let the request through unlimited for that one
+    // request) rather than propagating the error to errorHandler as a 500.
+    // Abuse protection degrading temporarily is a much smaller blast radius
+    // than every /api/* request 500ing until Redis recovers.
+    passOnStoreError: true,
+    logger: rateLimitLogger,
     ...(store ? { store } : {}),
   });
 }

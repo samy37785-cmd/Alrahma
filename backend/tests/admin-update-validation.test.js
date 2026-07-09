@@ -2,10 +2,12 @@ import { test, before, beforeEach, after } from 'node:test';
 import assert from 'node:assert/strict';
 import app from '../app.js';
 import User from '../models/User.js';
+import AdminUser from '../models/AdminUser.js';
 import Coupon from '../models/Coupon.js';
 import Blog from '../models/Blog.js';
 import Review from '../models/Review.js';
 import ContactMessage from '../models/ContactMessage.js';
+import { signAccessToken } from '../utils/adminAuthTokens.js';
 import { setupTestDb, clearTestDb, teardownTestDb } from './helpers/db.js';
 import { agentWithCsrf } from './helpers/csrf.js';
 
@@ -17,6 +19,10 @@ import { agentWithCsrf } from './helpers/csrf.js';
 // values are now rejected the same way create already rejected them, (2)
 // system-managed fields can no longer be set via PATCH, and (3) legitimate
 // partial updates still work exactly as before.
+//
+// All four PATCH endpoints below moved to /api/v1/admin/{coupons,blog,
+// reviews,contact} (MFA + RBAC + audit-logged) as part of the B1
+// legacy-route migration — see routes/v1/admin/.
 
 const PASSWORD = 'Str0ngP@ssw0rd!';
 
@@ -24,13 +30,15 @@ before(async () => { await setupTestDb(); }, { timeout: 60_000 });
 after(async () => { await teardownTestDb(); });
 beforeEach(async () => { await clearTestDb(); });
 
-async function makeAdminAgent() {
+async function adminUserAgent(role = 'admin') {
   const { agent, csrf } = await agentWithCsrf(app);
-  const email = `admin${Date.now()}${Math.random()}@example.com`;
-  await User.create({ name: 'Admin', email, password: PASSWORD, role: 'admin' });
-  const login = await agent.post('/api/auth/login').set(csrf).send({ email, password: PASSWORD });
-  assert.equal(login.status, 200);
-  return { agent, csrf };
+  const admin = await AdminUser.create({
+    name: `${role} admin`, email: `${role}-${Date.now()}${Math.random()}@example.com`,
+    password: 'Sup3r-Str0ng-Pass!', role,
+  });
+  const token = signAccessToken(admin._id, admin.role, true);
+  const cookieHeader = `admin_at=${token}; csrf_token=${csrf['x-csrf-token']}`;
+  return { agent, csrf, cookieHeader };
 }
 
 // --------------------------------------------------------------------------
@@ -38,27 +46,27 @@ async function makeAdminAgent() {
 // --------------------------------------------------------------------------
 
 test('updateCoupon: rejects an invalid discountType with 422', async () => {
-  const { agent, csrf } = await makeAdminAgent();
+  const { agent, csrf, cookieHeader } = await adminUserAgent();
   const coupon = await Coupon.create({ code: 'SAVE10', discountType: 'percent', discountValue: 10 });
 
-  const res = await agent.patch(`/api/coupons/${coupon._id}`).set(csrf).send({ discountType: 'bogus' });
+  const res = await agent.patch(`/api/v1/admin/coupons/${coupon._id}`).set({ ...csrf, Cookie: cookieHeader }).send({ discountType: 'bogus' });
   assert.equal(res.status, 422);
 });
 
 test('updateCoupon: rejects a malformed code with 422', async () => {
-  const { agent, csrf } = await makeAdminAgent();
+  const { agent, csrf, cookieHeader } = await adminUserAgent();
   const coupon = await Coupon.create({ code: 'SAVE10', discountType: 'percent', discountValue: 10 });
 
-  const res = await agent.patch(`/api/coupons/${coupon._id}`).set(csrf).send({ code: 'a' }); // too short, matches /^[A-Z0-9_-]{3,30}$/
+  const res = await agent.patch(`/api/v1/admin/coupons/${coupon._id}`).set({ ...csrf, Cookie: cookieHeader }).send({ code: 'a' }); // too short, matches /^[A-Z0-9_-]{3,30}$/
   assert.equal(res.status, 422);
 });
 
 test('updateCoupon: cannot set usedCount or usedBy directly (mass-assignment fix)', async () => {
-  const { agent, csrf } = await makeAdminAgent();
+  const { agent, csrf, cookieHeader } = await adminUserAgent();
   const student = await User.create({ name: 'Student', email: 'coupon-student@example.com', password: PASSWORD });
   const coupon = await Coupon.create({ code: 'SAVE10', discountType: 'percent', discountValue: 10 });
 
-  const res = await agent.patch(`/api/coupons/${coupon._id}`).set(csrf).send({
+  const res = await agent.patch(`/api/v1/admin/coupons/${coupon._id}`).set({ ...csrf, Cookie: cookieHeader }).send({
     usedCount: 999,
     usedBy: [{ user: student._id }],
     active: false, // a legitimate field, sent alongside — should still apply
@@ -72,10 +80,10 @@ test('updateCoupon: cannot set usedCount or usedBy directly (mass-assignment fix
 });
 
 test('updateCoupon: a legitimate partial update changes only the given field', async () => {
-  const { agent, csrf } = await makeAdminAgent();
+  const { agent, csrf, cookieHeader } = await adminUserAgent();
   const coupon = await Coupon.create({ code: 'SAVE10', discountType: 'percent', discountValue: 10, description: 'Original' });
 
-  const res = await agent.patch(`/api/coupons/${coupon._id}`).set(csrf).send({ active: false });
+  const res = await agent.patch(`/api/v1/admin/coupons/${coupon._id}`).set({ ...csrf, Cookie: cookieHeader }).send({ active: false });
   assert.equal(res.status, 200);
   assert.equal(res.body.coupon.active, false);
   assert.equal(res.body.coupon.description, 'Original');
@@ -94,18 +102,18 @@ async function makePost(overrides = {}) {
 }
 
 test('updatePost: rejects a malformed slug with 422', async () => {
-  const { agent, csrf } = await makeAdminAgent();
+  const { agent, csrf, cookieHeader } = await adminUserAgent();
   const post = await makePost();
 
-  const res = await agent.patch(`/api/blog/${post._id}`).set(csrf).send({ slug: 'Not A Valid Slug!' });
+  const res = await agent.patch(`/api/v1/admin/blog/${post._id}`).set({ ...csrf, Cookie: cookieHeader }).send({ slug: 'Not A Valid Slug!' });
   assert.equal(res.status, 422);
 });
 
 test('updatePost: cannot set views directly (mass-assignment fix)', async () => {
-  const { agent, csrf } = await makeAdminAgent();
+  const { agent, csrf, cookieHeader } = await adminUserAgent();
   const post = await makePost();
 
-  const res = await agent.patch(`/api/blog/${post._id}`).set(csrf).send({ views: 99999, title: 'Updated Title' });
+  const res = await agent.patch(`/api/v1/admin/blog/${post._id}`).set({ ...csrf, Cookie: cookieHeader }).send({ views: 99999, title: 'Updated Title' });
   assert.equal(res.status, 200);
 
   const updated = await Blog.findById(post._id);
@@ -114,10 +122,10 @@ test('updatePost: cannot set views directly (mass-assignment fix)', async () => 
 });
 
 test('updatePost: a legitimate partial update changes only the given field', async () => {
-  const { agent, csrf } = await makeAdminAgent();
+  const { agent, csrf, cookieHeader } = await adminUserAgent();
   const post = await makePost();
 
-  const res = await agent.patch(`/api/blog/${post._id}`).set(csrf).send({ published: true });
+  const res = await agent.patch(`/api/v1/admin/blog/${post._id}`).set({ ...csrf, Cookie: cookieHeader }).send({ published: true });
   assert.equal(res.status, 200);
   assert.equal(res.body.post.published, true);
   assert.equal(res.body.post.title, 'A Post');
@@ -128,11 +136,11 @@ test('updatePost: a legitimate partial update changes only the given field', asy
 // --------------------------------------------------------------------------
 
 test('moderateReview: rejects an invalid status with 422', async () => {
-  const { agent, csrf } = await makeAdminAgent();
+  const { agent, csrf, cookieHeader } = await adminUserAgent();
   const student = await User.create({ name: 'Reviewer', email: 'reviewer@example.com', password: PASSWORD });
   const review = await Review.create({ student: student._id, course: student._id, rating: 5, body: 'Great!' });
 
-  const res = await agent.patch(`/api/reviews/${review._id}/moderate`).set(csrf).send({ status: 'bogus' });
+  const res = await agent.patch(`/api/v1/admin/reviews/${review._id}/moderate`).set({ ...csrf, Cookie: cookieHeader }).send({ status: 'bogus' });
   assert.equal(res.status, 422);
 
   const unchanged = await Review.findById(review._id);
@@ -140,21 +148,21 @@ test('moderateReview: rejects an invalid status with 422', async () => {
 });
 
 test('moderateReview: a valid status is applied', async () => {
-  const { agent, csrf } = await makeAdminAgent();
+  const { agent, csrf, cookieHeader } = await adminUserAgent();
   const student = await User.create({ name: 'Reviewer2', email: 'reviewer2@example.com', password: PASSWORD });
   const review = await Review.create({ student: student._id, course: student._id, rating: 4, body: 'Good course' });
 
-  const res = await agent.patch(`/api/reviews/${review._id}/moderate`).set(csrf).send({ status: 'approved' });
+  const res = await agent.patch(`/api/v1/admin/reviews/${review._id}/moderate`).set({ ...csrf, Cookie: cookieHeader }).send({ status: 'approved' });
   assert.equal(res.status, 200);
   assert.equal(res.body.review.status, 'approved');
 });
 
 test('moderateReview: updating adminNote alone (no status) still works, preserving existing behavior', async () => {
-  const { agent, csrf } = await makeAdminAgent();
+  const { agent, csrf, cookieHeader } = await adminUserAgent();
   const student = await User.create({ name: 'Reviewer3', email: 'reviewer3@example.com', password: PASSWORD });
   const review = await Review.create({ student: student._id, course: student._id, rating: 3, body: 'Okay' });
 
-  const res = await agent.patch(`/api/reviews/${review._id}/moderate`).set(csrf).send({ adminNote: 'Checked, looks fine' });
+  const res = await agent.patch(`/api/v1/admin/reviews/${review._id}/moderate`).set({ ...csrf, Cookie: cookieHeader }).send({ adminNote: 'Checked, looks fine' });
   assert.equal(res.status, 200);
   assert.equal(res.body.review.status, 'pending'); // unchanged
   assert.equal(res.body.review.adminNote, 'Checked, looks fine');
@@ -165,10 +173,10 @@ test('moderateReview: updating adminNote alone (no status) still works, preservi
 // --------------------------------------------------------------------------
 
 test('updateContactStatus: rejects an invalid status with 422', async () => {
-  const { agent, csrf } = await makeAdminAgent();
+  const { agent, csrf, cookieHeader } = await adminUserAgent();
   const contact = await ContactMessage.create({ name: 'X', email: 'x@example.com', subject: 'Hi', message: 'A message here.' });
 
-  const res = await agent.patch(`/api/contact/${contact._id}`).set(csrf).send({ status: 'bogus' });
+  const res = await agent.patch(`/api/v1/admin/contact/${contact._id}`).set({ ...csrf, Cookie: cookieHeader }).send({ status: 'bogus' });
   assert.equal(res.status, 422);
 
   const unchanged = await ContactMessage.findById(contact._id);
@@ -176,20 +184,20 @@ test('updateContactStatus: rejects an invalid status with 422', async () => {
 });
 
 test('updateContactStatus: a valid status is applied, and resolving sets repliedAt', async () => {
-  const { agent, csrf } = await makeAdminAgent();
+  const { agent, csrf, cookieHeader } = await adminUserAgent();
   const contact = await ContactMessage.create({ name: 'X', email: 'x2@example.com', subject: 'Hi', message: 'A message here.' });
 
-  const res = await agent.patch(`/api/contact/${contact._id}`).set(csrf).send({ status: 'resolved' });
+  const res = await agent.patch(`/api/v1/admin/contact/${contact._id}`).set({ ...csrf, Cookie: cookieHeader }).send({ status: 'resolved' });
   assert.equal(res.status, 200);
   assert.equal(res.body.contact.status, 'resolved');
   assert.ok(res.body.contact.repliedAt);
 });
 
 test('updateContactStatus: updating adminNote alone (no status) still works, preserving existing behavior', async () => {
-  const { agent, csrf } = await makeAdminAgent();
+  const { agent, csrf, cookieHeader } = await adminUserAgent();
   const contact = await ContactMessage.create({ name: 'X', email: 'x3@example.com', subject: 'Hi', message: 'A message here.' });
 
-  const res = await agent.patch(`/api/contact/${contact._id}`).set(csrf).send({ adminNote: 'Spam-like, monitoring' });
+  const res = await agent.patch(`/api/v1/admin/contact/${contact._id}`).set({ ...csrf, Cookie: cookieHeader }).send({ adminNote: 'Spam-like, monitoring' });
   assert.equal(res.status, 200);
   assert.equal(res.body.contact.status, 'new'); // unchanged
   assert.equal(res.body.contact.adminNote, 'Spam-like, monitoring');

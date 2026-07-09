@@ -1,5 +1,5 @@
 import rateLimit from 'express-rate-limit';
-import { makeStore } from './rateLimit.js';
+import { makeStore, rateLimitLogger } from './rateLimit.js';
 
 /**
  * Admin-specific rate limiters.
@@ -23,6 +23,11 @@ const make = ({ windowMs = 15 * 60 * 1000, max, message, skipSuccessful = false,
       return ip.startsWith('::ffff:') ? ip.slice(7) : ip;
     },
     validate: { keyGeneratorIpFallback: false },
+    // Same fail-open rationale as config/rateLimit.js's limiter(): a Redis
+    // outage must degrade to "rate limiting temporarily off" for the admin
+    // API, never "every /api/v1/admin/* request 500s".
+    passOnStoreError: true,
+    logger: rateLimitLogger,
     ...(store ? { store } : {}),
   });
 };

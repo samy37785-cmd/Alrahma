@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { protect, adminOnly, softProtect } from '../middleware/auth.js';
+import { softProtect } from '../middleware/auth.js';
 import {
   createPaypalOrder,
   capturePaypalOrder,
@@ -12,8 +12,6 @@ import {
 import {
   getManualMethods,
   submitManualPayment,
-  listManualPayments,
-  reviewManualPayment,
 } from '../controllers/manualPaymentController.js';
 
 const router = Router();
@@ -31,7 +29,8 @@ router.post('/paypal/:orderId/capture', capturePaypalOrder);
 // --- Manual payment methods (WU / MoneyGram / Payoneer / IBAN / etc.) ---
 router.get('/manual-methods', getManualMethods);
 router.post('/manual', softProtect, submitManualPayment);
-router.get('/manual', protect, adminOnly, listManualPayments);
-router.patch('/manual/:id', protect, adminOnly, reviewManualPayment);
+
+// Admin review of manual payments now lives at /api/v1/admin/payments/manual
+// (MFA + RBAC + financialGuard protected — see routes/v1/admin/paymentsRoutes.js).
 
 export default router;

@@ -1,10 +1,12 @@
 import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useParams } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { AdminAuthProvider } from './context/AdminAuthContext';
 import { LangProvider } from './context/LangContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { QueryProvider } from './context/QueryProvider';
 import ProtectedRoute from './components/ui/ProtectedRoute';
+import AdminSessionGate from './components/ui/AdminSessionGate';
 import ScrollToTop from './components/ui/ScrollToTop';
 import RoutePrefetcher from './components/ui/RoutePrefetcher';
 import Analytics from './components/ui/Analytics';
@@ -18,6 +20,7 @@ const Home               = lazy(() => import('./pages/Home'));
 const Login              = lazy(() => import('./pages/Login'));
 const Register           = lazy(() => import('./pages/Register'));
 const AdminDashboard     = lazy(() => import('./pages/AdminDashboard'));
+const AdminLogin         = lazy(() => import('./pages/AdminLogin'));
 const Quran              = lazy(() => import('./pages/Quran'));
 const Blog               = lazy(() => import('./pages/Blog'));
 const BlogPost           = lazy(() => import('./pages/BlogPost'));
@@ -92,6 +95,7 @@ export default function App() {
     <ThemeProvider>
     <LangProvider>
     <AuthProvider>
+    <AdminAuthProvider>
       <BrowserRouter>
         <ScrollToTop />
         <RoutePrefetcher />
@@ -162,7 +166,8 @@ export default function App() {
           <Route path="/billing" element={<ProtectedRoute><Billing /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
-          <Route path="/admin" element={<ProtectedRoute adminOnly><AdminDashboard /></ProtectedRoute>} />
+          <Route path="/admin/login" element={<ProtectedRoute adminOnly><AdminLogin /></ProtectedRoute>} />
+          <Route path="/admin" element={<ProtectedRoute adminOnly><AdminSessionGate><AdminDashboard /></AdminSessionGate></ProtectedRoute>} />
           <Route path="/teacher" element={<ProtectedRoute role="teacher"><TeacherDashboard /></ProtectedRoute>} />
           <Route path="/parent" element={<ProtectedRoute role="parent"><ParentDashboard /></ProtectedRoute>} />
           <Route path="/calendar" element={<ProtectedRoute><CalendarPage /></ProtectedRoute>} />
@@ -189,6 +194,7 @@ export default function App() {
         </Routes>
         </Suspense>
       </BrowserRouter>
+    </AdminAuthProvider>
     </AuthProvider>
     </LangProvider>
     </ThemeProvider>

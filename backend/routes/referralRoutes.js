@@ -1,10 +1,6 @@
 import express from 'express';
-import { protect, adminOnly } from '../middleware/auth.js';
-import {
-  getMyReferrals,
-  trackReferral,
-  convertReferral,
-} from '../controllers/referralController.js';
+import { protect } from '../middleware/auth.js';
+import { getMyReferrals, trackReferral } from '../controllers/referralController.js';
 
 const router = express.Router();
 
@@ -17,9 +13,7 @@ router.get('/me', protect, getMyReferrals);
 // caller to attribute an arbitrary user's account to any referral code.
 router.post('/track', protect, trackReferral);
 
-// Admin: mark referral as converted. Previously missing adminOnly despite
-// its own documented "Admin / Internal" access level — any authenticated
-// user could mark any referral as converted.
-router.patch('/:id/convert', protect, adminOnly, convertReferral);
+// Admin mutation (mark converted) now lives at /api/v1/admin/referrals
+// (MFA + RBAC + audit-logged — see routes/v1/admin/referralsRoutes.js).
 
 export default router;

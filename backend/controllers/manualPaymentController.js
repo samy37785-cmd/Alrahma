@@ -11,6 +11,7 @@ import {
 } from '../config/emailTemplates.js';
 import { parsePagination, sendPaginated } from '../utils/pagination.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
+import { auditFromReq } from '../services/auditService.js';
 import logger from '../config/logger.js';
 
 // Returns the configured manual payment methods with display info.
@@ -143,8 +144,8 @@ export const submitManualPayment = asyncHandler(async (req, res) => {
 });
 
 // @desc  Admin: list all manual payment requests
-// @route GET /api/payments/manual
-// @access Admin
+// @route GET /api/v1/admin/payments/manual
+// @access Admin (payments:read)
 export const listManualPayments = asyncHandler(async (req, res) => {
   const { page, limit, skip } = parsePagination(req.query, { defaultLimit: 500, maxLimit: 500 });
   const [data, total] = await Promise.all([
@@ -155,8 +156,9 @@ export const listManualPayments = asyncHandler(async (req, res) => {
 });
 
 // @desc  Admin: approve or reject a manual payment
-// @route PATCH /api/payments/manual/:id
-// @access Admin
+// @route PATCH /api/v1/admin/payments/manual/:id
+// @access Admin (payments:write) — blocked by financialGuard while financials
+//         are frozen, except for the super-admin emergency override.
 export const reviewManualPayment = asyncHandler(async (req, res) => {
     const { status, adminNote } = req.body;
     if (!['approved', 'rejected'].includes(status)) {
@@ -172,25 +174,24 @@ export const reviewManualPayment = asyncHandler(async (req, res) => {
       throw new Error('Manual payment request not found');
     }
 
+    // Atomic status claim: only succeeds if the record is still 'pending'.
+    // Rejection must use the exact same claim as approval — otherwise a
+    // reject racing (or arriving after) an approval could silently overwrite
+    // an already-approved, already-enrolled record, and a duplicate
+    // reject/approve attempt would report false-positive success instead of
+    // the 409 the caller needs to know nothing actually changed.
+    let claimed;
+
     if (status === 'approved') {
       const dbSession = await mongoose.startSession();
       try {
         await dbSession.withTransaction(async () => {
-          // Atomic status claim: only succeeds if the record is still 'pending'.
-          // If two admins approve simultaneously, the second findOneAndUpdate
-          // returns null (the first already moved it to 'approved') and the
-          // transaction exits without creating a duplicate invoice or enrollment.
-          const claimed = await ManualPayment.findOneAndUpdate(
+          claimed = await ManualPayment.findOneAndUpdate(
             { _id: req.params.id, status: 'pending' },
             { $set: { status, adminNote } },
             { new: true, session: dbSession },
           );
-          if (!claimed) {
-            logger.warn('Manual payment already processed — duplicate approval ignored', {
-              id: req.params.id,
-            });
-            return;
-          }
+          if (!claimed) return;
 
           await enrollUser(record.userId, record.plan, dbSession);
           await createInvoice({
@@ -204,22 +205,41 @@ export const reviewManualPayment = asyncHandler(async (req, res) => {
       } finally {
         dbSession.endSession();
       }
+    } else {
+      claimed = await ManualPayment.findOneAndUpdate(
+        { _id: req.params.id, status: 'pending' },
+        { $set: { status, adminNote } },
+        { new: true },
+      );
+    }
 
+    if (!claimed) {
+      logger.warn('Manual payment review rejected — record no longer pending', {
+        id: req.params.id, attemptedStatus: status,
+      });
+      res.status(409);
+      throw new Error('This payment request has already been processed');
+    }
+
+    if (status === 'approved') {
       logger.info('Manual payment approved', {
         id:     req.params.id,
         plan:   record.plan,
         userId: String(record.userId),
       });
     } else {
-      // Rejection is a simple status change — no transaction needed.
-      await ManualPayment.findByIdAndUpdate(req.params.id, { status, adminNote });
-
       logger.info('Manual payment rejected', { id: req.params.id });
     }
 
     // Reflect the committed changes in the response object.
     record.status    = status;
     record.adminNote = adminNote;
+
+    await auditFromReq(
+      req, 'payment.manual.review', 'ManualPayment', record._id,
+      { status: 'pending' }, { status, adminNote },
+      status === 'approved' ? 'warning' : 'info',
+    );
 
     // Email the student about the decision — fires after the transaction commits.
     const studentEmail = record.customer?.email;

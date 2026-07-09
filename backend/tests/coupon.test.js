@@ -2,7 +2,9 @@ import { test, before, beforeEach, after } from 'node:test';
 import assert from 'node:assert/strict';
 import app from '../app.js';
 import User from '../models/User.js';
+import AdminUser from '../models/AdminUser.js';
 import Coupon from '../models/Coupon.js';
+import { signAccessToken } from '../utils/adminAuthTokens.js';
 import { setupTestDb, clearTestDb, teardownTestDb } from './helpers/db.js';
 import { agentWithCsrf } from './helpers/csrf.js';
 
@@ -12,10 +14,17 @@ import { agentWithCsrf } from './helpers/csrf.js';
 // assertion here would have kept passing even if the real Coupon model were
 // deleted or its logic completely different. Replaced with tests against the
 // real Coupon model (via the shared in-memory DB, same as every other model
-// test in this suite) and the real /api/coupons/* routes end-to-end.
+// test in this suite) and the real /api/coupons/* + /api/v1/admin/coupons/*
+// routes end-to-end.
 //
-// "Update behavior" (PATCH /api/coupons/:id — validation, mass-assignment
-// protection, partial updates) is already covered by
+// Coupon mutations (create/update/delete) moved to /api/v1/admin/coupons
+// (MFA + RBAC + audit-logged) as part of the B1 legacy-route migration;
+// listing (GET /api/coupons) and validation (POST /api/coupons/validate)
+// stayed on the legacy router — see routes/v1/admin/couponsRoutes.js and
+// routes/couponRoutes.js.
+//
+// "Update behavior" (PATCH /api/v1/admin/coupons/:id — validation,
+// mass-assignment protection, partial updates) is already covered by
 // tests/admin-update-validation.test.js and is not duplicated here.
 
 const PASSWORD = 'Str0ngP@ssw0rd!';
@@ -31,6 +40,19 @@ async function makeAdminAgent() {
   const login = await agent.post('/api/auth/login').set(csrf).send({ email, password: PASSWORD });
   assert.equal(login.status, 200);
   return { agent, csrf };
+}
+
+// AdminUser+MFA session — required for the migrated /api/v1/admin/coupons
+// mutation routes (see routes/v1/admin/couponsRoutes.js).
+async function adminUserAgent(role = 'admin') {
+  const { agent, csrf } = await agentWithCsrf(app);
+  const admin = await AdminUser.create({
+    name: `${role} admin`, email: `${role}-${Date.now()}${Math.random()}@example.com`,
+    password: 'Sup3r-Str0ng-Pass!', role,
+  });
+  const token = signAccessToken(admin._id, admin.role, true);
+  const cookieHeader = `admin_at=${token}; csrf_token=${csrf['x-csrf-token']}`;
+  return { agent, csrf, cookieHeader };
 }
 
 // ---------------------------------------------------------------------------
@@ -206,8 +228,8 @@ test('validateCoupon: a coupon used by a DIFFERENT user is still valid for this 
 // ---------------------------------------------------------------------------
 
 test('createCoupon: a valid admin request creates a real, persisted Coupon document', async () => {
-  const { agent, csrf } = await makeAdminAgent();
-  const res = await agent.post('/api/coupons').set(csrf).send({
+  const { agent, csrf, cookieHeader } = await adminUserAgent();
+  const res = await agent.post('/api/v1/admin/coupons').set({ ...csrf, Cookie: cookieHeader }).send({
     code: 'newcode', discountType: 'fixed', discountValue: 30,
   });
 
@@ -219,15 +241,15 @@ test('createCoupon: a valid admin request creates a real, persisted Coupon docum
 
 test('createCoupon: a duplicate code is rejected with 409 (unique index)', async () => {
   await Coupon.create({ code: 'DUPETEST', discountType: 'percent', discountValue: 10 });
-  const { agent, csrf } = await makeAdminAgent();
+  const { agent, csrf, cookieHeader } = await adminUserAgent();
 
-  const res = await agent.post('/api/coupons').set(csrf).send({
+  const res = await agent.post('/api/v1/admin/coupons').set({ ...csrf, Cookie: cookieHeader }).send({
     code: 'DUPETEST', discountType: 'fixed', discountValue: 5,
   });
   assert.equal(res.status, 409);
 });
 
-test('listCoupons: returns real, previously-created coupons', async () => {
+test('listCoupons: returns real, previously-created coupons (legacy read route, unaffected by the mutation migration)', async () => {
   await Coupon.create({ code: 'LIST1', discountType: 'percent', discountValue: 10 });
   await Coupon.create({ code: 'LIST2', discountType: 'fixed', discountValue: 5 });
 
@@ -239,9 +261,9 @@ test('listCoupons: returns real, previously-created coupons', async () => {
 
 test('deleteCoupon: removes the real document — a subsequent validate returns 404', async () => {
   const coupon = await Coupon.create({ code: 'TODELETE', discountType: 'percent', discountValue: 10 });
-  const { agent, csrf } = await makeAdminAgent();
+  const { agent, csrf, cookieHeader } = await adminUserAgent();
 
-  const del = await agent.delete(`/api/coupons/${coupon._id}`).set(csrf);
+  const del = await agent.delete(`/api/v1/admin/coupons/${coupon._id}`).set({ ...csrf, Cookie: cookieHeader });
   assert.equal(del.status, 200);
 
   const gone = await Coupon.findById(coupon._id);
@@ -251,4 +273,18 @@ test('deleteCoupon: removes the real document — a subsequent validate returns 
   await studentAgent.agent.post('/api/auth/register').set(studentAgent.csrf).send({ name: 'S', email: `after-delete-${Date.now()}@example.com`, password: PASSWORD });
   const validateRes = await studentAgent.agent.post('/api/coupons/validate').set(studentAgent.csrf).send({ code: 'TODELETE' });
   assert.equal(validateRes.status, 404);
+});
+
+test('legacy POST/PATCH/DELETE /api/coupons* admin mutation routes no longer exist (404)', async () => {
+  const coupon = await Coupon.create({ code: 'LEGACYCHECK', discountType: 'percent', discountValue: 10 });
+  const { agent, csrf } = await makeAdminAgent();
+
+  const create = await agent.post('/api/coupons').set(csrf).send({ code: 'X', discountType: 'fixed', discountValue: 1 });
+  assert.equal(create.status, 404);
+
+  const update = await agent.patch(`/api/coupons/${coupon._id}`).set(csrf).send({ active: false });
+  assert.equal(update.status, 404);
+
+  const del = await agent.delete(`/api/coupons/${coupon._id}`).set(csrf);
+  assert.equal(del.status, 404);
 });

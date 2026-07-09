@@ -1,6 +1,5 @@
 import { test, before, beforeEach, after } from 'node:test';
 import assert from 'node:assert/strict';
-import request from 'supertest';
 import app from '../app.js';
 import User from '../models/User.js';
 import { setupTestDb, clearTestDb, teardownTestDb } from './helpers/db.js';
@@ -10,14 +9,19 @@ import { agentWithCsrf } from './helpers/csrf.js';
 // contactRoutes.js each used to define their own local, independently
 // duplicated admin-check middleware (message: 'Admins only') instead of the
 // shared adminOnly from middleware/auth.js (message: 'Admin access
-// required'). This consolidates them onto the shared middleware. These
-// routers had zero prior test coverage of their admin-gated endpoints, so
-// this file locks in that every one of them still enforces the exact same
-// 401 (unauthenticated) / 403 (authenticated non-admin) / pass-through
-// (admin) behavior as before — the only intentional payload change is the
-// 403 message text, now standardized to the shared middleware's wording,
-// which nothing in the frontend or test suite depended on (verified via a
-// repo-wide grep before making this change).
+// required'). This consolidated them onto the shared middleware.
+//
+// B1 migration update: the mutation routes this file originally covered
+// (POST/PATCH/DELETE for blog, coupons, and contact; PATCH .../moderate for
+// reviews) have since moved to /api/v1/admin/{blog,coupons,contact,reviews}
+// (MFA + RBAC + audit-logged — see routes/v1/admin/). Their RBAC/401/403/
+// audit coverage now lives in tests/admin-v1-content-migration.test.js
+// (and, for coupons/referrals specifically, tests/coupon.test.js and
+// tests/referral.test.js). This file now covers only what's still actually
+// reachable on the legacy protect+adminOnly stack — the admin-only READ
+// endpoints (GET /api/coupons, GET /api/contact) that were never part of
+// the mutation migration — plus confirms every migrated mutation path is
+// gone from the legacy router.
 
 const PASSWORD = 'Str0ngP@ssw0rd!';
 
@@ -41,83 +45,56 @@ async function makeStudentAgent() {
   return { agent, csrf };
 }
 
-// Each entry: [method, path, body] for every admin-gated route touched by T11.
-const ADMIN_ROUTES = [
+// Admin-gated READ routes still on the legacy protect+adminOnly stack.
+const ADMIN_READ_ROUTES = [
+  ['get', '/api/coupons', undefined],
+  ['get', '/api/contact', undefined],
+];
+
+// Every mutation route this file used to cover, now migrated off the legacy
+// router entirely (see the B1 migration note above).
+const MIGRATED_MUTATION_ROUTES = [
   ['post',   '/api/blog',                {}],
   ['patch',  '/api/blog/000000000000000000000000', {}],
   ['delete', '/api/blog/000000000000000000000000', undefined],
-  ['get',    '/api/coupons',             undefined],
   ['post',   '/api/coupons',             {}],
   ['patch',  '/api/coupons/000000000000000000000000', {}],
   ['delete', '/api/coupons/000000000000000000000000', undefined],
   ['patch',  '/api/reviews/000000000000000000000000/moderate', { status: 'approved' }],
-  ['get',    '/api/contact',             undefined],
   ['patch',  '/api/contact/000000000000000000000000', { status: 'read' }],
 ];
 
-test('every admin-gated route is rejected with 401 when unauthenticated', async () => {
-  for (const [method, path] of ADMIN_ROUTES) {
+test('every remaining admin-gated legacy read route is rejected with 401 when unauthenticated', async () => {
+  for (const [method, path] of ADMIN_READ_ROUTES) {
     const { agent, csrf } = await agentWithCsrf(app);
     const res = await agent[method](path).set(csrf).send({});
     assert.equal(res.status, 401, `${method.toUpperCase()} ${path} expected 401, got ${res.status}`);
   }
 });
 
-test('every admin-gated route is rejected with 403 for an authenticated non-admin', async () => {
+test('every remaining admin-gated legacy read route is rejected with 403 for an authenticated non-admin', async () => {
   const { agent, csrf } = await makeStudentAgent();
-  for (const [method, path] of ADMIN_ROUTES) {
+  for (const [method, path] of ADMIN_READ_ROUTES) {
     const res = await agent[method](path).set(csrf).send({});
     assert.equal(res.status, 403, `${method.toUpperCase()} ${path} expected 403, got ${res.status}`);
     assert.equal(res.body.message, 'Admin access required');
   }
 });
 
-test('an authenticated admin passes the authorization gate on every route (blog)', async () => {
+test('an authenticated admin passes the authorization gate on every remaining legacy read route', async () => {
   const { agent, csrf } = await makeAdminAgent();
 
-  // POST / with an empty body: past the auth gate, express-validator now
-  // rejects it (422) — proves the gate was passed, not bypassed.
-  const create = await agent.post('/api/blog').set(csrf).send({});
-  assert.equal(create.status, 422);
+  const coupons = await agent.get('/api/coupons').set(csrf);
+  assert.equal(coupons.status, 200);
 
-  // PATCH/DELETE on a non-existent id: past the auth gate, controller 404s.
-  const update = await agent.patch('/api/blog/000000000000000000000000').set(csrf).send({ title: 'x' });
-  assert.equal(update.status, 404);
-  const del = await agent.delete('/api/blog/000000000000000000000000').set(csrf);
-  assert.equal(del.status, 404);
+  const contacts = await agent.get('/api/contact').set(csrf);
+  assert.equal(contacts.status, 200);
 });
 
-test('an authenticated admin passes the authorization gate on every route (coupons)', async () => {
+test('every migrated mutation route no longer exists on the legacy router (404) — even for an authenticated admin', async () => {
   const { agent, csrf } = await makeAdminAgent();
-
-  const list = await agent.get('/api/coupons').set(csrf);
-  assert.equal(list.status, 200);
-
-  const create = await agent.post('/api/coupons').set(csrf).send({});
-  assert.equal(create.status, 422);
-
-  const update = await agent.patch('/api/coupons/000000000000000000000000').set(csrf).send({});
-  assert.notEqual(update.status, 401);
-  assert.notEqual(update.status, 403);
-
-  const del = await agent.delete('/api/coupons/000000000000000000000000').set(csrf);
-  assert.notEqual(del.status, 401);
-  assert.notEqual(del.status, 403);
-});
-
-test('an authenticated admin passes the authorization gate on every route (reviews)', async () => {
-  const { agent, csrf } = await makeAdminAgent();
-  const res = await agent.patch('/api/reviews/000000000000000000000000/moderate').set(csrf).send({ status: 'approved' });
-  assert.equal(res.status, 404); // past the gate, controller reports "not found"
-});
-
-test('an authenticated admin passes the authorization gate on every route (contact)', async () => {
-  const { agent, csrf } = await makeAdminAgent();
-
-  const list = await agent.get('/api/contact').set(csrf);
-  assert.equal(list.status, 200);
-
-  const update = await agent.patch('/api/contact/000000000000000000000000').set(csrf).send({ status: 'read' });
-  assert.notEqual(update.status, 401);
-  assert.notEqual(update.status, 403);
+  for (const [method, path, body] of MIGRATED_MUTATION_ROUTES) {
+    const res = await agent[method](path).set(csrf).send(body);
+    assert.equal(res.status, 404, `${method.toUpperCase()} ${path} expected 404 (migrated route), got ${res.status}`);
+  }
 });

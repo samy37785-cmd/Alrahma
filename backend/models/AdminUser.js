@@ -12,6 +12,13 @@ export const ALL_PERMISSIONS = [
   'enrollments:read','enrollments:write',
   'audit:read',
   'system:maintenance','system:kill-switch',
+  // Added when blog/coupon/contact/certificate/referral/review admin
+  // mutations were migrated off the legacy protect+adminOnly stack onto
+  // this RBAC system — granted to admin/super-admin only, mirroring the
+  // legacy stack's binary "any admin" access (no finer-grained editor/
+  // viewer split existed for these resources before the migration).
+  'blog:write','coupons:write','contact:write',
+  'certificates:write','referrals:write','reviews:write',
 ];
 
 // Default permissions bundled with each role
@@ -23,6 +30,8 @@ export const ROLE_PERMISSIONS = {
     'payments:read','payments:write',
     'enrollments:read','enrollments:write',
     'audit:read',
+    'blog:write','coupons:write','contact:write',
+    'certificates:write','referrals:write','reviews:write',
   ],
   'editor': [
     'courses:read','courses:write',

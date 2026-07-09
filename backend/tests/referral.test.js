@@ -3,10 +3,23 @@ import assert from 'node:assert/strict';
 import mongoose from 'mongoose';
 import app from '../app.js';
 import User from '../models/User.js';
+import AdminUser from '../models/AdminUser.js';
 import Referral from '../models/Referral.js';
 import { trackReferral } from '../controllers/referralController.js';
+import { signAccessToken } from '../utils/adminAuthTokens.js';
 import { setupTestDb, clearTestDb, teardownTestDb } from './helpers/db.js';
 import { agentWithCsrf } from './helpers/csrf.js';
+
+async function adminUserAgent(role = 'admin') {
+  const { agent, csrf } = await agentWithCsrf(app);
+  const admin = await AdminUser.create({
+    name: `${role} admin`, email: `${role}-${Date.now()}${Math.random()}@example.com`,
+    password: 'Sup3r-Str0ng-Pass!', role,
+  });
+  const token = signAccessToken(admin._id, admin.role, true);
+  const cookieHeader = `admin_at=${token}; csrf_token=${csrf['x-csrf-token']}`;
+  return { agent, csrf, cookieHeader };
+}
 
 // Coverage for the T3 query-optimization change to trackReferral():
 // replaced an unindexed User.find({}) full-collection scan with a targeted
@@ -156,41 +169,52 @@ test('POST /api/referrals/track: an authenticated caller can only ever record a 
   assert.notEqual(String(res.body.referee), String(victim._id));
 });
 
-test('PATCH /api/referrals/:id/convert: unauthenticated request is rejected with 401', async () => {
+// convertReferral moved to /api/v1/admin/referrals/:id/convert (MFA + RBAC +
+// audit-logged) as part of the B1 legacy-route migration — see
+// routes/v1/admin/referralsRoutes.js. The legacy /api/referrals/:id/convert
+// route no longer exists (see the "no longer exists" test at the bottom of
+// this file).
+
+test('PATCH /api/v1/admin/referrals/:id/convert: unauthenticated request is rejected with 401', async () => {
   const referral = await Referral.create({
     referrer: new mongoose.Types.ObjectId(), referee: new mongoose.Types.ObjectId(), code: 'ABCD1234',
   });
   const { agent, csrf } = await agentWithCsrf(app);
-  const res = await agent.patch(`/api/referrals/${referral._id}/convert`).set(csrf).send({});
+  const res = await agent.patch(`/api/v1/admin/referrals/${referral._id}/convert`).set(csrf).send({});
   assert.equal(res.status, 401);
 });
 
-test('PATCH /api/referrals/:id/convert: an authenticated non-admin is rejected with 403 (previously: any logged-in user could convert)', async () => {
+test('PATCH /api/v1/admin/referrals/:id/convert: an AdminUser without referrals:write is rejected with 403 (previously: any logged-in regular User could convert)', async () => {
   const referral = await Referral.create({
     referrer: new mongoose.Types.ObjectId(), referee: new mongoose.Types.ObjectId(), code: 'ABCD5678',
   });
-  const { agent, csrf } = await agentWithCsrf(app);
-  const email = 'non-admin-convert@example.com';
-  await agent.post('/api/auth/register').set(csrf).send({ name: 'Student', email, password: PASSWORD });
+  // 'editor' has courses:read/write and enrollments:read only — no
+  // referrals:write (see ROLE_PERMISSIONS in models/AdminUser.js).
+  const { agent, csrf, cookieHeader } = await adminUserAgent('editor');
 
-  const res = await agent.patch(`/api/referrals/${referral._id}/convert`).set(csrf).send({});
+  const res = await agent.patch(`/api/v1/admin/referrals/${referral._id}/convert`).set({ ...csrf, Cookie: cookieHeader }).send({});
   assert.equal(res.status, 403);
 
   const unchanged = await Referral.findById(referral._id);
   assert.equal(unchanged.status, 'pending');
 });
 
-test('PATCH /api/referrals/:id/convert: an admin can convert a referral', async () => {
+test('PATCH /api/v1/admin/referrals/:id/convert: an admin can convert a referral', async () => {
   const referral = await Referral.create({
     referrer: new mongoose.Types.ObjectId(), referee: new mongoose.Types.ObjectId(), code: 'ABCD9999',
   });
-  const { agent, csrf } = await agentWithCsrf(app);
-  const email = 'admin-convert@example.com';
-  await User.create({ name: 'Admin', email, password: PASSWORD, role: 'admin' });
-  const login = await agent.post('/api/auth/login').set(csrf).send({ email, password: PASSWORD });
-  assert.equal(login.status, 200);
+  const { agent, csrf, cookieHeader } = await adminUserAgent();
 
-  const res = await agent.patch(`/api/referrals/${referral._id}/convert`).set(csrf).send({});
+  const res = await agent.patch(`/api/v1/admin/referrals/${referral._id}/convert`).set({ ...csrf, Cookie: cookieHeader }).send({});
   assert.equal(res.status, 200);
   assert.equal(res.body.status, 'converted');
+});
+
+test('legacy PATCH /api/referrals/:id/convert no longer exists (404)', async () => {
+  const referral = await Referral.create({
+    referrer: new mongoose.Types.ObjectId(), referee: new mongoose.Types.ObjectId(), code: 'LEGACY001',
+  });
+  const { agent, csrf } = await agentWithCsrf(app);
+  const res = await agent.patch(`/api/referrals/${referral._id}/convert`).set(csrf).send({});
+  assert.equal(res.status, 404);
 });

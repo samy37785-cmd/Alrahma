@@ -7,6 +7,7 @@ import { getCourses, getMyCertificates } from '../api/courseApi';
 import { COURSE_KEYS } from '../hooks/useCourses';
 import { useLang } from '../context/LangContext';
 import DashboardLayout from '../components/layout/DashboardLayout';
+import WishlistButton from '../components/ui/WishlistButton';
 import { escapeHtml as escHtml } from '../utils/escapeHtml';
 import { getNameInitials } from '../utils/nameInitials';
 
@@ -304,6 +305,7 @@ export default function Profile() {
                   <div key={c._id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: '1px solid var(--border-subtle)' }}>
                     <span style={{ fontSize: '1.2rem' }}>{c.icon || '📘'}</span>
                     <span style={{ flex: 1, fontWeight: 600, fontSize: '0.875rem', color: 'var(--text-primary)' }}>{c.title}</span>
+                    <WishlistButton courseId={c._id} size={16} />
                     <Link to={`/courses/${c._id}`} className="btn btn--green btn--sm" style={{ borderRadius: 7, fontSize: '0.78rem' }}>{pg.startLearning}</Link>
                   </div>
                 ))}

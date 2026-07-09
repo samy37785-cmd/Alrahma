@@ -53,12 +53,75 @@ describe('TutorReviewWidget', () => {
     await waitFor(() => expect(screen.getByText(/4\.7 \(3 reviews\)/)).toBeInTheDocument());
   });
 
-  it('error state: shows a fallback message when the rating fails to load, without crashing the submit flow', async () => {
+  it('error state: shows a fallback message and a retry button when the rating fails to load, without crashing the submit flow', async () => {
     getTeacherReviews.mockRejectedValue(new Error('Network error'));
     renderWidget();
 
     await waitFor(() => expect(screen.getByText(/couldn't load rating/i)).toBeInTheDocument());
     expect(screen.getByRole('button', { name: /rate your tutor/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /retry/i })).toBeInTheDocument();
+  });
+
+  it('error state: clicking retry re-fetches the rating', async () => {
+    getTeacherReviews.mockRejectedValueOnce(new Error('Network error'));
+    getTeacherReviews.mockResolvedValueOnce({ reviews: [], total: 0, avg: 0, count: 0 });
+    renderWidget();
+
+    await waitFor(() => expect(screen.getByText(/couldn't load rating/i)).toBeInTheDocument());
+    await userEvent.click(screen.getByRole('button', { name: /retry/i }));
+
+    await waitFor(() => expect(screen.getByText(/no reviews yet/i)).toBeInTheDocument());
+  });
+
+  it('recent reviews: renders a list of the teacher\'s reviews returned by the API', async () => {
+    getTeacherReviews.mockResolvedValue({
+      reviews: [
+        { _id: 'r1', rating: 5, body: 'Wonderful tutor' },
+        { _id: 'r2', rating: 4, body: 'Very patient' },
+      ],
+      total: 2, avg: 4.5, count: 2,
+    });
+    renderWidget();
+
+    await waitFor(() => expect(screen.getByText('Wonderful tutor')).toBeInTheDocument());
+    expect(screen.getByText('Very patient')).toBeInTheDocument();
+  });
+
+  it('recent reviews: "Show more reviews" is shown when total exceeds the loaded page and requests a bigger page', async () => {
+    getTeacherReviews.mockResolvedValue({
+      reviews: [{ _id: 'r1', rating: 5, body: 'Wonderful tutor' }],
+      total: 5, avg: 5, count: 5,
+    });
+    renderWidget();
+
+    const moreBtn = await screen.findByRole('button', { name: /show more reviews/i });
+    await userEvent.click(moreBtn);
+
+    await waitFor(() => expect(getTeacherReviews.mock.calls.at(-1)[1]).toMatchObject({ limit: 6 }));
+  });
+
+  it('recent reviews: sort dropdown is shown once there is more than one review and requests the chosen sort', async () => {
+    getTeacherReviews.mockResolvedValue({
+      reviews: [
+        { _id: 'r1', rating: 5, body: 'a' },
+        { _id: 'r2', rating: 3, body: 'b' },
+      ],
+      total: 2, avg: 4, count: 2,
+    });
+    renderWidget();
+
+    const select = await screen.findByLabelText(/sort reviews/i);
+    await userEvent.selectOptions(select, 'rating_desc');
+
+    await waitFor(() => expect(getTeacherReviews.mock.calls.at(-1)[1]).toMatchObject({ sort: 'rating_desc' }));
+  });
+
+  it('recent reviews: sort dropdown is not shown when there is only one (or zero) reviews', async () => {
+    getTeacherReviews.mockResolvedValue({ reviews: [{ _id: 'r1', rating: 5, body: 'a' }], total: 1, avg: 5, count: 1 });
+    renderWidget();
+
+    await waitFor(() => expect(screen.getByText('a')).toBeInTheDocument());
+    expect(screen.queryByLabelText(/sort reviews/i)).not.toBeInTheDocument();
   });
 
   it('submit review: opens the form, requires both a rating and body, and calls createReview with the real teacherId', async () => {
@@ -108,6 +171,17 @@ describe('TutorReviewWidget', () => {
     await userEvent.click(screen.getByRole('button', { name: /submit review/i }));
 
     await waitFor(() => expect(screen.getByText(/already reviewed your tutor/i)).toBeInTheDocument());
+  });
+
+  it('submit review: shows a live character counter for the review body', async () => {
+    getTeacherReviews.mockResolvedValue({ reviews: [], total: 0, avg: 0, count: 0 });
+    renderWidget();
+
+    await userEvent.click(await screen.findByRole('button', { name: /rate your tutor/i }));
+    expect(screen.getByText('0/2000')).toBeInTheDocument();
+
+    await userEvent.type(screen.getByPlaceholderText(/tell us about your experience/i), 'Great');
+    expect(screen.getByText('5/2000')).toBeInTheDocument();
   });
 
   it('no teacherId (no assigned tutor yet): the query is disabled and never calls the API', () => {

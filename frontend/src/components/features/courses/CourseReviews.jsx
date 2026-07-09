@@ -38,6 +38,7 @@ export default function CourseReviews({ courseId }) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [limit, setLimit] = useState(PAGE_SIZE);
+  const [sort, setSort] = useState('recent');
   const [showForm, setShowForm] = useState(false);
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
@@ -45,8 +46,8 @@ export default function CourseReviews({ courseId }) {
   const [bodyText, setBodyText] = useState('');
 
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ['reviews', 'course', courseId, limit],
-    queryFn: () => getCourseReviews(courseId, { limit }),
+    queryKey: ['reviews', 'course', courseId, sort, limit],
+    queryFn: () => getCourseReviews(courseId, { sort, limit }),
     enabled: !!courseId,
     staleTime: 60000,
   });
@@ -69,7 +70,21 @@ export default function CourseReviews({ courseId }) {
 
   return (
     <section style={{ marginTop: '2.5rem' }}>
-      <h2 style={{ margin: '0 0 16px', color: '#0b6e4f' }}>Reviews</h2>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
+        <h2 style={{ margin: 0, color: '#0b6e4f' }}>Reviews</h2>
+        {!isLoading && !isError && count > 1 && (
+          <select
+            aria-label="Sort reviews"
+            value={sort}
+            onChange={(e) => { setSort(e.target.value); setLimit(PAGE_SIZE); }}
+            style={{ fontSize: '.8rem', padding: '4px 8px', borderRadius: 8, border: '1px solid #e0e8e4' }}
+          >
+            <option value="recent">Newest</option>
+            <option value="rating_desc">Highest rated</option>
+            <option value="rating_asc">Lowest rated</option>
+          </select>
+        )}
+      </div>
 
       {isLoading ? (
         <p style={{ color: '#888' }}>Loading reviews…</p>
@@ -151,9 +166,12 @@ export default function CourseReviews({ courseId }) {
                   rows={3}
                   style={{
                     width: '100%', padding: '8px 10px', borderRadius: 8, border: '1px solid #e0e8e4',
-                    marginBottom: 10, boxSizing: 'border-box', resize: 'vertical', fontFamily: 'inherit',
+                    boxSizing: 'border-box', resize: 'vertical', fontFamily: 'inherit',
                   }}
                 />
+                <div style={{ fontSize: '.72rem', color: '#aaa', textAlign: 'right', marginBottom: 10 }}>
+                  {bodyText.length}/2000
+                </div>
                 {submitReview.isError && !alreadyReviewed && (
                   <p style={{ color: '#c0392b', fontSize: '.82rem', marginBottom: 8 }}>
                     Couldn&apos;t submit your review. Please try again.

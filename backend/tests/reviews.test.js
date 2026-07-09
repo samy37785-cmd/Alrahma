@@ -210,6 +210,44 @@ test('getTeacherReviews: rejects a malformed teacherId with 400, not a 500', asy
   assert.equal(res.status, 400);
 });
 
+test('getTeacherReviews: ?sort=rating_desc orders highest-rated first', async () => {
+  const teacher = await User.create({ name: 'Teacher', email: 'gt5@example.com', password: PASSWORD, role: 'teacher' });
+  const students = await Promise.all(
+    [0, 1, 2].map((i) => User.create({ name: `S${i}`, email: `gt5s${i}@example.com`, password: PASSWORD })),
+  );
+  await Review.create({ student: students[0]._id, teacher: teacher._id, rating: 3, body: 'mid', status: 'approved' });
+  await Review.create({ student: students[1]._id, teacher: teacher._id, rating: 5, body: 'best', status: 'approved' });
+  await Review.create({ student: students[2]._id, teacher: teacher._id, rating: 1, body: 'worst', status: 'approved' });
+
+  const { agent } = await agentWithCsrf(app);
+  const res = await agent.get(`/api/reviews/teacher/${teacher._id}?sort=rating_desc`);
+  assert.equal(res.status, 200);
+  assert.deepEqual(res.body.reviews.map((r) => r.rating), [5, 3, 1]);
+});
+
+test('getTeacherReviews: ?sort=rating_asc orders lowest-rated first', async () => {
+  const teacher = await User.create({ name: 'Teacher', email: 'gt6@example.com', password: PASSWORD, role: 'teacher' });
+  const students = await Promise.all(
+    [0, 1, 2].map((i) => User.create({ name: `S${i}`, email: `gt6s${i}@example.com`, password: PASSWORD })),
+  );
+  await Review.create({ student: students[0]._id, teacher: teacher._id, rating: 3, body: 'mid', status: 'approved' });
+  await Review.create({ student: students[1]._id, teacher: teacher._id, rating: 5, body: 'best', status: 'approved' });
+  await Review.create({ student: students[2]._id, teacher: teacher._id, rating: 1, body: 'worst', status: 'approved' });
+
+  const { agent } = await agentWithCsrf(app);
+  const res = await agent.get(`/api/reviews/teacher/${teacher._id}?sort=rating_asc`);
+  assert.equal(res.status, 200);
+  assert.deepEqual(res.body.reviews.map((r) => r.rating), [1, 3, 5]);
+});
+
+test('getTeacherReviews: an unrecognized sort value falls back to newest-first rather than erroring', async () => {
+  const teacher = await User.create({ name: 'Teacher', email: 'gt7@example.com', password: PASSWORD, role: 'teacher' });
+  const { agent } = await agentWithCsrf(app);
+  const res = await agent.get(`/api/reviews/teacher/${teacher._id}?sort=not-a-real-sort`);
+  assert.equal(res.status, 200);
+  assert.deepEqual(res.body.reviews, []);
+});
+
 // ---------------------------------------------------------------------------
 // getCourseReviews
 // ---------------------------------------------------------------------------
@@ -250,6 +288,21 @@ test('getCourseReviews: avg/count/distribution reflect only approved reviews for
   assert.equal(res.body.count, 3, 'pending review must not count toward the total');
   assert.equal(res.body.avg, (5 + 5 + 3) / 3);
   assert.deepEqual(res.body.distribution, { 1: 0, 2: 0, 3: 1, 4: 0, 5: 2 });
+});
+
+test('getCourseReviews: ?sort=rating_desc orders highest-rated first', async () => {
+  const course = await Course.create({ title: 'Sorted Course', description: 'x' });
+  const students = await Promise.all(
+    [0, 1, 2].map((i) => User.create({ name: `S${i}`, email: `gc3s${i}@example.com`, password: PASSWORD })),
+  );
+  await Review.create({ student: students[0]._id, course: course._id, rating: 2, body: 'mid', status: 'approved' });
+  await Review.create({ student: students[1]._id, course: course._id, rating: 5, body: 'best', status: 'approved' });
+  await Review.create({ student: students[2]._id, course: course._id, rating: 1, body: 'worst', status: 'approved' });
+
+  const { agent } = await agentWithCsrf(app);
+  const res = await agent.get(`/api/reviews/course/${course._id}?sort=rating_desc`);
+  assert.equal(res.status, 200);
+  assert.deepEqual(res.body.reviews.map((r) => r.rating), [5, 2, 1]);
 });
 
 test('getCourseReviews: a course with no approved reviews yet returns avg 0, count 0, and a zeroed distribution', async () => {

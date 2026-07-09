@@ -22,6 +22,7 @@ import ShareAchievement from '../components/ui/ShareAchievement';
 import CertificateCard from '../components/ui/CertificateCard';
 import ReferralCard from '../components/ui/ReferralCard';
 import HifzLeaderboard from '../components/ui/HifzLeaderboard';
+import WishlistButton from '../components/ui/WishlistButton';
 import '../styles/trust-engage.css';
 
 /* ── helpers ──────────────────────────────────────────────────── */
@@ -149,6 +150,7 @@ function CourseCard({ course, progress }) {
             {progress ? `${progress.done} / ${progress.total} lessons · ${pct}%` : 'Not started'}
           </div>
         </div>
+        <WishlistButton courseId={course._id} />
         <ProgressRing value={pct} size={44} stroke={5} />
       </div>
     </Link>

@@ -631,6 +631,24 @@
       "networkError": "Network error — please check your connection and try again.",
       "errorFallback": "Login failed. Please try again."
     },
+    "adminLogin": {
+      "title": "Admin Sign In",
+      "sub": "Hardened access — a second factor is required to manage users and payments.",
+      "email": "Email",
+      "password": "Password",
+      "continueBtn": "Continue",
+      "signingIn": "Signing in…",
+      "mfaSetupIntro": "Scan this QR code with an authenticator app (Google Authenticator, Authy, etc.), then enter the 6-digit code to finish setup.",
+      "manualEntryKey": "Manual entry key",
+      "totpLabel": "6-digit code",
+      "activateBtn": "Activate & Sign In",
+      "verifying": "Verifying…",
+      "mfaVerifyIntro": "Enter the 6-digit code from your authenticator app.",
+      "signInBtn": "Sign In",
+      "backToConsole": "Back to console",
+      "signInFailedFallback": "Sign-in failed",
+      "invalidCodeFallback": "Invalid code"
+    },
     "register": {
       "title": "Create your account",
       "sub": "Join Al-Rahma Academy",

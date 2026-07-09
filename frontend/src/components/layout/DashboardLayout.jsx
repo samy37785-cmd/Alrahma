@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { getUnreadCount } from '../../api/messageApi';
+import { getUnreadNotifs } from '../../api/notificationApi';
 import {
   LayoutDashboard, MessageSquare, Users, BookOpen, CreditCard, Target,
   UserCog, Book, User, ExternalLink, Menu, Search, Bell, Sun, Moon,
@@ -170,6 +171,17 @@ export default function DashboardLayout({ children }) {
     staleTime: 15000,
   });
   const unreadCount = unreadData?.count ?? 0;
+
+  // Separate from the messages unread count above — this drives the bell's
+  // own badge, not the "Messages" nav item's.
+  const { data: notifUnreadData } = useQuery({
+    queryKey: ['notifications', 'unread'],
+    queryFn: getUnreadNotifs,
+    enabled: Boolean(user),
+    refetchInterval: 30000,
+    staleTime: 15000,
+  });
+  const notifUnreadCount = notifUnreadData?.count ?? 0;
 
   // Memoized so nav items only re-allocate when role or badge changes
   const items = useMemo(
@@ -430,12 +442,12 @@ export default function DashboardLayout({ children }) {
               <button
                 className="ds-icon-btn"
                 onClick={() => setNotifOpen((o) => !o)}
-                aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
+                aria-label={`Notifications${notifUnreadCount > 0 ? ` (${notifUnreadCount} unread)` : ''}`}
                 aria-expanded={notifOpen}
                 aria-haspopup="dialog"
               >
                 <Bell size={17} aria-hidden="true" />
-                {unreadCount > 0 && (
+                {notifUnreadCount > 0 && (
                   <span className="ds-icon-btn__dot" aria-hidden="true" />
                 )}
               </button>

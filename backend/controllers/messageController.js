@@ -1,6 +1,12 @@
 ﻿import Message from '../models/Message.js';
 import User from '../models/User.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
+import { createNotification } from './notificationController.js';
+
+// Notification.body has a 500-char cap; Message.body allows up to 4000.
+function truncate(text, max = 200) {
+  return text.length > max ? `${text.slice(0, max - 1)}…` : text;
+}
 
 // Returns true if `me` is allowed to message `otherId`. The only permitted
 // channel is between a student and their assigned teacher (either direction).
@@ -91,6 +97,15 @@ export const sendMessage = asyncHandler(async (req, res) => {
   }
 
   const message = await Message.create({ from: me._id, to, body: body.trim() });
+
+  await createNotification({
+    recipient: to,
+    type:      'message_received',
+    title:     `New message from ${me.name}`,
+    body:      truncate(message.body),
+    link:      '/messages',
+  });
+
   res.status(201).json(message);
 });
 

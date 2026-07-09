@@ -1,9 +1,21 @@
+import mongoose from 'mongoose';
 import User from '../models/User.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { auditFromReq } from '../services/auditService.js';
 import { adminSetSubscription } from '../services/subscriptionService.js';
 
 const normEmail = (v) => String(v ?? '').toLowerCase().trim();
+
+const ALLOWED_SUBSCRIPTION_ACTIONS = ['activate', 'renew', 'deactivate'];
+
+// A malformed :id (or, for assignTeacher, a malformed teacherId body value)
+// otherwise reaches User.findById() as-is and throws a Mongoose CastError,
+// which errorHandler has no specific branch for — it falls through to a
+// generic 500 instead of the clean 400 the generic CRUD routes
+// (crudController.js) already return for the same mistake.
+function isValidObjectId(id) {
+  return mongoose.Types.ObjectId.isValid(id);
+}
 
 // @desc   List all teachers — for assigning students.
 // @route  GET /api/v1/admin/users/teachers
@@ -60,6 +72,10 @@ export const updateUserRole = asyncHandler(async (req, res) => {
     res.status(403);
     throw new Error('Only a super-admin may grant the admin role');
   }
+  if (!isValidObjectId(req.params.id)) {
+    res.status(400);
+    throw new Error('Invalid ID format');
+  }
   const user = await User.findById(req.params.id);
   if (!user) { res.status(404); throw new Error('User not found'); }
   const previousRole = user.role;
@@ -86,6 +102,10 @@ export const updateUserRole = asyncHandler(async (req, res) => {
 // @access Admin (users:write)
 export const assignTeacher = asyncHandler(async (req, res) => {
   const { teacherId } = req.body;
+  if (!isValidObjectId(req.params.id) || (teacherId && !isValidObjectId(teacherId))) {
+    res.status(400);
+    throw new Error('Invalid ID format');
+  }
   const student = await User.findById(req.params.id);
   if (!student) { res.status(404); throw new Error('Student not found'); }
   const previousTeacher = student.teacher;
@@ -114,6 +134,10 @@ export const assignTeacher = asyncHandler(async (req, res) => {
 // @body   { familyName }
 // @access Admin (users:write)
 export const setFamilyName = asyncHandler(async (req, res) => {
+  if (!isValidObjectId(req.params.id)) {
+    res.status(400);
+    throw new Error('Invalid ID format');
+  }
   const user = await User.findById(req.params.id);
   if (!user) { res.status(404); throw new Error('User not found'); }
   const previousFamilyName = user.familyName;
@@ -131,6 +155,14 @@ export const setFamilyName = asyncHandler(async (req, res) => {
 // @access Admin (users:write)
 export const updateUserSubscription = asyncHandler(async (req, res) => {
   const { action, plan } = req.body;
+  if (!ALLOWED_SUBSCRIPTION_ACTIONS.includes(action)) {
+    res.status(400);
+    throw new Error(`action must be one of: ${ALLOWED_SUBSCRIPTION_ACTIONS.join(', ')}`);
+  }
+  if (!isValidObjectId(req.params.id)) {
+    res.status(400);
+    throw new Error('Invalid ID format');
+  }
   const user = await User.findById(req.params.id);
   if (!user) { res.status(404); throw new Error('User not found'); }
   const previousSubscription = user.subscription;

@@ -235,19 +235,30 @@ test('updateUserSubscription: returns 404 for a non-existent user, without touch
   assert.equal(res.status, 404);
 });
 
-test('updateUserSubscription: an unrecognized action falls back to activate (existing business rule, unchanged) and still preserves Stripe metadata', async () => {
+test('updateUserSubscription: an unrecognized action is rejected with 400 and changes nothing (Production Polish Sprint: action is now enum-validated)', async () => {
   const { agent, csrf, cookieHeader } = await adminAgent();
   const student = await makeUserWithStripeSubscription();
+  const before = await User.findById(student._id).lean();
 
   const res = await agent.patch(`/api/v1/admin/users/${student._id}/subscription`).set({ ...csrf, Cookie: cookieHeader })
     .send({ action: 'not-a-real-action', plan: 'Pro' });
 
-  assert.equal(res.status, 200, 'an unrecognized action must fall through to the same activate branch as before (no behavior change)');
-  assert.equal(res.body.subscription.status, 'active');
+  assert.equal(res.status, 400, 'an unrecognized action must now be rejected rather than silently treated as activate');
 
   const updated = await User.findById(student._id).lean();
+  assert.equal(updated.subscription.status, before.subscription.status, 'subscription status must be unchanged');
   assert.equal(updated.subscription.stripeCustomerId, 'cus_TEST123');
   assert.equal(updated.subscription.stripeSubscriptionId, 'sub_TEST456');
+});
+
+test('updateUserSubscription: rejects a missing action with 400', async () => {
+  const { agent, csrf, cookieHeader } = await adminAgent();
+  const student = await makeUserWithStripeSubscription();
+
+  const res = await agent.patch(`/api/v1/admin/users/${student._id}/subscription`).set({ ...csrf, Cookie: cookieHeader })
+    .send({ plan: 'Pro' });
+
+  assert.equal(res.status, 400);
 });
 
 test('updateUserSubscription: is forbidden for a viewer (no users:write) and rejects unauthenticated requests', async () => {

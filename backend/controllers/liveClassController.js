@@ -2,6 +2,7 @@
 import User from '../models/User.js';
 import { sendMail } from '../config/mailer.js';
 import { liveClassScheduledEmail } from '../config/emailTemplates.js';
+import { createNotification } from './notificationController.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 
 // Populates teacher/student names for the API response.
@@ -86,6 +87,14 @@ export const createClass = asyncHandler(async (req, res) => {
     }),
   }).catch(() => {});
 
+  await createNotification({
+    recipient: studentDoc._id,
+    type:      'class_scheduled',
+    title:     'New class scheduled',
+    body:      `${req.user.name} scheduled "${title}" for ${when.toLocaleString()}.`,
+    link:      '/dashboard',
+  });
+
   const populated = await liveClass.populate(POPULATE);
   res.status(201).json(populated);
 });
@@ -109,6 +118,7 @@ async function ownClassOr404(req, res) {
 export const updateClass = asyncHandler(async (req, res) => {
   const liveClass = await ownClassOr404(req, res);
   const { title, startsAt, durationMin, meetingUrl, notes, status } = req.body;
+  const wasCancelled = liveClass.status === 'cancelled';
 
   if (title != null)       liveClass.title = title;
   if (durationMin != null) liveClass.durationMin = durationMin;
@@ -122,6 +132,19 @@ export const updateClass = asyncHandler(async (req, res) => {
   }
 
   await liveClass.save();
+
+  // Only the actual pending->cancelled transition should notify — re-saving
+  // an already-cancelled class (e.g. an unrelated notes edit) must not.
+  if (liveClass.status === 'cancelled' && !wasCancelled) {
+    await createNotification({
+      recipient: liveClass.student,
+      type:      'class_cancelled',
+      title:     'Class cancelled',
+      body:      `Your class "${liveClass.title}" has been cancelled.`,
+      link:      '/dashboard',
+    });
+  }
+
   const populated = await liveClass.populate(POPULATE);
   res.json(populated);
 });

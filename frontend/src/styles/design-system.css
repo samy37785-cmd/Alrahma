@@ -1,0 +1,561 @@
+/* ══════════════════════════════════════════════════════════════════════
+   AL-RAHMA ACADEMY — DESIGN SYSTEM: INTERACTIVE PRIMITIVES
+   ══════════════════════════════════════════════════════════════════════
+   Presentation-layer only. No component JSX is changed by this file —
+   these classes are new and unused until a future sprint wires them into
+   pages. See CLAUDE.md / the sprint report for the audit that produced
+   this scope: card, badge, avatar, form fields, skeleton, empty-state,
+   data-table and the sidebar already exist (components.css,
+   dashboard-shell.css) and are deliberately NOT duplicated here.
+
+   Confirmed gaps this file fills — no generic, reusable version existed
+   anywhere in the codebase before this file (only page/feature-specific,
+   mutually inconsistent, hand-rolled versions did — e.g. .qtm/.exit-popup/
+   .vcard-overlay each reimplement their own modal panel; AdminDashboard.jsx
+   hand-rolls its tab bar with inline styles):
+     Modal / Dialog · Toast · Tooltip · Dropdown/Menu · Tabs · Accordion ·
+     standalone Pagination · standalone Progress bar.
+
+   Every value below references an existing semantic token from tokens.css
+   — no new hardcoded colors, spacing, radii, or durations are introduced.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ────────────────────────────────────────────────────────────────────
+   MODAL / DIALOG
+   Unified overlay + panel system. New class names (ds-modal-*) so this
+   does not collide with or alter any existing modal implementation —
+   migrating .qtm/.exit-popup/.vcard-overlay/etc. onto this is future work.
+   ──────────────────────────────────────────────────────────────────── */
+.ds-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+  background: var(--bg-overlay);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+  animation: fadeIn var(--duration-slow) var(--ease-out) both;
+}
+
+.ds-modal {
+  background: var(--bg-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xl);
+  width: 100%;
+  max-width: var(--ds-modal-max-width, 480px);
+  max-height: calc(100vh - var(--space-8));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: scale-in var(--duration-slow) var(--ease-spring) both;
+}
+.ds-modal--sm { --ds-modal-max-width: 380px; }
+.ds-modal--md { --ds-modal-max-width: 480px; }
+.ds-modal--lg { --ds-modal-max-width: 640px; }
+.ds-modal--xl { --ds-modal-max-width: 800px; }
+
+.ds-modal__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-6) var(--space-6) var(--space-4);
+  border-bottom: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+.ds-modal__title {
+  margin: 0;
+  font-size: var(--text-xl);
+  font-weight: var(--weight-bold);
+  color: var(--text-primary);
+  line-height: var(--leading-snug);
+}
+.ds-modal__subtitle {
+  margin: var(--space-1) 0 0;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+.ds-modal__close {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: none;
+  border-radius: var(--radius-full);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: var(--transition-colors);
+}
+.ds-modal__close:hover { background: var(--bg-surface-hover); color: var(--text-primary); }
+
+.ds-modal__body {
+  padding: var(--space-6);
+  overflow-y: auto;
+  color: var(--text-primary);
+  font-size: var(--text-base);
+  line-height: var(--leading-relaxed);
+}
+.ds-modal__footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-6) var(--space-6);
+  flex-shrink: 0;
+}
+.ds-modal__footer--split { justify-content: space-between; }
+
+/* ────────────────────────────────────────────────────────────────────
+   DRAWER (generic side panel — distinct from .sb--drawer, which is the
+   sidebar's own mobile nav; this is a general-purpose slide-in panel,
+   e.g. filters, details, a compose pane)
+   ──────────────────────────────────────────────────────────────────── */
+.ds-drawer-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+  background: var(--bg-overlay);
+  animation: fadeIn var(--duration-slow) var(--ease-out) both;
+}
+.ds-drawer {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  z-index: var(--z-modal);
+  width: min(420px, 100vw);
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-xl);
+  display: flex;
+  flex-direction: column;
+  animation: ds-drawer-in var(--duration-slower) var(--ease-out) both;
+}
+.ds-drawer--left { right: auto; left: 0; animation-name: ds-drawer-in-left; }
+@keyframes ds-drawer-in { from { transform: translateX(100%); } to { transform: translateX(0); } }
+@keyframes ds-drawer-in-left { from { transform: translateX(-100%); } to { transform: translateX(0); } }
+
+.ds-drawer__header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: var(--space-5) var(--space-6);
+  border-bottom: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+.ds-drawer__title { margin: 0; font-size: var(--text-lg); font-weight: var(--weight-bold); color: var(--text-primary); }
+.ds-drawer__body { padding: var(--space-6); overflow-y: auto; flex: 1; }
+.ds-drawer__footer {
+  display: flex; align-items: center; justify-content: flex-end; gap: var(--space-3);
+  padding: var(--space-4) var(--space-6);
+  border-top: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+
+/* ────────────────────────────────────────────────────────────────────
+   TOAST / NOTIFICATION STACK
+   ──────────────────────────────────────────────────────────────────── */
+.ds-toast-stack {
+  position: fixed;
+  z-index: var(--z-toast);
+  bottom: var(--space-6);
+  right: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-width: min(380px, calc(100vw - var(--space-8)));
+  pointer-events: none;
+}
+@media (max-width: 640px) {
+  .ds-toast-stack { left: var(--space-4); right: var(--space-4); bottom: var(--space-4); max-width: none; }
+}
+
+.ds-toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  animation: ds-toast-in var(--duration-slow) var(--ease-spring) both;
+}
+.ds-toast--exiting { animation: ds-toast-out var(--duration-slow) var(--ease-in) both; }
+@keyframes ds-toast-in { from { transform: translateY(12px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes ds-toast-out { from { opacity: 1; } to { transform: translateX(24px); opacity: 0; } }
+
+.ds-toast--success { border-left: 3px solid var(--color-success); }
+.ds-toast--warning { border-left: 3px solid var(--color-warning); }
+.ds-toast--danger  { border-left: 3px solid var(--color-danger); }
+.ds-toast--info    { border-left: 3px solid var(--color-info); }
+
+.ds-toast__icon {
+  flex-shrink: 0;
+  width: 20px; height: 20px;
+  display: flex; align-items: center; justify-content: center;
+  margin-top: 1px;
+}
+.ds-toast--success .ds-toast__icon { color: var(--color-success); }
+.ds-toast--warning .ds-toast__icon { color: var(--color-warning); }
+.ds-toast--danger  .ds-toast__icon { color: var(--color-danger); }
+.ds-toast--info    .ds-toast__icon { color: var(--color-info); }
+
+.ds-toast__content { flex: 1; min-width: 0; }
+.ds-toast__title { margin: 0; font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--text-primary); }
+.ds-toast__desc  { margin: 2px 0 0; font-size: var(--text-sm); color: var(--text-secondary); line-height: var(--leading-normal); }
+.ds-toast__close {
+  flex-shrink: 0;
+  width: 22px; height: 22px;
+  display: flex; align-items: center; justify-content: center;
+  border: none; background: none; border-radius: var(--radius-full);
+  color: var(--text-secondary); cursor: pointer;
+  transition: var(--transition-colors);
+}
+.ds-toast__close:hover { background: var(--bg-surface-hover); color: var(--text-primary); }
+
+/* ────────────────────────────────────────────────────────────────────
+   TOOLTIP
+   Usage: wrap the trigger in `.ds-tooltip-wrap`, tooltip bubble is
+   `.ds-tooltip` (positioned via `.ds-tooltip--top|bottom|left|right`),
+   shown on :hover/:focus-within of the wrapper.
+   ──────────────────────────────────────────────────────────────────── */
+.ds-tooltip-wrap { position: relative; display: inline-flex; }
+
+.ds-tooltip {
+  position: absolute;
+  z-index: var(--z-tooltip);
+  padding: var(--space-2) var(--space-3);
+  background: var(--bg-tooltip);
+  color: var(--text-tooltip);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-snug);
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+  box-shadow: var(--shadow-md);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(2px);
+  transition: opacity var(--duration-fast) var(--ease-out),
+              transform var(--duration-fast) var(--ease-out),
+              visibility var(--duration-fast);
+  pointer-events: none;
+}
+.ds-tooltip-wrap:hover .ds-tooltip,
+.ds-tooltip-wrap:focus-within .ds-tooltip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.ds-tooltip--top    { bottom: calc(100% + var(--space-2)); left: 50%; transform: translateX(-50%) translateY(2px); }
+.ds-tooltip-wrap:hover .ds-tooltip--top,
+.ds-tooltip-wrap:focus-within .ds-tooltip--top { transform: translateX(-50%) translateY(0); }
+
+.ds-tooltip--bottom { top: calc(100% + var(--space-2)); left: 50%; transform: translateX(-50%) translateY(-2px); }
+.ds-tooltip-wrap:hover .ds-tooltip--bottom,
+.ds-tooltip-wrap:focus-within .ds-tooltip--bottom { transform: translateX(-50%) translateY(0); }
+
+.ds-tooltip--left  { right: calc(100% + var(--space-2)); top: 50%; transform: translateY(-50%) translateX(2px); }
+.ds-tooltip-wrap:hover .ds-tooltip--left,
+.ds-tooltip-wrap:focus-within .ds-tooltip--left { transform: translateY(-50%) translateX(0); }
+
+.ds-tooltip--right { left: calc(100% + var(--space-2)); top: 50%; transform: translateY(-50%) translateX(-2px); }
+.ds-tooltip-wrap:hover .ds-tooltip--right,
+.ds-tooltip-wrap:focus-within .ds-tooltip--right { transform: translateY(-50%) translateX(0); }
+
+/* Disable on touch devices — hover has no reliable meaning, and a lingering
+   tooltip can obscure content with no way to dismiss it. */
+@media (hover: none) {
+  .ds-tooltip { display: none; }
+}
+
+/* ────────────────────────────────────────────────────────────────────
+   DROPDOWN / MENU (generic popover menu — user menu, action menus, …)
+   ──────────────────────────────────────────────────────────────────── */
+.ds-menu {
+  position: absolute;
+  z-index: var(--z-dropdown);
+  top: calc(100% + var(--space-2));
+  right: 0;
+  min-width: 200px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  padding: var(--space-2);
+  animation: ds-menu-in var(--duration-base) var(--ease-out) both;
+}
+.ds-menu--left { right: auto; left: 0; }
+@keyframes ds-menu-in { from { opacity: 0; transform: translateY(-4px) scale(0.98); } to { opacity: 1; transform: none; } }
+
+.ds-menu__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: none;
+  background: none;
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  transition: var(--transition-colors);
+}
+.ds-menu__item:hover { background: var(--bg-surface-hover); }
+.ds-menu__item--danger { color: var(--color-danger-text); }
+.ds-menu__item--danger:hover { background: var(--color-danger-surface); }
+.ds-menu__item:disabled { color: var(--text-disabled); cursor: not-allowed; }
+.ds-menu__item:disabled:hover { background: none; }
+
+.ds-menu__icon { flex-shrink: 0; width: 16px; height: 16px; color: var(--text-secondary); }
+.ds-menu__divider { height: 1px; background: var(--border-subtle); margin: var(--space-2) calc(var(--space-2) * -1); }
+.ds-menu__label {
+  padding: var(--space-2) var(--space-3) var(--space-1);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+  color: var(--text-secondary);
+}
+
+/* ────────────────────────────────────────────────────────────────────
+   TABS (generic, reusable — AdminDashboard.jsx currently hand-rolls its
+   own tab bar with inline styles; migrating it onto this is future work)
+   ──────────────────────────────────────────────────────────────────── */
+.ds-tabs {
+  display: flex;
+  gap: var(--space-1);
+  padding: 4px;
+  background: var(--bg-page);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  overflow-x: auto;
+}
+.ds-tabs--underline {
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--border-default);
+  border-radius: 0;
+  padding: 0;
+  gap: var(--space-5);
+}
+
+.ds-tab {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-shrink: 0;
+  padding: var(--space-2) var(--space-4);
+  border: none;
+  background: none;
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: var(--transition-base);
+}
+.ds-tab:hover { color: var(--text-primary); }
+.ds-tab[aria-selected="true"] {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-xs);
+}
+
+.ds-tabs--underline .ds-tab {
+  border-radius: 0;
+  padding: var(--space-3) 0;
+  position: relative;
+}
+.ds-tabs--underline .ds-tab[aria-selected="true"] {
+  background: none;
+  box-shadow: none;
+  color: var(--color-primary);
+}
+.ds-tabs--underline .ds-tab[aria-selected="true"]::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; bottom: -1px;
+  height: 2px;
+  background: var(--color-primary);
+  border-radius: var(--radius-full);
+}
+
+.ds-tab__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: var(--radius-full);
+  background: var(--color-danger);
+  color: #fff;
+  font-size: 10px;
+  font-weight: var(--weight-bold);
+}
+
+/* ────────────────────────────────────────────────────────────────────
+   ACCORDION
+   ──────────────────────────────────────────────────────────────────── */
+.ds-accordion { display: flex; flex-direction: column; gap: var(--space-2); }
+
+.ds-accordion__item {
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.ds-accordion__trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-4) var(--space-5);
+  border: none;
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  text-align: left;
+  cursor: pointer;
+  transition: var(--transition-colors);
+}
+.ds-accordion__trigger:hover { background: var(--bg-surface-hover); }
+
+.ds-accordion__chevron {
+  flex-shrink: 0;
+  width: 16px; height: 16px;
+  color: var(--text-secondary);
+  transition: transform var(--duration-base) var(--ease-default);
+}
+.ds-accordion__trigger[aria-expanded="true"] .ds-accordion__chevron { transform: rotate(180deg); }
+
+/* Grid-rows trick animates height without a fixed max-height guess. */
+.ds-accordion__panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows var(--duration-slow) var(--ease-default);
+}
+.ds-accordion__item[data-open="true"] .ds-accordion__panel { grid-template-rows: 1fr; }
+.ds-accordion__panel-inner {
+  overflow: hidden;
+  padding: 0 var(--space-5);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+}
+.ds-accordion__item[data-open="true"] .ds-accordion__panel-inner { padding: 0 var(--space-5) var(--space-4); }
+
+/* ────────────────────────────────────────────────────────────────────
+   PAGINATION (standalone — distinct from the data-table-specific
+   .dt__pagination, for any plain paginated list)
+   ──────────────────────────────────────────────────────────────────── */
+.ds-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  flex-wrap: wrap;
+}
+.ds-pagination__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--border-default);
+  background: var(--bg-surface);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+  transition: var(--transition-base);
+}
+.ds-pagination__btn:hover:not(:disabled) { background: var(--bg-surface-hover); color: var(--text-primary); }
+.ds-pagination__btn:disabled { opacity: var(--opacity-disabled); cursor: not-allowed; }
+.ds-pagination__btn[aria-current="page"] {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-primary-text);
+}
+.ds-pagination__ellipsis {
+  display: flex; align-items: center; justify-content: center;
+  min-width: 36px; height: 36px;
+  color: var(--text-disabled);
+  font-size: var(--text-sm);
+}
+
+/* ────────────────────────────────────────────────────────────────────
+   PROGRESS BAR (standalone linear + circular — distinct from the
+   dashboard-specific .ds-bar in dashboard-shell.css)
+   ──────────────────────────────────────────────────────────────────── */
+.ds-progress {
+  width: 100%;
+  height: 8px;
+  background: var(--border-subtle);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+.ds-progress--sm { height: 4px; }
+.ds-progress--lg { height: 12px; }
+
+.ds-progress__fill {
+  height: 100%;
+  background: var(--color-primary);
+  border-radius: var(--radius-full);
+  transition: width var(--duration-slower) var(--ease-default);
+}
+.ds-progress__fill--accent  { background: var(--color-accent); }
+.ds-progress__fill--success { background: var(--color-success); }
+.ds-progress__fill--danger  { background: var(--color-danger); }
+
+/* Indeterminate variant — shimmering band, for unknown-duration loads */
+.ds-progress--indeterminate .ds-progress__fill {
+  width: 40% !important;
+  animation: ds-progress-indeterminate 1.4s var(--ease-default) infinite;
+}
+@keyframes ds-progress-indeterminate {
+  0%   { margin-left: -40%; }
+  100% { margin-left: 100%; }
+}
+
+/* ────────────────────────────────────────────────────────────────────
+   MOTION SYSTEM — reveal utilities
+   Reuses the keyframes already defined in global.css (fadeIn, fadeUp,
+   slideDown, slideUp, scale-in) rather than redefining new ones; these
+   classes just standardize how/when they're applied for scroll-reveal
+   and mount transitions.
+   ──────────────────────────────────────────────────────────────────── */
+.ds-reveal { animation: fadeUp var(--duration-slower) var(--ease-out) both; }
+.ds-reveal--fade { animation: fadeIn var(--duration-slower) var(--ease-out) both; }
+.ds-reveal--scale { animation: scale-in var(--duration-slow) var(--ease-spring) both; }
+
+.ds-stagger > * { animation: fadeUp var(--duration-slower) var(--ease-out) both; }
+.ds-stagger > *:nth-child(1) { animation-delay: 0ms; }
+.ds-stagger > *:nth-child(2) { animation-delay: 40ms; }
+.ds-stagger > *:nth-child(3) { animation-delay: 80ms; }
+.ds-stagger > *:nth-child(4) { animation-delay: 120ms; }
+.ds-stagger > *:nth-child(5) { animation-delay: 160ms; }
+.ds-stagger > *:nth-child(6) { animation-delay: 200ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ds-modal-overlay, .ds-modal, .ds-drawer, .ds-toast, .ds-menu,
+  .ds-reveal, .ds-reveal--fade, .ds-reveal--scale, .ds-stagger > * {
+    animation: none;
+  }
+  .ds-progress--indeterminate .ds-progress__fill { animation: none; width: 100% !important; }
+}

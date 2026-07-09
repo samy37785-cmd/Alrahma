@@ -1,0 +1,988 @@
+
+<!doctype html>
+<html lang="en">
+
+<head>
+    <title>Code coverage report for i18n/content.js</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../prettify.css" />
+    <link rel="stylesheet" href="../base.css" />
+    <link rel="shortcut icon" type="image/x-icon" href="../favicon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style type='text/css'>
+        .coverage-summary .sorter {
+            background-image: url(../sort-arrow-sprite.png);
+        }
+    </style>
+</head>
+    
+<body>
+<div class='wrapper'>
+    <div class='pad1'>
+        <h1><a href="../index.html">All files</a> / <a href="index.html">i18n</a> content.js</h1>
+        <div class='clearfix'>
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">100% </span>
+                <span class="quiet">Statements</span>
+                <span class='fraction'>11/11</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">50% </span>
+                <span class="quiet">Branches</span>
+                <span class='fraction'>1/2</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">100% </span>
+                <span class="quiet">Functions</span>
+                <span class='fraction'>1/1</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">100% </span>
+                <span class="quiet">Lines</span>
+                <span class='fraction'>10/10</span>
+            </div>
+        
+            
+        </div>
+        <p class="quiet">
+            Press <em>n</em> or <em>j</em> to go to the next uncovered block, <em>b</em>, <em>p</em> or <em>k</em> for the previous block.
+        </p>
+        <template id="filterTemplate">
+            <div class="quiet">
+                Filter:
+                <input type="search" id="fileSearch">
+            </div>
+        </template>
+    </div>
+    <div class='status-line high'></div>
+    <pre><table class="coverage">
+<tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
+<a name='L2'></a><a href='#L2'>2</a>
+<a name='L3'></a><a href='#L3'>3</a>
+<a name='L4'></a><a href='#L4'>4</a>
+<a name='L5'></a><a href='#L5'>5</a>
+<a name='L6'></a><a href='#L6'>6</a>
+<a name='L7'></a><a href='#L7'>7</a>
+<a name='L8'></a><a href='#L8'>8</a>
+<a name='L9'></a><a href='#L9'>9</a>
+<a name='L10'></a><a href='#L10'>10</a>
+<a name='L11'></a><a href='#L11'>11</a>
+<a name='L12'></a><a href='#L12'>12</a>
+<a name='L13'></a><a href='#L13'>13</a>
+<a name='L14'></a><a href='#L14'>14</a>
+<a name='L15'></a><a href='#L15'>15</a>
+<a name='L16'></a><a href='#L16'>16</a>
+<a name='L17'></a><a href='#L17'>17</a>
+<a name='L18'></a><a href='#L18'>18</a>
+<a name='L19'></a><a href='#L19'>19</a>
+<a name='L20'></a><a href='#L20'>20</a>
+<a name='L21'></a><a href='#L21'>21</a>
+<a name='L22'></a><a href='#L22'>22</a>
+<a name='L23'></a><a href='#L23'>23</a>
+<a name='L24'></a><a href='#L24'>24</a>
+<a name='L25'></a><a href='#L25'>25</a>
+<a name='L26'></a><a href='#L26'>26</a>
+<a name='L27'></a><a href='#L27'>27</a>
+<a name='L28'></a><a href='#L28'>28</a>
+<a name='L29'></a><a href='#L29'>29</a>
+<a name='L30'></a><a href='#L30'>30</a>
+<a name='L31'></a><a href='#L31'>31</a>
+<a name='L32'></a><a href='#L32'>32</a>
+<a name='L33'></a><a href='#L33'>33</a>
+<a name='L34'></a><a href='#L34'>34</a>
+<a name='L35'></a><a href='#L35'>35</a>
+<a name='L36'></a><a href='#L36'>36</a>
+<a name='L37'></a><a href='#L37'>37</a>
+<a name='L38'></a><a href='#L38'>38</a>
+<a name='L39'></a><a href='#L39'>39</a>
+<a name='L40'></a><a href='#L40'>40</a>
+<a name='L41'></a><a href='#L41'>41</a>
+<a name='L42'></a><a href='#L42'>42</a>
+<a name='L43'></a><a href='#L43'>43</a>
+<a name='L44'></a><a href='#L44'>44</a>
+<a name='L45'></a><a href='#L45'>45</a>
+<a name='L46'></a><a href='#L46'>46</a>
+<a name='L47'></a><a href='#L47'>47</a>
+<a name='L48'></a><a href='#L48'>48</a>
+<a name='L49'></a><a href='#L49'>49</a>
+<a name='L50'></a><a href='#L50'>50</a>
+<a name='L51'></a><a href='#L51'>51</a>
+<a name='L52'></a><a href='#L52'>52</a>
+<a name='L53'></a><a href='#L53'>53</a>
+<a name='L54'></a><a href='#L54'>54</a>
+<a name='L55'></a><a href='#L55'>55</a>
+<a name='L56'></a><a href='#L56'>56</a>
+<a name='L57'></a><a href='#L57'>57</a>
+<a name='L58'></a><a href='#L58'>58</a>
+<a name='L59'></a><a href='#L59'>59</a>
+<a name='L60'></a><a href='#L60'>60</a>
+<a name='L61'></a><a href='#L61'>61</a>
+<a name='L62'></a><a href='#L62'>62</a>
+<a name='L63'></a><a href='#L63'>63</a>
+<a name='L64'></a><a href='#L64'>64</a>
+<a name='L65'></a><a href='#L65'>65</a>
+<a name='L66'></a><a href='#L66'>66</a>
+<a name='L67'></a><a href='#L67'>67</a>
+<a name='L68'></a><a href='#L68'>68</a>
+<a name='L69'></a><a href='#L69'>69</a>
+<a name='L70'></a><a href='#L70'>70</a>
+<a name='L71'></a><a href='#L71'>71</a>
+<a name='L72'></a><a href='#L72'>72</a>
+<a name='L73'></a><a href='#L73'>73</a>
+<a name='L74'></a><a href='#L74'>74</a>
+<a name='L75'></a><a href='#L75'>75</a>
+<a name='L76'></a><a href='#L76'>76</a>
+<a name='L77'></a><a href='#L77'>77</a>
+<a name='L78'></a><a href='#L78'>78</a>
+<a name='L79'></a><a href='#L79'>79</a>
+<a name='L80'></a><a href='#L80'>80</a>
+<a name='L81'></a><a href='#L81'>81</a>
+<a name='L82'></a><a href='#L82'>82</a>
+<a name='L83'></a><a href='#L83'>83</a>
+<a name='L84'></a><a href='#L84'>84</a>
+<a name='L85'></a><a href='#L85'>85</a>
+<a name='L86'></a><a href='#L86'>86</a>
+<a name='L87'></a><a href='#L87'>87</a>
+<a name='L88'></a><a href='#L88'>88</a>
+<a name='L89'></a><a href='#L89'>89</a>
+<a name='L90'></a><a href='#L90'>90</a>
+<a name='L91'></a><a href='#L91'>91</a>
+<a name='L92'></a><a href='#L92'>92</a>
+<a name='L93'></a><a href='#L93'>93</a>
+<a name='L94'></a><a href='#L94'>94</a>
+<a name='L95'></a><a href='#L95'>95</a>
+<a name='L96'></a><a href='#L96'>96</a>
+<a name='L97'></a><a href='#L97'>97</a>
+<a name='L98'></a><a href='#L98'>98</a>
+<a name='L99'></a><a href='#L99'>99</a>
+<a name='L100'></a><a href='#L100'>100</a>
+<a name='L101'></a><a href='#L101'>101</a>
+<a name='L102'></a><a href='#L102'>102</a>
+<a name='L103'></a><a href='#L103'>103</a>
+<a name='L104'></a><a href='#L104'>104</a>
+<a name='L105'></a><a href='#L105'>105</a>
+<a name='L106'></a><a href='#L106'>106</a>
+<a name='L107'></a><a href='#L107'>107</a>
+<a name='L108'></a><a href='#L108'>108</a>
+<a name='L109'></a><a href='#L109'>109</a>
+<a name='L110'></a><a href='#L110'>110</a>
+<a name='L111'></a><a href='#L111'>111</a>
+<a name='L112'></a><a href='#L112'>112</a>
+<a name='L113'></a><a href='#L113'>113</a>
+<a name='L114'></a><a href='#L114'>114</a>
+<a name='L115'></a><a href='#L115'>115</a>
+<a name='L116'></a><a href='#L116'>116</a>
+<a name='L117'></a><a href='#L117'>117</a>
+<a name='L118'></a><a href='#L118'>118</a>
+<a name='L119'></a><a href='#L119'>119</a>
+<a name='L120'></a><a href='#L120'>120</a>
+<a name='L121'></a><a href='#L121'>121</a>
+<a name='L122'></a><a href='#L122'>122</a>
+<a name='L123'></a><a href='#L123'>123</a>
+<a name='L124'></a><a href='#L124'>124</a>
+<a name='L125'></a><a href='#L125'>125</a>
+<a name='L126'></a><a href='#L126'>126</a>
+<a name='L127'></a><a href='#L127'>127</a>
+<a name='L128'></a><a href='#L128'>128</a>
+<a name='L129'></a><a href='#L129'>129</a>
+<a name='L130'></a><a href='#L130'>130</a>
+<a name='L131'></a><a href='#L131'>131</a>
+<a name='L132'></a><a href='#L132'>132</a>
+<a name='L133'></a><a href='#L133'>133</a>
+<a name='L134'></a><a href='#L134'>134</a>
+<a name='L135'></a><a href='#L135'>135</a>
+<a name='L136'></a><a href='#L136'>136</a>
+<a name='L137'></a><a href='#L137'>137</a>
+<a name='L138'></a><a href='#L138'>138</a>
+<a name='L139'></a><a href='#L139'>139</a>
+<a name='L140'></a><a href='#L140'>140</a>
+<a name='L141'></a><a href='#L141'>141</a>
+<a name='L142'></a><a href='#L142'>142</a>
+<a name='L143'></a><a href='#L143'>143</a>
+<a name='L144'></a><a href='#L144'>144</a>
+<a name='L145'></a><a href='#L145'>145</a>
+<a name='L146'></a><a href='#L146'>146</a>
+<a name='L147'></a><a href='#L147'>147</a>
+<a name='L148'></a><a href='#L148'>148</a>
+<a name='L149'></a><a href='#L149'>149</a>
+<a name='L150'></a><a href='#L150'>150</a>
+<a name='L151'></a><a href='#L151'>151</a>
+<a name='L152'></a><a href='#L152'>152</a>
+<a name='L153'></a><a href='#L153'>153</a>
+<a name='L154'></a><a href='#L154'>154</a>
+<a name='L155'></a><a href='#L155'>155</a>
+<a name='L156'></a><a href='#L156'>156</a>
+<a name='L157'></a><a href='#L157'>157</a>
+<a name='L158'></a><a href='#L158'>158</a>
+<a name='L159'></a><a href='#L159'>159</a>
+<a name='L160'></a><a href='#L160'>160</a>
+<a name='L161'></a><a href='#L161'>161</a>
+<a name='L162'></a><a href='#L162'>162</a>
+<a name='L163'></a><a href='#L163'>163</a>
+<a name='L164'></a><a href='#L164'>164</a>
+<a name='L165'></a><a href='#L165'>165</a>
+<a name='L166'></a><a href='#L166'>166</a>
+<a name='L167'></a><a href='#L167'>167</a>
+<a name='L168'></a><a href='#L168'>168</a>
+<a name='L169'></a><a href='#L169'>169</a>
+<a name='L170'></a><a href='#L170'>170</a>
+<a name='L171'></a><a href='#L171'>171</a>
+<a name='L172'></a><a href='#L172'>172</a>
+<a name='L173'></a><a href='#L173'>173</a>
+<a name='L174'></a><a href='#L174'>174</a>
+<a name='L175'></a><a href='#L175'>175</a>
+<a name='L176'></a><a href='#L176'>176</a>
+<a name='L177'></a><a href='#L177'>177</a>
+<a name='L178'></a><a href='#L178'>178</a>
+<a name='L179'></a><a href='#L179'>179</a>
+<a name='L180'></a><a href='#L180'>180</a>
+<a name='L181'></a><a href='#L181'>181</a>
+<a name='L182'></a><a href='#L182'>182</a>
+<a name='L183'></a><a href='#L183'>183</a>
+<a name='L184'></a><a href='#L184'>184</a>
+<a name='L185'></a><a href='#L185'>185</a>
+<a name='L186'></a><a href='#L186'>186</a>
+<a name='L187'></a><a href='#L187'>187</a>
+<a name='L188'></a><a href='#L188'>188</a>
+<a name='L189'></a><a href='#L189'>189</a>
+<a name='L190'></a><a href='#L190'>190</a>
+<a name='L191'></a><a href='#L191'>191</a>
+<a name='L192'></a><a href='#L192'>192</a>
+<a name='L193'></a><a href='#L193'>193</a>
+<a name='L194'></a><a href='#L194'>194</a>
+<a name='L195'></a><a href='#L195'>195</a>
+<a name='L196'></a><a href='#L196'>196</a>
+<a name='L197'></a><a href='#L197'>197</a>
+<a name='L198'></a><a href='#L198'>198</a>
+<a name='L199'></a><a href='#L199'>199</a>
+<a name='L200'></a><a href='#L200'>200</a>
+<a name='L201'></a><a href='#L201'>201</a>
+<a name='L202'></a><a href='#L202'>202</a>
+<a name='L203'></a><a href='#L203'>203</a>
+<a name='L204'></a><a href='#L204'>204</a>
+<a name='L205'></a><a href='#L205'>205</a>
+<a name='L206'></a><a href='#L206'>206</a>
+<a name='L207'></a><a href='#L207'>207</a>
+<a name='L208'></a><a href='#L208'>208</a>
+<a name='L209'></a><a href='#L209'>209</a>
+<a name='L210'></a><a href='#L210'>210</a>
+<a name='L211'></a><a href='#L211'>211</a>
+<a name='L212'></a><a href='#L212'>212</a>
+<a name='L213'></a><a href='#L213'>213</a>
+<a name='L214'></a><a href='#L214'>214</a>
+<a name='L215'></a><a href='#L215'>215</a>
+<a name='L216'></a><a href='#L216'>216</a>
+<a name='L217'></a><a href='#L217'>217</a>
+<a name='L218'></a><a href='#L218'>218</a>
+<a name='L219'></a><a href='#L219'>219</a>
+<a name='L220'></a><a href='#L220'>220</a>
+<a name='L221'></a><a href='#L221'>221</a>
+<a name='L222'></a><a href='#L222'>222</a>
+<a name='L223'></a><a href='#L223'>223</a>
+<a name='L224'></a><a href='#L224'>224</a>
+<a name='L225'></a><a href='#L225'>225</a>
+<a name='L226'></a><a href='#L226'>226</a>
+<a name='L227'></a><a href='#L227'>227</a>
+<a name='L228'></a><a href='#L228'>228</a>
+<a name='L229'></a><a href='#L229'>229</a>
+<a name='L230'></a><a href='#L230'>230</a>
+<a name='L231'></a><a href='#L231'>231</a>
+<a name='L232'></a><a href='#L232'>232</a>
+<a name='L233'></a><a href='#L233'>233</a>
+<a name='L234'></a><a href='#L234'>234</a>
+<a name='L235'></a><a href='#L235'>235</a>
+<a name='L236'></a><a href='#L236'>236</a>
+<a name='L237'></a><a href='#L237'>237</a>
+<a name='L238'></a><a href='#L238'>238</a>
+<a name='L239'></a><a href='#L239'>239</a>
+<a name='L240'></a><a href='#L240'>240</a>
+<a name='L241'></a><a href='#L241'>241</a>
+<a name='L242'></a><a href='#L242'>242</a>
+<a name='L243'></a><a href='#L243'>243</a>
+<a name='L244'></a><a href='#L244'>244</a>
+<a name='L245'></a><a href='#L245'>245</a>
+<a name='L246'></a><a href='#L246'>246</a>
+<a name='L247'></a><a href='#L247'>247</a>
+<a name='L248'></a><a href='#L248'>248</a>
+<a name='L249'></a><a href='#L249'>249</a>
+<a name='L250'></a><a href='#L250'>250</a>
+<a name='L251'></a><a href='#L251'>251</a>
+<a name='L252'></a><a href='#L252'>252</a>
+<a name='L253'></a><a href='#L253'>253</a>
+<a name='L254'></a><a href='#L254'>254</a>
+<a name='L255'></a><a href='#L255'>255</a>
+<a name='L256'></a><a href='#L256'>256</a>
+<a name='L257'></a><a href='#L257'>257</a>
+<a name='L258'></a><a href='#L258'>258</a>
+<a name='L259'></a><a href='#L259'>259</a>
+<a name='L260'></a><a href='#L260'>260</a>
+<a name='L261'></a><a href='#L261'>261</a>
+<a name='L262'></a><a href='#L262'>262</a>
+<a name='L263'></a><a href='#L263'>263</a>
+<a name='L264'></a><a href='#L264'>264</a>
+<a name='L265'></a><a href='#L265'>265</a>
+<a name='L266'></a><a href='#L266'>266</a>
+<a name='L267'></a><a href='#L267'>267</a>
+<a name='L268'></a><a href='#L268'>268</a>
+<a name='L269'></a><a href='#L269'>269</a>
+<a name='L270'></a><a href='#L270'>270</a>
+<a name='L271'></a><a href='#L271'>271</a>
+<a name='L272'></a><a href='#L272'>272</a>
+<a name='L273'></a><a href='#L273'>273</a>
+<a name='L274'></a><a href='#L274'>274</a>
+<a name='L275'></a><a href='#L275'>275</a>
+<a name='L276'></a><a href='#L276'>276</a>
+<a name='L277'></a><a href='#L277'>277</a>
+<a name='L278'></a><a href='#L278'>278</a>
+<a name='L279'></a><a href='#L279'>279</a>
+<a name='L280'></a><a href='#L280'>280</a>
+<a name='L281'></a><a href='#L281'>281</a>
+<a name='L282'></a><a href='#L282'>282</a>
+<a name='L283'></a><a href='#L283'>283</a>
+<a name='L284'></a><a href='#L284'>284</a>
+<a name='L285'></a><a href='#L285'>285</a>
+<a name='L286'></a><a href='#L286'>286</a>
+<a name='L287'></a><a href='#L287'>287</a>
+<a name='L288'></a><a href='#L288'>288</a>
+<a name='L289'></a><a href='#L289'>289</a>
+<a name='L290'></a><a href='#L290'>290</a>
+<a name='L291'></a><a href='#L291'>291</a>
+<a name='L292'></a><a href='#L292'>292</a>
+<a name='L293'></a><a href='#L293'>293</a>
+<a name='L294'></a><a href='#L294'>294</a>
+<a name='L295'></a><a href='#L295'>295</a>
+<a name='L296'></a><a href='#L296'>296</a>
+<a name='L297'></a><a href='#L297'>297</a>
+<a name='L298'></a><a href='#L298'>298</a>
+<a name='L299'></a><a href='#L299'>299</a>
+<a name='L300'></a><a href='#L300'>300</a>
+<a name='L301'></a><a href='#L301'>301</a>
+<a name='L302'></a><a href='#L302'>302</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">/* ══════════════════════════════════════════════════════════════════
+   Per-language translations for data-driven content
+   (plans, about values, testimonials).
+   Static/structural data (prices, icons, colors, names, flags) stays
+   in src/data/*; the text below is merged in by language at render.
+   Indexed by language code — falls back to `en` when a key is missing.
+   ══════════════════════════════════════════════════════════════════ */
+&nbsp;
+/* ── Pricing plans: name + feature list (3 plans, in data order) ── */
+/*
+  Plan names use authentic Islamic educational terms across all languages.
+  The Arabic names appear as subtitles; primary display names stay Islamic.
+  Noorani  (نوراني)  = "filled with light" — the Noorani Qaida is the classic beginner Quran reading book
+  Huffaz   (حُفَّاظ) = "guardians/memorizers of the Quran"
+  Ijazah   (إجازة)  = formal certification with unbroken chain of knowledge
+*/
+export const PLAN_TEXT = {
+  en: [
+    { name: 'Noorani',  sub: 'Begin your light',   features: ['2 classes / week', '8 sessions / month', '1 hour per class', 'One-to-one tutoring', 'Zoom or Skype'] },
+    { name: 'Huffaz',   sub: 'Carry the Quran',    features: ['3 classes / week', '12 sessions / month', '1 hour per class', 'One-to-one tutoring', 'Progress reports'] },
+    { name: 'Ijazah',   sub: 'Earn your chain',    features: ['4 classes / week', '16 sessions / month', '1 hour per class', 'One-to-one tutoring', 'Ijazah pathway support'] },
+  ],
+  ar: [
+    { name: 'نوراني',   sub: 'ابدأ رحلة نورك',    features: ['حصتان أسبوعياً', '8 حصص شهرياً', 'ساعة لكل حصة', 'تعليم فردي', 'Zoom أو Skype'] },
+    { name: 'حُفَّاظ',  sub: 'احمل القرآن',        features: ['3 حصص أسبوعياً', '12 حصة شهرياً', 'ساعة لكل حصة', 'تعليم فردي', 'تقارير متابعة'] },
+    { name: 'إجازة',    sub: 'احصل على سندك',      features: ['4 حصص أسبوعياً', '16 حصة شهرياً', 'ساعة لكل حصة', 'تعليم فردي', 'دعم مسار الإجازة'] },
+  ],
+  it: [
+    { name: 'Noorani',  sub: 'Inizia la tua luce', features: ['2 lezioni / settimana', '8 sessioni / mese', '1 ora per lezione', 'Lezioni individuali', 'Zoom o Skype'] },
+    { name: 'Huffaz',   sub: 'Porta il Corano',    features: ['3 lezioni / settimana', '12 sessioni / mese', '1 ora per lezione', 'Lezioni individuali', 'Report sui progressi'] },
+    { name: 'Ijazah',   sub: 'Guadagna la catena', features: ['4 lezioni / settimana', '16 sessioni / mese', '1 ora per lezione', 'Lezioni individuali', 'Supporto al percorso Ijazah'] },
+  ],
+  es: [
+    { name: 'Noorani',  sub: 'Empieza tu luz',     features: ['2 clases / semana', '8 sesiones / mes', '1 hora por clase', 'Clases individuales', 'Zoom o Skype'] },
+    { name: 'Huffaz',   sub: 'Lleva el Corán',     features: ['3 clases / semana', '12 sesiones / mes', '1 hora por clase', 'Clases individuales', 'Informes de progreso'] },
+    { name: 'Ijazah',   sub: 'Gana tu cadena',     features: ['4 clases / semana', '16 sesiones / mes', '1 hora por clase', 'Clases individuales', 'Apoyo para la Ijazah'] },
+  ],
+  de: [
+    { name: 'Noorani',  sub: 'Beginne dein Licht', features: ['2 Stunden / Woche', '8 Einheiten / Monat', '1 Stunde pro Unterricht', 'Einzelunterricht', 'Zoom oder Skype'] },
+    { name: 'Huffaz',   sub: 'Trage den Koran',    features: ['3 Stunden / Woche', '12 Einheiten / Monat', '1 Stunde pro Unterricht', 'Einzelunterricht', 'Fortschrittsberichte'] },
+    { name: 'Ijazah',   sub: 'Erwirb deine Kette', features: ['4 Stunden / Woche', '16 Einheiten / Monat', '1 Stunde pro Unterricht', 'Einzelunterricht', 'Unterstützung auf dem Ijazah-Weg'] },
+  ],
+  fr: [
+    { name: 'Noorani',  sub: 'Commence ta lumière', features: ['2 cours / semaine', '8 séances / mois', '1 heure par cours', 'Cours individuels', 'Zoom ou Skype'] },
+    { name: 'Huffaz',   sub: 'Porte le Coran',      features: ['3 cours / semaine', '12 séances / mois', '1 heure par cours', 'Cours individuels', 'Rapports de progression'] },
+    { name: 'Ijazah',   sub: 'Gagne ta chaîne',     features: ['4 cours / semaine', '16 séances / mois', '1 heure par cours', 'Cours individuels', 'Accompagnement vers l\'Ijazah'] },
+  ],
+};
+&nbsp;
+/* ── About → Our Values (6 cards, in data order) ── */
+export const VALUES_TEXT = {
+  en: [
+    { title: 'Moderation',     desc: 'We present Islam in its true balanced form — inclusive, welcoming and free from extremism, suitable for Muslim communities living in the West.' },
+    { title: 'Authenticity',   desc: 'Every tutor holds a verified Ijazah with a chain of knowledge traced back to the Prophet. Our curriculum is rooted in traditional, authentic scholarship.' },
+    { title: 'Contemporary',   desc: 'We combine centuries-old Islamic scholarship with modern online technology to deliver world-class Quranic education directly to your home.' },
+    { title: 'Responsibility', desc: 'Every tutor is personally accountable for the progress, wellbeing and Islamic development of each student entrusted to their care.' },
+    { title: 'Excellence',     desc: 'We set high academic standards and continuously raise the quality of our teaching, drawing on the best Egyptian scholarly tradition.' },
+    { title: 'Transparency',   desc: 'Families receive honest, regular progress reports and open communication throughout the learning journey — no hidden fees, no surprises.' },
+  ],
+  ar: [
+    { title: 'الوسطية',      desc: 'نقدّم الإسلام في صورته المتوازنة الحقيقية — منفتحاً ومرحِّباً وبعيداً عن التطرف، بما يناسب الجاليات المسلمة في الغرب.' },
+    { title: 'الأصالة',      desc: 'كل معلم يحمل إجازة موثّقة بسند متصل إلى النبي ﷺ. ومنهجنا متجذّر في العلم الأصيل المتوارث.' },
+    { title: 'المعاصرة',     desc: 'نجمع بين العلم الإسلامي العريق والتقنية الحديثة لنقدّم تعليماً قرآنياً عالمي المستوى إلى بيتك مباشرة.' },
+    { title: 'المسؤولية',    desc: 'كل معلم مسؤول شخصياً عن تقدّم كل طالب وحُسن رعايته وتطوّره الإسلامي.' },
+    { title: 'التميّز',      desc: 'نضع معايير أكاديمية عالية ونرفع جودة تعليمنا باستمرار، مستندين إلى أفضل التقاليد العلمية المصرية.' },
+    { title: 'الشفافية',     desc: 'تتلقى الأسر تقارير تقدّم صادقة ومنتظمة وتواصلاً مفتوحاً طوال رحلة التعلّم — بلا رسوم خفية ولا مفاجآت.' },
+  ],
+  it: [
+    { title: 'Moderazione',    desc: 'Presentiamo l\'Islam nella sua vera forma equilibrata — inclusivo, accogliente e privo di estremismo, adatto alle comunità musulmane in Occidente.' },
+    { title: 'Autenticità',    desc: 'Ogni insegnante possiede un Ijazah verificato con una catena di sapere che risale al Profeta. Il nostro programma è radicato nella scienza tradizionale e autentica.' },
+    { title: 'Modernità',      desc: 'Uniamo la scienza islamica secolare alla moderna tecnologia online per offrire un\'educazione coranica di livello mondiale direttamente a casa tua.' },
+    { title: 'Responsabilità', desc: 'Ogni insegnante è personalmente responsabile dei progressi, del benessere e della crescita islamica di ogni studente affidato a lui.' },
+    { title: 'Eccellenza',     desc: 'Fissiamo elevati standard accademici e miglioriamo costantemente la qualità del nostro insegnamento, ispirandoci alla migliore tradizione scientifica egiziana.' },
+    { title: 'Trasparenza',    desc: 'Le famiglie ricevono report sui progressi onesti e regolari e una comunicazione aperta lungo tutto il percorso — senza costi nascosti né sorprese.' },
+  ],
+  es: [
+    { title: 'Moderación',     desc: 'Presentamos el Islam en su verdadera forma equilibrada — inclusivo, acogedor y libre de extremismo, adecuado para las comunidades musulmanas en Occidente.' },
+    { title: 'Autenticidad',   desc: 'Cada profesor posee un Ijazah verificado con una cadena de conocimiento que se remonta al Profeta. Nuestro plan de estudios se basa en la erudición tradicional y auténtica.' },
+    { title: 'Modernidad',     desc: 'Combinamos la erudición islámica centenaria con la tecnología en línea moderna para ofrecer una educación coránica de primer nivel directamente en tu hogar.' },
+    { title: 'Responsabilidad',desc: 'Cada profesor es personalmente responsable del progreso, el bienestar y el desarrollo islámico de cada estudiante a su cargo.' },
+    { title: 'Excelencia',     desc: 'Establecemos altos estándares académicos y elevamos continuamente la calidad de nuestra enseñanza, inspirándonos en la mejor tradición erudita egipcia.' },
+    { title: 'Transparencia',  desc: 'Las familias reciben informes de progreso honestos y regulares y una comunicación abierta durante todo el proceso — sin cargos ocultos ni sorpresas.' },
+  ],
+  de: [
+    { title: 'Ausgewogenheit', desc: 'Wir präsentieren den Islam in seiner wahren, ausgewogenen Form — inklusiv, einladend und frei von Extremismus, passend für muslimische Gemeinschaften im Westen.' },
+    { title: 'Authentizität',  desc: 'Jeder Lehrer besitzt eine geprüfte Ijazah mit einer bis zum Propheten zurückreichenden Wissenskette. Unser Lehrplan wurzelt in traditioneller, authentischer Gelehrsamkeit.' },
+    { title: 'Modernität',     desc: 'Wir verbinden jahrhundertealte islamische Gelehrsamkeit mit moderner Online-Technologie, um erstklassige Koranbildung direkt zu Ihnen nach Hause zu bringen.' },
+    { title: 'Verantwortung',  desc: 'Jeder Lehrer ist persönlich für den Fortschritt, das Wohlergehen und die islamische Entwicklung jedes anvertrauten Schülers verantwortlich.' },
+    { title: 'Exzellenz',      desc: 'Wir setzen hohe akademische Maßstäbe und steigern kontinuierlich die Qualität unseres Unterrichts, gestützt auf die beste ägyptische Gelehrtentradition.' },
+    { title: 'Transparenz',    desc: 'Familien erhalten ehrliche, regelmäßige Fortschrittsberichte und offene Kommunikation während der gesamten Lernreise — keine versteckten Gebühren, keine Überraschungen.' },
+  ],
+  fr: [
+    { title: 'Modération',     desc: 'Nous présentons l\'Islam dans sa véritable forme équilibrée — inclusif, accueillant et exempt d\'extrémisme, adapté aux communautés musulmanes en Occident.' },
+    { title: 'Authenticité',   desc: 'Chaque enseignant détient une Ijazah vérifiée avec une chaîne de savoir remontant au Prophète. Notre programme est ancré dans une érudition traditionnelle et authentique.' },
+    { title: 'Modernité',      desc: 'Nous associons une érudition islamique séculaire à la technologie en ligne moderne pour offrir un enseignement coranique de classe mondiale directement chez vous.' },
+    { title: 'Responsabilité', desc: 'Chaque enseignant est personnellement responsable des progrès, du bien-être et du développement islamique de chaque élève qui lui est confié.' },
+    { title: 'Excellence',     desc: 'Nous fixons des normes académiques élevées et améliorons sans cesse la qualité de notre enseignement, en nous appuyant sur la meilleure tradition savante égyptienne.' },
+    { title: 'Transparence',   desc: 'Les familles reçoivent des rapports de progression honnêtes et réguliers et une communication ouverte tout au long du parcours — sans frais cachés ni surprises.' },
+  ],
+};
+&nbsp;
+/* ── Testimonials: quote + course (6 items, in data order). Names/locations stay. ── */
+export const TESTIMONIAL_TEXT = {
+  en: [
+    { quote: "My children love their lessons. The tutors are patient, kind and truly knowledgeable. We've seen amazing progress in just a few months.", course: 'Quran Reading &amp; Tajweed' },
+    { quote: 'Flexible timing made it possible for me to study around work. My Tajweed has improved more than I imagined. Highly recommended.', course: 'Tajweed (Hafs)' },
+    { quote: 'Professional, organized and very welcoming. The free trial convinced our whole family to join. May Allah reward the tutors.', course: 'Islamic Studies' },
+    { quote: "Our daughter memorised her first Juz in 3 months. The tutor's patience is incredible — she never gets frustrated and always finds a new way to explain.", course: 'Hifz (Quran Memorization)' },
+    { quote: 'I converted 2 years ago and wanted to learn how to read the Quran properly. Starting from zero, I can now read independently. Alhamdulillah.', course: 'Noorani Qaida for Adults' },
+    { quote: 'The tutor is extremely patient and very skilled. My son learned the Arabic letters in just a few weeks. Highly recommended!', course: 'Arabic Alphabet for Children' },
+  ],
+  ar: [
+    { quote: 'أطفالي يحبون حصصهم. المعلمون صبورون ولطفاء وذوو علم حقيقي. لمسنا تقدماً مذهلاً في أشهر قليلة فقط.', course: 'تعليم القرآن والتجويد' },
+    { quote: 'المواعيد المرنة مكّنتني من الدراسة إلى جانب العمل. تحسّن تجويدي أكثر مما تخيّلت. أنصح به بشدة.', course: 'التجويد (حفص)' },
+    { quote: 'احترافية ومنظَّمة ومرحِّبة جداً. التجربة المجانية أقنعت عائلتنا كلها بالانضمام. جزى الله المعلمين خيراً.', course: 'الدراسات الإسلامية' },
+    { quote: 'حفظت ابنتنا أول جزء في 3 أشهر. صبر المعلمة لا يُصدَّق — لا تنزعج أبداً وتجد دائماً طريقة جديدة للشرح.', course: 'الحفظ (حفظ القرآن)' },
+    { quote: 'أسلمت قبل سنتين وأردت تعلّم قراءة القرآن بشكل صحيح. بدأت من الصفر، والآن أقرأ بمفردي. الحمد لله.', course: 'القاعدة النورانية للكبار' },
+    { quote: 'المعلمة صبورة للغاية وماهرة جداً. تعلّم ابني الحروف العربية في أسابيع قليلة. أنصح به بشدة!', course: 'الحروف العربية للأطفال' },
+  ],
+  it: [
+    { quote: 'I miei figli adorano le loro lezioni. Gli insegnanti sono pazienti, gentili e davvero competenti. Abbiamo visto progressi incredibili in pochi mesi.', course: 'Lettura del Corano e Tajweed' },
+    { quote: 'Gli orari flessibili mi hanno permesso di studiare oltre al lavoro. Il mio Tajweed è migliorato più di quanto immaginassi. Altamente raccomandato.', course: 'Tajweed (Hafs)' },
+    { quote: 'Professionali, organizzati e molto accoglienti. La prova gratuita ha convinto tutta la nostra famiglia a iscriversi. Che Allah ricompensi gli insegnanti.', course: 'Studi Islamici' },
+    { quote: 'Nostra figlia ha memorizzato il suo primo Juz in 3 mesi. La pazienza dell\'insegnante è incredibile — non si scoraggia mai e trova sempre un nuovo modo di spiegare.', course: 'Hifz (Memorizzazione del Corano)' },
+    { quote: 'Mi sono convertito 2 anni fa e volevo imparare a leggere il Corano correttamente. Partendo da zero, ora leggo da solo. Alhamdulillah.', course: 'Noorani Qaida per Adulti' },
+    { quote: 'L\'insegnante è pazientissima e molto brava. Mio figlio ha imparato le lettere arabe in poche settimane. Consiglio vivamente!', course: 'Alfabeto Arabo per Bambini' },
+  ],
+  es: [
+    { quote: 'A mis hijos les encantan sus clases. Los profesores son pacientes, amables y muy competentes. Hemos visto un progreso increíble en pocos meses.', course: 'Lectura del Corán y Tajweed' },
+    { quote: 'El horario flexible me permitió estudiar junto con el trabajo. Mi Tajweed ha mejorado más de lo que imaginaba. Muy recomendable.', course: 'Tajweed (Hafs)' },
+    { quote: 'Profesionales, organizados y muy acogedores. La prueba gratuita convenció a toda nuestra familia de inscribirse. Que Allah recompense a los profesores.', course: 'Estudios Islámicos' },
+    { quote: 'Nuestra hija memorizó su primer Juz en 3 meses. La paciencia de la profesora es increíble — nunca se frustra y siempre encuentra una nueva forma de explicar.', course: 'Hifz (Memorización del Corán)' },
+    { quote: 'Me convertí hace 2 años y quería aprender a leer el Corán correctamente. Empezando de cero, ahora leo de forma independiente. Alhamdulillah.', course: 'Noorani Qaida para Adultos' },
+    { quote: 'La profesora es muy paciente y muy hábil. Mi hijo aprendió las letras árabes en pocas semanas. ¡Muy recomendable!', course: 'Alfabeto Árabe para Niños' },
+  ],
+  de: [
+    { quote: 'Meine Kinder lieben ihren Unterricht. Die Lehrer sind geduldig, freundlich und wirklich kompetent. Wir haben in nur wenigen Monaten erstaunliche Fortschritte gesehen.', course: 'Koran-Lesen &amp; Tajweed' },
+    { quote: 'Die flexiblen Zeiten ermöglichten es mir, neben der Arbeit zu lernen. Mein Tajweed hat sich mehr verbessert, als ich dachte. Sehr empfehlenswert.', course: 'Tajweed (Hafs)' },
+    { quote: 'Professionell, organisiert und sehr einladend. Die kostenlose Probestunde hat unsere ganze Familie überzeugt. Möge Allah die Lehrer belohnen.', course: 'Islamische Studien' },
+    { quote: 'Unsere Tochter hat ihren ersten Dschuz in 3 Monaten auswendig gelernt. Die Geduld der Lehrerin ist unglaublich — sie wird nie ungeduldig und findet stets einen neuen Weg zu erklären.', course: 'Hifz (Koran-Memorierung)' },
+    { quote: 'Ich bin vor 2 Jahren konvertiert und wollte lernen, den Koran richtig zu lesen. Von null angefangen, lese ich nun selbstständig. Alhamdulillah.', course: 'Noorani Qaida für Erwachsene' },
+    { quote: 'Die Lehrerin ist äußerst geduldig und sehr fähig. Mein Sohn hat die arabischen Buchstaben in wenigen Wochen gelernt. Sehr empfehlenswert!', course: 'Arabisches Alphabet für Kinder' },
+  ],
+  fr: [
+    { quote: 'Mes enfants adorent leurs cours. Les enseignants sont patients, gentils et vraiment compétents. Nous avons constaté des progrès incroyables en quelques mois seulement.', course: 'Lecture du Coran et Tajweed' },
+    { quote: 'Les horaires flexibles m\'ont permis d\'étudier en parallèle du travail. Mon Tajweed s\'est amélioré plus que je ne l\'imaginais. Vivement recommandé.', course: 'Tajweed (Hafs)' },
+    { quote: 'Professionnels, organisés et très accueillants. L\'essai gratuit a convaincu toute notre famille de s\'inscrire. Qu\'Allah récompense les enseignants.', course: 'Études Islamiques' },
+    { quote: 'Notre fille a mémorisé son premier Juz en 3 mois. La patience de l\'enseignante est incroyable — elle ne se décourage jamais et trouve toujours une nouvelle façon d\'expliquer.', course: 'Hifz (Mémorisation du Coran)' },
+    { quote: 'Je me suis converti il y a 2 ans et je voulais apprendre à lire le Coran correctement. Partant de zéro, je lis maintenant de façon autonome. Alhamdulillah.', course: 'Noorani Qaida pour Adultes' },
+    { quote: 'L\'enseignante est extrêmement patiente et très compétente. Mon fils a appris les lettres arabes en quelques semaines. Vivement recommandé !', course: 'Alphabet Arabe pour Enfants' },
+  ],
+};
+&nbsp;
+/* ── Printable invoice modal labels ── */
+export const INVOICE_TEXT = {
+  en: { locale: 'en-GB', invoice: 'Invoice', date: 'Date', period: 'Period', subscription: 'Subscription', planWord: 'Plan', monthlyRate: 'Monthly rate', discount: 'Discount', off: 'OFF', totalPaid: 'Total paid', paid: '✓ Paid', thankYou: 'Thank you for learning with Al-Rahma Academy. May Allah bless your journey.', print: '🖨 Print / Save as PDF' },
+  ar: { locale: 'ar-EG', invoice: 'فاتورة', date: 'التاريخ', period: 'الفترة', subscription: 'اشتراك', planWord: 'باقة', monthlyRate: 'السعر الشهري', discount: 'الخصم', off: 'خصم', totalPaid: 'الإجمالي المدفوع', paid: '✓ مدفوع', thankYou: 'شكراً لتعلّمك مع أكاديمية الرحمة. بارك الله في رحلتك.', print: '🖨 طباعة / حفظ PDF' },
+  it: { locale: 'it-IT', invoice: 'Fattura', date: 'Data', period: 'Periodo', subscription: 'Abbonamento', planWord: 'Piano', monthlyRate: 'Tariffa mensile', discount: 'Sconto', off: 'SCONTO', totalPaid: 'Totale pagato', paid: '✓ Pagato', thankYou: 'Grazie per aver studiato con Al-Rahma Academy. Che Allah benedica il tuo percorso.', print: '🖨 Stampa / Salva come PDF' },
+  es: { locale: 'es-ES', invoice: 'Factura', date: 'Fecha', period: 'Período', subscription: 'Suscripción', planWord: 'Plan', monthlyRate: 'Tarifa mensual', discount: 'Descuento', off: 'DESC.', totalPaid: 'Total pagado', paid: '✓ Pagado', thankYou: 'Gracias por aprender con Al-Rahma Academy. Que Allah bendiga tu camino.', print: '🖨 Imprimir / Guardar como PDF' },
+  de: { locale: 'de-DE', invoice: 'Rechnung', date: 'Datum', period: 'Zeitraum', subscription: 'Abonnement', planWord: 'Tarif', monthlyRate: 'Monatstarif', discount: 'Rabatt', off: 'RABATT', totalPaid: 'Gezahlt insgesamt', paid: '✓ Bezahlt', thankYou: 'Danke, dass Sie mit der Al-Rahma Academy lernen. Möge Allah Ihren Weg segnen.', print: '🖨 Drucken / Als PDF speichern' },
+  fr: { locale: 'fr-FR', invoice: 'Facture', date: 'Date', period: 'Période', subscription: 'Abonnement', planWord: 'Forfait', monthlyRate: 'Tarif mensuel', discount: 'Remise', off: 'REMISE', totalPaid: 'Total payé', paid: '✓ Payé', thankYou: 'Merci d\'apprendre avec Al-Rahma Academy. Qu\'Allah bénisse votre parcours.', print: '🖨 Imprimer / Enregistrer en PDF' },
+};
+&nbsp;
+/* ── Checkout payment-method subtitles (keyed by method subKey) ── */
+export const CHECKOUT_SUBS = {
+  en: { cardSub: 'Secure card payment', intlSub: 'For international students' },
+  ar: { cardSub: 'دفع آمن بالبطاقة', intlSub: 'للطلاب الدوليين' },
+  it: { cardSub: 'Pagamento sicuro con carta', intlSub: 'Per studenti internazionali' },
+  es: { cardSub: 'Pago seguro con tarjeta', intlSub: 'Para estudiantes internacionales' },
+  de: { cardSub: 'Sichere Kartenzahlung', intlSub: 'Für internationale Schüler' },
+  fr: { cardSub: 'Paiement par carte sécurisé', intlSub: 'Pour les étudiants internationaux' },
+};
+&nbsp;
+/* ── Small shared UI strings (modals, floating buttons) ── */
+export const UI_TEXT = {
+  en: { close: 'Close', chooseResource: 'Choose how you’d like to start learning:', whatsapp: 'Chat on WhatsApp' },
+  ar: { close: 'إغلاق', chooseResource: 'اختر كيف تحبّ أن تبدأ التعلّم:', whatsapp: 'تحدّث معنا على واتساب' },
+  it: { close: 'Chiudi', chooseResource: 'Scegli come vuoi iniziare a imparare:', whatsapp: 'Scrivici su WhatsApp' },
+  es: { close: 'Cerrar', chooseResource: 'Elige cómo quieres empezar a aprender:', whatsapp: 'Escríbenos por WhatsApp' },
+  de: { close: 'Schließen', chooseResource: 'Wähle, wie du mit dem Lernen beginnen möchtest:', whatsapp: 'Schreib uns auf WhatsApp' },
+  fr: { close: 'Fermer', chooseResource: 'Choisissez comment vous voulez commencer à apprendre :', whatsapp: 'Écrivez-nous sur WhatsApp' },
+};
+&nbsp;
+/* ── Islamic Tools page (prayer times, qibla, calendar, verse) ── */
+const HIJRI_LATIN = ['Muharram','Safar','Rabi al-Awwal','Rabi al-Thani','Jumada al-Ula','Jumada al-Akhirah','Rajab','Sha\'ban','Ramadan','Shawwal','Dhu al-Qi\'dah','Dhu al-Hijjah'];
+const HIJRI_AR = ['محرم','صفر','ربيع الأول','ربيع الآخر','جمادى الأولى','جمادى الآخرة','رجب','شعبان','رمضان','شوال','ذو القعدة','ذو الحجة'];
+&nbsp;
+export const TOOLS_TEXT = {
+  en: {
+    eyebrow: 'Islamic Tools',
+    tabs: { prayer: 'Prayer Times', qibla: 'Qibla', calendar: 'Islamic Calendar', verse: 'Verse of the Day' },
+    calcMethod: '⚙ Calculation method', asrSchool: '🕮 Asr method', timeFormat: '🕒 Time format',
+    notify: '🔔 Prayer alert', enableNotify: 'Enable alerts', before: 'before', minute: 'min',
+    changeCity: '📍 Change city', search: 'Search', cityPlaceholder: 'e.g. Cairo, London, Paris…',
+    nextPrayerLbl: 'Next prayer', timeRemaining: 'Time remaining',
+    errRefetch: 'Could not refresh.', errCity: 'City not found. Use the English name.', noLocation: '🔒 Location not allowed. Search your city above.',
+    upcoming: 'next ⟵',
+    monthShow: '📅 Show full month timetable', monthHide: '📅 Hide month timetable',
+    cols: { date: 'Date', Fajr: 'Fajr', Sunrise: 'Sunrise', Dhuhr: 'Dhuhr', Asr: 'Asr', Maghrib: 'Maghrib', Isha: 'Isha' },
+    prayers: { Fajr: 'Fajr', Sunrise: 'Sunrise', Dhuhr: 'Dhuhr', Asr: 'Asr', Maghrib: 'Maghrib', Isha: 'Isha' },
+    extras: { Imsak: 'Imsak (Suhoor)', Midnight: 'Midnight', Lastthird: 'Last third (Qiyam)' },
+    asrSchools: ['Standard (Shafii/Maliki/Hanbali)', 'Hanafi'],
+    qibla: { title: '🕋 Qibla Direction', fromNorth: 'from North', distance: 'distance to Makkah', enableCompass: '🧭 Enable live compass (mobile)', compassLive: '✅ Live compass on — point your phone ↑', allowFirst: '📍 Allow location from the "Prayer Times" tab first', goToPrayer: 'Go to Prayer Times ←', kaabaTitle: '🕌 The Holy Kaaba', kaabaText: 'The Holy Kaaba is the first house built for mankind, located in Makkah, Saudi Arabia. Muslims worldwide face it during prayer. Coordinates: 21.3891° N, 39.8579° E.' },
+    cal: { setDate: 'Search your city in the "Prayer Times" tab to set the Hijri date', monthWord: 'Month of', upcoming: 'Upcoming Islamic Occasions', ramadan: 'Blessed month of Ramadan', eidFitr: 'Eid al-Fitr', eidAdha: 'Eid al-Adha', today: 'Today 🎉', days: 'days', monthsTitle: 'Hijri Months', months: HIJRI_LATIN },
+    verse: { title: '🌟 Verse of the Day', ref: 'Surah' },
+  },
+  ar: {
+    eyebrow: 'أدوات إسلامية',
+    tabs: { prayer: 'مواقيت الصلاة', qibla: 'القبلة', calendar: 'التقويم الإسلامي', verse: 'آية اليوم' },
+    calcMethod: '⚙ طريقة الحساب', asrSchool: '🕮 مذهب العصر', timeFormat: '🕒 صيغة الوقت',
+    notify: '🔔 تنبيه الصلاة', enableNotify: 'تفعيل التنبيهات', before: 'قبل', minute: 'دقيقة',
+    changeCity: '📍 تغيير المدينة', search: 'بحث', cityPlaceholder: 'مثال: Cairo, London, Paris…',
+    nextPrayerLbl: 'الصلاة القادمة', timeRemaining: 'الوقت المتبقي',
+    errRefetch: 'تعذر إعادة الجلب.', errCity: 'المدينة غير موجودة. استخدم الاسم بالإنجليزية.', noLocation: '🔒 لم يُسمح بالموقع. ابحث عن مدينتك أعلاه.',
+    upcoming: 'قادمة ⟵',
+    monthShow: '📅 عرض مواقيت الشهر كامل', monthHide: '📅 إخفاء جدول الشهر',
+    cols: { date: 'التاريخ', Fajr: 'الفجر', Sunrise: 'الشروق', Dhuhr: 'الظهر', Asr: 'العصر', Maghrib: 'المغرب', Isha: 'العشاء' },
+    prayers: { Fajr: 'الفجر', Sunrise: 'الشروق', Dhuhr: 'الظهر', Asr: 'العصر', Maghrib: 'المغرب', Isha: 'العشاء' },
+    extras: { Imsak: 'الإمساك (السحور)', Midnight: 'منتصف الليل', Lastthird: 'الثلث الأخير (قيام)' },
+    asrSchools: ['الجمهور (شافعي/مالكي/حنبلي)', 'الحنفي'],
+    qibla: { title: '🕋 اتجاه القبلة', fromNorth: 'الاتجاه من الشمال', distance: 'المسافة إلى مكة', enableCompass: '🧭 تفعيل البوصلة الحية (للهاتف)', compassLive: '✅ البوصلة الحية مفعّلة — وجّه هاتفك ↑', allowFirst: '📍 يجب السماح بالموقع من تبويب "مواقيت الصلاة" أولاً', goToPrayer: 'الذهاب لمواقيت الصلاة ←', kaabaTitle: '🕌 الكعبة المشرفة', kaabaText: 'الكعبة المشرفة هي أول بيت وُضع للناس، تقع في مدينة مكة المكرمة بالمملكة العربية السعودية. إليها يتوجه المسلمون في جميع أنحاء العالم أثناء الصلاة. إحداثياتها: 21.3891° شمالاً، 39.8579° شرقاً.' },
+    cal: { setDate: 'ابحث عن مدينتك في تبويب "مواقيت الصلاة" لتحديد التاريخ الهجري', monthWord: 'شهر', upcoming: 'المناسبات الإسلامية القادمة', ramadan: 'شهر رمضان المبارك', eidFitr: 'عيد الفطر المبارك', eidAdha: 'عيد الأضحى المبارك', today: 'اليوم 🎉', days: 'يوماً', monthsTitle: 'الأشهر الهجرية', months: HIJRI_AR },
+    verse: { title: '🌟 آية اليوم', ref: 'سورة' },
+  },
+  it: {
+    eyebrow: 'Strumenti Islamici',
+    tabs: { prayer: 'Orari di Preghiera', qibla: 'Qibla', calendar: 'Calendario Islamico', verse: 'Versetto del Giorno' },
+    calcMethod: '⚙ Metodo di calcolo', asrSchool: '🕮 Metodo Asr', timeFormat: '🕒 Formato ora',
+    notify: '🔔 Avviso preghiera', enableNotify: 'Attiva avvisi', before: 'prima di', minute: 'min',
+    changeCity: '📍 Cambia città', search: 'Cerca', cityPlaceholder: 'es. Cairo, Londra, Parigi…',
+    nextPrayerLbl: 'Prossima preghiera', timeRemaining: 'Tempo rimanente',
+    errRefetch: 'Impossibile aggiornare.', errCity: 'Città non trovata. Usa il nome in inglese.', noLocation: '🔒 Posizione non consentita. Cerca la tua città sopra.',
+    upcoming: 'prossima ⟵',
+    monthShow: '📅 Mostra orario del mese', monthHide: '📅 Nascondi orario del mese',
+    cols: { date: 'Data', Fajr: 'Fajr', Sunrise: 'Alba', Dhuhr: 'Dhuhr', Asr: 'Asr', Maghrib: 'Maghrib', Isha: 'Isha' },
+    prayers: { Fajr: 'Fajr', Sunrise: 'Alba', Dhuhr: 'Dhuhr', Asr: 'Asr', Maghrib: 'Maghrib', Isha: 'Isha' },
+    extras: { Imsak: 'Imsak (Suhur)', Midnight: 'Mezzanotte', Lastthird: 'Ultimo terzo (Qiyam)' },
+    asrSchools: ['Standard (Shafii/Maliki/Hanbali)', 'Hanafita'],
+    qibla: { title: '🕋 Direzione della Qibla', fromNorth: 'dal Nord', distance: 'distanza dalla Mecca', enableCompass: '🧭 Attiva bussola live (cellulare)', compassLive: '✅ Bussola live attiva — punta il telefono ↑', allowFirst: '📍 Consenti prima la posizione dalla scheda "Orari di Preghiera"', goToPrayer: 'Vai agli Orari di Preghiera ←', kaabaTitle: '🕌 La Sacra Kaaba', kaabaText: 'La Sacra Kaaba è la prima casa eretta per l\'umanità, situata alla Mecca, in Arabia Saudita. I musulmani di tutto il mondo si rivolgono ad essa durante la preghiera. Coordinate: 21.3891° N, 39.8579° E.' },
+    cal: { setDate: 'Cerca la tua città nella scheda "Orari di Preghiera" per impostare la data Hijri', monthWord: 'Mese di', upcoming: 'Prossime Ricorrenze Islamiche', ramadan: 'Mese benedetto del Ramadan', eidFitr: 'Eid al-Fitr', eidAdha: 'Eid al-Adha', today: 'Oggi 🎉', days: 'giorni', monthsTitle: 'Mesi Hijri', months: HIJRI_LATIN },
+    verse: { title: '🌟 Versetto del Giorno', ref: 'Sura' },
+  },
+  es: {
+    eyebrow: 'Herramientas Islámicas',
+    tabs: { prayer: 'Horarios de Oración', qibla: 'Alquibla', calendar: 'Calendario Islámico', verse: 'Versículo del Día' },
+    calcMethod: '⚙ Método de cálculo', asrSchool: '🕮 Método de Asr', timeFormat: '🕒 Formato de hora',
+    notify: '🔔 Aviso de oración', enableNotify: 'Activar avisos', before: 'antes de', minute: 'min',
+    changeCity: '📍 Cambiar ciudad', search: 'Buscar', cityPlaceholder: 'ej. El Cairo, Londres, París…',
+    nextPrayerLbl: 'Próxima oración', timeRemaining: 'Tiempo restante',
+    errRefetch: 'No se pudo actualizar.', errCity: 'Ciudad no encontrada. Usa el nombre en inglés.', noLocation: '🔒 Ubicación no permitida. Busca tu ciudad arriba.',
+    upcoming: 'próxima ⟵',
+    monthShow: '📅 Mostrar horario del mes', monthHide: '📅 Ocultar horario del mes',
+    cols: { date: 'Fecha', Fajr: 'Fajr', Sunrise: 'Amanecer', Dhuhr: 'Dhuhr', Asr: 'Asr', Maghrib: 'Maghrib', Isha: 'Isha' },
+    prayers: { Fajr: 'Fajr', Sunrise: 'Amanecer', Dhuhr: 'Dhuhr', Asr: 'Asr', Maghrib: 'Maghrib', Isha: 'Isha' },
+    extras: { Imsak: 'Imsak (Suhur)', Midnight: 'Medianoche', Lastthird: 'Último tercio (Qiyam)' },
+    asrSchools: ['Estándar (Shafii/Maliki/Hanbali)', 'Hanafí'],
+    qibla: { title: '🕋 Dirección de la Alquibla', fromNorth: 'desde el Norte', distance: 'distancia a La Meca', enableCompass: '🧭 Activar brújula en vivo (móvil)', compassLive: '✅ Brújula en vivo activa — apunta tu teléfono ↑', allowFirst: '📍 Permite primero la ubicación desde la pestaña "Horarios de Oración"', goToPrayer: 'Ir a Horarios de Oración ←', kaabaTitle: '🕌 La Sagrada Kaaba', kaabaText: 'La Sagrada Kaaba es la primera casa erigida para la humanidad, ubicada en La Meca, Arabia Saudita. Los musulmanes de todo el mundo se orientan hacia ella durante la oración. Coordenadas: 21.3891° N, 39.8579° E.' },
+    cal: { setDate: 'Busca tu ciudad en la pestaña "Horarios de Oración" para fijar la fecha Hijri', monthWord: 'Mes de', upcoming: 'Próximas Ocasiones Islámicas', ramadan: 'Bendito mes de Ramadán', eidFitr: 'Eid al-Fitr', eidAdha: 'Eid al-Adha', today: 'Hoy 🎉', days: 'días', monthsTitle: 'Meses Hijri', months: HIJRI_LATIN },
+    verse: { title: '🌟 Versículo del Día', ref: 'Sura' },
+  },
+  de: {
+    eyebrow: 'Islamische Werkzeuge',
+    tabs: { prayer: 'Gebetszeiten', qibla: 'Qibla', calendar: 'Islamischer Kalender', verse: 'Vers des Tages' },
+    calcMethod: '⚙ Berechnungsmethode', asrSchool: '🕮 Asr-Methode', timeFormat: '🕒 Zeitformat',
+    notify: '🔔 Gebetserinnerung', enableNotify: 'Erinnerungen aktivieren', before: 'vor', minute: 'Min.',
+    changeCity: '📍 Stadt ändern', search: 'Suchen', cityPlaceholder: 'z. B. Kairo, London, Paris…',
+    nextPrayerLbl: 'Nächstes Gebet', timeRemaining: 'Verbleibende Zeit',
+    errRefetch: 'Aktualisierung fehlgeschlagen.', errCity: 'Stadt nicht gefunden. Verwende den englischen Namen.', noLocation: '🔒 Standort nicht erlaubt. Suche oben deine Stadt.',
+    upcoming: 'nächstes ⟵',
+    monthShow: '📅 Monatsplan anzeigen', monthHide: '📅 Monatsplan ausblenden',
+    cols: { date: 'Datum', Fajr: 'Fadschr', Sunrise: 'Sonnenaufgang', Dhuhr: 'Dhuhr', Asr: 'Asr', Maghrib: 'Maghrib', Isha: 'Ischa' },
+    prayers: { Fajr: 'Fadschr', Sunrise: 'Sonnenaufgang', Dhuhr: 'Dhuhr', Asr: 'Asr', Maghrib: 'Maghrib', Isha: 'Ischa' },
+    extras: { Imsak: 'Imsak (Suhur)', Midnight: 'Mitternacht', Lastthird: 'Letztes Drittel (Qiyam)' },
+    asrSchools: ['Standard (Schafii/Maliki/Hanbali)', 'Hanafi'],
+    qibla: { title: '🕋 Qibla-Richtung', fromNorth: 'von Norden', distance: 'Entfernung nach Mekka', enableCompass: '🧭 Live-Kompass aktivieren (Handy)', compassLive: '✅ Live-Kompass an — richte dein Handy aus ↑', allowFirst: '📍 Erlaube zuerst den Standort im Tab „Gebetszeiten“', goToPrayer: 'Zu den Gebetszeiten ←', kaabaTitle: '🕌 Die Heilige Kaaba', kaabaText: 'Die Heilige Kaaba ist das erste für die Menschheit errichtete Haus, gelegen in Mekka, Saudi-Arabien. Muslime weltweit wenden sich ihr beim Gebet zu. Koordinaten: 21.3891° N, 39.8579° O.' },
+    cal: { setDate: 'Suche deine Stadt im Tab „Gebetszeiten“, um das Hijri-Datum festzulegen', monthWord: 'Monat', upcoming: 'Bevorstehende islamische Anlässe', ramadan: 'Gesegneter Monat Ramadan', eidFitr: 'Eid al-Fitr', eidAdha: 'Eid al-Adha', today: 'Heute 🎉', days: 'Tage', monthsTitle: 'Hijri-Monate', months: HIJRI_LATIN },
+    verse: { title: '🌟 Vers des Tages', ref: 'Sure' },
+  },
+  fr: {
+    eyebrow: 'Outils Islamiques',
+    tabs: { prayer: 'Horaires de Prière', qibla: 'Qibla', calendar: 'Calendrier Islamique', verse: 'Verset du Jour' },
+    calcMethod: '⚙ Méthode de calcul', asrSchool: '🕮 Méthode Asr', timeFormat: '🕒 Format de l\'heure',
+    notify: '🔔 Alerte de prière', enableNotify: 'Activer les alertes', before: 'avant', minute: 'min',
+    changeCity: '📍 Changer de ville', search: 'Rechercher', cityPlaceholder: 'ex. Le Caire, Londres, Paris…',
+    nextPrayerLbl: 'Prochaine prière', timeRemaining: 'Temps restant',
+    errRefetch: 'Échec de l\'actualisation.', errCity: 'Ville introuvable. Utilisez le nom en anglais.', noLocation: '🔒 Localisation non autorisée. Cherchez votre ville ci-dessus.',
+    upcoming: 'prochaine ⟵',
+    monthShow: '📅 Afficher l\'horaire du mois', monthHide: '📅 Masquer l\'horaire du mois',
+    cols: { date: 'Date', Fajr: 'Fajr', Sunrise: 'Lever du soleil', Dhuhr: 'Dhuhr', Asr: 'Asr', Maghrib: 'Maghrib', Isha: 'Isha' },
+    prayers: { Fajr: 'Fajr', Sunrise: 'Lever du soleil', Dhuhr: 'Dhuhr', Asr: 'Asr', Maghrib: 'Maghrib', Isha: 'Isha' },
+    extras: { Imsak: 'Imsak (Souhour)', Midnight: 'Minuit', Lastthird: 'Dernier tiers (Qiyam)' },
+    asrSchools: ['Standard (Chafii/Maliki/Hanbali)', 'Hanafite'],
+    qibla: { title: '🕋 Direction de la Qibla', fromNorth: 'depuis le Nord', distance: 'distance jusqu\'à La Mecque', enableCompass: '🧭 Activer la boussole en direct (mobile)', compassLive: '✅ Boussole en direct activée — orientez votre téléphone ↑', allowFirst: '📍 Autorisez d\'abord la localisation dans l\'onglet « Horaires de Prière »', goToPrayer: 'Aller aux Horaires de Prière ←', kaabaTitle: '🕌 La Sainte Kaaba', kaabaText: 'La Sainte Kaaba est la première maison érigée pour l\'humanité, située à La Mecque, en Arabie saoudite. Les musulmans du monde entier s\'orientent vers elle pendant la prière. Coordonnées : 21.3891° N, 39.8579° E.' },
+    cal: { setDate: 'Cherchez votre ville dans l\'onglet « Horaires de Prière » pour définir la date Hijri', monthWord: 'Mois de', upcoming: 'Prochaines Occasions Islamiques', ramadan: 'Mois béni du Ramadan', eidFitr: 'Aïd al-Fitr', eidAdha: 'Aïd al-Adha', today: 'Aujourd\'hui 🎉', days: 'jours', monthsTitle: 'Mois Hijri', months: HIJRI_LATIN },
+    verse: { title: '🌟 Verset du Jour', ref: 'Sourate' },
+  },
+};
+&nbsp;
+/* Helper: pick a language array/object with fallback to English. */
+export const pick = (map, lang) =&gt; map[lang] || <span class="branch-1 cbranch-no" title="branch not covered" >map.en;</span>
+&nbsp;
+&nbsp;</pre></td></tr></table></pre>
+
+                <div class='push'></div><!-- for sticky footer -->
+            </div><!-- /wrapper -->
+            <div class='footer quiet pad2 space-top1 center small'>
+                Code coverage generated by
+                <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
+                at 2026-07-07T21:45:23.784Z
+            </div>
+        <script src="../prettify.js"></script>
+        <script>
+            window.onload = function () {
+                prettyPrint();
+            };
+        </script>
+        <script src="../sorter.js"></script>
+        <script src="../block-navigation.js"></script>
+    </body>
+</html>
+    

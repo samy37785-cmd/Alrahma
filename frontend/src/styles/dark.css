@@ -27,6 +27,10 @@ html.dark .header {
   background: rgba(14, 26, 17, 0.97);
   border-bottom-color: var(--border-default);
 }
+html.dark .header--scrolled {
+  background: rgba(14, 26, 17, 0.99);
+  box-shadow: var(--shadow-sm);
+}
 html.dark .nav a,
 html.dark .nav__dropdown-trigger { color: var(--text-primary); }
 html.dark .nav a:hover,

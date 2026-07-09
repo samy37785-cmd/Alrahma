@@ -4,6 +4,7 @@ import { handleValidationErrors } from '../utils/validationHelper.js';
 import { parsePagination } from '../utils/pagination.js';
 import { auditFromReq } from '../services/auditService.js';
 import Review from '../models/Review.js';
+import { createNotification } from './notificationController.js';
 
 export const reviewValidation = [
   body('rating').isInt({ min: 1, max: 5 }).withMessage('Rating must be 1–5'),
@@ -84,12 +85,29 @@ export const moderateReview = asyncHandler(async (req, res) => {
   if (handleValidationErrors(req, res)) return;
 
   const { status, adminNote } = req.body;
+
+  // Read the prior status first so a notification only fires on the actual
+  // pending/rejected -> approved transition, not on every subsequent
+  // moderateReview call (e.g. an admin editing adminNote after approval).
+  const before = await Review.findById(req.params.id).select('status').lean();
+  if (!before) return res.status(404).json({ message: 'Review not found' });
+
   const review = await Review.findByIdAndUpdate(
     req.params.id,
     { ...(status && { status }), ...(adminNote && { adminNote }) },
     { new: true, runValidators: true },
   );
-  if (!review) return res.status(404).json({ message: 'Review not found' });
   await auditFromReq(req, 'review.moderate', 'Review', review._id, null, review, 'info');
+
+  if (status === 'approved' && before.status !== 'approved') {
+    await createNotification({
+      recipient: review.student,
+      type:      'review_approved',
+      title:     'Your review was approved',
+      body:      'Your review has been approved and is now visible to others.',
+      link:      '/dashboard',
+    });
+  }
+
   res.json({ review });
 });

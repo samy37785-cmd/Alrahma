@@ -4,6 +4,7 @@ import LiveClass from '../models/LiveClass.js';
 import { sendMail } from '../config/mailer.js';
 import { subscriptionRenewalReminderEmail, weeklyParentReportEmail } from '../config/emailTemplates.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
+import { createNotification } from './notificationController.js';
 import logger from '../config/logger.js';
 
 // How many days before expiry we send the heads-up. Override with RENEWAL_REMINDER_DAYS.
@@ -55,6 +56,18 @@ export const sendRenewalReminders = asyncHandler(async (_req, res) => {
         to: u.email,
         subject: 'Your Al-Rahma Academy subscription is renewing soon',
         html: subscriptionRenewalReminderEmail({ name: u.name, plan, validUntil, daysLeft, autoRenew }),
+      });
+
+      // Guarded by the same renewalReminderSentFor idempotency check above,
+      // so this fires exactly once per billing period, alongside the email.
+      await createNotification({
+        recipient: u._id,
+        type:      'subscription_expiring',
+        title:     'Your subscription is renewing soon',
+        body:      autoRenew
+          ? `Your ${plan} plan will auto-renew in ${daysLeft} day${daysLeft === 1 ? '' : 's'}.`
+          : `Your ${plan} plan expires in ${daysLeft} day${daysLeft === 1 ? '' : 's'}. Renew to keep your access.`,
+        link:      '/billing',
       });
 
       // Mark this period as reminded so we don't email it again.

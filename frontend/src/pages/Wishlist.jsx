@@ -8,14 +8,19 @@ export default function Wishlist() {
   const removeMutation = useRemoveFromWishlist();
   const clearMutation = useClearWishlist();
 
-  const courses = (data?.courses ?? []).filter((w) => w.course);
+  // Only render entries whose course is already populated — an in-flight
+  // optimistic add (see useAddToWishlist) briefly stores just the raw
+  // courseId until the server responds and the query is invalidated.
+  const courses = (data?.courses ?? []).filter((w) => w.course && typeof w.course === 'object');
 
   return (
     <DashboardLayout>
       <div className="ds-page-hd">
         <div>
           <div className="ds-page-hd__eyebrow"><Heart size={12} aria-hidden="true" /> Wishlist</div>
-          <h1 className="ds-page-hd__title">My Wishlist</h1>
+          <h1 className="ds-page-hd__title">
+            My Wishlist{!isLoading && !isError && courses.length > 0 && ` (${courses.length})`}
+          </h1>
           <p className="ds-page-hd__sub">Courses you&apos;re considering enrolling in.</p>
         </div>
         {courses.length > 0 && (

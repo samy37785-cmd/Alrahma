@@ -68,6 +68,21 @@ describe('WishlistButton', () => {
     expect(addToWishlist).not.toHaveBeenCalled();
   });
 
+  it('duplicate clicks while a mutation is in flight only submit once', async () => {
+    getWishlist.mockResolvedValue({ courses: [] });
+    let resolveAdd;
+    addToWishlist.mockReturnValue(new Promise((r) => { resolveAdd = r; }));
+    renderButton('course-1');
+
+    const btn = await screen.findByRole('button', { name: /add to wishlist/i });
+    await userEvent.click(btn);
+    await userEvent.click(btn);
+    await userEvent.click(btn);
+
+    expect(addToWishlist).toHaveBeenCalledTimes(1);
+    resolveAdd({ courses: [{ course: { _id: 'course-1' } }] });
+  });
+
   it('clicking does not bubble/navigate the enclosing link', async () => {
     getWishlist.mockResolvedValue({ courses: [] });
     addToWishlist.mockResolvedValue({ courses: [] });

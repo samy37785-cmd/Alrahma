@@ -77,6 +77,32 @@ describe('Wishlist page', () => {
     expect(screen.getAllByRole('link', { name: /view/i })).toHaveLength(2);
   });
 
+  it('shows a count in the page heading once the wishlist is populated', async () => {
+    getWishlist.mockResolvedValue({
+      courses: [
+        { course: { _id: 'c1', title: 'Tajweed Basics' }, addedAt: new Date().toISOString() },
+        { course: { _id: 'c2', title: 'Hifz Programme' }, addedAt: new Date().toISOString() },
+      ],
+    });
+    renderPage();
+
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'My Wishlist (2)' })).toBeInTheDocument());
+  });
+
+  it('does not show a count in the heading while empty', async () => {
+    getWishlist.mockResolvedValue({ courses: [] });
+    renderPage();
+
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'My Wishlist' })).toBeInTheDocument());
+  });
+
+  it('an in-flight optimistic entry (raw courseId, not yet populated) is filtered out instead of rendering a broken row', async () => {
+    getWishlist.mockResolvedValue({ courses: [{ course: 'course-id-only', addedAt: new Date().toISOString() }] });
+    renderPage();
+
+    await waitFor(() => expect(screen.getByText(/wishlist is empty/i)).toBeInTheDocument());
+  });
+
   it('a course with no populated `course` (e.g. it was deleted) is filtered out instead of crashing', async () => {
     getWishlist.mockResolvedValue({ courses: [{ course: null, addedAt: new Date().toISOString() }] });
     renderPage();

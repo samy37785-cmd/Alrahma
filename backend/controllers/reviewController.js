@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { body } from 'express-validator';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { handleValidationErrors } from '../utils/validationHelper.js';
@@ -5,6 +6,10 @@ import { parsePagination } from '../utils/pagination.js';
 import { auditFromReq } from '../services/auditService.js';
 import Review from '../models/Review.js';
 import { createNotification } from './notificationController.js';
+
+function isValidObjectId(id) {
+  return mongoose.Types.ObjectId.isValid(id);
+}
 
 export const reviewValidation = [
   body('rating').isInt({ min: 1, max: 5 }).withMessage('Rating must be 1–5'),
@@ -30,6 +35,9 @@ export const createReview = asyncHandler(async (req, res) => {
   if (!teacherId && !courseId) {
     return res.status(400).json({ message: 'Provide either teacherId or courseId' });
   }
+  if ((teacherId && !isValidObjectId(teacherId)) || (courseId && !isValidObjectId(courseId))) {
+    return res.status(400).json({ message: 'Invalid ID format' });
+  }
 
   const existing = await Review.findOne({
     student: req.user._id,
@@ -49,6 +57,9 @@ export const createReview = asyncHandler(async (req, res) => {
 });
 
 export const getTeacherReviews = asyncHandler(async (req, res) => {
+  if (!isValidObjectId(req.params.teacherId)) {
+    return res.status(400).json({ message: 'Invalid ID format' });
+  }
   const { page, limit, skip } = parsePagination(req.query, { defaultLimit: 10, maxLimit: 20 });
 
   const [reviews, total, stats] = await Promise.all([
@@ -66,6 +77,9 @@ export const getTeacherReviews = asyncHandler(async (req, res) => {
 });
 
 export const getCourseReviews = asyncHandler(async (req, res) => {
+  if (!isValidObjectId(req.params.courseId)) {
+    return res.status(400).json({ message: 'Invalid ID format' });
+  }
   const { page, limit, skip } = parsePagination(req.query, { defaultLimit: 10, maxLimit: 20 });
 
   const [reviews, total] = await Promise.all([
@@ -83,6 +97,9 @@ export const getCourseReviews = asyncHandler(async (req, res) => {
 
 export const moderateReview = asyncHandler(async (req, res) => {
   if (handleValidationErrors(req, res)) return;
+  if (!isValidObjectId(req.params.id)) {
+    return res.status(400).json({ message: 'Invalid ID format' });
+  }
 
   const { status, adminNote } = req.body;
 
@@ -110,4 +127,31 @@ export const moderateReview = asyncHandler(async (req, res) => {
   }
 
   res.json({ review });
+});
+
+// @desc  Admin: list all reviews (any status), optionally filtered — the
+//        moderation queue's only source of pending review IDs, since
+//        getTeacherReviews/getCourseReviews only ever return status:'approved'.
+// @route GET /api/reviews?status=pending
+// @access Admin (mirrors the legacy protect+adminOnly convention already used
+//         for GET /api/coupons, /api/contact, /api/certificates — only the
+//         moderation mutation itself lives on the hardened /v1/admin stack).
+export const listReviews = asyncHandler(async (req, res) => {
+  const { page, limit, skip } = parsePagination(req.query, { defaultLimit: 50, maxLimit: 200 });
+  const filter = {};
+  if (req.query.status) filter.status = req.query.status;
+
+  const [reviews, total] = await Promise.all([
+    Review.find(filter)
+      .populate('student', 'name email')
+      .populate('teacher', 'name')
+      .populate('course', 'title')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean(),
+    Review.countDocuments(filter),
+  ]);
+
+  res.json({ reviews, total, page, pages: Math.ceil(total / limit) });
 });

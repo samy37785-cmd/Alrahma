@@ -4,13 +4,14 @@ import { Link } from 'react-router-dom';
 import {
   LayoutDashboard, Users, BookOpen, CreditCard, Target, UserCog,
   Mail, Settings, TrendingUp, BarChart3, Activity, CheckCircle,
-  RefreshCw, Download, CalendarDays,
+  RefreshCw, Download, CalendarDays, Star,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getCourses } from '../api/courseApi';
 import { getManualPayments } from '../api/paymentApi';
 import { getUsers, listTeachers } from '../api/adminApi';
 import { getTrials, getSubscribers } from '../api/contentApi';
+import { getAdminReviews } from '../api/reviewApi';
 import AdminCoursesTab    from '../components/features/admin/AdminCoursesTab';
 import AdminTrialsTab     from '../components/features/admin/AdminTrialsTab';
 import AdminPaymentsTab   from '../components/features/admin/AdminPaymentsTab';
@@ -18,6 +19,7 @@ import AdminNewsletterTab from '../components/features/admin/AdminNewsletterTab'
 import AdminUsersTab      from '../components/features/admin/AdminUsersTab';
 import AdminStaffTab      from '../components/features/admin/AdminStaffTab';
 import AdminClassesTab   from '../components/features/admin/AdminClassesTab';
+import AdminReviewsTab   from '../components/features/admin/AdminReviewsTab';
 import AdminProgressModal from '../components/features/admin/AdminProgressModal';
 import DashboardLayout    from '../components/layout/DashboardLayout';
 import { DsBarChart, DsAreaChart, DsChartEmpty } from '../components/ui/DsChart';
@@ -159,6 +161,7 @@ const TABS = [
   { key: 'newsletter',  label: 'Newsletter',  Icon: Mail },
   { key: 'staff',       label: 'Staff',       Icon: UserCog },
   { key: 'classes',     label: 'Classes',     Icon: CalendarDays },
+  { key: 'reviews',     label: 'Reviews',     Icon: Star },
 ];
 
 export default function AdminDashboard() {
@@ -175,6 +178,7 @@ export default function AdminDashboard() {
   const { data: subscribers = [], isLoading: l4, isError: e4 } = useQuery({ queryKey: ['admin', 'newsletter'],  queryFn: getSubscribers,                      staleTime: 300000 });
   const { data: usersRes, isLoading: l5, isError: e5 }         = useQuery({ queryKey: ['admin', 'users'],       queryFn: getUsers,                            staleTime: 60000  });
   const { data: teachers = [], isLoading: l6 }     = useQuery({ queryKey: ['admin', 'teachers'],    queryFn: () => listTeachers().catch(() => []), staleTime: 120000 });
+  const { data: reviewsRes, isLoading: l7, isError: e6 }       = useQuery({ queryKey: ['admin', 'reviews'],     queryFn: getAdminReviews,                     staleTime: 60000  });
 
   // Surfaces a failed data load (most commonly a 403 for an AdminUser role
   // that lacks the relevant RBAC permission — e.g. 'editor' lacks
@@ -182,7 +186,7 @@ export default function AdminDashboard() {
   // payments" an empty-array fallback would otherwise show, which looked
   // indistinguishable from a genuinely empty account.
   const failedSections = [
-    e1 && 'courses', e2 && 'trial requests', e3 && 'payments', e4 && 'newsletter subscribers', e5 && 'users',
+    e1 && 'courses', e2 && 'trial requests', e3 && 'payments', e4 && 'newsletter subscribers', e5 && 'users', e6 && 'reviews',
   ].filter(Boolean);
   const loadErrorMessage = failedSections.length
     ? `Failed to load: ${failedSections.join(', ')}. You may not have permission to view this data, or there was a network error.`
@@ -192,8 +196,10 @@ export default function AdminDashboard() {
   const manualPaysTotal = paysRes?.total ?? manualPays.length;
   const users           = usersRes?.data ?? usersRes ?? [];
   const usersTotal      = usersRes?.total ?? users.length;
+  const reviews         = reviewsRes?.reviews ?? [];
+  const reviewsTotal    = reviewsRes?.total ?? reviews.length;
 
-  const loading = l1 || l2 || l3 || l4 || l5 || l6;
+  const loading = l1 || l2 || l3 || l4 || l5 || l6 || l7;
 
   const setCourses  = (updater) => queryClient.setQueryData(['admin', 'courses'],    updater);
   const setManualPays = (updater) => queryClient.setQueryData(['admin', 'payments'], (old) => {
@@ -205,6 +211,11 @@ export default function AdminDashboard() {
     const prev = old?.data ?? old ?? [];
     const next = typeof updater === 'function' ? updater(prev) : updater;
     return old?.data !== undefined ? { ...old, data: next } : next;
+  });
+  const setReviews  = (updater) => queryClient.setQueryData(['admin', 'reviews'],    (old) => {
+    const prev = old?.reviews ?? [];
+    const next = typeof updater === 'function' ? updater(prev) : updater;
+    return old?.reviews !== undefined ? { ...old, reviews: next } : next;
   });
 
   const loadAll = () => {
@@ -665,6 +676,18 @@ export default function AdminDashboard() {
       <div id="tabpanel-classes" role="tabpanel" aria-labelledby="tab-classes" hidden={activeTab !== 'classes'}>
         <div className="ds-card" style={{ padding: 0, overflow: 'hidden' }}>
           <AdminClassesTab users={users} onError={setError} />
+        </div>
+      </div>
+
+      {/* ── REVIEWS TAB ────────────────────────────────────────────── */}
+      <div id="tabpanel-reviews" role="tabpanel" aria-labelledby="tab-reviews" hidden={activeTab !== 'reviews'}>
+        <div className="ds-card" style={{ padding: 0, overflow: 'hidden' }}>
+          <AdminReviewsTab
+            reviews={reviews}
+            reviewsTotal={reviewsTotal}
+            onReviewsChange={setReviews}
+            onError={setError}
+          />
         </div>
       </div>
 

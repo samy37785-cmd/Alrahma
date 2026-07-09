@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useQuery, useQueries } from '@tanstack/react-query';
+import { useQuery, useQueries, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Flame, TrendingUp, CalendarDays, Clock, Play, BookOpen, BarChart2,
   MessageSquare, Book, CreditCard, MessageCircle, Landmark, Zap,
@@ -11,6 +11,7 @@ import { useLang } from '../context/LangContext';
 import { useDashboardData } from '../hooks/useDashboard';
 import { getCourseProgress, getMyCertificates } from '../api/courseApi';
 import { getClasses } from '../api/classApi';
+import { getTeacherReviews, createReview } from '../api/reviewApi';
 import { site } from '../data/site';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import ProgressRing from '../components/ui/ProgressRing';
@@ -270,6 +271,128 @@ function UpcomingClassCard({ cls }) {
             )
         )}
       </div>
+    </div>
+  );
+}
+
+// Real review average/count + submission form for the student's actual
+// assigned tutor (user.teacher — a real User._id, unlike enrollment.teacherName
+// which is only a free-text label from the public lead-capture form).
+export function TutorReviewWidget({ teacherId }) {
+  const queryClient = useQueryClient();
+  const [showForm, setShowForm] = useState(false);
+  const [rating, setRating] = useState(0);
+  const [hoverRating, setHoverRating] = useState(0);
+  const [body, setBody] = useState('');
+
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ['reviews', 'teacher', teacherId],
+    queryFn: () => getTeacherReviews(teacherId, { limit: 1 }),
+    enabled: !!teacherId,
+    staleTime: 60000,
+  });
+
+  const submitReview = useMutation({
+    mutationFn: () => createReview({ teacherId, rating, body }),
+    onSuccess: () => {
+      setShowForm(false);
+      queryClient.invalidateQueries({ queryKey: ['reviews', 'teacher', teacherId] });
+    },
+  });
+
+  const avg = data?.avg ?? 0;
+  const count = data?.count ?? 0;
+  const filled = Math.round(avg);
+  const alreadyReviewed = submitReview.isError && submitReview.error?.response?.status === 409;
+  const canSubmit = rating > 0 && body.trim().length > 0;
+
+  return (
+    <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--border-default)' }}>
+      {isLoading ? (
+        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Loading rating…</div>
+      ) : isError ? (
+        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Couldn&apos;t load rating.</div>
+      ) : (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+          <div style={{ display: 'flex', gap: 1 }}>
+            {[1, 2, 3, 4, 5].map((s) => (
+              <Star key={s} size={14} fill={s <= filled ? '#e0a30d' : 'none'} color={s <= filled ? '#e0a30d' : 'var(--border-default)'} />
+            ))}
+          </div>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+            {count > 0 ? `${avg.toFixed(1)} (${count} review${count === 1 ? '' : 's'})` : 'No reviews yet'}
+          </span>
+        </div>
+      )}
+
+      {submitReview.isSuccess ? (
+        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+          Thanks! Your review is pending approval.
+        </div>
+      ) : alreadyReviewed ? (
+        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+          You&apos;ve already reviewed your tutor.
+        </div>
+      ) : !showForm ? (
+        <button
+          type="button"
+          className="btn btn--sm"
+          style={{ borderRadius: 8, fontSize: '0.78rem', background: 'var(--bg-page)', border: '1px solid var(--border-default)', color: 'var(--text-secondary)' }}
+          onClick={() => setShowForm(true)}
+        >
+          <Star size={12} aria-hidden="true" /> Rate your tutor
+        </button>
+      ) : (
+        <div>
+          <div style={{ display: 'flex', gap: 4, marginBottom: 8 }}>
+            {[1, 2, 3, 4, 5].map((s) => (
+              <button
+                key={s}
+                type="button"
+                aria-label={`Rate ${s} star${s === 1 ? '' : 's'}`}
+                onClick={() => setRating(s)}
+                onMouseEnter={() => setHoverRating(s)}
+                onMouseLeave={() => setHoverRating(0)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+              >
+                <Star size={20} fill={s <= (hoverRating || rating) ? '#e0a30d' : 'none'} color={s <= (hoverRating || rating) ? '#e0a30d' : 'var(--border-default)'} />
+              </button>
+            ))}
+          </div>
+          <textarea
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            placeholder="Tell us about your experience with your tutor"
+            maxLength={2000}
+            rows={2}
+            style={{ width: '100%', fontFamily: 'var(--font-sans)', fontSize: '0.78rem', padding: 8, borderRadius: 8, border: '1px solid var(--border-default)', resize: 'vertical', marginBottom: 8, boxSizing: 'border-box' }}
+          />
+          {submitReview.isError && !alreadyReviewed && (
+            <div style={{ fontSize: '0.72rem', color: 'var(--color-danger-text)', marginBottom: 8 }}>
+              Couldn&apos;t submit your review. Please try again.
+            </div>
+          )}
+          <div style={{ display: 'flex', gap: 6 }}>
+            <button
+              type="button"
+              className="btn btn--green btn--sm"
+              style={{ borderRadius: 8, fontSize: '0.78rem' }}
+              disabled={!canSubmit || submitReview.isPending}
+              onClick={() => submitReview.mutate()}
+            >
+              {submitReview.isPending ? 'Submitting…' : 'Submit review'}
+            </button>
+            <button
+              type="button"
+              className="btn btn--sm"
+              style={{ borderRadius: 8, fontSize: '0.78rem', background: 'none', border: 'none', color: 'var(--text-secondary)' }}
+              onClick={() => setShowForm(false)}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -914,6 +1037,7 @@ export default function Dashboard() {
                   <p style={{ fontSize: '0.68rem', color: 'var(--text-secondary)', marginTop: 6, marginBottom: 0 }}>
                     Not the right fit? Request a free tutor change — we rematch within 48 h.
                   </p>
+                  {user?.teacher && <TutorReviewWidget teacherId={user.teacher} />}
                 </div>
               ) : (
                 <div className="ds-empty" style={{ padding: '16px 0' }}>

@@ -18,5 +18,6 @@
      hifz.css (24KB)         → pages/Quran.jsx + pages/tools/HifzReviewPage.jsx
      trust-engage.css (30KB) → pages/Home.jsx + pages/Dashboard.jsx */
 @import './styles/components.css';    /* UI component library (card, badge, form, …) */
+@import './styles/design-system.css'; /* modal, toast, tooltip, dropdown, tabs, accordion, pagination, progress */
 @import './styles/dark.css';          /* site-wide dark mode (html.dark)            */
 @import './styles/responsive.css';    /* mobile fixes — MUST stay last to win        */

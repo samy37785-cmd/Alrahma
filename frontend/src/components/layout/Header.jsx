@@ -6,6 +6,7 @@ import Brand from "./Brand";
 import { useAuth } from "../../context/AuthContext";
 import { useLang } from "../../context/LangContext";
 import { useTheme } from "../../context/ThemeContext";
+import { useEscapeKey } from "../../hooks/useEscapeKey";
 import LangSwitcher from "../ui/LangSwitcher";
 import Avatar from "../ui/Avatar";
 import CommandPalette from "../ui/CommandPalette";
@@ -190,12 +191,7 @@ export default function Header() {
   }, []);
 
   /* Escape closes the mobile drawer */
-  useEffect(() => {
-    if (!mobileOpen) return;
-    const handler = (e) => { if (e.key === "Escape") setMobileOpen(false); };
-    document.addEventListener("keydown", handler);
-    return () => document.removeEventListener("keydown", handler);
-  }, [mobileOpen]);
+  useEscapeKey(() => setMobileOpen(false), mobileOpen);
 
   /* Ctrl+K / ⌘+K opens the command palette */
   useEffect(() => {

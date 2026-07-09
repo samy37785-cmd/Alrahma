@@ -626,6 +626,24 @@
       "networkError": "Netzwerkfehler — überprüfe deine Verbindung und versuche es erneut.",
       "errorFallback": "Anmeldung fehlgeschlagen. Bitte erneut versuchen."
     },
+    "adminLogin": {
+      "title": "Admin-Anmeldung",
+      "sub": "Erweiterter Schutz — ein zweiter Faktor ist erforderlich, um Nutzer und Zahlungen zu verwalten.",
+      "email": "E-Mail",
+      "password": "Passwort",
+      "continueBtn": "Weiter",
+      "signingIn": "Anmelden…",
+      "mfaSetupIntro": "Scanne diesen QR-Code mit einer Authenticator-App (Google Authenticator, Authy usw.) und gib dann den 6-stelligen Code ein, um die Einrichtung abzuschließen.",
+      "manualEntryKey": "Manueller Eingabeschlüssel",
+      "totpLabel": "6-stelliger Code",
+      "activateBtn": "Aktivieren & Anmelden",
+      "verifying": "Wird überprüft…",
+      "mfaVerifyIntro": "Gib den 6-stelligen Code aus deiner Authenticator-App ein.",
+      "signInBtn": "Anmelden",
+      "backToConsole": "Zurück zur Konsole",
+      "signInFailedFallback": "Anmeldung fehlgeschlagen",
+      "invalidCodeFallback": "Ungültiger Code"
+    },
     "register": {
       "title": "Konto erstellen",
       "sub": "Tritt Al-Rahma Academy bei",

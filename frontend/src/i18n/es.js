@@ -627,6 +627,24 @@
       "networkError": "Error de red — comprueba tu conexión e inténtalo de nuevo.",
       "errorFallback": "Error al iniciar sesión. Por favor, inténtalo de nuevo."
     },
+    "adminLogin": {
+      "title": "Acceso de administrador",
+      "sub": "Acceso reforzado — se requiere un segundo factor para gestionar usuarios y pagos.",
+      "email": "Correo electrónico",
+      "password": "Contraseña",
+      "continueBtn": "Continuar",
+      "signingIn": "Iniciando…",
+      "mfaSetupIntro": "Escanea este código QR con una app de autenticación (Google Authenticator, Authy, etc.) y luego introduce el código de 6 dígitos para finalizar la configuración.",
+      "manualEntryKey": "Clave de entrada manual",
+      "totpLabel": "Código de 6 dígitos",
+      "activateBtn": "Activar e iniciar sesión",
+      "verifying": "Verificando…",
+      "mfaVerifyIntro": "Introduce el código de 6 dígitos de tu app de autenticación.",
+      "signInBtn": "Iniciar sesión",
+      "backToConsole": "Volver a la consola",
+      "signInFailedFallback": "Error al iniciar sesión",
+      "invalidCodeFallback": "Código no válido"
+    },
     "register": {
       "title": "Crea tu cuenta",
       "sub": "Únete a Al-Rahma Academy",

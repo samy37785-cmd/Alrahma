@@ -169,12 +169,24 @@ export default function AdminDashboard() {
   const [activeTab,  setActiveTab]  = useState('overview');
   const [reportUser, setReportUser] = useState(null);
 
-  const { data: courses = [], isLoading: l1 }      = useQuery({ queryKey: ['admin', 'courses'],     queryFn: getCourses,                          staleTime: 120000 });
-  const { data: trials = [], isLoading: l2 }       = useQuery({ queryKey: ['admin', 'trials'],      queryFn: getTrials,                           staleTime: 60000  });
-  const { data: paysRes, isLoading: l3 }           = useQuery({ queryKey: ['admin', 'payments'],    queryFn: getManualPayments,                   staleTime: 30000  });
-  const { data: subscribers = [], isLoading: l4 }  = useQuery({ queryKey: ['admin', 'newsletter'],  queryFn: getSubscribers,                      staleTime: 300000 });
-  const { data: usersRes, isLoading: l5 }          = useQuery({ queryKey: ['admin', 'users'],       queryFn: getUsers,                            staleTime: 60000  });
+  const { data: courses = [], isLoading: l1, isError: e1 }     = useQuery({ queryKey: ['admin', 'courses'],     queryFn: getCourses,                          staleTime: 120000 });
+  const { data: trials = [], isLoading: l2, isError: e2 }      = useQuery({ queryKey: ['admin', 'trials'],      queryFn: getTrials,                           staleTime: 60000  });
+  const { data: paysRes, isLoading: l3, isError: e3 }          = useQuery({ queryKey: ['admin', 'payments'],    queryFn: getManualPayments,                   staleTime: 30000  });
+  const { data: subscribers = [], isLoading: l4, isError: e4 } = useQuery({ queryKey: ['admin', 'newsletter'],  queryFn: getSubscribers,                      staleTime: 300000 });
+  const { data: usersRes, isLoading: l5, isError: e5 }         = useQuery({ queryKey: ['admin', 'users'],       queryFn: getUsers,                            staleTime: 60000  });
   const { data: teachers = [], isLoading: l6 }     = useQuery({ queryKey: ['admin', 'teachers'],    queryFn: () => listTeachers().catch(() => []), staleTime: 120000 });
+
+  // Surfaces a failed data load (most commonly a 403 for an AdminUser role
+  // that lacks the relevant RBAC permission — e.g. 'editor' lacks
+  // users:read) as a visible banner instead of the silent "0 users/0
+  // payments" an empty-array fallback would otherwise show, which looked
+  // indistinguishable from a genuinely empty account.
+  const failedSections = [
+    e1 && 'courses', e2 && 'trial requests', e3 && 'payments', e4 && 'newsletter subscribers', e5 && 'users',
+  ].filter(Boolean);
+  const loadErrorMessage = failedSections.length
+    ? `Failed to load: ${failedSections.join(', ')}. You may not have permission to view this data, or there was a network error.`
+    : '';
 
   const manualPays      = paysRes?.data ?? paysRes ?? [];
   const manualPaysTotal = paysRes?.total ?? manualPays.length;
@@ -254,6 +266,15 @@ export default function AdminDashboard() {
           </button>
         </div>
       </div>
+
+      {loadErrorMessage && (
+        <div style={{
+          background: 'var(--color-danger-surface)', border: '1px solid var(--color-danger-border)',
+          borderRadius: 9, padding: '10px 14px', marginBottom: 16, fontSize: '0.855rem', color: 'var(--color-danger-text)',
+        }}>
+          {loadErrorMessage}
+        </div>
+      )}
 
       {error && (
         <div style={{

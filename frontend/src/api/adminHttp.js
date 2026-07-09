@@ -1,16 +1,8 @@
 import axios from 'axios';
 import { adminRefresh } from './adminAuthApi';
+import { getCsrfToken } from './csrf';
 
 const baseURL = import.meta.env.VITE_API_URL || '/api';
-
-function getCsrfToken() {
-  return (
-    document.cookie
-      .split('; ')
-      .find((row) => row.startsWith('csrf_token='))
-      ?.split('=')[1] ?? ''
-  );
-}
 
 // Dedicated axios instance for the hardened /api/v1/admin/* API. Kept
 // separate from api/http.js because a 401 here means a different thing: the

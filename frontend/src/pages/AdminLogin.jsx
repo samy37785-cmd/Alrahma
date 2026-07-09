@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Brand from '../components/layout/Brand';
 import { useAdminAuth } from '../context/AdminAuthContext';
+import { useLang } from '../context/LangContext';
 
 // Second-factor sign-in for the admin console: the hardened AdminUser +
 // TOTP-MFA session required by /api/v1/admin/* (see AdminAuthContext /
@@ -10,6 +11,8 @@ import { useAdminAuth } from '../context/AdminAuthContext';
 // the site-wide /login page's regular User session.
 export default function AdminLogin() {
   const navigate = useNavigate();
+  const { t } = useLang();
+  const lg = t.authPg.adminLogin;
   const { login, confirmMfaSetup, verifyMfa, pendingStage, mfaSetupInfo } = useAdminAuth();
 
   const [email, setEmail]       = useState('');
@@ -25,7 +28,7 @@ export default function AdminLogin() {
     try {
       await login(email, password);
     } catch (err) {
-      setError(err.response?.data?.message || 'Sign-in failed');
+      setError(err.response?.data?.message || lg.signInFailedFallback);
     } finally {
       setBusy(false);
     }
@@ -39,7 +42,7 @@ export default function AdminLogin() {
       await confirmMfaSetup(totp, email);
       navigate('/admin', { replace: true });
     } catch (err) {
-      setError(err.response?.data?.message || 'Invalid code');
+      setError(err.response?.data?.message || lg.invalidCodeFallback);
     } finally {
       setBusy(false);
     }
@@ -53,7 +56,7 @@ export default function AdminLogin() {
       await verifyMfa(totp);
       navigate('/admin', { replace: true });
     } catch (err) {
-      setError(err.response?.data?.message || 'Invalid code');
+      setError(err.response?.data?.message || lg.invalidCodeFallback);
     } finally {
       setBusy(false);
     }
@@ -65,15 +68,15 @@ export default function AdminLogin() {
         <div className="auth__brand">
           <Brand />
         </div>
-        <h1>Admin Sign In</h1>
-        <p className="auth__sub">Hardened access — a second factor is required to manage users and payments.</p>
+        <h1>{lg.title}</h1>
+        <p className="auth__sub">{lg.sub}</p>
 
         {error && <p className="auth__error" role="alert">{error}</p>}
 
         {!pendingStage && (
           <form onSubmit={handleCredentials} noValidate>
             <div className="field">
-              <label htmlFor="admin-email">Email</label>
+              <label htmlFor="admin-email">{lg.email}</label>
               <input
                 type="email" id="admin-email" value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -81,7 +84,7 @@ export default function AdminLogin() {
               />
             </div>
             <div className="field">
-              <label htmlFor="admin-password">Password</label>
+              <label htmlFor="admin-password">{lg.password}</label>
               <input
                 type="password" id="admin-password" value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -89,53 +92,53 @@ export default function AdminLogin() {
               />
             </div>
             <button type="submit" className={`btn btn--green btn--block${busy ? ' btn--loading' : ''}`} disabled={busy}>
-              {busy ? 'Signing in…' : 'Continue'}
+              {busy ? lg.signingIn : lg.continueBtn}
             </button>
           </form>
         )}
 
         {pendingStage === 'mfa_setup' && (
           <form onSubmit={handleMfaSetupConfirm} noValidate>
-            <p>Scan this QR code with an authenticator app (Google Authenticator, Authy, etc.), then enter the 6-digit code to finish setup.</p>
+            <p>{lg.mfaSetupIntro}</p>
             {mfaSetupInfo?.qrCode && (
               <img src={mfaSetupInfo.qrCode} alt="TOTP QR code" width={200} height={200} style={{ display: 'block', margin: '0 auto 12px' }} />
             )}
             {mfaSetupInfo?.secret && (
               <p style={{ fontFamily: 'monospace', fontSize: '.82rem', textAlign: 'center', wordBreak: 'break-all' }}>
-                Manual entry key: {mfaSetupInfo.secret}
+                {lg.manualEntryKey}: {mfaSetupInfo.secret}
               </p>
             )}
             <div className="field">
-              <label htmlFor="admin-totp-setup">6-digit code</label>
+              <label htmlFor="admin-totp-setup">{lg.totpLabel}</label>
               <input
                 id="admin-totp-setup" value={totp} onChange={(e) => setTotp(e.target.value)}
                 inputMode="numeric" maxLength={6} required autoFocus
               />
             </div>
             <button type="submit" className={`btn btn--green btn--block${busy ? ' btn--loading' : ''}`} disabled={busy}>
-              {busy ? 'Verifying…' : 'Activate & Sign In'}
+              {busy ? lg.verifying : lg.activateBtn}
             </button>
           </form>
         )}
 
         {pendingStage === 'mfa' && (
           <form onSubmit={handleMfaVerify} noValidate>
-            <p>Enter the 6-digit code from your authenticator app.</p>
+            <p>{lg.mfaVerifyIntro}</p>
             <div className="field">
-              <label htmlFor="admin-totp">6-digit code</label>
+              <label htmlFor="admin-totp">{lg.totpLabel}</label>
               <input
                 id="admin-totp" value={totp} onChange={(e) => setTotp(e.target.value)}
                 inputMode="numeric" maxLength={6} required autoFocus
               />
             </div>
             <button type="submit" className={`btn btn--green btn--block${busy ? ' btn--loading' : ''}`} disabled={busy}>
-              {busy ? 'Verifying…' : 'Sign In'}
+              {busy ? lg.verifying : lg.signInBtn}
             </button>
           </form>
         )}
 
         <p className="auth__switch">
-          <Link to="/admin">Back to console</Link>
+          <Link to="/admin">{lg.backToConsole}</Link>
         </p>
       </div>
     </div>

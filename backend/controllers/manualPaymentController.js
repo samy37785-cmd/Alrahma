@@ -165,6 +165,10 @@ export const reviewManualPayment = asyncHandler(async (req, res) => {
       res.status(400);
       throw new Error('status must be approved or rejected');
     }
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      res.status(400);
+      throw new Error('Invalid ID format');
+    }
 
     // Load without modifying — the approval transaction performs an atomic
     // status claim so two concurrent approvals can never both succeed.

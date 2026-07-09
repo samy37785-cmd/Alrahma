@@ -1,15 +1,7 @@
 import axios from 'axios';
+import { getCsrfToken } from './csrf';
 
 const baseURL = import.meta.env.VITE_API_URL || '/api';
-
-function getCsrfToken() {
-  return (
-    document.cookie
-      .split('; ')
-      .find((row) => row.startsWith('csrf_token='))
-      ?.split('=')[1] ?? ''
-  );
-}
 
 const http = axios.create({
   baseURL,

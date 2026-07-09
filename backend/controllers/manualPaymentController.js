@@ -4,6 +4,7 @@ import { getPlan } from '../config/plans.js';
 import { sendMail, ADMIN_EMAIL } from '../config/mailer.js';
 import { enrollUser } from '../services/subscriptionService.js';
 import { createInvoice } from '../services/invoiceService.js';
+import { createNotification } from './notificationController.js';
 import {
   manualPaymentAdminEmail,
   manualPaymentApprovedEmail,
@@ -205,6 +206,13 @@ export const reviewManualPayment = asyncHandler(async (req, res) => {
             planName: record.plan,
             session:  dbSession,
           });
+          await createNotification({
+            recipient: record.userId,
+            type:      'payment_received',
+            title:     'Payment approved',
+            body:      `Your payment for the ${record.plan} plan has been approved and your subscription is now active.`,
+            link:      '/billing',
+          }, { session: dbSession });
         });
       } finally {
         dbSession.endSession();
@@ -215,6 +223,17 @@ export const reviewManualPayment = asyncHandler(async (req, res) => {
         { $set: { status, adminNote } },
         { new: true },
       );
+      if (claimed) {
+        await createNotification({
+          recipient: record.userId,
+          type:      'payment_failed',
+          title:     'Payment verification update',
+          body:      adminNote
+            ? `Your payment could not be verified: ${adminNote}`
+            : 'Your payment could not be verified. Please contact support.',
+          link:      '/billing',
+        });
+      }
     }
 
     if (!claimed) {

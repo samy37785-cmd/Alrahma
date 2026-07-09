@@ -3,6 +3,7 @@ import Payment from '../models/Payment.js';
 import { getPlan } from '../config/plans.js';
 import { enrollUser } from '../services/subscriptionService.js';
 import { createInvoice } from '../services/invoiceService.js';
+import { createNotification } from './notificationController.js';
 import { siteOrigin } from '../config/site.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import logger from '../config/logger.js';
@@ -158,6 +159,13 @@ async function finalizePaypalOrder(orderId, capture) {
         });
 
         await enrollUser(payment.userId, payment.plan, session);
+        await createNotification({
+          recipient: payment.userId,
+          type:      'payment_received',
+          title:     'Payment approved',
+          body:      `Your PayPal payment for the ${payment.plan} plan has been received and your subscription is now active.`,
+          link:      '/billing',
+        }, { session });
         logger.info('PayPal payment finalized', {
           orderId,
           paymentId: String(payment._id),
@@ -165,6 +173,13 @@ async function finalizePaypalOrder(orderId, capture) {
           userId:    String(payment.userId),
         });
       } else {
+        await createNotification({
+          recipient: payment.userId,
+          type:      'payment_failed',
+          title:     'Payment not completed',
+          body:      `Your PayPal payment for the ${payment.plan} plan was not completed. Please try again or contact support.`,
+          link:      '/billing',
+        }, { session });
         logger.warn('PayPal capture not completed', { orderId, captureStatus: capture?.status });
       }
 

@@ -108,10 +108,6 @@
 .tpg__star.on { color: var(--gold); }
 .tpg__avg { font-weight: 700; font-size: .95rem; color: var(--green-deep); }
 .tpg__cnt { font-size: .8rem; color: var(--muted); }
-.tpg__rate { display: flex; align-items: center; gap: 4px; margin-left: 12px; font-size: .78rem; color: var(--muted); }
-.tpg__rate-btn { background: none; border: 0; cursor: pointer; font-size: 1rem; color: #ccc; padding: 0; transition: color .15s; }
-.tpg__rate-btn:hover, .tpg__rate-btn.lit { color: var(--gold); }
-.tpg__thanks { color: var(--green); font-weight: 700; font-size: .8rem; }
 
 /* Langs */
 .tpg__langs { display: flex; flex-wrap: wrap; gap: 6px; }

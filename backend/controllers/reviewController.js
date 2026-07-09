@@ -11,6 +11,18 @@ function isValidObjectId(id) {
   return mongoose.Types.ObjectId.isValid(id);
 }
 
+// Additive, backward-compatible: omitting ?sort (or passing an unrecognized
+// value) preserves the original hardcoded newest-first behavior.
+const REVIEW_SORTS = {
+  recent: { createdAt: -1 },
+  rating_desc: { rating: -1, createdAt: -1 },
+  rating_asc: { rating: 1, createdAt: -1 },
+};
+
+function resolveReviewSort(sortParam) {
+  return REVIEW_SORTS[sortParam] || REVIEW_SORTS.recent;
+}
+
 export const reviewValidation = [
   body('rating').isInt({ min: 1, max: 5 }).withMessage('Rating must be 1–5'),
   body('body').trim().notEmpty().withMessage('Review body is required').isLength({ max: 2000 }),
@@ -65,7 +77,7 @@ export const getTeacherReviews = asyncHandler(async (req, res) => {
   const [reviews, total, stats] = await Promise.all([
     Review.find({ teacher: req.params.teacherId, status: 'approved' })
       .populate('student', 'name')
-      .sort({ createdAt: -1 })
+      .sort(resolveReviewSort(req.query.sort))
       .skip(skip)
       .limit(limit)
       .lean(),
@@ -85,7 +97,7 @@ export const getCourseReviews = asyncHandler(async (req, res) => {
   const [reviews, total, stats] = await Promise.all([
     Review.find({ course: req.params.courseId, status: 'approved' })
       .populate('student', 'name')
-      .sort({ createdAt: -1 })
+      .sort(resolveReviewSort(req.query.sort))
       .skip(skip)
       .limit(limit)
       .lean(),

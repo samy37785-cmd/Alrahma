@@ -124,6 +124,44 @@ describe('CourseReviews', () => {
     expect(screen.queryByRole('button', { name: /load more/i })).not.toBeInTheDocument();
   });
 
+  it('sort dropdown is shown once there is more than one review and requests the chosen sort', async () => {
+    getCourseReviews.mockResolvedValue({
+      reviews: [
+        { _id: 'r1', rating: 5, title: '', body: 'a', student: { name: 'A' }, createdAt: new Date().toISOString() },
+        { _id: 'r2', rating: 2, title: '', body: 'b', student: { name: 'B' }, createdAt: new Date().toISOString() },
+      ],
+      total: 2, avg: 3.5, count: 2, distribution: { 1: 0, 2: 1, 3: 0, 4: 0, 5: 1 },
+    });
+    renderComponent();
+
+    const select = await screen.findByLabelText(/sort reviews/i);
+    await userEvent.selectOptions(select, 'rating_asc');
+
+    await waitFor(() => expect(getCourseReviews.mock.calls.at(-1)[1]).toMatchObject({ sort: 'rating_asc' }));
+  });
+
+  it('sort dropdown is not shown when there is only one (or zero) reviews', async () => {
+    getCourseReviews.mockResolvedValue({
+      reviews: [{ _id: 'r1', rating: 5, title: '', body: 'x', student: { name: 'A' }, createdAt: new Date().toISOString() }],
+      total: 1, avg: 5, count: 1, distribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 1 },
+    });
+    renderComponent();
+
+    await waitFor(() => expect(screen.getByText('x')).toBeInTheDocument());
+    expect(screen.queryByLabelText(/sort reviews/i)).not.toBeInTheDocument();
+  });
+
+  it('submit review: shows a live character counter for the review body', async () => {
+    getCourseReviews.mockResolvedValue(emptyStats);
+    renderComponent();
+
+    await userEvent.click(await screen.findByRole('button', { name: /write a review/i }));
+    expect(screen.getByText('0/2000')).toBeInTheDocument();
+
+    await userEvent.type(screen.getByPlaceholderText(/share your experience/i), 'Great course');
+    expect(screen.getByText('12/2000')).toBeInTheDocument();
+  });
+
   it('submit review: requires both a rating and a body, and calls createReview with the real courseId', async () => {
     getCourseReviews.mockResolvedValue(emptyStats);
     createReview.mockResolvedValue({ review: { _id: 'new1', status: 'pending' } });

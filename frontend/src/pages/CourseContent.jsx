@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext';
 import { getCourse, getCourseProgress, toggleLessonDone } from '../api/courseApi';
 import { useLang } from '../context/LangContext';
+import CourseReviews from '../components/features/courses/CourseReviews';
 
 const ICONS = { youtube: '▶', pdf: '📄', link: '🔗', video: '▶', text: '📖' };
 const lessonKey = (l) => `lesson:${l._id}`;
@@ -219,6 +220,8 @@ export default function CourseContent() {
             <p style={{ color: '#888', margin: 0 }}>{cc.noMaterials}</p>
           </div>
         )}
+
+        <CourseReviews courseId={id} />
       </main>
     </div>
   );

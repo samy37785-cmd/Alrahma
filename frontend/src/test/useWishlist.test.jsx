@@ -1,7 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useWishlist, useIsWishlisted } from '../hooks/useWishlist';
+import {
+  useWishlist, useIsWishlisted, useAddToWishlist, useRemoveFromWishlist, useClearWishlist,
+} from '../hooks/useWishlist';
 
 vi.mock('../api/wishlistApi.js', () => ({
   getWishlist: vi.fn(),
@@ -48,5 +50,58 @@ describe('useIsWishlisted', () => {
     client.getWishlist.mockResolvedValue({ courses: [] });
     const { result } = renderHook(() => useIsWishlisted('course-999'), { wrapper: wrapper() });
     await waitFor(() => expect(result.current).toBe(false));
+  });
+});
+
+// Feature Sprint 3: the mutation hooks (add/remove/clear) had no coverage at
+// all — only the read side (useWishlist/useIsWishlisted) was ever tested.
+describe('useAddToWishlist', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('calls the API with the courseId and invalidates the wishlist cache on success', async () => {
+    client.addToWishlist.mockResolvedValue({ courses: [{ course: { _id: 'c1' } }] });
+    const { result } = renderHook(() => useAddToWishlist(), { wrapper: wrapper() });
+
+    result.current.mutate('c1');
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(client.addToWishlist.mock.calls[0][0]).toBe('c1');
+  });
+
+  it('surfaces a failure via isError instead of throwing', async () => {
+    client.addToWishlist.mockRejectedValue(new Error('Network error'));
+    const { result } = renderHook(() => useAddToWishlist(), { wrapper: wrapper() });
+
+    result.current.mutate('c1');
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+  });
+});
+
+describe('useRemoveFromWishlist', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('calls the API with the courseId', async () => {
+    client.removeFromWishlist.mockResolvedValue({ courses: [] });
+    const { result } = renderHook(() => useRemoveFromWishlist(), { wrapper: wrapper() });
+
+    result.current.mutate('c1');
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(client.removeFromWishlist.mock.calls[0][0]).toBe('c1');
+  });
+});
+
+describe('useClearWishlist', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('calls the clear API with no arguments', async () => {
+    client.clearWishlist.mockResolvedValue({ message: 'Wishlist cleared' });
+    const { result } = renderHook(() => useClearWishlist(), { wrapper: wrapper() });
+
+    result.current.mutate();
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(client.clearWishlist).toHaveBeenCalled();
   });
 });

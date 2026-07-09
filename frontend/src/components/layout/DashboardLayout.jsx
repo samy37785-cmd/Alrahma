@@ -8,7 +8,7 @@ import {
   UserCog, Book, User, ExternalLink, Menu, Search, Bell, Sun, Moon,
   GraduationCap, LogOut, Settings, Calendar, ClipboardList, Flame,
   X, ChevronLeft, ChevronRight, BarChart3, Home, Shield, Landmark,
-  Mail, FileText, BookMarked,
+  Mail, FileText, BookMarked, Heart,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
@@ -69,6 +69,7 @@ function navFor(isAdmin, isTeacher, isParent, unreadCount) {
     { to: '/tools/quran-reader', icon: Book,        label: 'Quran Reader' },
     { to: '/calendar',           icon: Calendar,     label: 'My Schedule' },
     { to: '/homework',           icon: FileText,      label: 'Homework' },
+    { to: '/wishlist',           icon: Heart,         label: 'Wishlist' },
     { section: 'ACCOUNT' },
     { to: '/profile', icon: User,        label: 'Profile' },
     { to: '/billing', icon: CreditCard,  label: 'Billing' },

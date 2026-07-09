@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { submitTrial } from '../../api/contentApi';
+import { useEscapeKey } from '../../hooks/useEscapeKey';
 
 export default function QuickTrialModal({ open, onClose }) {
   const [form, setForm] = useState({ name: '', email: '', whatsapp: '' });
@@ -17,16 +18,13 @@ export default function QuickTrialModal({ open, onClose }) {
     }
   }, [open]);
 
+  useEscapeKey(onClose, open);
+
   useEffect(() => {
     if (!open) return;
-    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
-    document.addEventListener('keydown', onKey);
     document.body.style.overflow = 'hidden';
-    return () => {
-      document.removeEventListener('keydown', onKey);
-      document.body.style.overflow = '';
-    };
-  }, [open, onClose]);
+    return () => { document.body.style.overflow = ''; };
+  }, [open]);
 
   if (!open) return null;
 

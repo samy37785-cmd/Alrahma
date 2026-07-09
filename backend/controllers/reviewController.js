@@ -82,7 +82,7 @@ export const getCourseReviews = asyncHandler(async (req, res) => {
   }
   const { page, limit, skip } = parsePagination(req.query, { defaultLimit: 10, maxLimit: 20 });
 
-  const [reviews, total] = await Promise.all([
+  const [reviews, total, stats] = await Promise.all([
     Review.find({ course: req.params.courseId, status: 'approved' })
       .populate('student', 'name')
       .sort({ createdAt: -1 })
@@ -90,9 +90,10 @@ export const getCourseReviews = asyncHandler(async (req, res) => {
       .limit(limit)
       .lean(),
     Review.countDocuments({ course: req.params.courseId, status: 'approved' }),
+    Review.ratingStatsForCourse(req.params.courseId),
   ]);
 
-  res.json({ reviews, total, page, pages: Math.ceil(total / limit) });
+  res.json({ reviews, total, page, pages: Math.ceil(total / limit), ...stats });
 });
 
 export const moderateReview = asyncHandler(async (req, res) => {

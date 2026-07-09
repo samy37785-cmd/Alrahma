@@ -234,6 +234,34 @@ test('getCourseReviews: rejects a malformed courseId with 400', async () => {
   assert.equal(res.status, 400);
 });
 
+test('getCourseReviews: avg/count/distribution reflect only approved reviews for that course', async () => {
+  const course = await Course.create({ title: 'Ijazah Programme', description: 'x' });
+  const students = await Promise.all(
+    [0, 1, 2, 3].map((i) => User.create({ name: `S${i}`, email: `gc2s${i}@example.com`, password: PASSWORD })),
+  );
+  await Review.create({ student: students[0]._id, course: course._id, rating: 5, body: 'a', status: 'approved' });
+  await Review.create({ student: students[1]._id, course: course._id, rating: 5, body: 'b', status: 'approved' });
+  await Review.create({ student: students[2]._id, course: course._id, rating: 3, body: 'c', status: 'approved' });
+  await Review.create({ student: students[3]._id, course: course._id, rating: 1, body: 'd', status: 'pending' });
+
+  const { agent } = await agentWithCsrf(app);
+  const res = await agent.get(`/api/reviews/course/${course._id}`);
+  assert.equal(res.status, 200);
+  assert.equal(res.body.count, 3, 'pending review must not count toward the total');
+  assert.equal(res.body.avg, (5 + 5 + 3) / 3);
+  assert.deepEqual(res.body.distribution, { 1: 0, 2: 0, 3: 1, 4: 0, 5: 2 });
+});
+
+test('getCourseReviews: a course with no approved reviews yet returns avg 0, count 0, and a zeroed distribution', async () => {
+  const course = await Course.create({ title: 'Brand New Course', description: 'x' });
+  const { agent } = await agentWithCsrf(app);
+  const res = await agent.get(`/api/reviews/course/${course._id}`);
+  assert.equal(res.status, 200);
+  assert.equal(res.body.avg, 0);
+  assert.equal(res.body.count, 0);
+  assert.deepEqual(res.body.distribution, { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 });
+});
+
 // ---------------------------------------------------------------------------
 // listReviews — admin (legacy protect+adminOnly, mirrors coupons/contact/certificates)
 // ---------------------------------------------------------------------------

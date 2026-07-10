@@ -127,10 +127,39 @@ function TutorCard({ t: teacher }) {
   );
 }
 
+/* Inline SVG icons — same Lucide-style used across the homepage, replacing
+   raw emoji so the credentials bar matches the rest of the icon language. */
+const CRED_ICONS = [
+  /* Al-Azhar Certified */
+  <svg key="grad" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+       strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M22 10 12 5 2 10l10 5 10-5Z"/>
+    <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+  </svg>,
+  /* Ijazah chain / certification document */
+  <svg key="doc" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+       strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M8 21h8a2 2 0 0 0 2-2V9l-6-6H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2Z"/>
+    <path d="M12 3v6h6"/>
+  </svg>,
+  /* Female tutors available */
+  <svg key="tutor" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+       strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+    <circle cx="12" cy="7" r="4"/>
+  </svg>,
+  /* Multilingual / global */
+  <svg key="globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+       strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <circle cx="12" cy="12" r="10"/>
+    <line x1="2" y1="12" x2="22" y2="12"/>
+    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+  </svg>,
+];
+
 export default function Tutors() {
   const { t: i18n } = useLang();
   const ut = i18n.tutors;
-  const credIcons = ['🎓', '📜', '👩‍🏫', '🌍'];
 
   return (
     <section className="tutors2" id="tutors">
@@ -144,7 +173,7 @@ export default function Tutors() {
         <Reveal className="tc2__creds-bar">
           {ut.creds.map((label, i) => (
             <div className="tc2__cred" key={label}>
-              <span className="tc2__cred-icon">{credIcons[i]}</span>
+              <span className="tc2__cred-icon">{CRED_ICONS[i]}</span>
               <span>{label}</span>
             </div>
           ))}

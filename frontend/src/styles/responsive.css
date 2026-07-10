@@ -14,10 +14,12 @@ body { max-width: 100%; }
    size, which stops long words / wide media forcing overflow. */
 img, video, svg, canvas { max-width: 100%; }
 
-/* ── 2) Mobile carousel (courses / teachers / pricing) ────────
+/* ── 2) Mobile carousel (pricing) ──────────────────────────────
    Desktop: arrows hidden, the track keeps its original grid class
    so nothing changes. Mobile: the track becomes a swipeable,
-   scroll-snapping row with peek of the next card + arrow buttons. */
+   scroll-snapping row with peek of the next card + arrow buttons.
+   (Courses and Teachers previously used this too, before their
+   Round 3/4 redesigns replaced it with a plain responsive layout.) */
 .mcar { position: relative; }
 .mcar__arrow { display: none; }
 
@@ -357,6 +359,31 @@ img, video, svg, canvas { max-width: 100%; }
 /* ── 11) TEACHERS CREDS BAR — tighter padding on small phones ─────── */
 @media (max-width: 480px) {
   .tc2__creds-bar { padding: 16px; }
+}
+
+/* ── 11b) TEACHERS — spotlight + card grid reflow for narrower screens.
+   Round 4 replaced the swipeable mobile carousel with a redesigned
+   horizontal profile-row card; these breakpoints step the grid down and
+   stack the spotlight/card rows into single-column layouts instead. */
+@media (max-width: 1024px) {
+  .tc3__grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 720px) {
+  .tc3__grid { grid-template-columns: 1fr; }
+  .tc3__spotlight { padding: 24px; }
+  .tc3__spotlight-inner { flex-direction: column; align-items: center; text-align: center; }
+  .tc3__spotlight-body .tc3__head { flex-direction: column; align-items: center; gap: 10px; }
+  .tc3__spotlight-body .tc3__tags,
+  .tc3__spotlight-body .tc3__actions { justify-content: center; }
+  .tc3__spotlight-bio { max-width: none; }
+}
+@media (max-width: 480px) {
+  .tc3__card { padding: 16px; gap: 12px; }
+  .tc3__avatar-ring { width: 68px; height: 68px; }
+  .tc3__initials { font-size: 1.25rem; }
+  .tc3__avatar-col--lg .tc3__avatar-ring { width: 96px; height: 96px; }
+  .tc3__avatar-col--lg .tc3__initials { font-size: 1.7rem; }
+  .tc3__head { flex-direction: column; gap: 6px; align-items: flex-start; }
 }
 
 /* ── 12) RTL FIX — mobile dropdown sub-menu indentation ──────────── */

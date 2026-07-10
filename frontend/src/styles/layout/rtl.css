@@ -24,7 +24,7 @@
 [dir="rtl"] .steps__timeline { direction: rtl; }
 [dir="rtl"] .timeline-step__line { background: linear-gradient(270deg, var(--green) 0%, var(--line) 100%); }
 [dir="rtl"] .timeline-step__arrow { transform: scaleX(-1); }
-[dir="rtl"] .course__badges { direction: ltr; }
+[dir="rtl"] .course-row__badges { direction: ltr; }
 [dir="rtl"] .join-cta__stats { direction: rtl; }
 [dir="rtl"] .plan__tag { right: auto; left: 12px; }
 [dir="rtl"] .plan__discount-badge { left: auto; right: 12px; }

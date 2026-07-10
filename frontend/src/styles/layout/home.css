@@ -323,73 +323,91 @@
 .timeline-step__card h3 { color: var(--green-deep); margin-bottom: 8px; font-size: 1.1rem; }
 .timeline-step__card p { color: var(--muted); font-size: .93rem; }
 
-/* Courses */
+/* Courses — an accordion list (Round 3 redesign), not a uniform card grid:
+   one course expanded at a time, with real hierarchy (a "Most Popular"
+   badge) instead of six visually-interchangeable cards. */
 .courses { padding: 96px 0; }
-.courses__grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; }
-.course {
-  background: #fff; border-radius: var(--radius-lg); overflow: hidden;
-  border: 1px solid var(--line); box-shadow: var(--shadow);
-  transition: transform .3s cubic-bezier(.22,.68,0,1.2), box-shadow .3s ease;
-  display: flex; flex-direction: column;
-}
-.course:hover {
-  transform: translateY(-10px);
-  box-shadow: 0 24px 60px rgba(8,77,55,.14);
-  border-color: rgba(11,110,79,.18);
-}
-.course--expanded { grid-column: 1 / -1; transform: none !important; }
 
-.course__banner {
-  height: 160px; display: flex; flex-direction: column;
-  align-items: center; justify-content: center; gap: 14px;
-  position: relative; overflow: hidden;
+.courses__head {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  flex-wrap: wrap; gap: 16px;
 }
-/* Decorative shimmer ring on banner */
-.course__banner::after {
-  content: ''; position: absolute;
-  width: 220px; height: 220px; border-radius: 50%;
-  border: 1px solid rgba(255,255,255,.14);
-  top: -60px; right: -60px; pointer-events: none;
+.courses__browse-all {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-weight: 700; font-size: .92rem; color: var(--green);
+  text-decoration: none; transition: gap .2s ease; padding-bottom: 4px;
 }
-.course__banner-icon {
-  display: flex; width: 52px; height: 52px;
-  filter: drop-shadow(0 4px 12px rgba(0,0,0,.25));
-  position: relative; z-index: 1;
+.courses__browse-all:hover { gap: 10px; }
+
+.courses__list { display: flex; flex-direction: column; gap: 12px; }
+
+.course-row {
+  background: #fff; border: 1px solid var(--line); border-radius: var(--radius-lg);
+  overflow: hidden; transition: border-color .25s ease, box-shadow .25s ease;
+}
+.course-row:hover { border-color: rgba(11,110,79,.25); box-shadow: var(--shadow-sm); }
+.course-row--active { border-color: rgba(11,110,79,.35); box-shadow: var(--shadow-md); }
+
+.course-row__head {
+  width: 100%; display: flex; align-items: center; gap: 18px;
+  padding: 18px 22px; background: none; border: none; cursor: pointer;
+  text-align: start; font-family: inherit;
+}
+.course-row__icon {
+  flex-shrink: 0; width: 52px; height: 52px; border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  padding: 13px; box-sizing: border-box;
+  box-shadow: 0 6px 18px rgba(8,77,55,.18);
   transition: transform .3s cubic-bezier(.22,.68,0,1.3);
 }
-.course__banner-icon svg { width: 100%; height: 100%; }
-.course:hover .course__banner-icon { transform: scale(1.08) translateY(-2px); }
-.course__badges { display: flex; gap: 8px; position: relative; z-index: 1; }
-.course__badge {
-  background: rgba(255,255,255,.22); color: #fff; font-size: .7rem; font-weight: 700;
-  padding: 4px 12px; border-radius: 999px; border: 1px solid rgba(255,255,255,.38);
-  backdrop-filter: blur(6px); text-transform: uppercase; letter-spacing: .6px;
-}
-.course__badge--alt { background: rgba(0,0,0,.2); }
+.course-row__icon svg { width: 100%; height: 100%; }
+.course-row:hover .course-row__icon,
+.course-row--active .course-row__icon { transform: scale(1.06); }
 
-.course__body {
-  padding: 26px 24px 24px; display: flex; flex-direction: column; flex: 1;
-  border-top: 3px solid transparent;
-  transition: border-color .3s;
+.course-row__title-wrap { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.course-row__title {
+  font-size: 1.05rem; font-weight: 800; color: var(--green-deep);
+  letter-spacing: -.01em; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
 }
-.course:hover .course__body { border-top-color: var(--green-light); }
-.course__body h3 {
-  color: var(--green-deep); font-size: 1.12rem; margin-bottom: 10px; font-weight: 800;
-  letter-spacing: -.01em;
+.course-row__popular {
+  font-size: .66rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em;
+  background: var(--gold); color: #3a2e05; padding: 3px 10px; border-radius: 999px;
 }
-.course__body > p {
-  color: var(--ink); font-size: .93rem; margin-bottom: 14px;
+.course-row__badges { display: flex; gap: 8px; }
+.course-row__badge {
+  font-size: .72rem; font-weight: 600; color: var(--muted);
+  background: var(--cream); border: 1px solid var(--line);
+  padding: 3px 10px; border-radius: 999px;
+}
+.course-row__badge--alt { background: transparent; }
+
+.course-row__chevron {
+  flex-shrink: 0; width: 22px; height: 22px; color: var(--muted);
+  transition: transform .3s ease, color .2s ease;
+}
+.course-row--active .course-row__chevron { transform: rotate(180deg); color: var(--green); }
+
+/* Height animation via grid-template-rows 0fr→1fr — no JS height
+   measurement, no hardcoded max-height guess. */
+.course-row__panel {
+  display: grid; grid-template-rows: 0fr;
+  transition: grid-template-rows .35s ease;
+}
+.course-row--active .course-row__panel { grid-template-rows: 1fr; }
+.course-row__body { overflow: hidden; min-height: 0; padding: 4px 22px 22px; }
+.course-row__body > p {
+  color: var(--ink); font-size: .93rem; margin: 0 0 14px;
   line-height: 1.7; opacity: .85;
 }
-.course__points {
-  list-style: none; display: flex; flex-direction: column; gap: 6px;
-  margin-bottom: 20px; flex: 1;
+.course-row__points {
+  list-style: none; margin: 0 0 20px; padding: 0;
+  display: flex; flex-direction: column; gap: 6px;
 }
-.course__points li {
+.course-row__points li {
   font-size: .85rem; color: var(--ink); padding-inline-start: 22px;
   position: relative; line-height: 1.5;
 }
-.course__points li::before {
+.course-row__points li::before {
   content: '✓'; position: absolute; inset-inline-start: 0;
   color: var(--green); font-weight: 700; font-size: .82rem;
 }

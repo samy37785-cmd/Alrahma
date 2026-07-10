@@ -8,6 +8,7 @@
 import { useState, useMemo, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import DashboardLayout from '../components/layout/DashboardLayout';
+import PreviewBanner from '../components/ui/PreviewBanner';
 import { useAuth } from '../context/AuthContext';
 import {
   FileText, Plus, Clock, Check, X, Upload, Download, MessageSquare,
@@ -357,35 +358,41 @@ export default function HomeworkPage() {
     staleTime: 2 * 60 * 1000,
   });
 
+  // No /api/homework/* backend exists yet (see the preview banner below) — these
+  // mutations still call the real endpoint they're named for, so wiring one up
+  // later needs no frontend changes, but they no longer swallow the failure and
+  // pretend it succeeded. Letting the error propagate means isError below is
+  // genuine, not a demo-mode fiction.
   const createMutation = useMutation({
     mutationFn: async (form) => {
-      try {
-        const { default: http } = await import('../api/http');
-        await http.post('/api/homework', form);
-      } catch { /* demo noop */ }
+      const { default: http } = await import('../api/http');
+      await http.post('/api/homework', form);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['homework'] }),
   });
 
   const submitMutation = useMutation({
     mutationFn: async ({ hwId, notes }) => {
-      try {
-        const { default: http } = await import('../api/http');
-        await http.post(`/api/homework/${hwId}/submit`, { notes });
-      } catch { /* demo noop */ }
+      const { default: http } = await import('../api/http');
+      await http.post(`/api/homework/${hwId}/submit`, { notes });
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['homework'] }),
   });
 
   const gradeMutation = useMutation({
     mutationFn: async ({ hwId, grade, feedback }) => {
-      try {
-        const { default: http } = await import('../api/http');
-        await http.post(`/api/homework/${hwId}/grade`, { grade, feedback });
-      } catch { /* demo noop */ }
+      const { default: http } = await import('../api/http');
+      await http.post(`/api/homework/${hwId}/grade`, { grade, feedback });
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['homework'] }),
   });
+
+  const actionFailed = createMutation.isError || submitMutation.isError || gradeMutation.isError;
+  const dismissActionError = () => {
+    createMutation.reset();
+    submitMutation.reset();
+    gradeMutation.reset();
+  };
 
   /* Stats */
   const stats = useMemo(() => {
@@ -415,6 +422,27 @@ export default function HomeworkPage() {
   return (
     <DashboardLayout>
       <div style={{ maxWidth: 860, margin: '0 auto' }}>
+        <PreviewBanner>
+          Preview — assignments shown here are illustrative. Creating, submitting, and grading aren&apos;t connected to a real backend yet, so nothing is actually saved.
+        </PreviewBanner>
+
+        {actionFailed && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px',
+            background: 'var(--color-danger-surface)', border: '1px solid var(--color-danger-border)',
+            borderRadius: 10, marginBottom: 18, fontSize: '0.82rem', color: 'var(--color-danger-text)',
+          }} role="alert">
+            <span style={{ flex: 1 }}>That action wasn&apos;t saved — this page is a preview.</span>
+            <button
+              type="button"
+              onClick={dismissActionError}
+              style={{ background: 'none', border: 'none', color: 'var(--color-danger-text)', fontWeight: 700, cursor: 'pointer', fontSize: '0.78rem', fontFamily: 'var(--font-sans)' }}
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
+
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
           <div>

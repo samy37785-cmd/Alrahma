@@ -8,6 +8,8 @@ import { useState, useMemo, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import { useAuth } from '../context/AuthContext';
+import { getClasses } from '../api/classApi';
+import { mapLiveClassToEvent } from '../utils/calendarHelpers';
 import {
   ChevronLeft, ChevronRight, Calendar, Clock, User, BookOpen,
   Video, MapPin, Plus, Check, X, AlertCircle, RefreshCw,
@@ -65,64 +67,41 @@ function sessionColor(type) {
   return SESSION_COLORS[type] || SESSION_COLORS.default;
 }
 
-/* ── Mock data generator (real data comes from API) ────────────── */
-function useSessions(year, month) {
-  return useQuery({
-    queryKey: ['calendar-sessions', year, month],
-    queryFn: async () => {
-      try {
-        const { default: http } = await import('../api/http');
-        const res = await http.get(`/api/sessions?year=${year}&month=${month + 1}`);
-        return res.data?.sessions ?? res.data ?? [];
-      } catch {
-        // Return demo data when API not available
-        const today = new Date();
-        const demo = [];
-        const types = ['quran', 'arabic', 'tajweed', 'hifz', 'islamic_studies'];
-        const teachers = ['Sheikh Omar', 'Ustadha Fatima', 'Sheikh Ibrahim'];
-        for (let i = 0; i < 18; i++) {
-          const d = new Date(year, month, Math.floor(Math.random() * 28) + 1,
-            8 + Math.floor(Math.random() * 10), [0, 15, 30, 45][Math.floor(Math.random() * 4)]);
-          const endD = new Date(d.getTime() + [30, 45, 60, 90][Math.floor(Math.random() * 4)] * 60000);
-          const type = types[Math.floor(Math.random() * types.length)];
-          demo.push({
-            _id: `demo-${i}`,
-            title: type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
-            type,
-            start: d.toISOString(),
-            end: endD.toISOString(),
-            teacher: teachers[Math.floor(Math.random() * teachers.length)],
-            status: isSameDay(d, today) && d < new Date() ? 'completed'
-              : d < new Date() ? (Math.random() > 0.2 ? 'completed' : 'absent')
-              : 'scheduled',
-            platform: Math.random() > 0.5 ? 'Zoom' : 'Google Meet',
-          });
-        }
-        return demo;
-      }
-    },
+/* ── Real data: the live-class scheduling backend (LiveClass model),
+   the same role-aware /api/classes endpoint Dashboard.jsx's "Upcoming
+   Classes" card already consumes — this used to call a nonexistent
+   /api/sessions endpoint and silently fall back to randomly-regenerated
+   fake sessions/teachers on every request. ─────────────────────────── */
+function useSessions() {
+  const query = useQuery({
+    queryKey: ['classes', 'calendar'],
+    queryFn:  () => getClasses(),
     staleTime: 2 * 60 * 1000,
   });
+  return {
+    ...query,
+    data: (query.data || []).map(mapLiveClassToEvent),
+  };
 }
 
 /* ── Event pill ─────────────────────────────────────────────────── */
 function EventPill({ ev, onClick }) {
   const { bg, border, text } = sessionColor(ev.type);
   const isCompleted = ev.status === 'completed';
-  const isAbsent    = ev.status === 'absent';
+  const isCancelled = ev.status === 'cancelled';
   return (
     <button
       onClick={() => onClick(ev)}
       title={ev.title}
       style={{
         width: '100%', textAlign: 'left', border: `1px solid ${border}`,
-        borderRadius: 5, background: isAbsent ? '#fee2e2' : bg,
-        color: isAbsent ? '#b91c1c' : text,
+        borderRadius: 5, background: isCancelled ? '#fee2e2' : bg,
+        color: isCancelled ? '#b91c1c' : text,
         fontSize: '0.7rem', fontWeight: 600, padding: '2px 6px',
         cursor: 'pointer', fontFamily: 'var(--font-sans)',
         overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis',
-        opacity: isCompleted ? 0.7 : 1,
-        textDecoration: isCompleted ? 'line-through' : 'none',
+        opacity: isCompleted || isCancelled ? 0.7 : 1,
+        textDecoration: isCompleted || isCancelled ? 'line-through' : 'none',
         marginBottom: 2,
       }}
     >
@@ -136,10 +115,10 @@ function EventModal({ ev, onClose }) {
   if (!ev) return null;
   const { bg, border, text } = sessionColor(ev.type);
   const statusIcon = ev.status === 'completed' ? <Check size={14} />
-    : ev.status === 'absent' ? <X size={14} />
+    : ev.status === 'cancelled' ? <X size={14} />
     : <Clock size={14} />;
   const statusLabel = ev.status === 'completed' ? 'Completed'
-    : ev.status === 'absent' ? 'Absent'
+    : ev.status === 'cancelled' ? 'Cancelled'
     : 'Scheduled';
 
   return (
@@ -427,7 +406,14 @@ export default function CalendarPage() {
   const year  = cursor.getFullYear();
   const month = cursor.getMonth();
 
-  const { data: sessions = [], isLoading, refetch } = useSessions(year, month);
+  const { data: sessions = [], isLoading, isError, refetch } = useSessions();
+  const monthSessions = useMemo(
+    () => sessions.filter((ev) => {
+      const d = new Date(ev.start);
+      return d.getFullYear() === year && d.getMonth() === month;
+    }),
+    [sessions, year, month],
+  );
 
   /* Navigation */
   const prev = useCallback(() => {
@@ -527,6 +513,14 @@ export default function CalendarPage() {
             <div style={{ height: 400, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' }}>
               <RefreshCw size={24} style={{ animation: 'it-spin 1s linear infinite' }} aria-hidden="true" />
             </div>
+          ) : isError ? (
+            <div className="ds-empty" style={{ padding: '48px 0' }}>
+              <div className="ds-empty__icon"><AlertCircle size={22} aria-hidden="true" /></div>
+              <div className="ds-empty__title">Couldn&apos;t load your class schedule</div>
+              <button type="button" className="btn btn--green btn--sm" style={{ marginTop: 12 }} onClick={() => refetch()}>
+                Try again
+              </button>
+            </div>
           ) : view === 'month' ? (
             <MonthView year={year} month={month} sessions={sessions} onEventClick={setSelected} />
           ) : view === 'week' ? (
@@ -539,10 +533,10 @@ export default function CalendarPage() {
         {/* ── Stats strip ─────────────────────────────────────────── */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px,1fr))', gap: 10, marginTop: 16 }}>
           {[
-            { label: 'This month', value: sessions.length, icon: Calendar },
-            { label: 'Completed',  value: sessions.filter(e => e.status === 'completed').length, icon: Check },
-            { label: 'Upcoming',   value: sessions.filter(e => e.status === 'scheduled').length, icon: Clock },
-            { label: 'Absent',     value: sessions.filter(e => e.status === 'absent').length,    icon: AlertCircle },
+            { label: 'This month', value: monthSessions.length, icon: Calendar },
+            { label: 'Completed',  value: monthSessions.filter(e => e.status === 'completed').length, icon: Check },
+            { label: 'Upcoming',   value: monthSessions.filter(e => e.status === 'scheduled').length, icon: Clock },
+            { label: 'Cancelled',  value: monthSessions.filter(e => e.status === 'cancelled').length,  icon: X },
           ].map(({ label, value, icon: Icon }) => (
             <div key={label} className="ds-card" style={{ padding: '14px 16px', textAlign: 'center' }}>
               <Icon size={18} style={{ color: 'var(--color-primary)', marginBottom: 6 }} aria-hidden="true" />

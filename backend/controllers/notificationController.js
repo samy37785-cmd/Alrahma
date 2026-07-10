@@ -1,6 +1,7 @@
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { parsePagination } from '../utils/pagination.js';
 import Notification from '../models/Notification.js';
+import logger from '../config/logger.js';
 
 export const getMyNotifications = asyncHandler(async (req, res) => {
   const { page, limit, skip } = parsePagination(req.query, { defaultLimit: 20, maxLimit: 50 });
@@ -47,6 +48,21 @@ export const getUnreadCount = asyncHandler(async (req, res) => {
   res.json({ count });
 });
 
-export async function createNotification({ recipient, type, title, body, link, data }) {
-  return Notification.create({ recipient, type, title, body, link, data });
+// Shared by every business-event call site (payments, live classes,
+// certificates, messages, reviews, the renewal-reminder cron) — centralizing
+// the no-recipient guard here means each call site doesn't need to repeat
+// "if (userId) { ... }" around every call, since Notification.recipient is a
+// required field and several sources (guest checkouts, Stripe webhooks
+// missing metadata) legitimately have no user to notify.
+export async function createNotification({ recipient, type, title, body, link, data }, { session } = {}) {
+  if (!recipient) {
+    logger.debug('createNotification skipped — no recipient', { type });
+    return null;
+  }
+  const sessionOpts = session ? { session } : {};
+  const [notification] = await Notification.create(
+    [{ recipient, type, title, body, link, data }],
+    sessionOpts,
+  );
+  return notification;
 }

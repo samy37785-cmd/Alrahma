@@ -27,6 +27,10 @@ html.dark .header {
   background: rgba(14, 26, 17, 0.97);
   border-bottom-color: var(--border-default);
 }
+html.dark .header--scrolled {
+  background: rgba(14, 26, 17, 0.99);
+  box-shadow: var(--shadow-sm);
+}
 html.dark .nav a,
 html.dark .nav__dropdown-trigger { color: var(--text-primary); }
 html.dark .nav a:hover,
@@ -114,7 +118,8 @@ html.dark .feature,
 html.dark .features__card,
 html.dark .steps__card,
 html.dark .timeline-step__card,
-html.dark .tc2__card,
+html.dark .tc3__card,
+html.dark .tc3__spotlight,
 html.dark .tst__featured,
 html.dark .tst__mini,
 html.dark .plan,
@@ -136,7 +141,7 @@ html.dark .enroll__card,
 html.dark .hub-card,
 html.dark .value-card,
 html.dark .video-card,
-html.dark .course {
+html.dark .course-row {
   background: var(--bg-surface);
   border-color: var(--border-default);
   color: var(--text-primary);
@@ -381,8 +386,12 @@ html.dark .tst__mini-top span { color: var(--text-secondary); }
 html.dark .tst__quote-mark { color: var(--border-strong); }
 
 /* ── Teachers (home) ────────────────────────────────────────────────── */
-html.dark .tc2__name { color: var(--text-primary); }
-html.dark .tc2__spec { color: var(--text-secondary); }
+html.dark .tc3__name-ar { color: var(--text-primary); }
+html.dark .tc3__name-en,
+html.dark .tc3__spotlight-bio,
+html.dark .tc3__meta-item { color: var(--text-secondary); }
+html.dark .tc3__tag { background: rgba(11,110,79,.18); color: var(--text-primary); border-color: rgba(11,110,79,.3); }
+html.dark .tc3__spotlight { background: var(--bg-surface); border-color: rgba(212,175,55,.25); }
 
 /* ── Pricing ────────────────────────────────────────────────────────── */
 html.dark .plan__price-row { color: var(--text-primary); }
@@ -546,17 +555,17 @@ html.dark .stats-item__label { color: rgba(207,224,216,.75); }
 html.dark .hero__wave path { fill: var(--bg-page); }
 
 /* ── Course cards (home) ────────────────────────────────────────────── */
-html.dark .course__body h3 { color: var(--text-primary); }
-html.dark .course__body > p { color: var(--text-secondary); opacity: 1; }
-html.dark .course__points li { color: var(--text-primary); }
+html.dark .course-row__title { color: var(--text-primary); }
+html.dark .course-row__body > p { color: var(--text-secondary); opacity: 1; }
+html.dark .course-row__points li { color: var(--text-primary); }
 
 /* ── Smooth transition on theme switch ──────────────────────────────── */
 body,
 .header, .nav__dropdown-menu, .plan, .blog-card,
 .faq__item, .faq-item, .adhkar__card, .tpg__card,
-.tc2__card, .hadith__card, .dash__stat, .dash__panel,
+.tc3__card, .tc3__spotlight, .hadith__card, .dash__stat, .dash__panel,
 .billing__card, .admin__card, .admin__panel, .hub-card,
-.value-card, .feature, .course, .enroll__card {
+.value-card, .feature, .course-row, .enroll__card {
   transition: background-color var(--duration-slow) var(--ease-default),
               border-color var(--duration-slow) var(--ease-default),
               color var(--duration-slow) var(--ease-default);

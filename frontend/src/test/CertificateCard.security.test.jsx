@@ -3,12 +3,14 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import CertificateCard from '../components/ui/CertificateCard';
 
-// Coverage for T21 (security audit): CertificateCard's "Download" button used
-// to interpolate admin-supplied certificate fields (title, studentName,
-// issuedBy, course.title, certificateNumber) directly into a raw HTML string
-// passed to document.write() in a new window — a crafted value (e.g. a
-// malicious admin, or a compromised admin session) could execute script in
-// that window's same-origin context. Verifies the fix: those fields are now
+// Coverage for T21 (security audit): CertificateCard's "Print / Save PDF"
+// button (renamed from "Download" in Learning Experience Sprint 3 — it opens
+// a print dialog, it never downloaded a file) used to interpolate
+// admin-supplied certificate fields (title, studentName, issuedBy,
+// course.title, certificateNumber) directly into a raw HTML string passed to
+// document.write() in a new window — a crafted value (e.g. a malicious
+// admin, or a compromised admin session) could execute script in that
+// window's same-origin context. Verifies the fix: those fields are now
 // HTML-escaped before interpolation, so a value containing markup renders as
 // inert text rather than being parsed as an element/script.
 
@@ -41,7 +43,7 @@ describe('CertificateCard security: document.write XSS escaping', () => {
     const { fakeWin } = mockWindowOpen();
     render(<CertificateCard cert={maliciousCert} />);
 
-    await userEvent.click(screen.getByRole('button', { name: /download/i }));
+    await userEvent.click(screen.getByRole('button', { name: /print/i }));
 
     expect(fakeWin.document.write).toHaveBeenCalledTimes(1);
     const html = fakeWin.document.write.mock.calls[0][0];
@@ -66,12 +68,21 @@ describe('CertificateCard security: document.write XSS escaping', () => {
     const { fakeWin } = mockWindowOpen();
     render(<CertificateCard cert={cert} />);
 
-    await userEvent.click(screen.getByRole('button', { name: /download/i }));
+    await userEvent.click(screen.getByRole('button', { name: /print/i }));
 
     const html = fakeWin.document.write.mock.calls[0][0];
     expect(html).toContain('Tajweed Mastery');
     expect(html).toContain('Amina Khalid');
     expect(html).toContain('Tajweed Level 2');
     expect(html).toContain('CERT-0001');
+  });
+
+  it('shows a fallback message instead of crashing when the popup is blocked', async () => {
+    vi.spyOn(window, 'open').mockReturnValue(null);
+    render(<CertificateCard cert={maliciousCert} />);
+
+    await userEvent.click(screen.getByRole('button', { name: /print/i }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/allow pop-ups/i);
   });
 });

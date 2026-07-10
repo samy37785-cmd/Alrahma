@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import Reveal from './ui/Reveal';
 import { useLang } from '../context/LangContext';
 
 const COUNTRIES = [
@@ -60,7 +61,7 @@ export default function TrustBar() {
   const doubled = [...COUNTRIES, ...COUNTRIES];
 
   return (
-    <section className="trust-bar" aria-label="Trusted worldwide">
+    <Reveal as="section" className="trust-bar" aria-label="Trusted worldwide">
       <div className="container">
 
         {/* Top row: headline trust stats */}
@@ -134,6 +135,6 @@ export default function TrustBar() {
         </div>
 
       </div>
-    </section>
+    </Reveal>
   );
 }

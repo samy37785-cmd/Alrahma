@@ -2,17 +2,19 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { getUnreadCount } from '../../api/messageApi';
+import { getUnreadNotifs } from '../../api/notificationApi';
 import {
   LayoutDashboard, MessageSquare, Users, BookOpen, CreditCard, Target,
   UserCog, Book, User, ExternalLink, Menu, Search, Bell, Sun, Moon,
   GraduationCap, LogOut, Settings, Calendar, ClipboardList, Flame,
   X, ChevronLeft, ChevronRight, BarChart3, Home, Shield, Landmark,
-  Mail, FileText, BookMarked,
+  Mail, FileText, BookMarked, Heart,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import CommandPalette from '../ui/CommandPalette';
 import NotificationPanel from '../ui/NotificationPanel';
+import BrandIcon from '../ui/BrandIcon';
 import { getNameInitials } from '../../utils/nameInitials';
 import '../../styles/dashboard-shell.css';
 
@@ -68,6 +70,7 @@ function navFor(isAdmin, isTeacher, isParent, unreadCount) {
     { to: '/tools/quran-reader', icon: Book,        label: 'Quran Reader' },
     { to: '/calendar',           icon: Calendar,     label: 'My Schedule' },
     { to: '/homework',           icon: FileText,      label: 'Homework' },
+    { to: '/wishlist',           icon: Heart,         label: 'Wishlist' },
     { section: 'ACCOUNT' },
     { to: '/profile', icon: User,        label: 'Profile' },
     { to: '/billing', icon: CreditCard,  label: 'Billing' },
@@ -171,6 +174,17 @@ export default function DashboardLayout({ children }) {
   });
   const unreadCount = unreadData?.count ?? 0;
 
+  // Separate from the messages unread count above — this drives the bell's
+  // own badge, not the "Messages" nav item's.
+  const { data: notifUnreadData } = useQuery({
+    queryKey: ['notifications', 'unread'],
+    queryFn: getUnreadNotifs,
+    enabled: Boolean(user),
+    refetchInterval: 30000,
+    staleTime: 15000,
+  });
+  const notifUnreadCount = notifUnreadData?.count ?? 0;
+
   // Memoized so nav items only re-allocate when role or badge changes
   const items = useMemo(
     () => navFor(isAdmin, isTeacher, isParent, unreadCount),
@@ -271,7 +285,7 @@ export default function DashboardLayout({ children }) {
       >
         {/* Brand */}
         <Link to="/" className="ds-brand">
-          <div className="ds-brand__logo">ر</div>
+          <BrandIcon size={34} className="ds-brand__logo" />
           <div className="ds-brand__text">
             <span className="ds-brand__name">Al-Rahma</span>
             <span className="ds-brand__sub">Academy</span>
@@ -430,12 +444,12 @@ export default function DashboardLayout({ children }) {
               <button
                 className="ds-icon-btn"
                 onClick={() => setNotifOpen((o) => !o)}
-                aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
+                aria-label={`Notifications${notifUnreadCount > 0 ? ` (${notifUnreadCount} unread)` : ''}`}
                 aria-expanded={notifOpen}
                 aria-haspopup="dialog"
               >
                 <Bell size={17} aria-hidden="true" />
-                {unreadCount > 0 && (
+                {notifUnreadCount > 0 && (
                   <span className="ds-icon-btn__dot" aria-hidden="true" />
                 )}
               </button>

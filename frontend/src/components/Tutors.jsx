@@ -1,154 +1,257 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Reveal from './ui/Reveal';
-import MobileCarousel from './ui/MobileCarousel';
 import { TEACHERS } from '../data';
 import { useLang } from '../context/LangContext';
 
-function StarRating({ teacher }) {
-  const { t } = useLang();
-  const ut = t.tutors;
-  const key = `tutor-rating-${teacher.id}`;
-  const [myRating, setMyRating] = useState(() => Number(localStorage.getItem(key) || 0));
-  const [hover, setHover] = useState(0);
-  const [thanks, setThanks] = useState(false);
+/* Inline SVG icons — Lucide-style, consistent with the rest of the homepage. */
+const STAR_ICON = (
+  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+    <path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2Z" />
+  </svg>
+);
+const CHECK_BADGE_ICON = (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"
+       strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="m9 12 2 2 4-4" />
+    <circle cx="12" cy="12" r="9" />
+  </svg>
+);
+const CLOCK_ICON = (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+       strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <circle cx="12" cy="12" r="9" />
+    <path d="M12 7v5l3 3" />
+  </svg>
+);
+const REVIEWS_ICON = (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+       strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5Z" />
+  </svg>
+);
+const PLAY_ICON = (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+    <path d="M8 5v14l11-7z" />
+  </svg>
+);
 
-  const handle = (n) => {
-    setMyRating(n);
-    localStorage.setItem(key, String(n));
-    setThanks(true);
-    setTimeout(() => setThanks(false), 2000);
-  };
+/* Credentials bar icons (unchanged from Round 2's emoji sweep). */
+const CRED_ICONS = [
+  <svg key="grad" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+       strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M22 10 12 5 2 10l10 5 10-5Z"/>
+    <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+  </svg>,
+  <svg key="doc" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+       strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M8 21h8a2 2 0 0 0 2-2V9l-6-6H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2Z"/>
+    <path d="M12 3v6h6"/>
+  </svg>,
+  <svg key="tutor" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+       strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+    <circle cx="12" cy="7" r="4"/>
+  </svg>,
+  <svg key="globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+       strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <circle cx="12" cy="12" r="10"/>
+    <line x1="2" y1="12" x2="22" y2="12"/>
+    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+  </svg>,
+];
 
-  const total  = teacher.reviews + (myRating ? 1 : 0);
-  const avg    = myRating
-    ? ((teacher.rating * teacher.reviews + myRating) / total).toFixed(1)
-    : teacher.rating.toFixed(1);
-  const filled = Math.round(Number(avg));
+const initialsOf = (nameAr) => nameAr.split(' ').slice(0, 2).map((w) => w[0]).join('');
 
+function VideoModal({ teacher, onClose }) {
   return (
-    <div className="tc2__rating">
-      <div className="tc2__stars-disp">
-        {[1,2,3,4,5].map((s) => (
-          <span key={s} className={`tc2__star${s <= filled ? ' on' : ''}`}>★</span>
-        ))}
-      </div>
-      <span className="tc2__avg">{avg}</span>
-      <span className="tc2__cnt">({total})</span>
-
-      <div className="tc2__rate-wrap">
-        <span className="tc2__rate-lbl">{myRating ? ut.yourRating : ut.rate}</span>
-        {[1,2,3,4,5].map((s) => (
-          <button
-            key={s}
-            type="button"
-            className={`tc2__rate-btn${(hover || myRating) >= s ? ' lit' : ''}`}
-            onMouseEnter={() => setHover(s)}
-            onMouseLeave={() => setHover(0)}
-            onClick={() => handle(s)}
-            aria-label={`Rate ${s} stars`}
-          >★</button>
-        ))}
-        {thanks && <span className="tc2__thanks">✓</span>}
+    <div
+      className="tc3__video-overlay"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Introduction video for ${teacher.nameEn}`}
+    >
+      <div className="tc3__video-wrap" onClick={(e) => e.stopPropagation()}>
+        <button className="tc3__video-close" onClick={onClose} aria-label="Close video">×</button>
+        <iframe
+          src={teacher.videoUrl}
+          title={`${teacher.nameEn} introduction`}
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+          style={{ width: '100%', height: '100%', border: 'none', borderRadius: 12 }}
+        />
       </div>
     </div>
   );
 }
 
+function TutorAvatar({ teacher, tp, initials, size = 'md', onPlay }) {
+  return (
+    <div className={`tc3__avatar-col tc3__avatar-col--${size}`}>
+      <Link
+        to={`/teachers/${teacher.id}`}
+        className="tc3__avatar-ring"
+        style={{ '--avatar-ring-color': teacher.color }}
+      >
+        <span className="tc3__initials" dir="rtl">{initials}</span>
+      </Link>
+      <span className="tc3__verified" title={tp.alazharBadge} aria-label={tp.alazharBadge}>
+        {CHECK_BADGE_ICON}
+      </span>
+      {teacher.videoUrl && (
+        <button
+          type="button"
+          className="tc3__play"
+          onClick={onPlay}
+          aria-label={`Watch ${teacher.nameEn}'s introduction`}
+        >
+          {PLAY_ICON}
+        </button>
+      )}
+    </div>
+  );
+}
+
+function RatingPill({ teacher, size = 'md' }) {
+  return (
+    <span
+      className={`tc3__rating-pill tc3__rating-pill--${size}`}
+      aria-label={`Rated ${teacher.rating.toFixed(1)} out of 5 from ${teacher.reviews} reviews`}
+    >
+      <span className="tc3__rating-star" aria-hidden="true">{STAR_ICON}</span>
+      {teacher.rating.toFixed(1)}
+    </span>
+  );
+}
+
 function TutorCard({ t: teacher }) {
-  const navigate              = useNavigate();
-  const { lang, t: i18n }    = useLang();
-  const tp                    = i18n.tp;
-  const ut                    = i18n.tutors;
-  const initials              = teacher.nameAr.split(' ').slice(0, 2).map((w) => w[0]).join('');
-  const grad                  = `linear-gradient(145deg, ${teacher.color}dd, ${teacher.color}88)`;
-  const title                 = teacher.title[lang]       || teacher.title.en;
-  const specialties           = teacher.specialties[lang] || teacher.specialties.en;
+  const navigate = useNavigate();
+  const { lang, t: i18n } = useLang();
+  const tp = i18n.tp;
+  const ut = i18n.tutors;
+  const initials = initialsOf(teacher.nameAr);
+  const title = teacher.title[lang] || teacher.title.en;
+  const specialties = teacher.specialties[lang] || teacher.specialties.en;
   const [videoOpen, setVideoOpen] = useState(false);
+  const genderLabel = teacher.gender === 'f' ? tp.femaleBadge : tp.maleBadge;
 
   return (
-    <Reveal as="article" className="tc2__card" style={{ '--card-color': teacher.color }}>
-      {/* Video modal */}
+    <Reveal as="article" className="tc3__card" style={{ '--card-color': teacher.color }}>
       {videoOpen && teacher.videoUrl && (
-        <div
-          className="tc2__video-overlay"
-          onClick={() => setVideoOpen(false)}
-          role="dialog"
-          aria-modal="true"
-          aria-label={`Introduction video for ${teacher.nameEn}`}
-        >
-          <div className="tc2__video-wrap" onClick={(e) => e.stopPropagation()}>
-            <button
-              className="tc2__video-close"
-              onClick={() => setVideoOpen(false)}
-              aria-label="Close video"
-            >×</button>
-            <iframe
-              src={teacher.videoUrl}
-              title={`${teacher.nameEn} introduction`}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-              style={{ width: '100%', height: '100%', border: 'none', borderRadius: 12 }}
-            />
-          </div>
-        </div>
+        <VideoModal teacher={teacher} onClose={() => setVideoOpen(false)} />
       )}
 
-      <Link to={`/teachers/${teacher.id}`} className="tc2__top" style={{ background: grad }}>
-        <div className="tc2__ring tc2__ring--1" />
-        <div className="tc2__ring tc2__ring--2" />
-        <div className="tc2__az-badge">{tp.alazharBadge}</div>
-        <div className="tc2__avatar">
-          <span className="tc2__initials" dir="rtl">{initials}</span>
-        </div>
-        {/* Video play button */}
-        {teacher.videoUrl && (
-          <button
-            className="tc2__video-play"
-            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setVideoOpen(true); }}
-            aria-label={`Watch ${teacher.nameEn}'s introduction`}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-              <path d="M8 5v14l11-7z"/>
-            </svg>
-            {ut.introVideo}
-          </button>
-        )}
-        <div className="tc2__gender">
-          {teacher.gender === 'f' ? tp.femaleBadge : tp.maleBadge}
-        </div>
-      </Link>
+      <TutorAvatar teacher={teacher} tp={tp} initials={initials} onPlay={() => setVideoOpen(true)} />
 
-      <div className="tc2__body">
-        <Link to={`/teachers/${teacher.id}`} className="tc2__name-link">
-          <h3 className="tc2__name-ar" dir="rtl">{teacher.nameAr}</h3>
-          <p className="tc2__name-en">{teacher.nameEn}</p>
-        </Link>
-        <p className="tc2__role">{title}</p>
+      <div className="tc3__main">
+        <div className="tc3__head">
+          <Link to={`/teachers/${teacher.id}`} className="tc3__name-link">
+            <h3 className="tc3__name-ar" dir="rtl">{teacher.nameAr}</h3>
+            <p className="tc3__name-en">{teacher.nameEn}</p>
+          </Link>
+          <RatingPill teacher={teacher} />
+        </div>
 
-        <div className="tc2__tags">
+        <p className="tc3__role">{title}</p>
+
+        <div className="tc3__tags">
           {specialties.slice(0, 3).map((s) => (
-            <span key={s} className="tc2__tag">{s}</span>
+            <span key={s} className="tc3__tag">{s}</span>
           ))}
         </div>
 
-        <StarRating teacher={teacher} />
+        <div className="tc3__meta">
+          <span className="tc3__meta-item" aria-label={`${teacher.reviews} reviews`}>
+            <span aria-hidden="true">{REVIEWS_ICON}</span>({teacher.reviews})
+          </span>
+          {teacher.hours && (
+            <span className="tc3__meta-item">
+              <span aria-hidden="true">{CLOCK_ICON}</span>{teacher.hours} {ut.teachingHrs}
+            </span>
+          )}
+          <span className="tc3__meta-item tc3__meta-item--muted">{genderLabel}</span>
+        </div>
 
-        {teacher.hours && (
-          <div className="tc2__hours">⏱ {teacher.hours} {ut.teachingHrs}</div>
-        )}
-
-        <div className="tc2__actions">
-          <Link to={`/teachers/${teacher.id}`} className="btn btn--ghost btn--sm">
-            {ut.viewProfile}
-          </Link>
+        <div className="tc3__actions">
           <button
             type="button"
-            className="btn btn--green btn--sm"
+            className="tc3__cta"
             onClick={() => navigate(`/enroll?teacher=${teacher.id}`)}
           >
             {ut.enroll}
           </button>
+          <Link to={`/teachers/${teacher.id}`} className="tc3__cta-link">
+            {ut.viewProfile}
+          </Link>
+        </div>
+      </div>
+    </Reveal>
+  );
+}
+
+function useSpotlightTeacher(teachers) {
+  return useMemo(
+    () => [...teachers].sort((a, b) => (b.rating - a.rating) || (b.reviews - a.reviews))[0],
+    [teachers],
+  );
+}
+
+function SpotlightCard({ teacher }) {
+  const navigate = useNavigate();
+  const { lang, t: i18n } = useLang();
+  const tp = i18n.tp;
+  const ut = i18n.tutors;
+  const initials = initialsOf(teacher.nameAr);
+  const title = teacher.title[lang] || teacher.title.en;
+  const bio = teacher.bio[lang] || teacher.bio.en;
+  const specialties = teacher.specialties[lang] || teacher.specialties.en;
+  const [videoOpen, setVideoOpen] = useState(false);
+
+  return (
+    <Reveal className="tc3__spotlight" style={{ '--card-color': teacher.color }}>
+      {videoOpen && teacher.videoUrl && (
+        <VideoModal teacher={teacher} onClose={() => setVideoOpen(false)} />
+      )}
+
+      <span className="tc3__spotlight-tag">
+        <span aria-hidden="true">{STAR_ICON}</span>
+        Top Rated Tutor
+      </span>
+
+      <div className="tc3__spotlight-inner">
+        <TutorAvatar teacher={teacher} tp={tp} initials={initials} size="lg" onPlay={() => setVideoOpen(true)} />
+
+        <div className="tc3__spotlight-body">
+          <div className="tc3__head">
+            <Link to={`/teachers/${teacher.id}`} className="tc3__name-link">
+              <h3 className="tc3__name-ar" dir="rtl">{teacher.nameAr}</h3>
+              <p className="tc3__name-en">{teacher.nameEn}</p>
+            </Link>
+            <RatingPill teacher={teacher} size="lg" />
+          </div>
+
+          <p className="tc3__role">{title}</p>
+          <p className="tc3__spotlight-bio">{bio}</p>
+
+          <div className="tc3__tags">
+            {specialties.slice(0, 4).map((s) => (
+              <span key={s} className="tc3__tag">{s}</span>
+            ))}
+          </div>
+
+          <div className="tc3__actions">
+            <button
+              type="button"
+              className="tc3__cta"
+              onClick={() => navigate(`/enroll?teacher=${teacher.id}`)}
+            >
+              {ut.enroll}
+            </button>
+            <Link to={`/teachers/${teacher.id}`} className="tc3__cta-link">
+              {ut.viewProfile}
+            </Link>
+          </div>
         </div>
       </div>
     </Reveal>
@@ -158,7 +261,8 @@ function TutorCard({ t: teacher }) {
 export default function Tutors() {
   const { t: i18n } = useLang();
   const ut = i18n.tutors;
-  const credIcons = ['🎓', '📜', '👩‍🏫', '🌍'];
+  const spotlight = useSpotlightTeacher(TEACHERS);
+  const rest = useMemo(() => TEACHERS.filter((t) => t.id !== spotlight.id), [spotlight]);
 
   return (
     <section className="tutors2" id="tutors">
@@ -172,15 +276,17 @@ export default function Tutors() {
         <Reveal className="tc2__creds-bar">
           {ut.creds.map((label, i) => (
             <div className="tc2__cred" key={label}>
-              <span className="tc2__cred-icon">{credIcons[i]}</span>
+              <span className="tc2__cred-icon">{CRED_ICONS[i]}</span>
               <span>{label}</span>
             </div>
           ))}
         </Reveal>
 
-        <MobileCarousel trackClassName="tc2__grid" ariaLabel={ut.heading}>
-          {TEACHERS.map((t) => <TutorCard key={t.id} t={t} />)}
-        </MobileCarousel>
+        <SpotlightCard teacher={spotlight} />
+
+        <Reveal className="tc3__grid">
+          {rest.map((t) => <TutorCard key={t.id} t={t} />)}
+        </Reveal>
 
         <Reveal className="tc2__footer">
           <Link to="/teachers" className="btn btn--ghost">

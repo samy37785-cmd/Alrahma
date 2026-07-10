@@ -19,7 +19,35 @@ const COUNTRIES = [
   { flag: '🇳🇴', name: 'Norway' },
 ];
 
-const TRUST_ICONS = ['🎓', '⚡', '🌍', '🛡️'];
+/* Inline SVG icons — same Lucide-style, 24×24 viewBox, white stroke used by
+   Features.jsx, replacing raw emoji so the trust stat cards match the rest
+   of the page's icon language instead of introducing a third style. */
+const TRUST_ICONS = [
+  /* 0 — Graduation cap: Al-Azhar Certified Tutors */
+  <svg key="grad" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2"
+       strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M22 10 12 5 2 10l10 5 10-5Z"/>
+    <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+  </svg>,
+  /* 1 — Zap: Support Response Time */
+  <svg key="zap" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2"
+       strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M13 2 3 14h7l-1 8 10-12h-7l1-8Z"/>
+  </svg>,
+  /* 2 — Globe: Countries (same path as Features.jsx's Multilingual icon) */
+  <svg key="globe" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2"
+       strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <circle cx="12" cy="12" r="10"/>
+    <line x1="2" y1="12" x2="22" y2="12"/>
+    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+  </svg>,
+  /* 3 — Shield-check: Day Refund Guarantee (same path as Features.jsx's Al-Azhar Certified icon) */
+  <svg key="shield" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2"
+       strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+    <polyline points="9 12 11 14 15 10"/>
+  </svg>,
+];
 
 export default function TrustBadges() {
   const { t } = useLang();
@@ -38,7 +66,7 @@ export default function TrustBadges() {
         <div className="trust__grid">
           {tr.items.map((item, i) => (
             <Reveal key={i} className="trust__card">
-              <div className="trust__card-icon">{TRUST_ICONS[i]}</div>
+              <div className="trust__card-icon-wrap"><span className="trust__card-icon">{TRUST_ICONS[i]}</span></div>
               <div className="trust__card-stat">{item.stat}</div>
               <div className="trust__card-label">{item.label}</div>
               <p className="trust__card-desc">{item.desc}</p>

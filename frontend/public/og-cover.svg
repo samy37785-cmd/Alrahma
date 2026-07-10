@@ -8,19 +8,25 @@
       <stop offset="0" stop-color="#0b6e4f"/>
       <stop offset="1" stop-color="#15885f"/>
     </linearGradient>
-    <mask id="crescent">
-      <rect width="1200" height="630" fill="black"/>
-      <circle cx="318" cy="250" r="60" fill="white"/>
-      <circle cx="343" cy="235" r="50" fill="black"/>
-    </mask>
+    <linearGradient id="dome" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3fc296"/>
+      <stop offset="1" stop-color="#0b6e4f"/>
+    </linearGradient>
   </defs>
 
   <rect width="1200" height="630" fill="url(#bg)"/>
 
   <!-- logo tile -->
   <rect x="250" y="190" width="180" height="180" rx="42" fill="url(#tile)" stroke="#d4af37" stroke-width="3"/>
-  <rect x="250" y="190" width="180" height="180" fill="#d4af37" mask="url(#crescent)"/>
-  <circle cx="368" cy="225" r="11" fill="#d4af37"/>
+
+  <!-- minaret + crescent finial -->
+  <rect x="335.8" y="209.7" width="8.4" height="19.7" rx="4.2" fill="#d4af37"/>
+  <circle cx="340" cy="206.9" r="5.1" fill="#d4af37"/>
+
+  <!-- mosque dome -->
+  <path d="M311.9 294.1 C311.9 257.5 323.1 229.4 340 229.4 C356.9 229.4 368.1 257.5 368.1 294.1 Z" fill="url(#dome)" stroke="#d4af37" stroke-width="3"/>
+  <rect x="311.9" y="288.4" width="56.25" height="11.25" rx="2.8" fill="url(#dome)" stroke="#d4af37" stroke-width="2.5"/>
+
   <g transform="translate(0,40)">
     <path d="M340 300 C310 282 270 282 245 292 L245 350 C270 340 310 340 340 354 Z" fill="#fff"/>
     <path d="M340 300 C370 282 410 282 435 292 L435 350 C410 340 370 340 340 354 Z" fill="#eef1f0"/>

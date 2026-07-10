@@ -4,6 +4,7 @@ import { sendMail } from '../config/mailer.js';
 import { certificateIssuedEmail } from '../config/emailTemplates.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { auditFromReq } from '../services/auditService.js';
+import { createNotification } from './notificationController.js';
 
 // @desc  Admin/teacher: issue a certificate to a student.
 // @route POST /api/certificates
@@ -34,6 +35,14 @@ export const issueCertificate = asyncHandler(async (req, res) => {
   });
 
   await auditFromReq(req, 'certificate.issue', 'Certificate', cert._id, null, cert, 'info');
+
+  await createNotification({
+    recipient: student._id,
+    type:      'certificate_issued',
+    title:     'You received a certificate',
+    body:      `You've been issued the "${cert.title}" certificate.`,
+    link:      '/profile',
+  });
 
   // Notify the student (non-blocking).
   if (student.email) {

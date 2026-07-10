@@ -6,6 +6,7 @@
 import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import DashboardLayout from '../components/layout/DashboardLayout';
+import PreviewBanner from '../components/ui/PreviewBanner';
 import { useAuth } from '../context/AuthContext';
 import {
   Check, X, Clock, AlertCircle, TrendingUp, Calendar, Users,
@@ -325,12 +326,14 @@ export default function AttendancePage() {
     staleTime: 2 * 60 * 1000,
   });
 
+  // No /api/attendance/* backend exists yet (see the preview banner below) —
+  // this still calls the real endpoint it's named for, so wiring one up later
+  // needs no frontend changes, but it no longer swallows the failure and
+  // pretends it succeeded.
   const saveMutation = useMutation({
     mutationFn: async ({ date, subject, marks }) => {
-      try {
-        const { default: http } = await import('../api/http');
-        await http.post('/api/attendance/bulk', { date, subject, marks });
-      } catch { /* demo noop */ }
+      const { default: http } = await import('../api/http');
+      await http.post('/api/attendance/bulk', { date, subject, marks });
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['attendance-records'] }),
   });
@@ -367,6 +370,27 @@ export default function AttendancePage() {
   return (
     <DashboardLayout>
       <div style={{ maxWidth: 1000, margin: '0 auto' }}>
+        <PreviewBanner>
+          Preview — the attendance history, student roster, and rates below are illustrative. Marking attendance isn&apos;t connected to a real backend yet, so nothing is actually saved.
+        </PreviewBanner>
+
+        {saveMutation.isError && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px',
+            background: 'var(--color-danger-surface)', border: '1px solid var(--color-danger-border)',
+            borderRadius: 10, marginBottom: 18, fontSize: '0.82rem', color: 'var(--color-danger-text)',
+          }} role="alert">
+            <span style={{ flex: 1 }}>Attendance wasn&apos;t saved — this page is a preview.</span>
+            <button
+              type="button"
+              onClick={() => saveMutation.reset()}
+              style={{ background: 'none', border: 'none', color: 'var(--color-danger-text)', fontWeight: 700, cursor: 'pointer', fontSize: '0.78rem', fontFamily: 'var(--font-sans)' }}
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
+
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
           <div>

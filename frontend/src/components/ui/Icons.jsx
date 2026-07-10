@@ -1,8 +1,7 @@
 /**
  * Al-Rahma Academy — SVG Icon System
  * All icons are 20×20 viewBox, stroke-based (consistent weight).
- * Usage: <Icon name="book" size={20} className="..." />
- *        <BookIcon />   (named exports)
+ * Usage: <BookOpenIcon size={20} className="..." />
  */
 
 const BASE = {
@@ -56,9 +55,6 @@ export const CompassIcon = (p) => (
 export const CalendarIcon = (p) => (
   <Svg {...p}><rect x="2" y="4" width="16" height="14" rx="2" stroke="currentColor" strokeWidth="1.5"/><path d="M2 8h16M6 2v4M14 2v4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></Svg>
 );
-export const SunIcon = (p) => (
-  <Svg {...p}><circle cx="10" cy="10" r="3.5" stroke="currentColor" strokeWidth="1.5"/><path d="M10 2v2M10 16v2M2 10h2M16 10h2M4.22 4.22l1.42 1.42M14.36 14.36l1.42 1.42M4.22 15.78l1.42-1.42M14.36 5.64l1.42-1.42" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></Svg>
-);
 export const VerseIcon = (p) => (
   <Svg {...p}><path d="M10 3L12 8H17L13 11L14.5 16.5L10 13L5.5 16.5L7 11L3 8H8L10 3Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/></Svg>
 );
@@ -70,35 +66,17 @@ export const HandIcon = (p) => (
 export const ChevronDownIcon = (p) => (
   <Svg {...p}><path d="M5 7.5l5 5 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></Svg>
 );
-export const ChevronRightIcon = (p) => (
-  <Svg {...p}><path d="M7.5 5l5 5-5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></Svg>
-);
-export const ChevronLeftIcon = (p) => (
-  <Svg {...p}><path d="M12.5 5l-5 5 5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></Svg>
-);
-export const MenuIcon = (p) => (
-  <Svg {...p}><path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></Svg>
-);
-export const XIcon = (p) => (
-  <Svg {...p}><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></Svg>
-);
 export const SearchIcon = (p) => (
   <Svg {...p}><circle cx="9" cy="9" r="5.5" stroke="currentColor" strokeWidth="1.5"/><path d="M13.5 13.5L17 17" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></Svg>
 );
 export const BellIcon = (p) => (
   <Svg {...p}><path d="M10 2a6 6 0 016 6v3l1.5 3H2.5L4 11V8a6 6 0 016-6zM8 16a2 2 0 004 0" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></Svg>
 );
-export const UserIcon = (p) => (
-  <Svg {...p}><circle cx="10" cy="6" r="3.5" stroke="currentColor" strokeWidth="1.5"/><path d="M3 18c0-3.866 3.134-7 7-7s7 3.134 7 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></Svg>
-);
 export const SettingsIcon = (p) => (
   <Svg {...p}><circle cx="10" cy="10" r="2.5" stroke="currentColor" strokeWidth="1.5"/><path d="M10 2v2M10 16v2M2 10h2M16 10h2M4.22 4.22l1.42 1.42M14.36 14.36l1.42 1.42M4.22 15.78l1.42-1.42M14.36 5.64l1.42-1.42" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></Svg>
 );
 export const LogoutIcon = (p) => (
   <Svg {...p}><path d="M13 5l4 5-4 5M17 10H7M3 4v12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></Svg>
-);
-export const DashboardIcon = (p) => (
-  <Svg {...p}><rect x="2" y="2" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="1.5"/><rect x="11" y="2" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="1.5"/><rect x="2" y="11" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="1.5"/><rect x="11" y="11" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="1.5"/></Svg>
 );
 export const MessageIcon = (p) => (
   <Svg {...p}><path d="M17 10c0 3.866-3.134 7-7 7a7.002 7.002 0 01-3.536-.95L3 17l.95-3.464A7 7 0 1117 10z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/></Svg>
@@ -112,18 +90,6 @@ export const ShieldIcon = (p) => (
 export const EditIcon = (p) => (
   <Svg {...p}><path d="M14 2l4 4-10 10H4v-4L14 2z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/></Svg>
 );
-export const TrashIcon = (p) => (
-  <Svg {...p}><path d="M4 6h12M8 6V4h4v2M5 6l1 11h8l1-11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></Svg>
-);
-export const PlusIcon = (p) => (
-  <Svg {...p}><path d="M10 3v14M3 10h14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></Svg>
-);
-export const CheckIcon = (p) => (
-  <Svg {...p}><path d="M4 10l4 4 8-8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></Svg>
-);
-export const ExternalLinkIcon = (p) => (
-  <Svg {...p}><path d="M11 3h6v6M17 3L9 11M7 5H4a1 1 0 00-1 1v10a1 1 0 001 1h10a1 1 0 001-1v-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></Svg>
-);
 export const GlobeIcon = (p) => (
   <Svg {...p}><circle cx="10" cy="10" r="8" stroke="currentColor" strokeWidth="1.5"/><path d="M2 10h16M10 2c-3 3-3 11 0 16M10 2c3 3 3 11 0 16" stroke="currentColor" strokeWidth="1.5"/></Svg>
 );
@@ -136,17 +102,11 @@ export const HomeIcon = (p) => (
 export const UsersIcon = (p) => (
   <Svg {...p}><circle cx="8" cy="6" r="2.5" stroke="currentColor" strokeWidth="1.5"/><path d="M2 18c0-3.314 2.686-6 6-6s6 2.686 6 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/><circle cx="14" cy="6" r="2.5" stroke="currentColor" strokeWidth="1.5"/><path d="M16 13.5c1.5.8 2.5 2.5 2.5 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></Svg>
 );
-export const SidebarIcon = (p) => (
-  <Svg {...p}><rect x="2" y="2" width="16" height="16" rx="2" stroke="currentColor" strokeWidth="1.5"/><path d="M7 2v16" stroke="currentColor" strokeWidth="1.5"/></Svg>
-);
 export const MoonIcon = (p) => (
   <Svg {...p}><path d="M17 10.5A7 7 0 019.5 3 7.5 7.5 0 1017 10.5z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/></Svg>
 );
 export const SunIconOutline = (p) => (
   <Svg {...p}><circle cx="10" cy="10" r="3" stroke="currentColor" strokeWidth="1.5"/><path d="M10 1v2M10 17v2M1 10h2M17 10h2M3.22 3.22l1.42 1.42M15.36 15.36l1.42 1.42M3.22 16.78l1.42-1.42M15.36 4.64l1.42-1.42" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></Svg>
-);
-export const WhatsAppIcon = (p) => (
-  <Svg {...p}><path d="M10 2a8 8 0 016.32 12.9L18 18l-3.15-.84A8 8 0 1110 2z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/><path d="M7.5 8.5c.5 1 1.5 2 2.5 2.5 1 .5 1.5.5 2 0 .5-.5 1-1 1-1s-1-1.5-1.5-1.5-1 .5-1 .5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></Svg>
 );
 export const TeacherIcon = (p) => (
   <Svg {...p}><rect x="3" y="3" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="1.5"/><path d="M7 17l3-3 3 3M10 14v3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></Svg>
@@ -154,29 +114,3 @@ export const TeacherIcon = (p) => (
 export const AboutIcon = (p) => (
   <Svg {...p}><circle cx="10" cy="10" r="8" stroke="currentColor" strokeWidth="1.5"/><path d="M10 9v6M10 7v.01" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></Svg>
 );
-
-/* ── Named map for <Icon name="…"> usage ── */
-const ICON_MAP = {
-  'book-open': BookOpenIcon, 'star': StarIcon, 'scroll': ScrollIcon,
-  'mosque': MosqueIcon, 'alphabet': AlphabetIcon, 'beads': BeadsIcon,
-  'library': LibraryIcon, 'compass': CompassIcon, 'calendar': CalendarIcon,
-  'sun': SunIcon, 'verse': VerseIcon, 'hand': HandIcon,
-  'chevron-down': ChevronDownIcon, 'chevron-right': ChevronRightIcon,
-  'chevron-left': ChevronLeftIcon, 'menu': MenuIcon, 'x': XIcon,
-  'search': SearchIcon, 'bell': BellIcon, 'user': UserIcon,
-  'settings': SettingsIcon, 'logout': LogoutIcon, 'dashboard': DashboardIcon,
-  'message': MessageIcon, 'card': CardIcon, 'shield': ShieldIcon,
-  'edit': EditIcon, 'trash': TrashIcon, 'plus': PlusIcon, 'check': CheckIcon,
-  'external-link': ExternalLinkIcon, 'globe': GlobeIcon, 'lock': LockIcon,
-  'home': HomeIcon, 'users': UsersIcon, 'sidebar': SidebarIcon,
-  'moon': MoonIcon, 'sun-outline': SunIconOutline, 'whatsapp': WhatsAppIcon,
-  'teacher': TeacherIcon, 'about': AboutIcon,
-};
-
-export function Icon({ name, ...props }) {
-  const Component = ICON_MAP[name];
-  if (!Component) return null;
-  return <Component {...props} />;
-}
-
-export default Icon;

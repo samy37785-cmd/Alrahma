@@ -6,6 +6,7 @@ import Brand from "./Brand";
 import { useAuth } from "../../context/AuthContext";
 import { useLang } from "../../context/LangContext";
 import { useTheme } from "../../context/ThemeContext";
+import { useEscapeKey } from "../../hooks/useEscapeKey";
 import LangSwitcher from "../ui/LangSwitcher";
 import Avatar from "../ui/Avatar";
 import CommandPalette from "../ui/CommandPalette";
@@ -133,6 +134,7 @@ function NavDropdown({ state, label, items, hubTo, wide, isActive, closeAll, vie
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [cmdOpen, setCmdOpen]       = useState(false);
+  const [scrolled, setScrolled]     = useState(false);
   const { user, isAdmin, isTeacher, isParent, logout } = useAuth();
   const { t, lang, setLang } = useLang();
   const { dark, toggle: toggleDark } = useTheme();
@@ -178,13 +180,18 @@ export default function Header() {
     return () => window.removeEventListener("scroll", close);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  /* Escape closes the mobile drawer */
+  /* Shrink the header slightly once the page has scrolled past the hero —
+     a small threshold (not 0) avoids flicker from momentum-scroll bounce
+     at the very top on iOS/macOS trackpads. */
   useEffect(() => {
-    if (!mobileOpen) return;
-    const handler = (e) => { if (e.key === "Escape") setMobileOpen(false); };
-    document.addEventListener("keydown", handler);
-    return () => document.removeEventListener("keydown", handler);
-  }, [mobileOpen]);
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  /* Escape closes the mobile drawer */
+  useEscapeKey(() => setMobileOpen(false), mobileOpen);
 
   /* Ctrl+K / ⌘+K opens the command palette */
   useEffect(() => {
@@ -250,7 +257,7 @@ export default function Header() {
 
   return (
     <>
-      <header className="header" id="top">
+      <header className={`header${scrolled ? " header--scrolled" : ""}`} id="top">
         <div className="container header__inner">
           <Brand />
 

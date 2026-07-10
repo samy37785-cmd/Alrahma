@@ -1,15 +1,17 @@
 import { Router } from 'express';
-import { protect } from '../middleware/auth.js';
+import { protect, adminOnly } from '../middleware/auth.js';
 import {
   createReview,
   getTeacherReviews,
   getCourseReviews,
+  listReviews,
   reviewValidation,
 } from '../controllers/reviewController.js';
 
 const router = Router();
 
 router.post('/',                 protect, reviewValidation, createReview);
+router.get('/',                  protect, adminOnly, listReviews);
 router.get('/teacher/:teacherId', getTeacherReviews);
 router.get('/course/:courseId',   getCourseReviews);
 

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { escapeHtml } from '../../utils/escapeHtml';
 
 const TYPE_LABEL = {
@@ -124,17 +125,23 @@ function CertificatePrintView({ cert }) {
 
 export default function CertificateCard({ cert }) {
   const color = TYPE_COLOR[cert.type] || '#0b6e4f';
+  const [popupBlocked, setPopupBlocked] = useState(false);
 
-  const handleDownload = () => {
-    const html = CertificatePrintView({ cert });
+  const handlePrint = () => {
     const win = window.open('', '_blank', 'width=900,height=700');
+    // window.open returns null (rather than throwing) when the browser's
+    // popup blocker intervenes — this used to crash on the next line with no
+    // indication to the user why the button appeared to do nothing.
+    if (!win) { setPopupBlocked(true); return; }
+    setPopupBlocked(false);
+    const html = CertificatePrintView({ cert });
     win.document.write(html);
     win.document.close();
   };
 
   return (
     <div style={{
-      background: '#fff',
+      background: 'var(--bg-surface)',
       border: `2px solid ${color}33`,
       borderLeft: `4px solid ${color}`,
       borderRadius: 12,
@@ -169,28 +176,35 @@ export default function CertificateCard({ cert }) {
         </div>
       </div>
 
-      {/* Download */}
-      <button
-        type="button"
-        onClick={handleDownload}
-        style={{
-          flexShrink: 0,
-          background: `${color}15`,
-          border: `1px solid ${color}33`,
-          borderRadius: 8,
-          padding: '7px 14px',
-          fontSize: '0.78rem',
-          fontWeight: 700,
-          color,
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 5,
-        }}
-        title="Download certificate as PDF"
-      >
-        ⬇ Download
-      </button>
+      {/* Print / save as PDF — this opens a print dialog, it doesn't download
+          a file directly, so the label says so rather than "Download". */}
+      <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+        <button
+          type="button"
+          onClick={handlePrint}
+          style={{
+            background: `${color}15`,
+            border: `1px solid ${color}33`,
+            borderRadius: 8,
+            padding: '7px 14px',
+            fontSize: '0.78rem',
+            fontWeight: 700,
+            color,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 5,
+          }}
+          title="Print or save as PDF"
+        >
+          🖨 Print / Save PDF
+        </button>
+        {popupBlocked && (
+          <span role="alert" style={{ fontSize: '0.68rem', color: 'var(--color-danger-text)', textAlign: 'right', maxWidth: 140 }}>
+            Please allow pop-ups to print this certificate.
+          </span>
+        )}
+      </div>
     </div>
   );
 }

@@ -1,9 +1,12 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext';
 import { getCourse, getCourseProgress, toggleLessonDone } from '../api/courseApi';
 import { useLang } from '../context/LangContext';
+import CourseReviews from '../components/features/courses/CourseReviews';
+import { Skeleton } from '../components/ui/Skeleton';
+import { getYouTubeEmbedUrl } from '../utils/courseLessonHelpers';
 
 const ICONS = { youtube: '▶', pdf: '📄', link: '🔗', video: '▶', text: '📖' };
 const lessonKey = (l) => `lesson:${l._id}`;
@@ -28,7 +31,10 @@ export default function CourseContent() {
   const cc           = t.courseContent;
   const queryClient  = useQueryClient();
 
-  const [openText, setOpenText] = useState(null);
+  const [openItem, setOpenItem] = useState(null);
+  const [highlightedId, setHighlightedId] = useState(null);
+  const lessonRefs = useRef({});
+  const highlightTimeout = useRef(null);
 
   // No local "redirect if not logged in" effect here — this route is always
   // wrapped in <ProtectedRoute> (App.jsx), which already owns that decision
@@ -90,6 +96,20 @@ export default function CourseContent() {
     (course?.resources?.filter((r) => completed.has(r.url)).length || 0);
   const percent   = total ? Math.round((doneCount / total) * 100) : 0;
 
+  // First not-yet-completed lesson, in module/lesson order — powers the
+  // "Continue learning" jump-to shortcut so returning students don't have to
+  // scan a long flat list to find where they left off.
+  const nextLesson = lessons.find((l) => !completed.has(lessonKey(l))) ?? null;
+
+  const jumpToLesson = (lessonId) => {
+    const el = lessonRefs.current[lessonId];
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    clearTimeout(highlightTimeout.current);
+    setHighlightedId(lessonId);
+    highlightTimeout.current = setTimeout(() => setHighlightedId(null), 1600);
+  };
+
   const toggleItem = (key, payload) => {
     const done = !completed.has(key);
     toggleMutation.mutate({ key, payload, done });
@@ -98,7 +118,24 @@ export default function CourseContent() {
   const markDone   = cc.markDone   || 'Mark as done';
   const markUndone = cc.markUndone || 'Mark as not done';
 
-  if (isLoading) return <div className="auth"><div className="auth__card"><p>{cc.loading}</p></div></div>;
+  if (isLoading) {
+    return (
+      <div className="billing-page">
+        <main className="container billing-page__main" style={{ maxWidth: 800 }}>
+          <div style={{ marginTop: '2rem' }}>
+            <Skeleton width="40%" height={28} style={{ marginBottom: 10 }} />
+            <Skeleton width="70%" height={16} style={{ marginBottom: 24 }} />
+            <Skeleton width="100%" height={8} radius="var(--radius-full)" style={{ marginBottom: 24 }} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <Skeleton height={62} radius="var(--radius-md)" />
+              <Skeleton height={62} radius="var(--radius-md)" />
+              <Skeleton height={62} radius="var(--radius-md)" />
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
   if (isError || !course) return <div className="auth"><div className="auth__card"><p className="auth__error">{cc.notFound}</p><Link to="/">← {cc.myAccount}</Link></div></div>;
 
   const getLabel = (type) => {
@@ -141,6 +178,34 @@ export default function CourseContent() {
               <div style={{ width: `${percent}%`, height: '100%', background: '#0b6e4f', transition: 'width .3s' }} />
             </div>
 
+            {/* Continue learning — jump to the first not-yet-completed lesson,
+                so returning students don't have to scan the whole list. */}
+            {nextLesson && (
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
+                background: 'var(--color-primary-surface)', border: '1px solid var(--color-primary-border)',
+                borderRadius: 10, padding: '14px 18px', marginBottom: '1.5rem',
+              }}>
+                <span style={{ fontSize: '1.3rem', flexShrink: 0 }} aria-hidden="true">{ICONS[nextLesson.type] || '▶'}</span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--color-primary)', textTransform: 'uppercase', letterSpacing: '.03em' }}>
+                    Continue learning
+                  </div>
+                  <div style={{ fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {nextLesson.title}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  className="btn btn--green btn--sm"
+                  style={{ flexShrink: 0 }}
+                  onClick={() => jumpToLesson(nextLesson._id)}
+                >
+                  Jump to lesson →
+                </button>
+              </div>
+            )}
+
             {/* ── Structured modules → lessons ── */}
             {modules.map((m, mi) => (
               <section key={m._id || mi} style={{ marginBottom: '1.75rem' }}>
@@ -150,9 +215,23 @@ export default function CourseContent() {
                   {(m.lessons || []).map((l) => {
                     const isDone = completed.has(lessonKey(l));
                     const isText = l.type === 'text';
-                    const isOpen = openText === l._id;
+                    const isMedia = l.type === 'youtube' || l.type === 'video';
+                    const isOpen = openItem === l._id;
+                    const embedUrl = isMedia && l.type === 'youtube' ? getYouTubeEmbedUrl(l.url) : null;
+                    const isHighlighted = highlightedId === l._id;
                     return (
-                      <li key={l._id} style={{ background: isDone ? '#f0f8f4' : '#fff', border: `1px solid ${isDone ? '#bfe0cf' : '#e0e8e4'}`, borderRadius: 10, padding: '14px 20px' }}>
+                      <li
+                        key={l._id}
+                        id={`lesson-${l._id}`}
+                        ref={(el) => { lessonRefs.current[l._id] = el; }}
+                        style={{
+                          background: isDone ? '#f0f8f4' : '#fff',
+                          border: `1px solid ${isHighlighted ? 'var(--color-primary)' : isDone ? '#bfe0cf' : '#e0e8e4'}`,
+                          borderRadius: 10, padding: '14px 20px',
+                          boxShadow: isHighlighted ? '0 0 0 3px var(--color-primary-surface)' : 'none',
+                          transition: 'box-shadow .3s ease, border-color .3s ease',
+                        }}
+                      >
                         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
                           <CheckBtn isDone={isDone} onClick={() => toggleItem(lessonKey(l), { lessonId: l._id })} markDone={markDone} markUndone={markUndone} />
                           <span style={{ fontSize: '1.3rem' }}>{ICONS[l.type] || '▶'}</span>
@@ -161,8 +240,12 @@ export default function CourseContent() {
                             {l.duration && <p style={{ margin: '2px 0 0', fontSize: '.82rem', color: '#888' }}>{l.duration}</p>}
                           </div>
                           {isText ? (
-                            <button className="btn btn--green btn--sm" onClick={() => setOpenText(isOpen ? null : l._id)}>
+                            <button className="btn btn--green btn--sm" onClick={() => setOpenItem(isOpen ? null : l._id)}>
                               {isOpen ? (cc.close || 'Close') : (cc.read || 'Read')}
+                            </button>
+                          ) : isMedia && l.url ? (
+                            <button className="btn btn--green btn--sm" onClick={() => setOpenItem(isOpen ? null : l._id)}>
+                              {isOpen ? (cc.close || 'Close') : getLabel(l.type)}
                             </button>
                           ) : l.url ? (
                             <a href={l.url} target="_blank" rel="noopener noreferrer" className="btn btn--green btn--sm">{getLabel(l.type)}</a>
@@ -171,6 +254,37 @@ export default function CourseContent() {
                         {isText && isOpen && (
                           <div style={{ marginTop: 12, padding: '12px 14px', background: '#f7faf8', borderRadius: 8, whiteSpace: 'pre-wrap', color: '#333', fontSize: '.95rem', lineHeight: 1.7 }}>
                             {l.content}
+                          </div>
+                        )}
+                        {isMedia && isOpen && (
+                          <div style={{ marginTop: 12 }}>
+                            {embedUrl ? (
+                              <div style={{ position: 'relative', paddingTop: '56.25%', borderRadius: 8, overflow: 'hidden' }}>
+                                <iframe
+                                  src={embedUrl}
+                                  title={l.title}
+                                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                  allowFullScreen
+                                  style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }}
+                                />
+                              </div>
+                            ) : l.type === 'video' ? (
+                              <video controls src={l.url} style={{ width: '100%', borderRadius: 8, display: 'block' }}>
+                                Your browser doesn&apos;t support embedded video.
+                              </video>
+                            ) : (
+                              <p style={{ margin: 0, fontSize: '.85rem', color: '#888' }}>
+                                This video can&apos;t be played inline.
+                              </p>
+                            )}
+                            <a
+                              href={l.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{ display: 'inline-block', marginTop: 8, fontSize: '.8rem', color: '#0b6e4f', textDecoration: 'underline' }}
+                            >
+                              Open in new tab ↗
+                            </a>
                           </div>
                         )}
                         {(l.resources?.length > 0) && (
@@ -219,6 +333,8 @@ export default function CourseContent() {
             <p style={{ color: '#888', margin: 0 }}>{cc.noMaterials}</p>
           </div>
         )}
+
+        <CourseReviews courseId={id} />
       </main>
     </div>
   );

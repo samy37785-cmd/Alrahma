@@ -1,5 +1,4 @@
-﻿import { useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+﻿import { useParams, useNavigate, Link } from 'react-router-dom';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 import useSEO from '../hooks/useSEO';
@@ -10,23 +9,19 @@ import { useLang } from '../context/LangContext';
 const FLAG = { en:'🇬🇧', ar:'🇪🇬', it:'🇮🇹', fr:'🇫🇷', de:'🇩🇪', es:'🇪🇸' };
 const LANG_LABEL = { en:'English', ar:'Arabic', it:'Italian', fr:'French', de:'German', es:'Spanish' };
 
-function InteractiveStars({ teacher }) {
+// This page's teacher directory (data/teachers.js) is static marketing
+// content — editorial bios, credentials and rating/review-count numbers with
+// no corresponding real account in the database (unlike the real Review
+// system, which operates on actual User/Course documents — see
+// Dashboard.jsx's TutorReviewWidget for the real, backend-connected
+// equivalent). This static rating display used to also let any visitor
+// "rate" the teacher via a button that only wrote to their own browser's
+// localStorage and recomputed a fake average never seen by anyone else —
+// removed as misleading; this now shows only the honest editorial figures.
+function TeacherRating({ teacher }) {
   const { t } = useLang();
   const tp = t.tp;
-  const key = `tc-rating-${teacher.id}`;
-  const [myRating, setMyRating] = useState(() => Number(localStorage.getItem(key) || 0));
-  const [hover, setHover]       = useState(0);
-  const [thanks, setThanks]     = useState(false);
-
-  const handle = (n) => {
-    setMyRating(n); localStorage.setItem(key, String(n));
-    setThanks(true); setTimeout(() => setThanks(false), 2200);
-  };
-  const total  = teacher.reviews + (myRating ? 1 : 0);
-  const avg    = myRating
-    ? ((teacher.rating * teacher.reviews + myRating) / total).toFixed(1)
-    : teacher.rating.toFixed(1);
-  const filled = Math.round(Number(avg));
+  const filled = Math.round(teacher.rating);
 
   return (
     <div className="tp__rating">
@@ -35,18 +30,8 @@ function InteractiveStars({ teacher }) {
           <span key={s} className={`tp__star${s <= filled ? ' on' : ''}`}>★</span>
         ))}
       </div>
-      <span className="tp__avg">{avg}</span>
-      <span className="tp__cnt">({total} {tp.reviews})</span>
-      <div className="tp__rate-row">
-        <span className="tp__rate-lbl">{tp.rateThis}</span>
-        {[1,2,3,4,5].map((s) => (
-          <button key={s} type="button"
-            className={`tp__rate-btn${(hover || myRating) >= s ? ' lit' : ''}`}
-            onMouseEnter={() => setHover(s)} onMouseLeave={() => setHover(0)}
-            onClick={() => handle(s)} aria-label={`Rate ${s} stars`}>★</button>
-        ))}
-        {thanks && <span className="tp__thanks">{tp.thanks}</span>}
-      </div>
+      <span className="tp__avg">{teacher.rating.toFixed(1)}</span>
+      <span className="tp__cnt">({teacher.reviews} {tp.reviews})</span>
     </div>
   );
 }
@@ -225,7 +210,7 @@ export default function TeacherProfile() {
 
             <div className="tp__section">
               <h2>{tp.studentRating}</h2>
-              <InteractiveStars teacher={teacher} />
+              <TeacherRating teacher={teacher} />
             </div>
           </div>
 

@@ -14,7 +14,12 @@ const courses = createCRUDController(Course, {
   defaultLimit:   50,
   maxLimit:       500,
   searchFields:   ['title', 'description'],
-  allowedFilters: ['level', 'language', 'isPublished'],
+  // Must match the real Course schema fields (models/Course.js) — there is
+  // no `language` field on this model, and the boolean is named `published`,
+  // not `isPublished`. The generic CRUD list() forwards allowlisted filters
+  // straight into a Mongoose query with no existence check, so a mismatched
+  // name here doesn't error — it silently matches zero documents.
+  allowedFilters: ['level', 'published'],
   sortable:       ['createdAt', 'updatedAt', 'title'],
 });
 

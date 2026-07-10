@@ -8,6 +8,7 @@ import {
   deactivateSubscription,
 } from '../services/subscriptionService.js';
 import { createInvoice } from '../services/invoiceService.js';
+import { createNotification } from './notificationController.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import logger from '../config/logger.js';
 
@@ -142,6 +143,14 @@ export const stripeWebhook = asyncHandler(async (req, res) => {
               paymentId: updated._id,
               session:   dbSession,
             });
+
+            await createNotification({
+              recipient: userId,
+              type:      'payment_received',
+              title:     'Payment approved',
+              body:      `Your payment for the ${planName} plan has been received and your subscription is now active.`,
+              link:      '/billing',
+            }, { session: dbSession });
           });
         } finally {
           dbSession.endSession();
@@ -185,6 +194,14 @@ export const stripeWebhook = asyncHandler(async (req, res) => {
               gatewayInvoiceId: stripeInvoice.id,
               session:          dbSession,
             });
+
+            await createNotification({
+              recipient: userId,
+              type:      'subscription_renewed',
+              title:     'Subscription renewed',
+              body:      `Your ${planName} subscription has been renewed.`,
+              link:      '/billing',
+            }, { session: dbSession });
           });
         } finally {
           dbSession.endSession();

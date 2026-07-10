@@ -1,23 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import useScrollReveal from '../hooks/useScrollReveal';
+import useCountUp from '../hooks/useCountUp';
 import { useLang } from '../context/LangContext';
 import { STATS as STATS_DATA, SHOW_STATS } from '../data/socialProof';
-
-function useCountUp(target, duration = 1600, active = false, decimals = 0) {
-  const [count, setCount] = useState(0);
-  useEffect(() => {
-    if (!active) return;
-    let start = 0;
-    const step = target / (duration / 16);
-    const timer = setInterval(() => {
-      start += step;
-      if (start >= target) { setCount(target); clearInterval(timer); }
-      else setCount(decimals ? parseFloat(start.toFixed(decimals)) : Math.floor(start));
-    }, 16);
-    return () => clearInterval(timer);
-  }, [active, target, duration, decimals]);
-  return count;
-}
 
 function StatItem({ value, suffix, label, active, decimals = 0 }) {
   const count = useCountUp(value, 1600, active, decimals);

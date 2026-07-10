@@ -134,7 +134,7 @@ export default function CertificateCard({ cert }) {
 
   return (
     <div style={{
-      background: '#fff',
+      background: 'var(--bg-surface)',
       border: `2px solid ${color}33`,
       borderLeft: `4px solid ${color}`,
       borderRadius: 12,

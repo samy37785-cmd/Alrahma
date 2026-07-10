@@ -9,19 +9,19 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { useLang } from '../context/LangContext';
 import { useDashboardData } from '../hooks/useDashboard';
+import useCountUp from '../hooks/useCountUp';
 import { getCourseProgress, getMyCertificates } from '../api/courseApi';
 import { getClasses } from '../api/classApi';
 import { getTeacherReviews, createReview } from '../api/reviewApi';
 import { site } from '../data/site';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import ProgressRing from '../components/ui/ProgressRing';
-import { SkeletonDashboard } from '../components/ui/Skeleton';
+import { Skeleton, SkeletonDashboard } from '../components/ui/Skeleton';
 import { DsBarChart, DsChartEmpty } from '../components/ui/DsChart';
 import MilestoneCelebration from '../components/ui/MilestoneCelebration';
 import ShareAchievement from '../components/ui/ShareAchievement';
 import CertificateCard from '../components/ui/CertificateCard';
 import ReferralCard from '../components/ui/ReferralCard';
-import HifzLeaderboard from '../components/ui/HifzLeaderboard';
 import WishlistButton from '../components/ui/WishlistButton';
 import '../styles/trust-engage.css';
 
@@ -467,7 +467,7 @@ export default function Dashboard() {
   const { user } = useAuth();
   const { t }   = useLang();
 
-  const { me, enrollment, courses, loading } = useDashboardData(!!user);
+  const { me, enrollment, courses, loading, error, refetch } = useDashboardData(!!user);
 
   const sub     = me?.subscription ?? user?.subscription ?? null;
   const isActive = sub?.status === 'active';
@@ -488,7 +488,7 @@ export default function Dashboard() {
   const firstCourse   = courses[0];
 
   /* Fetch upcoming classes */
-  const { data: classes = [] } = useQuery({
+  const { data: classes = [], isLoading: classesLoading } = useQuery({
     queryKey: ['classes', 'upcoming'],
     queryFn:  () => getClasses({ upcoming: 1 }),
     enabled:  !!user,
@@ -497,7 +497,7 @@ export default function Dashboard() {
   });
 
   /* Fetch student certificates */
-  const { data: certificates = [] } = useQuery({
+  const { data: certificates = [], isLoading: certificatesLoading } = useQuery({
     queryKey: ['certificates', 'mine'],
     queryFn:  getMyCertificates,
     enabled:  !!user,
@@ -545,6 +545,15 @@ export default function Dashboard() {
   const shareLabel = overallPct === 100
     ? `Completed ${firstCourse?.title || 'my course'} — 100% done!`
     : `Reached ${overallPct}% in ${firstCourse?.title || 'my Quran course'}`;
+
+  /* KPI stat count-up — plain numbers only; sessionsNum falls back to 0 when
+     sessionsFromPlan() returns the '—' placeholder (no active plan), and the
+     JSX below renders that raw placeholder instead of the animated count. */
+  const sessionsNum   = typeof sessions === 'number' ? sessions : 0;
+  const streakCount   = useCountUp(streak, 1000, !loading);
+  const progressCount = useCountUp(overallPct, 1000, !loading);
+  const sessionsCount = useCountUp(sessionsNum, 1000, !loading);
+  const xpCount        = useCountUp(me?.xp ?? 0, 1000, !loading);
 
   if (loading) {
     return (
@@ -599,6 +608,26 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* ── Dashboard data error banner ─────────────────────── */}
+      {!!error && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px',
+          background: 'var(--color-warning-surface)', border: '1px solid var(--color-warning-border)',
+          borderRadius: 10, marginBottom: 18, fontSize: '0.875rem', color: 'var(--color-warning-text)',
+        }}>
+          <span>⚠</span>
+          <span style={{ flex: 1 }}>Some dashboard data couldn&apos;t be loaded.</span>
+          <button
+            type="button"
+            className="btn btn--sm"
+            style={{ background: 'var(--color-warning)', color: '#fff', borderRadius: 6, padding: '5px 12px', fontSize: '0.78rem', fontWeight: 700, border: 'none', cursor: 'pointer' }}
+            onClick={() => refetch()}
+          >
+            Try again
+          </button>
+        </div>
+      )}
+
       {/* ── Expired banner ──────────────────────────────────── */}
       {!isActive && (
         <div style={{
@@ -637,7 +666,7 @@ export default function Dashboard() {
               {streak > 0 ? '↑' : '—'}
             </span>
           </div>
-          <div className="ds-stat__value">{streak}</div>
+          <div className="ds-stat__value">{streakCount}</div>
           <div className="ds-stat__label">Day Streak</div>
           <div className="ds-stat__sub">Keep studying daily</div>
         </div>
@@ -657,7 +686,7 @@ export default function Dashboard() {
             <span className="ds-stat__trend ds-stat__trend--up">{overallPct}%</span>
           </div>
           <div className="ds-stat__value">
-            {overallPct}
+            {progressCount}
             <span style={{ fontSize: '1rem', fontWeight: 400, color: 'var(--text-secondary)' }}>%</span>
           </div>
           <div className="ds-stat__label">Progress</div>
@@ -673,7 +702,7 @@ export default function Dashboard() {
               <CalendarDays size={18} aria-hidden="true" />
             </div>
           </div>
-          <div className="ds-stat__value">{sessions}</div>
+          <div className="ds-stat__value">{typeof sessions === 'number' ? sessionsCount : sessions}</div>
           <div className="ds-stat__label">Weekly Sessions</div>
           <div className="ds-stat__sub">{sub?.plan || 'No active plan'}</div>
         </div>
@@ -688,7 +717,7 @@ export default function Dashboard() {
               <span className="ds-stat__trend ds-stat__trend--up">Lv {me?.level}</span>
             )}
           </div>
-          <div className="ds-stat__value">{me?.xp ?? 0}</div>
+          <div className="ds-stat__value">{xpCount}</div>
           <div className="ds-stat__label">XP Earned</div>
           <div className="ds-stat__sub">Level {me?.level ?? 1} · {20 - ((me?.xp ?? 0) % 20)} XP to next</div>
         </div>
@@ -836,9 +865,9 @@ export default function Dashboard() {
           {firstCourse && (
             <div className="ds-card">
               <div className="ds-card__hd">
-                <span className="ds-card__title">
+                <h2 className="ds-card__title">
                   <span className="ds-card__title-icon"><Play size={14} aria-hidden="true" /></span> Continue Learning
-                </span>
+                </h2>
                 <Link to={`/courses/${firstCourse._id}`} className="ds-card__link">View all →</Link>
               </div>
               <div className="ds-card__body">
@@ -880,9 +909,9 @@ export default function Dashboard() {
           {isActive && courses.length > 0 && (
             <div className="ds-card">
               <div className="ds-card__hd">
-                <span className="ds-card__title">
+                <h2 className="ds-card__title">
                   <span className="ds-card__title-icon"><BookOpen size={14} aria-hidden="true" /></span> My Courses
-                </span>
+                </h2>
               </div>
               <div className="ds-card__body" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {courses.map((c) => (
@@ -909,9 +938,9 @@ export default function Dashboard() {
           {/* Weekly Activity */}
           <div className="ds-card">
             <div className="ds-card__hd">
-              <span className="ds-card__title">
+              <h2 className="ds-card__title">
                 <span className="ds-card__title-icon"><BarChart2 size={14} aria-hidden="true" /></span> Weekly Activity
-              </span>
+              </h2>
               <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Last 7 days</span>
             </div>
             <div className="ds-card__body">
@@ -920,21 +949,34 @@ export default function Dashboard() {
           </div>
 
           {/* My Certificates */}
-          {certificates.length > 0 && (
-            <div className="ds-card">
-              <div className="ds-card__hd">
-                <span className="ds-card__title">
-                  <span className="ds-card__title-icon"><GraduationCap size={14} aria-hidden="true" /></span> My Certificates
-                </span>
+          <div className="ds-card">
+            <div className="ds-card__hd">
+              <h2 className="ds-card__title">
+                <span className="ds-card__title-icon"><GraduationCap size={14} aria-hidden="true" /></span> My Certificates
+              </h2>
+              {certificates.length > 0 && (
                 <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>{certificates.length} issued</span>
-              </div>
-              <div className="ds-card__body" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {certificates.map((cert) => (
-                  <CertificateCard key={cert._id} cert={cert} />
-                ))}
-              </div>
+              )}
             </div>
-          )}
+            <div className="ds-card__body" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {certificatesLoading ? (
+                <>
+                  <Skeleton height={64} radius="var(--radius-md)" />
+                  <Skeleton height={64} radius="var(--radius-md)" />
+                </>
+              ) : certificates.length === 0 ? (
+                <div className="ds-empty" style={{ padding: '20px 0' }}>
+                  <div className="ds-empty__icon" style={{ width: 40, height: 40, fontSize: '1.1rem' }}>🎓</div>
+                  <div className="ds-empty__title" style={{ fontSize: '0.82rem' }}>No certificates yet</div>
+                  <div className="ds-empty__desc" style={{ fontSize: '0.72rem' }}>Complete a course to earn your first certificate.</div>
+                </div>
+              ) : (
+                certificates.map((cert) => (
+                  <CertificateCard key={cert._id} cert={cert} />
+                ))
+              )}
+            </div>
+          </div>
         </div>
 
         {/* RIGHT — Sidebar widgets */}
@@ -1031,12 +1073,17 @@ export default function Dashboard() {
           {/* Next class */}
           <div className="ds-card">
             <div className="ds-card__hd">
-              <span className="ds-card__title">
+              <h2 className="ds-card__title">
                 <span className="ds-card__title-icon"><CalendarDays size={14} aria-hidden="true" /></span> Upcoming Classes
-              </span>
+              </h2>
             </div>
             <div className="ds-card__body" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {classes.length === 0 ? (
+              {classesLoading ? (
+                <>
+                  <Skeleton height={48} radius="var(--radius-md)" />
+                  <Skeleton height={48} radius="var(--radius-md)" />
+                </>
+              ) : classes.length === 0 ? (
                 <div className="ds-empty" style={{ padding: '20px 0' }}>
                   <div className="ds-empty__icon" style={{ width: 40, height: 40, fontSize: '1.1rem' }}>📅</div>
                   <div className="ds-empty__title" style={{ fontSize: '0.82rem' }}>No upcoming classes</div>
@@ -1053,9 +1100,9 @@ export default function Dashboard() {
           {/* My Tutor */}
           <div className="ds-card">
             <div className="ds-card__hd">
-              <span className="ds-card__title">
+              <h2 className="ds-card__title">
                 <span className="ds-card__title-icon"><GraduationCap size={14} aria-hidden="true" /></span> My Tutor
-              </span>
+              </h2>
             </div>
             <div className="ds-card__body">
               {enrollment?.teacherName ? (
@@ -1122,9 +1169,9 @@ export default function Dashboard() {
           {/* Quick Actions */}
           <div className="ds-card">
             <div className="ds-card__hd">
-              <span className="ds-card__title">
+              <h2 className="ds-card__title">
                 <span className="ds-card__title-icon"><Zap size={14} aria-hidden="true" /></span> Quick Actions
-              </span>
+              </h2>
             </div>
             <div className="ds-card__body">
               <div className="ds-quick-actions">
@@ -1155,9 +1202,6 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
-
-          {/* Hifz leaderboard */}
-          <HifzLeaderboard />
 
           {/* Referral card */}
           <ReferralCard />

@@ -34,5 +34,10 @@ export function useDashboardData(enabled = true) {
     courses:    coursesQuery.data ?? [],
     loading:    meQuery.isLoading || enrollmentQuery.isLoading || coursesQuery.isLoading,
     error:      meQuery.error || enrollmentQuery.error || coursesQuery.error,
+    refetch:    () => {
+      meQuery.refetch();
+      enrollmentQuery.refetch();
+      coursesQuery.refetch();
+    },
   };
 }

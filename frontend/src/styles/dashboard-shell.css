@@ -708,6 +708,7 @@
   display: flex;
   align-items: center;
   gap: 7px;
+  margin: 0;
 }
 
 .ds-card__title-icon { font-size: 1rem; }

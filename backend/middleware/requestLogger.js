@@ -16,6 +16,7 @@ export function requestLogger(req, res, next) {
       status,
       ms,
       ip:        req.ip,
+      xff:       req.headers['x-forwarded-for'] ?? null, // TEMP diagnostic for trust-proxy fix — remove after
       userId:    req.user?._id?.toString?.() ?? null,
       requestId: req.requestId ?? null,
     });

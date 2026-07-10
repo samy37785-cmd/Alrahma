@@ -62,7 +62,19 @@ export default function Newsletter() {
       <Reveal as="section" className="newsletter newsletter--done">
         <div className="container newsletter__inner">
           <div className="newsletter__success">
-            <span className="newsletter__success-icon">📬</span>
+            <span className="newsletter__success-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                   strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2Z" />
+                <path d="m22 6-10 7L2 6" />
+              </svg>
+              <span className="newsletter__success-badge">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"
+                     strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              </span>
+            </span>
             <h2>{n.successHeading || 'Check your inbox!'}</h2>
             <p>{n.successSub || 'Your free Tajweed Starter Guide is on its way. It may take a minute or two.'}</p>
           </div>

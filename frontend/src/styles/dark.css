@@ -114,6 +114,7 @@ html.dark .admin {
 }
 
 /* ── Features / cards ──────────────────────────────────────────────── */
+html.dark .feature h3 { color: var(--text-primary); }
 html.dark .feature,
 html.dark .features__card,
 html.dark .steps__card,
@@ -148,7 +149,7 @@ html.dark .course-row {
 }
 
 /* Hover state for interactive cards */
-html.dark .faq__item.open,
+html.dark .faq__item--open,
 html.dark .faq-item--open,
 html.dark .dash__lesson-row:hover,
 html.dark .billing__row:hover,
@@ -281,8 +282,10 @@ html.dark .faq-item__a { background: var(--bg-surface-raised); }
 html.dark .faq-item__a p,
 html.dark .faq-page__sub { color: var(--text-secondary); }
 html.dark .faq-item--open { border-color: var(--border-brand); }
-html.dark .faq__question { color: var(--text-primary); }
-html.dark .faq__answer { color: var(--text-secondary); }
+html.dark .faq__question,
+html.dark .faq__question-text { color: var(--text-primary); }
+html.dark .faq__answer,
+html.dark .faq__answer p { color: var(--text-secondary); }
 
 /* ── Newsletter ─────────────────────────────────────────────────────── */
 html.dark .newsletter {
@@ -394,10 +397,13 @@ html.dark .tc3__tag { background: rgba(11,110,79,.18); color: var(--text-primary
 html.dark .tc3__spotlight { background: var(--bg-surface); border-color: rgba(212,175,55,.25); }
 
 /* ── Pricing ────────────────────────────────────────────────────────── */
-html.dark .plan__price-row { color: var(--text-primary); }
+html.dark .plan__price-row,
+html.dark .plan__price-amount,
+html.dark .plan__head-text h3 { color: var(--text-primary); }
 html.dark .plan__per-hour,
 html.dark .plan__cancel-note { color: var(--text-secondary); }
 html.dark .plan li { color: var(--text-primary); }
+html.dark .plan--featured { background: linear-gradient(160deg, var(--bg-surface), var(--bg-surface)); }
 html.dark .plan__discount-banner {
   background: #1c1800;
   border-color: rgba(212,175,55,.25);

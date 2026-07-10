@@ -80,21 +80,29 @@ export default function Features() {
         <div className="features__grid">
           {features.map((f, i) => {
             const item = t.features.items[i] || {};
+            const isFeatured = i === 0;
             return (
               <Reveal
                 as="article"
-                className="feature"
+                className={`feature${isFeatured ? ' feature--featured' : ''}`}
                 key={f.title}
                 style={{ '--feature-grad': ACCENTS[i % ACCENTS.length] }}
               >
-                <div
-                  className="feature__icon-wrap"
-                  style={{ background: GRADS[i % GRADS.length] }}
-                >
-                  {ICONS[i % ICONS.length]}
+                <div className="feature__row">
+                  <div
+                    className="feature__icon-wrap"
+                    style={{ background: GRADS[i % GRADS.length] }}
+                  >
+                    {ICONS[i % ICONS.length]}
+                  </div>
+                  <h3>{item.title || f.title}</h3>
                 </div>
-                <h3>{item.title || f.title}</h3>
                 <p>{item.text || f.text}</p>
+                {isFeatured && (
+                  <a href="#trial" className="feature__link">
+                    Start your free trial <span aria-hidden="true">→</span>
+                  </a>
+                )}
               </Reveal>
             );
           })}

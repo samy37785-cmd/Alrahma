@@ -57,17 +57,17 @@ export default function Testimonials() {
           </p>
           <div className="tst__video-grid">
             {[
-              { thumb: '🧒', label: 'Ahmed, 9 — learned Al-Fatiha in 3 weeks', duration: '1:24' },
-              { thumb: '👩', label: 'Fatima, Germany — from zero to reading Quran', duration: '2:10' },
-              { thumb: '👨‍👩‍👧', label: 'The Johnson Family, UK — 6 months journey', duration: '3:05' },
+              { initials: 'A', grad: '#0b6e4f,#1a9e72', label: 'Ahmed, 9 — learned Al-Fatiha in 3 weeks', duration: '1:24' },
+              { initials: 'F', grad: '#7a3a8a,#a04dba', label: 'Fatima, Germany — from zero to reading Quran', duration: '2:10' },
+              { initials: 'J', grad: '#1a5fa0,#2176c7', label: 'The Johnson Family, UK — 6 months journey', duration: '3:05' },
             ].map((v) => (
               <div key={v.label} className="tst__video-card" role="button" tabIndex={0}
                 aria-label={`Watch: ${v.label}`}
                 onClick={() => window.open('https://wa.me/message/ALRAHMA', '_blank', 'noopener')}
                 onKeyDown={(e) => e.key === 'Enter' && window.open('https://wa.me/message/ALRAHMA', '_blank', 'noopener')}
               >
-                <div className="tst__video-thumb">
-                  <span className="tst__video-emoji" aria-hidden="true">{v.thumb}</span>
+                <div className="tst__video-thumb" style={{ background: `linear-gradient(135deg, ${v.grad})` }}>
+                  <span className="tst__video-initials" aria-hidden="true">{v.initials}</span>
                   <div className="tst__video-play" aria-hidden="true">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>
                   </div>

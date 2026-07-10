@@ -157,11 +157,16 @@
 .tst__video-thumb {
   position: relative;
   height: 130px;
-  background: linear-gradient(135deg, #0b6e4f, #1a9e72);
   display: flex; align-items: center; justify-content: center;
 }
 
-.tst__video-emoji { font-size: 3.5rem; }
+.tst__video-initials {
+  font-family: var(--serif);
+  font-size: 3rem;
+  font-weight: 700;
+  color: rgba(255,255,255,.9);
+  text-shadow: 0 2px 8px rgba(0,0,0,.15);
+}
 
 .tst__video-play {
   position: absolute;

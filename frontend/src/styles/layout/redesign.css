@@ -131,12 +131,6 @@
 .tst__cta-num { font-size: 2.4rem; font-weight: 800; color: #fff; margin-bottom: 4px; }
 .tst__cta-label { font-size: .88rem; color: #cde5d8; margin-bottom: 16px; }
 
-/* Tutor card actions */
-.tc2__name-link { text-decoration: none; display: block; }
-.tc2__name-link:hover .tc2__name-ar { color: var(--green); }
-.tc2__actions { display: flex; gap: 10px; margin-top: auto; padding-top: 12px; }
-.tc2__actions .btn { flex: 1; text-align: center; justify-content: center; }
-
 /* ── Teacher Profile Page ───────────────────────────────────────── */
 .tp__hero { padding: 60px 0; color: #fff; }
 .tp__hero-inner { display: grid; grid-template-columns: auto 1fr; gap: 40px; align-items: center; }

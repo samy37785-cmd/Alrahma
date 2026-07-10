@@ -118,7 +118,8 @@ html.dark .feature,
 html.dark .features__card,
 html.dark .steps__card,
 html.dark .timeline-step__card,
-html.dark .tc2__card,
+html.dark .tc3__card,
+html.dark .tc3__spotlight,
 html.dark .tst__featured,
 html.dark .tst__mini,
 html.dark .plan,
@@ -385,8 +386,12 @@ html.dark .tst__mini-top span { color: var(--text-secondary); }
 html.dark .tst__quote-mark { color: var(--border-strong); }
 
 /* ── Teachers (home) ────────────────────────────────────────────────── */
-html.dark .tc2__name { color: var(--text-primary); }
-html.dark .tc2__spec { color: var(--text-secondary); }
+html.dark .tc3__name-ar { color: var(--text-primary); }
+html.dark .tc3__name-en,
+html.dark .tc3__spotlight-bio,
+html.dark .tc3__meta-item { color: var(--text-secondary); }
+html.dark .tc3__tag { background: rgba(11,110,79,.18); color: var(--text-primary); border-color: rgba(11,110,79,.3); }
+html.dark .tc3__spotlight { background: var(--bg-surface); border-color: rgba(212,175,55,.25); }
 
 /* ── Pricing ────────────────────────────────────────────────────────── */
 html.dark .plan__price-row { color: var(--text-primary); }
@@ -558,7 +563,7 @@ html.dark .course-row__points li { color: var(--text-primary); }
 body,
 .header, .nav__dropdown-menu, .plan, .blog-card,
 .faq__item, .faq-item, .adhkar__card, .tpg__card,
-.tc2__card, .hadith__card, .dash__stat, .dash__panel,
+.tc3__card, .tc3__spotlight, .hadith__card, .dash__stat, .dash__panel,
 .billing__card, .admin__card, .admin__panel, .hub-card,
 .value-card, .feature, .course-row, .enroll__card {
   transition: background-color var(--duration-slow) var(--ease-default),

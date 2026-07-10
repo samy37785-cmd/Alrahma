@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import Reveal from './ui/Reveal';
 import { useLang } from '../context/LangContext';
 import LiveCounter from './LiveCounter';
 
@@ -9,7 +10,7 @@ export default function JoinCTA({ onTrialClick }) {
   const jc = t.joinCta;
 
   return (
-    <section className="join-cta">
+    <Reveal as="section" className="join-cta">
       {/* Decorative rings */}
       <div className="join-cta__ring join-cta__ring--1" />
       <div className="join-cta__ring join-cta__ring--2" />
@@ -61,6 +62,6 @@ export default function JoinCTA({ onTrialClick }) {
           <span>14-day money-back guarantee · No credit card required · Cancel anytime</span>
         </div>
       </div>
-    </section>
+    </Reveal>
   );
 }

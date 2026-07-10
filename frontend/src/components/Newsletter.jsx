@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import Reveal from './ui/Reveal';
 import { subscribeNewsletter } from '../api/contentApi';
 import { useLang } from '../context/LangContext';
 
@@ -29,7 +30,7 @@ export default function Newsletter() {
 
   if (status === 'done') {
     return (
-      <section className="newsletter newsletter--done">
+      <Reveal as="section" className="newsletter newsletter--done">
         <div className="container newsletter__inner">
           <div className="newsletter__success">
             <span className="newsletter__success-icon">📬</span>
@@ -37,12 +38,12 @@ export default function Newsletter() {
             <p>{n.successSub || 'Your free Tajweed Starter Guide is on its way. It may take a minute or two.'}</p>
           </div>
         </div>
-      </section>
+      </Reveal>
     );
   }
 
   return (
-    <section className="newsletter">
+    <Reveal as="section" className="newsletter">
       <div className="container newsletter__inner newsletter__inner--guide">
 
         {/* Left — offer */}
@@ -70,7 +71,7 @@ export default function Newsletter() {
         <div className="newsletter__form-wrap">
           <div className="newsletter__guide-preview" aria-hidden="true">
             <div className="newsletter__guide-cover">
-              <span className="newsletter__guide-cover-arabicبسم">بِسْمِ اللَّهِ</span>
+              <span className="newsletter__guide-cover-arabic">بِسْمِ اللَّهِ</span>
               <span className="newsletter__guide-cover-title">Tajweed<br/>Starter Guide</span>
               <span className="newsletter__guide-cover-badge">FREE</span>
             </div>
@@ -105,6 +106,6 @@ export default function Newsletter() {
         </div>
 
       </div>
-    </section>
+    </Reveal>
   );
 }

@@ -566,22 +566,6 @@
 .tc2__star.on { color: var(--gold); }
 .tc2__avg { font-weight: 700; font-size: .92rem; color: var(--green-deep); margin: 0 4px; }
 .tc2__cnt { font-size: .75rem; color: var(--muted); }
-.tc2__rate-wrap {
-  display: flex; align-items: center; gap: 4px; margin-top: 6px;
-  background: var(--cream); border-radius: 8px; padding: 6px 10px;
-}
-.tc2__rate-lbl { font-size: .72rem; color: var(--muted); margin-right: 4px; white-space: nowrap; }
-.tc2__rate-btn {
-  background: none; border: 0; cursor: pointer; font-size: 1rem;
-  color: #ccc; transition: color .15s, transform .15s;
-  line-height: 1;
-  /* Comfortable, accessible tap target (≥24px) without enlarging the star */
-  display: inline-flex; align-items: center; justify-content: center;
-  min-width: 28px; min-height: 28px; padding: 4px;
-}
-.tc2__rate-btn:hover, .tc2__rate-btn.lit { color: var(--gold); }
-.tc2__rate-btn:hover { transform: scale(1.2); }
-.tc2__thanks { font-size: .75rem; color: var(--green); font-weight: 700; margin-left: 4px; }
 
 /* Footer link */
 .tc2__footer { text-align: center; margin-top: 40px; }
@@ -845,7 +829,7 @@
   border-radius: 12px; padding: 28px 24px; text-align: center;
   position: relative; gap: 8px;
 }
-.newsletter__guide-cover-arabicبسم {
+.newsletter__guide-cover-arabic {
   font-family: 'Amiri', serif; font-size: 1.2rem; color: var(--color-accent); letter-spacing: .05em;
 }
 .newsletter__guide-cover-title {

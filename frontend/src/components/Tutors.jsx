@@ -5,26 +5,14 @@ import MobileCarousel from './ui/MobileCarousel';
 import { TEACHERS } from '../data';
 import { useLang } from '../context/LangContext';
 
+// Static, honest star rating. This used to let any visitor "rate" the tutor
+// via a button that only wrote to their own browser's localStorage and
+// recomputed a fake blended average never seen by anyone else — the same
+// anti-pattern already fixed on TeacherProfile.jsx and Teachers.jsx. TEACHERS
+// is a fictional marketing directory with no real backend account behind it,
+// so this shows only the static editorial rating/reviews figures.
 function StarRating({ teacher }) {
-  const { t } = useLang();
-  const ut = t.tutors;
-  const key = `tutor-rating-${teacher.id}`;
-  const [myRating, setMyRating] = useState(() => Number(localStorage.getItem(key) || 0));
-  const [hover, setHover] = useState(0);
-  const [thanks, setThanks] = useState(false);
-
-  const handle = (n) => {
-    setMyRating(n);
-    localStorage.setItem(key, String(n));
-    setThanks(true);
-    setTimeout(() => setThanks(false), 2000);
-  };
-
-  const total  = teacher.reviews + (myRating ? 1 : 0);
-  const avg    = myRating
-    ? ((teacher.rating * teacher.reviews + myRating) / total).toFixed(1)
-    : teacher.rating.toFixed(1);
-  const filled = Math.round(Number(avg));
+  const filled = Math.round(teacher.rating);
 
   return (
     <div className="tc2__rating">
@@ -33,24 +21,8 @@ function StarRating({ teacher }) {
           <span key={s} className={`tc2__star${s <= filled ? ' on' : ''}`}>★</span>
         ))}
       </div>
-      <span className="tc2__avg">{avg}</span>
-      <span className="tc2__cnt">({total})</span>
-
-      <div className="tc2__rate-wrap">
-        <span className="tc2__rate-lbl">{myRating ? ut.yourRating : ut.rate}</span>
-        {[1,2,3,4,5].map((s) => (
-          <button
-            key={s}
-            type="button"
-            className={`tc2__rate-btn${(hover || myRating) >= s ? ' lit' : ''}`}
-            onMouseEnter={() => setHover(s)}
-            onMouseLeave={() => setHover(0)}
-            onClick={() => handle(s)}
-            aria-label={`Rate ${s} stars`}
-          >★</button>
-        ))}
-        {thanks && <span className="tc2__thanks">✓</span>}
-      </div>
+      <span className="tc2__avg">{teacher.rating.toFixed(1)}</span>
+      <span className="tc2__cnt">({teacher.reviews})</span>
     </div>
   );
 }

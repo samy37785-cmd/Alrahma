@@ -71,7 +71,7 @@ export default function Testimonials() {
           </p>
         </Reveal>
 
-        <div className="tst__layout">
+        <Reveal className="tst__layout">
           {/* Main featured testimonial */}
           <div className="tst__featured">
             <div className="tst__quote-mark">&quot;</div>
@@ -148,7 +148,7 @@ export default function Testimonials() {
               </Link>
             </div>
           </div>
-        </div>
+        </Reveal>
       </div>
     </section>
   );

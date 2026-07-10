@@ -132,7 +132,11 @@ export default function Hero({ onTrialClick }) {
 
           {/* Floating pill — rating */}
           <div className="hero__pill hero__pill--top">
-            <span className="hero__pill-icon">⭐</span>
+            <span className="hero__pill-icon">
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="m12 2 2.9 6.6 7.1.6-5.4 4.7 1.6 7-6.2-3.8L5.8 21l1.6-7-5.4-4.7 7.1-.6L12 2z"/>
+              </svg>
+            </span>
             <div>
               <strong>4.9 / 5</strong>
               <span>{h.studentsCount}</span>
@@ -141,7 +145,12 @@ export default function Hero({ onTrialClick }) {
 
           {/* Floating pill — Al-Azhar certification */}
           <div className="hero__pill hero__pill--bottom">
-            <span className="hero__pill-icon">🎓</span>
+            <span className="hero__pill-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M22 10 12 5 2 10l10 5 10-5Z"/>
+                <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+              </svg>
+            </span>
             <div>
               <strong>Al-Azhar</strong>
               <span>{h.certifiedTutors}</span>

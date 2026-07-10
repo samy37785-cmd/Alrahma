@@ -239,7 +239,15 @@
 }
 .hero__pill--top    { top: 20px;  right: -10px; animation: float 3.5s ease-in-out infinite; }
 .hero__pill--bottom { bottom: 40px; left: -20px; animation: float 4.2s ease-in-out infinite .8s; }
-.hero__pill-icon { font-size: 1.6rem; flex-shrink: 0; }
+.hero__pill-icon {
+  flex-shrink: 0;
+  width: 34px; height: 34px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #d4af37, #f0c040);
+  color: #0b3a1f;
+}
+.hero__pill-icon svg { width: 18px; height: 18px; }
 .hero__pill strong { display: block; color: #fff; font-size: .95rem; }
 .hero__pill span   { display: block; color: rgba(255,255,255,.6); font-size: .75rem; }
 

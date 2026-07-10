@@ -140,7 +140,7 @@ html.dark .enroll__card,
 html.dark .hub-card,
 html.dark .value-card,
 html.dark .video-card,
-html.dark .course {
+html.dark .course-row {
   background: var(--bg-surface);
   border-color: var(--border-default);
   color: var(--text-primary);
@@ -550,9 +550,9 @@ html.dark .stats-item__label { color: rgba(207,224,216,.75); }
 html.dark .hero__wave path { fill: var(--bg-page); }
 
 /* ── Course cards (home) ────────────────────────────────────────────── */
-html.dark .course__body h3 { color: var(--text-primary); }
-html.dark .course__body > p { color: var(--text-secondary); opacity: 1; }
-html.dark .course__points li { color: var(--text-primary); }
+html.dark .course-row__title { color: var(--text-primary); }
+html.dark .course-row__body > p { color: var(--text-secondary); opacity: 1; }
+html.dark .course-row__points li { color: var(--text-primary); }
 
 /* ── Smooth transition on theme switch ──────────────────────────────── */
 body,
@@ -560,7 +560,7 @@ body,
 .faq__item, .faq-item, .adhkar__card, .tpg__card,
 .tc2__card, .hadith__card, .dash__stat, .dash__panel,
 .billing__card, .admin__card, .admin__panel, .hub-card,
-.value-card, .feature, .course, .enroll__card {
+.value-card, .feature, .course-row, .enroll__card {
   transition: background-color var(--duration-slow) var(--ease-default),
               border-color var(--duration-slow) var(--ease-default),
               color var(--duration-slow) var(--ease-default);

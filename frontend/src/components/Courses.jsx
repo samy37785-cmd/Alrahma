@@ -1,25 +1,25 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import Reveal from './ui/Reveal';
-import MobileCarousel from './ui/MobileCarousel';
 import ResourceModal from './ui/ResourceModal';
 import AlphabetLearner from './features/AlphabetLearner';
 import { useTrial } from '../context/TrialContext';
 import { useLang } from '../context/LangContext';
 import { courses } from '../data';
 
+// `popular: true` drives the one "Most Popular" row — a deliberate hierarchy
+// signal (like a highlighted pricing plan) rather than treating all six
+// courses as interchangeable, which a uniform grid previously did.
 const COURSE_META = [
   { grad: 'linear-gradient(135deg,#0b6e4f,#1a9e72)', level: 'Beginner', duration: 'All ages' },
   { grad: 'linear-gradient(135deg,#1a5fa0,#2176c7)', level: 'Intermediate', duration: '6+ months' },
-  { grad: 'linear-gradient(135deg,#7a3a8a,#a04dba)', level: 'All levels', duration: 'Ongoing' },
+  { grad: 'linear-gradient(135deg,#7a3a8a,#a04dba)', level: 'All levels', duration: 'Ongoing', popular: true },
   { grad: 'linear-gradient(135deg,#2c3e50,#3d5166)', level: 'Advanced', duration: '2+ years' },
   { grad: 'linear-gradient(135deg,#d4af37,#b8941f)', level: 'All levels', duration: 'Flexible' },
   { grad: 'linear-gradient(135deg,#c0392b,#e74c3c)', level: 'Beginner', duration: 'Kids & Adults' },
 ];
 
-/* Inline SVG icons — same Lucide-style used by Features.jsx, replacing raw
-   emoji banner icons so course cards match the rest of the page's icon
-   language instead of introducing a third style. */
+/* Inline SVG icons — same Lucide-style used by Features.jsx. */
 const COURSE_ICONS = [
   /* 0 — Open book: Quran Reading */
   <svg key="book" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.6"
@@ -66,6 +66,13 @@ const COURSE_ICONS = [
   </svg>,
 ];
 
+const CHEVRON = (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+       strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <polyline points="6 9 12 15 18 9"/>
+  </svg>
+);
+
 const READER_RE = /reading/i;
 
 const isAlphabet = (course) =>
@@ -77,6 +84,14 @@ export default function Courses() {
   const navigate = useNavigate();
   const [picker, setPicker] = useState(null);
   const [openAlphabet, setOpenAlphabet] = useState(false);
+  // Which course's detail is expanded — one at a time, matching the visual
+  // hierarchy the "Most Popular" badge already implies. Starts on that same
+  // course so the redesigned rich-detail state is visible immediately, not
+  // only after a click.
+  const [activeIdx, setActiveIdx] = useState(() => {
+    const i = COURSE_META.findIndex((m) => m.popular);
+    return i >= 0 ? i : 0;
+  });
 
   const handleStart = (course) => {
     if (isAlphabet(course)) {
@@ -112,49 +127,71 @@ export default function Courses() {
   return (
     <section className="courses" id="courses">
       <div className="container">
-        <Reveal className="section-head">
-          <p className="eyebrow">{t.courses.eyebrow}</p>
-          <h2>{t.courses.heading}</h2>
+        <Reveal className="section-head courses__head">
+          <div>
+            <p className="eyebrow">{t.courses.eyebrow}</p>
+            <h2>{t.courses.heading}</h2>
+          </div>
+          <Link to="/courses" className="courses__browse-all">
+            {t.courses.viewAll || 'Browse full curriculum'} <span aria-hidden="true">→</span>
+          </Link>
         </Reveal>
-        <MobileCarousel trackClassName="courses__grid" ariaLabel={t.courses.heading}>
+
+        <Reveal className="courses__list">
           {courses.map((c, i) => {
             const item = t.courses.items[i] || {};
             const meta = COURSE_META[i] || COURSE_META[0];
             const metaT = (t.courses.meta && t.courses.meta[i]) || {};
-            const expanded = isAlphabet(c) && openAlphabet;
+            const isActive = activeIdx === i;
+            const alphabetExpanded = isAlphabet(c) && openAlphabet;
             return (
-              <Reveal
-                as="article"
-                className={`course${expanded ? ' course--expanded' : ''}`}
+              <div
                 key={c.title}
+                className={`course-row${isActive ? ' course-row--active' : ''}`}
               >
-                <div className="course__banner" style={{ background: meta.grad }}>
-                  <span className="course__banner-icon">{COURSE_ICONS[i] || COURSE_ICONS[0]}</span>
-                  <div className="course__badges">
-                    <span className="course__badge">{metaT.level || meta.level}</span>
-                    <span className="course__badge course__badge--alt">{metaT.duration || meta.duration}</span>
+                <button
+                  type="button"
+                  className="course-row__head"
+                  onClick={() => setActiveIdx(isActive ? -1 : i)}
+                  aria-expanded={isActive}
+                >
+                  <span className="course-row__icon" style={{ background: meta.grad }}>
+                    {COURSE_ICONS[i] || COURSE_ICONS[0]}
+                  </span>
+                  <span className="course-row__title-wrap">
+                    <span className="course-row__title">
+                      {item.title || c.title}
+                      {meta.popular && <span className="course-row__popular">Most Popular</span>}
+                    </span>
+                    <span className="course-row__badges">
+                      <span className="course-row__badge">{metaT.level || meta.level}</span>
+                      <span className="course-row__badge course-row__badge--alt">{metaT.duration || meta.duration}</span>
+                    </span>
+                  </span>
+                  <span className="course-row__chevron">{CHEVRON}</span>
+                </button>
+
+                <div className="course-row__panel">
+                  <div className="course-row__body">
+                    <p>{item.text || c.text}</p>
+                    {(item.points || c.points) && (
+                      <ul className="course-row__points">
+                        {(item.points || c.points).map((pt) => (
+                          <li key={pt}>{pt}</li>
+                        ))}
+                      </ul>
+                    )}
+                    <button type="button" className="course__link" onClick={() => handleStart(c)}>
+                      {alphabetExpanded ? t.courses.closeBtn : t.courses.startBtn}
+                    </button>
+
+                    {alphabetExpanded && <AlphabetLearner onClose={() => setOpenAlphabet(false)} />}
                   </div>
                 </div>
-                <div className="course__body">
-                  <h3>{item.title || c.title}</h3>
-                  <p>{item.text || c.text}</p>
-                  {(item.points || c.points) && (
-                    <ul className="course__points">
-                      {(item.points || c.points).map((pt) => (
-                        <li key={pt}>{pt}</li>
-                      ))}
-                    </ul>
-                  )}
-                  <button type="button" className="course__link" onClick={() => handleStart(c)}>
-                    {expanded ? t.courses.closeBtn : t.courses.startBtn}
-                  </button>
-
-                  {expanded && <AlphabetLearner onClose={() => setOpenAlphabet(false)} />}
-                </div>
-              </Reveal>
+              </div>
             );
           })}
-        </MobileCarousel>
+        </Reveal>
       </div>
 
       <ResourceModal course={picker} onClose={() => setPicker(null)} />

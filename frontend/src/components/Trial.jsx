@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import Reveal from './ui/Reveal';
 import { site, courseOptions } from '../data';
 import { submitTrial } from '../api/contentApi';
 import { useTrial } from '../context/TrialContext';
@@ -66,7 +67,7 @@ export default function Trial() {
   const mailBody = encodeURIComponent('Name: ' + form.name + '\nEmail: ' + form.email + '\nPhone: ' + form.phone + '\nCourse: ' + form.course + '\nMessage: ' + form.message);
 
   return (
-    <section className="trial" id="trial">
+    <Reveal as="section" className="trial" id="trial">
       <div className="container trial__inner">
 
         {/* ── Left: value copy ── */}
@@ -212,6 +213,6 @@ export default function Trial() {
         </form>
 
       </div>
-    </section>
+    </Reveal>
   );
 }

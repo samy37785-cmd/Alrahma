@@ -272,7 +272,7 @@ img, video, svg, canvas { max-width: 100%; }
   .ls__code { display: none; }             /* language: flag only */
   .ls__trigger { padding: 6px 8px; }
   .header__right .btn--sm { padding: 8px 12px; font-size: .82rem; }
-  .brand__mark { font-size: 1.5rem; }
+  .brand__mark { width: 28px; height: 28px; }
   .brand__text strong { font-size: 1rem; }
   .brand { gap: 8px; }
 }

@@ -1,6 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { site } from '../../data';
 import { useLang } from '../../context/LangContext';
+import BrandIcon from '../ui/BrandIcon';
 
 export default function Brand({ light = false }) {
   const { t } = useLang();
@@ -13,7 +14,7 @@ export default function Brand({ light = false }) {
 
   return (
     <Link to="/" onClick={handleClick} className={`brand${light ? ' brand--light' : ''}`}>
-      <span className="brand__mark" aria-hidden="true">۩</span>
+      <BrandIcon size={36} className="brand__mark" />
       <span className="brand__text">
         <strong>{site.name}</strong>
         <small>{t.tagline}</small>

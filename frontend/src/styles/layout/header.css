@@ -41,7 +41,11 @@
   .header, .header__inner { transition: none; }
 }
 .brand { display: flex; align-items: center; gap: 12px; }
-.brand__mark { font-size: 2rem; color: var(--gold); line-height: 1; }
+.brand__mark { flex-shrink: 0; display: block; transition: transform .25s ease; }
+.brand:hover .brand__mark { transform: scale(1.05); }
+@media (prefers-reduced-motion: reduce) {
+  .brand__mark { transition: none; }
+}
 .brand__text strong { display: block; font-size: 1.15rem; color: var(--green-deep); letter-spacing: .3px; }
 .brand__text small { display: block; font-size: 0.7rem; color: var(--muted); letter-spacing: .5px; }
 

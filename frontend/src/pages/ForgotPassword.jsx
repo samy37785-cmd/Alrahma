@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { forgotPassword } from '../api/authApi';
 import { useLang } from '../context/LangContext';
 import useSEO from '../hooks/useSEO';
+import Brand from '../components/layout/Brand';
 
 
 export default function ForgotPassword() {
@@ -32,6 +33,9 @@ export default function ForgotPassword() {
   return (
     <div className="auth">
       <div className="auth__card">
+        <div className="auth__brand">
+          <Brand />
+        </div>
         <h1 className="auth__title">{fp.title}</h1>
         <p className="auth__sub">{fp.sub}</p>
         {msg && <p className="profile-page__success" role="status">{msg}</p>}

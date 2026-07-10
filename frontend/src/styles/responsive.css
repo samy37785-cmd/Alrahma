@@ -414,7 +414,16 @@ img, video, svg, canvas { max-width: 100%; }
 }
 
 /* ── 16) FAQ QUESTION — break long words to prevent overflow ─────── */
-.faq__question { word-break: break-word; hyphens: auto; }
+.faq__question-text { word-break: break-word; hyphens: auto; }
+
+/* ── 16b) FAQ — single column, aside becomes a static card ─────────── */
+@media (max-width: 860px) {
+  .faq__layout { grid-template-columns: 1fr; }
+  .faq__aside { position: static; }
+}
+@media (max-width: 480px) {
+  .faq__answer { padding-left: 22px; }
+}
 
 /* ══════════════════════════════════════════════════════════════════
    17) IPHONE SAFE-AREA  (home-bar / notch)
@@ -446,7 +455,7 @@ img, video, svg, canvas { max-width: 100%; }
   .container > * { min-width: 0; }
 
   /* Pricing plan price number is very large; scale down slightly */
-  .plan__price span { font-size: 2rem; }
+  .plan__price-amount { font-size: 2rem; }
 
   /* Stat numbers in the banner would overflow at 2.8rem on 320px */
   .stats-item__num { font-size: clamp(1.5rem, 7vw, 2rem); }

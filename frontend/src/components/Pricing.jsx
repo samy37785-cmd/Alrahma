@@ -29,7 +29,27 @@ const PLAN_GRADS = [
   'linear-gradient(135deg,#2c3e50,#3d5166)',
 ];
 
-const PLAN_ICONS = ['🌱', '⭐', '👑'];
+/* Inline SVG icons — same Lucide-style language used across the homepage,
+   replacing the raw 🌱⭐👑 emoji. */
+const PLAN_ICONS = [
+  /* Seedling — Starter */
+  <svg key="seedling" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2"
+       strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M12 22v-9" />
+    <path d="M12 13c0-4 3-7 8-7 0 5-3 8-8 8Z" />
+    <path d="M12 13c0-3-2.5-5.5-6-5.5 0 4 2.5 6.5 6 6" />
+  </svg>,
+  /* Star — Most Popular */
+  <svg key="star" viewBox="0 0 24 24" fill="#fff" aria-hidden="true">
+    <path d="m12 2 2.9 6.6 7.1.6-5.4 4.7 1.6 7-6.2-3.8L5.8 21l1.6-7-5.4-4.7 7.1-.6L12 2z" />
+  </svg>,
+  /* Crown — Premium */
+  <svg key="crown" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2"
+       strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="m2 18 2-11 5 4 3-6 3 6 5-4 2 11Z" />
+    <path d="M2 22h20" />
+  </svg>,
+];
 
 /* Returns the next Sunday 23:59:59 local time */
 function getNextSundayDeadline() {
@@ -142,29 +162,35 @@ export default function Pricing() {
                   {plan.tag === 'Most popular' ? p.mostPopular : plan.tag}
                 </span>
               )}
+              {plan.discountPct && (
+                <span className="plan__discount-badge">{plan.discountPct}{p.off}</span>
+              )}
 
-              <div className="plan__header" style={{ background: PLAN_GRADS[i % PLAN_GRADS.length] }}>
-                <span className="plan__header-icon">{PLAN_ICONS[i % PLAN_ICONS.length]}</span>
-                <h3>{pt.name}</h3>
-                {plan.arabicName && (
-                  <p className="plan__arabic-name">{plan.arabicName}</p>
-                )}
-                {pt.sub && (
-                  <p className="plan__tagline">{pt.sub}</p>
-                )}
-                <p className="plan__price">
-                  {plan.originalPrice && (
-                    <s className="plan__original-price">{cvtPrice(plan.originalPrice, curr)}</s>
+              <div className="plan__head">
+                <span className="plan__icon-badge" style={{ background: PLAN_GRADS[i % PLAN_GRADS.length] }}>
+                  {PLAN_ICONS[i % PLAN_ICONS.length]}
+                </span>
+                <div className="plan__head-text">
+                  <h3>{pt.name}</h3>
+                  {plan.arabicName && (
+                    <p className="plan__arabic-name">{plan.arabicName}</p>
                   )}
-                  <span>{cvtPrice(plan.price, curr)}</span>{p.perMonth}
-                </p>
-                {plan.pricePerHour && (
-                  <span className="plan__per-hour">{cvtPrice(plan.pricePerHour, curr)} {p.perHour}</span>
-                )}
-                {plan.discountPct && (
-                  <span className="plan__discount-badge">{plan.discountPct}{p.off}</span>
-                )}
+                </div>
               </div>
+              {pt.sub && (
+                <p className="plan__tagline">{pt.sub}</p>
+              )}
+
+              <div className="plan__price-row">
+                {plan.originalPrice && (
+                  <s className="plan__original-price">{cvtPrice(plan.originalPrice, curr)}</s>
+                )}
+                <span className="plan__price-amount">{cvtPrice(plan.price, curr)}</span>
+                <span className="plan__price-suffix">{p.perMonth}</span>
+              </div>
+              {plan.pricePerHour && (
+                <span className="plan__per-hour">{cvtPrice(plan.pricePerHour, curr)} {p.perHour}</span>
+              )}
 
               <div className="plan__body">
                 {plan.originalPrice && (

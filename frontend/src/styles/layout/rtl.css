@@ -16,7 +16,8 @@
 [dir="rtl"] .field label { text-align: right; }
 [dir="rtl"] .field input, [dir="rtl"] .field textarea, [dir="rtl"] .field select { text-align: right; direction: rtl; }
 [dir="rtl"] .lang-switcher { direction: ltr; }
-[dir="rtl"] .faq__question { text-align: right; flex-direction: row-reverse; }
+[dir="rtl"] .faq__question { text-align: right; }
+[dir="rtl"] .faq__answer { padding: 0 58px 22px 22px; }
 [dir="rtl"] .about__mission { border-left: 0; border-right: 3px solid var(--gold); padding-left: 0; padding-right: 14px; }
 [dir="rtl"] .quote figcaption { direction: rtl; }
 [dir="rtl"] .stats-banner__grid { direction: rtl; }
@@ -26,10 +27,9 @@
 [dir="rtl"] .timeline-step__arrow { transform: scaleX(-1); }
 [dir="rtl"] .course-row__badges { direction: ltr; }
 [dir="rtl"] .join-cta__stats { direction: rtl; }
-[dir="rtl"] .plan__tag { right: auto; left: 12px; }
-[dir="rtl"] .plan__discount-badge { left: auto; right: 12px; }
+[dir="rtl"] .plan__tag { right: auto; left: 18px; }
+[dir="rtl"] .plan__discount-badge { left: auto; right: 18px; }
 [dir="rtl"] .plan ul { text-align: right; }
-[dir="rtl"] .plan li::before { margin-right: 0; margin-left: 10px; }
 [dir="rtl"] .tc2__creds-bar { direction: rtl; }
 [dir="rtl"] .tc2__cred { border-right: 0; border-left: 1px solid rgba(255,255,255,.12); }
 [dir="rtl"] .tc2__cred:last-child { border-left: 0; }
@@ -60,9 +60,6 @@
 
 /* Hub card badge: flip from right to left in RTL */
 [dir="rtl"] .hub-card__badge { right: auto; left: 16px; }
-
-/* Plan tag badges (Pricing): flip side in RTL */
-[dir="rtl"] .plan__tag { right: auto; left: 12px; }
 
 /* Dropdown menus: left-aligned in RTL, right-aligned in LTR */
 [dir="rtl"] .nav__dropdown-menu { left: auto; right: 0; }

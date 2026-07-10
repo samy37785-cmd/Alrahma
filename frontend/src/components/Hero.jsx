@@ -5,6 +5,30 @@ import BrandMedallion from './ui/BrandMedallion';
 
 const DEMO_VIDEO_ID = import.meta.env.VITE_DEMO_VIDEO_ID || 'dQw4w9WgXcQ';
 
+/* Inline SVG icons for the stats bar — matches the site-wide Lucide-style
+   icon language used everywhere else on the homepage. */
+const STAT_ICONS = [
+  <svg key="book" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+       strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M2 4h7a4 4 0 0 1 4 4v12a3 3 0 0 0-3-3H2Z" />
+    <path d="M22 4h-7a4 4 0 0 0-4 4v12a3 3 0 0 1 3-3h8Z" />
+  </svg>,
+  <svg key="star" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+    <path d="m12 2 2.9 6.6 7.1.6-5.4 4.7 1.6 7-6.2-3.8L5.8 21l1.6-7-5.4-4.7 7.1-.6L12 2z" />
+  </svg>,
+  <svg key="globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+       strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <circle cx="12" cy="12" r="10" />
+    <line x1="2" y1="12" x2="22" y2="12" />
+    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+  </svg>,
+  <svg key="grad" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+       strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M22 10 12 5 2 10l10 5 10-5Z" />
+    <path d="M6 12v5c3 3 9 3 12 0v-5" />
+  </svg>,
+];
+
 const LIVE_ACTIVITY = [
   { name: 'Ahmad', location: 'Frankfurt', action: 'just booked a free trial' },
   { name: 'Fatima', location: 'Rome', action: 'enrolled in Tajweed' },
@@ -107,8 +131,11 @@ export default function Hero({ onTrialClick }) {
           <div className="hero__stats-bar" aria-label="Al-Rahma Academy statistics">
             {['9,000+', '4.9★', '40+', '32'].map((value, i) => (
               <div key={value} className="hero__stat">
-                <strong>{value}</strong>
-                <span>{h.statsLabels[i]}</span>
+                <span className="hero__stat-icon" aria-hidden="true">{STAT_ICONS[i]}</span>
+                <span className="hero__stat-text">
+                  <strong>{value}</strong>
+                  <span>{h.statsLabels[i]}</span>
+                </span>
               </div>
             ))}
           </div>

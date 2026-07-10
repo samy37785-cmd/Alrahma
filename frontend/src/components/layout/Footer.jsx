@@ -4,6 +4,8 @@ import { useLang } from "../../context/LangContext";
 import { site, socials } from "../../data";
 import { ShieldIcon, BookOpenIcon, GlobeIcon, StarIcon, CalendarIcon } from '../ui/Icons';
 
+const footerShieldIconStyle = { display: 'inline-flex', verticalAlign: '-3px', marginRight: 4 };
+
 const TRUST_ICONS = [ShieldIcon, BookOpenIcon, GlobeIcon, StarIcon, CalendarIcon];
 
 export default function Footer() {
@@ -94,7 +96,12 @@ export default function Footer() {
             <li><Link to="/academy/teachers">{f.teachersLink}</Link></li>
             <li><Link to="/academy/privacy">{f.privacy}</Link></li>
             <li><Link to="/academy/terms">{f.terms || "Terms of Service"}</Link></li>
-            <li><Link to="/academy/refund-policy"><span aria-hidden="true">🛡️ </span>{f.refundPolicy || "Refund Policy"}</Link></li>
+            <li>
+              <Link to="/academy/refund-policy">
+                <ShieldIcon size={13} style={footerShieldIconStyle} />
+                {f.refundPolicy || "Refund Policy"}
+              </Link>
+            </li>
           </ul>
         </div>
 

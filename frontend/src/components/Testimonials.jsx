@@ -5,6 +5,18 @@ import { useLang } from '../context/LangContext';
 import { TESTIMONIAL_TEXT, pick } from '../i18n/content';
 import { TESTIMONIALS as ALL, HAPPY_STUDENTS, SHOW_TESTIMONIALS } from '../data/socialProof';
 
+/* Same open-book icon used by Courses.jsx — replaces the raw 📖 emoji that
+   was the only emoji left in an otherwise icon-consistent section. */
+function BookIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+         strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ verticalAlign: '-2px', marginRight: 3 }}>
+      <path d="M2 4h7a4 4 0 0 1 4 4v12a3 3 0 0 0-3-3H2Z"/>
+      <path d="M22 4h-7a4 4 0 0 0-4 4v12a3 3 0 0 1 3-3h8Z"/>
+    </svg>
+  );
+}
+
 export default function Testimonials() {
   const { t, lang } = useLang();
   const [idx, setIdx] = useState(0);
@@ -90,7 +102,7 @@ export default function Testimonials() {
                   </span>
                 </strong>
                 <span className="tst__loc">{cur.flag} {cur.location}</span>
-                <span className="tst__course">📖 {cur.course}</span>
+                <span className="tst__course"><BookIcon />{cur.course}</span>
               </div>
               <div className="tst__stars">
                 {[1,2,3,4,5].map((s) => (
@@ -135,7 +147,7 @@ export default function Testimonials() {
                   </div>
                 </div>
                 <p className="tst__mini-text">&quot;{item.quote.slice(0, 110)}…&quot;</p>
-                <span className="tst__mini-course">📖 {item.course}</span>
+                <span className="tst__mini-course"><BookIcon />{item.course}</span>
               </div>
             ))}
 

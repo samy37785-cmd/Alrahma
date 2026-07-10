@@ -1,7 +1,12 @@
+import { useId } from 'react';
+
 /**
- * BrandMedallion — Al-Rahma's unique visual signature.
- * An 8-point Islamic geometric star (Rub el Hizb pattern) built entirely
- * from SVG paths. No external image, no runtime dependency.
+ * BrandMedallion — Al-Rahma's hero-scale brand signature: the same open
+ * book + mosque dome + minaret mark used everywhere else (see BrandIcon.jsx),
+ * set inside the existing animated ring/octagon frame, rather than a
+ * differently-colored, unrelated 8-point star — the two were previously
+ * inconsistent with each other (blue/gold star vs. the site's green/gold
+ * icon language used in the header, footer, and everywhere else).
  *
  * Props:
  *   size      – px width/height (default 320)
@@ -12,26 +17,26 @@ export default function BrandMedallion({ size = 320, animated = true, className 
   const r = size / 2;
   const cx = r;
   const cy = r;
+  const uid = useId();
+  const bgId = `med-bg-${uid}`;
+  const domeId = `med-dome-${uid}`;
+  const arcId = `med-text-arc-${uid}`;
 
-  // 8-point star polygon: two overlapping squares rotated 45° apart
-  // Outer radius: 38% of size, inner notch: 21%
-  const outerR = size * 0.38;
-  const innerR = size * 0.21;
-  const points8 = Array.from({ length: 16 }, (_, i) => {
-    const angle = (i * Math.PI) / 8 - Math.PI / 2;
-    const rad = i % 2 === 0 ? outerR : innerR;
-    return `${cx + rad * Math.cos(angle)},${cy + rad * Math.sin(angle)}`;
-  }).join(' ');
-
-  // Decorative octagon (connecting the star points)
+  // Decorative octagon (matches the outer ring's rhythm)
   const octR = size * 0.44;
   const octPoints = Array.from({ length: 8 }, (_, i) => {
     const angle = (i * Math.PI) / 4 - Math.PI / 8;
     return `${cx + octR * Math.cos(angle)},${cy + octR * Math.sin(angle)}`;
   }).join(' ');
 
-  // Small inner circle text arc radius
-  const textR = size * 0.285;
+  // Brand icon (native 64×64) scaled to occupy ~44% of the medallion width,
+  // positioned in the upper portion so the Arabic wordmark sits below it.
+  const iconScale = (size * 0.4405) / 64;
+  const iconX = size * 0.2794;
+  const iconY = size * 0.2294;
+
+  // Curved text path radius (bottom arc, "Al-Azhar Certified…")
+  const textR = size * 0.3121;
 
   return (
     <svg
@@ -44,28 +49,20 @@ export default function BrandMedallion({ size = 320, animated = true, className 
       role="img"
     >
       <defs>
-        <radialGradient id="med-bg" cx="50%" cy="40%" r="60%">
-          <stop offset="0%" stopColor="#1e4d8c" />
-          <stop offset="100%" stopColor="#0b3a6b" />
+        <radialGradient id={bgId} cx="50%" cy="40%" r="60%">
+          <stop offset="0%" stopColor="#15885f" />
+          <stop offset="100%" stopColor="#0a4d39" />
         </radialGradient>
-        <radialGradient id="med-star" cx="50%" cy="35%" r="65%">
-          <stop offset="0%" stopColor="#e8a93a" />
-          <stop offset="100%" stopColor="#b8721e" />
-        </radialGradient>
-        <filter id="med-glow" x="-20%" y="-20%" width="140%" height="140%">
-          <feGaussianBlur in="SourceGraphic" stdDeviation={size * 0.012} result="blur" />
-          <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-        </filter>
-        <filter id="med-star-glow" x="-15%" y="-15%" width="130%" height="130%">
-          <feGaussianBlur in="SourceGraphic" stdDeviation={size * 0.018} result="blur" />
-          <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-        </filter>
+        <linearGradient id={domeId} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#3fc296" />
+          <stop offset="1" stopColor="#0b6e4f" />
+        </linearGradient>
       </defs>
 
       {/* Outer ring — animated */}
       <g style={animated ? { transformOrigin: `${cx}px ${cy}px`, animation: 'med-spin 60s linear infinite' } : {}}>
         <circle cx={cx} cy={cy} r={size * 0.487} fill="none"
-          stroke="rgba(200,132,42,0.22)" strokeWidth="1" strokeDasharray="4 6" />
+          stroke="rgba(212,175,55,0.22)" strokeWidth="1" strokeDasharray="4 6" />
         {/* 8 small diamond markers on outer ring */}
         {Array.from({ length: 8 }, (_, i) => {
           const a = (i * Math.PI) / 4;
@@ -73,15 +70,15 @@ export default function BrandMedallion({ size = 320, animated = true, className 
           const my = cy + size * 0.487 * Math.sin(a);
           return (
             <circle key={i} cx={mx} cy={my} r={size * 0.014}
-              fill="rgba(200,132,42,0.55)" />
+              fill="rgba(212,175,55,0.55)" />
           );
         })}
       </g>
 
       {/* Background disc */}
       <circle cx={cx} cy={cy} r={size * 0.46}
-        fill="url(#med-bg)"
-        stroke="rgba(200,132,42,0.35)" strokeWidth="1.5" />
+        fill={`url(#${bgId})`}
+        stroke="rgba(212,175,55,0.35)" strokeWidth="1.5" />
 
       {/* Subtle Islamic pattern overlay — concentric dotted rings */}
       {[0.32, 0.38, 0.43].map((ratio, i) => (
@@ -92,50 +89,49 @@ export default function BrandMedallion({ size = 320, animated = true, className 
 
       {/* Octagon frame */}
       <polygon points={octPoints}
-        fill="none" stroke="rgba(200,132,42,0.4)" strokeWidth="1.2" />
+        fill="none" stroke="rgba(212,175,55,0.4)" strokeWidth="1.2" />
 
-      {/* 8-point star — the brand signature */}
-      <polygon points={points8}
-        fill="url(#med-star)"
-        filter="url(#med-star-glow)"
-        opacity="0.92" />
+      {/* Brand icon — open book + mosque dome/minaret */}
+      <g transform={`translate(${iconX},${iconY}) scale(${iconScale})`}>
+        <rect x="30.5" y="7" width="3" height="7" rx="1.5" fill="#d4af37" />
+        <circle cx="32" cy="6" r="1.8" fill="#d4af37" />
+        <path d="M22 37 C22 24 26 14 32 14 C38 14 42 24 42 37 Z" fill={`url(#${domeId})`} stroke="#d4af37" strokeWidth="1.1" />
+        <rect x="22" y="35" width="20" height="4" rx="1" fill={`url(#${domeId})`} stroke="#d4af37" strokeWidth="1" />
+        <path d="M32 42 C25 38 16 38 11 40 L11 54 C16 52 25 52 32 56 Z" fill="#ffffff" />
+        <path d="M32 42 C39 38 48 38 53 40 L53 54 C48 52 39 52 32 56 Z" fill="#f1f3f2" />
+        <rect x="30.8" y="42" width="2.4" height="13" rx="1.2" fill="#0b6e4f" />
+      </g>
 
-      {/* Inner circle */}
-      <circle cx={cx} cy={cy} r={size * 0.2}
-        fill="rgba(10,40,80,0.65)"
-        stroke="rgba(200,132,42,0.5)" strokeWidth="1.5" />
-
-      {/* Arabic Bismillah — centre */}
+      {/* Arabic wordmark, below the icon */}
       <text
-        x={cx} y={cy - size * 0.028}
+        x={cx} y={size * 0.75}
         textAnchor="middle" dominantBaseline="middle"
         fontFamily="Amiri, serif"
-        fontSize={size * 0.072}
+        fontSize={size * 0.0765}
         fill="#e8c87a"
-        filter="url(#med-glow)"
       >
         الرَّحمة
       </text>
       <text
-        x={cx} y={cy + size * 0.065}
+        x={cx} y={size * 0.8176}
         textAnchor="middle" dominantBaseline="middle"
         fontFamily="'Segoe UI', Arial, sans-serif"
-        fontSize={size * 0.032}
+        fontSize={size * 0.0353}
         fontWeight="700"
         letterSpacing={size * 0.004}
-        fill="rgba(255,255,255,0.55)"
+        fill="rgba(255,255,255,0.7)"
       >
         ACADEMY
       </text>
 
-      {/* Curved text path: "Est. 1444 AH · Al-Azhar Certified" */}
+      {/* Curved text path: "Al-Azhar Certified · Authentic Ijazah Chain" */}
       <path
-        id="med-text-arc"
+        id={arcId}
         d={`M ${cx - textR},${cy} A ${textR},${textR} 0 0 1 ${cx + textR},${cy}`}
         fill="none"
       />
-      <text fontSize={size * 0.028} fill="rgba(200,132,42,0.7)" fontFamily="'Segoe UI', Arial, sans-serif" letterSpacing="1">
-        <textPath href="#med-text-arc" startOffset="50%" textAnchor="middle">
+      <text fontSize={size * 0.0279} fill="rgba(212,175,55,0.7)" fontFamily="'Segoe UI', Arial, sans-serif" letterSpacing="1">
+        <textPath href={`#${arcId}`} startOffset="50%" textAnchor="middle">
           Al-Azhar Certified · Authentic Ijazah Chain
         </textPath>
       </text>

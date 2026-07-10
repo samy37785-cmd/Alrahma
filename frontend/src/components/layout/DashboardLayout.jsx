@@ -14,6 +14,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import CommandPalette from '../ui/CommandPalette';
 import NotificationPanel from '../ui/NotificationPanel';
+import BrandIcon from '../ui/BrandIcon';
 import { getNameInitials } from '../../utils/nameInitials';
 import '../../styles/dashboard-shell.css';
 
@@ -284,7 +285,7 @@ export default function DashboardLayout({ children }) {
       >
         {/* Brand */}
         <Link to="/" className="ds-brand">
-          <div className="ds-brand__logo">ر</div>
+          <BrandIcon size={34} className="ds-brand__logo" />
           <div className="ds-brand__text">
             <span className="ds-brand__name">Al-Rahma</span>
             <span className="ds-brand__sub">Academy</span>

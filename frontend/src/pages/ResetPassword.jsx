@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { resetPassword } from '../api/authApi';
 import { useLang } from '../context/LangContext';
 import useSEO from '../hooks/useSEO';
+import Brand from '../components/layout/Brand';
 
 export default function ResetPassword() {
   const { t } = useLang();
@@ -48,6 +49,9 @@ export default function ResetPassword() {
   return (
     <div className="auth">
       <div className="auth__card">
+        <div className="auth__brand">
+          <Brand />
+        </div>
         <h1 className="auth__title">{rp.title}</h1>
         <p className="auth__sub">{rp.sub}</p>
         {msg && <p className="profile-page__success" role="status">{msg}</p>}

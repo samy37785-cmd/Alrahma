@@ -1,7 +1,7 @@
 /* ════════════════════════════════════════════════════════════════════
    TRUST & ENGAGEMENT STYLES
    Covers: QuranAudioPlayer, TrustBadges, pricing refund banner,
-   video testimonials, ShareAchievement, ReferralCard, HifzLeaderboard
+   video testimonials, ShareAchievement, ReferralCard
    ════════════════════════════════════════════════════════════════════ */
 
 /* ── Quran Audio Player (Hero floating widget) ─────────────────────── */
@@ -422,68 +422,6 @@
 }
 .referral-card__wa:hover { background: #1eb358; }
 
-/* ── HifzLeaderboard ───────────────────────────────────────────────── */
-.hifz-lb {
-  background: var(--bg-surface);
-  border: 1px solid var(--border-default);
-  border-radius: 14px;
-  overflow: hidden;
-}
-
-.hifz-lb__header {
-  display: flex; align-items: center; gap: 12px;
-  padding: 14px 16px;
-  background: linear-gradient(135deg, #0b6e4f, #1a9e72);
-  color: #fff;
-}
-
-.hifz-lb__icon { font-size: 1.4rem; flex-shrink: 0; }
-
-.hifz-lb__title { font-size: 0.9rem; font-weight: 700; margin: 0 0 1px; color: #fff; }
-.hifz-lb__sub { font-size: 0.7rem; color: rgba(255,255,255,.75); margin: 0; }
-
-.hifz-lb__my-rank {
-  margin-left: auto; flex-shrink: 0;
-  background: rgba(255,255,255,.2);
-  border-radius: 999px;
-  padding: 3px 10px;
-  font-size: 0.72rem; font-weight: 700;
-}
-
-.hifz-lb__list { list-style: none; margin: 0; padding: 0; }
-
-.hifz-lb__item {
-  display: flex; align-items: center; gap: 10px;
-  padding: 10px 14px;
-  border-bottom: 1px solid var(--border-subtle);
-  font-size: 0.8rem;
-}
-.hifz-lb__item:last-child { border-bottom: none; }
-.hifz-lb__item--top { background: var(--color-primary-surface, #f0fdf4); }
-
-.hifz-lb__rank { width: 24px; text-align: center; font-size: 1rem; flex-shrink: 0; }
-.hifz-lb__name { flex: 1; font-weight: 600; color: var(--text-primary); min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-.hifz-lb__progress-wrap {
-  display: flex; align-items: center; gap: 7px; flex-shrink: 0;
-}
-.hifz-lb__bar {
-  width: 60px; height: 5px; border-radius: 3px;
-  background: var(--border-subtle);
-}
-.hifz-lb__bar-fill {
-  height: 100%; border-radius: 3px;
-  background: var(--color-primary, #0b6e4f);
-  transition: width 0.6s ease;
-}
-.hifz-lb__juz { font-size: 0.7rem; color: var(--text-secondary); white-space: nowrap; }
-
-.hifz-lb__note {
-  padding: 8px 14px; font-size: 0.68rem;
-  color: var(--text-secondary); font-style: italic; margin: 0;
-  text-align: center; border-top: 1px solid var(--border-subtle);
-}
-
 /* ── Teacher Proof Badges ──────────────────────────────────────────── */
 .tp__proof {
   margin-top: 20px;
@@ -765,9 +703,6 @@ html.dark .referral-card {
 }
 html.dark .referral-card__input { background: var(--bg-surface-raised); border-color: rgba(134,239,172,.3); }
 
-html.dark .hifz-lb { background: var(--bg-surface-raised); border-color: var(--border-default); }
-html.dark .hifz-lb__item--top { background: rgba(11,110,79,.1); }
-
 html.dark .pricing__refund-banner {
   background: rgba(21,128,61,.12);
   border-color: rgba(22,163,74,.4);
@@ -822,7 +757,6 @@ html.dark .plan__anchor-note { background: rgba(251,191,36,.08); border-color: r
   .qap { bottom: 90px; right: 12px; }
   .qap__label { display: none; }
   .referral-card { flex-direction: column; }
-  .hifz-lb__progress-wrap { display: none; }
   .cancel-survey__card { padding: 20px 16px; }
   .legal-page { padding: 40px 0 60px; }
   .legal-page__inner h1 { font-size: 1.5rem; }

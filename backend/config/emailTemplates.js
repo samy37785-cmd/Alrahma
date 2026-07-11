@@ -1,3 +1,10 @@
+// Absolute URL to the brand mark (book + mosque dome + minaret on a green
+// tile) — the same logo used everywhere in the app. Email clients don't
+// execute JS or inline SVG reliably, so unlike the frontend's <BrandIcon/>
+// this references the hosted PNG, with the "AL-Rahma Academy" text as a
+// fallback if the recipient's client blocks images.
+const LOGO_URL = `${process.env.CLIENT_URL || 'https://al-rahmaacademy.com'}/logo.png`;
+
 const base = (content) => `
 <!DOCTYPE html>
 <html lang="en">
@@ -13,8 +20,17 @@ const base = (content) => `
         <!-- Header -->
         <tr>
           <td style="background:#0b6e4f;padding:24px 32px;">
-            <h1 style="margin:0;color:#fff;font-size:22px;letter-spacing:.5px;">🕌 AL-Rahma Academy</h1>
-            <p style="margin:4px 0 0;color:#9fc0b3;font-size:13px;">Learn the Holy Quran Online</p>
+            <table cellpadding="0" cellspacing="0" role="presentation">
+              <tr>
+                <td style="vertical-align:middle;padding-right:12px;">
+                  <img src="${LOGO_URL}" width="40" height="40" alt="Al-Rahma Academy" style="display:block;border-radius:9px;" />
+                </td>
+                <td style="vertical-align:middle;">
+                  <h1 style="margin:0;color:#fff;font-size:22px;letter-spacing:.5px;">AL-Rahma Academy</h1>
+                  <p style="margin:4px 0 0;color:#9fc0b3;font-size:13px;">Learn the Holy Quran Online</p>
+                </td>
+              </tr>
+            </table>
           </td>
         </tr>
         <!-- Body -->

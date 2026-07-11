@@ -184,11 +184,7 @@
   height: 440px;
 }
 .hero__medallion {
-  filter: drop-shadow(0 0 48px rgba(26,58,107,.6));
-  transition: transform .4s ease;
-}
-.hero__medallion:hover {
-  transform: scale(1.03);
+  filter: drop-shadow(0 12px 28px rgba(11,110,79,.28));
 }
 
 /* Central circle */

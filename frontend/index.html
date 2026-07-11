@@ -325,7 +325,6 @@
 <body>
   <style>
     @keyframes alr-spin  { to { transform: rotate(360deg); } }
-    @keyframes alr-pulse { 0%,100%{opacity:.7} 50%{opacity:1} }
     #app-loading {
       position: fixed; inset: 0; display: flex; flex-direction: column;
       align-items: center; justify-content: center; gap: 20px;
@@ -337,7 +336,6 @@
     }
     #app-loading .alr-mark {
       display: block; width: 56px; height: 56px;
-      animation: alr-pulse 2s ease-in-out infinite;
     }
     #app-loading .alr-name {
       font-size: 15px; font-weight: 600; letter-spacing: .08em;

@@ -73,7 +73,7 @@
   border-radius: 16px; overflow: hidden; backdrop-filter: blur(6px);
 }
 .hero__stat {
-  flex: 1; display: flex; align-items: center; gap: 9px;
+  flex: 1; min-width: 0; display: flex; align-items: center; gap: 9px;
   padding: 13px 10px;
   border-right: 1px solid rgba(255,255,255,.1);
   transition: background .2s ease;
@@ -86,9 +86,12 @@
   color: var(--gold); opacity: .85;
 }
 .hero__stat-icon svg { width: 100%; height: 100%; }
-.hero__stat-text { display: flex; flex-direction: column; }
+.hero__stat-text { display: flex; flex-direction: column; min-width: 0; }
 .hero__stat strong { display: block; font-size: 1.05rem; font-weight: 800; color: #fff; line-height: 1.1; }
-.hero__stat span { font-size: .66rem; color: #b8d4c9; text-transform: uppercase; letter-spacing: .04em; }
+.hero__stat span {
+  display: block; font-size: .66rem; color: #b8d4c9; text-transform: uppercase;
+  letter-spacing: .04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
 
 /* Micro-copy under CTA */
 .hero__microcopy {
@@ -310,7 +313,7 @@
   background: linear-gradient(155deg, #fff, var(--cream));
 }
 
-.feature__row { display: flex; align-items: center; gap: 16px; margin-bottom: 12px; }
+.feature__row { display: flex; align-items: center; gap: 16px; margin-bottom: 12px; min-width: 0; }
 .feature--featured .feature__row { margin-bottom: 14px; }
 
 .feature__icon-wrap {
@@ -321,7 +324,7 @@
 }
 .feature--featured .feature__icon-wrap { width: 64px; height: 64px; }
 .feature__icon { font-size: 2rem; line-height: 1; }
-.feature h3 { color: var(--green-deep); margin: 0; font-size: 1.02rem; line-height: 1.3; }
+.feature h3 { color: var(--green-deep); margin: 0; font-size: 1.02rem; line-height: 1.3; min-width: 0; }
 .feature--featured h3 { font-size: 1.28rem; }
 .feature p { color: var(--muted); font-size: .87rem; line-height: 1.6; margin: 0; }
 .feature--featured p { font-size: .95rem; max-width: 46ch; }
@@ -772,6 +775,7 @@
   padding: 4px 11px; border-radius: 999px; border: 1px solid rgba(255,255,255,.3); z-index: 2;
 }
 .plan__head { display: flex; align-items: center; gap: 14px; margin-bottom: 6px; }
+.plan__head-text { min-width: 0; }
 .plan__icon-badge {
   flex-shrink: 0; width: 52px; height: 52px; border-radius: var(--radius-md);
   display: flex; align-items: center; justify-content: center;

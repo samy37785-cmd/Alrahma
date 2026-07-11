@@ -49,6 +49,7 @@
 
 .faq__question-text {
   flex: 1;
+  min-width: 0;
   font-size: 1.02rem;
   font-weight: 700;
   color: var(--green-deep);

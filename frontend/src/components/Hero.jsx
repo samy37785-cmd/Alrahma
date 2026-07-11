@@ -161,7 +161,7 @@ export default function Hero({ onTrialClick }) {
         <div className="hero__visual hero__visual--medallion" aria-hidden="true">
 
           {/* Unique Islamic geometric brand signature */}
-          <BrandMedallion size={340} animated className="hero__medallion" />
+          <BrandMedallion size={340} className="hero__medallion" />
 
           {/* Floating pill — rating */}
           <div className="hero__pill hero__pill--top">

@@ -62,6 +62,10 @@ function CertificatePrintView({ cert }) {
     border-radius: 2px;
     pointer-events: none;
   }
+  .cert__mark {
+    width: 56px; height: 56px;
+    margin: 0 auto 10px;
+  }
   .cert__logo {
     font-family: 'Amiri', serif;
     font-size: 1.5rem;
@@ -90,6 +94,28 @@ function CertificatePrintView({ cert }) {
 </head>
 <body>
 <div class="cert">
+  <div class="cert__mark">
+    <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Al-Rahma Academy">
+      <defs>
+        <linearGradient id="cert-mark-bg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#0b6e4f"/>
+          <stop offset="1" stop-color="#15885f"/>
+        </linearGradient>
+        <linearGradient id="cert-mark-dome" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#3fc296"/>
+          <stop offset="1" stop-color="#0b6e4f"/>
+        </linearGradient>
+      </defs>
+      <rect width="64" height="64" rx="15" fill="url(#cert-mark-bg)"/>
+      <rect x="30.5" y="7" width="3" height="7" rx="1.5" fill="#d4af37"/>
+      <circle cx="32" cy="6" r="1.8" fill="#d4af37"/>
+      <path d="M22 37 C22 24 26 14 32 14 C38 14 42 24 42 37 Z" fill="url(#cert-mark-dome)" stroke="#d4af37" stroke-width="1.1"/>
+      <rect x="22" y="35" width="20" height="4" rx="1" fill="url(#cert-mark-dome)" stroke="#d4af37" stroke-width="1"/>
+      <path d="M32 42 C25 38 16 38 11 40 L11 54 C16 52 25 52 32 56 Z" fill="#ffffff"/>
+      <path d="M32 42 C39 38 48 38 53 40 L53 54 C48 52 39 52 32 56 Z" fill="#f1f3f2"/>
+      <rect x="30.8" y="42" width="2.4" height="13" rx="1.2" fill="#0b6e4f"/>
+    </svg>
+  </div>
   <div class="cert__logo">أكاديمية الرحمة</div>
   <div class="cert__academy">Al-Rahma Academy</div>
   <div class="cert__bismillah">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ</div>

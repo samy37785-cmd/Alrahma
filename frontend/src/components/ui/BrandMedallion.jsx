@@ -3,17 +3,15 @@ import { useId } from 'react';
 /**
  * BrandMedallion — Al-Rahma's hero-scale brand signature: the same open
  * book + mosque dome + minaret mark used everywhere else (see BrandIcon.jsx),
- * set inside the existing animated ring/octagon frame, rather than a
- * differently-colored, unrelated 8-point star — the two were previously
- * inconsistent with each other (blue/gold star vs. the site's green/gold
- * icon language used in the header, footer, and everywhere else).
+ * set inside a static ring/octagon frame. Fully static by design — no
+ * rotation, pulse or hover motion — to match the premium, minimal brand
+ * presentation used across the rest of the app.
  *
  * Props:
  *   size      – px width/height (default 320)
- *   animated  – rotate outer ring (default true)
  *   className – extra class on the root <svg>
  */
-export default function BrandMedallion({ size = 320, animated = true, className = '' }) {
+export default function BrandMedallion({ size = 320, className = '' }) {
   const r = size / 2;
   const cx = r;
   const cy = r;
@@ -59,8 +57,8 @@ export default function BrandMedallion({ size = 320, animated = true, className 
         </linearGradient>
       </defs>
 
-      {/* Outer ring — animated */}
-      <g style={animated ? { transformOrigin: `${cx}px ${cy}px`, animation: 'med-spin 60s linear infinite' } : {}}>
+      {/* Outer ring — static */}
+      <g>
         <circle cx={cx} cy={cy} r={size * 0.487} fill="none"
           stroke="rgba(212,175,55,0.22)" strokeWidth="1" strokeDasharray="4 6" />
         {/* 8 small diamond markers on outer ring */}
@@ -135,13 +133,6 @@ export default function BrandMedallion({ size = 320, animated = true, className 
           Al-Azhar Certified · Authentic Ijazah Chain
         </textPath>
       </text>
-
-      <style>{`
-        @keyframes med-spin {
-          from { transform: rotate(0deg); }
-          to   { transform: rotate(360deg); }
-        }
-      `}</style>
     </svg>
   );
 }

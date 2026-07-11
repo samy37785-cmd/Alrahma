@@ -35,7 +35,27 @@
       "PowerShell(cd \"d:\\\\mahmoud-samy\\\\frontend\" ; npm run build 2>&1 | Where-Object { $_ -match \"error|warning|✓|✗|built|transform\" } | Select-Object -Last 20)",
       "PowerShell(npm list -g --depth=0 2>$null)",
       "PowerShell(& \"C:\\\\Program Files\\\\nodejs\\\\npm.cmd\" list -g --depth=0 2>&1)",
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "Bash(timeout 8 mongosh \"mongodb://127.0.0.1:27017/al-rahma\" --eval \"db.runCommand\\({ping:1}\\)\" --quiet)",
+      "Bash(pkill -f \"vite preview\")",
+      "Bash(npx vite *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:4175/)",
+      "Bash(NODE_PATH=/c/Users/MG/Documents/GitHub/Alrahma/node_modules node -e ' *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:4176/)",
+      "Bash(git commit -m ' *)",
+      "Bash(sed -i \"s#http://localhost:[0-9]*/#https://al-rahmaacademy.com/#\" \"C:\\\\Users\\\\MG\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-MG-Documents-GitHub-Alrahma\\\\e2056bd7-1a0c-4e58-b97c-b4ff016c1081\\\\scratchpad\\\\zoom-faq.js\")",
+      "Bash(sed -i \"s#faq-item1-FIXED-visual.png#faq-item1-PRODUCTION-FINAL.png#\" \"C:\\\\Users\\\\MG\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-MG-Documents-GitHub-Alrahma\\\\e2056bd7-1a0c-4e58-b97c-b4ff016c1081\\\\scratchpad\\\\zoom-faq.js\")",
+      "Bash(NODE_PATH=\"/c/Users/MG/Documents/GitHub/Alrahma/node_modules\" node \"C:\\\\Users\\\\MG\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-MG-Documents-GitHub-Alrahma\\\\e2056bd7-1a0c-4e58-b97c-b4ff016c1081\\\\scratchpad\\\\final-verify.js\")",
+      "Bash(awk '{files+=$1; ins+=$4; del+=$6} END {print \"files-touched-entries:\",files,\"insertions:\",ins,\"deletions:\",del}')",
+      "Bash(grep -v '^$')",
+      "Bash(awk -F/ '{print $1}' /tmp/changed_files.txt)",
+      "Bash(grep -oE '\\\\.[a-zA-Z0-9]+$' /tmp/changed_files.txt)",
+      "Bash(git log *)",
+      "Bash(awk '{ins+=$4; del+=$6} END {print \"insertions:\",ins,\"deletions:\",del}')",
+      "Bash(awk -F/ '{print $1}' /tmp/changed_files2.txt)",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(d.get\\('metadata',{}\\).get\\('vulnerabilities'\\)\\)\")",
+      "Bash(git ls-tree *)",
+      "Bash(grep -E \"^\\(FRONTEND|BACKEND\\)_.*\\\\.md$\")"
     ],
     "additionalDirectories": [
       "d:\\mahmoud-samy\\frontend\\src\\components\\features"

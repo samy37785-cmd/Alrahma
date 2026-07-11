@@ -9,8 +9,8 @@ const CACHE = 'alrahma-v2';
 // HTML (including '/') must NOT be precached — Vite embeds new chunk hashes in
 // each build, so serving a cached HTML with old chunk names causes 404s.
 const STATIC_PRECACHE = [
-  '/favicon.svg',
   '/manifest.json',
+  '/favicon.svg',
 ];
 
 self.addEventListener('install', (e) => {

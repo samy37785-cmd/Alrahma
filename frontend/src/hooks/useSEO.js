@@ -13,7 +13,7 @@ import { useEffect } from 'react';
 
 const SITE = 'AL-Rahma Academy';
 const ORIGIN = 'https://al-rahmaacademy.com';
-const DEFAULT_IMAGE = `${ORIGIN}/og-cover.jpg`;
+const DEFAULT_IMAGE = `${ORIGIN}/og-cover.svg`;
 
 function setMeta(attr, key, value) {
   let el = document.head.querySelector(`meta[${attr}="${key}"]`);

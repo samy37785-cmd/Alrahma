@@ -1,9 +1,10 @@
-// Absolute URL to the brand mark (book + mosque dome + minaret on a green
-// tile) — the same logo used everywhere in the app. Email clients don't
-// execute JS or inline SVG reliably, so unlike the frontend's <BrandIcon/>
-// this references the hosted PNG, with the "AL-Rahma Academy" text as a
-// fallback if the recipient's client blocks images.
-const LOGO_URL = `${process.env.CLIENT_URL || 'https://al-rahmaacademy.com'}/logo.png`;
+// Absolute URL — email clients fetch images over HTTP, so a relative /favicon.svg
+// path (fine for the web app) would resolve against the mail client's own
+// origin instead of ours. SVG in <img> has patchy support in some desktop
+// mail clients (notably Outlook's Word-based renderer); no rasterizer is
+// available in this environment to also ship a PNG fallback — a known,
+// reported limitation, not an oversight.
+const LOGO_URL = `${(process.env.CLIENT_URL || 'https://alrahmaacademy.com').split(',')[0].trim()}/favicon.svg`;
 
 const base = (content) => `
 <!DOCTYPE html>
@@ -19,18 +20,14 @@ const base = (content) => `
       <table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.08);">
         <!-- Header -->
         <tr>
-          <td style="background:#0b6e4f;padding:24px 32px;">
-            <table cellpadding="0" cellspacing="0" role="presentation">
-              <tr>
-                <td style="vertical-align:middle;padding-right:12px;">
-                  <img src="${LOGO_URL}" width="40" height="40" alt="Al-Rahma Academy" style="display:block;border-radius:9px;" />
-                </td>
-                <td style="vertical-align:middle;">
-                  <h1 style="margin:0;color:#fff;font-size:22px;letter-spacing:.5px;">AL-Rahma Academy</h1>
-                  <p style="margin:4px 0 0;color:#9fc0b3;font-size:13px;">Learn the Holy Quran Online</p>
-                </td>
-              </tr>
-            </table>
+          <td style="background:#0c3834;padding:24px 32px;">
+            <table cellpadding="0" cellspacing="0"><tr>
+              <td style="vertical-align:middle;padding-right:12px;"><img src="${LOGO_URL}" width="40" height="40" alt="Al-Rahma Academy" style="display:block;border-radius:9px;" /></td>
+              <td style="vertical-align:middle;">
+                <h1 style="margin:0;color:#fff;font-size:22px;letter-spacing:.5px;">AL-Rahma Academy</h1>
+                <p style="margin:4px 0 0;color:#9fc0b3;font-size:13px;">Learn the Holy Quran Online</p>
+              </td>
+            </tr></table>
           </td>
         </tr>
         <!-- Body -->

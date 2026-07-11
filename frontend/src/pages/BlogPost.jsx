@@ -111,13 +111,13 @@ export default function BlogPost() {
       datePublished: post.date,
       articleSection: post.category,
       inLanguage: 'en',
+      image: 'https://al-rahmaacademy.com/og-cover.svg',
       author: { '@type': 'Organization', name: 'Al-Rahma Academy', url: 'https://al-rahmaacademy.com' },
       publisher: {
         '@type': 'Organization',
         name: 'Al-Rahma Academy',
-        logo: { '@type': 'ImageObject', url: 'https://al-rahmaacademy.com/logo.png' },
+        logo: { '@type': 'ImageObject', url: 'https://al-rahmaacademy.com/favicon.svg' },
       },
-      image: 'https://al-rahmaacademy.com/og-cover.jpg',
       mainEntityOfPage: `https://al-rahmaacademy.com/blog/${post.slug}`,
     } : null,
   });

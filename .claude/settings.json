@@ -65,7 +65,16 @@
       "Bash(node -e \"try{require.resolve\\('sharp'\\)}catch\\(e\\){console.log\\('sharp not resolvable from repo root'\\)}\")",
       "Bash(/c/WINDOWS/system32/convert /?)",
       "Bash(node shot-icon.mjs)",
-      "Bash(node \"/c/Users/MG/AppData/Local/Temp/claude/c--Users-MG-Documents-GitHub-Alrahma/735ef99e-fb5d-4282-a88f-535cc4324d67/scratchpad/render-brandicon.mjs\")"
+      "Bash(node \"/c/Users/MG/AppData/Local/Temp/claude/c--Users-MG-Documents-GitHub-Alrahma/735ef99e-fb5d-4282-a88f-535cc4324d67/scratchpad/render-brandicon.mjs\")",
+      "Bash(ls /c/Users/MG/AppData/Local/Temp/claude/c--Users-MG-Documents-GitHub-Alrahma/735ef99e-fb5d-4282-a88f-535cc4324d67/scratchpad/render-brandicon.mjs /c/Users/MG/AppData/Local/Temp/claude/c--Users-MG-Documents-GitHub-Alrahma/735ef99e-fb5d-4282-a88f-535cc4324d67/scratchpad/render-lockup.mjs /c/Users/MG/AppData/Local/Temp/claude/c--Users-MG-Documents-GitHub-Alrahma/735ef99e-fb5d-4282-a88f-535cc4324d67/scratchpad/shot-icon.mjs /c/Users/MG/AppData/Local/Temp/claude/c--Users-MG-Documents-GitHub-Alrahma/735ef99e-fb5d-4282-a88f-535cc4324d67/scratchpad/shot-lockup.mjs)",
+      "Bash(node render-brandicon.mjs)",
+      "Bash(node render-mono.mjs)",
+      "Bash(node shot-mono.mjs)",
+      "Bash(node render-lockup.mjs)",
+      "Bash(node shot-lockup.mjs)",
+      "Bash(node shot-static-assets.mjs)",
+      "Bash(npm test *)",
+      "Bash(node phase3-verify.mjs)"
     ],
     "additionalDirectories": [
       "d:\\mahmoud-samy\\frontend\\src\\components\\features"

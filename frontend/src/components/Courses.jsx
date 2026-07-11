@@ -173,19 +173,21 @@ export default function Courses() {
 
                 <div className="course-row__panel">
                   <div className="course-row__body">
-                    <p>{item.text || c.text}</p>
-                    {(item.points || c.points) && (
-                      <ul className="course-row__points">
-                        {(item.points || c.points).map((pt) => (
-                          <li key={pt}>{pt}</li>
-                        ))}
-                      </ul>
-                    )}
-                    <button type="button" className="course__link" onClick={() => handleStart(c)}>
-                      {alphabetExpanded ? t.courses.closeBtn : t.courses.startBtn}
-                    </button>
+                    <div className="course-row__body-inner">
+                      <p>{item.text || c.text}</p>
+                      {(item.points || c.points) && (
+                        <ul className="course-row__points">
+                          {(item.points || c.points).map((pt) => (
+                            <li key={pt}>{pt}</li>
+                          ))}
+                        </ul>
+                      )}
+                      <button type="button" className="course__link" onClick={() => handleStart(c)}>
+                        {alphabetExpanded ? t.courses.closeBtn : t.courses.startBtn}
+                      </button>
 
-                    {alphabetExpanded && <AlphabetLearner onClose={() => setOpenAlphabet(false)} />}
+                      {alphabetExpanded && <AlphabetLearner onClose={() => setOpenAlphabet(false)} />}
+                    </div>
                   </div>
                 </div>
               </div>

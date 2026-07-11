@@ -29,6 +29,19 @@ const ICONS = [
   </svg>,
 ];
 
+/* Mosque dome — same mark used elsewhere (BrandIcon, Courses' Islamic
+   Studies icon), replacing the raw 🕌 emoji baked into the `promise`
+   translation string. */
+const MOSQUE_ICON = (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+       strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M12 3v2" />
+    <path d="M8 14c0-4.5 1.8-7 4-7s4 2.5 4 7Z" />
+    <rect x="8" y="13" width="8" height="2.5" rx=".5" />
+    <rect x="4" y="16.5" width="16" height="2.5" rx=".5" />
+  </svg>
+);
+
 export default function JoinCTA({ onTrialClick }) {
   const { t } = useLang();
   const jc = t.joinCta;
@@ -49,7 +62,10 @@ export default function JoinCTA({ onTrialClick }) {
         <p className="join-cta__sub">{jc.sub}</p>
 
         {jc.promise && (
-          <p className="join-cta__promise">{jc.promise}</p>
+          <p className="join-cta__promise">
+            <span aria-hidden="true" className="join-cta__promise-icon">{MOSQUE_ICON}</span>
+            {jc.promise.replace(/^🕌\s*/, '')}
+          </p>
         )}
 
         <div className="join-cta__stats">

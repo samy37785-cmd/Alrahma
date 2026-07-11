@@ -562,7 +562,7 @@ html.dark .hero__wave path { fill: var(--bg-page); }
 
 /* ── Course cards (home) ────────────────────────────────────────────── */
 html.dark .course-row__title { color: var(--text-primary); }
-html.dark .course-row__body > p { color: var(--text-secondary); opacity: 1; }
+html.dark .course-row__body-inner > p { color: var(--text-secondary); opacity: 1; }
 html.dark .course-row__points li { color: var(--text-primary); }
 
 /* ── Smooth transition on theme switch ──────────────────────────────── */

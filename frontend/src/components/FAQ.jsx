@@ -49,7 +49,9 @@ export default function FAQ() {
                   </button>
                   <div className="faq__panel">
                     <div className="faq__answer">
-                      <p>{item.a}</p>
+                      <div className="faq__answer-inner">
+                        <p>{item.a}</p>
+                      </div>
                     </div>
                   </div>
                 </div>

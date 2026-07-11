@@ -17,7 +17,7 @@
 [dir="rtl"] .field input, [dir="rtl"] .field textarea, [dir="rtl"] .field select { text-align: right; direction: rtl; }
 [dir="rtl"] .lang-switcher { direction: ltr; }
 [dir="rtl"] .faq__question { text-align: right; }
-[dir="rtl"] .faq__answer { padding: 0 58px 22px 22px; }
+[dir="rtl"] .faq__answer-inner { padding: 0 58px 22px 22px; }
 [dir="rtl"] .about__mission { border-left: 0; border-right: 3px solid var(--gold); padding-left: 0; padding-right: 14px; }
 [dir="rtl"] .quote figcaption { direction: rtl; }
 [dir="rtl"] .stats-banner__grid { direction: rtl; }

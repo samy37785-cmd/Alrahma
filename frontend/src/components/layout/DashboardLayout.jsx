@@ -14,8 +14,8 @@ import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import CommandPalette from '../ui/CommandPalette';
 import NotificationPanel from '../ui/NotificationPanel';
-import BrandIcon from '../ui/BrandIcon';
 import { getNameInitials } from '../../utils/nameInitials';
+import BrandIcon from '../ui/BrandIcon';
 import '../../styles/dashboard-shell.css';
 
 /* Icon renderer — keeps icon size consistent across all nav items */

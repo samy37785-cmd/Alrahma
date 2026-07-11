@@ -55,7 +55,17 @@
       "Bash(awk -F/ '{print $1}' /tmp/changed_files2.txt)",
       "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(d.get\\('metadata',{}\\).get\\('vulnerabilities'\\)\\)\")",
       "Bash(git ls-tree *)",
-      "Bash(grep -E \"^\\(FRONTEND|BACKEND\\)_.*\\\\.md$\")"
+      "Bash(grep -E \"^\\(FRONTEND|BACKEND\\)_.*\\\\.md$\")",
+      "Bash(npm run *)",
+      "Bash(node --check backend/config/emailTemplates.js)",
+      "Bash(curl -s -o /dev/null -w \"5173: %{http_code}\\\\n\" http://localhost:5173/ --max-time 3)",
+      "Bash(node phase1-verify.mjs)",
+      "Bash(node phase1-loading.mjs)",
+      "Bash(node -e ' *)",
+      "Bash(node -e \"try{require.resolve\\('sharp'\\)}catch\\(e\\){console.log\\('sharp not resolvable from repo root'\\)}\")",
+      "Bash(/c/WINDOWS/system32/convert /?)",
+      "Bash(node shot-icon.mjs)",
+      "Bash(node \"/c/Users/MG/AppData/Local/Temp/claude/c--Users-MG-Documents-GitHub-Alrahma/735ef99e-fb5d-4282-a88f-535cc4324d67/scratchpad/render-brandicon.mjs\")"
     ],
     "additionalDirectories": [
       "d:\\mahmoud-samy\\frontend\\src\\components\\features"

@@ -183,8 +183,8 @@
 .hero__visual--medallion {
   height: 440px;
 }
-.hero__medallion {
-  filter: drop-shadow(0 12px 28px rgba(11,110,79,.28));
+.hero__lockup {
+  max-width: 300px;
 }
 
 /* Central circle */

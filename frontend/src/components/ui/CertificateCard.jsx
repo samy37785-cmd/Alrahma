@@ -62,10 +62,7 @@ function CertificatePrintView({ cert }) {
     border-radius: 2px;
     pointer-events: none;
   }
-  .cert__mark {
-    width: 56px; height: 56px;
-    margin: 0 auto 10px;
-  }
+  .cert__mark { width: 56px; height: 56px; margin: 0 auto 10px; }
   .cert__logo {
     font-family: 'Amiri', serif;
     font-size: 1.5rem;
@@ -95,25 +92,32 @@ function CertificatePrintView({ cert }) {
 <body>
 <div class="cert">
   <div class="cert__mark">
-    <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Al-Rahma Academy">
+    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Al-Rahma Academy">
       <defs>
-        <linearGradient id="cert-mark-bg" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stop-color="#0b6e4f"/>
-          <stop offset="1" stop-color="#15885f"/>
+        <linearGradient id="cm-dome" x1="0.15" y1="0.05" x2="0.85" y2="1">
+          <stop offset="0" stop-color="#3a9c85" />
+          <stop offset="0.45" stop-color="#1e6b5c" />
+          <stop offset="1" stop-color="#0c3834" />
         </linearGradient>
-        <linearGradient id="cert-mark-dome" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stop-color="#3fc296"/>
-          <stop offset="1" stop-color="#0b6e4f"/>
+        <linearGradient id="cm-wingl" x1="1" y1="0.3" x2="0" y2="1">
+          <stop offset="0" stop-color="#1e6b5c" />
+          <stop offset="0.4" stop-color="#2c8069" />
+          <stop offset="0.72" stop-color="#c39a3a" />
+          <stop offset="1" stop-color="#d4af37" />
+        </linearGradient>
+        <linearGradient id="cm-wingr" x1="0" y1="0.3" x2="1" y2="1">
+          <stop offset="0" stop-color="#1e6b5c" />
+          <stop offset="0.4" stop-color="#2c8069" />
+          <stop offset="0.72" stop-color="#c39a3a" />
+          <stop offset="1" stop-color="#d4af37" />
         </linearGradient>
       </defs>
-      <rect width="64" height="64" rx="15" fill="url(#cert-mark-bg)"/>
-      <rect x="30.5" y="7" width="3" height="7" rx="1.5" fill="#d4af37"/>
-      <circle cx="32" cy="6" r="1.8" fill="#d4af37"/>
-      <path d="M22 37 C22 24 26 14 32 14 C38 14 42 24 42 37 Z" fill="url(#cert-mark-dome)" stroke="#d4af37" stroke-width="1.1"/>
-      <rect x="22" y="35" width="20" height="4" rx="1" fill="url(#cert-mark-dome)" stroke="#d4af37" stroke-width="1"/>
-      <path d="M32 42 C25 38 16 38 11 40 L11 54 C16 52 25 52 32 56 Z" fill="#ffffff"/>
-      <path d="M32 42 C39 38 48 38 53 40 L53 54 C48 52 39 52 32 56 Z" fill="#f1f3f2"/>
-      <rect x="30.8" y="42" width="2.4" height="13" rx="1.2" fill="#0b6e4f"/>
+      <rect x="47.6" y="14.5" width="4.8" height="13" rx="2.4" fill="#d4af37" />
+      <path d="M50 9c2.6 0 4.7 2 4.7 4.5 0 1-.35 1.95-.95 2.7a5.4 5.4 0 0 0 .1-6.1 4.9 4.9 0 0 0-3.85-1.6 4.9 4.9 0 0 0-3.85 1.6 5.4 5.4 0 0 0 .1 6.1 4.6 4.6 0 0 1-.95-2.7c0-2.5 2.1-4.5 4.7-4.5Z" fill="#d4af37" />
+      <path d="M50 26.5 C 44.5 26.5, 40.5 31, 38.7 37 C 37.2 42, 37 47, 38.2 51.5 C 38.9 54, 40.3 55.7, 42 56.4 C 42 55, 42.4 54, 43.2 53.5 C 45.2 52.2, 54.8 52.2, 56.8 53.5 C 57.6 54, 58 55, 58 56.4 C 59.7 55.7, 61.1 54, 61.8 51.5 C 63 47, 62.8 42, 61.3 37 C 59.5 31, 55.5 26.5, 50 26.5 Z" fill="url(#cm-dome)" stroke="#d4af37" stroke-width="1.6" stroke-linejoin="round" />
+      <rect x="36" y="55.5" width="28" height="7" rx="1.5" fill="url(#cm-dome)" stroke="#d4af37" stroke-width="1.4" />
+      <path d="M50 60 C 40 66, 24 66, 12 61 C 10.5 61.5, 9 63.5, 9 66 C 9 76, 22 84, 38 85.5 C 44 86, 48 84, 50 80 Z" fill="url(#cm-wingl)" />
+      <path d="M50 60 C 60 66, 76 66, 88 61 C 89.5 61.5, 91 63.5, 91 66 C 91 76, 78 84, 62 85.5 C 56 86, 52 84, 50 80 Z" fill="url(#cm-wingr)" />
     </svg>
   </div>
   <div class="cert__logo">أكاديمية الرحمة</div>

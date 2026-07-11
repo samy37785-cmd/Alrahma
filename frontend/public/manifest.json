@@ -14,12 +14,7 @@
   "categories": ["education", "religion", "lifestyle"],
   "scope": "/",
   "icons": [
-    {
-      "src": "/favicon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
-    }
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
   ],
   "shortcuts": [
     {
@@ -27,21 +22,21 @@
       "short_name": "Quran",
       "description": "Open the Quran reader",
       "url": "/tools/quran-reader",
-      "icons": [{ "src": "/favicon.svg", "sizes": "any" }]
+      "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
     },
     {
       "name": "My Dashboard",
       "short_name": "Dashboard",
       "description": "Go to your learning dashboard",
       "url": "/dashboard",
-      "icons": [{ "src": "/favicon.svg", "sizes": "any" }]
+      "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
     },
     {
       "name": "Prayer Times",
       "short_name": "Prayer",
       "description": "Check prayer times",
       "url": "/tools/prayer-times",
-      "icons": [{ "src": "/favicon.svg", "sizes": "any" }]
+      "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
     }
   ],
   "screenshots": [],

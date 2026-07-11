@@ -11,18 +11,25 @@ import '../../styles/brand-lockup.css';
  * directly on arbitrary backgrounds.
  *
  * Props:
- *   orientation    – 'horizontal' (icon left, text right) or 'vertical'
- *                    (icon top, text below), matching the guideline's two
- *                    named lockup variants. Default 'horizontal'.
+ *   orientation    – 'horizontal' (icon, a tall gold divider, then a
+ *                    stacked text column) or 'vertical' (icon on top, text
+ *                    centered below), matching the guideline's two named
+ *                    lockup variants exactly — including horizontal's
+ *                    vertical divider spine between icon and text, which
+ *                    the guideline shows explicitly. Default 'horizontal'.
+ *   tone           – passthrough to BrandIcon ('brand' default, or
+ *                    'black'/'white' for a monochrome icon on a
+ *                    non-brand-colored background).
  *   showBismillah  – include the Bismillah line (default true). Set false
  *                    for tighter spaces where the guideline's own compact
  *                    mockups omit it.
  *   className      – extra class on the root element
  */
-export default function BrandLockup({ orientation = 'horizontal', showBismillah = true, className = '' }) {
+export default function BrandLockup({ orientation = 'horizontal', tone = 'brand', showBismillah = true, className = '' }) {
   return (
     <div className={`brand-lockup brand-lockup--${orientation}${className ? ' ' + className : ''}`}>
-      <BrandIcon size={orientation === 'horizontal' ? 64 : 76} tile={false} className="brand-lockup__icon" />
+      <BrandIcon size={orientation === 'horizontal' ? 64 : 76} tile={false} tone={tone} className="brand-lockup__icon" />
+      {orientation === 'horizontal' && <span className="brand-lockup__spine" aria-hidden="true" />}
       <div className="brand-lockup__text">
         <div className="brand-lockup__en">
           <span className="brand-lockup__en-main">AL-RAHMA</span>

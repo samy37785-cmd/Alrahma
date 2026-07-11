@@ -24,6 +24,16 @@
   flex-shrink: 0;
 }
 
+/* Vertical gold divider between the icon and the text column — horizontal
+   mode only, matching the guideline's Horizontal Logo panel exactly. */
+.brand-lockup__spine {
+  align-self: stretch;
+  width: 1px;
+  background: #d4af37;
+  opacity: 0.6;
+  flex-shrink: 0;
+}
+
 .brand-lockup__text {
   display: flex;
   flex-direction: column;
@@ -34,15 +44,18 @@
   align-items: center;
 }
 
+/* AL-RAHMA / thin gold underline / ACADEMY, always stacked — both
+   orientations use the same vertical text-block pattern; only the icon's
+   relationship to that block (top vs. left-with-spine) differs. */
 .brand-lockup__en {
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.3rem;
 }
 
 .brand-lockup--vertical .brand-lockup__en {
-  flex-direction: column;
-  gap: 0.3rem;
+  align-items: center;
 }
 
 .brand-lockup__en-main {
@@ -55,14 +68,9 @@
 }
 
 .brand-lockup__divider {
-  width: 1px;
-  height: 1rem;
-  background: #d4af37;
-}
-
-.brand-lockup--vertical .brand-lockup__divider {
   width: 2.25rem;
   height: 1px;
+  background: #d4af37;
 }
 
 .brand-lockup__en-sub {

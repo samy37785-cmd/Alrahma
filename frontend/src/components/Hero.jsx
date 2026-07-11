@@ -5,6 +5,12 @@ import BrandMedallion from './ui/BrandMedallion';
 
 const DEMO_VIDEO_ID = import.meta.env.VITE_DEMO_VIDEO_ID || 'dQw4w9WgXcQ';
 
+// The badge1/2/3 translation strings already contain a leading "✓ " (used
+// elsewhere as plain inline text) — this list renders its own styled
+// checkmark badge, so the string's own checkmark must be stripped to avoid
+// showing two of them.
+const stripLeadingCheck = (str) => (str || '').replace(/^✓\s*/, '');
+
 /* Inline SVG icons for the stats bar — matches the site-wide Lucide-style
    icon language used everywhere else on the homepage. */
 const STAT_ICONS = [
@@ -122,9 +128,9 @@ export default function Hero({ onTrialClick }) {
           </p>
 
           <ul className="hero__badges">
-            <li><span className="hero__badge-check">✓</span>{h.badge1}</li>
-            <li><span className="hero__badge-check">✓</span>{h.badge2}</li>
-            <li><span className="hero__badge-check">✓</span>{h.badge3}</li>
+            <li><span className="hero__badge-check">✓</span>{stripLeadingCheck(h.badge1)}</li>
+            <li><span className="hero__badge-check">✓</span>{stripLeadingCheck(h.badge2)}</li>
+            <li><span className="hero__badge-check">✓</span>{stripLeadingCheck(h.badge3)}</li>
           </ul>
 
           {/* Stats bar */}

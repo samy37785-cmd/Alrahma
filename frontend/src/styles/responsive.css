@@ -94,6 +94,11 @@ img, video, svg, canvas { max-width: 100%; }
 @media (max-width: 640px) {
   .features__grid { grid-template-columns: repeat(2, 1fr) !important; gap: 12px; }
   .feature { padding: 18px 16px; }
+  /* Forcing 2 columns here only leaves ~100px beside the 52px icon for the
+     heading — long single words ("Multilingual") don't fit and were
+     clipped rather than wrapped (found via real mobile screenshot). Stack
+     icon above heading instead, so it gets the full card width. */
+  .feature__row { flex-direction: column; align-items: flex-start; gap: 10px; }
 }
 
 /* Very small phones: feature cards stack to avoid cramping. */
@@ -347,6 +352,19 @@ img, video, svg, canvas { max-width: 100%; }
   .newsletter__form input { min-width: 0; width: 100%; box-sizing: border-box; }
   .hero__visual--medallion { height: 280px; }
   .hero__medallion { width: 240px !important; height: 240px !important; }
+
+  /* Hero stats bar: 4 icon+label items in one row need more width than a
+     narrow phone's hero column has (found via real screenshot — the row's
+     unbreakable words like "COUNTRIES" forced the whole hero text column
+     wider than the viewport, clipping the heading/paragraph next to it).
+     Wrap to a 2x2 grid instead of trying to fit 4 across. */
+  .hero__stats-bar { flex-wrap: wrap; }
+  .hero__stat {
+    flex: 1 1 50%;
+    border-right: none;
+  }
+  .hero__stat:nth-child(odd) { border-right: 1px solid rgba(255,255,255,.1); }
+  .hero__stat:nth-child(-n+2) { border-bottom: 1px solid rgba(255,255,255,.1); }
 }
 
 /* ── 10) TOPBAR — hide contact links on very small phones to save

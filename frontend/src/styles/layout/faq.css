@@ -49,6 +49,7 @@
 
 .faq__question-text {
   flex: 1;
+  min-width: 0;
   font-size: 1.02rem;
   font-weight: 700;
   color: var(--green-deep);
@@ -79,7 +80,14 @@
 }
 .faq__item--open .faq__panel { grid-template-rows: 1fr; }
 
-.faq__answer { overflow: hidden; min-height: 0; padding: 0 22px 22px 58px; }
+/* No padding here — this element's box height must be able to reach a true
+   0px when collapsed. Padding on the directly-collapsing grid item would
+   still render (overflow:hidden clips at the border-box edge, which
+   includes padding, not at the 0-height content boundary), letting the
+   overflowing answer text peek through by exactly the padding amount. The
+   padding lives on .faq__answer-inner instead, one level deeper. */
+.faq__answer { overflow: hidden; min-height: 0; }
+.faq__answer-inner { padding: 0 22px 22px 58px; }
 .faq__answer p { color: var(--muted); font-size: .93rem; line-height: 1.7; margin: 0; }
 
 /* Sticky "still have questions" aside */

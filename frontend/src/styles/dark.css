@@ -23,14 +23,10 @@ html.dark h2 { color: var(--text-primary); }
 html.dark .nav-backdrop { background: rgba(0, 0, 0, 0.65); }
 
 /* ── Header / Nav ──────────────────────────────────────────────────── */
-html.dark .header {
-  background: rgba(14, 26, 17, 0.97);
-  border-bottom-color: var(--border-default);
-}
-html.dark .header--scrolled {
-  background: rgba(14, 26, 17, 0.99);
-  box-shadow: var(--shadow-sm);
-}
+/* .header itself, .nav__user-btn, .nav__theme-toggle and .ls__trigger are
+   now fixed brand-green chrome (see header.css) — identical in both
+   themes, so no html.dark override is needed for them anymore. The
+   floating dropdown/menu PANELS below stay theme-responsive. */
 html.dark .nav a,
 html.dark .nav__dropdown-trigger { color: var(--text-primary); }
 html.dark .nav a:hover,
@@ -50,30 +46,8 @@ html.dark .nav__dropdown-item--danger:hover {
   color: var(--p-danger-400);
 }
 html.dark .nav__user-avatar { background: var(--color-primary); }
-html.dark .nav__user-btn {
-  background: var(--bg-surface-raised);
-  border-color: var(--border-default);
-  color: var(--text-primary);
-}
-html.dark .nav__user-btn:hover { border-color: var(--border-brand); }
-html.dark .nav__theme-toggle {
-  background: var(--bg-surface-raised);
-  border-color: var(--border-default);
-}
-html.dark .nav__theme-toggle:hover { background: var(--bg-surface-hover); }
 
 /* ── Lang switcher ─────────────────────────────────────────────────── */
-html.dark .ls__trigger {
-  background: var(--bg-surface-raised);
-  border-color: var(--border-default);
-  color: var(--text-primary);
-}
-html.dark .ls__trigger:hover,
-html.dark .ls__trigger--open {
-  border-color: var(--border-brand);
-  background: var(--bg-surface-hover);
-  color: var(--text-brand);
-}
 html.dark .ls__menu {
   background: var(--bg-surface-raised);
   border-color: var(--border-default);

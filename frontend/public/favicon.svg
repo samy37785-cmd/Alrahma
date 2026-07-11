@@ -50,6 +50,10 @@
            C 56 86, 52 84, 50 80
            Z" fill="url(#wingr)" />
   <path d="M50 60 L50 80.5" stroke="#0c3834" stroke-width="1.3" stroke-linecap="round" opacity="0.55" />
+  <path d="M47 61.5 C 41 65, 32 65.5, 24 63.5" stroke="#0c3834" stroke-width="0.7" opacity="0.32" fill="none" />
   <path d="M46 63 C 38 67, 26 68, 15 64.5" stroke="#0c3834" stroke-width="0.8" opacity="0.28" fill="none" />
+  <path d="M44.5 65.5 C 34 70.5, 20 71.5, 11.5 67" stroke="#0c3834" stroke-width="0.7" opacity="0.22" fill="none" />
+  <path d="M53 61.5 C 59 65, 68 65.5, 76 63.5" stroke="#0c3834" stroke-width="0.7" opacity="0.32" fill="none" />
   <path d="M54 63 C 62 67, 74 68, 85 64.5" stroke="#0c3834" stroke-width="0.8" opacity="0.28" fill="none" />
+  <path d="M55.5 65.5 C 66 70.5, 80 71.5, 88.5 67" stroke="#0c3834" stroke-width="0.7" opacity="0.22" fill="none" />
 </svg>

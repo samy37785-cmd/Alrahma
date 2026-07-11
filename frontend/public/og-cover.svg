@@ -1,40 +1,76 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" font-family="Segoe UI, Tahoma, sans-serif">
+<svg viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Al-Rahma Academy">
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#0b6e4f"/>
-      <stop offset="1" stop-color="#0a4d39"/>
+      <stop offset="0" stop-color="#123f3a" />
+      <stop offset="1" stop-color="#0c3834" />
     </linearGradient>
-    <linearGradient id="tile" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#0b6e4f"/>
-      <stop offset="1" stop-color="#15885f"/>
+    <linearGradient id="dome" x1="0.15" y1="0.05" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#3a9c85" />
+      <stop offset="0.45" stop-color="#1e6b5c" />
+      <stop offset="1" stop-color="#0c3834" />
     </linearGradient>
-    <linearGradient id="dome" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#3fc296"/>
-      <stop offset="1" stop-color="#0b6e4f"/>
+    <linearGradient id="wingl" x1="1" y1="0.3" x2="0" y2="1">
+      <stop offset="0" stop-color="#1e6b5c" />
+      <stop offset="0.4" stop-color="#2c8069" />
+      <stop offset="0.72" stop-color="#c39a3a" />
+      <stop offset="1" stop-color="#d4af37" />
+    </linearGradient>
+    <linearGradient id="wingr" x1="0" y1="0.3" x2="1" y2="1">
+      <stop offset="0" stop-color="#1e6b5c" />
+      <stop offset="0.4" stop-color="#2c8069" />
+      <stop offset="0.72" stop-color="#c39a3a" />
+      <stop offset="1" stop-color="#d4af37" />
     </linearGradient>
   </defs>
 
-  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="url(#bg)" />
 
-  <!-- logo tile -->
-  <rect x="250" y="190" width="180" height="180" rx="42" fill="url(#tile)" stroke="#d4af37" stroke-width="3"/>
-
-  <!-- minaret + crescent finial -->
-  <rect x="335.8" y="209.7" width="8.4" height="19.7" rx="4.2" fill="#d4af37"/>
-  <circle cx="340" cy="206.9" r="5.1" fill="#d4af37"/>
-
-  <!-- mosque dome -->
-  <path d="M311.9 294.1 C311.9 257.5 323.1 229.4 340 229.4 C356.9 229.4 368.1 257.5 368.1 294.1 Z" fill="url(#dome)" stroke="#d4af37" stroke-width="3"/>
-  <rect x="311.9" y="288.4" width="56.25" height="11.25" rx="2.8" fill="url(#dome)" stroke="#d4af37" stroke-width="2.5"/>
-
-  <g transform="translate(0,40)">
-    <path d="M340 300 C310 282 270 282 245 292 L245 350 C270 340 310 340 340 354 Z" fill="#fff"/>
-    <path d="M340 300 C370 282 410 282 435 292 L435 350 C410 340 370 340 340 354 Z" fill="#eef1f0"/>
-    <rect x="338" y="300" width="4" height="54" rx="2" fill="#0b6e4f"/>
+  <!-- Icon, hand-positioned at ~2.4x the 100x100 source viewBox, centered left of the wordmark -->
+  <g transform="translate(150,175) scale(2.4)">
+    <rect x="47.6" y="14.5" width="4.8" height="13" rx="2.4" fill="#d4af37" />
+    <path d="M50 9c2.6 0 4.7 2 4.7 4.5 0 1-.35 1.95-.95 2.7a5.4 5.4 0 0 0 .1-6.1 4.9 4.9 0 0 0-3.85-1.6 4.9 4.9 0 0 0-3.85 1.6 5.4 5.4 0 0 0 .1 6.1 4.6 4.6 0 0 1-.95-2.7c0-2.5 2.1-4.5 4.7-4.5Z" fill="#d4af37" />
+    <path d="M50 26.5
+             C 44.5 26.5, 40.5 31, 38.7 37
+             C 37.2 42, 37 47, 38.2 51.5
+             C 38.9 54, 40.3 55.7, 42 56.4
+             C 42 55, 42.4 54, 43.2 53.5
+             C 45.2 52.2, 54.8 52.2, 56.8 53.5
+             C 57.6 54, 58 55, 58 56.4
+             C 59.7 55.7, 61.1 54, 61.8 51.5
+             C 63 47, 62.8 42, 61.3 37
+             C 59.5 31, 55.5 26.5, 50 26.5
+             Z" fill="url(#dome)" stroke="#d4af37" stroke-width="1.6" stroke-linejoin="round" />
+    <rect x="36" y="55.5" width="28" height="7" rx="1.5" fill="url(#dome)" stroke="#d4af37" stroke-width="1.4" />
+    <path d="M50 60
+             C 40 66, 24 66, 12 61
+             C 10.5 61.5, 9 63.5, 9 66
+             C 9 76, 22 84, 38 85.5
+             C 44 86, 48 84, 50 80
+             Z" fill="url(#wingl)" />
+    <path d="M50 60
+             C 60 66, 76 66, 88 61
+             C 89.5 61.5, 91 63.5, 91 66
+             C 91 76, 78 84, 62 85.5
+             C 56 86, 52 84, 50 80
+             Z" fill="url(#wingr)" />
+    <path d="M50 60 L50 80.5" stroke="#0c3834" stroke-width="1.3" stroke-linecap="round" opacity="0.55" />
+    <path d="M47 61.5 C 41 65, 32 65.5, 24 63.5" stroke="#0c3834" stroke-width="0.7" opacity="0.32" fill="none" />
+    <path d="M46 63 C 38 67, 26 68, 15 64.5" stroke="#0c3834" stroke-width="0.8" opacity="0.28" fill="none" />
+    <path d="M44.5 65.5 C 34 70.5, 20 71.5, 11.5 67" stroke="#0c3834" stroke-width="0.7" opacity="0.22" fill="none" />
+    <path d="M53 61.5 C 59 65, 68 65.5, 76 63.5" stroke="#0c3834" stroke-width="0.7" opacity="0.32" fill="none" />
+    <path d="M54 63 C 62 67, 74 68, 85 64.5" stroke="#0c3834" stroke-width="0.8" opacity="0.28" fill="none" />
+    <path d="M55.5 65.5 C 66 70.5, 80 71.5, 88.5 67" stroke="#0c3834" stroke-width="0.7" opacity="0.22" fill="none" />
   </g>
 
-  <!-- text -->
-  <text x="250" y="445" fill="#ffffff" font-size="72" font-weight="800">Al-Rahma Academy</text>
-  <text x="252" y="500" fill="#d4af37" font-size="34" font-weight="600">Learn the Holy Quran Online</text>
-  <text x="252" y="548" fill="#cfe6dc" font-size="27">Tajweed · Hifz · Ijazah · Arabic — certified tutors, 1-to-1</text>
+  <!-- Wordmark: font-family references Cinzel/Cairo/Amiri (self-hosted by
+       the app for in-app rendering). Viewers without those fonts installed
+       fall back to serif/sans-serif — a known limitation for this static
+       file, called out in the delivery report. All four lines are
+       center-aligned on a shared x so the RTL Arabic/Bismillah lines (which
+       render leftward from their anchor) can't collide with the icon. -->
+  <text x="760" y="250" text-anchor="middle" font-family="Cinzel, Georgia, serif" font-weight="700" font-size="58" letter-spacing="3" fill="#f6f1e6">AL-RAHMA</text>
+  <line x1="650" y1="280" x2="870" y2="280" stroke="#d4af37" stroke-width="2" />
+  <text x="760" y="315" text-anchor="middle" font-family="Cinzel, Georgia, serif" font-weight="700" font-size="26" letter-spacing="8" fill="#d4af37">ACADEMY</text>
+  <text x="760" y="375" text-anchor="middle" font-family="Cairo, 'Segoe UI', sans-serif" font-weight="700" font-size="34" fill="#f6f1e6" direction="rtl">أكاديمية الرحمة</text>
+  <text x="760" y="425" text-anchor="middle" font-family="Amiri, Georgia, serif" font-size="30" fill="#d4af37" direction="rtl">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</text>
 </svg>

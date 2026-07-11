@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useLang } from '../context/LangContext';
 import QuranAudioPlayer from './ui/QuranAudioPlayer';
-import BrandMedallion from './ui/BrandMedallion';
+import BrandLockup from './ui/BrandLockup';
 
 const DEMO_VIDEO_ID = import.meta.env.VITE_DEMO_VIDEO_ID || 'dQw4w9WgXcQ';
 
@@ -157,11 +157,10 @@ export default function Hero({ onTrialClick }) {
           </div>
         </div>
 
-        {/* ── Right: Brand Medallion ── */}
-        <div className="hero__visual hero__visual--medallion" aria-hidden="true">
+        {/* ── Right: Brand lockup ── */}
+        <div className="hero__visual hero__visual--medallion">
 
-          {/* Unique Islamic geometric brand signature */}
-          <BrandMedallion size={340} animated className="hero__medallion" />
+          <BrandLockup orientation="vertical" className="hero__lockup" />
 
           {/* Floating pill — rating */}
           <div className="hero__pill hero__pill--top">

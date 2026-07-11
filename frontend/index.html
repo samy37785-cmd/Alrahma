@@ -4,11 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <link rel="manifest" href="/manifest.json" />
-
-  <!-- Favicon / logo (browser tab + bookmarks + home screen) -->
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="apple-touch-icon" href="/favicon.svg" />
-  <link rel="mask-icon" href="/favicon.svg" color="#0b6e4f" />
+  <link rel="mask-icon" href="/favicon.svg" color="#0c3834" />
+
   <meta name="theme-color" content="#0b6e4f" media="(prefers-color-scheme: light)" />
   <meta name="theme-color" content="#0d1712" media="(prefers-color-scheme: dark)" />
 
@@ -42,7 +41,7 @@
   <meta property="og:url"         content="https://al-rahmaacademy.com/" />
   <meta property="og:title"       content="Al-Rahma Academy — Learn Quran Online | Tajweed, Hifz & Arabic" />
   <meta property="og:description" content="One-to-one live Quran lessons with certified Egyptian tutors. Tajweed, Hifz, Ijazah & Arabic for all ages. Book 2 free trial classes — no commitment." />
-  <meta property="og:image"       content="https://al-rahmaacademy.com/og-cover.jpg" />
+  <meta property="og:image"        content="https://al-rahmaacademy.com/og-cover.svg" />
   <meta property="og:image:width"  content="1200" />
   <meta property="og:image:height" content="630" />
   <meta property="og:locale"      content="en_GB" />
@@ -60,8 +59,8 @@
   <meta name="twitter:creator"     content="@alrahmaacademy" />
   <meta name="twitter:title"       content="Al-Rahma Academy — Learn Quran Online" />
   <meta name="twitter:description" content="Certified Egyptian tutors. One-to-one lessons in Tajweed, Hifz & Arabic. Book 2 free trial classes today." />
-  <meta name="twitter:image"       content="https://al-rahmaacademy.com/og-cover.jpg" />
-  <meta name="twitter:image:alt"   content="Al-Rahma Academy — Online Quran School" />
+  <meta name="twitter:image"       content="https://al-rahmaacademy.com/og-cover.svg" />
+  <meta name="twitter:image:alt"   content="Al-Rahma Academy" />
 
   <!-- ═══════════════════════════════════════════════════════════════
        Fonts & Icons
@@ -109,11 +108,9 @@
     "url": "https://al-rahmaacademy.com",
     "logo": {
       "@type": "ImageObject",
-      "url": "https://al-rahmaacademy.com/logo.png",
-      "width": 400,
-      "height": 120
+      "url": "https://al-rahmaacademy.com/favicon.svg"
     },
-    "image": "https://al-rahmaacademy.com/og-cover.jpg",
+    "image": "https://al-rahmaacademy.com/og-cover.svg",
     "email": "alrahmaacademy038@gmail.com",
     "telephone": "+201016054663",
     "foundingDate": "2020",
@@ -325,7 +322,6 @@
 <body>
   <style>
     @keyframes alr-spin  { to { transform: rotate(360deg); } }
-    @keyframes alr-pulse { 0%,100%{opacity:.7} 50%{opacity:1} }
     #app-loading {
       position: fixed; inset: 0; display: flex; flex-direction: column;
       align-items: center; justify-content: center; gap: 20px;
@@ -336,8 +332,7 @@
       display: flex; flex-direction: column; align-items: center; gap: 8px;
     }
     #app-loading .alr-mark {
-      display: block; width: 56px; height: 56px;
-      animation: alr-pulse 2s ease-in-out infinite;
+      width: 56px; height: 56px;
     }
     #app-loading .alr-name {
       font-size: 15px; font-weight: 600; letter-spacing: .08em;
@@ -369,25 +364,44 @@
          (createRoot) replaces this on mount. -->
     <div id="app-loading" role="status" aria-label="Loading Al-Rahma Academy">
       <div class="alr-logo">
-        <svg class="alr-mark" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Al-Rahma Academy">
+        <svg class="alr-mark" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true">
           <defs>
-            <linearGradient id="alr-mark-bg" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0" stop-color="#0b6e4f"/>
-              <stop offset="1" stop-color="#15885f"/>
+            <linearGradient id="alr-tile" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#123f3a" />
+              <stop offset="1" stop-color="#0c3834" />
             </linearGradient>
-            <linearGradient id="alr-mark-dome" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stop-color="#3fc296"/>
-              <stop offset="1" stop-color="#0b6e4f"/>
+            <linearGradient id="alr-dome" x1="0.15" y1="0.05" x2="0.85" y2="1">
+              <stop offset="0" stop-color="#3a9c85" />
+              <stop offset="0.45" stop-color="#1e6b5c" />
+              <stop offset="1" stop-color="#0c3834" />
+            </linearGradient>
+            <linearGradient id="alr-wingl" x1="1" y1="0.3" x2="0" y2="1">
+              <stop offset="0" stop-color="#1e6b5c" />
+              <stop offset="0.4" stop-color="#2c8069" />
+              <stop offset="0.72" stop-color="#c39a3a" />
+              <stop offset="1" stop-color="#d4af37" />
+            </linearGradient>
+            <linearGradient id="alr-wingr" x1="0" y1="0.3" x2="1" y2="1">
+              <stop offset="0" stop-color="#1e6b5c" />
+              <stop offset="0.4" stop-color="#2c8069" />
+              <stop offset="0.72" stop-color="#c39a3a" />
+              <stop offset="1" stop-color="#d4af37" />
             </linearGradient>
           </defs>
-          <rect width="64" height="64" rx="15" fill="url(#alr-mark-bg)"/>
-          <rect x="30.5" y="7" width="3" height="7" rx="1.5" fill="#d4af37"/>
-          <circle cx="32" cy="6" r="1.8" fill="#d4af37"/>
-          <path d="M22 37 C22 24 26 14 32 14 C38 14 42 24 42 37 Z" fill="url(#alr-mark-dome)" stroke="#d4af37" stroke-width="1.1"/>
-          <rect x="22" y="35" width="20" height="4" rx="1" fill="url(#alr-mark-dome)" stroke="#d4af37" stroke-width="1"/>
-          <path d="M32 42 C25 38 16 38 11 40 L11 54 C16 52 25 52 32 56 Z" fill="#ffffff"/>
-          <path d="M32 42 C39 38 48 38 53 40 L53 54 C48 52 39 52 32 56 Z" fill="#f1f3f2"/>
-          <rect x="30.8" y="42" width="2.4" height="13" rx="1.2" fill="#0b6e4f"/>
+          <rect width="100" height="100" rx="22" fill="url(#alr-tile)" />
+          <rect x="47.6" y="14.5" width="4.8" height="13" rx="2.4" fill="#d4af37" />
+          <path d="M50 9c2.6 0 4.7 2 4.7 4.5 0 1-.35 1.95-.95 2.7a5.4 5.4 0 0 0 .1-6.1 4.9 4.9 0 0 0-3.85-1.6 4.9 4.9 0 0 0-3.85 1.6 5.4 5.4 0 0 0 .1 6.1 4.6 4.6 0 0 1-.95-2.7c0-2.5 2.1-4.5 4.7-4.5Z" fill="#d4af37" />
+          <path d="M50 26.5 C 44.5 26.5, 40.5 31, 38.7 37 C 37.2 42, 37 47, 38.2 51.5 C 38.9 54, 40.3 55.7, 42 56.4 C 42 55, 42.4 54, 43.2 53.5 C 45.2 52.2, 54.8 52.2, 56.8 53.5 C 57.6 54, 58 55, 58 56.4 C 59.7 55.7, 61.1 54, 61.8 51.5 C 63 47, 62.8 42, 61.3 37 C 59.5 31, 55.5 26.5, 50 26.5 Z" fill="url(#alr-dome)" stroke="#d4af37" stroke-width="1.6" stroke-linejoin="round" />
+          <rect x="36" y="55.5" width="28" height="7" rx="1.5" fill="url(#alr-dome)" stroke="#d4af37" stroke-width="1.4" />
+          <path d="M50 60 C 40 66, 24 66, 12 61 C 10.5 61.5, 9 63.5, 9 66 C 9 76, 22 84, 38 85.5 C 44 86, 48 84, 50 80 Z" fill="url(#alr-wingl)" />
+          <path d="M50 60 C 60 66, 76 66, 88 61 C 89.5 61.5, 91 63.5, 91 66 C 91 76, 78 84, 62 85.5 C 56 86, 52 84, 50 80 Z" fill="url(#alr-wingr)" />
+          <path d="M50 60 L50 80.5" stroke="#0c3834" stroke-width="1.3" stroke-linecap="round" opacity="0.55" />
+          <path d="M47 61.5 C 41 65, 32 65.5, 24 63.5" stroke="#0c3834" stroke-width="0.7" opacity="0.32" fill="none" />
+          <path d="M46 63 C 38 67, 26 68, 15 64.5" stroke="#0c3834" stroke-width="0.8" opacity="0.28" fill="none" />
+          <path d="M44.5 65.5 C 34 70.5, 20 71.5, 11.5 67" stroke="#0c3834" stroke-width="0.7" opacity="0.22" fill="none" />
+          <path d="M53 61.5 C 59 65, 68 65.5, 76 63.5" stroke="#0c3834" stroke-width="0.7" opacity="0.32" fill="none" />
+          <path d="M54 63 C 62 67, 74 68, 85 64.5" stroke="#0c3834" stroke-width="0.8" opacity="0.28" fill="none" />
+          <path d="M55.5 65.5 C 66 70.5, 80 71.5, 88.5 67" stroke="#0c3834" stroke-width="0.7" opacity="0.22" fill="none" />
         </svg>
         <div class="alr-name">Al-Rahma Academy</div>
         <div class="alr-tagline">Learn Quran Online</div>

@@ -74,7 +74,21 @@
       "Bash(node shot-lockup.mjs)",
       "Bash(node shot-static-assets.mjs)",
       "Bash(npm test *)",
-      "Bash(node phase3-verify.mjs)"
+      "Bash(node phase3-verify.mjs)",
+      "Bash(git stash *)",
+      "Bash(cp .claude/settings.json \"C:/Users/MG/AppData/Local/Temp/claude/c--Users-MG-Documents-GitHub-Alrahma/5935bf76-d123-4ecd-b407-a2f8155eccb1/scratchpad/settings.json.bak3\")",
+      "Bash(cp .claude/settings.json \"C:/Users/MG/AppData/Local/Temp/claude/c--Users-MG-Documents-GitHub-Alrahma/5935bf76-d123-4ecd-b407-a2f8155eccb1/scratchpad/settings.json.bak4\")",
+      "Bash(cp \"C:/Users/MG/AppData/Local/Temp/claude/c--Users-MG-Documents-GitHub-Alrahma/5935bf76-d123-4ecd-b407-a2f8155eccb1/scratchpad/settings.json.bak4\" .claude/settings.json)",
+      "Bash(npx --no-install playwright --version)",
+      "Bash(timeout 30 bash -c 'until curl -sf http://localhost:4180 >/dev/null; do sleep 1; done')",
+      "Bash(node \"C:/Users/MG/AppData/Local/Temp/claude/c--Users-MG-Documents-GitHub-Alrahma/5935bf76-d123-4ecd-b407-a2f8155eccb1/scratchpad/verify-header.mjs\")",
+      "Bash(NODE_PATH=\"/c/Users/MG/Documents/GitHub/Alrahma/node_modules\" node \"C:/Users/MG/AppData/Local/Temp/claude/c--Users-MG-Documents-GitHub-Alrahma/5935bf76-d123-4ecd-b407-a2f8155eccb1/scratchpad/verify-header.mjs\")",
+      "Bash(cp \"C:/Users/MG/AppData/Local/Temp/claude/c--Users-MG-Documents-GitHub-Alrahma/5935bf76-d123-4ecd-b407-a2f8155eccb1/scratchpad/verify-header.mjs\" ./verify-header-tmp.mjs)",
+      "Bash(node verify-header-tmp.mjs)",
+      "Bash(curl -sf http://localhost:4180)",
+      "Bash(rm -f verify-header-tmp.mjs verify-inner.mjs)",
+      "Bash(pkill -f \"vite.*4180\")",
+      "Bash(pkill -f \"npm run dev\")"
     ],
     "additionalDirectories": [
       "d:\\mahmoud-samy\\frontend\\src\\components\\features"

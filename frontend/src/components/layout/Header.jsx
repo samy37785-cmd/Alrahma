@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import Brand from "./Brand";
+import BrandLockup from "../ui/BrandLockup";
 import { useAuth } from "../../context/AuthContext";
 import { useLang } from "../../context/LangContext";
 import { useTheme } from "../../context/ThemeContext";
@@ -213,6 +213,12 @@ export default function Header() {
   const isActive = (path) => location.pathname === path || location.pathname.startsWith(path + "/");
   const handleLogout = () => { closeAll(); logout(); navigate("/"); };
 
+  /* Same as Brand.jsx: on any inner page → navigate home; already on
+     home → just scroll to top. */
+  const handleBrandClick = () => {
+    if (location.pathname === "/") window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   /* Swipe-up gesture closes the mobile drawer */
   const handleTouchStart = useCallback((e) => {
     touchStartY.current = e.touches[0].clientY;
@@ -259,7 +265,9 @@ export default function Header() {
     <>
       <header className={`header${scrolled ? " header--scrolled" : ""}`} id="top">
         <div className="container header__inner">
-          <Brand />
+          <Link to="/" onClick={handleBrandClick} className="header__brand-link" aria-label="Al-Rahma Academy home">
+            <BrandLockup orientation="horizontal" plain showBismillah={false} size={40} className="header__lockup" />
+          </Link>
 
           <nav
             className={`nav${mobileOpen ? " open" : ""}`}
@@ -393,7 +401,7 @@ export default function Header() {
 
             {/* Dark mode toggle — desktop only; mobile uses drawer version */}
             <button
-              className="nav__theme-toggle btn btn--icon btn--ghost btn--sm"
+              className="nav__theme-toggle btn btn--icon btn--ghost-inv btn--sm"
               onClick={toggleDark}
               aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
               title={dark ? "Light mode" : "Dark mode"}
@@ -467,12 +475,12 @@ export default function Header() {
                 )}
               </div>
             ) : (
-              <Link to="/login" className="btn btn--ghost btn--sm">{n.login}</Link>
+              <Link to="/login" className="btn btn--ghost-inv btn--sm">{n.login}</Link>
             )}
 
             {/* Search / Command Palette — desktop only; mobile has its own in the drawer */}
             <button
-              className="nav__search-btn btn btn--icon btn--ghost btn--sm"
+              className="nav__search-btn btn btn--icon btn--ghost-inv btn--sm"
               onClick={() => setCmdOpen(true)}
               aria-label="Search (Ctrl+K)"
               title="Search (Ctrl+K)"

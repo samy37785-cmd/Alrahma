@@ -20,6 +20,16 @@
   padding: 1.6rem 1.75rem;
 }
 
+/* Drops the card's own background/padding/shadow — for use on a parent
+   that's already the brand's dark green (e.g. the header bar), so the
+   icon+wordmark don't render as a nested card inside another. */
+.brand-lockup--plain {
+  background: none;
+  box-shadow: none;
+  padding: 0;
+  border-radius: 0;
+}
+
 .brand-lockup__icon {
   flex-shrink: 0;
 }

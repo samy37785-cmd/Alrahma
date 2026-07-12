@@ -23,12 +23,21 @@ import '../../styles/brand-lockup.css';
  *   showBismillah  – include the Bismillah line (default true). Set false
  *                    for tighter spaces where the guideline's own compact
  *                    mockups omit it.
+ *   plain          – skip the card's own background/padding/shadow
+ *                    (default false), for dropping the icon+wordmark
+ *                    directly onto a parent that's already the brand's
+ *                    dark green (e.g. the site header bar) instead of
+ *                    nesting one dark card inside another.
+ *   size           – icon px size (default 64 horizontal / 76 vertical,
+ *                    matching the guideline's own proportions). Override
+ *                    for smaller placements like a nav bar.
  *   className      – extra class on the root element
  */
-export default function BrandLockup({ orientation = 'horizontal', tone = 'brand', showBismillah = true, className = '' }) {
+export default function BrandLockup({ orientation = 'horizontal', tone = 'brand', showBismillah = true, plain = false, size, className = '' }) {
+  const iconSize = size ?? (orientation === 'horizontal' ? 64 : 76);
   return (
-    <div className={`brand-lockup brand-lockup--${orientation}${className ? ' ' + className : ''}`}>
-      <BrandIcon size={orientation === 'horizontal' ? 64 : 76} tile={false} tone={tone} className="brand-lockup__icon" />
+    <div className={`brand-lockup brand-lockup--${orientation}${plain ? ' brand-lockup--plain' : ''}${className ? ' ' + className : ''}`}>
+      <BrandIcon size={iconSize} tile={false} tone={tone} className="brand-lockup__icon" />
       {orientation === 'horizontal' && <span className="brand-lockup__spine" aria-hidden="true" />}
       <div className="brand-lockup__text">
         <div className="brand-lockup__en">

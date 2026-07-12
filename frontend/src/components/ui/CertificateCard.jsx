@@ -62,7 +62,6 @@ function CertificatePrintView({ cert }) {
     border-radius: 2px;
     pointer-events: none;
   }
-  .cert__mark { width: 56px; height: 56px; margin: 0 auto 10px; }
   .cert__logo {
     font-family: 'Amiri', serif;
     font-size: 1.5rem;
@@ -91,20 +90,6 @@ function CertificatePrintView({ cert }) {
 </head>
 <body>
 <div class="cert">
-  <div class="cert__mark">
-    <!-- Black monochrome tone (matching BrandIcon's tone="black" silhouette,
-         not the full gradient version) — certificates are commonly printed
-         on office B&W printers, where the green/gold gradient degrades; the
-         guideline itself markets the black version for print use. -->
-    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Al-Rahma Academy">
-      <rect x="47.6" y="14.5" width="4.8" height="13" rx="2.4" fill="#0f1417" />
-      <path d="M50 9c2.6 0 4.7 2 4.7 4.5 0 1-.35 1.95-.95 2.7a5.4 5.4 0 0 0 .1-6.1 4.9 4.9 0 0 0-3.85-1.6 4.9 4.9 0 0 0-3.85 1.6 5.4 5.4 0 0 0 .1 6.1 4.6 4.6 0 0 1-.95-2.7c0-2.5 2.1-4.5 4.7-4.5Z" fill="#0f1417" />
-      <path d="M50 26.5 C 44.5 26.5, 40.5 31, 38.7 37 C 37.2 42, 37 47, 38.2 51.5 C 38.9 54, 40.3 55.7, 42 56.4 C 42 55, 42.4 54, 43.2 53.5 C 45.2 52.2, 54.8 52.2, 56.8 53.5 C 57.6 54, 58 55, 58 56.4 C 59.7 55.7, 61.1 54, 61.8 51.5 C 63 47, 62.8 42, 61.3 37 C 59.5 31, 55.5 26.5, 50 26.5 Z" fill="#0f1417" />
-      <rect x="36" y="55.5" width="28" height="7" rx="1.5" fill="#0f1417" />
-      <path d="M50 60 C 40 66, 24 66, 12 61 C 10.5 61.5, 9 63.5, 9 66 C 9 76, 22 84, 38 85.5 C 44 86, 48 84, 50 80 Z" fill="#0f1417" />
-      <path d="M50 60 C 60 66, 76 66, 88 61 C 89.5 61.5, 91 63.5, 91 66 C 91 76, 78 84, 62 85.5 C 56 86, 52 84, 50 80 Z" fill="#0f1417" />
-    </svg>
-  </div>
   <div class="cert__logo">أكاديمية الرحمة</div>
   <div class="cert__academy">Al-Rahma Academy</div>
   <div class="cert__bismillah">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ</div>

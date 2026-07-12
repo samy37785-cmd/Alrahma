@@ -1,10 +1,10 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useQueries, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Flame, TrendingUp, CalendarDays, Clock, Play, BookOpen, BarChart2,
   MessageSquare, Book, CreditCard, MessageCircle, Landmark, Zap,
-  GraduationCap, Trophy, Star, Target,
+  GraduationCap, Trophy, Star, Target, Moon, ListChecks, PenLine,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLang } from '../context/LangContext';
@@ -14,6 +14,9 @@ import { getCourseProgress, getMyCertificates } from '../api/courseApi';
 import { getClasses } from '../api/classApi';
 import { getTeacherReviews, createReview } from '../api/reviewApi';
 import { site } from '../data/site';
+import { TOOLS_TEXT, pick } from '../i18n/content';
+import { PRAYERS_ORDER, PRAYER_META } from '../utils/islamicToolsUtils';
+import { getDailyWisdom } from '../data/dailyWisdom';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import ProgressRing from '../components/ui/ProgressRing';
 import { Skeleton, SkeletonDashboard } from '../components/ui/Skeleton';
@@ -71,6 +74,11 @@ function fmtTime(d) {
 
 function minutesUntil(d) {
   return Math.max(0, Math.round((new Date(d) - Date.now()) / 60000));
+}
+
+function todayKey() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
 /* Weekly activity: last 7 days, aggregate completedAt from ALL enrolled courses */
@@ -277,6 +285,176 @@ function UpcomingClassCard({ cls }) {
   );
 }
 
+function SpiritualPulseCard({ t, lang }) {
+  const prayerNames = pick(TOOLS_TEXT, lang).prayers;
+  return (
+    <div className="ds-card">
+      <div className="ds-card__hd">
+        <h2 className="ds-card__title">
+          <span className="ds-card__title-icon"><Moon size={14} aria-hidden="true" /></span> {t.dashboard.pulseTitle}
+        </h2>
+      </div>
+      <div className="ds-card__body">
+        <div className="ds-pulse">
+          {PRAYERS_ORDER.filter((name) => name !== 'Sunrise').map((name) => (
+            <div key={name} className="ds-pulse__chip">
+              <span className="ds-pulse__chip-icon" aria-hidden="true">{PRAYER_META[name].icon}</span>
+              <span className="ds-pulse__chip-name">{prayerNames[name]}</span>
+            </div>
+          ))}
+        </div>
+        <Link to="/tools/prayer-times" className="ds-pulse__cta">{t.dashboard.pulseCta}</Link>
+      </div>
+    </div>
+  );
+}
+
+function DailyWisdomCard({ t }) {
+  const quote = useMemo(() => getDailyWisdom(), []);
+  const text = t.dashboard.wisdomQuotes?.[quote.id];
+  return (
+    <div className="ds-card ds-wisdom">
+      <div className="ds-wisdom__eyebrow">{t.dashboard.wisdomEyebrow}</div>
+      <p className="ds-wisdom__arabic" dir="rtl" lang="ar">{quote.arabic}</p>
+      {text && (
+        <>
+          <p className="ds-wisdom__gloss">{text.gloss}</p>
+          <p className="ds-wisdom__source">{text.source}</p>
+        </>
+      )}
+    </div>
+  );
+}
+
+function SmartPlannerCard({ t, classes, classesLoading, userId }) {
+  const habitsKey = `ds-habits:${userId}:${todayKey()}`;
+  const reflectionKey = `ds-reflection:${userId}:${todayKey()}`;
+
+  const [habits, setHabits] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(habitsKey) || '{}'); } catch { return {}; }
+  });
+  const [reflection, setReflection] = useState(() => {
+    try { return localStorage.getItem(reflectionKey) || ''; } catch { return ''; }
+  });
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    try { localStorage.setItem(habitsKey, JSON.stringify(habits)); } catch { /* noop */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [habits]);
+
+  const toggleHabit = (key) => setHabits((h) => ({ ...h, [key]: !h[key] }));
+
+  const saveReflection = () => {
+    try { localStorage.setItem(reflectionKey, reflection); } catch { /* noop */ }
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  };
+
+  const todaysClasses = (classes || []).filter(
+    (c) => new Date(c.startsAt).toDateString() === new Date().toDateString()
+  );
+
+  const HABITS = [
+    { key: 'lesson', label: t.dashboard.plannerHabitLesson },
+    { key: 'quran',  label: t.dashboard.plannerHabitQuran },
+    { key: 'dua',    label: t.dashboard.plannerHabitDua },
+  ];
+
+  return (
+    <div className="ds-card">
+      <div className="ds-card__hd">
+        <h2 className="ds-card__title">
+          <span className="ds-card__title-icon"><ListChecks size={14} aria-hidden="true" /></span> {t.dashboard.plannerTitle}
+        </h2>
+      </div>
+      <div className="ds-card__body">
+
+        {/* Today's schedule */}
+        <div className="ds-planner__section">
+          <div className="ds-planner__section-title">{t.dashboard.plannerScheduleTitle}</div>
+          {classesLoading ? (
+            <Skeleton height={48} radius="var(--radius-md)" />
+          ) : todaysClasses.length === 0 ? (
+            <div className="ds-empty" style={{ padding: '12px 0' }}>
+              <div className="ds-empty__desc" style={{ fontSize: '0.75rem' }}>{t.dashboard.plannerScheduleEmpty}</div>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {todaysClasses.map((cls) => (
+                <UpcomingClassCard key={cls._id} cls={cls} />
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Daily habits */}
+        <div className="ds-planner__section">
+          <div className="ds-planner__section-title">{t.dashboard.plannerHabitsTitle}</div>
+          {HABITS.map((h) => (
+            <label key={h.key} className={`ds-planner__habit${habits[h.key] ? ' ds-planner__habit--done' : ''}`}>
+              <input
+                type="checkbox"
+                checked={!!habits[h.key]}
+                onChange={() => toggleHabit(h.key)}
+              />
+              {h.label}
+            </label>
+          ))}
+        </div>
+
+        {/* Daily reflection */}
+        <div className="ds-planner__section">
+          <div className="ds-planner__section-title">
+            <PenLine size={12} aria-hidden="true" style={{ verticalAlign: -2, marginInlineEnd: 4 }} />
+            {t.dashboard.plannerReflectionTitle}
+          </div>
+          <textarea
+            className="ds-planner__textarea"
+            value={reflection}
+            onChange={(e) => setReflection(e.target.value)}
+            placeholder={t.dashboard.plannerReflectionPlaceholder}
+            rows={3}
+          />
+          <button
+            type="button"
+            className="btn btn--green btn--sm"
+            style={{ marginTop: 8, borderRadius: 8, fontSize: '0.78rem' }}
+            onClick={saveReflection}
+          >
+            {t.dashboard.plannerSave}
+          </button>
+          {saved && <div className="ds-planner__saved-note">{t.dashboard.plannerSaved}</div>}
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
+function HifzProgressCard({ t, firstCourse, overallPct }) {
+  return (
+    <div className="ds-card ds-card--gold-ring">
+      <div className="ds-card__hd" style={{ justifyContent: 'center' }}>
+        <h2 className="ds-card__title">{t.dashboard.hifzTitle}</h2>
+      </div>
+      <div className="ds-card__body" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+        <ProgressRing
+          value={overallPct}
+          size={96}
+          stroke={8}
+          color="var(--text-accent)"
+          trackColor="var(--bg-surface-raised)"
+          sublabel={firstCourse.title}
+        />
+        <Link to={`/courses/${firstCourse._id}`} className="btn btn--sm" style={{ borderRadius: 8, fontSize: '0.78rem', background: 'none', border: 'none', color: 'var(--text-accent-dark)', fontWeight: 700 }}>
+          {t.dashboard.hifzCta}
+        </Link>
+      </div>
+    </div>
+  );
+}
+
 const TUTOR_REVIEWS_PAGE_SIZE = 3;
 
 // Real review average/count + recent-reviews list + submission form for the
@@ -465,7 +643,7 @@ export function TutorReviewWidget({ teacherId }) {
    ══════════════════════════════════════════════════════════════════ */
 export default function Dashboard() {
   const { user } = useAuth();
-  const { t }   = useLang();
+  const { t, lang } = useLang();
 
   const { me, enrollment, courses, loading, error, refetch } = useDashboardData(!!user);
 
@@ -652,6 +830,24 @@ export default function Dashboard() {
         }}>
           ⏰ Your plan expires in <strong>{days} day{days !== 1 ? 's' : ''}</strong> — renew to keep learning uninterrupted.
           <Link to="/#pricing" style={{ marginLeft: 'auto', fontWeight: 700, color: 'var(--color-warning-text)', textDecoration: 'underline' }}>Renew</Link>
+        </div>
+      )}
+
+      {/* ── Spiritual Pulse + Daily Wisdom ──────────────────── */}
+      <div className="ds-grid ds-grid-2" style={{ marginBottom: 20 }}>
+        <SpiritualPulseCard t={t} lang={lang} />
+        <DailyWisdomCard t={t} />
+      </div>
+
+      {/* ── Smart Planner ────────────────────────────────────── */}
+      <div style={{ marginBottom: 20 }}>
+        <SmartPlannerCard t={t} classes={classes} classesLoading={classesLoading} userId={user?._id} />
+      </div>
+
+      {/* ── Hifz Progress (gold ring) ───────────────────────── */}
+      {firstCourse && (
+        <div style={{ marginBottom: 20 }}>
+          <HifzProgressCard t={t} firstCourse={firstCourse} overallPct={overallPct} />
         </div>
       )}
 

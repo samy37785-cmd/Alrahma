@@ -2,7 +2,6 @@ import { plans } from '../../data';
 import { useLang } from '../../context/LangContext';
 import { PLAN_TEXT, INVOICE_TEXT, pick } from '../../i18n/content';
 import { useModalA11y } from '../../hooks/useModalA11y';
-import BrandIcon from './BrandIcon';
 
 export default function InvoiceModal({ invoice, onClose }) {
   const { lang } = useLang();
@@ -33,7 +32,6 @@ export default function InvoiceModal({ invoice, onClose }) {
         {/* Academy header */}
         <div className="inv__header">
           <div className="inv__academy">
-            <BrandIcon size={40} className="inv__logo" />
             <div>
               <strong>AL-Rahma Academy</strong>
               <small>alrahmaacademy038@gmail.com</small>

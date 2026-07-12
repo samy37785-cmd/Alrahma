@@ -45,8 +45,6 @@
   overflow: hidden;
 }
 
-.ds-brand__logo { flex-shrink: 0; display: block; border-radius: 9px; box-shadow: 0 4px 14px -6px rgba(0, 0, 0, 0.5); }
-
 .ds-brand__text { overflow: hidden; }
 
 .ds-brand__name {

@@ -345,7 +345,6 @@
   gap: 16px; flex-wrap: wrap; margin-bottom: 6px;
 }
 .inv__academy { display: flex; align-items: center; gap: 12px; }
-.inv__logo { flex-shrink: 0; display: block; border-radius: 10px; }
 .inv__academy strong { display: block; font-size: 1.1rem; color: var(--green-deep); }
 .inv__academy small { color: var(--muted); font-size: .78rem; }
 .inv__meta { text-align: right; font-size: .85rem; color: var(--muted); line-height: 1.8; }

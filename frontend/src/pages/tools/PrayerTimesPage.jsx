@@ -149,7 +149,6 @@ export default function PrayerTimesPage() {
         const id = setTimeout(() => {
           new Notification(`${PRAYER_META[name].icon} ${PRAYER_META[name].ar} — بعد ${notifyMins} دقيقة`, {
             body: `وقت صلاة ${PRAYER_META[name].ar}: ${stripParens(prayerData.timings[name])}`,
-            icon: '/favicon.svg',
           });
         }, secsUntilAlert * 1000);
         notifyRef.current.push(id);

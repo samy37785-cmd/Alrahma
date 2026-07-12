@@ -948,7 +948,30 @@
     "greetingNight": "Buona notte",
     "greetingMorning": "Buongiorno",
     "greetingAfternoon": "Buon pomeriggio",
-    "greetingEvening": "Buona sera"
+    "greetingEvening": "Buona sera",
+    "wisdomEyebrow": "Saggezza del giorno",
+    "wisdomQuotes": {
+      "intentions":        { "gloss": "Le azioni si giudicano dalle intenzioni, e ognuno otterrà ciò che ha inteso.", "source": "Sahih al-Bukhari 1 · Sahih Muslim 1907" },
+      "learnTeach":        { "gloss": "Il migliore tra voi è colui che impara il Corano e lo insegna.", "source": "Sahih al-Bukhari 5027" },
+      "loveForBrother":    { "gloss": "Nessuno di voi crede veramente finché non ama per il proprio fratello ciò che ama per se stesso.", "source": "Sahih al-Bukhari 13 · Sahih Muslim 45" },
+      "speakGoodOrSilent": { "gloss": "Chi crede in Allah e nell'Ultimo Giorno dica il bene o taccia.", "source": "Sahih al-Bukhari 6018 · Sahih Muslim 47" },
+      "strongBeliever":    { "gloss": "Il credente forte è migliore e più amato da Allah del credente debole, sebbene in entrambi vi sia del bene.", "source": "Sahih Muslim 2664" }
+    },
+    "pulseTitle": "Impulso Spirituale",
+    "pulseCta": "Vedi tutti gli orari di preghiera →",
+    "plannerTitle": "Pianificatore Intelligente",
+    "plannerScheduleTitle": "Programma di Oggi",
+    "plannerScheduleEmpty": "Nessuna lezione programmata oggi",
+    "plannerHabitsTitle": "Abitudini Quotidiane",
+    "plannerHabitLesson": "Completa la lezione di oggi",
+    "plannerHabitQuran": "Recita il Corano per 10 minuti",
+    "plannerHabitDua": "Fai una dua per facilitare l'apprendimento",
+    "plannerReflectionTitle": "Riflessione Quotidiana",
+    "plannerReflectionPlaceholder": "Cosa hai imparato o per cosa sei grato oggi?",
+    "plannerSave": "Salva",
+    "plannerSaved": "Salvato ✓",
+    "hifzTitle": "Progresso Hifz",
+    "hifzCta": "Continua →"
   },
   "billing": {
     "bar": "Al-Rahma · Fatturazione",

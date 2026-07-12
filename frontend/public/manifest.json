@@ -13,30 +13,28 @@
   "dir": "ltr",
   "categories": ["education", "religion", "lifestyle"],
   "scope": "/",
-  "icons": [
-    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
-  ],
+  "icons": [],
   "shortcuts": [
     {
       "name": "Quran Reader",
       "short_name": "Quran",
       "description": "Open the Quran reader",
       "url": "/tools/quran-reader",
-      "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+      "icons": []
     },
     {
       "name": "My Dashboard",
       "short_name": "Dashboard",
       "description": "Go to your learning dashboard",
       "url": "/dashboard",
-      "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+      "icons": []
     },
     {
       "name": "Prayer Times",
       "short_name": "Prayer",
       "description": "Check prayer times",
       "url": "/tools/prayer-times",
-      "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+      "icons": []
     }
   ],
   "screenshots": [],

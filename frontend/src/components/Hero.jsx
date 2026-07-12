@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useLang } from '../context/LangContext';
 import QuranAudioPlayer from './ui/QuranAudioPlayer';
-import BrandLockup from './ui/BrandLockup';
 
 const DEMO_VIDEO_ID = import.meta.env.VITE_DEMO_VIDEO_ID || 'dQw4w9WgXcQ';
 
@@ -159,8 +158,6 @@ export default function Hero({ onTrialClick }) {
 
         {/* ── Right: Brand lockup ── */}
         <div className="hero__visual hero__visual--medallion">
-
-          <BrandLockup orientation="vertical" className="hero__lockup" />
 
           {/* Floating pill — rating */}
           <div className="hero__pill hero__pill--top">

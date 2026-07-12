@@ -281,7 +281,6 @@ img, video, svg, canvas { max-width: 100%; }
   .header__right .btn--sm { padding: 8px 12px; font-size: .82rem; }
   .brand__text strong { font-size: 1rem; }
   .brand { gap: 8px; }
-  .brand__mark { width: 28px; height: 28px; }
 }
 
 /* ── 6d) Quran reader — control-bar selects (≈505px) overflowed once
@@ -351,7 +350,6 @@ img, video, svg, canvas { max-width: 100%; }
   .newsletter__form  { width: 100%; }
   .newsletter__form input { min-width: 0; width: 100%; box-sizing: border-box; }
   .hero__visual--medallion { height: 280px; }
-  .hero__lockup { max-width: 220px; padding: 1rem 1.1rem; }
 
   /* Hero stats bar: 4 icon+label items in one row need more width than a
      narrow phone's hero column has (found via real screenshot — the row's

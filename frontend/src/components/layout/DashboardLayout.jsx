@@ -15,7 +15,6 @@ import { useTheme } from '../../context/ThemeContext';
 import CommandPalette from '../ui/CommandPalette';
 import NotificationPanel from '../ui/NotificationPanel';
 import { getNameInitials } from '../../utils/nameInitials';
-import BrandIcon from '../ui/BrandIcon';
 import '../../styles/dashboard-shell.css';
 
 /* Icon renderer — keeps icon size consistent across all nav items */
@@ -285,7 +284,6 @@ export default function DashboardLayout({ children }) {
       >
         {/* Brand */}
         <Link to="/" className="ds-brand">
-          <BrandIcon size={34} className="ds-brand__logo" />
           <div className="ds-brand__text">
             <span className="ds-brand__name">Al-Rahma</span>
             <span className="ds-brand__sub">Academy</span>

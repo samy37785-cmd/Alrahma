@@ -952,7 +952,30 @@
     "greetingNight": "Good night",
     "greetingMorning": "Good morning",
     "greetingAfternoon": "Good afternoon",
-    "greetingEvening": "Good evening"
+    "greetingEvening": "Good evening",
+    "wisdomEyebrow": "Daily Wisdom",
+    "wisdomQuotes": {
+      "intentions":        { "gloss": "Actions are judged by intentions, and every person will get what they intended.", "source": "Sahih al-Bukhari 1 · Sahih Muslim 1907" },
+      "learnTeach":        { "gloss": "The best among you are those who learn the Quran and teach it.", "source": "Sahih al-Bukhari 5027" },
+      "loveForBrother":    { "gloss": "None of you truly believes until he loves for his brother what he loves for himself.", "source": "Sahih al-Bukhari 13 · Sahih Muslim 45" },
+      "speakGoodOrSilent": { "gloss": "Whoever believes in Allah and the Last Day should speak good or remain silent.", "source": "Sahih al-Bukhari 6018 · Sahih Muslim 47" },
+      "strongBeliever":    { "gloss": "The strong believer is better and more beloved to Allah than the weak believer, while there is good in both.", "source": "Sahih Muslim 2664" }
+    },
+    "pulseTitle": "Spiritual Pulse",
+    "pulseCta": "View full prayer times →",
+    "plannerTitle": "Smart Planner",
+    "plannerScheduleTitle": "Today's Schedule",
+    "plannerScheduleEmpty": "No classes scheduled today",
+    "plannerHabitsTitle": "Daily Habits",
+    "plannerHabitLesson": "Complete today's lesson",
+    "plannerHabitQuran": "Recite Quran for 10 minutes",
+    "plannerHabitDua": "Make dua for ease in learning",
+    "plannerReflectionTitle": "Daily Reflection",
+    "plannerReflectionPlaceholder": "What did you learn or feel grateful for today?",
+    "plannerSave": "Save",
+    "plannerSaved": "Saved ✓",
+    "hifzTitle": "Hifz Progress",
+    "hifzCta": "Continue →"
   },
   "billing": {
     "bar": "Al-Rahma · Billing",

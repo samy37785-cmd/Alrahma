@@ -46,3 +46,18 @@ createRoot(rootElement).render(app);
 // Arabic-heavy pages (Teachers, Quran) trigger this immediately on mount
 // instead — see loadArabicFonts.js.
 loadArabicFontsIdle();
+
+// Service worker: production only. sw.js caches non-HTML GET requests
+// cache-first assuming Vite's content-hashed build filenames (safe — a new
+// deploy gets new hashes, so stale cache entries are simply orphaned). In
+// `vite dev`, source files are served unhashed at a stable URL and change on
+// every edit, so the same cache-first rule would instead pin the browser to
+// whatever version of a file it first saw — indefinitely, even across
+// restarts — which is exactly the "why does my dev server show old code"
+// trap this guard avoids. `vite preview` serves the real hashed build output
+// and is unaffected (import.meta.env.DEV is false there too).
+if (!import.meta.env.DEV && 'serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(() => {});
+  });
+}

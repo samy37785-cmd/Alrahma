@@ -18,6 +18,7 @@ vi.mock('../api/paymentApi', () => ({ getManualPayments: vi.fn() }));
 vi.mock('../api/adminApi', () => ({ getUsers: vi.fn(), listTeachers: vi.fn() }));
 vi.mock('../api/contentApi', () => ({ getTrials: vi.fn(), getSubscribers: vi.fn() }));
 vi.mock('../api/reviewApi', () => ({ getAdminReviews: vi.fn() }));
+vi.mock('../api/communityApi', () => ({ getAdminPosts: vi.fn(), getAdminComments: vi.fn() }));
 
 vi.mock('../context/AuthContext', () => ({ useAuth: () => ({ user: { name: 'Admin' } }) }));
 vi.mock('../components/layout/DashboardLayout', () => ({
@@ -32,12 +33,14 @@ vi.mock('../components/features/admin/AdminStaffTab', () => ({ default: () => <d
 vi.mock('../components/features/admin/AdminClassesTab', () => ({ default: () => <div /> }));
 vi.mock('../components/features/admin/AdminReviewsTab', () => ({ default: () => <div /> }));
 vi.mock('../components/features/admin/AdminProgressModal', () => ({ default: () => <div /> }));
+vi.mock('../components/features/admin/AdminCommunityTab', () => ({ default: () => <div /> }));
 
 import { getCourses } from '../api/courseApi';
 import { getManualPayments } from '../api/paymentApi';
 import { getUsers, listTeachers } from '../api/adminApi';
 import { getTrials, getSubscribers } from '../api/contentApi';
 import { getAdminReviews } from '../api/reviewApi';
+import { getAdminPosts, getAdminComments } from '../api/communityApi';
 import AdminDashboard from '../pages/AdminDashboard';
 
 function renderDashboard() {
@@ -57,6 +60,8 @@ function mockAllSucceed() {
   getSubscribers.mockResolvedValue([]);
   listTeachers.mockResolvedValue([]);
   getAdminReviews.mockResolvedValue({ reviews: [], total: 0 });
+  getAdminPosts.mockResolvedValue({ posts: [], total: 0 });
+  getAdminComments.mockResolvedValue({ comments: [], total: 0 });
 }
 
 describe('AdminDashboard — RBAC-aware load-error banner', () => {

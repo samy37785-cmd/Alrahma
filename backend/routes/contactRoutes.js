@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { protect, adminOnly } from '../middleware/auth.js';
-import { submitContact, getContacts, contactValidation } from '../controllers/contactController.js';
+import { submitContact, getContacts } from '../controllers/contactController.js';
+import { contactValidation } from '../validators/contactValidators.js';
 
 const router = Router();
 

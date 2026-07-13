@@ -1,7 +1,6 @@
 import SystemConfig   from '../models/SystemConfig.js';
 import SystemAuditLog from '../models/SystemAuditLog.js';
 import AdminUser      from '../models/AdminUser.js';
-import { body, query } from 'express-validator';
 import { handleValidationErrors } from '../utils/validationHelper.js';
 import { auditFromReq, createAuditLog } from '../services/auditService.js';
 import { parsePagination, sendPaginated } from '../utils/pagination.js';
@@ -21,9 +20,6 @@ export async function getSystemStatus(req, res) {
 }
 
 // ── POST /api/v1/admin/system/maintenance ────────────────────────────────────
-export const toggleMaintenanceModeValidation = [
-  body('enable').isBoolean().withMessage('enable must be a boolean'),
-];
 
 export async function toggleMaintenanceMode(req, res) {
   if (handleValidationErrors(req, res)) return;
@@ -53,9 +49,6 @@ export async function toggleMaintenanceMode(req, res) {
 }
 
 // ── POST /api/v1/admin/system/financial-freeze ───────────────────────────────
-export const toggleFinancialFreezeValidation = [
-  body('enable').isBoolean().withMessage('enable must be a boolean'),
-];
 
 export async function toggleFinancialFreeze(req, res) {
   if (handleValidationErrors(req, res)) return;
@@ -85,13 +78,6 @@ export async function toggleFinancialFreeze(req, res) {
 }
 
 // ── GET /api/v1/admin/system/audit-log ───────────────────────────────────────
-export const getAuditLogValidation = [
-  query('page').optional().isInt({ min: 1 }),
-  query('limit').optional().isInt({ min: 1, max: 200 }),
-  query('severity').optional().isIn(['info', 'warning', 'critical']),
-  query('resource').optional().isString(),
-  query('adminId').optional().isMongoId(),
-];
 
 export async function getAuditLog(req, res) {
   if (handleValidationErrors(req, res)) return;
@@ -129,12 +115,6 @@ export async function getAuditLog(req, res) {
  * Default: 365 days. Minimum enforced: 90 days (legal minimum retention).
  * Super-admin only (enforced in route via requireAdminRole).
  */
-export const purgeOldAuditLogsValidation = [
-  body('olderThanDays')
-    .optional()
-    .isInt({ min: 90 })
-    .withMessage('olderThanDays must be an integer ≥ 90'),
-];
 
 export async function purgeOldAuditLogs(req, res) {
   if (handleValidationErrors(req, res)) return;
@@ -175,18 +155,6 @@ export async function listAdmins(req, res) {
 }
 
 // ── POST /api/v1/admin/system/admins ─────────────────────────────────────────
-export const createAdminValidation = [
-  body('name').isString().trim().notEmpty().withMessage('Name required'),
-  body('email').isEmail().normalizeEmail().withMessage('Valid email required'),
-  body('password')
-    .isString()
-    .isLength({ min: 12, max: 72 })
-    .withMessage('Password must be 12–72 characters'),
-  body('role')
-    .optional()
-    .isIn(['super-admin', 'admin', 'editor', 'viewer'])
-    .withMessage('Invalid role'),
-];
 
 export async function createAdmin(req, res) {
   if (handleValidationErrors(req, res)) return;

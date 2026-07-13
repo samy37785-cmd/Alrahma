@@ -2,7 +2,6 @@ import crypto    from 'crypto';
 import speakeasy from 'speakeasy';
 import qrcode    from 'qrcode';
 import jwt       from 'jsonwebtoken';
-import { body } from 'express-validator';
 
 import AdminUser    from '../models/AdminUser.js';
 import RefreshToken  from '../models/RefreshToken.js';
@@ -39,19 +38,6 @@ async function issueRefreshToken(adminId, family, req) {
   });
   return raw;
 }
-
-// ── Validation chains ────────────────────────────────────────────────────────
-export const loginValidation = [
-  body('email').isEmail().normalizeEmail().withMessage('Valid email required'),
-  body('password').isString().notEmpty().withMessage('Password required'),
-];
-
-export const mfaTokenValidation = [
-  body('token')
-    .isString()
-    .matches(/^\d{6}$/)
-    .withMessage('TOTP token must be exactly 6 digits'),
-];
 
 // ── POST /api/v1/admin/auth/login ────────────────────────────────────────────
 /**

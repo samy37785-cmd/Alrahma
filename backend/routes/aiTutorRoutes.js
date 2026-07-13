@@ -7,8 +7,8 @@ import {
   getConversation,
   deleteConversation,
   sendMessage,
-  sendMessageValidation,
 } from '../controllers/aiTutorController.js';
+import { sendMessageValidation } from '../validators/aiTutorValidators.js';
 
 const router = Router();
 router.use(protect);

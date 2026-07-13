@@ -1,8 +1,8 @@
 import { Router } from 'express';
 import {
   register, login, logout, getMe, updateMe, forgotPassword, resetPassword, getLinkCode, googleAuth,
-  registerValidation, loginValidation,
 } from '../controllers/authController.js';
+import { registerValidation, loginValidation } from '../validators/authValidators.js';
 import { protect } from '../middleware/auth.js';
 
 const router = Router();

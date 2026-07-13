@@ -4,13 +4,20 @@ import { requirePermissions } from '../../../middleware/rbac.js';
 import { asyncHandler } from '../../../utils/asyncHandler.js';
 import {
   getSystemStatus,
-  toggleMaintenanceMode,   toggleMaintenanceModeValidation,
-  toggleFinancialFreeze,   toggleFinancialFreezeValidation,
-  getAuditLog,             getAuditLogValidation,
-  purgeOldAuditLogs,       purgeOldAuditLogsValidation,
+  toggleMaintenanceMode,
+  toggleFinancialFreeze,
+  getAuditLog,
+  purgeOldAuditLogs,
   listAdmins,
-  createAdmin,             createAdminValidation,
+  createAdmin,
 } from '../../../controllers/systemController.js';
+import {
+  toggleMaintenanceModeValidation,
+  toggleFinancialFreezeValidation,
+  getAuditLogValidation,
+  purgeOldAuditLogsValidation,
+  createAdminValidation,
+} from '../../../validators/systemValidators.js';
 
 const router = Router();
 

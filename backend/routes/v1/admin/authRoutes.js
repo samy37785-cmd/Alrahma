@@ -3,13 +3,14 @@ import { asyncHandler } from '../../../utils/asyncHandler.js';
 import { loginLimiter, mfaLimiter, refreshLimiter } from '../../../config/adminRateLimits.js';
 import { verifyAccessToken } from '../../../middleware/adminAuth.js';
 import {
-  login,           loginValidation,
+  login,
   setupMfa,
-  confirmMfaSetup, mfaTokenValidation,
+  confirmMfaSetup,
   verifyMfaLogin,
   refreshTokens,
   logout,
 } from '../../../controllers/adminAuthController.js';
+import { loginValidation, mfaTokenValidation } from '../../../validators/adminAuthValidators.js';
 
 const router = Router();
 

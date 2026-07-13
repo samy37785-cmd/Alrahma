@@ -5,8 +5,8 @@ import {
   getTeacherReviews,
   getCourseReviews,
   listReviews,
-  reviewValidation,
 } from '../controllers/reviewController.js';
+import { reviewValidation } from '../validators/reviewValidators.js';
 
 const router = Router();
 

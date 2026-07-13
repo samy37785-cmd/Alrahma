@@ -295,14 +295,17 @@
     "planMessage": "Je suis intéressé par l'offre {plan}."
   },
   "newsletter": {
-    "heading": "Abonnez-vous à notre newsletter",
-    "sub": "Recevez des articles islamiques et des mises à jour de l'académie directement dans votre boîte mail.",
-    "placeholder": "Entrez votre email",
-    "btn": "S'abonner",
-    "subscribing": "Abonnement...",
-    "subscribed": "Abonné ✓",
-    "success": "✓ Abonné ! Jazak Allah khair.",
-    "error": "Quelque chose s'est mal passé. Veuillez réessayer."
+    "badge": "TÉLÉCHARGEMENT GRATUIT",
+    "heading": "Guide de Tajweed gratuit pour débutants",
+    "sub": "Apprenez les 5 règles de Tajweed les plus importantes avant le premier cours de votre enfant — en langage simple, sans aucune connaissance de l'arabe.",
+    "placeholder": "Votre adresse email",
+    "btn": "Envoyez-moi le guide gratuit →",
+    "subscribing": "Envoi…",
+    "subscribed": "Envoyé ✓",
+    "successHeading": "Vérifiez votre boîte de réception !",
+    "successSub": "Votre guide de Tajweed gratuit est en route. Cela peut prendre une minute ou deux.",
+    "error": "Quelque chose s'est mal passé. Veuillez réessayer.",
+    "privacy": "Pas de spam. Désabonnement à tout moment."
   },
   "footer": {
     "about": "Éducation authentique en ligne de Coran, d'arabe et d'Islam pour des étudiants de tous âges, partout dans le monde.",
@@ -522,16 +525,17 @@
     ]
   },
   "joinCta": {
-    "eyebrow": "Commencez Aujourd'hui",
-    "heading": "Rejoignez plus de 500 étudiants dans le monde",
-    "sub": "Apprenez le Coran depuis chez vous avec des enseignants certifiés par Al-Azhar. Horaires flexibles et cours personnalisés — pour tous les âges et tous les niveaux.",
+    "eyebrow": "Offrez le Coran à votre enfant",
+    "heading": "En 6 mois, votre enfant récitera Al-Fatiha parfaitement.",
+    "sub": "Plus de 1 200 familles à travers l'Europe ont déjà fait ce choix. Deux cours d'essai gratuits — sans carte, sans engagement. Annulez à tout moment.",
+    "promise": "🕌 Reliés à une chaîne ininterrompue de transmission du Coran vieille de 1 400 ans",
     "stats": [
-      "30+ Pays",
+      "40+ Pays",
       "Note 4,9★",
-      "Certifiés Al-Azhar",
-      "Disponible 24h/24"
+      "Certifiés Ijazah",
+      "2 Cours Gratuits"
     ],
-    "cta": "Réservez votre essai gratuit →"
+    "cta": "Commencez gratuitement — sans carte →"
   },
   "stats": {
     "labels": [

@@ -12,7 +12,10 @@
     "test": "npm run test --prefix backend && npm run test --prefix frontend",
     "test:backend": "npm run test --prefix backend",
     "test:frontend": "npm run test --prefix frontend",
-    "test:coverage": "npm run test:coverage --prefix frontend"
+    "test:coverage": "npm run test:coverage --prefix frontend",
+    "e2e": "npm run build --prefix frontend && playwright test",
+    "e2e:quick": "playwright test",
+    "e2e:update": "playwright test --update-snapshots"
   },
   "devDependencies": {
     "@playwright/test": "^1.61.1",

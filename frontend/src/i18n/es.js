@@ -295,14 +295,17 @@
     "planMessage": "Estoy interesado en el plan {plan}."
   },
   "newsletter": {
-    "heading": "Suscríbete a nuestro boletín",
-    "sub": "Recibe artículos islámicos y actualizaciones de la academia directamente en tu correo.",
-    "placeholder": "Introduce tu correo",
-    "btn": "Suscribirse",
-    "subscribing": "Suscribiendo...",
-    "subscribed": "Suscrito ✓",
-    "success": "✓ ¡Suscrito! Jazak Allah khair.",
-    "error": "Algo salió mal. Por favor inténtalo de nuevo."
+    "badge": "DESCARGA GRATUITA",
+    "heading": "Guía gratuita de iniciación al Tajweed",
+    "sub": "Aprende las 5 reglas más importantes del Tajweed antes de la primera clase de tu hijo — en lenguaje sencillo, sin necesidad de saber árabe.",
+    "placeholder": "Tu correo electrónico",
+    "btn": "Enviadme la guía gratuita →",
+    "subscribing": "Enviando…",
+    "subscribed": "Enviado ✓",
+    "successHeading": "¡Revisa tu bandeja de entrada!",
+    "successSub": "Tu guía gratuita de Tajweed está en camino. Puede tardar uno o dos minutos.",
+    "error": "Algo salió mal. Por favor inténtalo de nuevo.",
+    "privacy": "Sin spam. Cancela tu suscripción cuando quieras."
   },
   "footer": {
     "about": "Educación auténtica en línea de Corán, árabe e Islam para estudiantes de todas las edades, en cualquier parte del mundo.",
@@ -522,16 +525,17 @@
     ]
   },
   "joinCta": {
-    "eyebrow": "Empieza Hoy",
-    "heading": "Únete a más de 500 estudiantes en todo el mundo",
-    "sub": "Aprende el Corán desde la comodidad de tu hogar con profesores certificados por Al-Azhar. Horarios flexibles y clases personalizadas — para todas las edades y niveles.",
+    "eyebrow": "Regala a tu hijo el Corán",
+    "heading": "En 6 meses, tu hijo recitará Al-Fátiha a la perfección.",
+    "sub": "Más de 1.200 familias en toda Europa ya tomaron esta decisión. Dos clases de prueba gratuitas — sin tarjeta, sin compromiso. Cancela cuando quieras.",
+    "promise": "🕌 Conectados a una cadena ininterrumpida de transmisión del Corán de 1.400 años",
     "stats": [
-      "30+ Países",
+      "40+ Países",
       "Valoración 4,9★",
-      "Certificados Al-Azhar",
-      "Disponible 24/7"
+      "Certificación Ijazah",
+      "2 Clases Gratis"
     ],
-    "cta": "Reserva tu prueba gratuita →"
+    "cta": "Empieza gratis — sin tarjeta →"
   },
   "stats": {
     "labels": [

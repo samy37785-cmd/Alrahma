@@ -291,17 +291,21 @@
     "whatsappBtn": "WhatsApp schreiben",
     "emailBtn": "E-Mail senden",
     "errorServer": "Serverfehler — kontaktiere uns direkt.",
-    "errorGeneric": "Senden fehlgeschlagen. Bitte versuche es erneut."
+    "errorGeneric": "Senden fehlgeschlagen. Bitte versuche es erneut.",
+    "planMessage": "Ich interessiere mich für den {plan}-Tarif."
   },
   "newsletter": {
-    "heading": "Newsletter abonnieren",
-    "sub": "Erhalte islamische Artikel und Akademie-Updates direkt in dein Postfach.",
-    "placeholder": "E-Mail eingeben",
-    "btn": "Abonnieren",
-    "subscribing": "Wird abonniert...",
-    "subscribed": "Abonniert ✓",
-    "success": "✓ Abonniert! Jazak Allah khair.",
-    "error": "Etwas ist schiefgelaufen. Bitte versuche es erneut."
+    "badge": "GRATIS-DOWNLOAD",
+    "heading": "Kostenloser Tajweed-Einsteigerguide",
+    "sub": "Lerne die 5 wichtigsten Tajweed-Regeln vor der ersten Stunde deines Kindes — in einfacher Sprache, ganz ohne Arabisch-Vorkenntnisse.",
+    "placeholder": "Deine E-Mail-Adresse",
+    "btn": "Schickt mir den Gratis-Guide →",
+    "subscribing": "Wird gesendet…",
+    "subscribed": "Gesendet ✓",
+    "successHeading": "Sieh in dein Postfach!",
+    "successSub": "Dein kostenloser Tajweed-Einsteigerguide ist unterwegs. Es kann ein bis zwei Minuten dauern.",
+    "error": "Etwas ist schiefgelaufen. Bitte versuche es erneut.",
+    "privacy": "Kein Spam. Jederzeit abbestellbar."
   },
   "footer": {
     "about": "Authentische Online-Bildung in Koran, Arabisch und Islam für Schüler aller Altersgruppen, überall auf der Welt.",
@@ -521,16 +525,17 @@
     ]
   },
   "joinCta": {
-    "eyebrow": "Fang heute an",
-    "heading": "Tritt 500+ Schülern weltweit bei",
-    "sub": "Lerne den Koran von zu Hause aus mit Al-Azhar-zertifizierten Lehrern. Flexible Zeitpläne, persönliche Lektionen — für jedes Alter und Niveau.",
+    "eyebrow": "Schenke deinem Kind den Koran",
+    "heading": "In 6 Monaten rezitiert dein Kind Al-Fatiha fehlerfrei.",
+    "sub": "Über 1.200 Familien in ganz Europa haben diese Wahl bereits getroffen. Zwei kostenlose Probestunden — keine Karte, keine Verpflichtung. Jederzeit kündbar.",
+    "promise": "🕌 Verbunden mit einer 1.400 Jahre alten, ununterbrochenen Kette der Koran-Überlieferung",
     "stats": [
-      "30+ Länder",
+      "40+ Länder",
       "Bewertung 4,9★",
-      "Al-Azhar Zertifiziert",
-      "24/7 Verfügbar"
+      "Ijazah-zertifiziert",
+      "2 Gratis-Stunden"
     ],
-    "cta": "Kostenlose Probestunde buchen →"
+    "cta": "Kostenlos starten — ohne Karte →"
   },
   "stats": {
     "labels": [

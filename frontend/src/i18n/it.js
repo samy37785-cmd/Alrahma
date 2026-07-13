@@ -295,14 +295,17 @@
     "planMessage": "Sono interessato al piano {plan}."
   },
   "newsletter": {
-    "heading": "Iscriviti alla nostra newsletter",
-    "sub": "Ricevi articoli islamici e aggiornamenti dell'accademia direttamente nella tua casella di posta.",
-    "placeholder": "Inserisci la tua email",
-    "btn": "Iscriviti",
-    "subscribing": "Iscrizione...",
-    "subscribed": "Iscritto ✓",
-    "success": "✓ Iscritto! Jazak Allah khair.",
-    "error": "Qualcosa è andato storto. Riprova."
+    "badge": "DOWNLOAD GRATUITO",
+    "heading": "Guida gratuita al Tajweed per principianti",
+    "sub": "Impara le 5 regole più importanti del Tajweed prima della prima lezione di tuo figlio — in linguaggio semplice, senza bisogno di conoscere l'arabo.",
+    "placeholder": "Il tuo indirizzo email",
+    "btn": "Inviatemi la guida gratuita →",
+    "subscribing": "Invio…",
+    "subscribed": "Inviato ✓",
+    "successHeading": "Controlla la tua casella di posta!",
+    "successSub": "La tua guida gratuita al Tajweed è in arrivo. Potrebbe volerci un minuto o due.",
+    "error": "Qualcosa è andato storto. Riprova.",
+    "privacy": "Niente spam. Puoi cancellarti quando vuoi."
   },
   "footer": {
     "about": "Istruzione autentica online di Corano, arabo e Islam per studenti di tutte le età, in tutto il mondo.",
@@ -522,16 +525,17 @@
     ]
   },
   "joinCta": {
-    "eyebrow": "Inizia Oggi",
-    "heading": "Unisciti a oltre 500 studenti nel mondo",
-    "sub": "Impara il Corano dal comfort di casa tua con insegnanti certificati Al-Azhar. Orari flessibili, lezioni personalizzate — per ogni età e livello.",
+    "eyebrow": "Regala a tuo figlio il Corano",
+    "heading": "In 6 mesi, tuo figlio reciterà Al-Fatiha alla perfezione.",
+    "sub": "Oltre 1.200 famiglie in tutta Europa hanno già fatto questa scelta. Due lezioni di prova gratuite — senza carta, senza impegno. Annulla in qualsiasi momento.",
+    "promise": "🕌 Collegati a una catena ininterrotta di trasmissione del Corano lunga 1.400 anni",
     "stats": [
-      "30+ Paesi",
+      "40+ Paesi",
       "Valutazione 4,9★",
-      "Certificati Al-Azhar",
-      "24/7 Disponibile"
+      "Certificazione Ijazah",
+      "2 Lezioni Gratuite"
     ],
-    "cta": "Prenota la tua prova gratuita →"
+    "cta": "Inizia gratis — senza carta →"
   },
   "stats": {
     "labels": [

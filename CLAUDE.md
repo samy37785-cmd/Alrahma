@@ -203,6 +203,7 @@ Frontend: only `VITE_API_URL=/api` (relative; proxied by Vite in dev).
 
 - Never commit directly to `main`. Every change goes on a feature branch, gets a descriptive commit message (what changed and why — not placeholders like "fix", "update", "kk"), and opens a PR. Use the `/push` command for this.
 - Before committing, review `git diff` — don't commit changes you haven't looked at.
+- **`frontend/package-lock.json` must be regenerated with npm 10.8.2** (`npx npm@10.8.2 install`), not whatever npm ships with a newer local Node install. CI (`.github/workflows/ci.yml`) runs `npm ci` on Linux; a lockfile regenerated with a different npm version can hit npm's optional-dependency platform bug (npm/cli#4828) — `vitest`'s bundled `rolldown` silently loses its Linux native binding, and CI's `Test` step fails with "Cannot find native binding" even though `Install dependencies` reports success. If only adding/bumping one dependency, prefer an incremental `npm@10.8.2 install --package-lock-only` over a full `rm -rf node_modules package-lock.json && npm install` — the incremental form only touches the packages that actually changed, while a full reinstall can silently reshuffle transitive resolution (e.g. hoisting `rolldown` to top-level instead of nesting it under `vitest/node_modules/`) and reintroduce the same bug even with the right npm version. Always verify with a real `npm ci` (not just `npm install`) before pushing.
 
 ## Brand & content conventions
 

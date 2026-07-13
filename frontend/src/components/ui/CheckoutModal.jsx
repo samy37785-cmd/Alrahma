@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { startStripeSession, startPaypalPayment, getManualMethods, submitManualPayment } from '../../api/paymentApi';
+import { startStripeSession, startPaypalPayment, getManualMethods, submitManualPayment, validateCoupon } from '../../api/paymentApi';
 import { useLang } from '../../context/LangContext';
 import { PLAN_TEXT, CHECKOUT_SUBS, pick } from '../../i18n/content';
 import { plans } from '../../data';
@@ -25,6 +25,13 @@ export default function CheckoutModal({ plan, onClose }) {
   const [error, setError]           = useState('');
   const [iframeUrl, setIframeUrl]   = useState('');
   const [success, setSuccess]       = useState('');
+  // Coupon: `couponInput` is the raw field; `appliedCoupon` holds the
+  // server-validated result ({ code, discount, finalAmount }) — the server
+  // re-validates at charge time, this is only the UI preview of that.
+  const [couponInput, setCouponInput]     = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [couponError, setCouponError]     = useState('');
+  const [couponLoading, setCouponLoading] = useState(false);
 
   useEffect(() => {
     if (!plan) return;
@@ -45,11 +52,36 @@ export default function CheckoutModal({ plan, onClose }) {
 
   const onField = (key) => (e) => setCustomer((c) => ({ ...c, [key]: e.target.value }));
 
+  // Amount actually charged (coupon-aware); falls back to the plan price.
+  const totalAmount = appliedCoupon ? appliedCoupon.finalAmount : amount;
+
+  const handleApplyCoupon = async () => {
+    const code = couponInput.trim();
+    if (!code || couponLoading) return;
+    setCouponError(''); setCouponLoading(true);
+    try {
+      const res = await validateCoupon(code, plan.name);
+      setAppliedCoupon({ code: res.code, discount: res.discount, finalAmount: res.finalAmount });
+    } catch (err) {
+      setAppliedCoupon(null);
+      // 401 = not logged in (coupon usage is tracked per account).
+      setCouponError(
+        err.response?.status === 401
+          ? (c.couponLoginFirst || 'Please log in to use a coupon code.')
+          : (err.response?.data?.message || err.message),
+      );
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
+  const removeCoupon = () => { setAppliedCoupon(null); setCouponInput(''); setCouponError(''); };
+
   const handleGatewaySubmit = async (e) => {
     e.preventDefault();
     setError(''); setLoading(true);
     try {
-      const payload = { plan: plan.name, customer };
+      const payload = { plan: plan.name, customer, ...(appliedCoupon ? { coupon: appliedCoupon.code } : {}) };
       const res = method === 'paypal'
         ? await startPaypalPayment(payload)
         : await startStripeSession(payload);
@@ -67,7 +99,7 @@ export default function CheckoutModal({ plan, onClose }) {
     e.preventDefault();
     setError(''); setLoading(true);
     try {
-      await submitManualPayment({ plan: plan.name, method, customer, reference });
+      await submitManualPayment({ plan: plan.name, method, customer, reference, ...(appliedCoupon ? { coupon: appliedCoupon.code } : {}) });
       setSuccess(c.successMsg);
     } catch (err) {
       setError(err.response?.data?.message || err.message || c.submitFailed);
@@ -134,6 +166,45 @@ export default function CheckoutModal({ plan, onClose }) {
               </div>
             </div>
 
+            {/* ── Coupon code ── */}
+            <div className="checkout__field" style={{ marginTop: 4 }}>
+              <label htmlFor="ck-coupon">{c.couponLabel || 'Coupon code'} <small>({c.optional})</small></label>
+              {appliedCoupon ? (
+                <div
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}
+                  role="status" aria-live="polite"
+                >
+                  <span>
+                    ✅ {c.couponApplied || 'Coupon applied'}: <strong>{appliedCoupon.code}</strong>
+                    {' '}— {c.couponDiscountLine || 'Coupon discount'}: <strong>−€{appliedCoupon.discount}</strong>
+                  </span>
+                  <button type="button" className="btn btn--ghost" onClick={removeCoupon}>
+                    {c.couponRemove || 'Remove'}
+                  </button>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <input
+                    id="ck-coupon"
+                    placeholder={c.couponPlaceholder || 'e.g. WELCOME10'}
+                    value={couponInput}
+                    onChange={(e) => { setCouponInput(e.target.value); setCouponError(''); }}
+                    style={{ flex: 1 }}
+                  />
+                  <button
+                    type="button"
+                    className="btn btn--ghost"
+                    onClick={handleApplyCoupon}
+                    disabled={couponLoading || !couponInput.trim()}
+                    aria-busy={couponLoading}
+                  >
+                    {couponLoading ? '…' : (c.couponApply || 'Apply')}
+                  </button>
+                </div>
+              )}
+              {couponError && <p className="checkout__error" role="alert" style={{ marginTop: 6 }}>{couponError}</p>}
+            </div>
+
             {/* ── Gateway methods ── */}
             <p className="checkout__group-title">{c.cardPayment}</p>
             {GATEWAY_METHODS.filter((m) => m.group === 'card').map((m) => (
@@ -194,8 +265,8 @@ export default function CheckoutModal({ plan, onClose }) {
               {loading
                 ? c.processing
                 : isManual
-                  ? `${c.submitRequest} — €${amount}`
-                  : `${c.completePayment} — €${amount}`}
+                  ? `${c.submitRequest} — €${totalAmount}`
+                  : `${c.completePayment} — €${totalAmount}`}
             </button>
             <p className="checkout__secure-note">
               🔒 {isManual ? c.verifyNote : c.secureNote}

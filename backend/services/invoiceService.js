@@ -20,6 +20,10 @@ import { getPlan } from '../config/plans.js';
  * @param {*}       [params.paymentId]         - Payment._id for traceability
  * @param {Date}    [params.createdAt]         - Billing period anchor (defaults to now)
  * @param {string}  [params.gatewayInvoiceId]  - Gateway-issued invoice ID for idempotency
+ * @param {number}  [params.amountPaid]        - Actual amount charged, when it differs
+ *                                               from the plan's list price (coupon
+ *                                               checkouts). Omit for full-price flows
+ *                                               like Stripe renewals.
  * @param {object}  [params.session]           - Mongoose ClientSession for transactions
  * @returns {Promise<Invoice>}
  */
@@ -31,6 +35,7 @@ export async function createInvoice({
   paymentId       = null,
   createdAt       = new Date(),
   gatewayInvoiceId = null,
+  amountPaid      = null,
   session         = null,
 }) {
   const plan        = getPlan(planName);
@@ -49,7 +54,7 @@ export async function createInvoice({
     customerEmail:  email,
     customerName:   name,
     plan:           planName,
-    amount:         plan?.amount         ?? 0,
+    amount:         amountPaid ?? plan?.amount ?? 0,
     originalAmount: plan?.originalAmount ?? plan?.amount ?? 0,
     discountPct:    plan?.discountPct    ?? 0,
     currency:       plan?.currency       ?? 'EUR',

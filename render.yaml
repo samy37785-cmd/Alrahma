@@ -21,6 +21,10 @@ services:
       # ── CORS ─────────────────────────────────────────────────────────────────
       - key: CLIENT_URL
         sync: false
+      # Vercel account-scope suffix for preview-deploy origins (see
+      # backend/.env.example). Unset = preview origins are not CORS-allowed.
+      - key: VERCEL_PREVIEW_SCOPE
+        sync: false
 
       # ── Email (SMTP) ──────────────────────────────────────────────────────────
       - key: SMTP_HOST
@@ -35,9 +39,10 @@ services:
         sync: false
 
       # ── Cron jobs ─────────────────────────────────────────────────────────────
-      # Trigger renewal reminders via an external scheduler (UptimeRobot, GitHub
-      # Actions, etc.) that sends GET https://<render-url>/api/cron/renewal-reminders
-      # with header  "Authorization: Bearer <CRON_SECRET>"  every day at 09:00 UTC.
+      # Triggered by .github/workflows/cron.yml (GitHub Actions schedule):
+      # renewal reminders daily at 09:00 UTC, weekly parent reports Sundays at
+      # 08:00 UTC. Requires the CRON_SECRET GitHub repository secret to match
+      # this env var — the workflow fails loudly if the secret is missing.
       - key: CRON_SECRET
         sync: false
       - key: RENEWAL_REMINDER_DAYS

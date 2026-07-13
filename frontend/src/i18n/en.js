@@ -1021,7 +1021,14 @@
     "startFailed": "Could not start the payment. Please try again.",
     "paymentFailed": "Payment failed. Please try again.",
     "submitFailed": "Submission failed. Please try again.",
-    "recurringNote": "Auto-renews every month — you can cancel anytime."
+    "recurringNote": "Auto-renews every month — you can cancel anytime.",
+    "couponLabel": "Coupon code",
+    "couponPlaceholder": "e.g. WELCOME10",
+    "couponApply": "Apply",
+    "couponApplied": "Coupon applied",
+    "couponRemove": "Remove",
+    "couponDiscountLine": "Coupon discount",
+    "couponLoginFirst": "Please log in to use a coupon code."
   },
   "errors": {
     "crashed": "Something went wrong",

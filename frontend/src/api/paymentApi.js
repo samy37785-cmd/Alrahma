@@ -18,4 +18,8 @@ export const reviewManualPayment = (id, data) => adminHttp.patch(`/v1/admin/paym
 export const getInvoices = () => http.get('/invoices').then((r) => r.data);
 
 // --- Coupons ---
-export const validateCoupon = (code) => http.post('/coupons/validate', { code }).then((r) => r.data);
+// Pass the plan name to get the checkout-accurate discounted total
+// (discount/finalAmount/originalAmount) — the backend runs the exact same
+// resolution the payment endpoints use at charge time.
+export const validateCoupon = (code, plan) =>
+  http.post('/coupons/validate', { code, ...(plan ? { plan } : {}) }).then((r) => r.data);

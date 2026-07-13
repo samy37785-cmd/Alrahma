@@ -3,6 +3,7 @@ import ManualPayment from '../models/ManualPayment.js';
 import { getPlan } from '../config/plans.js';
 import { sendMail, ADMIN_EMAIL } from '../config/mailer.js';
 import { enrollUser } from '../services/subscriptionService.js';
+import { resolveCouponForCheckout, redeemCoupon } from '../services/couponService.js';
 import { createInvoice } from '../services/invoiceService.js';
 import { createNotification } from './notificationController.js';
 import {
@@ -109,9 +110,23 @@ export const submitManualPayment = asyncHandler(async (req, res) => {
       throw new Error(`Unknown plan: ${planName}`);
     }
 
+    // Coupon (optional): validated server-side against the server-side plan
+    // price. The recorded amount is what the student must actually transfer;
+    // redemption is recorded only if/when an admin approves the payment.
+    const couponResult = await resolveCouponForCheckout({
+      code:   req.body.coupon,
+      userId: req.user?._id,
+      plan,
+    });
+    if (!couponResult.ok) {
+      res.status(couponResult.status);
+      throw new Error(couponResult.message);
+    }
+    const { coupon, discount, finalAmount } = couponResult;
+
     const record = await ManualPayment.create({
       plan:      plan.name,
-      amount:    plan.amount,
+      amount:    finalAmount, // net of any coupon
       currency:  plan.currency,
       method,
       customer,
@@ -119,6 +134,8 @@ export const submitManualPayment = asyncHandler(async (req, res) => {
       notes,
       userId:    req.user?._id ?? null,
       status:    'pending',
+      couponCode:     coupon?.code ?? null,
+      discountAmount: discount,
     });
 
     logger.info('Manual payment submitted', { id: String(record._id), plan: plan.name, method });
@@ -133,7 +150,9 @@ export const submitManualPayment = asyncHandler(async (req, res) => {
           name:      customer.name,
           email:     customer.email,
           plan:      plan.name,
-          amount:    plan.amount,
+          // The amount the student was actually asked to transfer (net of
+          // any coupon) — the admin verifies the transfer against this.
+          amount:    finalAmount,
           currency:  plan.currency,
           method,
           reference,
@@ -198,12 +217,26 @@ export const reviewManualPayment = asyncHandler(async (req, res) => {
           );
           if (!claimed) return;
 
+          // Record the coupon redemption now that the transfer is verified.
+          // A false return (per-user/maxUses race) is logged, not thrown —
+          // the student already sent the discounted amount.
+          if (record.couponCode && record.userId) {
+            const redeemed = await redeemCoupon(record.couponCode, record.userId, dbSession);
+            if (!redeemed) {
+              logger.warn('Manual payment approve: coupon redemption not recorded (already used or cap reached)', {
+                coupon: record.couponCode, userId: String(record.userId), id: req.params.id,
+              });
+            }
+          }
+
           await enrollUser(record.userId, record.plan, dbSession);
           await createInvoice({
             userId:   record.userId,
             email:    record.customer?.email,
             name:     record.customer?.name,
             planName: record.plan,
+            // ManualPayment.amount is already net of any coupon.
+            amountPaid: record.amount,
             session:  dbSession,
           });
           await createNotification({

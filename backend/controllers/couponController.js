@@ -3,6 +3,8 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 import { handleValidationErrors } from '../utils/validationHelper.js';
 import { parsePagination } from '../utils/pagination.js';
 import { auditFromReq } from '../services/auditService.js';
+import { resolveCouponForCheckout } from '../services/couponService.js';
+import { getPlan } from '../config/plans.js';
 import Coupon from '../models/Coupon.js';
 
 export const couponValidation = [
@@ -42,6 +44,32 @@ export const validateCoupon = asyncHandler(async (req, res) => {
   const code = (req.body.code || req.query.code || '').trim().toUpperCase();
   if (!code) return res.status(400).json({ message: 'Coupon code is required' });
 
+  // Plan-aware validation (used by the checkout UI): when a plan name is
+  // sent, run the exact same resolution the payment controllers use at
+  // charge time — applicablePlans, minOrderAmount, and the computed
+  // discounted total included — so the price the UI previews can never
+  // drift from what checkout will actually charge.
+  const planName = req.body.plan || req.query.plan;
+  if (planName) {
+    const plan = getPlan(planName);
+    if (!plan) return res.status(400).json({ message: `Unknown plan: ${planName}` });
+
+    const result = await resolveCouponForCheckout({ code, userId: req.user._id, plan });
+    if (!result.ok) return res.status(result.status).json({ message: result.message });
+
+    return res.json({
+      valid:          true,
+      code:           result.coupon.code,
+      discountType:   result.coupon.discountType,
+      discountValue:  result.coupon.discountValue,
+      description:    result.coupon.description,
+      discount:       result.discount,
+      finalAmount:    result.finalAmount,
+      originalAmount: plan.amount,
+    });
+  }
+
+  // Legacy plan-less validation (existence/validity/per-user use only).
   // Exclude the potentially large usedBy array from the main fetch; check it
   // with a separate indexed query so we never load thousands of subdocuments.
   const [coupon, alreadyUsedDoc] = await Promise.all([

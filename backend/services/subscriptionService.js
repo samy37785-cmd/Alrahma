@@ -65,6 +65,50 @@ export async function activateRecurringSubscription(userId, {
 }
 
 /**
+ * Grants free subscription days (referral rewards). Extends from the current
+ * validUntil when the subscription is still running, or from "now" when it
+ * has already lapsed (a credit should never be silently swallowed by an
+ * expired period). Activates the subscription so the credit is usable
+ * immediately; deliberately does NOT touch provider/stripe* fields — a
+ * Stripe-billed user keeps their linkage, exactly like adminSetSubscription.
+ *
+ * @param {*}      userId
+ * @param {number} [days=30]
+ * @param {object} [session] - Mongoose ClientSession for transactions
+ * @returns {Promise<Date|null>} the new validUntil, or null if no such user
+ */
+export async function grantSubscriptionCredit(userId, days = 30, session = null) {
+  if (!userId) return null;
+  const opts = session ? { session } : {};
+  const user = await User.findById(userId).select('subscription').session(session);
+  if (!user) return null;
+
+  const now  = new Date();
+  const base = user.subscription?.validUntil && new Date(user.subscription.validUntil) > now
+    ? new Date(user.subscription.validUntil)
+    : now;
+  const validUntil = new Date(base);
+  validUntil.setDate(validUntil.getDate() + days);
+
+  await User.updateOne(
+    { _id: userId },
+    {
+      $set: {
+        'subscription.status':     'active',
+        'subscription.validUntil': validUntil,
+        // Only backfill plan/activeSince for users who never had a
+        // subscription at all (e.g. a referrer who hasn't subscribed yet) —
+        // never overwrite a real plan.
+        ...(user.subscription?.plan        ? {} : { 'subscription.plan': 'Starter' }),
+        ...(user.subscription?.activeSince ? {} : { 'subscription.activeSince': now }),
+      },
+    },
+    opts,
+  );
+  return validUntil;
+}
+
+/**
  * Marks a subscription inactive (Stripe cancellation / expiry webhook).
  *
  * @param {string} stripeSubscriptionId

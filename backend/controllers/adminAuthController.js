@@ -243,6 +243,18 @@ export async function verifyMfaLogin(req, res) {
     return res.status(401).json({ message: 'Account not found or deactivated' });
   }
 
+  // Enforce the per-account lock here too, not just at the password stage.
+  // Failed TOTP attempts below increment the same failedLoginAttempts
+  // counter that locks the account — without this check, a caller holding a
+  // still-valid 10-minute pre-auth token could keep brute-forcing TOTP codes
+  // after the lock engaged, bounded only by the per-IP mfaLimiter.
+  if (admin.isLocked()) {
+    return res.status(423).json({
+      message: 'Account temporarily locked. Too many failed login attempts.',
+      code:    'ACCOUNT_LOCKED',
+    });
+  }
+
   if (!admin.mfaEnabled) {
     return res.status(400).json({ message: 'MFA is not enabled on this account' });
   }

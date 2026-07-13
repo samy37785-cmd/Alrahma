@@ -207,7 +207,12 @@ test('PATCH /api/v1/admin/referrals/:id/convert: an admin can convert a referral
 
   const res = await agent.patch(`/api/v1/admin/referrals/${referral._id}/convert`).set({ ...csrf, Cookie: cookieHeader }).send({});
   assert.equal(res.status, 200);
-  assert.equal(res.body.status, 'converted');
+  // Conversion now also applies the documented 1-month credit to both
+  // parties in the same transaction, so the final status is 'rewarded'
+  // (previously it stopped at 'converted' and no credit was ever granted —
+  // see audit-fixes-2026-07.test.js for the full reward-crediting coverage).
+  assert.equal(res.body.status, 'rewarded');
+  assert.ok(res.body.convertedAt && res.body.rewardedAt);
 });
 
 test('legacy PATCH /api/referrals/:id/convert no longer exists (404)', async () => {

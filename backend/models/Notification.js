@@ -15,6 +15,13 @@ const TYPES = [
   'admin_announcement',
   'coupon_received',
   'review_approved',
+  // Community moderation (communityController.moderatePost/moderateComment).
+  // These MUST stay in sync with every createNotification() call site — a
+  // type missing from this enum makes Notification.create throw a
+  // ValidationError at the call site (a 500 for the admin approving the
+  // post, after the status update already committed).
+  'post_approved',
+  'comment_approved',
 ];
 
 const notificationSchema = new mongoose.Schema(

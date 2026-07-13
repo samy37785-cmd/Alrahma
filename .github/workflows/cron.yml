@@ -1,0 +1,70 @@
+name: Scheduled jobs
+
+# The backend's cron endpoints (backend/routes/cronRoutes.js) MUST be hit by a
+# scheduler external to the app — Render runs no cron, and Vercel only hosts
+# the static frontend (see render.yaml's inline note). This workflow is that
+# scheduler.
+#
+# REQUIRED SETUP (one-time): add a repository secret named CRON_SECRET
+# (Settings → Secrets and variables → Actions) with the same value as the
+# CRON_SECRET env var on Render. Without it, every run fails fast with a
+# clear message instead of silently doing nothing.
+#
+# Note: GitHub Actions schedule times can drift by several minutes under
+# load — fine for these jobs (daily emails, not time-critical).
+
+on:
+  schedule:
+    - cron: '0 9 * * *'   # renewal reminders — daily 09:00 UTC
+    - cron: '0 8 * * 0'   # weekly parent reports — Sundays 08:00 UTC
+  workflow_dispatch:       # manual trigger for testing either job
+
+permissions: {}
+
+env:
+  BACKEND_URL: https://academy-backend-cxso.onrender.com
+
+jobs:
+  renewal-reminders:
+    name: Renewal reminders (daily)
+    runs-on: ubuntu-latest
+    # Run on the daily schedule, and also on manual dispatch so the wiring
+    # can be verified end-to-end without waiting for 09:00 UTC.
+    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '0 9 * * *'
+    steps:
+      - name: Fail fast when CRON_SECRET is not configured
+        if: ${{ secrets.CRON_SECRET == '' }}
+        run: |
+          echo "::error::The CRON_SECRET repository secret is not set — renewal reminders are NOT being sent. Add it under Settings → Secrets and variables → Actions."
+          exit 1
+
+      - name: Trigger /api/cron/renewal-reminders
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        # Generous retries + timeout: the Render free tier sleeps after 15 min
+        # of inactivity and a cold start can take tens of seconds.
+        run: |
+          curl -fsS \
+            --retry 5 --retry-delay 20 --retry-all-errors --max-time 180 \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            "${BACKEND_URL}/api/cron/renewal-reminders"
+
+  weekly-parent-reports:
+    name: Weekly parent reports (Sundays)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '0 8 * * 0'
+    steps:
+      - name: Fail fast when CRON_SECRET is not configured
+        if: ${{ secrets.CRON_SECRET == '' }}
+        run: |
+          echo "::error::The CRON_SECRET repository secret is not set — weekly parent reports are NOT being sent. Add it under Settings → Secrets and variables → Actions."
+          exit 1
+
+      - name: Trigger /api/cron/weekly-parent-reports
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          curl -fsS \
+            --retry 5 --retry-delay 20 --retry-all-errors --max-time 180 \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            "${BACKEND_URL}/api/cron/weekly-parent-reports"

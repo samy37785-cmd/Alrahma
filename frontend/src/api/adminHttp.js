@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { adminRefresh } from './adminAuthApi';
-import { getCsrfToken } from './csrf';
+import { getCsrfToken, ensureCsrfToken } from './csrf';
 
 const baseURL = import.meta.env.VITE_API_URL || '/api';
 
@@ -15,9 +15,10 @@ const adminHttp = axios.create({
   withCredentials: true,
 });
 
-adminHttp.interceptors.request.use((config) => {
+adminHttp.interceptors.request.use(async (config) => {
   const mutating = ['post', 'put', 'patch', 'delete'];
   if (mutating.includes(config.method?.toLowerCase())) {
+    await ensureCsrfToken();
     config.headers['x-csrf-token'] = getCsrfToken();
   }
   return config;

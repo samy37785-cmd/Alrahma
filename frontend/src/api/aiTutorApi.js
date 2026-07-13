@@ -1,5 +1,5 @@
 import http from './http';
-import { getCsrfToken } from './csrf';
+import { getCsrfToken, ensureCsrfToken } from './csrf';
 
 export const listTutorConversations  = ()     => http.get('/ai-tutor/conversations').then((r) => r.data);
 export const createTutorConversation = ()     => http.post('/ai-tutor/conversations').then((r) => r.data);
@@ -14,6 +14,7 @@ export async function streamTutorMessage(conversationId, content, { onDelta, onD
   const baseURL = http.defaults.baseURL || '/api';
   let response;
   try {
+    await ensureCsrfToken();
     response = await fetch(`${baseURL}/ai-tutor/conversations/${conversationId}/messages`, {
       method: 'POST',
       credentials: 'include',

@@ -137,6 +137,16 @@ app.get('/ready', async (_req, res) => {
 
 app.use('/api', apiLimiter);
 
+// A fresh visitor whose very first request to the API is a mutation (e.g.
+// landing directly on /login with no prior page having made any backend
+// call) has no csrf_token cookie yet — issueCsrfToken only sets it on a
+// response, and verifyCsrfToken rejects that same first request before one
+// ever arrives. The frontend's http/adminHttp interceptors call this cheap,
+// DB-free GET once (see ensureCsrfToken in api/csrf.js) to warm the cookie
+// before sending a mutating request. Placed before the DB-connection-check
+// middleware so it works even during a DB hiccup.
+app.get('/api/csrf', (_req, res) => res.json({ ok: true }));
+
 // Ensure DB is connected on every request (cached after first call).
 app.use(async (req, res, next) => {
   try {

@@ -6,16 +6,24 @@ import { getUnreadNotifs } from '../../api/notificationApi';
 import {
   LayoutDashboard, MessageSquare, Users, BookOpen, CreditCard, Target,
   UserCog, Book, User, ExternalLink, Menu, Search, Bell, Sun, Moon,
-  GraduationCap, LogOut, Settings, Calendar, ClipboardList, Flame,
+  GraduationCap, LogOut, Calendar, ClipboardList, Flame,
   X, ChevronLeft, ChevronRight, BarChart3, Home, Shield, Landmark,
-  Mail, FileText, BookMarked, Heart, Sparkles, Users2,
+  Mail, FileText, BookMarked, Heart, Sparkles, Users2, MessageCircle,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import CommandPalette from '../ui/CommandPalette';
 import NotificationPanel from '../ui/NotificationPanel';
+import LangSwitcher from '../ui/LangSwitcher';
 import { getNameInitials } from '../../utils/nameInitials';
+import { site } from '../../data/site';
 import '../../styles/dashboard-shell.css';
+// LangSwitcher's `.ls*` styles live in header.css (shared with the public
+// Header). Importing it here too pulls in some unrelated `.header`/`.nav__*`
+// rules that go unused on dashboard pages, but that's a safe no-op (no class
+// name collisions with dashboard-shell.css) — simplest way to reuse the
+// component without duplicating its CSS into a second file.
+import '../../styles/layout/header.css';
 
 /* Icon renderer — keeps icon size consistent across all nav items */
 function NavIcon({ icon: Icon, size = 16 }) {
@@ -26,56 +34,65 @@ function navFor(isAdmin, isTeacher, isParent, unreadCount) {
   if (isAdmin) return [
     { section: 'MAIN' },
     { to: '/admin',    icon: LayoutDashboard, label: 'Overview',  end: true },
-    { to: '/messages', icon: MessageSquare,   label: 'Messages',  badge: unreadCount || 0 },
     { section: 'MANAGEMENT' },
     { to: '/admin#users',    icon: Users,      label: 'Users' },
     { to: '/admin#courses',  icon: BookOpen,   label: 'Courses' },
     { to: '/admin#payments', icon: CreditCard, label: 'Payments' },
     { to: '/admin#trials',   icon: Target,     label: 'Trials' },
     { to: '/admin#staff',    icon: UserCog,    label: 'Staff' },
-    { section: 'SYSTEM' },
+    { section: 'COMMUNITY' },
+    { to: '/messages', icon: MessageSquare, label: 'Messages', badge: unreadCount || 0 },
+    { section: 'HELP' },
     { to: '/', icon: ExternalLink, label: 'View Site', external: true },
   ];
 
   if (isTeacher) return [
     { section: 'MAIN' },
-    { to: '/teacher',  icon: LayoutDashboard, label: 'Dashboard', end: true },
-    { to: '/messages', icon: MessageSquare,   label: 'Messages',  badge: unreadCount || 0 },
-    { section: 'SCHEDULE' },
-    { to: '/calendar',    icon: Calendar,      label: 'Calendar' },
-    { to: '/attendance',  icon: ClipboardList, label: 'Attendance' },
-    { to: '/homework',    icon: FileText,       label: 'Homework' },
-    { section: 'TOOLS' },
-    { to: '/tools/quran-reader', icon: Book, label: 'Quran Reader' },
+    { to: '/teacher', icon: LayoutDashboard, label: 'Dashboard', end: true },
+    { section: 'TEACHING' },
+    { to: '/calendar',           icon: Calendar,      label: 'Calendar' },
+    { to: '/attendance',         icon: ClipboardList, label: 'Attendance' },
+    { to: '/homework',           icon: FileText,       label: 'Homework' },
+    { to: '/tools/quran-reader', icon: Book,           label: 'Quran Reader' },
+    { section: 'COMMUNITY' },
+    { to: '/messages', icon: MessageSquare, label: 'Messages', badge: unreadCount || 0 },
     { section: 'ACCOUNT' },
-    { to: '/profile', icon: User,         label: 'Profile' },
-    { to: '/',        icon: ExternalLink,  label: 'View Site', external: true },
+    { to: '/profile', icon: User, label: 'Profile' },
+    { section: 'HELP' },
+    { to: `https://wa.me/${site.whatsapp}`, icon: MessageCircle, label: 'WhatsApp Support', external: true },
+    { to: '/',                              icon: ExternalLink,  label: 'View Site',        external: true },
   ];
 
   if (isParent) return [
     { section: 'MAIN' },
-    { to: '/parent',   icon: LayoutDashboard, label: 'Dashboard', end: true },
-    { to: '/messages', icon: MessageSquare,   label: 'Messages',  badge: unreadCount || 0 },
+    { to: '/parent', icon: LayoutDashboard, label: 'Dashboard', end: true },
+    { section: 'COMMUNITY' },
+    { to: '/messages', icon: MessageSquare, label: 'Messages', badge: unreadCount || 0 },
     { section: 'ACCOUNT' },
-    { to: '/profile', icon: User,        label: 'Profile' },
-    { to: '/',        icon: ExternalLink, label: 'View Site', external: true },
+    { to: '/profile', icon: User, label: 'Profile' },
+    { section: 'HELP' },
+    { to: `https://wa.me/${site.whatsapp}`, icon: MessageCircle, label: 'WhatsApp Support', external: true },
+    { to: '/',                              icon: ExternalLink,  label: 'View Site',        external: true },
   ];
 
   return [
     { section: 'MAIN' },
     { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', end: true },
-    { to: '/messages',  icon: MessageSquare,   label: 'Messages',  badge: unreadCount || 0 },
     { section: 'LEARNING' },
     { to: '/tools/quran-reader', icon: Book,        label: 'Quran Reader' },
     { to: '/ai-tutor',           icon: Sparkles,      label: 'AI Tutor' },
-    { to: '/community',          icon: Users2,        label: 'Community' },
     { to: '/calendar',           icon: Calendar,     label: 'My Schedule' },
     { to: '/homework',           icon: FileText,      label: 'Homework' },
     { to: '/wishlist',           icon: Heart,         label: 'Wishlist' },
+    { section: 'COMMUNITY' },
+    { to: '/messages',  icon: MessageSquare, label: 'Messages',  badge: unreadCount || 0 },
+    { to: '/community', icon: Users2,        label: 'Community' },
     { section: 'ACCOUNT' },
     { to: '/profile', icon: User,        label: 'Profile' },
     { to: '/billing', icon: CreditCard,  label: 'Billing' },
-    { to: '/',        icon: ExternalLink, label: 'View Site', external: true },
+    { section: 'HELP' },
+    { to: `https://wa.me/${site.whatsapp}`, icon: MessageCircle, label: 'WhatsApp Support', external: true },
+    { to: '/',                              icon: ExternalLink,  label: 'View Site',        external: true },
   ];
 }
 
@@ -368,32 +385,11 @@ export default function DashboardLayout({ children }) {
           })}
         </nav>
 
-        {/* Footer: user info + theme toggle */}
+        {/* Footer: user info. Account actions (Profile/Billing/Log out) live
+            in one place only — the header user-menu dropdown below — instead
+            of being split across a second "Settings" link here that pointed
+            at the exact same /profile route under a different label. */}
         <div className="ds-sidebar__footer">
-          {/* Theme toggle */}
-          <button
-            className="ds-nav__item"
-            onClick={toggle}
-            aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'}
-            title={dark ? 'Light mode' : 'Dark mode'}
-          >
-            <span className="ds-nav__icon">
-              {dark ? <Sun size={16} aria-hidden="true" /> : <Moon size={16} aria-hidden="true" />}
-            </span>
-            {!collapsed && <span className="ds-nav__label">{dark ? 'Light mode' : 'Dark mode'}</span>}
-          </button>
-
-          {/* Settings link */}
-          <NavLink
-            to="/profile"
-            className={({ isActive }) => `ds-nav__item${isActive ? ' ds-nav__item--active' : ''}`}
-            title={collapsed ? 'Settings' : undefined}
-            aria-label={collapsed ? 'Settings' : undefined}
-          >
-            <span className="ds-nav__icon"><Settings size={16} aria-hidden="true" /></span>
-            {!collapsed && <span className="ds-nav__label">Settings</span>}
-          </NavLink>
-
           {/* User info */}
           <div className="ds-sidebar__user">
             <div className="ds-sidebar__avatar" aria-hidden="true">{initials}</div>
@@ -439,6 +435,21 @@ export default function DashboardLayout({ children }) {
 
           {/* Right cluster */}
           <div className="ds-header__right">
+            {/* Language switcher */}
+            <LangSwitcher />
+
+            {/* Theme toggle — moved here from the sidebar footer so search,
+                language, theme, notifications, and the user menu all live in
+                one consistent top-bar cluster. */}
+            <button
+              className="ds-icon-btn"
+              onClick={toggle}
+              aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'}
+              title={dark ? 'Light mode' : 'Dark mode'}
+            >
+              {dark ? <Sun size={17} aria-hidden="true" /> : <Moon size={17} aria-hidden="true" />}
+            </button>
+
             {/* Notification bell */}
             <div ref={notifBtnRef} style={{ position: 'relative' }}>
               <button

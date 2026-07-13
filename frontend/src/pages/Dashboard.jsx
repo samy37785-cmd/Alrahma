@@ -4,7 +4,7 @@ import { useQuery, useQueries, useMutation, useQueryClient } from '@tanstack/rea
 import {
   Flame, TrendingUp, CalendarDays, Clock, Play, BookOpen, BarChart2,
   MessageSquare, Book, CreditCard, MessageCircle, Landmark, Zap,
-  GraduationCap, Trophy, Star, Target, Moon, ListChecks, PenLine,
+  GraduationCap, Trophy, Star, Target, Moon, ListChecks, PenLine, Sparkles,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLang } from '../context/LangContext';
@@ -859,6 +859,12 @@ export default function Dashboard() {
           {!enrollment && isActive && (
             <Link to="/enroll" className="btn btn--green btn--sm">Enroll Now</Link>
           )}
+          <Link to="/courses" className="btn btn--ghost btn--sm">
+            <BookOpen size={14} aria-hidden="true" /> Browse Courses
+          </Link>
+          <Link to="/ai-tutor" className="btn btn--green btn--sm">
+            <Sparkles size={14} aria-hidden="true" /> Ask AI Tutor
+          </Link>
         </div>
       </div>
 

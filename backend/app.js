@@ -42,6 +42,8 @@ import reviewRoutes from './routes/reviewRoutes.js';
 import blogRoutes from './routes/blogRoutes.js';
 import searchRoutes from './routes/searchRoutes.js';
 import referralRoutes from './routes/referralRoutes.js';
+import aiTutorRoutes from './routes/aiTutorRoutes.js';
+import communityRoutes from './routes/communityRoutes.js';
 import { notFound, errorHandler } from './middleware/errorHandler.js';
 import { sanitizeMongo } from './middleware/sanitizeMongo.js';
 import { requestLogger } from './middleware/requestLogger.js';
@@ -135,6 +137,16 @@ app.get('/ready', async (_req, res) => {
 
 app.use('/api', apiLimiter);
 
+// A fresh visitor whose very first request to the API is a mutation (e.g.
+// landing directly on /login with no prior page having made any backend
+// call) has no csrf_token cookie yet — issueCsrfToken only sets it on a
+// response, and verifyCsrfToken rejects that same first request before one
+// ever arrives. The frontend's http/adminHttp interceptors call this cheap,
+// DB-free GET once (see ensureCsrfToken in api/csrf.js) to warm the cookie
+// before sending a mutating request. Placed before the DB-connection-check
+// middleware so it works even during a DB hiccup.
+app.get('/api/csrf', (_req, res) => res.json({ ok: true }));
+
 // Ensure DB is connected on every request (cached after first call).
 app.use(async (req, res, next) => {
   try {
@@ -170,6 +182,8 @@ app.use('/api/coupons',       couponRoutes);
 app.use('/api/wishlist',      wishlistRoutes);
 app.use('/api/reviews',       reviewRoutes);
 app.use('/api/blog',          blogRoutes);
+app.use('/api/ai-tutor',      aiTutorRoutes);
+app.use('/api/community',     communityRoutes);
 app.use('/api/search',        searchRoutes);
 app.use('/api/referrals',     referralRoutes);
 

@@ -11,3 +11,25 @@ export function getCsrfToken() {
       ?.split('=')[1] ?? ''
   );
 }
+
+// The backend only ever *sets* csrf_token on a response (issueCsrfToken), so
+// a visitor whose first-ever request to the API is a mutation — e.g. landing
+// directly on /login or /register with no earlier page having called the
+// backend — has no cookie to echo back yet, and verifyCsrfToken rejects that
+// same request with "CSRF token missing" before one can arrive. Both http.js
+// and adminHttp.js call this before attaching the header on a mutating
+// request; it's a no-op once the cookie already exists. `inflight` makes
+// concurrent first mutations (e.g. a double-click) share one warm-up call
+// instead of each firing their own.
+let inflight = null;
+
+export async function ensureCsrfToken() {
+  if (getCsrfToken()) return;
+  const baseURL = import.meta.env.VITE_API_URL || '/api';
+  if (!inflight) {
+    inflight = fetch(`${baseURL}/csrf`, { credentials: 'include' })
+      .catch(() => {})
+      .finally(() => { inflight = null; });
+  }
+  await inflight;
+}

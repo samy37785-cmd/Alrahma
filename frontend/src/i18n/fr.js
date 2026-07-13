@@ -948,7 +948,30 @@
     "greetingNight": "Bonne nuit",
     "greetingMorning": "Bonjour",
     "greetingAfternoon": "Bon après-midi",
-    "greetingEvening": "Bonsoir"
+    "greetingEvening": "Bonsoir",
+    "wisdomEyebrow": "Sagesse du jour",
+    "wisdomQuotes": {
+      "intentions":        { "gloss": "Les actes ne valent que par les intentions, et chacun n'aura que ce qu'il a eu l'intention de faire.", "source": "Sahih al-Boukhari 1 · Sahih Muslim 1907" },
+      "learnTeach":        { "gloss": "Le meilleur d'entre vous est celui qui apprend le Coran et l'enseigne.", "source": "Sahih al-Boukhari 5027" },
+      "loveForBrother":    { "gloss": "Nul d'entre vous ne croit vraiment tant qu'il n'aime pas pour son frère ce qu'il aime pour lui-même.", "source": "Sahih al-Boukhari 13 · Sahih Muslim 45" },
+      "speakGoodOrSilent": { "gloss": "Que celui qui croit en Allah et au Jour dernier dise du bien ou se taise.", "source": "Sahih al-Boukhari 6018 · Sahih Muslim 47" },
+      "strongBeliever":    { "gloss": "Le croyant fort est meilleur et plus aimé d'Allah que le croyant faible, bien qu'il y ait du bien en chacun.", "source": "Sahih Muslim 2664" }
+    },
+    "pulseTitle": "Pouls Spirituel",
+    "pulseCta": "Voir tous les horaires de prière →",
+    "plannerTitle": "Planificateur Intelligent",
+    "plannerScheduleTitle": "Programme d'aujourd'hui",
+    "plannerScheduleEmpty": "Aucun cours prévu aujourd'hui",
+    "plannerHabitsTitle": "Habitudes Quotidiennes",
+    "plannerHabitLesson": "Terminer la leçon du jour",
+    "plannerHabitQuran": "Réciter le Coran pendant 10 minutes",
+    "plannerHabitDua": "Faire une dua pour faciliter l'apprentissage",
+    "plannerReflectionTitle": "Réflexion Quotidienne",
+    "plannerReflectionPlaceholder": "Qu'avez-vous appris ou pour quoi êtes-vous reconnaissant aujourd'hui ?",
+    "plannerSave": "Enregistrer",
+    "plannerSaved": "Enregistré ✓",
+    "hifzTitle": "Progrès du Hifz",
+    "hifzCta": "Continuer →"
   },
   "billing": {
     "bar": "Al-Rahma · Facturation",

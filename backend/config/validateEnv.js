@@ -35,6 +35,7 @@ const RECOMMENDED = [
   'SMTP_USER',
   'SMTP_PASS',
   'CLIENT_URL',
+  'ANTHROPIC_API_KEY',
 ];
 
 export function validateEnv() {

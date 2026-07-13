@@ -948,7 +948,30 @@
     "greetingNight": "Buenas noches",
     "greetingMorning": "Buenos días",
     "greetingAfternoon": "Buenas tardes",
-    "greetingEvening": "Buenas noches"
+    "greetingEvening": "Buenas noches",
+    "wisdomEyebrow": "Sabiduría diaria",
+    "wisdomQuotes": {
+      "intentions":        { "gloss": "Las acciones se juzgan según las intenciones, y cada persona obtendrá lo que haya pretendido.", "source": "Sahih al-Bujari 1 · Sahih Muslim 1907" },
+      "learnTeach":        { "gloss": "El mejor de vosotros es quien aprende el Corán y lo enseña.", "source": "Sahih al-Bujari 5027" },
+      "loveForBrother":    { "gloss": "Ninguno de vosotros cree verdaderamente hasta que ama para su hermano lo que ama para sí mismo.", "source": "Sahih al-Bujari 13 · Sahih Muslim 45" },
+      "speakGoodOrSilent": { "gloss": "Quien crea en Alá y en el Último Día, que diga algo bueno o guarde silencio.", "source": "Sahih al-Bujari 6018 · Sahih Muslim 47" },
+      "strongBeliever":    { "gloss": "El creyente fuerte es mejor y más amado por Alá que el creyente débil, aunque en ambos hay bien.", "source": "Sahih Muslim 2664" }
+    },
+    "pulseTitle": "Pulso Espiritual",
+    "pulseCta": "Ver todos los horarios de oración →",
+    "plannerTitle": "Planificador Inteligente",
+    "plannerScheduleTitle": "Horario de Hoy",
+    "plannerScheduleEmpty": "No hay clases programadas hoy",
+    "plannerHabitsTitle": "Hábitos Diarios",
+    "plannerHabitLesson": "Completar la lección de hoy",
+    "plannerHabitQuran": "Recitar el Corán durante 10 minutos",
+    "plannerHabitDua": "Hacer dua para facilitar el aprendizaje",
+    "plannerReflectionTitle": "Reflexión Diaria",
+    "plannerReflectionPlaceholder": "¿Qué aprendiste o por qué te sientes agradecido hoy?",
+    "plannerSave": "Guardar",
+    "plannerSaved": "Guardado ✓",
+    "hifzTitle": "Progreso de Hifz",
+    "hifzCta": "Continuar →"
   },
   "billing": {
     "bar": "Al-Rahma · Facturación",

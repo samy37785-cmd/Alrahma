@@ -948,7 +948,30 @@
     "greetingNight": "طاب مساؤك",
     "greetingMorning": "صباح الخير",
     "greetingAfternoon": "مساء الخير",
-    "greetingEvening": "مساء النور"
+    "greetingEvening": "مساء النور",
+    "wisdomEyebrow": "حكمة اليوم",
+    "wisdomQuotes": {
+      "intentions":        { "gloss": "إنما الأعمال تُقاس بالنيات، ولكل امرئ ما نوى.", "source": "صحيح البخاري ١ · صحيح مسلم ١٩٠٧" },
+      "learnTeach":        { "gloss": "خيركم من تعلم القرآن وعلّمه.", "source": "صحيح البخاري ٥٠٢٧" },
+      "loveForBrother":    { "gloss": "لا يؤمن أحدكم حتى يحب لأخيه ما يحب لنفسه.", "source": "صحيح البخاري ١٣ · صحيح مسلم ٤٥" },
+      "speakGoodOrSilent": { "gloss": "من كان يؤمن بالله واليوم الآخر فليقل خيرًا أو ليصمت.", "source": "صحيح البخاري ٦٠١٨ · صحيح مسلم ٤٧" },
+      "strongBeliever":    { "gloss": "المؤمن القوي خير وأحب إلى الله من المؤمن الضعيف، وفي كل خير.", "source": "صحيح مسلم ٢٦٦٤" }
+    },
+    "pulseTitle": "النبض الروحي",
+    "pulseCta": "← عرض مواقيت الصلاة كاملة",
+    "plannerTitle": "المخطط الذكي",
+    "plannerScheduleTitle": "جدول اليوم",
+    "plannerScheduleEmpty": "لا توجد حصص مجدولة اليوم",
+    "plannerHabitsTitle": "العادات اليومية",
+    "plannerHabitLesson": "أكمل درس اليوم",
+    "plannerHabitQuran": "تلاوة القرآن لمدة ١٠ دقائق",
+    "plannerHabitDua": "ادعُ الله بتيسير التعلّم",
+    "plannerReflectionTitle": "تأمل اليوم",
+    "plannerReflectionPlaceholder": "ماذا تعلمت اليوم أو لأي شيء تشعر بالامتنان؟",
+    "plannerSave": "حفظ",
+    "plannerSaved": "تم الحفظ ✓",
+    "hifzTitle": "تقدّم الحفظ",
+    "hifzCta": "← متابعة"
   },
   "billing": {
     "bar": "الرحمة · الفواتير",

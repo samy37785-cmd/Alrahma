@@ -947,7 +947,30 @@
     "greetingNight": "Gute Nacht",
     "greetingMorning": "Guten Morgen",
     "greetingAfternoon": "Guten Tag",
-    "greetingEvening": "Guten Abend"
+    "greetingEvening": "Guten Abend",
+    "wisdomEyebrow": "Weisheit des Tages",
+    "wisdomQuotes": {
+      "intentions":        { "gloss": "Taten werden nach den Absichten beurteilt, und jedem gebührt, was er beabsichtigt hat.", "source": "Sahih al-Buchari 1 · Sahih Muslim 1907" },
+      "learnTeach":        { "gloss": "Die Besten von euch sind die, die den Koran lernen und ihn lehren.", "source": "Sahih al-Buchari 5027" },
+      "loveForBrother":    { "gloss": "Keiner von euch glaubt wirklich, bis er seinem Bruder wünscht, was er sich selbst wünscht.", "source": "Sahih al-Buchari 13 · Sahih Muslim 45" },
+      "speakGoodOrSilent": { "gloss": "Wer an Allah und den Jüngsten Tag glaubt, soll Gutes sagen oder schweigen.", "source": "Sahih al-Buchari 6018 · Sahih Muslim 47" },
+      "strongBeliever":    { "gloss": "Der starke Gläubige ist besser und Allah lieber als der schwache Gläubige, doch in beiden ist Gutes.", "source": "Sahih Muslim 2664" }
+    },
+    "pulseTitle": "Spiritueller Puls",
+    "pulseCta": "Alle Gebetszeiten ansehen →",
+    "plannerTitle": "Intelligenter Planer",
+    "plannerScheduleTitle": "Heutiger Stundenplan",
+    "plannerScheduleEmpty": "Heute sind keine Kurse geplant",
+    "plannerHabitsTitle": "Tägliche Gewohnheiten",
+    "plannerHabitLesson": "Heutige Lektion abschließen",
+    "plannerHabitQuran": "10 Minuten Koran rezitieren",
+    "plannerHabitDua": "Dua für leichteres Lernen sprechen",
+    "plannerReflectionTitle": "Tägliche Reflexion",
+    "plannerReflectionPlaceholder": "Was hast du heute gelernt oder wofür bist du dankbar?",
+    "plannerSave": "Speichern",
+    "plannerSaved": "Gespeichert ✓",
+    "hifzTitle": "Hifz-Fortschritt",
+    "hifzCta": "Weiter →"
   },
   "billing": {
     "bar": "Al-Rahma · Abrechnung",

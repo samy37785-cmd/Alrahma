@@ -29,9 +29,8 @@ const ICONS = [
   </svg>,
 ];
 
-/* Mosque dome — same mark used elsewhere (BrandIcon, Courses' Islamic
-   Studies icon), replacing the raw 🕌 emoji baked into the `promise`
-   translation string. */
+/* Mosque dome — same mark as Courses' Islamic Studies icon, replacing the
+   raw 🕌 emoji baked into the `promise` translation string. */
 const MOSQUE_ICON = (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
        strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

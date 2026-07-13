@@ -49,7 +49,7 @@ const COURSE_ICONS = [
     <circle cx="12" cy="8" r="6"/>
     <path d="M8.5 13.5 7 22l5-3 5 3-1.5-8.5"/>
   </svg>,
-  /* 4 — Mosque dome (same mark as BrandIcon): Islamic Studies */
+  /* 4 — Mosque dome: Islamic Studies */
   <svg key="dome" viewBox="0 0 64 64" aria-hidden="true">
     <rect x="30.5" y="7" width="3" height="7" rx="1.5" fill="#d4af37"/>
     <circle cx="32" cy="6" r="1.8" fill="#d4af37"/>

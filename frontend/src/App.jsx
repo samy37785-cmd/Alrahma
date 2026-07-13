@@ -32,6 +32,8 @@ const RefundPolicy       = lazy(() => import('./pages/RefundPolicy'));
 const PaymentResult      = lazy(() => import('./pages/PaymentResult'));
 const Billing            = lazy(() => import('./pages/Billing'));
 const Wishlist           = lazy(() => import('./pages/Wishlist'));
+const AiTutor             = lazy(() => import('./pages/AiTutor'));
+const Community            = lazy(() => import('./pages/Community'));
 const Dashboard          = lazy(() => import('./pages/Dashboard'));
 const Profile            = lazy(() => import('./pages/Profile'));
 const Teachers           = lazy(() => import('./pages/Teachers'));
@@ -166,6 +168,8 @@ export default function App() {
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/billing" element={<ProtectedRoute><Billing /></ProtectedRoute>} />
           <Route path="/wishlist" element={<ProtectedRoute><Wishlist /></ProtectedRoute>} />
+          <Route path="/ai-tutor" element={<ProtectedRoute><AiTutor /></ProtectedRoute>} />
+          <Route path="/community" element={<ProtectedRoute><Community /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
           <Route path="/admin/login" element={<ProtectedRoute adminOnly><AdminLogin /></ProtectedRoute>} />

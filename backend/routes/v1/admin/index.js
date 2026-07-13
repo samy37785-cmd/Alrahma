@@ -18,6 +18,7 @@ import contactRoutes      from './contactRoutes.js';
 import certificatesRoutes from './certificatesRoutes.js';
 import referralsRoutes    from './referralsRoutes.js';
 import reviewsRoutes      from './reviewsRoutes.js';
+import communityRoutes    from './communityRoutes.js';
 import systemRoutes       from './systemRoutes.js';
 
 const router = Router();
@@ -76,6 +77,7 @@ router.use('/contact',      contactRoutes);
 router.use('/certificates', certificatesRoutes);
 router.use('/referrals',    referralsRoutes);
 router.use('/reviews',      reviewsRoutes);
+router.use('/community',    communityRoutes);
 router.use('/system',       systemRoutes);
 
 export default router;

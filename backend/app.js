@@ -42,6 +42,8 @@ import reviewRoutes from './routes/reviewRoutes.js';
 import blogRoutes from './routes/blogRoutes.js';
 import searchRoutes from './routes/searchRoutes.js';
 import referralRoutes from './routes/referralRoutes.js';
+import aiTutorRoutes from './routes/aiTutorRoutes.js';
+import communityRoutes from './routes/communityRoutes.js';
 import { notFound, errorHandler } from './middleware/errorHandler.js';
 import { sanitizeMongo } from './middleware/sanitizeMongo.js';
 import { requestLogger } from './middleware/requestLogger.js';
@@ -170,6 +172,8 @@ app.use('/api/coupons',       couponRoutes);
 app.use('/api/wishlist',      wishlistRoutes);
 app.use('/api/reviews',       reviewRoutes);
 app.use('/api/blog',          blogRoutes);
+app.use('/api/ai-tutor',      aiTutorRoutes);
+app.use('/api/community',     communityRoutes);
 app.use('/api/search',        searchRoutes);
 app.use('/api/referrals',     referralRoutes);
 

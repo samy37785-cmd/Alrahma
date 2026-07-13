@@ -19,6 +19,7 @@ export const ALL_PERMISSIONS = [
   // viewer split existed for these resources before the migration).
   'blog:write','coupons:write','contact:write',
   'certificates:write','referrals:write','reviews:write',
+  'community:write',
 ];
 
 // Default permissions bundled with each role
@@ -32,6 +33,7 @@ export const ROLE_PERMISSIONS = {
     'audit:read',
     'blog:write','coupons:write','contact:write',
     'certificates:write','referrals:write','reviews:write',
+    'community:write',
   ],
   'editor': [
     'courses:read','courses:write',

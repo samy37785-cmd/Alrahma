@@ -97,3 +97,20 @@ export const enrollmentLimiter = limiter({
   message: 'Too many enrollment requests — please try again later.',
   prefix: 'rl:enrollment:',
 });
+
+// AI Tutor calls a paid, per-message LLM API — a tighter burst limit than
+// the general API limiter, on top of the daily per-user cap enforced in
+// aiTutorController.js (this limiter only bounds short-term bursts).
+export const aiTutorLimiter = limiter({
+  max: 20,
+  message: 'Too many messages — please slow down and try again in a few minutes.',
+  prefix: 'rl:ai-tutor:',
+});
+
+// Community posting/commenting — spam protection ahead of the moderation
+// queue (every post/comment still requires admin approval regardless).
+export const communityLimiter = limiter({
+  max: 15,
+  message: 'Too many posts — please slow down and try again in a few minutes.',
+  prefix: 'rl:community:',
+});

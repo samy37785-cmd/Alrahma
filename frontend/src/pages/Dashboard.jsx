@@ -240,13 +240,12 @@ function UpcomingClassCard({ cls }) {
       border: `1px solid ${isNow ? 'var(--color-success-border)' : 'var(--border-default)'}`,
       borderRadius: 10,
     }}>
-      <div style={{
-        width: 40, height: 40, borderRadius: 10, flexShrink: 0,
+      <div className="ds-date-badge" style={{
         background: isNow ? 'var(--color-success-surface)' : 'var(--color-primary-surface)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: '1.1rem',
+        color: isNow ? 'var(--color-success-text)' : 'var(--color-primary)',
       }}>
-        📅
+        <span className="ds-date-badge__month">{new Date(cls.startsAt).toLocaleDateString('en-GB', { month: 'short' }).toUpperCase()}</span>
+        <span className="ds-date-badge__day">{new Date(cls.startsAt).getDate()}</span>
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontWeight: 700, fontSize: '0.855rem', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -289,16 +288,21 @@ function SpiritualPulseCard({ t, lang }) {
   const prayerNames = pick(TOOLS_TEXT, lang).prayers;
   return (
     <div className="ds-card">
-      <div className="ds-card__hd">
-        <h2 className="ds-card__title">
-          <span className="ds-card__title-icon"><Moon size={14} aria-hidden="true" /></span> {t.dashboard.pulseTitle}
-        </h2>
+      <div className="ds-card__hd" style={{ alignItems: 'flex-start' }}>
+        <div>
+          <h2 className="ds-card__title">
+            <span className="ds-card__title-icon"><Moon size={14} aria-hidden="true" /></span> {t.dashboard.pulseTitle}
+          </h2>
+          <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: 2 }}>
+            {new Date().toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+          </div>
+        </div>
       </div>
       <div className="ds-card__body">
         <div className="ds-pulse">
           {PRAYERS_ORDER.filter((name) => name !== 'Sunrise').map((name) => (
             <div key={name} className="ds-pulse__chip">
-              <span className="ds-pulse__chip-icon" aria-hidden="true">{PRAYER_META[name].icon}</span>
+              <span className="ds-pulse__chip-icon" aria-hidden="true" style={{ color: PRAYER_META[name].color }}>{PRAYER_META[name].icon}</span>
               <span className="ds-pulse__chip-name">{prayerNames[name]}</span>
             </div>
           ))}
@@ -312,9 +316,19 @@ function SpiritualPulseCard({ t, lang }) {
 function DailyWisdomCard({ t }) {
   const quote = useMemo(() => getDailyWisdom(), []);
   const text = t.dashboard.wisdomQuotes?.[quote.id];
+
+  const share = () => {
+    const txt = `${quote.arabic}\n\n${text?.gloss || ''}\n— ${text?.source || ''}`;
+    if (navigator.share) navigator.share({ title: t.dashboard.wisdomEyebrow, text: txt }).catch(() => {});
+    else navigator.clipboard?.writeText(txt);
+  };
+
   return (
     <div className="ds-card ds-wisdom">
-      <div className="ds-wisdom__eyebrow">{t.dashboard.wisdomEyebrow}</div>
+      <div className="ds-wisdom__hd">
+        <div className="ds-wisdom__eyebrow">{t.dashboard.wisdomEyebrow}</div>
+        <button type="button" className="ds-wisdom__share" onClick={share} aria-label="Share">⤴</button>
+      </div>
       <p className="ds-wisdom__arabic" dir="rtl" lang="ar">{quote.arabic}</p>
       {text && (
         <>
@@ -329,6 +343,7 @@ function DailyWisdomCard({ t }) {
 function SmartPlannerCard({ t, classes, classesLoading, userId }) {
   const habitsKey = `ds-habits:${userId}:${todayKey()}`;
   const reflectionKey = `ds-reflection:${userId}:${todayKey()}`;
+  const tracksKey = `ds-custom-tracks:${userId}`;
 
   const [habits, setHabits] = useState(() => {
     try { return JSON.parse(localStorage.getItem(habitsKey) || '{}'); } catch { return {}; }
@@ -336,6 +351,11 @@ function SmartPlannerCard({ t, classes, classesLoading, userId }) {
   const [reflection, setReflection] = useState(() => {
     try { return localStorage.getItem(reflectionKey) || ''; } catch { return ''; }
   });
+  const [customTracks, setCustomTracks] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(tracksKey) || '[]'); } catch { return []; }
+  });
+  const [addingTrack, setAddingTrack] = useState(false);
+  const [newTrackLabel, setNewTrackLabel] = useState('');
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
@@ -343,7 +363,22 @@ function SmartPlannerCard({ t, classes, classesLoading, userId }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [habits]);
 
+  useEffect(() => {
+    try { localStorage.setItem(tracksKey, JSON.stringify(customTracks)); } catch { /* noop */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [customTracks]);
+
   const toggleHabit = (key) => setHabits((h) => ({ ...h, [key]: !h[key] }));
+
+  const addTrack = () => {
+    const label = newTrackLabel.trim();
+    if (!label) { setAddingTrack(false); return; }
+    setCustomTracks((tr) => [...tr, { key: `custom-${Date.now()}`, label }]);
+    setNewTrackLabel('');
+    setAddingTrack(false);
+  };
+
+  const removeTrack = (key) => setCustomTracks((tr) => tr.filter((tk) => tk.key !== key));
 
   const saveReflection = () => {
     try { localStorage.setItem(reflectionKey, reflection); } catch { /* noop */ }
@@ -359,7 +394,9 @@ function SmartPlannerCard({ t, classes, classesLoading, userId }) {
     { key: 'lesson', label: t.dashboard.plannerHabitLesson },
     { key: 'quran',  label: t.dashboard.plannerHabitQuran },
     { key: 'dua',    label: t.dashboard.plannerHabitDua },
+    ...customTracks,
   ];
+  const doneCount = HABITS.filter((h) => habits[h.key]).length;
 
   return (
     <div className="ds-card">
@@ -390,17 +427,43 @@ function SmartPlannerCard({ t, classes, classesLoading, userId }) {
 
         {/* Daily habits */}
         <div className="ds-planner__section">
-          <div className="ds-planner__section-title">{t.dashboard.plannerHabitsTitle}</div>
+          <div className="ds-planner__section-title" style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span>{t.dashboard.plannerHabitsTitle}</span>
+            <span style={{ fontWeight: 400, color: 'var(--text-secondary)' }}>{doneCount}/{HABITS.length} done</span>
+          </div>
           {HABITS.map((h) => (
-            <label key={h.key} className={`ds-planner__habit${habits[h.key] ? ' ds-planner__habit--done' : ''}`}>
-              <input
-                type="checkbox"
-                checked={!!habits[h.key]}
-                onChange={() => toggleHabit(h.key)}
-              />
-              {h.label}
-            </label>
+            <div key={h.key} className="ds-planner__habit-row">
+              <label className={`ds-planner__habit${habits[h.key] ? ' ds-planner__habit--done' : ''}`}>
+                <input
+                  type="checkbox"
+                  checked={!!habits[h.key]}
+                  onChange={() => toggleHabit(h.key)}
+                />
+                {h.label}
+              </label>
+              {h.key.startsWith('custom-') && (
+                <button type="button" className="ds-planner__habit-remove" onClick={() => removeTrack(h.key)} aria-label="Remove track">×</button>
+              )}
+            </div>
           ))}
+          {addingTrack ? (
+            <div className="ds-planner__add-track">
+              <input
+                type="text"
+                autoFocus
+                value={newTrackLabel}
+                onChange={(e) => setNewTrackLabel(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') addTrack(); if (e.key === 'Escape') setAddingTrack(false); }}
+                placeholder="New habit name…"
+                maxLength={60}
+              />
+              <button type="button" className="btn btn--green btn--sm" style={{ borderRadius: 6, fontSize: '0.72rem' }} onClick={addTrack}>Add</button>
+            </div>
+          ) : (
+            <button type="button" className="ds-planner__add-track-btn" onClick={() => setAddingTrack(true)}>
+              + Add New Track
+            </button>
+          )}
         </div>
 
         {/* Daily reflection */}
@@ -432,13 +495,20 @@ function SmartPlannerCard({ t, classes, classesLoading, userId }) {
   );
 }
 
-function HifzProgressCard({ t, firstCourse, overallPct }) {
+function HifzProgressCard({ t, firstCourse, firstProgress, overallPct }) {
+  const lastReviewedDays = useMemo(() => {
+    const dates = firstProgress?.completedAt;
+    if (!dates?.length) return null;
+    const mostRecent = Math.max(...dates.map((d) => new Date(d).getTime()));
+    return Math.floor((Date.now() - mostRecent) / 86400000);
+  }, [firstProgress]);
+
   return (
     <div className="ds-card ds-card--gold-ring">
       <div className="ds-card__hd" style={{ justifyContent: 'center' }}>
         <h2 className="ds-card__title">{t.dashboard.hifzTitle}</h2>
       </div>
-      <div className="ds-card__body" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+      <div className="ds-card__body" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
         <ProgressRing
           value={overallPct}
           size={96}
@@ -447,7 +517,12 @@ function HifzProgressCard({ t, firstCourse, overallPct }) {
           trackColor="var(--bg-surface-raised)"
           sublabel={firstCourse.title}
         />
-        <Link to={`/courses/${firstCourse._id}`} className="btn btn--sm" style={{ borderRadius: 8, fontSize: '0.78rem', background: 'none', border: 'none', color: 'var(--text-accent-dark)', fontWeight: 700 }}>
+        {lastReviewedDays !== null && (
+          <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
+            Last reviewed {lastReviewedDays === 0 ? 'today' : `${lastReviewedDays} day${lastReviewedDays === 1 ? '' : 's'} ago`}
+          </div>
+        )}
+        <Link to={`/courses/${firstCourse._id}`} className="btn btn--sm" style={{ marginTop: 8, borderRadius: 8, fontSize: '0.78rem', background: 'none', border: 'none', color: 'var(--text-accent-dark)', fontWeight: 700 }}>
           {t.dashboard.hifzCta}
         </Link>
       </div>
@@ -769,6 +844,7 @@ export default function Dashboard() {
           </div>
           <h1 className="ds-page-hd__title">
             {greeting(t.dashboard)}, {user?.name?.split(' ')[0]}
+            {streak > 0 && <span className="ds-streak-badge">{streak} Day Streak</span>}
           </h1>
           <p className="ds-page-hd__sub">
             {isActive
@@ -833,21 +909,58 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* ── Spiritual Pulse + Daily Wisdom ──────────────────── */}
-      <div className="ds-grid ds-grid-2" style={{ marginBottom: 20 }}>
-        <SpiritualPulseCard t={t} lang={lang} />
-        <DailyWisdomCard t={t} />
+      {/* ── Spiritual Pulse + Smart Planner (main) / Daily Wisdom + Hifz + Upcoming (side) ── */}
+      <div className="ds-grid ds-grid-main-side" style={{ marginBottom: 20 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+          <SpiritualPulseCard t={t} lang={lang} />
+          <SmartPlannerCard t={t} classes={classes} classesLoading={classesLoading} userId={user?._id} />
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <DailyWisdomCard t={t} />
+          {firstCourse && (
+            <HifzProgressCard t={t} firstCourse={firstCourse} firstProgress={firstProgress} overallPct={overallPct} />
+          )}
+          <div className="ds-card">
+            <div className="ds-card__hd">
+              <h2 className="ds-card__title">Upcoming</h2>
+              <Link to="/calendar" className="ds-card__link">See all →</Link>
+            </div>
+            <div className="ds-card__body" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {classesLoading ? (
+                <Skeleton height={40} radius="var(--radius-md)" />
+              ) : classes.length === 0 ? (
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>No upcoming events</div>
+              ) : (
+                classes.slice(0, 2).map((cls) => (
+                  <Link key={cls._id} to="/calendar" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
+                    <div className="ds-date-badge" style={{ background: 'var(--color-primary-surface)', color: 'var(--color-primary)' }}>
+                      <span className="ds-date-badge__month">{new Date(cls.startsAt).toLocaleDateString('en-GB', { month: 'short' }).toUpperCase()}</span>
+                      <span className="ds-date-badge__day">{new Date(cls.startsAt).getDate()}</span>
+                    </div>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontWeight: 700, fontSize: '0.82rem', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{cls.title}</div>
+                      <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>{fmtTime(cls.startsAt)}</div>
+                    </div>
+                  </Link>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* ── Smart Planner ────────────────────────────────────── */}
-      <div style={{ marginBottom: 20 }}>
-        <SmartPlannerCard t={t} classes={classes} classesLoading={classesLoading} userId={user?._id} />
-      </div>
-
-      {/* ── Hifz Progress (gold ring) ───────────────────────── */}
+      {/* ── Ongoing Study banner ─────────────────────────────── */}
       {firstCourse && (
-        <div style={{ marginBottom: 20 }}>
-          <HifzProgressCard t={t} firstCourse={firstCourse} overallPct={overallPct} />
+        <div className="ds-ongoing-banner" style={{ marginBottom: 20 }}>
+          <div className="ds-ongoing-banner__tag">Ongoing Study</div>
+          <h3 className="ds-ongoing-banner__title">{firstCourse.title}</h3>
+          <div className="ds-ongoing-banner__bar">
+            <div className="ds-bar"><div className="ds-bar__fill" style={{ width: `${overallPct}%` }} /></div>
+            <span>{overallPct}% complete</span>
+          </div>
+          <Link to={`/courses/${firstCourse._id}`} className="btn btn--green ds-ongoing-banner__cta">
+            <Play size={14} aria-hidden="true" /> Resume Learning
+          </Link>
         </div>
       )}
 

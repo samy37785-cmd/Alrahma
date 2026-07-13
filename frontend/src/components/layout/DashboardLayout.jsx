@@ -8,7 +8,7 @@ import {
   UserCog, Book, User, ExternalLink, Menu, Search, Bell, Sun, Moon,
   GraduationCap, LogOut, Settings, Calendar, ClipboardList, Flame,
   X, ChevronLeft, ChevronRight, BarChart3, Home, Shield, Landmark,
-  Mail, FileText, BookMarked, Heart,
+  Mail, FileText, BookMarked, Heart, Sparkles, Users2,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
@@ -67,6 +67,8 @@ function navFor(isAdmin, isTeacher, isParent, unreadCount) {
     { to: '/messages',  icon: MessageSquare,   label: 'Messages',  badge: unreadCount || 0 },
     { section: 'LEARNING' },
     { to: '/tools/quran-reader', icon: Book,        label: 'Quran Reader' },
+    { to: '/ai-tutor',           icon: Sparkles,      label: 'AI Tutor' },
+    { to: '/community',          icon: Users2,        label: 'Community' },
     { to: '/calendar',           icon: Calendar,     label: 'My Schedule' },
     { to: '/homework',           icon: FileText,      label: 'Homework' },
     { to: '/wishlist',           icon: Heart,         label: 'Wishlist' },

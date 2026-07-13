@@ -1,20 +1,18 @@
 /**
  * Auto-generate public/sitemap.xml from a single source of truth: the
- * `seoRoutes` list in package.json (the public, indexable routes). Runs as the
- * npm `prebuild` hook, so every deploy ships a complete, current sitemap with
- * no manual editing. Auth/admin routes are never in that list, so they are
- * never sitemapped (and robots.txt blocks them too).
+ * `seoRoutes` list in scripts/seoRoutes.mjs (the public, indexable routes).
+ * Runs as the npm `prebuild` hook, so every deploy ships a complete, current
+ * sitemap with no manual editing. Auth/admin routes are never in that list,
+ * so they are never sitemapped (and robots.txt blocks them too).
  */
-import { readFileSync, writeFileSync } from 'node:fs';
+import { writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { seoRoutes as routes } from './seoRoutes.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..');
 const ORIGIN = 'https://al-rahmaacademy.com';
-
-const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
-const routes = pkg.seoRoutes ?? ['/'];
 
 // Standalone static language landing pages that live in public/{it,fr}/ and
 // are not React routes, so they aren't in the react-snap include list.

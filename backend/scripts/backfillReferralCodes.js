@@ -6,8 +6,8 @@
 // instead of waiting for it to shrink organically.
 // Run with:  npm run backfill:referral-codes
 import dotenv from 'dotenv';
-import connectDB from './config/db.js';
-import User from './models/User.js';
+import connectDB from '../config/db.js';
+import User from '../models/User.js';
 
 dotenv.config();
 

@@ -1,9 +1,9 @@
 // Populates the database with sample courses + one admin user.
 // Run with:  npm run seed
 import dotenv from 'dotenv';
-import connectDB from './config/db.js';
-import Course from './models/Course.js';
-import User from './models/User.js';
+import connectDB from '../config/db.js';
+import Course from '../models/Course.js';
+import User from '../models/User.js';
 
 dotenv.config();
 

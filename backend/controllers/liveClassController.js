@@ -1,7 +1,7 @@
 ﻿import LiveClass from '../models/LiveClass.js';
 import User from '../models/User.js';
 import { sendMail } from '../config/mailer.js';
-import { liveClassScheduledEmail } from '../config/emailTemplates.js';
+import { liveClassScheduledEmail } from '../templates/emailTemplates.js';
 import { createNotification } from '../services/notificationService.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 

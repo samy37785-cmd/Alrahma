@@ -1,8 +1,9 @@
 import jwt from 'jsonwebtoken';
+import env from '../config/env.js';
 import crypto from 'crypto';
 import User from '../models/User.js';
 import { sendMail } from '../config/mailer.js';
-import { forgotPasswordEmail } from '../config/emailTemplates.js';
+import { forgotPasswordEmail } from '../templates/emailTemplates.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { handleValidationErrors } from '../utils/validationHelper.js';
 import { hashToken } from '../utils/hashToken.js';
@@ -18,8 +19,8 @@ const normEmail = (v) => String(v ?? '').toLowerCase().trim();
 // a password change without a DB call per-request — the version mismatch is caught
 // only when the user hits a protected route, not immediately on all connections.
 function signToken(id, role, v = 0) {
-  return jwt.sign({ id, role, v }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRES_IN || '7d',
+  return jwt.sign({ id, role, v }, env.JWT_SECRET, {
+    expiresIn: env.JWT_EXPIRES_IN || '7d',
   });
 }
 
@@ -42,7 +43,7 @@ function cookieMaxAgeFor(token) {
 function authCookieOptions(maxAge) {
   return {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: env.NODE_ENV === 'production',
     sameSite: 'lax',
     maxAge,
     path: '/',
@@ -244,7 +245,7 @@ export const googleAuth = asyncHandler(async (req, res) => {
   }
   const payload = await info.json();
 
-  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const clientId = env.GOOGLE_CLIENT_ID;
   if (!clientId) {
     res.status(503);
     throw new Error('Google Sign-In is not configured on this server');

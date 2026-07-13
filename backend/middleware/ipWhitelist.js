@@ -21,6 +21,7 @@
  * Under serverless each cold start pays the parse cost once and every
  * subsequent warm request reads from the cached array.
  */
+import env from '../config/env.js';
 
 function ipv4ToInt(ip) {
   return ip.split('.').reduce((acc, octet) => (acc << 8) + parseInt(octet, 10), 0) >>> 0;
@@ -63,7 +64,7 @@ function ipMatchesEntry(ip, entry) {
 // Parse once at module evaluation — env vars are immutable at runtime.
 // null = no whitelist configured (allow all).
 const _whitelist = (() => {
-  const raw = process.env.ADMIN_IP_WHITELIST ?? '';
+  const raw = env.ADMIN_IP_WHITELIST ?? '';
   if (!raw.trim()) return null;
   return raw.split(',').map((s) => s.trim()).filter(Boolean);
 })();
@@ -73,7 +74,7 @@ export function ipWhitelist(req, res, next) {
     // No whitelist configured. In production this must fail closed — silently
     // allowing all IPs would mean a missing env var quietly disables the
     // entire admin IP control instead of surfacing as an outage to fix.
-    if (process.env.NODE_ENV === 'production') {
+    if (env.NODE_ENV === 'production') {
       return res.status(403).json({
         message: 'Access denied: your IP address is not permitted to access this resource',
       });

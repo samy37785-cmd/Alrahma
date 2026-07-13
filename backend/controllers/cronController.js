@@ -1,14 +1,15 @@
 import User from '../models/User.js';
+import env from '../config/env.js';
 import CourseProgress from '../models/CourseProgress.js';
 import LiveClass from '../models/LiveClass.js';
 import { sendMail } from '../config/mailer.js';
-import { subscriptionRenewalReminderEmail, weeklyParentReportEmail } from '../config/emailTemplates.js';
+import { subscriptionRenewalReminderEmail, weeklyParentReportEmail } from '../templates/emailTemplates.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { createNotification } from '../services/notificationService.js';
 import logger from '../config/logger.js';
 
 // How many days before expiry we send the heads-up. Override with RENEWAL_REMINDER_DAYS.
-const REMIND_WITHIN_DAYS = Number(process.env.RENEWAL_REMINDER_DAYS) || 3;
+const REMIND_WITHIN_DAYS = Number(env.RENEWAL_REMINDER_DAYS) || 3;
 const DAY = 24 * 60 * 60 * 1000;
 
 // Maximum number of emails to send concurrently.

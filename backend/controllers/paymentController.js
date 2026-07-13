@@ -1,4 +1,5 @@
 ﻿import mongoose from 'mongoose';
+import env from '../config/env.js';
 import Payment from '../models/Payment.js';
 import { getPlan } from '../config/plans.js';
 import { enrollUser } from '../services/subscriptionService.js';
@@ -37,7 +38,7 @@ async function postJSON(url, body, headers = {}) {
 // ----------------------------- PayPal ---------------------------------------
 
 function paypalBase() {
-  return process.env.PAYPAL_MODE === 'live'
+  return env.PAYPAL_MODE === 'live'
     ? 'https://api-m.paypal.com'
     : 'https://api-m.sandbox.paypal.com';
 }
@@ -45,7 +46,7 @@ function paypalBase() {
 // OAuth2 client-credentials -> short-lived access token.
 async function paypalAccessToken() {
   const auth = Buffer.from(
-    `${process.env.PAYPAL_CLIENT_ID}:${process.env.PAYPAL_CLIENT_SECRET}`
+    `${env.PAYPAL_CLIENT_ID}:${env.PAYPAL_CLIENT_SECRET}`
   ).toString('base64');
   const res = await fetch(`${paypalBase()}/v1/oauth2/token`, {
     method: 'POST',
@@ -244,7 +245,7 @@ export const capturePaypalOrder = asyncHandler(async (req, res) => {
 // @route  POST /api/payments/paypal/webhook
 // @access Public (verified via PayPal's verify-webhook-signature API)
 export const paypalWebhook = asyncHandler(async (req, res) => {
-    const webhookId = process.env.PAYPAL_WEBHOOK_ID;
+    const webhookId = env.PAYPAL_WEBHOOK_ID;
     if (!webhookId) return res.status(401).json({ message: 'PayPal webhook not configured' });
 
     const certUrl = req.headers['paypal-cert-url'] || '';

@@ -1,4 +1,5 @@
 import crypto from 'node:crypto';
+import env from '../config/env.js';
 
 const SAFE_METHODS  = new Set(['GET', 'HEAD', 'OPTIONS']);
 const CSRF_COOKIE   = 'csrf_token';
@@ -20,7 +21,7 @@ export function issueCsrfToken(req, res, next) {
     res.cookie(CSRF_COOKIE, token, {
       httpOnly: false,
       sameSite: 'strict',
-      secure:   process.env.NODE_ENV === 'production',
+      secure:   env.NODE_ENV === 'production',
       maxAge:   MAX_AGE_SEC * 1000,
     });
   }

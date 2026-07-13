@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken';
+import env from '../config/env.js';
 import AdminUser from '../models/AdminUser.js';
 import {
   ACCESS_TOKEN_COOKIE,
@@ -28,7 +29,7 @@ export async function verifyAccessToken(req, res, next) {
 
   let decoded;
   try {
-    decoded = jwt.verify(token, process.env.ADMIN_JWT_ACCESS_SECRET, { algorithms: ['HS256'] });
+    decoded = jwt.verify(token, env.ADMIN_JWT_ACCESS_SECRET, { algorithms: ['HS256'] });
   } catch (err) {
     if (err.name === 'TokenExpiredError') {
       return res.status(401).json({ message: 'Access token expired', code: 'TOKEN_EXPIRED' });

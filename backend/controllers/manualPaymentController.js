@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import env from '../config/env.js';
 import ManualPayment from '../models/ManualPayment.js';
 import { getPlan } from '../config/plans.js';
 import { sendMail, ADMIN_EMAIL } from '../config/mailer.js';
@@ -10,7 +11,7 @@ import {
   manualPaymentAdminEmail,
   manualPaymentApprovedEmail,
   manualPaymentRejectedEmail,
-} from '../config/emailTemplates.js';
+} from '../templates/emailTemplates.js';
 import { parsePagination, sendPaginated } from '../utils/pagination.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { auditFromReq } from '../services/auditService.js';
@@ -19,7 +20,7 @@ import logger from '../config/logger.js';
 // Returns the configured manual payment methods with display info.
 // Only returns a method if its env vars are filled in.
 export function getManualMethods(req, res) {
-  const e = process.env;
+  const e = env;
   const methods = [];
 
   if (e.PAYPAL_RECEIVER_EMAIL) {

@@ -1,7 +1,7 @@
 ﻿import Certificate from '../models/Certificate.js';
 import User from '../models/User.js';
 import { sendMail } from '../config/mailer.js';
-import { certificateIssuedEmail } from '../config/emailTemplates.js';
+import { certificateIssuedEmail } from '../templates/emailTemplates.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { auditFromReq } from '../services/auditService.js';
 import { createNotification } from '../services/notificationService.js';

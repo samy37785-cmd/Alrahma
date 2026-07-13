@@ -1,6 +1,6 @@
 ﻿import TrialRequest from '../models/TrialRequest.js';
 import { sendMail, ADMIN_EMAIL } from '../config/mailer.js';
-import { trialRequestAdminEmail, trialRequestStudentEmail } from '../config/emailTemplates.js';
+import { trialRequestAdminEmail, trialRequestStudentEmail } from '../templates/emailTemplates.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 
 // @desc   Submit a free-trial request (from the React form)

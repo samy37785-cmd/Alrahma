@@ -1,7 +1,8 @@
 import { asyncHandler } from '../utils/asyncHandler.js';
+import env from '../config/env.js';
 import { handleValidationErrors } from '../utils/validationHelper.js';
 import { parsePagination } from '../utils/pagination.js';
-import { contactAdminEmail } from '../config/emailTemplates.js';
+import { contactAdminEmail } from '../templates/emailTemplates.js';
 import ContactMessage from '../models/ContactMessage.js';
 import { sendMail } from '../config/mailer.js';
 import { auditFromReq } from '../services/auditService.js';
@@ -19,7 +20,7 @@ export const submitContact = asyncHandler(async (req, res) => {
     ipAddress: ip,
   });
 
-  const adminEmail = process.env.ADMIN_EMAIL || process.env.EMAIL_FROM;
+  const adminEmail = env.ADMIN_EMAIL || env.EMAIL_FROM;
   if (adminEmail) {
     try {
       await sendMail({

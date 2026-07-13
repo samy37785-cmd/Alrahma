@@ -1,4 +1,5 @@
 ﻿import mongoose from 'mongoose';
+import env from '../config/env.js';
 import Stripe from 'stripe';
 import { siteOrigin } from '../config/site.js';
 import Payment from '../models/Payment.js';
@@ -18,8 +19,8 @@ import logger from '../config/logger.js';
 // reuses the same object; a cold start creates it once.
 let _stripe = null;
 function getStripe() {
-  if (!process.env.STRIPE_SECRET_KEY) throw new Error('Stripe is not configured');
-  if (!_stripe) _stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+  if (!env.STRIPE_SECRET_KEY) throw new Error('Stripe is not configured');
+  if (!_stripe) _stripe = new Stripe(env.STRIPE_SECRET_KEY);
   return _stripe;
 }
 
@@ -106,7 +107,7 @@ export const createStripeSession = asyncHandler(async (req, res) => {
 // @route  POST /api/payments/stripe/webhook
 // @access Public (verified via Stripe signature; raw body set in app.js)
 export const stripeWebhook = asyncHandler(async (req, res) => {
-    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+    const webhookSecret = env.STRIPE_WEBHOOK_SECRET;
     if (!webhookSecret) return res.status(401).json({ message: 'Stripe webhook not configured' });
 
     const stripe = getStripe();

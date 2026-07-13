@@ -15,12 +15,12 @@ export default [
     rules: {
       ...js.configs.recommended.rules,
       'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
-      // Phase 0 guardrail (refactoring roadmap B5): env access belongs in
-      // config/ modules so validateEnv.js can stay provably complete. Kept
-      // at "warn" until Phase 2 centralizes the remaining direct readers,
-      // then flipped to "error".
+      // Refactoring roadmap B5: env access goes through config/env.js so the
+      // app's environment surface stays a single, complete, validated
+      // inventory. Phase 2 migrated every direct reader; new ones are a
+      // hard error.
       'no-restricted-properties': [
-        'warn',
+        'error',
         {
           object: 'process',
           property: 'env',

@@ -1,6 +1,6 @@
 ﻿import Enrollment from '../models/Enrollment.js';
 import { sendMail, ADMIN_EMAIL } from '../config/mailer.js';
-import { enrollmentAdminEmail, enrollmentStudentEmail } from '../config/emailTemplates.js';
+import { enrollmentAdminEmail, enrollmentStudentEmail } from '../templates/emailTemplates.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { parsePagination, sendPaginated } from '../utils/pagination.js';
 import logger from '../config/logger.js';

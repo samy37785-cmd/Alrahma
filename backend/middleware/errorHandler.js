@@ -1,4 +1,5 @@
 import logger from '../config/logger.js';
+import env from '../config/env.js';
 
 export function notFound(req, res, _next) {
   res.status(404).json({ message: `Route not found: ${req.originalUrl}` });
@@ -28,7 +29,7 @@ export function errorHandler(err, req, res, _next) {
     return res.status(400).json({ message: messages.join(', ') });
   }
 
-  const leakSafe = status >= 500 && process.env.NODE_ENV === 'production';
+  const leakSafe = status >= 500 && env.NODE_ENV === 'production';
   res.status(status).json({
     message: leakSafe ? 'Server error — please try again.' : (err.message || 'Server error'),
   });

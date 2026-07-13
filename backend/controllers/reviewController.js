@@ -5,7 +5,7 @@ import { handleValidationErrors } from '../utils/validationHelper.js';
 import { parsePagination } from '../utils/pagination.js';
 import { auditFromReq } from '../services/auditService.js';
 import Review from '../models/Review.js';
-import { createNotification } from './notificationController.js';
+import { createNotification } from '../services/notificationService.js';
 
 function isValidObjectId(id) {
   return mongoose.Types.ObjectId.isValid(id);

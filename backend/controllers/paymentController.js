@@ -4,7 +4,7 @@ import { getPlan } from '../config/plans.js';
 import { enrollUser } from '../services/subscriptionService.js';
 import { resolveCouponForCheckout, redeemCoupon } from '../services/couponService.js';
 import { createInvoice } from '../services/invoiceService.js';
-import { createNotification } from './notificationController.js';
+import { createNotification } from '../services/notificationService.js';
 import { siteOrigin } from '../config/site.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import logger from '../config/logger.js';

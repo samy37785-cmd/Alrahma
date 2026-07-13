@@ -8,7 +8,7 @@ import ManualPayment from '../models/ManualPayment.js';
 import Payment from '../models/Payment.js';
 import Review from '../models/Review.js';
 import Notification from '../models/Notification.js';
-import { createNotification } from '../controllers/notificationController.js';
+import { createNotification } from '../services/notificationService.js';
 import { signAccessToken } from '../utils/adminAuthTokens.js';
 import { setupTestDb, clearTestDb, teardownTestDb } from './helpers/db.js';
 import { agentWithCsrf } from './helpers/csrf.js';

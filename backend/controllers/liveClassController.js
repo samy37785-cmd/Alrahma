@@ -2,7 +2,7 @@
 import User from '../models/User.js';
 import { sendMail } from '../config/mailer.js';
 import { liveClassScheduledEmail } from '../config/emailTemplates.js';
-import { createNotification } from './notificationController.js';
+import { createNotification } from '../services/notificationService.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 
 // Populates teacher/student names for the API response.

@@ -6,7 +6,7 @@ import { parsePagination } from '../utils/pagination.js';
 import { auditFromReq } from '../services/auditService.js';
 import Post from '../models/Post.js';
 import Comment from '../models/Comment.js';
-import { createNotification } from './notificationController.js';
+import { createNotification } from '../services/notificationService.js';
 
 function isValidObjectId(id) {
   return mongoose.Types.ObjectId.isValid(id);

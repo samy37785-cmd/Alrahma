@@ -4,7 +4,7 @@ import LiveClass from '../models/LiveClass.js';
 import { sendMail } from '../config/mailer.js';
 import { subscriptionRenewalReminderEmail, weeklyParentReportEmail } from '../config/emailTemplates.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
-import { createNotification } from './notificationController.js';
+import { createNotification } from '../services/notificationService.js';
 import logger from '../config/logger.js';
 
 // How many days before expiry we send the heads-up. Override with RENEWAL_REMINDER_DAYS.

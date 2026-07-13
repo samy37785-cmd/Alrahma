@@ -4,7 +4,7 @@ import { sendMail } from '../config/mailer.js';
 import { certificateIssuedEmail } from '../config/emailTemplates.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { auditFromReq } from '../services/auditService.js';
-import { createNotification } from './notificationController.js';
+import { createNotification } from '../services/notificationService.js';
 
 // @desc  Admin/teacher: issue a certificate to a student.
 // @route POST /api/certificates

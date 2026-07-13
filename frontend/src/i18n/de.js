@@ -1016,7 +1016,14 @@
     "startFailed": "Zahlung konnte nicht gestartet werden. Bitte versuche es erneut.",
     "paymentFailed": "Zahlung fehlgeschlagen. Bitte versuche es erneut.",
     "submitFailed": "Senden fehlgeschlagen. Bitte versuche es erneut.",
-    "recurringNote": "Automatische monatliche Verlängerung — jederzeit kündbar."
+    "recurringNote": "Automatische monatliche Verlängerung — jederzeit kündbar.",
+    "couponLabel": "Gutscheincode",
+    "couponPlaceholder": "z. B. WELCOME10",
+    "couponApply": "Anwenden",
+    "couponApplied": "Gutschein angewendet",
+    "couponRemove": "Entfernen",
+    "couponDiscountLine": "Gutschein-Rabatt",
+    "couponLoginFirst": "Bitte melde dich an, um einen Gutscheincode zu verwenden."
   },
   "errors": {
     "crashed": "Etwas ist schiefgelaufen",

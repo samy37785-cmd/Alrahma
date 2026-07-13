@@ -1017,7 +1017,14 @@
     "startFailed": "Impossibile avviare il pagamento. Riprova.",
     "paymentFailed": "Pagamento non riuscito. Riprova.",
     "submitFailed": "Invio non riuscito. Riprova.",
-    "recurringNote": "Rinnovo automatico mensile — puoi disdire in qualsiasi momento."
+    "recurringNote": "Rinnovo automatico mensile — puoi disdire in qualsiasi momento.",
+    "couponLabel": "Codice sconto",
+    "couponPlaceholder": "es. WELCOME10",
+    "couponApply": "Applica",
+    "couponApplied": "Coupon applicato",
+    "couponRemove": "Rimuovi",
+    "couponDiscountLine": "Sconto coupon",
+    "couponLoginFirst": "Accedi per usare un codice sconto."
   },
   "errors": {
     "crashed": "Si è verificato un errore",

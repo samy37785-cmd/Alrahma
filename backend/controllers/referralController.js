@@ -1,7 +1,13 @@
+import mongoose from 'mongoose';
 import Referral from '../models/Referral.js';
 import User from '../models/User.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { auditFromReq } from '../services/auditService.js';
+import { grantSubscriptionCredit } from '../services/subscriptionService.js';
+
+// Both parties receive this many free days when a referral converts
+// (the "1-month credit" documented on models/Referral.js).
+const REFERRAL_REWARD_DAYS = 30;
 
 // @desc  Get the authenticated user's referral stats (code + referral list)
 // @route GET /api/referrals/me
@@ -78,19 +84,58 @@ export const trackReferral = asyncHandler(async (req, res) => {
   res.status(201).json(referral);
 });
 
-// @desc  Mark a referral as converted (called when a referee subscribes)
+// @desc  Mark a referral as converted (called when a referee subscribes) and
+//        apply the documented reward: 1 month of subscription credit to BOTH
+//        the referrer and the referee (models/Referral.js flow). The status
+//        claim + both credits run in one transaction, so a crash mid-way can
+//        never leave the referral "rewarded" with only one side credited —
+//        and the pending→ claim makes a double-submit idempotent (the second
+//        call finds a non-pending referral and changes nothing).
 // @route PATCH /api/referrals/:id/convert
 // @access Admin / Internal
 export const convertReferral = asyncHandler(async (req, res) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    res.status(400);
+    throw new Error('Invalid ID format');
+  }
   const referral = await Referral.findById(req.params.id);
   if (!referral) { res.status(404); throw new Error('Referral not found'); }
   if (referral.status !== 'pending') return res.json(referral);
+  if (!referral.referee) {
+    res.status(400);
+    throw new Error('Referral has no registered referee yet — nothing to convert');
+  }
 
-  referral.status      = 'converted';
-  referral.convertedAt = new Date();
-  await referral.save();
+  const now = new Date();
+  const session = await mongoose.startSession();
+  let claimed = null;
+  try {
+    await session.withTransaction(async () => {
+      // Atomic claim: only one concurrent convert can move pending → rewarded.
+      claimed = await Referral.findOneAndUpdate(
+        { _id: referral._id, status: 'pending' },
+        { $set: { status: 'rewarded', convertedAt: now, rewardedAt: now } },
+        { new: true, session },
+      );
+      if (!claimed) return; // raced by another convert — no credits from this call
 
-  await auditFromReq(req, 'referral.convert', 'Referral', referral._id, { status: 'pending' }, referral, 'info');
+      await grantSubscriptionCredit(referral.referrer, REFERRAL_REWARD_DAYS, session);
+      await grantSubscriptionCredit(referral.referee,  REFERRAL_REWARD_DAYS, session);
+    });
+  } finally {
+    session.endSession();
+  }
 
-  res.json(referral);
+  if (!claimed) {
+    // Someone else completed the conversion between our read and the claim.
+    return res.json(await Referral.findById(referral._id).lean());
+  }
+
+  await auditFromReq(
+    req, 'referral.convert', 'Referral', claimed._id,
+    { status: 'pending' }, claimed, 'info',
+    { rewardDays: REFERRAL_REWARD_DAYS, referrer: String(referral.referrer), referee: String(referral.referee) },
+  );
+
+  res.json(claimed);
 });

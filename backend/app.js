@@ -68,6 +68,20 @@ const allowedOrigins = [
   ...(process.env.VERCEL_URL ? [`https://${process.env.VERCEL_URL}`] : []),
 ];
 
+// Vercel preview deployments (credentialed CORS): the old check here was
+// /^https:\/\/alrahma-[a-z0-9-]+\.vercel\.app$/ — but *.vercel.app subdomains
+// are first-come-first-served across ALL Vercel accounts, so any attacker
+// could register a project named e.g. "alrahma-evil" and their origin would
+// pass. The only component of a Vercel preview URL that an outsider cannot
+// claim is the account-scope suffix (e.g. "alrahma-git-main-<scope>" /
+// "alrahma-<hash>-<scope>"), so previews are now pinned to that scope via
+// VERCEL_PREVIEW_SCOPE. Unset = no preview origins allowed (fail closed;
+// production traffic uses CLIENT_URL and is unaffected).
+const previewScope = (process.env.VERCEL_PREVIEW_SCOPE || '').trim();
+const vercelPreviewOrigin = previewScope
+  ? new RegExp(`^https://[a-z0-9-]+-${previewScope.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\.vercel\\.app$`)
+  : null;
+
 app.use(
   cors({
     origin(origin, callback) {
@@ -75,7 +89,7 @@ app.use(
         !origin ||                                              // curl / mobile / server-to-server
         allowedOrigins.includes(origin) ||                    // explicitly whitelisted
         (process.env.NODE_ENV !== 'production' && /^http:\/\/localhost:\d+$/.test(origin)) || // any localhost port (local dev only)
-        /^https:\/\/alrahma-[a-z0-9-]+\.vercel\.app$/.test(origin) // Vercel preview branches
+        (vercelPreviewOrigin && vercelPreviewOrigin.test(origin)) // Vercel previews, scope-pinned
       ) {
         return callback(null, true);
       }

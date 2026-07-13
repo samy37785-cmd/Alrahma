@@ -6,8 +6,14 @@ import mongoose from 'mongoose';
 const paymentSchema = new mongoose.Schema(
   {
     plan: { type: String, required: true }, // Starter | Standard | Premium
-    amount: { type: Number, required: true }, // looked up server-side
+    amount: { type: Number, required: true }, // looked up server-side; already net of any coupon
     currency: { type: String, default: 'EUR' },
+
+    // Coupon applied at checkout (couponService.resolveCouponForCheckout).
+    // Redeemed (usedCount/usedBy recorded) only when the payment actually
+    // succeeds — see the webhook/capture/approval flows.
+    couponCode:     { type: String, default: null },
+    discountAmount: { type: Number, default: 0 },
 
     gateway: { type: String, enum: ['stripe', 'paypal'], required: true },
     // card (Stripe) / paypal

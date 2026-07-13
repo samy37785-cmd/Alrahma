@@ -1017,7 +1017,14 @@
     "startFailed": "No se pudo iniciar el pago. Por favor inténtalo de nuevo.",
     "paymentFailed": "Pago fallido. Por favor inténtalo de nuevo.",
     "submitFailed": "Envío fallido. Por favor inténtalo de nuevo.",
-    "recurringNote": "Renovación automática mensual — puedes cancelar en cualquier momento."
+    "recurringNote": "Renovación automática mensual — puedes cancelar en cualquier momento.",
+    "couponLabel": "Código de descuento",
+    "couponPlaceholder": "ej. WELCOME10",
+    "couponApply": "Aplicar",
+    "couponApplied": "Cupón aplicado",
+    "couponRemove": "Eliminar",
+    "couponDiscountLine": "Descuento del cupón",
+    "couponLoginFirst": "Inicia sesión para usar un código de descuento."
   },
   "errors": {
     "crashed": "Algo salió mal",

@@ -7,6 +7,7 @@ import {
   activateRecurringSubscription,
   deactivateSubscription,
 } from '../services/subscriptionService.js';
+import { resolveCouponForCheckout, redeemCoupon } from '../services/couponService.js';
 import { createInvoice } from '../services/invoiceService.js';
 import { createNotification } from './notificationController.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
@@ -38,6 +39,32 @@ export const createStripeSession = asyncHandler(async (req, res) => {
     const origin = siteOrigin();
     const userId = String(req.user?._id ?? '');
 
+    // Coupon (optional): validated server-side against the server-side plan
+    // price — the client only ever sends the code, never an amount. Applied
+    // as a duration:'once' Stripe discount, so it reduces the FIRST charge
+    // only; monthly renewals bill the full plan price.
+    const couponResult = await resolveCouponForCheckout({
+      code:   req.body.coupon,
+      userId: req.user?._id,
+      plan,
+    });
+    if (!couponResult.ok) {
+      res.status(couponResult.status);
+      throw new Error(couponResult.message);
+    }
+    const { coupon, discount, finalAmount } = couponResult;
+
+    let discounts;
+    if (coupon) {
+      const stripeCoupon = await stripe.coupons.create({
+        amount_off: Math.round(discount * 100),
+        currency:   plan.currency.toLowerCase(),
+        duration:   'once',
+        name:       `Coupon ${coupon.code}`,
+      });
+      discounts = [{ coupon: stripeCoupon.id }];
+    }
+
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       line_items: [{
@@ -49,6 +76,7 @@ export const createStripeSession = asyncHandler(async (req, res) => {
         },
         quantity: 1,
       }],
+      ...(discounts ? { discounts } : {}),
       customer_email: customer.email || undefined,
       // Metadata is copied onto the subscription so renewal webhooks can find the user.
       subscription_data: { metadata: { userId, plan: plan.name } },
@@ -59,7 +87,7 @@ export const createStripeSession = asyncHandler(async (req, res) => {
 
     await Payment.create({
       plan:           plan.name,
-      amount:         plan.amount,
+      amount:         finalAmount, // first charge, net of any coupon
       currency:       plan.currency,
       gateway:        'stripe',
       method:         'card',
@@ -67,6 +95,8 @@ export const createStripeSession = asyncHandler(async (req, res) => {
       status:         'pending',
       gatewayOrderId: session.id,
       userId:         req.user?._id ?? null,
+      couponCode:     coupon?.code ?? null,
+      discountAmount: discount,
     });
 
     res.json({ type: 'redirect', url: session.url, sessionId: session.id });
@@ -125,6 +155,19 @@ export const stripeWebhook = asyncHandler(async (req, res) => {
             // duplicate delivery (already processed), or a missing record.
             if (!updated) return;
 
+            // Record the coupon redemption now that the money actually moved.
+            // A false return (per-user/maxUses race) is logged, not thrown —
+            // the customer already paid the discounted price; failing the
+            // whole fulfilment over usage bookkeeping would be worse.
+            if (updated.couponCode && updated.userId) {
+              const redeemed = await redeemCoupon(updated.couponCode, updated.userId, dbSession);
+              if (!redeemed) {
+                logger.warn('Stripe checkout: coupon redemption not recorded (already used or cap reached)', {
+                  coupon: updated.couponCode, userId: String(updated.userId),
+                });
+              }
+            }
+
             if (userId) {
               await activateRecurringSubscription(userId, {
                 plan: planName,
@@ -141,6 +184,9 @@ export const stripeWebhook = asyncHandler(async (req, res) => {
               name:      updated.customer?.name,
               planName,
               paymentId: updated._id,
+              // Payment.amount is already net of any coupon — invoice the
+              // amount actually charged, not the list price.
+              amountPaid: updated.amount,
               session:   dbSession,
             });
 

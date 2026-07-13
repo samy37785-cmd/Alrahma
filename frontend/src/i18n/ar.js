@@ -1017,7 +1017,14 @@
     "startFailed": "تعذّر بدء الدفع. يرجى المحاولة مرة أخرى.",
     "paymentFailed": "فشلت عملية الدفع. يرجى المحاولة مجدداً.",
     "submitFailed": "فشل الإرسال. يرجى المحاولة مرة أخرى.",
-    "recurringNote": "يتجدد تلقائياً كل شهر — يمكنك الإلغاء في أي وقت."
+    "recurringNote": "يتجدد تلقائياً كل شهر — يمكنك الإلغاء في أي وقت.",
+    "couponLabel": "كود الخصم",
+    "couponPlaceholder": "مثال: WELCOME10",
+    "couponApply": "تطبيق",
+    "couponApplied": "تم تطبيق الكوبون",
+    "couponRemove": "إزالة",
+    "couponDiscountLine": "خصم الكوبون",
+    "couponLoginFirst": "يرجى تسجيل الدخول لاستخدام كود الخصم."
   },
   "errors": {
     "crashed": "حدث خطأ",

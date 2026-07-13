@@ -15,7 +15,10 @@ export const globalSearch = asyncHandler(async (req, res) => {
   const limit = 5;
 
   const [courses, posts, teachers] = await Promise.all([
-    Course.find({ $or: [{ title: regex }, { description: regex }] })
+    // published: true — this is a public endpoint; without the filter,
+    // unpublished/draft course titles and descriptions leak into search
+    // results (the Blog query below already had the equivalent guard).
+    Course.find({ published: true, $or: [{ title: regex }, { description: regex }] })
       .select('title description level')
       .limit(limit)
       .lean(),
@@ -37,7 +40,8 @@ export const searchCourses = asyncHandler(async (req, res) => {
   const level = req.query.level;
   const { page, limit, skip } = parsePagination(req.query, { defaultLimit: 12, maxLimit: 20 });
 
-  const filter = {};
+  // published: true — same public-endpoint guard as globalSearch above.
+  const filter = { published: true };
   if (q) {
     const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const regex = new RegExp(escaped, 'i');

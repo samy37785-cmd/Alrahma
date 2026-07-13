@@ -2,6 +2,7 @@
 import Payment from '../models/Payment.js';
 import { getPlan } from '../config/plans.js';
 import { enrollUser } from '../services/subscriptionService.js';
+import { resolveCouponForCheckout, redeemCoupon } from '../services/couponService.js';
 import { createInvoice } from '../services/invoiceService.js';
 import { createNotification } from './notificationController.js';
 import { siteOrigin } from '../config/site.js';
@@ -69,6 +70,19 @@ export const createPaypalOrder = asyncHandler(async (req, res) => {
       res.status(400);
       throw new Error(`Unknown plan: ${planName}`);
     }
+    // Coupon (optional): validated server-side against the server-side plan
+    // price — the client only ever sends the code, never an amount.
+    const couponResult = await resolveCouponForCheckout({
+      code:   req.body.coupon,
+      userId: req.user?._id,
+      plan,
+    });
+    if (!couponResult.ok) {
+      res.status(couponResult.status);
+      throw new Error(couponResult.message);
+    }
+    const { coupon, discount, finalAmount } = couponResult;
+
     const token = await paypalAccessToken();
 
     const order = await postJSON(
@@ -78,7 +92,7 @@ export const createPaypalOrder = asyncHandler(async (req, res) => {
         purchase_units: [
           {
             description: `${plan.name} Plan — Al-Rahma Academy`,
-            amount: { currency_code: plan.currency, value: plan.amount.toFixed(2) },
+            amount: { currency_code: plan.currency, value: finalAmount.toFixed(2) },
           },
         ],
         application_context: {
@@ -93,7 +107,7 @@ export const createPaypalOrder = asyncHandler(async (req, res) => {
 
     await Payment.create({
       plan: plan.name,
-      amount: plan.amount,
+      amount: finalAmount, // net of any coupon
       currency: plan.currency,
       gateway: 'paypal',
       method: 'paypal',
@@ -101,6 +115,8 @@ export const createPaypalOrder = asyncHandler(async (req, res) => {
       status: 'pending',
       gatewayOrderId: order.id,
       userId: req.user?._id ?? null,
+      couponCode: coupon?.code ?? null,
+      discountAmount: discount,
     });
 
     const approve = order.links?.find((l) => l.rel === 'approve')?.href;
@@ -148,6 +164,18 @@ async function finalizePaypalOrder(orderId, capture) {
       await payment.save({ session });
 
       if (completed) {
+        // Record the coupon redemption now that the money actually moved.
+        // A false return (per-user/maxUses race) is logged, not thrown — the
+        // buyer already paid the discounted price.
+        if (payment.couponCode && payment.userId) {
+          const redeemed = await redeemCoupon(payment.couponCode, payment.userId, session);
+          if (!redeemed) {
+            logger.warn('PayPal finalize: coupon redemption not recorded (already used or cap reached)', {
+              coupon: payment.couponCode, userId: String(payment.userId), orderId,
+            });
+          }
+        }
+
         await createInvoice({
           userId:    payment.userId,
           email:     payment.customer?.email,
@@ -155,6 +183,9 @@ async function finalizePaypalOrder(orderId, capture) {
           planName:  payment.plan,
           paymentId: payment._id,
           createdAt: payment.createdAt,
+          // Payment.amount is already net of any coupon — invoice what was
+          // actually charged, not the list price.
+          amountPaid: payment.amount,
           session,
         });
 

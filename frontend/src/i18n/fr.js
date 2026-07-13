@@ -1017,7 +1017,14 @@
     "startFailed": "Impossible de démarrer le paiement. Veuillez réessayer.",
     "paymentFailed": "Échec du paiement. Veuillez réessayer.",
     "submitFailed": "Échec de l'envoi. Veuillez réessayer.",
-    "recurringNote": "Renouvellement automatique mensuel — annulable à tout moment."
+    "recurringNote": "Renouvellement automatique mensuel — annulable à tout moment.",
+    "couponLabel": "Code promo",
+    "couponPlaceholder": "ex. WELCOME10",
+    "couponApply": "Appliquer",
+    "couponApplied": "Coupon appliqué",
+    "couponRemove": "Retirer",
+    "couponDiscountLine": "Remise coupon",
+    "couponLoginFirst": "Veuillez vous connecter pour utiliser un code promo."
   },
   "errors": {
     "crashed": "Une erreur s'est produite",

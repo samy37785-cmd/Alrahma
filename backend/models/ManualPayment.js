@@ -3,9 +3,14 @@ import mongoose from 'mongoose';
 const manualPaymentSchema = new mongoose.Schema(
   {
     plan:     { type: String, required: true },
-    amount:   { type: Number, required: true },
+    amount:   { type: Number, required: true }, // already net of any coupon
     currency: { type: String, default: 'EUR' },
     method:   { type: String, required: true }, // wu | moneygram | payoneer | bank | paypal_manual
+
+    // Coupon applied at submission (couponService.resolveCouponForCheckout);
+    // redeemed only when an admin approves the payment.
+    couponCode:     { type: String, default: null },
+    discountAmount: { type: Number, default: 0 },
 
     customer: {
       name:  { type: String, trim: true },

@@ -17,6 +17,13 @@ import '@fontsource/poppins/latin-800.css';
 import '@fontsource/poppins/latin-ext-400.css';
 import '@fontsource/poppins/latin-ext-600.css';
 import '@fontsource/poppins/latin-ext-700.css';
+// Playfair Display — Latin editorial display serif for section headlines
+// (Home page restyle only). Self-hosted for the same reason as Poppins
+// above. Only the 2 weights actually used (600/700) + their italic variants
+// (for the .hero__highlight accent word).
+import '@fontsource/playfair-display/latin-600.css';
+import '@fontsource/playfair-display/latin-700.css';
+import '@fontsource/playfair-display/latin-600-italic.css';
 // NOTE: Amiri (Arabic) is heavy (~200 KB) and is the biggest item in the
 // render critical path, yet it's only needed for Arabic-script text. It is
 // loaded lazily after first paint (see loadArabicFonts below) so it no longer

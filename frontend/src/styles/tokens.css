@@ -26,6 +26,7 @@
   --p-green-700: #063a2a;
   --p-green-800: #06372a;   /* brand deep */
   --p-green-900: #041e17;
+  --p-green-950: #00241f;   /* deepest — Home page editorial-serif restyle */
 
   /* Gold family */
   --p-gold-50:  #fdf9e8;
@@ -225,6 +226,9 @@
   --font-sans:  "Poppins", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-serif: "Amiri", Georgia, "Times New Roman", serif;
   --font-mono:  "Fira Code", "JetBrains Mono", "Courier New", monospace;
+  /* Latin display serif for editorial-style headlines (Home page restyle) —
+     distinct from --font-serif above, which is Amiri and stays Arabic-only. */
+  --font-serif-display: "Playfair Display", Georgia, serif;
 
   /* Font size scale */
   --text-xs:    0.72rem;   /* 11.5px */

@@ -114,7 +114,13 @@ export default defineConfig({
     port: 4173,
     host: true,
     proxy: {
-      '/api': { target: 'http://localhost:5000', changeOrigin: true },
+      // PREVIEW_API_TARGET lets the e2e suite (playwright.config.js) point a
+      // preview instance at its own isolated, seeded backend instead of the
+      // dev backend on :5000. Unset = unchanged default behavior.
+      '/api': {
+        target: process.env.PREVIEW_API_TARGET || 'http://localhost:5000',
+        changeOrigin: true,
+      },
     },
   },
 });

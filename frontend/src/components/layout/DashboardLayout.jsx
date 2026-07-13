@@ -17,6 +17,7 @@ import NotificationPanel from '../ui/NotificationPanel';
 import LangSwitcher from '../ui/LangSwitcher';
 import { getNameInitials } from '../../utils/nameInitials';
 import { site } from '../../data/site';
+import BrandIcon from '../ui/BrandIcon';
 import '../../styles/dashboard-shell.css';
 // LangSwitcher's `.ls*` styles live in header.css (shared with the public
 // Header). Importing it here too pulls in some unrelated `.header`/`.nav__*`
@@ -303,6 +304,7 @@ export default function DashboardLayout({ children }) {
       >
         {/* Brand */}
         <Link to="/" className="ds-brand">
+          <BrandIcon size={34} className="ds-brand__logo" />
           <div className="ds-brand__text">
             <span className="ds-brand__name">Al-Rahma</span>
             <span className="ds-brand__sub">Academy</span>

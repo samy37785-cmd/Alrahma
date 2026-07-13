@@ -198,7 +198,10 @@ img, video, svg, canvas { max-width: 100%; }
   }
   .nav.open { transform: translateY(0); transition: transform .38s cubic-bezier(0.22,1,0.36,1); }
 
-  /* Nav link rows */
+  /* Nav link rows — the drawer itself is a light (var(--white)) panel,
+     unlike the always-dark header bar these same classes render in on
+     desktop, so text/active colors are reverted to the original
+     dark-on-light treatment here. */
   .nav > a, .nav__dropdown-trigger {
     padding: 14px 20px;
     width: 100%;
@@ -206,12 +209,16 @@ img, video, svg, canvas { max-width: 100%; }
     border-bottom: 1px solid var(--line);
     border-radius: 0;
     background: none !important;
+    color: var(--ink);
     font-size: 0.95rem;
     font-weight: 600;
     display: flex;
     align-items: center;
     justify-content: space-between;
   }
+  .nav__dropdown-trigger:hover,
+  .nav__dropdown-trigger--open { color: var(--green); background: var(--green-light) !important; }
+  .nav__active { color: var(--green) !important; }
 
   /* CTA button: full-width pill inside drawer */
   .nav__cta {
@@ -273,14 +280,24 @@ img, video, svg, canvas { max-width: 100%; }
 @media (max-width: 480px) {
   .header__right { gap: 5px; }
   .brand__text small { display: none; }   /* keep the name, drop the tagline */
+
+  /* Header lockup: drop the ACADEMY sub-line and Arabic line, keep just
+     icon + AL-RAHMA, mirroring the old compact mark's tagline-drop above. */
+  .header__lockup { gap: 0.7rem; }
+  .header__lockup .brand-lockup__en-sub,
+  .header__lockup .brand-lockup__ar { display: none; }
 }
 @media (max-width: 400px) {
   .header__right { gap: 4px; }
   .ls__code { display: none; }             /* language: flag only */
   .ls__trigger { padding: 6px 8px; }
+  .header__lockup { gap: 0.5rem; }
+  .header__lockup .brand-lockup__icon { width: 32px; height: 32px; }
+  .header__lockup .brand-lockup__en-main { font-size: 1.05rem; }
   .header__right .btn--sm { padding: 8px 12px; font-size: .82rem; }
   .brand__text strong { font-size: 1rem; }
   .brand { gap: 8px; }
+  .brand__mark { width: 28px; height: 28px; }
 }
 
 /* ── 6d) Quran reader — control-bar selects (≈505px) overflowed once
@@ -350,6 +367,7 @@ img, video, svg, canvas { max-width: 100%; }
   .newsletter__form  { width: 100%; }
   .newsletter__form input { min-width: 0; width: 100%; box-sizing: border-box; }
   .hero__visual--medallion { height: 280px; }
+  .hero__lockup { max-width: 220px; padding: 1rem 1.1rem; }
 
   /* Hero stats bar: 4 icon+label items in one row need more width than a
      narrow phone's hero column has (found via real screenshot — the row's

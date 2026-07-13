@@ -24,6 +24,11 @@ import '@fontsource/poppins/latin-ext-700.css';
 import '@fontsource/playfair-display/latin-600.css';
 import '@fontsource/playfair-display/latin-700.css';
 import '@fontsource/playfair-display/latin-600-italic.css';
+// Brand-lockup-only fonts (Header logo appears on every page, so loaded
+// eagerly like Poppins rather than lazily like Amiri below — a lazy-loaded
+// logo wordmark would visibly font-swap on every single page load).
+import '@fontsource/cinzel/latin-700.css';
+import '@fontsource/cairo/arabic-700.css';
 // NOTE: Amiri (Arabic) is heavy (~200 KB) and is the biggest item in the
 // render critical path, yet it's only needed for Arabic-script text. It is
 // loaded lazily after first paint (see loadArabicFonts below) so it no longer

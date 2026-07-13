@@ -195,21 +195,8 @@
 .hero__visual--medallion {
   height: 440px;
 }
-/* Decorative backdrop panel filling the space behind the floating pills and
-   verse card — this slot was left empty after the old brand medallion was
-   removed. Purely decorative (tiled pattern + gradient wash, no fabricated
-   content/logo). Painted before the pills/verse in DOM order, so it sits
-   behind them with no z-index needed on the existing elements. */
-.hero__visual--medallion::before {
-  content: '';
-  position: absolute;
-  inset: 6%;
-  border-radius: 28px;
-  background:
-    var(--islamic-pattern) repeat 0 0 / 40px 40px,
-    linear-gradient(155deg, var(--p-green-950) 0%, var(--p-green-800) 55%, rgba(212,175,55,.28) 100%);
-  border: 1px solid rgba(212,175,55,.25);
-  box-shadow: 0 20px 60px rgba(0,36,31,.35);
+.hero__lockup {
+  max-width: 300px;
 }
 
 /* Floating pills */

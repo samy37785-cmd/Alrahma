@@ -13,6 +13,7 @@ import { useEffect } from 'react';
 
 const SITE = 'AL-Rahma Academy';
 const ORIGIN = 'https://al-rahmaacademy.com';
+const DEFAULT_IMAGE = `${ORIGIN}/og-cover.svg`;
 
 function setMeta(attr, key, value) {
   let el = document.head.querySelector(`meta[${attr}="${key}"]`);
@@ -92,7 +93,7 @@ export default function useSEO({
   useEffect(() => {
     const fullTitle = title ? `${title} | ${SITE}` : `${SITE} — Learn the Holy Quran Online`;
     const url = ORIGIN + window.location.pathname;
-    const img = image || null;
+    const img = image || DEFAULT_IMAGE;
 
     document.title = fullTitle;
 

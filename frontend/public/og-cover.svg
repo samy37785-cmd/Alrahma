@@ -1,0 +1,78 @@
+<svg viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Al-Rahma Academy">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#123f3a" />
+      <stop offset="1" stop-color="#0c3834" />
+    </linearGradient>
+    <linearGradient id="dome" x1="0.15" y1="0.05" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#3a9c85" />
+      <stop offset="0.45" stop-color="#1e6b5c" />
+      <stop offset="1" stop-color="#0c3834" />
+    </linearGradient>
+    <linearGradient id="wingl" x1="1" y1="0.3" x2="0" y2="1">
+      <stop offset="0" stop-color="#1e6b5c" />
+      <stop offset="0.4" stop-color="#2c8069" />
+      <stop offset="0.72" stop-color="#c39a3a" />
+      <stop offset="1" stop-color="#d4af37" />
+    </linearGradient>
+    <linearGradient id="wingr" x1="0" y1="0.3" x2="1" y2="1">
+      <stop offset="0" stop-color="#1e6b5c" />
+      <stop offset="0.4" stop-color="#2c8069" />
+      <stop offset="0.72" stop-color="#c39a3a" />
+      <stop offset="1" stop-color="#d4af37" />
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#bg)" />
+
+  <!-- Icon, hand-positioned at ~2.1x the 100x100 source viewBox, centered
+       above the wordmark — vertical lockup (guideline panel 2), not the
+       side-by-side horizontal layout (panel 3) used elsewhere. -->
+  <g transform="translate(495,92) scale(2.1)">
+    <rect x="47.6" y="14.5" width="4.8" height="13" rx="2.4" fill="#d4af37" />
+    <path d="M50 9c2.6 0 4.7 2 4.7 4.5 0 1-.35 1.95-.95 2.7a5.4 5.4 0 0 0 .1-6.1 4.9 4.9 0 0 0-3.85-1.6 4.9 4.9 0 0 0-3.85 1.6 5.4 5.4 0 0 0 .1 6.1 4.6 4.6 0 0 1-.95-2.7c0-2.5 2.1-4.5 4.7-4.5Z" fill="#d4af37" />
+    <path d="M50 26.5
+             C 44.5 26.5, 40.5 31, 38.7 37
+             C 37.2 42, 37 47, 38.2 51.5
+             C 38.9 54, 40.3 55.7, 42 56.4
+             C 42 55, 42.4 54, 43.2 53.5
+             C 45.2 52.2, 54.8 52.2, 56.8 53.5
+             C 57.6 54, 58 55, 58 56.4
+             C 59.7 55.7, 61.1 54, 61.8 51.5
+             C 63 47, 62.8 42, 61.3 37
+             C 59.5 31, 55.5 26.5, 50 26.5
+             Z" fill="url(#dome)" stroke="#d4af37" stroke-width="1.6" stroke-linejoin="round" />
+    <rect x="36" y="55.5" width="28" height="7" rx="1.5" fill="url(#dome)" stroke="#d4af37" stroke-width="1.4" />
+    <path d="M50 60
+             C 40 66, 24 66, 12 61
+             C 10.5 61.5, 9 63.5, 9 66
+             C 9 76, 22 84, 38 85.5
+             C 44 86, 48 84, 50 80
+             Z" fill="url(#wingl)" />
+    <path d="M50 60
+             C 60 66, 76 66, 88 61
+             C 89.5 61.5, 91 63.5, 91 66
+             C 91 76, 78 84, 62 85.5
+             C 56 86, 52 84, 50 80
+             Z" fill="url(#wingr)" />
+    <path d="M50 60 L50 80.5" stroke="#0c3834" stroke-width="1.3" stroke-linecap="round" opacity="0.55" />
+    <path d="M47 61.5 C 41 65, 32 65.5, 24 63.5" stroke="#0c3834" stroke-width="0.7" opacity="0.32" fill="none" />
+    <path d="M46 63 C 38 67, 26 68, 15 64.5" stroke="#0c3834" stroke-width="0.8" opacity="0.28" fill="none" />
+    <path d="M44.5 65.5 C 34 70.5, 20 71.5, 11.5 67" stroke="#0c3834" stroke-width="0.7" opacity="0.22" fill="none" />
+    <path d="M53 61.5 C 59 65, 68 65.5, 76 63.5" stroke="#0c3834" stroke-width="0.7" opacity="0.32" fill="none" />
+    <path d="M54 63 C 62 67, 74 68, 85 64.5" stroke="#0c3834" stroke-width="0.8" opacity="0.28" fill="none" />
+    <path d="M55.5 65.5 C 66 70.5, 80 71.5, 88.5 67" stroke="#0c3834" stroke-width="0.7" opacity="0.22" fill="none" />
+  </g>
+
+  <!-- Wordmark: font-family references Cinzel/Cairo/Amiri (self-hosted by
+       the app for in-app rendering). Viewers without those fonts installed
+       fall back to serif/sans-serif — a known limitation for this static
+       file, called out in the delivery report. All lines are centered on
+       the canvas midpoint (x=600) so the RTL Arabic/Bismillah lines (which
+       render leftward from their anchor) can't collide with the icon. -->
+  <text x="600" y="352" text-anchor="middle" font-family="Cinzel, Georgia, serif" font-weight="700" font-size="58" letter-spacing="3" fill="#f6f1e6">AL-RAHMA</text>
+  <line x1="490" y1="382" x2="710" y2="382" stroke="#d4af37" stroke-width="2" />
+  <text x="600" y="417" text-anchor="middle" font-family="Cinzel, Georgia, serif" font-weight="700" font-size="26" letter-spacing="8" fill="#d4af37">ACADEMY</text>
+  <text x="600" y="477" text-anchor="middle" font-family="Cairo, 'Segoe UI', sans-serif" font-weight="700" font-size="34" fill="#f6f1e6" direction="rtl">أكاديمية الرحمة</text>
+  <text x="600" y="527" text-anchor="middle" font-family="Amiri, Georgia, serif" font-size="30" fill="#d4af37" direction="rtl">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</text>
+</svg>

@@ -10,6 +10,7 @@ const CACHE = 'alrahma-v2';
 // each build, so serving a cached HTML with old chunk names causes 404s.
 const STATIC_PRECACHE = [
   '/manifest.json',
+  '/favicon.svg',
 ];
 
 self.addEventListener('install', (e) => {

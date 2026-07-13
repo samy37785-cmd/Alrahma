@@ -1,0 +1,108 @@
+/* BrandLockup — official logo lockup card. Colors are the brand guideline's
+   exact swatches (#0C3834 / #1E6B5C / #D4AF37 / #F6F1E6 / #0F1417), not the
+   app's semantic design tokens — this is fixed brand artwork, not themeable
+   UI chrome, so it intentionally does not respond to dark mode. */
+
+.brand-lockup {
+  display: flex;
+  align-items: center;
+  gap: 1.1rem;
+  background: linear-gradient(155deg, #123f3a, #0c3834);
+  border-radius: 1.1rem;
+  padding: 1.1rem 1.5rem;
+  box-shadow: 0 10px 30px -12px rgba(12, 56, 52, 0.45);
+}
+
+.brand-lockup--vertical {
+  flex-direction: column;
+  text-align: center;
+  gap: 0.65rem;
+  padding: 1.6rem 1.75rem;
+}
+
+/* Drops the card's own background/padding/shadow — for use on a parent
+   that's already the brand's dark green (e.g. the header bar), so the
+   icon+wordmark don't render as a nested card inside another. */
+.brand-lockup--plain {
+  background: none;
+  box-shadow: none;
+  padding: 0;
+  border-radius: 0;
+}
+
+.brand-lockup__icon {
+  flex-shrink: 0;
+}
+
+/* Vertical gold divider between the icon and the text column — horizontal
+   mode only, matching the guideline's Horizontal Logo panel exactly. */
+.brand-lockup__spine {
+  align-self: stretch;
+  width: 1px;
+  background: #d4af37;
+  opacity: 0.6;
+  flex-shrink: 0;
+}
+
+.brand-lockup__text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.brand-lockup--vertical .brand-lockup__text {
+  align-items: center;
+}
+
+/* AL-RAHMA / thin gold underline / ACADEMY, always stacked — both
+   orientations use the same vertical text-block pattern; only the icon's
+   relationship to that block (top vs. left-with-spine) differs. */
+.brand-lockup__en {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.3rem;
+}
+
+.brand-lockup--vertical .brand-lockup__en {
+  align-items: center;
+}
+
+.brand-lockup__en-main {
+  font-family: 'Cinzel', serif;
+  font-weight: 700;
+  font-size: 1.35rem;
+  letter-spacing: 0.06em;
+  color: #f6f1e6;
+  line-height: 1;
+}
+
+.brand-lockup__divider {
+  width: 2.25rem;
+  height: 1px;
+  background: #d4af37;
+}
+
+.brand-lockup__en-sub {
+  font-family: 'Cinzel', serif;
+  font-weight: 700;
+  font-size: 0.72rem;
+  letter-spacing: 0.28em;
+  color: #d4af37;
+  line-height: 1;
+}
+
+.brand-lockup__ar {
+  font-family: 'Cairo', sans-serif;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #f6f1e6;
+}
+
+.brand-lockup__bismillah {
+  font-family: 'Amiri', serif;
+  font-weight: 400;
+  font-size: 1.05rem;
+  color: #d4af37;
+  margin-top: 0.15rem;
+}

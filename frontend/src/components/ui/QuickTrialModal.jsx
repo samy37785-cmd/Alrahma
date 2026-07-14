@@ -1,29 +1,25 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { submitTrial } from '../../api/contentApi';
-import { useEscapeKey } from '../../hooks/useEscapeKey';
+import { useModalA11y } from '../../hooks/useModalA11y';
 
 export default function QuickTrialModal({ open, onClose }) {
   const [form, setForm] = useState({ name: '', email: '', whatsapp: '' });
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState('');
-  const firstRef = useRef(null);
+  // Escape-to-close, initial focus (name input), scroll lock, focus restore —
+  // this modal originally hand-rolled the first three; the hook was extracted
+  // from here (see useModalA11y.js) and now it consumes it like every other
+  // dialog. Visuals (.qtm*) are deliberately bespoke marketing styling and
+  // are NOT migrated to .ds-modal chrome.
+  const firstRef = useModalA11y(open, onClose);
 
   useEffect(() => {
     if (open) {
       setForm({ name: '', email: '', whatsapp: '' });
       setDone(false);
       setError('');
-      setTimeout(() => firstRef.current?.focus(), 60);
     }
-  }, [open]);
-
-  useEscapeKey(onClose, open);
-
-  useEffect(() => {
-    if (!open) return;
-    document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = ''; };
   }, [open]);
 
   if (!open) return null;

@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import Reveal from './ui/Reveal';
-import { site, courseOptions } from '../data';
-import { submitTrial } from '../api/contentApi';
-import { useTrial } from '../context/TrialContext';
-import { useLang } from '../context/LangContext';
+import Reveal from '../../ui/Reveal';
+import { site, courseOptions } from '../../../data';
+import { submitTrial } from '../../../api/contentApi';
+import { useTrial } from '../../../context/TrialContext';
+import { useLang } from '../../../context/LangContext';
 
 const EMPTY = { name: '', email: '', phone: '', course: '', message: '' };
 

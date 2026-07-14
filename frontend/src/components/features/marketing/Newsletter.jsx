@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import Reveal from './ui/Reveal';
-import { subscribeNewsletter } from '../api/contentApi';
-import { useLang } from '../context/LangContext';
+import Reveal from '../../ui/Reveal';
+import { subscribeNewsletter } from '../../../api/contentApi';
+import { useLang } from '../../../context/LangContext';
 
 /* Inline SVG icons — same Lucide-style used across the homepage, replacing
    raw emoji so the benefits list matches the rest of the icon language. */

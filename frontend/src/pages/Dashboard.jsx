@@ -27,6 +27,7 @@ import CertificateCard from '../components/ui/CertificateCard';
 import ReferralCard from '../components/ui/ReferralCard';
 import WishlistButton from '../components/ui/WishlistButton';
 import '../styles/trust-engage.css';
+import { formatDayMonth as fmtDate, formatTime as fmtTime, minutesUntil } from '../utils/date';
 
 /* ── helpers ──────────────────────────────────────────────────── */
 const SESSIONS_BY_PLAN = {
@@ -60,20 +61,6 @@ function greeting(d) {
   if (h < 12) return d.greetingMorning;
   if (h < 17) return d.greetingAfternoon;
   return d.greetingEvening;
-}
-
-function fmtDate(d) {
-  if (!d) return '—';
-  return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
-}
-
-function fmtTime(d) {
-  if (!d) return '';
-  return new Date(d).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-}
-
-function minutesUntil(d) {
-  return Math.max(0, Math.round((new Date(d) - Date.now()) / 60000));
 }
 
 function todayKey() {

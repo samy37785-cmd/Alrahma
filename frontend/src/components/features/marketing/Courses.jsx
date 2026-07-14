@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import Reveal from './ui/Reveal';
-import ResourceModal from './ui/ResourceModal';
-import AlphabetLearner from './features/AlphabetLearner';
-import { useTrial } from '../context/TrialContext';
-import { useLang } from '../context/LangContext';
-import { courses } from '../data';
+import Reveal from '../../ui/Reveal';
+import ResourceModal from '../../ui/ResourceModal';
+import AlphabetLearner from '../tools/AlphabetLearner';
+import { useTrial } from '../../../context/TrialContext';
+import { useLang } from '../../../context/LangContext';
+import { courses } from '../../../data';
 
 // `popular: true` drives the one "Most Popular" row — a deliberate hierarchy
 // signal (like a highlighted pricing plan) rather than treating all six

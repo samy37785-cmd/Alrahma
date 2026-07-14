@@ -4,7 +4,7 @@ import Footer from '../../components/layout/Footer';
 import Breadcrumbs from '../../components/ui/Breadcrumbs';
 import WhatsappFab from '../../components/ui/WhatsappFab';
 import useSEO from '../../hooks/useSEO';
-import AlphabetLearner from '../../components/features/AlphabetLearner';
+import AlphabetLearner from '../../components/features/tools/AlphabetLearner';
 import { useLang } from '../../context/LangContext';
 
 export default function ArabicAlphabetPage() {

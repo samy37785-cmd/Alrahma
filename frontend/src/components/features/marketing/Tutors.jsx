@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import Reveal from './ui/Reveal';
-import { TEACHERS } from '../data';
-import { useLang } from '../context/LangContext';
+import Reveal from '../../ui/Reveal';
+import { TEACHERS } from '../../../data';
+import { useLang } from '../../../context/LangContext';
 
 /* Inline SVG icons — Lucide-style, consistent with the rest of the homepage. */
 const STAR_ICON = (

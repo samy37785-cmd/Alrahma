@@ -15,97 +15,7 @@ import {
   MessageSquare, Clock, Download, Share2,
 } from 'lucide-react';
 import { getNameInitials } from '../utils/nameInitials';
-
-const TXT = {
-  en: {
-    linkTitle: 'Link a child account',
-    linkHelp: 'Ask your child to open their Profile page and copy the link code, then enter it below.',
-    code: 'Link code', link: 'Link', linked: 'Child linked successfully.',
-    children: 'My children', noChildren: 'No children linked yet.',
-    records: 'records', verses: 'memorized verses', view: 'View progress', unlink: 'Unlink',
-    close: 'Close', history: 'Teacher follow-up', noRecords: 'No follow-up records yet.',
-    courseProgress: 'Course progress', hifz: 'Memorization (Hifz)',
-    noCourses: 'No course activity.', noHifz: 'No memorization recorded.',
-    surah: 'Surah', ayah: 'verses',
-    present: 'Present', absent: 'Absent', late: 'Late', excused: 'Excused',
-    by: 'by',
-  },
-  ar: {
-    linkTitle: 'ربط حساب الابن',
-    linkHelp: 'اطلب من ابنك فتح صفحة "الملف الشخصي" ونسخ كود الربط ثم أدخله هنا.',
-    code: 'كود الربط', link: 'ربط', linked: 'تم ربط الابن بنجاح.',
-    children: 'أبنائي', noChildren: 'لم يُربط أبناء بعد.',
-    records: 'سجل', verses: 'آية محفوظة', view: 'عرض التقدم', unlink: 'إلغاء الربط',
-    close: 'إغلاق', history: 'متابعة المعلم', noRecords: 'لا توجد سجلات متابعة.',
-    courseProgress: 'تقدّم الكورسات', hifz: 'الحفظ',
-    noCourses: 'لا يوجد نشاط.', noHifz: 'لم يُسجَّل حفظ.',
-    surah: 'سورة', ayah: 'آية',
-    present: 'حاضر', absent: 'غائب', late: 'متأخر', excused: 'بعذر',
-    by: 'بواسطة',
-  },
-  it: {
-    linkTitle: 'Collega un account figlio',
-    linkHelp: 'Chiedi a tuo figlio di aprire la pagina Profilo e copiare il codice di collegamento, poi inseriscilo qui sotto.',
-    code: 'Codice collegamento', link: 'Collega', linked: 'Figlio collegato con successo.',
-    children: 'I miei figli', noChildren: 'Nessun figlio collegato ancora.',
-    records: 'registri', verses: 'versetti memorizzati', view: 'Vedi progressi', unlink: 'Scollega',
-    close: 'Chiudi', history: 'Seguito insegnante', noRecords: 'Nessun registro di seguito.',
-    courseProgress: 'Progressi nel corso', hifz: 'Memorizzazione (Hifz)',
-    noCourses: 'Nessuna attività nel corso.', noHifz: 'Nessuna memorizzazione registrata.',
-    surah: 'Surah', ayah: 'versetti',
-    present: 'Presente', absent: 'Assente', late: 'In ritardo', excused: 'Giustificato',
-    by: 'da',
-  },
-  fr: {
-    linkTitle: 'Lier un compte enfant',
-    linkHelp: 'Demandez à votre enfant d\'ouvrir sa page Profil et de copier le code de liaison, puis entrez-le ci-dessous.',
-    code: 'Code de liaison', link: 'Lier', linked: 'Enfant lié avec succès.',
-    children: 'Mes enfants', noChildren: 'Aucun enfant lié pour l\'instant.',
-    records: 'enregistrements', verses: 'versets mémorisés', view: 'Voir les progrès', unlink: 'Délier',
-    close: 'Fermer', history: 'Suivi enseignant', noRecords: 'Aucun enregistrement de suivi.',
-    courseProgress: 'Progression du cours', hifz: 'Mémorisation (Hifz)',
-    noCourses: 'Aucune activité dans le cours.', noHifz: 'Aucune mémorisation enregistrée.',
-    surah: 'Sourate', ayah: 'versets',
-    present: 'Présent', absent: 'Absent', late: 'En retard', excused: 'Excusé',
-    by: 'par',
-  },
-  de: {
-    linkTitle: 'Kindkonto verknüpfen',
-    linkHelp: 'Bitte dein Kind, die Profilseite zu öffnen und den Verknüpfungscode zu kopieren, dann hier eingeben.',
-    code: 'Verknüpfungscode', link: 'Verknüpfen', linked: 'Kind erfolgreich verknüpft.',
-    children: 'Meine Kinder', noChildren: 'Noch keine Kinder verknüpft.',
-    records: 'Einträge', verses: 'auswendig gelernte Verse', view: 'Fortschritt ansehen', unlink: 'Trennen',
-    close: 'Schließen', history: 'Lehrerbegleitung', noRecords: 'Noch keine Begleitungseinträge.',
-    courseProgress: 'Kursfortschritt', hifz: 'Memorierung (Hifz)',
-    noCourses: 'Noch keine Kursaktivität.', noHifz: 'Keine Memorierung aufgezeichnet.',
-    surah: 'Sure', ayah: 'Verse',
-    present: 'Anwesend', absent: 'Abwesend', late: 'Zu spät', excused: 'Entschuldigt',
-    by: 'von',
-  },
-  es: {
-    linkTitle: 'Vincular cuenta de hijo',
-    linkHelp: 'Pide a tu hijo que abra su página de Perfil y copie el código de vinculación, luego ingrésalo abajo.',
-    code: 'Código de vinculación', link: 'Vincular', linked: 'Hijo vinculado con éxito.',
-    children: 'Mis hijos', noChildren: 'Aún no hay hijos vinculados.',
-    records: 'registros', verses: 'versículos memorizados', view: 'Ver progreso', unlink: 'Desvincular',
-    close: 'Cerrar', history: 'Seguimiento del profesor', noRecords: 'Sin registros de seguimiento.',
-    courseProgress: 'Progreso del curso', hifz: 'Memorización (Hifz)',
-    noCourses: 'Sin actividad en el curso.', noHifz: 'Sin memorización registrada.',
-    surah: 'Surah', ayah: 'versículos',
-    present: 'Presente', absent: 'Ausente', late: 'Tarde', excused: 'Justificado',
-    by: 'por',
-  },
-};
-
-function fmtDate(d) {
-  if (!d) return '—';
-  return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-}
-
-function fmtTime(d) {
-  if (!d) return '';
-  return new Date(d).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-}
+import { formatFullDate as fmtDate, formatTime as fmtTime } from '../utils/date';
 
 function attendBadge(a) {
   if (a === 'present') return 'ds-badge--green';
@@ -249,8 +159,8 @@ function ChildModal({ childId, childList, L, onClose }) {
    ══════════════════════════════════════════════════════════════════ */
 export default function ParentDashboard() {
   const { user }   = useAuth();
-  const { lang }   = useLang();
-  const L          = TXT[lang] || TXT.en;
+  const { t, lang } = useLang();
+  const L          = t.parentDash;
   const queryClient = useQueryClient();
 
   const [code,      setCode]      = useState('');

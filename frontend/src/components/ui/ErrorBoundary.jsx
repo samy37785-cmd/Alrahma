@@ -1,5 +1,5 @@
 import { Component } from 'react';
-import { captureException } from '../utils/sentry.js';
+import { captureException } from '../../utils/sentry';
 
 const CRASH_STRINGS = {
   ar: { crashed: 'حدث خطأ غير متوقع', crashSub: 'حدث خطأ غير متوقع. يرجى تحديث الصفحة والمحاولة مرة أخرى.', refresh: 'تحديث الصفحة' },

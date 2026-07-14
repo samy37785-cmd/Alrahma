@@ -4,7 +4,7 @@ import Footer from '../../components/layout/Footer';
 import Breadcrumbs from '../../components/ui/Breadcrumbs';
 import WhatsappFab from '../../components/ui/WhatsappFab';
 import useSEO from '../../hooks/useSEO';
-import Tasbeeh from '../../components/features/Tasbeeh';
+import Tasbeeh from '../../components/features/tools/Tasbeeh';
 import { useLang } from '../../context/LangContext';
 
 export default function TasbeehPage() {

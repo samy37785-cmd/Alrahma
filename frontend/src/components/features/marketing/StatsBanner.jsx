@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import useScrollReveal from '../hooks/useScrollReveal';
-import useCountUp from '../hooks/useCountUp';
-import { useLang } from '../context/LangContext';
-import { STATS as STATS_DATA, SHOW_STATS } from '../data/socialProof';
+import useScrollReveal from '../../../hooks/useScrollReveal';
+import useCountUp from '../../../hooks/useCountUp';
+import { useLang } from '../../../context/LangContext';
+import { STATS as STATS_DATA, SHOW_STATS } from '../../../data/marketing/socialProof';
 
 function StatItem({ value, suffix, label, active, decimals = 0 }) {
   const count = useCountUp(value, 1600, active, decimals);

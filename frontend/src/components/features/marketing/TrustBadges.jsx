@@ -1,5 +1,5 @@
-import Reveal from './ui/Reveal';
-import { useLang } from '../context/LangContext';
+import Reveal from '../../ui/Reveal';
+import { useLang } from '../../../context/LangContext';
 
 const COUNTRIES = [
   { flag: '🇬🇧', name: 'UK' },

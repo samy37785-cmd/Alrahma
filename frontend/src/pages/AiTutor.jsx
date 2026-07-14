@@ -10,10 +10,7 @@ import {
 } from '../hooks/useAiTutor';
 import { streamTutorMessage } from '../api/aiTutorApi';
 import '../styles/ai-tutor.css';
-
-function fmtDate(d) {
-  return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
-}
+import { formatDayMonth as fmtDate } from '../utils/date';
 
 export default function AiTutor() {
   const [activeId, setActiveId] = useState(null);

@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import Reveal from './ui/Reveal';
-import { useLang } from '../context/LangContext';
+import Reveal from '../../ui/Reveal';
+import { useLang } from '../../../context/LangContext';
 
 const PLUS_ICON = (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"

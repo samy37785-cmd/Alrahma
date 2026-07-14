@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
-import Reveal from './ui/Reveal';
-import { useLang } from '../context/LangContext';
+import Reveal from '../../ui/Reveal';
+import { useLang } from '../../../context/LangContext';
 import LiveCounter from './LiveCounter';
 
 /* Inline SVG icons — same Lucide-style used across the homepage, replacing

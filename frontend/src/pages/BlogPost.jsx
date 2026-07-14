@@ -1,6 +1,6 @@
 import { useParams, Link, Navigate } from 'react-router-dom';
 import PageBar from '../components/layout/PageBar';
-import { CATEGORY_COLORS } from '../data/blogPosts';
+import { CATEGORY_COLORS } from '../data/marketing/blogPosts';
 import { useBlogPost, useBlogPosts } from '../hooks/useBlog';
 import useSEO from '../hooks/useSEO';
 import Breadcrumbs from '../components/ui/Breadcrumbs';

@@ -5,27 +5,12 @@ import { useLang } from '../context/LangContext';
 import { getContacts, getConversation, sendMessage } from '../api/messageApi';
 import DashboardLayout from '../components/layout/DashboardLayout';
 
-const TXT = {
-  en: {
-    bar: 'Messages', back: 'View site', contacts: 'Conversations',
-    noContacts: 'No conversations available. Messaging is between a student and their teacher.',
-    pick: 'Pick a conversation to start chatting.',
-    send: 'Send', placeholder: 'Write a message…', empty: 'No messages yet — say salam 👋',
-  },
-  ar: {
-    bar: 'الرسائل', back: 'عرض الموقع', contacts: 'المحادثات',
-    noContacts: 'لا توجد محادثات متاحة. المراسلة بين الطالب ومعلّمه.',
-    pick: 'اختر محادثة لتبدأ.',
-    send: 'إرسال', placeholder: 'اكتب رسالة…', empty: 'لا توجد رسائل بعد — سلّم 👋',
-  },
-};
-
 const fmt = (d) => new Date(d).toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 
 export default function Messages() {
   const { user } = useAuth();
-  const { lang } = useLang();
-  const L = TXT[lang === 'ar' ? 'ar' : 'en'];
+  const { t } = useLang();
+  const L = t.messages;
   const queryClient = useQueryClient();
 
   const [activeId, setActiveId] = useState(null);

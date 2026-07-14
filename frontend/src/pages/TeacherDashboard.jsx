@@ -21,87 +21,6 @@ import {
 import { getNameInitials } from '../utils/nameInitials';
 
 /* ── i18n ──────────────────────────────────────────────────────── */
-const TXT = {
-  en: {
-    grade: 'Grade /100', gradeLabel: 'Rating', attendance: 'Attendance', note: 'Note',
-    present: 'Present', absent: 'Absent', late: 'Late', excused: 'Excused', notSet: 'Not set',
-    save: 'Save record', history: 'Follow-up history', noRecords: 'No records yet.',
-    courseProgress: 'Course progress', hifz: 'Memorization (Hifz)', noCourses: 'No course activity yet.',
-    noHifz: 'No memorization recorded yet.', delete: 'Delete', close: 'Close',
-    needField: 'Add at least a grade, attendance or note.',
-    surah: 'Surah', ayah: 'ayah',
-    classTitle: 'Class title', student: 'Student', dateTime: 'Date & time',
-    duration: 'Duration (min)', meetingUrl: 'Meeting link', schedule: 'Schedule class',
-    noClasses: 'No upcoming classes.', cancelClass: 'Cancel', classNeed: 'Pick a student, title and date.',
-    tzNote: 'Times shown in your local timezone.',
-  },
-  ar: {
-    grade: 'الدرجة /100', gradeLabel: 'التقدير', attendance: 'الحضور', note: 'ملاحظة',
-    present: 'حاضر', absent: 'غائب', late: 'متأخر', excused: 'بعذر', notSet: 'غير محدد',
-    save: 'حفظ المتابعة', history: 'سجل المتابعة', noRecords: 'لا توجد سجلات بعد.',
-    courseProgress: 'تقدّم الكورسات', hifz: 'الحفظ', noCourses: 'لا يوجد نشاط بعد.',
-    noHifz: 'لم يُسجَّل حفظ بعد.', delete: 'حذف', close: 'إغلاق',
-    needField: 'ضِف على الأقل درجة أو حضور أو ملاحظة.',
-    surah: 'سورة', ayah: 'آية',
-    classTitle: 'عنوان الحصة', student: 'الطالب', dateTime: 'التاريخ والوقت',
-    duration: 'المدة (دقائق)', meetingUrl: 'رابط الحصة', schedule: 'جدولة حصة',
-    noClasses: 'لا توجد حصص قادمة.', cancelClass: 'إلغاء', classNeed: 'اختر طالبًا وعنوانًا وتاريخًا.',
-    tzNote: 'الأوقات بتوقيتك المحلي.',
-  },
-  it: {
-    grade: 'Voto /100', gradeLabel: 'Valutazione', attendance: 'Presenza', note: 'Nota',
-    present: 'Presente', absent: 'Assente', late: 'In ritardo', excused: 'Giustificato', notSet: 'Non impostato',
-    save: 'Salva scheda', history: 'Storico follow-up', noRecords: 'Nessun registro ancora.',
-    courseProgress: 'Progresso corsi', hifz: 'Memorizzazione (Hifz)', noCourses: 'Nessuna attività ancora.',
-    noHifz: 'Nessuna memorizzazione registrata.', delete: 'Elimina', close: 'Chiudi',
-    needField: 'Aggiungi almeno un voto, presenza o nota.',
-    surah: 'Surah', ayah: 'ayah',
-    classTitle: 'Titolo lezione', student: 'Studente', dateTime: 'Data e ora',
-    duration: 'Durata (min)', meetingUrl: 'Link riunione', schedule: 'Programma lezione',
-    noClasses: 'Nessuna lezione in arrivo.', cancelClass: 'Annulla', classNeed: 'Scegli uno studente, titolo e data.',
-    tzNote: 'Orari nel tuo fuso orario locale.',
-  },
-  fr: {
-    grade: 'Note /100', gradeLabel: 'Appréciation', attendance: 'Présence', note: 'Note',
-    present: 'Présent', absent: 'Absent', late: 'En retard', excused: 'Excusé', notSet: 'Non défini',
-    save: 'Enregistrer', history: 'Historique suivi', noRecords: 'Aucun enregistrement.',
-    courseProgress: 'Progression des cours', hifz: 'Mémorisation (Hifz)', noCourses: 'Aucune activité encore.',
-    noHifz: 'Aucune mémorisation enregistrée.', delete: 'Supprimer', close: 'Fermer',
-    needField: 'Ajoutez au moins une note, présence ou commentaire.',
-    surah: 'Sourate', ayah: 'verset',
-    classTitle: 'Titre du cours', student: 'Élève', dateTime: 'Date et heure',
-    duration: 'Durée (min)', meetingUrl: 'Lien réunion', schedule: 'Planifier un cours',
-    noClasses: 'Aucun cours à venir.', cancelClass: 'Annuler', classNeed: 'Choisissez un élève, un titre et une date.',
-    tzNote: 'Heures dans votre fuseau horaire local.',
-  },
-  de: {
-    grade: 'Note /100', gradeLabel: 'Bewertung', attendance: 'Anwesenheit', note: 'Notiz',
-    present: 'Anwesend', absent: 'Abwesend', late: 'Zu spät', excused: 'Entschuldigt', notSet: 'Nicht gesetzt',
-    save: 'Eintrag speichern', history: 'Verlauf', noRecords: 'Noch keine Einträge.',
-    courseProgress: 'Kursfortschritt', hifz: 'Memorierung (Hifz)', noCourses: 'Noch keine Aktivität.',
-    noHifz: 'Noch keine Memorierung aufgezeichnet.', delete: 'Löschen', close: 'Schließen',
-    needField: 'Füge mindestens eine Note, Anwesenheit oder Notiz hinzu.',
-    surah: 'Sure', ayah: 'Vers',
-    classTitle: 'Stundenthema', student: 'Schüler', dateTime: 'Datum & Uhrzeit',
-    duration: 'Dauer (Min)', meetingUrl: 'Meeting-Link', schedule: 'Stunde planen',
-    noClasses: 'Keine bevorstehenden Stunden.', cancelClass: 'Absagen', classNeed: 'Schüler, Thema und Datum wählen.',
-    tzNote: 'Zeiten in deiner lokalen Zeitzone.',
-  },
-  es: {
-    grade: 'Nota /100', gradeLabel: 'Calificación', attendance: 'Asistencia', note: 'Nota',
-    present: 'Presente', absent: 'Ausente', late: 'Tarde', excused: 'Justificado', notSet: 'No establecido',
-    save: 'Guardar registro', history: 'Historial seguimiento', noRecords: 'No hay registros aún.',
-    courseProgress: 'Progreso del curso', hifz: 'Memorización (Hifz)', noCourses: 'Sin actividad aún.',
-    noHifz: 'No se registró memorización.', delete: 'Eliminar', close: 'Cerrar',
-    needField: 'Añade al menos una nota, asistencia o comentario.',
-    surah: 'Surah', ayah: 'versículo',
-    classTitle: 'Título de clase', student: 'Estudiante', dateTime: 'Fecha y hora',
-    duration: 'Duración (min)', meetingUrl: 'Enlace reunión', schedule: 'Programar clase',
-    noClasses: 'No hay clases próximas.', cancelClass: 'Cancelar', classNeed: 'Elige estudiante, título y fecha.',
-    tzNote: 'Horarios en tu zona horaria local.',
-  },
-};
-
 const EMPTY_CLASS  = { student: '', title: '', startsAt: '', durationMin: 30, meetingUrl: '' };
 const EMPTY_RECORD = { date: '', course: '', grade: '', gradeLabel: '', attendance: '', note: '' };
 
@@ -473,8 +392,8 @@ function StudentModal({ studentId, students, courses, L, lang, onClose }) {
    ══════════════════════════════════════════════════════════════════ */
 export default function TeacherDashboard() {
   const { user }   = useAuth();
-  const { lang }   = useLang();
-  const L          = TXT[lang] || TXT.en;
+  const { t, lang } = useLang();
+  const L          = t.teacherDash;
   const queryClient = useQueryClient();
 
   const [openId,     setOpenId]     = useState(null);

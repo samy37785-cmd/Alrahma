@@ -11,8 +11,8 @@ import ScrollToTop from './components/ui/ScrollToTop';
 import RoutePrefetcher from './components/ui/RoutePrefetcher';
 import Analytics from './components/ui/Analytics';
 import { Analytics as VercelAnalytics } from '@vercel/analytics/react';
-import ErrorBoundary from './components/ErrorBoundary';
-import ContentGuard from './components/ContentGuard';
+import ErrorBoundary from './components/ui/ErrorBoundary';
+import ContentGuard from './components/ui/ContentGuard';
 import LiveChat from './components/ui/LiveChat';
 
 // Route-level code splitting

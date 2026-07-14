@@ -1,4 +1,4 @@
-import Reveal from './ui/Reveal';
+import Reveal from '../../ui/Reveal';
 
 const CHAIN = [
   {

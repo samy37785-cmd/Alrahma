@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import Reveal from './ui/Reveal';
-import MobileCarousel from './ui/MobileCarousel';
-import CheckoutModal from './ui/CheckoutModal';
-import { useLang } from '../context/LangContext';
-import { plans } from '../data';
-import { PLAN_TEXT, pick } from '../i18n/content';
+import Reveal from '../../ui/Reveal';
+import MobileCarousel from '../../ui/MobileCarousel';
+import CheckoutModal from '../../ui/CheckoutModal';
+import { useLang } from '../../../context/LangContext';
+import { plans } from '../../../data';
+import { PLAN_TEXT, pick } from '../../../i18n/content';
 
 // Currency config: code, symbol, rate from EUR, display label
 const CURRENCIES = [

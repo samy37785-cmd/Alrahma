@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useLang } from '../../context/LangContext';
+import { useLang } from '../../../context/LangContext';
 
 const CIRC = 326.73; // 2 * π * 52
 

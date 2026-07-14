@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import ErrorBoundary from '../components/ErrorBoundary';
+import ErrorBoundary from '../components/ui/ErrorBoundary';
 
 // T23 (monitoring & observability audit): Sentry is fully initialized in
 // production (see main.jsx / utils/sentry.js), but this top-level error

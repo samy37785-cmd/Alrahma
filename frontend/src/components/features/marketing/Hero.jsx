@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useLang } from '../context/LangContext';
-import QuranAudioPlayer from './ui/QuranAudioPlayer';
-import BrandLockup from './ui/BrandLockup';
+import { useLang } from '../../../context/LangContext';
+import QuranAudioPlayer from '../../ui/QuranAudioPlayer';
+import BrandLockup from '../../ui/BrandLockup';
 
 const DEMO_VIDEO_ID = import.meta.env.VITE_DEMO_VIDEO_ID || 'dQw4w9WgXcQ';
 

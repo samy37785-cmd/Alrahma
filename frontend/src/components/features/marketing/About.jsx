@@ -1,8 +1,8 @@
 import { Link } from 'react-router-dom';
-import Reveal from './ui/Reveal';
-import { useLang } from '../context/LangContext';
-import { stats, values } from '../data';
-import { VALUES_TEXT, pick } from '../i18n/content';
+import Reveal from '../../ui/Reveal';
+import { useLang } from '../../../context/LangContext';
+import { stats, values } from '../../../data';
+import { VALUES_TEXT, pick } from '../../../i18n/content';
 
 export default function About() {
   const { t, lang } = useLang();

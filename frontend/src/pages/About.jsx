@@ -1,6 +1,6 @@
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
-import About from '../components/About';
+import About from '../components/features/marketing/About';
 import useSEO from '../hooks/useSEO';
 import Breadcrumbs from '../components/ui/Breadcrumbs';
 import { useLang } from '../context/LangContext';

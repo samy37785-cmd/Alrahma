@@ -1,6 +1,6 @@
-import Reveal from './ui/Reveal';
-import { features } from '../data';
-import { useLang } from '../context/LangContext';
+import Reveal from '../../ui/Reveal';
+import { features } from '../../../data';
+import { useLang } from '../../../context/LangContext';
 
 const GRADS = [
   'linear-gradient(135deg,#d4af37,#f0c040)',  /* gold  — Free Trial */

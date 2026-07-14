@@ -17,6 +17,9 @@ test.describe('checkout modal', () => {
     await expect(modal).toBeVisible({ timeout: 10_000 });
 
     await page.evaluate(() => document.fonts.ready);
-    await expect(page).toHaveScreenshot('checkout-modal.png');
+    // Element screenshot, not page: the page's scroll offset behind the
+    // modal varies by a few px per run on mobile and is not what this
+    // baseline is protecting.
+    await expect(modal).toHaveScreenshot('checkout-modal.png');
   });
 });

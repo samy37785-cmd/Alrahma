@@ -8,7 +8,7 @@ import WhatsappFab from '../../components/ui/WhatsappFab';
 import useSEO from '../../hooks/useSEO';
 import { useLang } from '../../context/LangContext';
 import { TOOLS_TEXT, pick } from '../../i18n/content';
-import QiblaCompass from '../../components/features/QiblaCompass';
+import QiblaCompass from '../../components/features/tools/QiblaCompass';
 import { qiblaBearing, qiblaDistance, fetchPrayerCity } from '../../utils/islamicToolsUtils';
 
 export default function QiblaPage() {

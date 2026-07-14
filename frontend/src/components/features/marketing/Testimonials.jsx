@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import Reveal from './ui/Reveal';
-import { useLang } from '../context/LangContext';
-import { TESTIMONIAL_TEXT, pick } from '../i18n/content';
-import { TESTIMONIALS as ALL, HAPPY_STUDENTS, SHOW_TESTIMONIALS } from '../data/socialProof';
+import Reveal from '../../ui/Reveal';
+import { useLang } from '../../../context/LangContext';
+import { TESTIMONIAL_TEXT, pick } from '../../../i18n/content';
+import { TESTIMONIALS as ALL, HAPPY_STUDENTS, SHOW_TESTIMONIALS } from '../../../data/socialProof';
 
 /* Same open-book icon used by Courses.jsx — replaces the raw 📖 emoji that
    was the only emoji left in an otherwise icon-consistent section. */

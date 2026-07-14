@@ -3,9 +3,8 @@ import env from '../config/env.js';
 import ManualPayment from '../models/ManualPayment.js';
 import { getPlan } from '../config/plans.js';
 import { sendMail, ADMIN_EMAIL } from '../config/mailer.js';
-import { enrollUser } from '../services/subscriptionService.js';
-import { resolveCouponForCheckout, redeemCoupon } from '../services/couponService.js';
-import { createInvoice } from '../services/invoiceService.js';
+import { resolveCouponForCheckout } from '../services/couponService.js';
+import { fulfillPaidCheckout } from '../services/checkoutService.js';
 import { createNotification } from '../services/notificationService.js';
 import {
   manualPaymentAdminEmail,
@@ -218,35 +217,24 @@ export const reviewManualPayment = asyncHandler(async (req, res) => {
           );
           if (!claimed) return;
 
-          // Record the coupon redemption now that the transfer is verified.
-          // A false return (per-user/maxUses race) is logged, not thrown —
-          // the student already sent the discounted amount.
-          if (record.couponCode && record.userId) {
-            const redeemed = await redeemCoupon(record.couponCode, record.userId, dbSession);
-            if (!redeemed) {
-              logger.warn('Manual payment approve: coupon redemption not recorded (already used or cap reached)', {
-                coupon: record.couponCode, userId: String(record.userId), id: req.params.id,
-              });
-            }
-          }
-
-          await enrollUser(record.userId, record.plan, dbSession);
-          await createInvoice({
-            userId:   record.userId,
-            email:    record.customer?.email,
-            name:     record.customer?.name,
-            planName: record.plan,
-            // ManualPayment.amount is already net of any coupon.
-            amountPaid: record.amount,
-            session:  dbSession,
+          await fulfillPaidCheckout({
+            source:     'manual',
+            session:    dbSession,
+            userId:     record.userId,
+            planName:   record.plan,
+            couponCode: record.couponCode,
+            invoice: {
+              email: record.customer?.email,
+              name:  record.customer?.name,
+              // ManualPayment.amount is already net of any coupon.
+              amountPaid: record.amount,
+            },
+            notification: {
+              type:  'payment_received',
+              title: 'Payment approved',
+              body:  `Your payment for the ${record.plan} plan has been approved and your subscription is now active.`,
+            },
           });
-          await createNotification({
-            recipient: record.userId,
-            type:      'payment_received',
-            title:     'Payment approved',
-            body:      `Your payment for the ${record.plan} plan has been approved and your subscription is now active.`,
-            link:      '/billing',
-          }, { session: dbSession });
         });
       } finally {
         dbSession.endSession();

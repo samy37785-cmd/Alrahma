@@ -4,13 +4,9 @@ import Stripe from 'stripe';
 import { siteOrigin } from '../config/site.js';
 import Payment from '../models/Payment.js';
 import { getPlan } from '../config/plans.js';
-import {
-  activateRecurringSubscription,
-  deactivateSubscription,
-} from '../services/subscriptionService.js';
-import { resolveCouponForCheckout, redeemCoupon } from '../services/couponService.js';
-import { createInvoice } from '../services/invoiceService.js';
-import { createNotification } from '../services/notificationService.js';
+import { deactivateSubscription } from '../services/subscriptionService.js';
+import { resolveCouponForCheckout } from '../services/couponService.js';
+import { fulfillPaidCheckout } from '../services/checkoutService.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import logger from '../config/logger.js';
 
@@ -156,48 +152,34 @@ export const stripeWebhook = asyncHandler(async (req, res) => {
             // duplicate delivery (already processed), or a missing record.
             if (!updated) return;
 
-            // Record the coupon redemption now that the money actually moved.
-            // A false return (per-user/maxUses race) is logged, not thrown —
-            // the customer already paid the discounted price; failing the
-            // whole fulfilment over usage bookkeeping would be worse.
-            if (updated.couponCode && updated.userId) {
-              const redeemed = await redeemCoupon(updated.couponCode, updated.userId, dbSession);
-              if (!redeemed) {
-                logger.warn('Stripe checkout: coupon redemption not recorded (already used or cap reached)', {
-                  coupon: updated.couponCode, userId: String(updated.userId),
-                });
-              }
-            }
-
-            if (userId) {
-              await activateRecurringSubscription(userId, {
-                plan: planName,
+            await fulfillPaidCheckout({
+              source:  'stripe',
+              session: dbSession,
+              // The persisted record's userId is authoritative; the metadata
+              // copy is the fallback (both come from the same checkout call).
+              userId:     updated.userId ?? userId,
+              planName,
+              couponCode: updated.couponCode,
+              invoice: {
+                email:     stripeSession.customer_email || updated.customer?.email,
+                name:      updated.customer?.name,
+                paymentId: updated._id,
+                // Payment.amount is already net of any coupon — invoice the
+                // amount actually charged, not the list price.
+                amountPaid: updated.amount,
+              },
+              subscription: {
+                mode: 'recurring',
                 validUntil,
                 stripeCustomerId:     stripeSession.customer,
                 stripeSubscriptionId: subscription.id,
-                session: dbSession,
-              });
-            }
-
-            await createInvoice({
-              userId,
-              email:     stripeSession.customer_email || updated.customer?.email,
-              name:      updated.customer?.name,
-              planName,
-              paymentId: updated._id,
-              // Payment.amount is already net of any coupon — invoice the
-              // amount actually charged, not the list price.
-              amountPaid: updated.amount,
-              session:   dbSession,
+              },
+              notification: {
+                type:  'payment_received',
+                title: 'Payment approved',
+                body:  `Your payment for the ${planName} plan has been received and your subscription is now active.`,
+              },
             });
-
-            await createNotification({
-              recipient: userId,
-              type:      'payment_received',
-              title:     'Payment approved',
-              body:      `Your payment for the ${planName} plan has been received and your subscription is now active.`,
-              link:      '/billing',
-            }, { session: dbSession });
           });
         } finally {
           dbSession.endSession();
@@ -223,32 +205,28 @@ export const stripeWebhook = asyncHandler(async (req, res) => {
         const dbSession = await mongoose.startSession();
         try {
           await dbSession.withTransaction(async () => {
-            if (userId) {
-              await activateRecurringSubscription(userId, {
-                plan: planName,
+            await fulfillPaidCheckout({
+              source:   'stripe-renewal',
+              session:  dbSession,
+              userId,
+              planName,
+              invoice: {
+                email:            stripeInvoice.customer_email,
+                name:             stripeInvoice.customer_name,
+                gatewayInvoiceId: stripeInvoice.id,
+              },
+              subscription: {
+                mode: 'recurring',
                 validUntil,
                 stripeCustomerId:     stripeInvoice.customer,
                 stripeSubscriptionId: subscription.id,
-                session: dbSession,
-              });
-            }
-
-            await createInvoice({
-              userId,
-              email:            stripeInvoice.customer_email,
-              name:             stripeInvoice.customer_name,
-              planName,
-              gatewayInvoiceId: stripeInvoice.id,
-              session:          dbSession,
+              },
+              notification: {
+                type:  'subscription_renewed',
+                title: 'Subscription renewed',
+                body:  `Your ${planName} subscription has been renewed.`,
+              },
             });
-
-            await createNotification({
-              recipient: userId,
-              type:      'subscription_renewed',
-              title:     'Subscription renewed',
-              body:      `Your ${planName} subscription has been renewed.`,
-              link:      '/billing',
-            }, { session: dbSession });
           });
         } finally {
           dbSession.endSession();

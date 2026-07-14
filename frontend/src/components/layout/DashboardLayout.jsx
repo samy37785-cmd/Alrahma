@@ -16,7 +16,6 @@ import CommandPalette from '../ui/CommandPalette';
 import NotificationPanel from '../ui/NotificationPanel';
 import LangSwitcher from '../ui/LangSwitcher';
 import { getNameInitials } from '../../utils/nameInitials';
-import { site } from '../../data/site';
 import BrandIcon from '../ui/BrandIcon';
 import '../../styles/dashboard-shell.css';
 // LangSwitcher's `.ls*` styles live in header.css (shared with the public
@@ -25,7 +24,9 @@ import '../../styles/dashboard-shell.css';
 // name collisions with dashboard-shell.css) — simplest way to reuse the
 // component without duplicating its CSS into a second file.
 import '../../styles/layout/header.css';
-import { NavIcon, navFor, roleLabel, bottomNavFor, MobileBottomNav } from './dashboardNav';
+import { navFor, roleLabel } from './dashboardNav';
+import NavIcon from './NavIcon';
+import MobileBottomNav from './MobileBottomNav';
 
 export default function DashboardLayout({ children }) {
   const { user, logout, isAdmin, isTeacher, isParent } = useAuth();

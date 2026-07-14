@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Al-Rahma Academy** — full-stack Islamic education platform. React 18 SPA + Express 4 API + MongoDB Atlas. Monorepo: Vercel serves the pre-built frontend SPA only (`vercel.json` rewrites `/api/*` to the Render URL); the backend runs as a standalone, long-running Express process on Render (`backend/`, `node server.js`). There is no serverless API wrapper. `.github/workflows/cron.yml` is the external scheduler that hits `/api/cron/*` (daily renewal reminders, weekly parent reports) with `CRON_SECRET` auth — Render/Vercel run no cron themselves.
 
-An **enterprise refactoring roadmap** (assessment + 8 phases) is in flight — see `docs/audits/` for the dated audit reports and PR history for phase progress. Phase 0 added the safety nets (e2e suite, i18n parity test, env lint guard); consult the roadmap before restructuring anything it already schedules.
+The **enterprise refactoring roadmap** (2026-07) is complete through Phase 7 — see PR history (#41–#48) and `docs/audits/` for the originating reports. Its safety nets are permanent: the e2e suite (light + dark baselines), the i18n parity test, and the env-access lint guard. Deliberately deferred work is recorded with reasons in `docs/ROUTE_CONSOLIDATION_PLAN.md` and `docs/adr/` — read those before restructuring routes, the Quran verse loading, or package tooling.
 
 ## Commands
 
@@ -71,7 +71,7 @@ Entry: `main.jsx` → `App.jsx`. Provider stack (outer→inner): `ErrorBoundary`
 
 **Modals:** every new dialog uses `components/ui/Modal.jsx` (`.ds-modal` chrome + `useModalA11y`). Legacy bespoke modals are being migrated one PR at a time — see `docs/adr/0002-single-modal-component.md` for the queue and the two documented exceptions (InvoiceModal's print CSS, QuickTrialModal's intentional marketing styling).
 
-**Quran module** (`pages/Quran.jsx` + `components/features/quran/`): the app's most polished surface — nav modes (Surah/Page/Juz/Hizb) orthogonal to reading modes (Continuous via `QuranMushafPage`, Verse-by-Verse via `QuranVerseList`); notes/highlights persist on `QuranBookmark`; `useQuranAudioEngine` (verse-sync player) is separate from `useQuranHifz` (repeat/test engine) — do not merge them. Verse data still uses raw `useState`/`useEffect` (React Query migration is roadmap Phase 7).
+**Quran module** (`pages/Quran.jsx` + `components/features/quran/`): the app's most polished surface — nav modes (Surah/Page/Juz/Hizb) orthogonal to reading modes (Continuous via `QuranMushafPage`, Verse-by-Verse via `QuranVerseList`); notes/highlights persist on `QuranBookmark`; `useQuranAudioEngine` (verse-sync player) is separate from `useQuranHifz` (repeat/test engine) — do not merge them. Verse data still uses raw `useState`/`useEffect` — deliberately: the fetch effect also owns player-state resets, so a React Query swap changes navigation semantics (see docs/ROUTE_CONSOLIDATION_PLAN.md before attempting).
 
 **Honest-data rule:** `HomeworkPage.jsx` and `AttendancePage.jsx` have **no backend** — they render illustrative preview data behind `PreviewBanner` and must not report fake success. The public teacher directory (`data/teachers.js`, `Teachers.jsx`, `TeacherProfile.jsx`) is static editorial content with no real accounts — never wire it to the real review/user systems. Never add localStorage-only "rating" widgets or hardcoded leaderboards; this class of fabricated-social-proof bug has been removed repeatedly.
 

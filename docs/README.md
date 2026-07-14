@@ -19,6 +19,9 @@
 
 - [adr/](adr/) — one page per architectural decision. Add a new ADR whenever a
   decision would otherwise live only in a PR description or someone's memory.
+- [ROUTE_CONSOLIDATION_PLAN.md](ROUTE_CONSOLIDATION_PLAN.md) — the queued
+  migration of admin reads onto `/api/v1/admin/*`, plus other explicitly
+  deferred refactors and their reasons.
 
 ## Historical (point-in-time, not maintained)
 

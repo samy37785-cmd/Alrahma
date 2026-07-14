@@ -14,10 +14,7 @@ import {
 } from '../hooks/useCommunity';
 import { useAuth } from '../context/AuthContext';
 import '../styles/community.css';
-
-function fmtDate(d) {
-  return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
-}
+import { formatDayMonth as fmtDate } from '../utils/date';
 
 function CommentThread({ postId }) {
   const { data: comments = [], isLoading } = usePostComments(postId);

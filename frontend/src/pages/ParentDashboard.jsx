@@ -15,16 +15,7 @@ import {
   MessageSquare, Clock, Download, Share2,
 } from 'lucide-react';
 import { getNameInitials } from '../utils/nameInitials';
-
-function fmtDate(d) {
-  if (!d) return '—';
-  return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-}
-
-function fmtTime(d) {
-  if (!d) return '';
-  return new Date(d).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-}
+import { formatFullDate as fmtDate, formatTime as fmtTime } from '../utils/date';
 
 function attendBadge(a) {
   if (a === 'present') return 'ds-badge--green';

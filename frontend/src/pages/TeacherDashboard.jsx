@@ -19,23 +19,11 @@ import {
   Video, Clock,
 } from 'lucide-react';
 import { getNameInitials } from '../utils/nameInitials';
+import { formatDateTime as fmtDate, minutesUntil } from '../utils/date';
 
 /* ── i18n ──────────────────────────────────────────────────────── */
 const EMPTY_CLASS  = { student: '', title: '', startsAt: '', durationMin: 30, meetingUrl: '' };
 const EMPTY_RECORD = { date: '', course: '', grade: '', gradeLabel: '', attendance: '', note: '' };
-
-function fmtDate(d) {
-  if (!d) return '—';
-  const dt = new Date(d);
-  const date = dt.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-  return (dt.getHours() || dt.getMinutes())
-    ? `${date} · ${dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
-    : date;
-}
-
-function minutesUntil(d) {
-  return Math.max(0, Math.round((new Date(d) - Date.now()) / 60000));
-}
 
 function gradeColor(g) {
   if (g >= 85) return 'ds-badge--green';

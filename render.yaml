@@ -37,6 +37,9 @@ services:
         sync: false
       - key: ADMIN_EMAIL
         sync: false
+      # Optional fallback recipient for contact-form email when ADMIN_EMAIL is unset.
+      - key: EMAIL_FROM
+        sync: false
 
       # ── Cron jobs ─────────────────────────────────────────────────────────────
       # Triggered by .github/workflows/cron.yml (GitHub Actions schedule):
@@ -65,9 +68,25 @@ services:
         sync: false
 
       # ── Manual payment display details ────────────────────────────────────────
+      # Customer-facing display values, not credentials — the checkout page's
+      # manual-payment method list is built from whichever of these are set.
       - key: PAYPAL_RECEIVER_EMAIL
         sync: false
       - key: PAYPAL_ME_LINK
+        sync: false
+      - key: PAYONEER_EMAIL
+        sync: false
+      - key: BANK_NAME
+        sync: false
+      - key: BANK_ACCOUNT_NAME
+        sync: false
+      - key: BANK_IBAN
+        sync: false
+      - key: BANK_SWIFT
+        sync: false
+      - key: BANK_CURRENCY
+        sync: false
+      - key: BANK_COUNTRY
         sync: false
       - key: WU_RECEIVER_NAME
         sync: false
@@ -94,6 +113,19 @@ services:
       - key: GOOGLE_CLIENT_ID
         sync: false
 
+      # ── AI Tutor (Claude API) ─────────────────────────────────────────────────
+      # Unset = the AI Tutor feature responds 503 (disabled); rest of the app
+      # is unaffected.
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: AI_TUTOR_DAILY_MESSAGE_LIMIT
+        sync: false
+
       # ── Redis (optional — enables distributed rate limiting) ──────────────────
       - key: REDIS_URL
+        sync: false
+
+      # ── Logging (optional) ────────────────────────────────────────────────────
+      # Winston level: error | warn | info | http | debug (default: info in prod).
+      - key: LOG_LEVEL
         sync: false

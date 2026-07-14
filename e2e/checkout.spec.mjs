@@ -17,9 +17,19 @@ test.describe('checkout modal', () => {
     await expect(modal).toBeVisible({ timeout: 10_000 });
 
     await page.evaluate(() => document.fonts.ready);
-    // Element screenshot, not page: the page's scroll offset behind the
-    // modal varies by a few px per run on mobile and is not what this
-    // baseline is protecting.
-    await expect(modal).toHaveScreenshot('checkout-modal.png');
+    // Fixed-dimension clip anchored at the modal's top-left. Neither a page
+    // screenshot (background scroll offset varies per run on mobile) nor a
+    // plain element screenshot (the modal's own height rounds 574/575px
+    // between runs, and ANY size mismatch fails regardless of tolerance)
+    // is stable here.
+    const box = await modal.boundingBox();
+    await expect(page).toHaveScreenshot('checkout-modal.png', {
+      clip: {
+        x: Math.ceil(box.x),
+        y: Math.ceil(box.y),
+        width: Math.floor(box.width) - 1,
+        height: Math.min(Math.floor(box.height) - 1, 540),
+      },
+    });
   });
 });

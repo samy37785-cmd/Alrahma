@@ -2,9 +2,8 @@
 import env from '../config/env.js';
 import Payment from '../models/Payment.js';
 import { getPlan } from '../config/plans.js';
-import { enrollUser } from '../services/subscriptionService.js';
-import { resolveCouponForCheckout, redeemCoupon } from '../services/couponService.js';
-import { createInvoice } from '../services/invoiceService.js';
+import { resolveCouponForCheckout } from '../services/couponService.js';
+import { fulfillPaidCheckout } from '../services/checkoutService.js';
 import { createNotification } from '../services/notificationService.js';
 import { siteOrigin } from '../config/site.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
@@ -165,39 +164,27 @@ async function finalizePaypalOrder(orderId, capture) {
       await payment.save({ session });
 
       if (completed) {
-        // Record the coupon redemption now that the money actually moved.
-        // A false return (per-user/maxUses race) is logged, not thrown — the
-        // buyer already paid the discounted price.
-        if (payment.couponCode && payment.userId) {
-          const redeemed = await redeemCoupon(payment.couponCode, payment.userId, session);
-          if (!redeemed) {
-            logger.warn('PayPal finalize: coupon redemption not recorded (already used or cap reached)', {
-              coupon: payment.couponCode, userId: String(payment.userId), orderId,
-            });
-          }
-        }
-
-        await createInvoice({
-          userId:    payment.userId,
-          email:     payment.customer?.email,
-          name:      payment.customer?.name,
-          planName:  payment.plan,
-          paymentId: payment._id,
-          createdAt: payment.createdAt,
-          // Payment.amount is already net of any coupon — invoice what was
-          // actually charged, not the list price.
-          amountPaid: payment.amount,
+        await fulfillPaidCheckout({
+          source:     'paypal',
           session,
+          userId:     payment.userId,
+          planName:   payment.plan,
+          couponCode: payment.couponCode,
+          invoice: {
+            email:     payment.customer?.email,
+            name:      payment.customer?.name,
+            paymentId: payment._id,
+            createdAt: payment.createdAt,
+            // Payment.amount is already net of any coupon — invoice what was
+            // actually charged, not the list price.
+            amountPaid: payment.amount,
+          },
+          notification: {
+            type:  'payment_received',
+            title: 'Payment approved',
+            body:  `Your PayPal payment for the ${payment.plan} plan has been received and your subscription is now active.`,
+          },
         });
-
-        await enrollUser(payment.userId, payment.plan, session);
-        await createNotification({
-          recipient: payment.userId,
-          type:      'payment_received',
-          title:     'Payment approved',
-          body:      `Your PayPal payment for the ${payment.plan} plan has been received and your subscription is now active.`,
-          link:      '/billing',
-        }, { session });
         logger.info('PayPal payment finalized', {
           orderId,
           paymentId: String(payment._id),

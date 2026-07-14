@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import PageBar from '../components/layout/PageBar';
-import { CATEGORY_COLORS } from '../data/blogPosts';
+import { CATEGORY_COLORS } from '../data/marketing/blogPosts';
 import { useBlogPosts, BLOG_KEYS } from '../hooks/useBlog';
 import { getBlogPost } from '../api/blogApi';
 import useSEO from '../hooks/useSEO';

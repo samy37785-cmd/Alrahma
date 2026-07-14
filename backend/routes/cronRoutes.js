@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import env from '../config/env.js';
 import crypto from 'crypto';
 import { sendRenewalReminders, sendWeeklyParentReports } from '../controllers/cronController.js';
 
@@ -16,7 +17,7 @@ function safeEqual(a, b) {
 // set; we also accept an x-cron-secret header for manual runs / curl.
 // Note: ?key= query-param was removed — query strings appear in server logs.
 function cronAuth(req, res, next) {
-  const secret = process.env.CRON_SECRET;
+  const secret = env.CRON_SECRET;
   if (!secret) return res.status(503).json({ message: 'CRON_SECRET not configured' });
 
   const auth = req.headers.authorization || '';

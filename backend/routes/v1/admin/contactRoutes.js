@@ -1,5 +1,6 @@
 import { Router } from 'express';
-import { updateContactStatus, contactStatusValidation } from '../../../controllers/contactController.js';
+import { updateContactStatus } from '../../../controllers/contactController.js';
+import { contactStatusValidation } from '../../../validators/contactValidators.js';
 import { requirePermissions } from '../../../middleware/rbac.js';
 import { asyncHandler } from '../../../utils/asyncHandler.js';
 

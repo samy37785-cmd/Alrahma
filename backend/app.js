@@ -4,6 +4,7 @@
 // producing false "not configured" warnings. The side-effect import guarantees
 // .env is loaded before the rest of the graph evaluates.
 import 'dotenv/config';
+import env from './config/env.js';
 
 import express from 'express';
 import mongoose from 'mongoose';
@@ -63,9 +64,9 @@ app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 
 const allowedOrigins = [
   // Explicit list from CLIENT_URL env var (comma-separated)
-  ...(process.env.CLIENT_URL || 'http://localhost:5173').split(',').map((o) => o.trim()),
+  ...(env.CLIENT_URL || 'http://localhost:5173').split(',').map((o) => o.trim()),
   // VERCEL_URL is set during Vercel preview builds — allow those origins too
-  ...(process.env.VERCEL_URL ? [`https://${process.env.VERCEL_URL}`] : []),
+  ...(env.VERCEL_URL ? [`https://${env.VERCEL_URL}`] : []),
 ];
 
 // Vercel preview deployments (credentialed CORS): the old check here was
@@ -77,7 +78,7 @@ const allowedOrigins = [
 // "alrahma-<hash>-<scope>"), so previews are now pinned to that scope via
 // VERCEL_PREVIEW_SCOPE. Unset = no preview origins allowed (fail closed;
 // production traffic uses CLIENT_URL and is unaffected).
-const previewScope = (process.env.VERCEL_PREVIEW_SCOPE || '').trim();
+const previewScope = (env.VERCEL_PREVIEW_SCOPE || '').trim();
 const vercelPreviewOrigin = previewScope
   ? new RegExp(`^https://[a-z0-9-]+-${previewScope.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\.vercel\\.app$`)
   : null;
@@ -88,7 +89,7 @@ app.use(
       if (
         !origin ||                                              // curl / mobile / server-to-server
         allowedOrigins.includes(origin) ||                    // explicitly whitelisted
-        (process.env.NODE_ENV !== 'production' && /^http:\/\/localhost:\d+$/.test(origin)) || // any localhost port (local dev only)
+        (env.NODE_ENV !== 'production' && /^http:\/\/localhost:\d+$/.test(origin)) || // any localhost port (local dev only)
         (vercelPreviewOrigin && vercelPreviewOrigin.test(origin)) // Vercel previews, scope-pinned
       ) {
         return callback(null, true);
@@ -126,8 +127,8 @@ app.get('/health', (_req, res) => {
     status:  'ok',
     uptime:  Math.floor(process.uptime()),
     memory:  process.memoryUsage().heapUsed,
-    version: process.env.npm_package_version || '1.0.0',
-    env:     process.env.NODE_ENV || 'development',
+    version: env.npm_package_version || '1.0.0',
+    env:     env.NODE_ENV || 'development',
     ts:      new Date().toISOString(),
   });
 });

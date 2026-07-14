@@ -1,24 +1,17 @@
 import mongoose from 'mongoose';
-import { body } from 'express-validator';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { handleValidationErrors } from '../utils/validationHelper.js';
 import { parsePagination } from '../utils/pagination.js';
 import { auditFromReq } from '../services/auditService.js';
 import Post from '../models/Post.js';
 import Comment from '../models/Comment.js';
-import { createNotification } from './notificationController.js';
+import { createNotification } from '../services/notificationService.js';
 
 function isValidObjectId(id) {
   return mongoose.Types.ObjectId.isValid(id);
 }
 
-export const postValidation = [
-  body('body').trim().notEmpty().withMessage('Post body is required').isLength({ max: 2000 }),
-];
 
-export const commentValidation = [
-  body('body').trim().notEmpty().withMessage('Comment body is required').isLength({ max: 1000 }),
-];
 
 // @desc  Public feed — approved posts only, with each post's approved
 //        comment count computed on the fly (not denormalized, so there's
@@ -136,10 +129,6 @@ export const deleteComment = asyncHandler(async (req, res) => {
    session), same pattern as reviewController's moderateReview/listReviews.
    ═══════════════════════════════════════════════════════════════════════ */
 
-export const moderationValidation = [
-  body('status').isIn(['approved', 'rejected']).withMessage('status must be approved or rejected'),
-  body('adminNote').optional().trim().isLength({ max: 500 }),
-];
 
 export const listPostsAdmin = asyncHandler(async (req, res) => {
   const { page, limit, skip } = parsePagination(req.query, { defaultLimit: 50, maxLimit: 200 });

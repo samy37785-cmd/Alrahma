@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import env from '../config/env.js';
 import Referral from '../models/Referral.js';
 import User from '../models/User.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
@@ -23,7 +24,7 @@ export const getMyReferrals = asyncHandler(async (req, res) => {
 
   const stats = {
     code,
-    link: `${process.env.CLIENT_URL?.split(',')[0] || 'https://alrahmaacademy.com'}/enroll?ref=${code}`,
+    link: `${env.CLIENT_URL?.split(',')[0] || 'https://alrahmaacademy.com'}/enroll?ref=${code}`,
     total:     referrals.length,
     converted: referrals.filter((r) => ['converted', 'rewarded'].includes(r.status)).length,
     rewarded:  referrals.filter((r) => r.status === 'rewarded').length,

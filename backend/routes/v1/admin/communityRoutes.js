@@ -1,10 +1,7 @@
 import { Router } from 'express';
 import { requirePermissions } from '../../../middleware/rbac.js';
-import {
-  moderatePost,
-  moderateComment,
-  moderationValidation,
-} from '../../../controllers/communityController.js';
+import { moderatePost, moderateComment } from '../../../controllers/communityController.js';
+import { moderationValidation } from '../../../validators/communityValidators.js';
 
 const router = Router();
 

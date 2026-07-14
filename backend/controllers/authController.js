@@ -1,9 +1,9 @@
 import jwt from 'jsonwebtoken';
+import env from '../config/env.js';
 import crypto from 'crypto';
-import { body } from 'express-validator';
 import User from '../models/User.js';
 import { sendMail } from '../config/mailer.js';
-import { forgotPasswordEmail } from '../config/emailTemplates.js';
+import { forgotPasswordEmail } from '../templates/emailTemplates.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { handleValidationErrors } from '../utils/validationHelper.js';
 import { hashToken } from '../utils/hashToken.js';
@@ -14,36 +14,13 @@ import { siteOrigin } from '../config/site.js';
 // defence-in-depth alongside the global sanitizeMongo middleware.
 const normEmail = (v) => String(v ?? '').toLowerCase().trim();
 
-// Deliberately does NOT use express-validator's .normalizeEmail() — that
-// sanitizer applies provider-specific rewrites (e.g. stripping dots/+tags
-// from Gmail addresses) that would silently change what email a user
-// actually registers with. .isEmail() here is a pure format gate; the
-// existing normEmail() above remains the only source of normalization,
-// unchanged.
-export const registerValidation = [
-  body('name').trim().notEmpty().withMessage('Name is required'),
-  body('email').trim().notEmpty().withMessage('Email is required').isEmail().withMessage('A valid email is required'),
-  body('password').isString().withMessage('Password is required').isLength({ min: 8 }).withMessage('Password must be at least 8 characters'),
-];
-
-// login only needs to guard against malformed *types* reaching
-// user.matchPassword() — bcrypt.compare() throws (not a clean 401) if
-// password isn't a string, e.g. a request with no password field at all, or
-// password sent as a number/object/array. This does not change behavior for
-// any well-formed request: correct/incorrect credentials still resolve to
-// the same 200/401 as before.
-export const loginValidation = [
-  body('email').trim().notEmpty().withMessage('Email is required').isEmail().withMessage('A valid email is required'),
-  body('password').isString().withMessage('Password is required').notEmpty().withMessage('Password is required'),
-];
-
 // Helper: create a signed JWT for a user id.
 // `v` (tokenVersion) is embedded so protect() can reject tokens issued before
 // a password change without a DB call per-request — the version mismatch is caught
 // only when the user hits a protected route, not immediately on all connections.
 function signToken(id, role, v = 0) {
-  return jwt.sign({ id, role, v }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRES_IN || '7d',
+  return jwt.sign({ id, role, v }, env.JWT_SECRET, {
+    expiresIn: env.JWT_EXPIRES_IN || '7d',
   });
 }
 
@@ -66,7 +43,7 @@ function cookieMaxAgeFor(token) {
 function authCookieOptions(maxAge) {
   return {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: env.NODE_ENV === 'production',
     sameSite: 'lax',
     maxAge,
     path: '/',
@@ -268,7 +245,7 @@ export const googleAuth = asyncHandler(async (req, res) => {
   }
   const payload = await info.json();
 
-  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const clientId = env.GOOGLE_CLIENT_ID;
   if (!clientId) {
     res.status(503);
     throw new Error('Google Sign-In is not configured on this server');

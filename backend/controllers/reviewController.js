@@ -1,11 +1,10 @@
 import mongoose from 'mongoose';
-import { body } from 'express-validator';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { handleValidationErrors } from '../utils/validationHelper.js';
 import { parsePagination } from '../utils/pagination.js';
 import { auditFromReq } from '../services/auditService.js';
 import Review from '../models/Review.js';
-import { createNotification } from './notificationController.js';
+import { createNotification } from '../services/notificationService.js';
 
 function isValidObjectId(id) {
   return mongoose.Types.ObjectId.isValid(id);
@@ -23,21 +22,6 @@ function resolveReviewSort(sortParam) {
   return REVIEW_SORTS[sortParam] || REVIEW_SORTS.recent;
 }
 
-export const reviewValidation = [
-  body('rating').isInt({ min: 1, max: 5 }).withMessage('Rating must be 1–5'),
-  body('body').trim().notEmpty().withMessage('Review body is required').isLength({ max: 2000 }),
-  body('title').optional().trim().isLength({ max: 120 }),
-];
-
-// moderateReview operates on a different field set than reviewValidation
-// (moderation status, not review content), so it has its own small rule set.
-// Both fields optional: the controller currently allows updating adminNote
-// alone (status is a no-op if omitted), which this preserves — but status,
-// when present, must be one of the real enum values.
-export const reviewModerationValidation = [
-  body('status').optional().isIn(['pending', 'approved', 'rejected']).withMessage('status must be pending, approved, or rejected'),
-  body('adminNote').optional().trim().isLength({ max: 500 }),
-];
 
 export const createReview = asyncHandler(async (req, res) => {
   if (handleValidationErrors(req, res)) return;

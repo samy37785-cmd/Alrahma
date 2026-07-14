@@ -1,10 +1,12 @@
+import env from '../config/env.js';
+
 // Absolute URL — email clients fetch images over HTTP, so a relative /favicon.svg
 // path (fine for the web app) would resolve against the mail client's own
 // origin instead of ours. SVG in <img> has patchy support in some desktop
 // mail clients (notably Outlook's Word-based renderer); no rasterizer is
 // available in this environment to also ship a PNG fallback — a known,
 // reported limitation, not an oversight.
-const LOGO_URL = `${(process.env.CLIENT_URL || 'https://alrahmaacademy.com').split(',')[0].trim()}/favicon.svg`;
+const LOGO_URL = `${(env.CLIENT_URL || 'https://alrahmaacademy.com').split(',')[0].trim()}/favicon.svg`;
 
 const base = (content) => `
 <!DOCTYPE html>
@@ -83,7 +85,7 @@ export function trialRequestStudentEmail({ name }) {
       In the meantime, feel free to explore the Quran reader on our website.
     </p>
     <div style="margin-top:24px;">
-      <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}/quran" style="background:#0b6e4f;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-size:14px;display:inline-block;">Read the Quran</a>
+      <a href="${env.CLIENT_URL || 'http://localhost:5173'}/quran" style="background:#0b6e4f;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-size:14px;display:inline-block;">Read the Quran</a>
     </div>
     <p style="color:#888;font-size:13px;margin-top:24px;">If you have any questions, reply to this email or contact us on WhatsApp.</p>
   `);
@@ -103,7 +105,7 @@ export function manualPaymentAdminEmail({ name, email, plan, method, amount, cur
       ${row('Reference', reference || 'Not provided')}
     </table>
     <div style="margin-top:24px;">
-      <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}/admin" style="background:#0b6e4f;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-size:14px;display:inline-block;">Review in Dashboard</a>
+      <a href="${env.CLIENT_URL || 'http://localhost:5173'}/admin" style="background:#0b6e4f;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-size:14px;display:inline-block;">Review in Dashboard</a>
     </div>
   `);
 }
@@ -119,7 +121,7 @@ export function manualPaymentApprovedEmail({ name, plan }) {
       You can view your invoice in your billing section. A teacher will reach out to schedule your first session.
     </p>
     <div style="margin-top:24px;">
-      <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}/billing" style="background:#0b6e4f;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-size:14px;display:inline-block;">View Billing</a>
+      <a href="${env.CLIENT_URL || 'http://localhost:5173'}/billing" style="background:#0b6e4f;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-size:14px;display:inline-block;">View Billing</a>
     </div>
   `);
 }
@@ -139,7 +141,7 @@ export function certificateIssuedEmail({ name, title, number }) {
       You can view and print your certificate from your account.
     </p>
     <div style="margin-top:24px;">
-      <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}/profile" style="background:#0b6e4f;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-size:14px;display:inline-block;">View Certificate</a>
+      <a href="${env.CLIENT_URL || 'http://localhost:5173'}/profile" style="background:#0b6e4f;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-size:14px;display:inline-block;">View Certificate</a>
     </div>
   `);
 }
@@ -182,7 +184,7 @@ export function subscriptionRenewalReminderEmail({ name, plan, validUntil, daysL
         : 'To keep your lessons going without interruption, please renew before that date from your billing page.'}
     </p>
     <div style="margin-top:24px;">
-      <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}/billing" style="background:#0b6e4f;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-size:14px;display:inline-block;">${autoRenew ? 'Manage Billing' : 'Renew Now'}</a>
+      <a href="${env.CLIENT_URL || 'http://localhost:5173'}/billing" style="background:#0b6e4f;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-size:14px;display:inline-block;">${autoRenew ? 'Manage Billing' : 'Renew Now'}</a>
     </div>
     <p style="color:#888;font-size:13px;margin-top:24px;">If you have any questions, just reply to this email.</p>
   `);
@@ -200,7 +202,7 @@ export function manualPaymentRejectedEmail({ name, adminNote }) {
       Please contact us so we can resolve this as quickly as possible.
     </p>
     <div style="margin-top:24px;">
-      <a href="mailto:${process.env.SMTP_USER || ''}" style="background:#0b6e4f;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-size:14px;display:inline-block;">Contact Us</a>
+      <a href="mailto:${env.SMTP_USER || ''}" style="background:#0b6e4f;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-size:14px;display:inline-block;">Contact Us</a>
     </div>
   `);
 }
@@ -290,7 +292,7 @@ export function weeklyParentReportEmail({ parentName, children }) {
       Keep up the great work! Regular study is the key to Quran mastery. 🌙
     </p>
     <div style="margin:24px 0;">
-      <a href="${process.env.CLIENT_URL || 'https://alrahmaacademy.com'}/parent" style="background:#0b6e4f;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;display:inline-block;">View Full Progress</a>
+      <a href="${env.CLIENT_URL || 'https://alrahmaacademy.com'}/parent" style="background:#0b6e4f;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;display:inline-block;">View Full Progress</a>
     </div>
   `);
 }

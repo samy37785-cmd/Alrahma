@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { body } from 'express-validator';
+import env from '../config/env.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { handleValidationErrors } from '../utils/validationHelper.js';
 import TutorConversation from '../models/TutorConversation.js';
@@ -14,12 +14,9 @@ const TUTOR_HISTORY_LIMIT = 20;
 const TUTOR_MAX_OUTPUT_TOKENS = 1024;
 
 function dailyMessageLimit() {
-  return Number(process.env.AI_TUTOR_DAILY_MESSAGE_LIMIT) || 40;
+  return Number(env.AI_TUTOR_DAILY_MESSAGE_LIMIT) || 40;
 }
 
-export const sendMessageValidation = [
-  body('content').trim().notEmpty().withMessage('Message is required').isLength({ max: 4000 }),
-];
 
 export const listConversations = asyncHandler(async (req, res) => {
   const conversations = await TutorConversation.find({ user: req.user._id })

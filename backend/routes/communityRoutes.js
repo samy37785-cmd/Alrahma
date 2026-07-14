@@ -10,11 +10,10 @@ import {
   listComments,
   createComment,
   deleteComment,
-  postValidation,
-  commentValidation,
   listPostsAdmin,
   listCommentsAdmin,
 } from '../controllers/communityController.js';
+import { postValidation, commentValidation } from '../validators/communityValidators.js';
 
 const router = Router();
 router.use(protect);

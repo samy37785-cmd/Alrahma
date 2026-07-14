@@ -1,5 +1,6 @@
 import { Router } from 'express';
-import { moderateReview, reviewModerationValidation } from '../../../controllers/reviewController.js';
+import { moderateReview } from '../../../controllers/reviewController.js';
+import { reviewModerationValidation } from '../../../validators/reviewValidators.js';
 import { requirePermissions } from '../../../middleware/rbac.js';
 import { asyncHandler } from '../../../utils/asyncHandler.js';
 

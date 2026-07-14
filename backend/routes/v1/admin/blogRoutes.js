@@ -1,7 +1,6 @@
 import { Router } from 'express';
-import {
-  createPost, updatePost, deletePost, blogValidation, blogUpdateValidation,
-} from '../../../controllers/blogController.js';
+import { createPost, updatePost, deletePost } from '../../../controllers/blogController.js';
+import { blogValidation, blogUpdateValidation } from '../../../validators/blogValidators.js';
 import { requirePermissions } from '../../../middleware/rbac.js';
 import { asyncHandler } from '../../../utils/asyncHandler.js';
 

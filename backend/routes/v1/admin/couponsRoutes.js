@@ -1,7 +1,6 @@
 import { Router } from 'express';
-import {
-  createCoupon, updateCoupon, deleteCoupon, couponValidation, couponUpdateValidation,
-} from '../../../controllers/couponController.js';
+import { createCoupon, updateCoupon, deleteCoupon } from '../../../controllers/couponController.js';
+import { couponValidation, couponUpdateValidation } from '../../../validators/couponValidators.js';
 import { requirePermissions } from '../../../middleware/rbac.js';
 import { asyncHandler } from '../../../utils/asyncHandler.js';
 

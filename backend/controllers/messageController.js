@@ -1,7 +1,7 @@
 ﻿import Message from '../models/Message.js';
 import User from '../models/User.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
-import { createNotification } from './notificationController.js';
+import { createNotification } from '../services/notificationService.js';
 
 // Notification.body has a 500-char cap; Message.body allows up to 4000.
 function truncate(text, max = 200) {

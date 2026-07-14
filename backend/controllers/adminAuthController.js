@@ -1,8 +1,8 @@
 import crypto    from 'crypto';
+import env from '../config/env.js';
 import speakeasy from 'speakeasy';
 import qrcode    from 'qrcode';
 import jwt       from 'jsonwebtoken';
-import { body } from 'express-validator';
 
 import AdminUser    from '../models/AdminUser.js';
 import RefreshToken  from '../models/RefreshToken.js';
@@ -39,19 +39,6 @@ async function issueRefreshToken(adminId, family, req) {
   });
   return raw;
 }
-
-// ── Validation chains ────────────────────────────────────────────────────────
-export const loginValidation = [
-  body('email').isEmail().normalizeEmail().withMessage('Valid email required'),
-  body('password').isString().notEmpty().withMessage('Password required'),
-];
-
-export const mfaTokenValidation = [
-  body('token')
-    .isString()
-    .matches(/^\d{6}$/)
-    .withMessage('TOTP token must be exactly 6 digits'),
-];
 
 // ── POST /api/v1/admin/auth/login ────────────────────────────────────────────
 /**
@@ -95,7 +82,7 @@ export async function login(req, res) {
   // Pre-auth token: narrow — only valid for the MFA endpoints
   const preAuthToken = jwt.sign(
     { id: String(admin._id), role: admin.role, stage },
-    process.env.ADMIN_JWT_ACCESS_SECRET,
+    env.ADMIN_JWT_ACCESS_SECRET,
     { expiresIn: '10m' }
   );
 
@@ -121,7 +108,7 @@ export async function setupMfa(req, res) {
 
   let decoded;
   try {
-    decoded = jwt.verify(token, process.env.ADMIN_JWT_ACCESS_SECRET, { algorithms: ['HS256'] });
+    decoded = jwt.verify(token, env.ADMIN_JWT_ACCESS_SECRET, { algorithms: ['HS256'] });
   } catch {
     return res.status(401).json({ message: 'Invalid or expired pre-auth token' });
   }
@@ -165,7 +152,7 @@ export async function confirmMfaSetup(req, res) {
 
   let decoded;
   try {
-    decoded = jwt.verify(preToken, process.env.ADMIN_JWT_ACCESS_SECRET, { algorithms: ['HS256'] });
+    decoded = jwt.verify(preToken, env.ADMIN_JWT_ACCESS_SECRET, { algorithms: ['HS256'] });
   } catch {
     return res.status(401).json({ message: 'Invalid or expired pre-auth token' });
   }
@@ -229,7 +216,7 @@ export async function verifyMfaLogin(req, res) {
 
   let decoded;
   try {
-    decoded = jwt.verify(preToken, process.env.ADMIN_JWT_ACCESS_SECRET, { algorithms: ['HS256'] });
+    decoded = jwt.verify(preToken, env.ADMIN_JWT_ACCESS_SECRET, { algorithms: ['HS256'] });
   } catch {
     return res.status(401).json({ message: 'Invalid or expired pre-auth token' });
   }

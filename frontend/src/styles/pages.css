@@ -65,7 +65,7 @@
   font-weight: 800;
   color: #4fd19a;
   line-height: 1;
-  font-family: 'Poppins', sans-serif;
+  font-family: var(--font-display);
 }
 .obj__text {
   color: #d8ede2;

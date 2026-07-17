@@ -239,7 +239,7 @@
 .ff__input:focus        {
   border-color: var(--border-input-focus);
   background: var(--bg-input-focus);
-  box-shadow: 0 0 0 3px rgba(11, 110, 79, 0.12);
+  box-shadow: 0 0 0 2px var(--ring-color);   /* reference: 2px emerald focus ring */
 }
 .ff__input:disabled {
   background: var(--bg-disabled);

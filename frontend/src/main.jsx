@@ -2,28 +2,26 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 // Self-hosted fonts (served from our own origin = far faster than Google's
 // gstatic CDN, and no render-blocking 3rd-party stylesheet). Amiri uses the
-// Arabic subset only — Latin text is covered by Poppins.
-// Only 4 weights now (was 5): every font-weight:500 use in the codebase was
-// consolidated to 600 (visually near-identical — Medium vs SemiBold) so this
-// file doesn't need to be fetched at all. It was empirically the file
-// implicated in a reproducible mobile CLS bug on the Teachers page: on a
-// throttled connection all 8 Poppins files used to land in one late batch,
-// and removing the least-used one shrinks that batch and the odds of any
-// single page's text swapping fonts (and reflowing) after first paint.
-import '@fontsource/poppins/latin-400.css';
-import '@fontsource/poppins/latin-600.css';
-import '@fontsource/poppins/latin-700.css';
-import '@fontsource/poppins/latin-800.css';
-import '@fontsource/poppins/latin-ext-400.css';
-import '@fontsource/poppins/latin-ext-600.css';
-import '@fontsource/poppins/latin-ext-700.css';
-// Playfair Display — Latin editorial display serif for section headlines
-// (Home page restyle only). Self-hosted for the same reason as Poppins
-// above. Only the 2 weights actually used (600/700) + their italic variants
-// (for the .hero__highlight accent word).
-import '@fontsource/playfair-display/latin-600.css';
-import '@fontsource/playfair-display/latin-700.css';
-import '@fontsource/playfair-display/latin-600-italic.css';
+// Arabic subset only — Latin text is covered by Inter.
+// Redesign (stitch-reference): Inter is the functional/body typeface across
+// every data-heavy surface (weights 400/500/600/700). latin-ext covers the
+// accented glyphs used by the it/es/de/fr locales so those pages never swap
+// to a fallback mid-word.
+import '@fontsource/inter/latin-400.css';
+import '@fontsource/inter/latin-500.css';
+import '@fontsource/inter/latin-600.css';
+import '@fontsource/inter/latin-700.css';
+import '@fontsource/inter/latin-ext-400.css';
+import '@fontsource/inter/latin-ext-600.css';
+import '@fontsource/inter/latin-ext-700.css';
+// Epilogue — the high-impact display typeface for headlines (--font-display).
+// Per the design reference it carries display-hero (800), headline-lg (700)
+// and headline-md (600). Self-hosted and loaded eagerly like Inter above so
+// hero/section headings never font-swap after first paint.
+import '@fontsource/epilogue/latin-600.css';
+import '@fontsource/epilogue/latin-700.css';
+import '@fontsource/epilogue/latin-800.css';
+import '@fontsource/epilogue/latin-ext-700.css';
 // Brand-lockup-only fonts (Header logo appears on every page, so loaded
 // eagerly like Poppins rather than lazily like Amiri below — a lazy-loaded
 // logo wordmark would visibly font-swap on every single page load).

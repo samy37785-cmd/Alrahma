@@ -4,6 +4,7 @@
   color: #cfe0d8;
   padding-top: 60px;
   padding-bottom: env(safe-area-inset-bottom, 0px);
+  border-top: 1px solid rgba(200, 132, 42, 0.3);   /* illuminated-manuscript edge */
 }
 .footer__grid { display: grid; grid-template-columns: 1.4fr 1fr 1fr 1.2fr; gap: 36px; padding-bottom: 40px; }
 .brand--light .brand__text strong { color: #fff; }

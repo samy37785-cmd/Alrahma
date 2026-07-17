@@ -315,9 +315,9 @@
   --opacity-subtle:   0.6;
   --opacity-medium:   0.75;
 
-  /* ── Sidebar ── */
-  --sidebar-width:      240px;
-  --sidebar-width-sm:   64px;   /* collapsed icon-only */
+  /* ── Sidebar (reference: fixed 280px desktop navigation rail) ── */
+  --sidebar-width:      280px;
+  --sidebar-width-sm:   72px;   /* collapsed icon-only */
 
   /* ── Layout ── */
   --container-max:      1160px;

@@ -346,7 +346,7 @@ export default function ParentDashboard() {
             onClick={(e) => e.stopPropagation()}
           >
             {/* Report header */}
-            <div style={{ background: 'var(--grad-green, linear-gradient(135deg,#0b6e4f,#1a9e72))', padding: '28px 32px', borderRadius: '18px 18px 0 0', position: 'relative' }}>
+            <div style={{ background: 'var(--grad-green, linear-gradient(135deg,#00543b,#0a7a56))', padding: '28px 32px', borderRadius: '18px 18px 0 0', position: 'relative' }}>
               <div style={{ color: 'rgba(255,255,255,.7)', fontSize: '0.7rem', fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: 8 }}>
                 Weekly Progress Report — {new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
               </div>

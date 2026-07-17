@@ -1091,7 +1091,7 @@
 
 .ds-streak__dot--on {
   background: var(--p-gold-500);
-  box-shadow: 0 0 0 2px rgba(212,175,55,.25);
+  box-shadow: 0 0 0 2px rgba(200,132,42,.25);
 }
 .ds-streak__dot--today {
   ring: 2px solid var(--p-gold-500);
@@ -2022,7 +2022,7 @@ html.dark .milestone-toast {
 .share-verse-card__divider {
   width: 60px;
   height: 1px;
-  background: var(--accent, #d4af37);
+  background: var(--accent, #c8842a);
   opacity: .6;
   border-radius: 1px;
 }
@@ -2062,7 +2062,7 @@ html.dark .milestone-toast {
   transition: border-color .15s, transform .15s;
 }
 .share-verse-design-btn:hover { transform: scale(1.1); }
-.share-verse-design-btn.active { border-color: var(--color-primary, #0b6e4f); }
+.share-verse-design-btn.active { border-color: var(--color-primary, #00543b); }
 
 /* Share actions */
 .share-verse-actions {
@@ -2087,7 +2087,7 @@ html.dark .milestone-toast {
   white-space: nowrap;
 }
 .share-verse-btn:hover { opacity: .85; }
-.share-verse-btn--native { background: var(--color-primary, #0b6e4f); color: #fff; }
+.share-verse-btn--native { background: var(--color-primary, #00543b); color: #fff; }
 .share-verse-btn--wa     { background: #25d366; color: #fff; }
 .share-verse-btn--copy   { background: var(--bg-page); border: 1px solid var(--border-default); color: var(--text-primary); }
 .share-verse-btn--dl     { background: #4f46e5; color: #fff; }

@@ -60,9 +60,9 @@ function getDueCards(cards) {
 }
 
 const QUALITY_LABELS = [
-  { q: 5, label: 'Perfect', color: '#1a9e72' },
+  { q: 5, label: 'Perfect', color: '#0a7a56' },
   { q: 4, label: 'Good', color: '#4ade80' },
-  { q: 3, label: 'OK', color: '#d4af37' },
+  { q: 3, label: 'OK', color: '#c8842a' },
   { q: 1, label: 'Hard', color: '#f97316' },
   { q: 0, label: 'Forgot', color: '#c0392b' },
 ];

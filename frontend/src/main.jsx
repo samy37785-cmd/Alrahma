@@ -23,7 +23,7 @@ import '@fontsource/epilogue/latin-700.css';
 import '@fontsource/epilogue/latin-800.css';
 import '@fontsource/epilogue/latin-ext-700.css';
 // Brand-lockup-only fonts (Header logo appears on every page, so loaded
-// eagerly like Poppins rather than lazily like Amiri below — a lazy-loaded
+// eagerly like Inter rather than lazily like Amiri below — a lazy-loaded
 // logo wordmark would visibly font-swap on every single page load).
 import '@fontsource/cinzel/latin-700.css';
 import '@fontsource/cairo/arabic-700.css';

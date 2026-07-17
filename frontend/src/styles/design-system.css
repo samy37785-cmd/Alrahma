@@ -31,7 +31,8 @@
   inset: 0;
   z-index: var(--z-modal);
   background: var(--bg-overlay);
-  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: var(--glass-blur-sm);
+  backdrop-filter: var(--glass-blur-sm);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -41,7 +42,8 @@
 
 .ds-modal {
   background: var(--bg-surface);
-  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
   box-shadow: var(--shadow-xl);
   width: 100%;
   max-width: var(--ds-modal-max-width, 480px);
@@ -178,9 +180,11 @@
   align-items: flex-start;
   gap: var(--space-3);
   padding: var(--space-4);
-  background: var(--bg-surface);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-md);
+  background: var(--glass-bg-strong);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
   animation: ds-toast-in var(--duration-slow) var(--ease-spring) both;
 }
@@ -283,9 +287,11 @@
   top: calc(100% + var(--space-2));
   right: 0;
   min-width: 200px;
-  background: var(--bg-surface);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-md);
+  background: var(--glass-bg-strong);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
   padding: var(--space-2);
   animation: ds-menu-in var(--duration-base) var(--ease-out) both;
@@ -368,8 +374,8 @@
 .ds-tab:hover { color: var(--text-primary); }
 .ds-tab[aria-selected="true"] {
   background: var(--bg-surface);
-  color: var(--text-primary);
-  box-shadow: var(--shadow-xs);
+  color: var(--color-primary);
+  box-shadow: var(--shadow-sm);
 }
 
 .ds-tabs--underline .ds-tab {
@@ -515,11 +521,11 @@
 
 .ds-progress__fill {
   height: 100%;
-  background: var(--color-primary);
+  background: linear-gradient(90deg, var(--p-green-600), var(--p-green-400));
   border-radius: var(--radius-full);
   transition: width var(--duration-slower) var(--ease-default);
 }
-.ds-progress__fill--accent  { background: var(--color-accent); }
+.ds-progress__fill--accent  { background: linear-gradient(90deg, var(--p-amber-600), var(--p-amber-400)); }
 .ds-progress__fill--success { background: var(--color-success); }
 .ds-progress__fill--danger  { background: var(--color-danger); }
 

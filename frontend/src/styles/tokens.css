@@ -103,7 +103,6 @@
   --bg-page:          var(--p-neutral-50);      /* page background (cream parchment) */
   --bg-surface:       var(--p-neutral-0);       /* card / panel */
   --bg-surface-raised:#f7f5ee;                  /* slightly elevated panel (surface-container-low) */
-  --bg-surface-sunken:var(--p-neutral-100);     /* recessed well (surface-container) */
   --bg-surface-hover: var(--p-green-50);        /* card hover fill */
   --bg-overlay:       rgba(0, 46, 32, 0.55);   /* modal backdrop */
   --bg-tooltip:       var(--p-green-800);       /* tooltip background */
@@ -239,8 +238,6 @@
   --font-mono:  "Fira Code", "JetBrains Mono", "Courier New", monospace;
   /* Display typeface for high-impact headlines (hero + section headings). */
   --font-display:       "Epilogue", "Inter", system-ui, sans-serif;
-  /* Back-compat alias — legacy editorial headlines referenced this name. */
-  --font-serif-display: var(--font-display);
 
   /* Font size scale */
   --text-xs:    0.72rem;   /* 11.5px */
@@ -315,9 +312,9 @@
   --opacity-subtle:   0.6;
   --opacity-medium:   0.75;
 
-  /* ── Sidebar ── */
-  --sidebar-width:      240px;
-  --sidebar-width-sm:   64px;   /* collapsed icon-only */
+  /* ── Sidebar (reference: fixed 280px desktop navigation rail) ── */
+  --sidebar-width:      280px;
+  --sidebar-width-sm:   72px;   /* collapsed icon-only */
 
   /* ── Layout ── */
   --container-max:      1160px;
@@ -369,7 +366,6 @@ html.dark {
   --bg-page:          #0d1712;
   --bg-surface:       #14201b;
   --bg-surface-raised:#1a2822;
-  --bg-surface-sunken: #101a15;
   --bg-surface-hover: #1f3228;
   --bg-input:         #0e1a11;
   --bg-input-focus:   #162518;

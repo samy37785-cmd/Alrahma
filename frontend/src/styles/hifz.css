@@ -106,7 +106,7 @@
 /* ===== Resource picker modal ===== */
 .modal {
   position: fixed; inset: 0; z-index: 100;
-  background: rgba(6, 55, 42, .55); backdrop-filter: blur(3px);
+  background: rgba(0, 46, 32, .55); backdrop-filter: blur(3px);
   -webkit-backdrop-filter: blur(3px);
   display: flex; align-items: center; justify-content: center;
   padding: max(20px, env(safe-area-inset-top, 20px))
@@ -181,7 +181,7 @@
 .checkout__method:hover { border-color: var(--green); }
 .checkout__method.is-active {
   border-color: var(--green); background: #fff;
-  box-shadow: 0 0 0 3px rgba(11, 110, 79, .12);
+  box-shadow: 0 0 0 3px rgba(0, 84, 59, .12);
 }
 .checkout__method input[type="radio"] { accent-color: var(--green); width: 17px; height: 17px; }
 .checkout__method-label { display: flex; flex-direction: column; line-height: 1.25; }
@@ -205,7 +205,7 @@
 }
 .checkout__field input:focus {
   outline: none; border-color: var(--green);
-  box-shadow: 0 0 0 3px rgba(11, 110, 79, .12);
+  box-shadow: 0 0 0 3px rgba(0, 84, 59, .12);
 }
 
 .checkout__wallets { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -278,7 +278,7 @@
 }
 .pricing__banner strong { color: var(--gold); }
 .pricing__banner-badge {
-  background: var(--gold); color: #3a2e05; font-size: .72rem; font-weight: 700;
+  background: var(--gold); color: #3a2000; font-size: .72rem; font-weight: 700;
   padding: 3px 10px; border-radius: 999px; white-space: nowrap;
 }
 .plan__discount-badge {
@@ -455,13 +455,13 @@
 .alpha__card {
   background: #fff; border: 1.5px solid var(--line); border-radius: 16px;
   padding: 20px 14px 14px; text-align: center;
-  box-shadow: 0 3px 14px rgba(8,77,55,.07);
+  box-shadow: 0 3px 14px rgba(0,59,40,.07);
   transition: border-color .2s, transform .2s, box-shadow .2s;
   display: flex; flex-direction: column; align-items: center; gap: 4px;
 }
 .alpha__card:hover {
   border-color: var(--green); transform: translateY(-3px);
-  box-shadow: 0 6px 20px rgba(11,110,79,.12);
+  box-shadow: 0 6px 20px rgba(0,84,59,.12);
 }
 .alpha__glyph {
   font-family: var(--serif); font-size: 3.8rem; color: var(--green-deep);

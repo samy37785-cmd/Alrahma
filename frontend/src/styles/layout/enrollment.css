@@ -12,7 +12,7 @@
 .enroll__trust-strip {
   display: flex; align-items: center; gap: 24px; flex-wrap: wrap;
   background: linear-gradient(135deg,#f0faf5,#edf9f3);
-  border: 1px solid rgba(11,110,79,.15); border-radius: 14px;
+  border: 1px solid rgba(0,84,59,.15); border-radius: 14px;
   padding: 18px 24px; margin-bottom: 28px;
 }
 .enroll__trust-quote {
@@ -46,7 +46,7 @@
   z-index: 2; position: relative;
 }
 .enroll__step-item.active .enroll__step-circle {
-  border-color: var(--green); background: var(--green); color: #fff; box-shadow: 0 4px 16px rgba(11,110,79,.35);
+  border-color: var(--green); background: var(--green); color: #fff; box-shadow: 0 4px 16px rgba(0,84,59,.35);
 }
 .enroll__step-item.done .enroll__step-circle {
   border-color: var(--green); background: var(--green); color: #fff;
@@ -156,7 +156,7 @@
   transition: all .25s; position: relative; overflow: hidden;
 }
 .enroll__plan-card:hover { border-color: var(--green); transform: translateY(-4px); box-shadow: var(--shadow-md); }
-.enroll__plan-card.selected { border-color: var(--green); box-shadow: 0 0 0 3px rgba(11,110,79,.2); }
+.enroll__plan-card.selected { border-color: var(--green); box-shadow: 0 0 0 3px rgba(0,84,59,.2); }
 .enroll__plan-card.featured { border-color: var(--gold); }
 .enroll__plan-tag { position: absolute; top: 10px; right: 10px; background: var(--gold); color: #2a1f00; font-size: .7rem; font-weight: 700; padding: 3px 10px; border-radius: 999px; }
 .enroll__plan-icon { font-size: 1.8rem; margin: 20px 0 6px; }
@@ -171,10 +171,10 @@
 .enroll__plan-selected { color: var(--green); font-weight: 700; font-size: .85rem; margin-top: 8px; }
 
 /* Summary */
-.enroll__summary { background: var(--green-light); border: 1px solid rgba(11,110,79,.2); border-radius: var(--radius); padding: 24px; }
+.enroll__summary { background: var(--green-light); border: 1px solid rgba(0,84,59,.2); border-radius: var(--radius); padding: 24px; }
 .enroll__summary h3 { color: var(--green-deep); margin-bottom: 14px; font-size: 1.1rem; }
 .enroll__summary-rows { display: flex; flex-direction: column; gap: 8px; }
-.enroll__summary-row { display: flex; justify-content: space-between; font-size: .9rem; padding-bottom: 8px; border-bottom: 1px dashed rgba(11,110,79,.2); }
+.enroll__summary-row { display: flex; justify-content: space-between; font-size: .9rem; padding-bottom: 8px; border-bottom: 1px dashed rgba(0,84,59,.2); }
 .enroll__summary-row span { color: var(--muted); }
 .enroll__summary-row strong { color: var(--green-deep); }
 
@@ -250,8 +250,8 @@
   display: flex; flex-direction: column; align-items: center; gap: 4px;
   margin-bottom: 20px;
   padding: 14px 24px;
-  background: var(--color-primary-surface, rgba(11,110,79,.07));
-  border: 1px solid var(--color-primary-border, rgba(11,110,79,.18));
+  background: var(--color-primary-surface, rgba(0,84,59,.07));
+  border: 1px solid var(--color-primary-border, rgba(0,84,59,.18));
   border-radius: 14px;
   max-width: 320px;
   margin-inline: auto;
@@ -301,7 +301,7 @@
 .enroll__next-step:last-child { padding-bottom: 0; }
 .enroll__next-step-icon {
   width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;
-  background: var(--color-primary-surface, rgba(11,110,79,.1));
+  background: var(--color-primary-surface, rgba(0,84,59,.1));
   display: flex; align-items: center; justify-content: center;
   font-size: 1.1rem;
 }

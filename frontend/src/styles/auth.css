@@ -5,11 +5,16 @@
   padding-top: max(40px, env(safe-area-inset-top, 40px));
   padding-bottom: max(40px, env(safe-area-inset-bottom, 40px));
   background:
-    radial-gradient(1000px 400px at 80% -10%, rgba(212,175,55,.18), transparent 60%),
+    radial-gradient(1000px 400px at 80% -10%, rgba(200,132,42,.18), transparent 60%),
     linear-gradient(160deg, var(--green-deep), var(--green) 70%);
 }
+/* Glass panel floating over the emerald gradient (reference §Elevation Level 2) */
 .auth__card {
-  background: #fff; border-radius: 18px; padding: 40px 34px;
+  background: var(--glass-bg-strong);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: 18px; padding: 40px 34px;
   width: min(100%, 420px); box-shadow: var(--shadow-lg);
 }
 

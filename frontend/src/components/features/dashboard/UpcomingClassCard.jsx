@@ -42,7 +42,7 @@ function EmbeddedJoinBtn({ meetingUrl, title }) {
           aria-modal="true"
           aria-label={`Live class: ${title}`}
         >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', background: '#0b6e4f', color: '#fff' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', background: '#00543b', color: '#fff' }}>
             <span style={{ fontWeight: 700 }}>📹 {title}</span>
             <button
               type="button"

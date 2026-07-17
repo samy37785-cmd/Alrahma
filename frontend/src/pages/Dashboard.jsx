@@ -457,7 +457,7 @@ export default function Dashboard() {
       {isActive && !enrollment && courses.length === 0 && (
         <div className="ds-card" style={{ marginBottom: 20, overflow: 'hidden' }}>
           <div style={{
-            background: 'linear-gradient(135deg, var(--color-primary) 0%, #1a9e72 100%)',
+            background: 'linear-gradient(135deg, var(--color-primary) 0%, #0a7a56 100%)',
             padding: '20px 24px 16px',
           }}>
             <div style={{ color: 'rgba(255,255,255,.7)', fontSize: '0.72rem', fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: 6 }}>
@@ -504,7 +504,7 @@ export default function Dashboard() {
                 <div style={{
                   width: 34, height: 34, borderRadius: '50%', flexShrink: 0,
                   background: step.done ? 'var(--color-success-surface)' : 'var(--color-primary-surface)',
-                  border: `2px solid ${step.done ? 'var(--color-success-border)' : 'var(--border-brand, rgba(11,110,79,.3))'}`,
+                  border: `2px solid ${step.done ? 'var(--color-success-border)' : 'var(--border-brand, rgba(0,84,59,.3))'}`,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: '1rem',
                 }}>

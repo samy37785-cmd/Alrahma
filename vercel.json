@@ -15,13 +15,28 @@
       "has": [{ "type": "host", "value": "alrahma-xi.vercel.app" }],
       "destination": "https://al-rahmaacademy.com/:path*",
       "permanent": true
-    }
+    },
+    {
+      "source": "/",
+      "has": [{ "type": "host", "value": "www.al-rahmaacademy.com" }],
+      "destination": "https://al-rahmaacademy.com/",
+      "permanent": true
+    },
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "www.al-rahmaacademy.com" }],
+      "destination": "https://al-rahmaacademy.com/:path*",
+      "permanent": true
+    },
+    { "source": "/it", "destination": "/it/", "permanent": true },
+    { "source": "/fr", "destination": "/fr/", "permanent": true }
   ],
   "rewrites": [
     {
       "source": "/api/:path*",
       "destination": "https://academy-backend-cxso.onrender.com/api/:path*"
     },
+    { "source": "/favicon.ico", "destination": "/favicon.svg" },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
   "headers": [

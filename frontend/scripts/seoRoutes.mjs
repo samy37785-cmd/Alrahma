@@ -6,6 +6,8 @@
  * Lived in package.json's "seoRoutes" key until the Phase 1 repo cleanup —
  * route data is content, not package manifest metadata.
  */
+import { TEACHERS } from '../src/data/marketing/teachers.js';
+
 export const seoRoutes = [
   '/',
   '/courses',
@@ -26,17 +28,20 @@ export const seoRoutes = [
   '/tools/arabic-alphabet',
   '/resources',
   '/resources/blog',
-  '/resources/blog/how-to-start-learning-quran',
-  '/resources/blog/what-is-tajweed',
-  '/resources/blog/noorani-qaida-explained',
-  '/resources/blog/how-long-to-memorise-quran',
-  '/resources/blog/why-learn-arabic-to-understand-quran',
-  '/resources/blog/quran-memorization-tips-adults',
-  '/resources/blog/understanding-fiqh-everyday-muslims',
+  // Individual /resources/blog/<slug> posts are added here only once they
+  // actually exist as published posts in the Blog collection — the DB has
+  // zero posts right now, and sitemapping URLs with no real content behind
+  // them is a soft-404 signal to crawlers.
   '/resources/faq',
   '/academy',
   '/academy/about',
   '/academy/teachers',
+  // One entry per real teacher profile (App.jsx: /academy/teachers/:id) —
+  // sourced from the same TEACHERS list the directory itself renders, so
+  // this can't drift out of sync with what's actually crawlable.
+  ...TEACHERS.map((t) => `/academy/teachers/${t.id}`),
   '/academy/privacy',
+  '/academy/terms',
+  '/academy/refund-policy',
   '/enroll',
 ];

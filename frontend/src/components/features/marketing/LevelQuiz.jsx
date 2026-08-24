@@ -41,13 +41,13 @@ const RECOMMENDATIONS = {
   read: {
     title: 'Quran Reading — Noorani Qaida',
     desc: 'Start from the very first letter. Our tutors take complete beginners to confident Quran reading in 4–6 months.',
-    path: '/courses/quran-tajweed',
+    path: '/courses/quran',
     badge: '🌱 Perfect for beginners',
   },
   memorize: {
     title: 'Quran Memorization (Hifz)',
     desc: 'A structured Hifz plan with daily revision, spaced repetition, and personal accountability — for all ages.',
-    path: '/courses/hifz',
+    path: '/courses/quran',
     badge: '🏆 Most popular course',
   },
   ijazah: {

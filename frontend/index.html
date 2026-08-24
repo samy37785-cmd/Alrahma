@@ -25,13 +25,13 @@
   <link rel="canonical" href="https://al-rahmaacademy.com/" />
 
   <!-- hreflang — en/it/fr have dedicated pages; ar/es/de use lang query param -->
-  <link rel="alternate" hreflang="en"       href="https://al-rahmaacademy.com/en/" />
+  <link rel="alternate" hreflang="en"       href="https://al-rahmaacademy.com/" />
   <link rel="alternate" hreflang="ar"       href="https://al-rahmaacademy.com/?lang=ar" />
   <link rel="alternate" hreflang="it"       href="https://al-rahmaacademy.com/it/" />
   <link rel="alternate" hreflang="es"       href="https://al-rahmaacademy.com/?lang=es" />
   <link rel="alternate" hreflang="de"       href="https://al-rahmaacademy.com/?lang=de" />
   <link rel="alternate" hreflang="fr"       href="https://al-rahmaacademy.com/fr/" />
-  <link rel="alternate" hreflang="x-default" href="https://al-rahmaacademy.com/en/" />
+  <link rel="alternate" hreflang="x-default" href="https://al-rahmaacademy.com/" />
 
   <!-- ═══════════════════════════════════════════════════════════════
        Open Graph (Facebook, WhatsApp, LinkedIn previews)
@@ -67,24 +67,6 @@
   ════════════════════════════════════════════════════════════════ -->
   <!-- Poppins + Amiri are self-hosted (bundled via src/main.jsx) — no
        render-blocking Google Fonts request and no 3rd-party origin. -->
-
-  <!-- ═══════════════════════════════════════════════════════════════
-       Schema Markup — BreadcrumbList (home page = single item)
-  ════════════════════════════════════════════════════════════════ -->
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    "itemListElement": [
-      {
-        "@type": "ListItem",
-        "position": 1,
-        "name": "Home",
-        "item": "https://al-rahmaacademy.com/"
-      }
-    ]
-  }
-  </script>
 
   <!-- ═══════════════════════════════════════════════════════════════
        Schema Markup — EducationalOrganization
@@ -214,83 +196,7 @@
           }
         }
       ]
-    },
-    "aggregateRating": {
-      "@type": "AggregateRating",
-      "ratingValue": "4.9",
-      "reviewCount": "87",
-      "bestRating": "5",
-      "worstRating": "1"
     }
-  }
-  </script>
-
-  <!-- ═══════════════════════════════════════════════════════════════
-       Schema Markup — FAQ
-       Unlocks FAQ accordion directly in Google search results
-  ════════════════════════════════════════════════════════════════ -->
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    "mainEntity": [
-      {
-        "@type": "Question",
-        "name": "Do you offer free trial Quran lessons?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "Yes. Al-Rahma Academy offers 2 completely free trial classes with no payment or commitment required. You can book directly from our website by filling in the free trial form."
-        }
-      },
-      {
-        "@type": "Question",
-        "name": "Are female Quran tutors available?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "Yes. We have certified female tutors available for sisters and children. Simply request a female teacher when filling in the booking form and we will match you accordingly."
-        }
-      },
-      {
-        "@type": "Question",
-        "name": "Can complete beginners with no Arabic background join?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "Absolutely. Our Noorani Qaida programme starts from the very first Arabic letter. No prior knowledge of Arabic is needed. We welcome students of all levels, from children to adults."
-        }
-      },
-      {
-        "@type": "Question",
-        "name": "Which platforms are used for the online lessons?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "All lessons are delivered live via Zoom or Skype. Every class is one-to-one between the student and the tutor — not group sessions — giving your child or yourself full individual attention."
-        }
-      },
-      {
-        "@type": "Question",
-        "name": "How much do the monthly plans cost?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "Plans start from €56 per month for 2 classes per week (Starter plan). The Standard plan offers 3 classes per week for €84/month, and the Premium plan offers 4 classes per week for €112/month. All plans include one-to-one tutoring."
-        }
-      },
-      {
-        "@type": "Question",
-        "name": "Do you teach students in Italy, France and the UK?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "Yes. Al-Rahma Academy serves Muslim communities across Europe including Italy, France, the UK, Germany, Belgium and beyond. All lessons are online so there are no geographical restrictions."
-        }
-      },
-      {
-        "@type": "Question",
-        "name": "Can children get an Ijazah certificate through Al-Rahma Academy?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "Yes. We offer a structured Ijazah pathway for students who wish to earn a formal Quranic certification with a verified chain of narration. This is available for both children and adults who reach the required level."
-        }
-      }
-    ]
   }
   </script>
 

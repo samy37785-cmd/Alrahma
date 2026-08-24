@@ -26,6 +26,8 @@ export const seoRoutes = [
   '/tools/verse-of-the-day',
   '/tools/tasbeeh',
   '/tools/arabic-alphabet',
+  '/tools/tajweed-checker',
+  '/tools/hifz-review',
   '/resources',
   '/resources/blog',
   // Individual /resources/blog/<slug> posts are added here only once they

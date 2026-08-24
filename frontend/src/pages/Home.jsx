@@ -3,6 +3,7 @@ import '../styles/trust-engage.css';
 import { TrialProvider } from '../context/TrialContext';
 import { useLang } from '../context/LangContext';
 import useSEO from '../hooks/useSEO';
+import { buildFaqPageSchema } from '../utils/schema';
 import TopBar from '../components/layout/TopBar';
 import Header from '../components/layout/Header';
 import Hero from '../components/features/marketing/Hero';
@@ -36,15 +37,7 @@ export default function Home() {
     keywords: 'learn quran online, online quran classes, quran tutor, tajweed lessons, al-azhar tutor, online islamic studies, quran for children, hifz online',
     // Built from the same t.faq.items array <FAQ /> renders below, so this
     // can never drift from the actual visible questions/answers again.
-    schema: {
-      '@context': 'https://schema.org',
-      '@type': 'FAQPage',
-      mainEntity: t.faq.items.map((item) => ({
-        '@type': 'Question',
-        name: item.q,
-        acceptedAnswer: { '@type': 'Answer', text: item.a },
-      })),
-    },
+    schema: buildFaqPageSchema(t.faq.items),
   });
   return (
     <TrialProvider>

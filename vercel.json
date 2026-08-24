@@ -8,28 +8,32 @@
       "source": "/",
       "has": [{ "type": "host", "value": "alrahma-xi.vercel.app" }],
       "destination": "https://al-rahmaacademy.com/",
-      "permanent": true
+      "permanent": true,
+      "preserveQueryParams": true
     },
     {
       "source": "/:path*",
       "has": [{ "type": "host", "value": "alrahma-xi.vercel.app" }],
       "destination": "https://al-rahmaacademy.com/:path*",
-      "permanent": true
+      "permanent": true,
+      "preserveQueryParams": true
     },
     {
       "source": "/",
       "has": [{ "type": "host", "value": "www.al-rahmaacademy.com" }],
       "destination": "https://al-rahmaacademy.com/",
-      "permanent": true
+      "permanent": true,
+      "preserveQueryParams": true
     },
     {
       "source": "/:path*",
       "has": [{ "type": "host", "value": "www.al-rahmaacademy.com" }],
       "destination": "https://al-rahmaacademy.com/:path*",
-      "permanent": true
+      "permanent": true,
+      "preserveQueryParams": true
     },
-    { "source": "/it", "destination": "/it/", "permanent": true },
-    { "source": "/fr", "destination": "/fr/", "permanent": true }
+    { "source": "/it", "destination": "/it/", "permanent": true, "preserveQueryParams": true },
+    { "source": "/fr", "destination": "/fr/", "permanent": true, "preserveQueryParams": true }
   ],
   "rewrites": [
     {

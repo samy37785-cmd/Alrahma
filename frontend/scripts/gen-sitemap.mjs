@@ -15,11 +15,10 @@ const root = join(__dirname, '..');
 const ORIGIN = 'https://al-rahmaacademy.com';
 
 // Standalone static language landing pages that live in public/{it,fr}/ and
-// are not React routes, so they aren't in the react-snap include list.
+// are not React routes, so they aren't in seoRoutes.mjs's list.
 const extraStatic = ['/it/', '/fr/'];
 
 const paths = [...new Set([...routes, ...extraStatic])];
-const today = new Date().toISOString().slice(0, 10);
 
 const priorityFor = (p) => {
   if (p === '/') return '1.0';
@@ -32,13 +31,17 @@ const priorityFor = (p) => {
 };
 const changefreqFor = (p) => (p === '/' ? 'weekly' : 'monthly');
 
+// No <lastmod> is emitted: there is no real per-route last-modified source
+// in this codebase (no file-mtime tracking, no CMS timestamp for static
+// routes), and a build-time "today" on every URL is worse than omitting the
+// tag — Google explicitly discounts a lastmod it can't verify as accurate.
+// Reintroduce per-URL once a real source exists (e.g. Blog posts' updatedAt).
 const body = paths
   .map((p) => {
     const loc = p === '/' ? `${ORIGIN}/` : `${ORIGIN}${p}`;
     return [
       '  <url>',
       `    <loc>${loc}</loc>`,
-      `    <lastmod>${today}</lastmod>`,
       `    <changefreq>${changefreqFor(p)}</changefreq>`,
       `    <priority>${priorityFor(p)}</priority>`,
       '  </url>',

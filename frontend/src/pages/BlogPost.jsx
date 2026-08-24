@@ -153,7 +153,7 @@ export default function BlogPost() {
         </div>
 
         <article className="blog-post__body">
-          {renderMarkdown(post.content)}
+          {renderMarkdown(post.body)}
         </article>
 
         {(prev || next) && (

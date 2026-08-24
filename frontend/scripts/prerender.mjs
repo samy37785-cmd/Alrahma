@@ -129,7 +129,20 @@ async function main() {
     await waitForUrl(PREVIEW_URL, 60_000);
     log('preview server ready.');
 
-    browser = await chromium.launch();
+    // Standard Playwright-downloaded Chromium works fine locally and in
+    // GitHub Actions CI (Ubuntu), but fails to launch on Vercel's build
+    // container — confirmed live: it downloads, then errors "error while
+    // loading shared libraries: libnspr4.so: cannot open shared object
+    // file", and there's no root/apt access there to install it. Vercel
+    // sets VERCEL=1 during builds; only there, swap in @sparticuz/chromium's
+    // bundled, statically-linked binary (built for exactly this class of
+    // restricted environment) instead of Playwright's own download.
+    let launchOptions = {};
+    if (process.env.VERCEL) {
+      const { default: sparticuz } = await import('@sparticuz/chromium');
+      launchOptions = { executablePath: await sparticuz.executablePath(), args: sparticuz.args };
+    }
+    browser = await chromium.launch(launchOptions);
     const context = await browser.newContext({ serviceWorkers: 'block' });
     await context.route('**/_vercel/**', (route) => route.fulfill({ status: 204, body: '' }));
 

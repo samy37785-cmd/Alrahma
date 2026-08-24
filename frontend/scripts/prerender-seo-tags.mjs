@@ -5,31 +5,31 @@
  * hreflang set is. Pure Node ESM — no browser globals, no JSX.
  */
 import translations, { LANGS } from '../src/i18n/index.js';
+import { pathFor } from '../src/utils/localePath.js';
 
 export { LANGS };
 
 export const ORIGIN = 'https://al-rahmaacademy.com';
 
-// Routes that stay in seoRoutes.mjs (real, indexable, in the sitemap) but
-// are excluded from prerender.mjs's headless-capture matrix specifically.
-// /tools/verse-of-the-day fetches a live "today's verse" from api.quran.com
-// on mount — freezing that into a static prerendered file would show every
-// future visitor the verse from the day this build ran, not the real day's
-// verse, until the next deploy. It keeps shipping today's normal SPA-shell
-// behavior instead (client-fetches the correct verse on load), so it's
-// never wrong, just not pre-rendered.
-export const PRERENDER_EXCLUDED_ROUTES = new Set(['/tools/verse-of-the-day']);
+// Routes that would stay in seoRoutes.mjs (real, indexable, in the sitemap)
+// but get excluded from prerender.mjs's headless-capture matrix specifically
+// — for content that's genuinely time-varying enough that freezing one
+// capture-time snapshot into the static file would misrepresent the page
+// (e.g. a "today's X" feature) *and* has no reasonable stable placeholder.
+// Currently empty: /tools/verse-of-the-day used to be excluded outright, but
+// that left it with no prerendered file at all — Vercel's SPA catch-all then
+// served it dist/index.html, which is now the real prerendered *homepage*
+// (wrong title/canonical/JSON-LD for that URL, not a neutral shell). It's
+// prerendered like every other route now; prerender.mjs blocks its one
+// live verse-fetch during capture instead, so the written file gets the
+// page's real, correct chrome without baking in a specific day's verse.
+export const PRERENDER_EXCLUDED_ROUTES = new Set();
 
-// English is unprefixed (matches the pre-existing convention already live in
-// production for '/'); the other five languages get a /{lang} path prefix so
-// each has its own real, self-canonical, indexable URL — the fix this phase
-// makes for ar/es/de, which previously had no indexable URL at all (only
-// ?lang= query-param switching, which useSEO.js's path-only canonical can
-// never treat as self-canonical).
-export function pathFor(route, lang) {
-  if (lang === 'en') return route;
-  return route === '/' ? `/${lang}/` : `/${lang}${route}`;
-}
+// pathFor itself now lives in src/utils/localePath.js — the same module
+// LangContext/BrowserRouter's basename/LangSwitcher use at runtime — so the
+// build-time URL scheme and the live router's URL scheme are structurally
+// the same code, not two independent implementations that happen to agree.
+export { pathFor };
 
 export function urlFor(route, lang) {
   return ORIGIN + pathFor(route, lang);

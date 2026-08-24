@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useLang } from '../../context/LangContext';
 import { LANGS, LANG_LABELS } from '../../i18n';
+import { switchLanguageHref } from '../../utils/localePath';
 
 const LANG_FULL = {
   en: 'English',
@@ -16,7 +17,7 @@ const FLAG = {
 };
 
 export default function LangSwitcher() {
-  const { lang, setLang } = useLang();
+  const { lang } = useLang();
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
@@ -27,7 +28,15 @@ export default function LangSwitcher() {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  const select = (code) => { setLang(code); setOpen(false); };
+  // A full navigation, not setLang(): <BrowserRouter>'s basename is fixed at
+  // mount from the URL main.jsx first saw, so switching language has to load
+  // the equivalent URL under the new prefix for the basename (and canonical,
+  // and hreflang) to stay correct — client-side state alone can't do that.
+  const select = (code) => {
+    setOpen(false);
+    if (code === lang) return;
+    window.location.assign(switchLanguageHref(window.location.pathname, window.location.search, code));
+  };
 
   return (
     <div className="ls" ref={ref} aria-label="Choose language">

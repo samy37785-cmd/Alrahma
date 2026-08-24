@@ -11,6 +11,7 @@ import LangSwitcher from "../ui/LangSwitcher";
 import Avatar from "../ui/Avatar";
 import CommandPalette from "../ui/CommandPalette";
 import { LANGS } from "../../i18n";
+import { switchLanguageHref } from "../../utils/localePath";
 import {
   BookOpenIcon, StarIcon, ScrollIcon, MosqueIcon, AlphabetIcon,
   BeadsIcon, LibraryIcon, CompassIcon, CalendarIcon, HandIcon, VerseIcon,
@@ -30,7 +31,7 @@ export default function Header() {
   const [cmdOpen, setCmdOpen]       = useState(false);
   const [scrolled, setScrolled]     = useState(false);
   const { user, isAdmin, isTeacher, isParent, logout } = useAuth();
-  const { t, lang, setLang } = useLang();
+  const { t, lang } = useLang();
   const { dark, toggle: toggleDark } = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
@@ -252,7 +253,10 @@ export default function Header() {
                   <button
                     key={code}
                     className={`nav__mobile-lang-btn${lang === code ? " nav__mobile-lang-btn--active" : ""}`}
-                    onClick={() => setLang(code)}
+                    onClick={() => {
+                      if (code === lang) return;
+                      window.location.assign(switchLanguageHref(location.pathname, location.search, code));
+                    }}
                     aria-pressed={lang === code}
                   >
                     {FLAG[code]} {code.toUpperCase()}

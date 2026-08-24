@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { langFromPath, stripLangPrefix, pathFor } from '../utils/localePath';
 
 /**
  * Central SEO engine. Every public page calls this hook to drive its
@@ -54,16 +55,23 @@ function setJsonLd(id, obj) {
 // Build a BreadcrumbList from the URL path. /course/ijazah →
 // Home › Course › Ijazah. Returns null on the home page (no breadcrumb).
 function buildBreadcrumb(pathname) {
-  const parts = pathname.split('/').filter(Boolean);
+  // Strip a leading language segment first for the label/level walk —
+  // otherwise a real prefixed URL like /fr/courses/ijazah would render
+  // "Fr › Courses › Ijazah", turning the language code itself into a
+  // spurious first breadcrumb crumb — but each level's own `item` URL still
+  // needs to carry that same prefix back (via pathFor), so a French page's
+  // breadcrumb doesn't point at the English URLs.
+  const { lang } = langFromPath(pathname);
+  const parts = stripLangPrefix(pathname).split('/').filter(Boolean);
   if (parts.length === 0) return null;
-  const items = [{ name: 'Home', url: `${ORIGIN}/` }];
+  const items = [{ name: 'Home', url: ORIGIN + pathFor('/', lang || 'en') }];
   let acc = '';
   for (const p of parts) {
     acc += `/${p}`;
     const name = decodeURIComponent(p)
       .replace(/[-_]/g, ' ')
       .replace(/\b\w/g, (c) => c.toUpperCase());
-    items.push({ name, url: ORIGIN + acc });
+    items.push({ name, url: ORIGIN + pathFor(acc, lang || 'en') });
   }
   return {
     '@context': 'https://schema.org',

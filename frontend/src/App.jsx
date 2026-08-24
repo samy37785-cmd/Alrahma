@@ -91,7 +91,7 @@ function PageFallback() {
   );
 }
 
-export default function App() {
+export default function App({ basename = '' }) {
   return (
     <ErrorBoundary>
     <QueryProvider>
@@ -99,7 +99,7 @@ export default function App() {
     <LangProvider>
     <AuthProvider>
     <AdminAuthProvider>
-      <BrowserRouter>
+      <BrowserRouter basename={basename}>
         <ScrollToTop />
         <RoutePrefetcher />
         <Analytics />

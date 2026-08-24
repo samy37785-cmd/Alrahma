@@ -85,9 +85,29 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
+      # `npm run build`'s postbuild step (scripts/prerender.mjs) spins up the
+      # real backend + in-memory MongoDB and a headless Chromium to capture
+      # every prerendered page — same isolated stack the e2e job already
+      # uses, needed here too now that Build below exercises it.
+      - name: Cache mongodb-memory-server binaries
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/mongodb-binaries
+          key: mongodb-binaries-${{ runner.os }}-${{ hashFiles('backend/package-lock.json') }}
+          restore-keys: |
+            mongodb-binaries-${{ runner.os }}-
+
       - name: Install dependencies
         working-directory: frontend
         run: npm ci
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm ci
+
+      - name: Install Chromium
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
 
       - name: Lint
         working-directory: frontend
@@ -100,6 +120,10 @@ jobs:
       - name: Build
         working-directory: frontend
         run: npm run build
+
+      - name: Verify prerendered output
+        working-directory: frontend
+        run: npm run verify:prerender
 
   e2e:
     name: E2E smoke (Playwright)

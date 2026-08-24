@@ -31,10 +31,25 @@ describe('seoRoutes', () => {
 describe('vercel.json redirects', () => {
   const vercelJsonPath = join(__dirname, '..', '..', '..', 'vercel.json');
   const vercelConfig = JSON.parse(readFileSync(vercelJsonPath, 'utf8'));
+  // Vercel's standard `redirects` array forwards the incoming query string
+  // to `destination` automatically — no field needed. `preserveQueryParams`
+  // is a real Vercel field, but only for the separate bulkRedirectsPath
+  // (CSV/JSON/JSONL) mechanism; adding it to a regular redirect object fails
+  // Vercel's config validation outright (confirmed: broke every preview
+  // deployment at 0ms, before the build even started, when it was present
+  // here). This guards against reintroducing that exact mistake.
 
-  it('every redirect preserves query parameters', () => {
-    const withoutFlag = vercelConfig.redirects.filter((r) => r.preserveQueryParams !== true);
-    expect(withoutFlag).toEqual([]);
+  it('has valid entries: source, destination, and permanent only — no bulk-redirect-only fields', () => {
+    const ALLOWED_KEYS = new Set(['source', 'destination', 'permanent', 'has', 'missing', 'statusCode']);
+    const invalid = vercelConfig.redirects.filter((r) =>
+      Object.keys(r).some((k) => !ALLOWED_KEYS.has(k)),
+    );
+    expect(invalid).toEqual([]);
+  });
+
+  it('every redirect targeting al-rahmaacademy.com is permanent (308)', () => {
+    const nonPermanent = vercelConfig.redirects.filter((r) => r.permanent !== true);
+    expect(nonPermanent).toEqual([]);
   });
 });
 

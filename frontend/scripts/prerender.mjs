@@ -237,7 +237,19 @@ async function main() {
         const { route, lang } = pairs[i];
         current = { route, lang };
 
-        const target = `${PREVIEW_URL}${route}${route.includes('?') ? '&' : '?'}lang=${lang}`;
+        // Navigate to the real prefixed URL (e.g. /fr/courses), not the old
+        // /courses?lang=fr query-string hack — that predates the routing fix
+        // and now actively conflicts with it: LangContext's saved-preference
+        // redirect fires whenever the URL has no language prefix, which the
+        // query-string form never has, so every non-English capture
+        // immediately navigated away mid-page.evaluate() ("Execution context
+        // was destroyed"). Navigating to the real URL is also strictly more
+        // representative: it's exactly what Vercel serves and exactly what a
+        // real visitor's first navigation looks like — vite preview's default
+        // SPA fallback serves the base shell for a not-yet-written path
+        // (this pair's own output doesn't exist until after this capture),
+        // then client-side routing takes it from there, same as production.
+        const target = `${PREVIEW_URL}${pathFor(route, lang)}`;
         // One retry on a timed-out navigation: under CONCURRENCY-way
         // parallelism (and on a shared CI/dev machine with other load), a
         // single otherwise-healthy page can occasionally miss networkidle

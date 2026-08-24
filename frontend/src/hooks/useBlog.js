@@ -11,6 +11,7 @@ export function useBlogPosts(params) {
   return useQuery({
     queryKey: BLOG_KEYS.list(params),
     queryFn:  () => getBlogPosts(params),
+    select:   (res) => res.posts,
     staleTime: 1000 * 60 * 10,
     gcTime:    1000 * 60 * 30, // keep in memory 30 min so revisits skip the fetch
   });
@@ -20,6 +21,7 @@ export function useBlogPost(slug) {
   return useQuery({
     queryKey: BLOG_KEYS.post(slug),
     queryFn:  () => getBlogPost(slug),
+    select:   (res) => res.post,
     enabled:  Boolean(slug),
     staleTime: 1000 * 60 * 10,
     gcTime:    1000 * 60 * 30,

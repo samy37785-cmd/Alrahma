@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import '../styles/trust-engage.css';
 import { TrialProvider } from '../context/TrialContext';
+import { useLang } from '../context/LangContext';
 import useSEO from '../hooks/useSEO';
+import { buildFaqPageSchema } from '../utils/schema';
 import TopBar from '../components/layout/TopBar';
 import Header from '../components/layout/Header';
 import Hero from '../components/features/marketing/Hero';
@@ -28,19 +30,14 @@ import ExitIntentPopup from '../components/ui/ExitIntentPopup';
 
 export default function Home() {
   const [trialOpen, setTrialOpen] = useState(false);
+  const { t } = useLang();
   useSEO({
     title: 'Learn the Quran Online — Al-Rahma Academy',
     description: 'One-to-one online Quran, Tajweed and Arabic lessons with Al-Azhar certified tutors. Available 24/7 in English, Italian, French, German and Spanish. 2 free trial lessons — no payment needed. Trusted by 1,200+ families across Europe.',
     keywords: 'learn quran online, online quran classes, quran tutor, tajweed lessons, al-azhar tutor, online islamic studies, quran for children, hifz online',
-    schema: {
-      '@context': 'https://schema.org',
-      '@type': 'EducationalOrganization',
-      name: 'Al-Rahma Academy',
-      description: 'Online Quran and Islamic education platform with Al-Azhar certified tutors.',
-      url: 'https://al-rahmaacademy.com',
-      sameAs: ['https://facebook.com/alrahmaacademy', 'https://instagram.com/alrahmaacademy'],
-      offers: { '@type': 'Offer', description: '2 free trial lessons, then monthly subscription from €39/month', priceCurrency: 'EUR' },
-    },
+    // Built from the same t.faq.items array <FAQ /> renders below, so this
+    // can never drift from the actual visible questions/answers again.
+    schema: buildFaqPageSchema(t.faq.items),
   });
   return (
     <TrialProvider>

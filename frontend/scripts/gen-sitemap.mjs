@@ -1,24 +1,28 @@
 /**
  * Auto-generate public/sitemap.xml from a single source of truth: the
- * `seoRoutes` list in scripts/seoRoutes.mjs (the public, indexable routes).
+ * `seoRoutes` list in scripts/seoRoutes.mjs (the public, indexable routes)
+ * crossed with every supported language (scripts/prerender-seo-tags.mjs).
  * Runs as the npm `prebuild` hook, so every deploy ships a complete, current
- * sitemap with no manual editing. Auth/admin routes are never in that list,
+ * sitemap with no manual editing. Auth/admin routes are never in seoRoutes,
  * so they are never sitemapped (and robots.txt blocks them too).
+ *
+ * One <url> block per {route, lang} pair (seoRoutes.length × LANGS.length),
+ * each carrying the full reciprocal hreflang set via <xhtml:link> — per
+ * Google's sitemap-hreflang convention, alternates must be annotated on
+ * every language variant's own entry, not just once on a single "canonical"
+ * entry. urlFor/hreflangSetFor
+ * come from prerender-seo-tags.mjs, the same module scripts/prerender.mjs
+ * uses to decide what URL each prerendered file actually gets, so the
+ * sitemap and the prerendered output can't drift apart.
  */
 import { writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { seoRoutes as routes } from './seoRoutes.mjs';
+import { LANGS, urlFor, hreflangSetFor } from './prerender-seo-tags.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..');
-const ORIGIN = 'https://al-rahmaacademy.com';
-
-// Standalone static language landing pages that live in public/{it,fr}/ and
-// are not React routes, so they aren't in seoRoutes.mjs's list.
-const extraStatic = ['/it/', '/fr/'];
-
-const paths = [...new Set([...routes, ...extraStatic])];
 
 const priorityFor = (p) => {
   if (p === '/') return '1.0';
@@ -36,24 +40,31 @@ const changefreqFor = (p) => (p === '/' ? 'weekly' : 'monthly');
 // routes), and a build-time "today" on every URL is worse than omitting the
 // tag — Google explicitly discounts a lastmod it can't verify as accurate.
 // Reintroduce per-URL once a real source exists (e.g. Blog posts' updatedAt).
-const body = paths
-  .map((p) => {
-    const loc = p === '/' ? `${ORIGIN}/` : `${ORIGIN}${p}`;
-    return [
-      '  <url>',
-      `    <loc>${loc}</loc>`,
-      `    <changefreq>${changefreqFor(p)}</changefreq>`,
-      `    <priority>${priorityFor(p)}</priority>`,
-      '  </url>',
-    ].join('\n');
-  })
+const body = routes
+  .flatMap((route) =>
+    LANGS.map((lang) => {
+      const loc = urlFor(route, lang);
+      const alternates = hreflangSetFor(route)
+        .map(({ hreflang, href }) => `    <xhtml:link rel="alternate" hreflang="${hreflang}" href="${href}"/>`)
+        .join('\n');
+      return [
+        '  <url>',
+        `    <loc>${loc}</loc>`,
+        `    <changefreq>${changefreqFor(route)}</changefreq>`,
+        `    <priority>${priorityFor(route)}</priority>`,
+        alternates,
+        '  </url>',
+      ].join('\n');
+    }),
+  )
   .join('\n');
 
 const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
 ${body}
 </urlset>
 `;
 
 writeFileSync(join(root, 'public', 'sitemap.xml'), xml, 'utf8');
-console.log(`[sitemap] generated ${paths.length} URLs → public/sitemap.xml`);
+console.log(`[sitemap] generated ${routes.length * LANGS.length} URLs (${routes.length} routes × ${LANGS.length} languages) → public/sitemap.xml`);

@@ -29,7 +29,10 @@
       "permanent": true
     },
     { "source": "/it", "destination": "/it/", "permanent": true },
-    { "source": "/fr", "destination": "/fr/", "permanent": true }
+    { "source": "/fr", "destination": "/fr/", "permanent": true },
+    { "source": "/ar", "destination": "/ar/", "permanent": true },
+    { "source": "/es", "destination": "/es/", "permanent": true },
+    { "source": "/de", "destination": "/de/", "permanent": true }
   ],
   "rewrites": [
     {

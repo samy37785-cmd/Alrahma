@@ -24,9 +24,13 @@
   <meta name="author" content="Al-Rahma Academy" />
   <link rel="canonical" href="https://al-rahmaacademy.com/" />
 
-  <!-- hreflang — only en/it/fr are real, self-canonical, reciprocal pages.
-       ar/es/de are query-param only (?lang=), not distinct indexable URLs —
-       omitted until Phase 2 prerenders real /ar/, /es/, /de/ pages. -->
+  <!-- hreflang — this static 4-entry block is a vite dev/vite preview
+       fallback only. In the shipped build, scripts/prerender.mjs's postbuild
+       step overwrites this file (and every other prerendered route) with
+       the real, per-route, all-6-language hreflang set computed by
+       scripts/prerender-seo-tags.mjs — see that file for the source of
+       truth. This block exists only so `vite dev`/`vite preview` (which
+       never run the prerender step) still ship something reasonable. -->
   <link rel="alternate" hreflang="en"       href="https://al-rahmaacademy.com/" />
   <link rel="alternate" hreflang="it"       href="https://al-rahmaacademy.com/it/" />
   <link rel="alternate" hreflang="fr"       href="https://al-rahmaacademy.com/fr/" />

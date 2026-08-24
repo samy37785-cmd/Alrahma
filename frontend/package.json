@@ -11,6 +11,8 @@
     "dev": "vite",
     "prebuild": "node scripts/gen-sitemap.mjs",
     "build": "vite build",
+    "postbuild": "node scripts/prerender.mjs",
+    "verify:prerender": "node scripts/verify-prerender.mjs",
     "lint": "eslint .",
     "lint:strict": "eslint . --max-warnings 0",
     "lint:fix": "eslint . --fix",
@@ -43,6 +45,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
+    "@playwright/test": "^1.61.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",

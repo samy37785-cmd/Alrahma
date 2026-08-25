@@ -262,21 +262,26 @@ async function main() {
         // (this pair's own output doesn't exist until after this capture),
         // then client-side routing takes it from there, same as production.
         const target = `${PREVIEW_URL}${pathFor(route, lang)}`;
-        // One retry on a timed-out navigation: under CONCURRENCY-way
-        // parallelism (and on a shared CI/dev machine with other load), a
-        // single otherwise-healthy page can occasionally miss networkidle
-        // within budget — confirmed in practice as a different, unrelated
-        // route timing out on successive runs, not the same one, which is
-        // the signature of transient contention rather than a real hang. A
-        // genuine routing bug fails the same page every time regardless.
-        try {
-          await page.goto(target, { waitUntil: 'networkidle', timeout: 45_000 });
-        } catch (err) {
-          if (!(err instanceof Error) || !err.message.includes('Timeout')) throw err;
-          log(`WARN retrying ${lang} ${route} after a navigation timeout...`);
-          await page.goto(target, { waitUntil: 'networkidle', timeout: 45_000 });
+        // One retry on a timed-out navigation OR a timed-out post-navigation
+        // lang-attribute wait: under CONCURRENCY-way parallelism (and on a
+        // shared CI/dev machine, or Vercel's own resource-constrained build
+        // container, with other load), a single otherwise-healthy page can
+        // occasionally miss its budget at either step — confirmed in
+        // practice both as page.goto missing networkidle and, separately, as
+        // this waitForFunction alone timing out with the navigation already
+        // complete. Retrying the whole { goto, waitForFunction } sequence
+        // (not just goto) closes that second case. A genuine routing bug
+        // fails the same page every time regardless of retries.
+        for (let attempt = 1; ; attempt++) {
+          try {
+            await page.goto(target, { waitUntil: 'networkidle', timeout: 45_000 });
+            await page.waitForFunction((l) => document.documentElement.getAttribute('lang') === l, lang, { timeout: 15_000 });
+            break;
+          } catch (err) {
+            if (attempt >= 2 || !(err instanceof Error) || !err.message.includes('Timeout')) throw err;
+            log(`WARN retrying ${lang} ${route} after a timeout...`);
+          }
         }
-        await page.waitForFunction((l) => document.documentElement.getAttribute('lang') === l, lang, { timeout: 15_000 });
         // Real timer, not requestAnimationFrame — rAF can stall indefinitely
         // for a background/inactive page in headless mode, with no timeout
         // to fall back on since page.evaluate() has none by default.

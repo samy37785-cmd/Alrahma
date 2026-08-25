@@ -20,9 +20,20 @@
 }
 
 .card--hoverable:hover {
-  box-shadow: var(--shadow-lg);
-  transform: translateY(-2px);
-  border-color: var(--border-strong);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-3px);
+  border-color: var(--border-brand);
+}
+
+/* Glass surface variant (reference §Elevation Level 2) — reusable modifier
+   for cards that float over imagery or gradients (e.g. hero/session cards).
+   Semi-transparent cream + backdrop blur; falls back to a solid tint where
+   backdrop-filter is unsupported. */
+.card--glass {
+  background: var(--glass-bg-strong);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border-color: var(--glass-border);
 }
 .card--clickable {
   cursor: pointer;
@@ -154,6 +165,8 @@
   flex-shrink: 0;
   position: relative;
   font-size: calc(var(--_size, 40px) * 0.35);
+  /* subtle premium lift + inner rim */
+  box-shadow: 0 1px 3px rgba(0, 59, 40, 0.14), inset 0 0 0 1px rgba(255, 255, 255, 0.12);
 }
 .avatar--xs   { --_size: 24px; width: 24px; height: 24px; font-size: 9px; }
 .avatar--sm   { --_size: 32px; width: 32px; height: 32px; font-size: 12px; }
@@ -235,7 +248,7 @@
   appearance: none;
 }
 .ff__input::placeholder { color: var(--text-disabled); }
-.ff__input:hover        { border-color: var(--border-strong); }
+.ff__input:hover        { border-color: var(--border-strong); box-shadow: var(--shadow-xs); }
 .ff__input:focus        {
   border-color: var(--border-input-focus);
   background: var(--bg-input-focus);

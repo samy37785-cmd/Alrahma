@@ -32,8 +32,8 @@ export default function Home() {
   const [trialOpen, setTrialOpen] = useState(false);
   const { t } = useLang();
   useSEO({
-    title: 'Learn the Quran Online — Al-Rahma Academy',
-    description: 'One-to-one online Quran, Tajweed and Arabic lessons with Al-Azhar certified tutors. Available 24/7 in English, Italian, French, German and Spanish. 2 free trial lessons — no payment needed. Trusted by 1,200+ families across Europe.',
+    title: t.hero.title,
+    description: t.hero.sub,
     keywords: 'learn quran online, online quran classes, quran tutor, tajweed lessons, al-azhar tutor, online islamic studies, quran for children, hifz online',
     // Built from the same t.faq.items array <FAQ /> renders below, so this
     // can never drift from the actual visible questions/answers again.

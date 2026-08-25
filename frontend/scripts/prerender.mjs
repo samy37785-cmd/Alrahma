@@ -12,8 +12,20 @@
  * the fully-rendered DOM, corrects the tags useSEO.js gets wrong for a
  * query-param-driven capture, and writes one real HTML file per pair into
  * dist/ — no vercel.json routing change needed, Vercel already resolves an
- * exact static file before its SPA catch-all rewrite (proven today by
- * dist/it/index.html and dist/fr/index.html).
+ * exact static file before its SPA catch-all rewrite.
+ *
+ * IMPORTANT: this relies on nothing else placing a same-path file under
+ * frontend/public/<lang>/... — such a file would be copied into dist/ by
+ * `vite build` first and then silently shadow (and self-perpetuate, since
+ * this script's own capture navigates through the live preview server)
+ * whatever this script would otherwise generate for that route. Confirmed
+ * as a real, previously-shipped bug: frontend/public/fr/index.html and
+ * public/it/index.html were legacy Phase-1 static landing pages at exactly
+ * this URL shape, so /fr/ and /it/ silently never ran the real SPA at all
+ * (no hydration, no routing fix, broken same-page nav to /en/) despite this
+ * script "successfully" prerendering them every build. Removed in the
+ * Phase 2 routing-fix pass once the real i18n-driven Home page was
+ * confirmed to already carry equal-or-richer translated content.
  *
  * Spins up an isolated seeded backend + a `vite preview` server on a port
  * pair (5300/4500) deliberately distinct from the e2e suite's (5100/4300),
@@ -337,8 +349,17 @@ async function main() {
         const outPath = `${PREVIEW_URL}${pathFor(route, lang)}`;
         try {
           await checkPage.goto(outPath, { waitUntil: 'networkidle' });
-          const isNotFound = await checkPage.evaluate(() => !!document.querySelector('.notfound-page'));
-          if (isNotFound) notFoundHits.push(`${lang} ${route} → rendered NotFound after hydration at ${outPath}`);
+          const state = await checkPage.evaluate(() => ({
+            isNotFound: !!document.querySelector('.notfound-page'),
+            // A same-path file under frontend/public/ (or any other static
+            // file that shadows this route) never loads the SPA bundle at
+            // all, so #root stays empty — .notfound-page alone can't catch
+            // that, since there's no React there to render it. Confirmed as
+            // a real, previously-shipped bug (see this file's header).
+            reactMounted: (document.getElementById('root')?.children.length ?? 0) > 0,
+          }));
+          if (state.isNotFound) notFoundHits.push(`${lang} ${route} → rendered NotFound after hydration at ${outPath}`);
+          if (!state.reactMounted) notFoundHits.push(`${lang} ${route} → React never mounted (#root empty) at ${outPath} — likely shadowed by a static file`);
         } finally {
           checkPage.off('console', onConsole);
           checkPage.off('pageerror', onPageError);

@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LLM Council — Full Rebuild vs. Incremental</title>
+<style>
+  :root{
+    --emerald:#00543B; --emerald-deep:#003b28; --amber:#C8842A;
+    --cream:#FBF9F2; --cream-2:#f0eee7; --ink:#1b1c18; --muted:#4f5b56;
+    --line:#e4e2dc; --card:#ffffff; --green-soft:#e8f3ee; --amber-soft:#fbf1e2;
+    --red:#ba1a1a; --red-soft:#ffe6e3;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--cream); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.6; -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:940px; margin:0 auto; padding:48px 20px 80px}
+  header.hero{border-bottom:3px solid var(--amber); padding-bottom:24px; margin-bottom:32px}
+  .kicker{font-size:12px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--amber); margin:0 0 8px}
+  h1{font-size:clamp(1.7rem,4vw,2.5rem); line-height:1.15; margin:0 0 10px; color:var(--emerald-deep); letter-spacing:-.02em}
+  .sub{color:var(--muted); font-size:1rem; margin:0}
+  .meta{margin-top:14px; font-size:.82rem; color:var(--muted)}
+  .q-block{background:var(--card); border:1px solid var(--line); border-left:4px solid var(--emerald); border-radius:12px; padding:20px 22px; margin:0 0 36px; box-shadow:0 1px 3px rgba(0,59,40,.05)}
+  .q-block h2{margin:0 0 8px; font-size:.78rem; letter-spacing:.12em; text-transform:uppercase; color:var(--muted)}
+  .q-block p{margin:0; font-size:1.05rem}
+  h2.sec{font-size:1.35rem; color:var(--emerald-deep); margin:44px 0 4px; letter-spacing:-.01em}
+  h2.sec + .lead{color:var(--muted); margin:0 0 18px; font-size:.95rem}
+
+  /* verdict banner */
+  .verdict{background:linear-gradient(160deg,var(--emerald),var(--emerald-deep)); color:#fff; border-radius:16px; padding:28px 26px; margin:8px 0 12px; box-shadow:0 10px 30px rgba(0,59,40,.28)}
+  .verdict .tag{display:inline-block; background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.25); color:#fff; font-size:.72rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; padding:5px 12px; border-radius:999px; margin-bottom:14px}
+  .verdict h3{margin:0 0 10px; font-size:1.5rem; color:#fff}
+  .verdict p{margin:0; color:#e7f3ec; font-size:1.02rem}
+  .verdict .glow{color:#ffd9a0; font-weight:700}
+
+  /* alignment spectrum */
+  .spectrum{display:grid; grid-template-columns:1fr; gap:10px; margin:8px 0 8px}
+  .adv{display:grid; grid-template-columns:150px 1fr auto; align-items:center; gap:14px; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px 16px}
+  .adv .name{font-weight:700; font-size:.9rem}
+  .adv .pos{font-size:.86rem; color:var(--muted)}
+  .pill{font-size:.72rem; font-weight:700; letter-spacing:.05em; text-transform:uppercase; padding:5px 11px; border-radius:999px; white-space:nowrap}
+  .pill.no{background:var(--green-soft); color:var(--emerald-deep)}
+  .pill.yes{background:var(--amber-soft); color:#8a5a12}
+  @media(max-width:620px){ .adv{grid-template-columns:1fr auto; } .adv .pos{grid-column:1 / -1} }
+
+  .cols{display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:8px}
+  @media(max-width:720px){ .cols{grid-template-columns:1fr} }
+  .box{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:18px 20px}
+  .box h4{margin:0 0 10px; font-size:.95rem; color:var(--emerald-deep)}
+  .box.clash h4{color:var(--amber)}
+  .box ul{margin:0; padding-left:18px} .box li{margin:6px 0; font-size:.92rem}
+  .box.blind{background:#fff; border-color:#f0d9b8}
+
+  .first{background:var(--amber-soft); border:1px solid #eccf9f; border-left:4px solid var(--amber); border-radius:12px; padding:20px 22px; margin-top:16px}
+  .first .lbl{font-size:.72rem; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:#8a5a12; margin:0 0 6px}
+  .first p{margin:0; font-size:1.05rem; font-weight:500}
+
+  .plan{counter-reset:step; margin:14px 0 0; padding:0; list-style:none}
+  .plan li{position:relative; padding:12px 12px 12px 52px; background:var(--card); border:1px solid var(--line); border-radius:12px; margin-bottom:10px; font-size:.94rem}
+  .plan li::before{counter-increment:step; content:counter(step); position:absolute; left:14px; top:12px; width:26px; height:26px; border-radius:50%; background:var(--emerald); color:#fff; font-weight:700; font-size:.85rem; display:flex; align-items:center; justify-content:center}
+
+  details{background:var(--card); border:1px solid var(--line); border-radius:12px; margin:10px 0; overflow:hidden}
+  details summary{cursor:pointer; padding:14px 18px; font-weight:600; font-size:.95rem; list-style:none; display:flex; align-items:center; justify-content:space-between; color:var(--emerald-deep)}
+  details summary::-webkit-details-marker{display:none}
+  details summary::after{content:"+"; font-size:1.2rem; color:var(--amber); font-weight:700}
+  details[open] summary::after{content:"–"}
+  details .body{padding:0 18px 18px; font-size:.92rem; color:#2a332f}
+  details .body .role{font-size:.72rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--amber); margin:14px 0 2px}
+  footer{margin-top:48px; padding-top:20px; border-top:1px solid var(--line); font-size:.8rem; color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <p class="kicker">LLM Council · Verdict</p>
+    <h1>Full frontend rebuild — or finish the incremental redesign?</h1>
+    <p class="sub">Five advisors, independent analysis, anonymized peer review, chairman synthesis.</p>
+    <p class="meta">Al-Rahma Academy · React 18 SPA + Express + MongoDB · 2026-07-17</p>
+  </header>
+
+  <div class="q-block">
+    <h2>The Question</h2>
+    <p>Should the project <strong>cancel</strong> its completed 6-phase incremental redesign (palette, fonts, glassmorphism, tokens already applied &amp; test-green) and instead do a <strong>complete from-scratch rebuild</strong> of all ~52 pages and ~107 components to look "premium SaaS" — while preserving 100% of functionality (backend, APIs, auth, routing, state, logic untouched)? The entire visual reference is <code>DESIGN.md</code> (already applied) plus <em>one</em> screenshot for all 52 pages.</p>
+  </div>
+
+  <div class="verdict">
+    <span class="tag">Chairman's Recommendation</span>
+    <h3>No full rebuild. Audit first, then re-author only the pages that fail.</h3>
+    <p>4 of 5 advisors converged independently: the reference's foundation is <strong>already built</strong>, one screenshot <strong>cannot specify</strong> 52 heterogeneous screens, and a "presentation-only rebuild" is <strong>technically incoherent</strong> here because behavior is welded to the markup. Convert the request into a measured, <span class="glow">page-by-page re-author pass</span> — same premium endpoint, no risky multi-month branch, safety nets intact.</p>
+  </div>
+
+  <h2 class="sec">Where the advisors landed</h2>
+  <p class="lead">Four say don't rebuild. One sees upside — but peer review found that upside is already reachable without a rebuild.</p>
+  <div class="spectrum">
+    <div class="adv"><span class="name">The Contrarian</span><span class="pos">One screenshot can't spec 52 screens; baselines invalidate day one. "You already won."</span><span class="pill no">Don't rebuild</span></div>
+    <div class="adv"><span class="name">First Principles</span><span class="pos">Wrong axis. Don't rebuild — <em>audit</em>, rank, rebuild only failures.</span><span class="pill no">Don't rebuild</span></div>
+    <div class="adv"><span class="name">The Executor</span><span class="pos">Small team + production = revenue regressions. Re-author page-by-page, risky surfaces last.</span><span class="pill no">Don't rebuild</span></div>
+    <div class="adv"><span class="name">The Outsider</span><span class="pos">"Why delete a working, tested site? Premium-SaaS is a vibe, not a problem."</span><span class="pill no">Don't rebuild</span></div>
+    <div class="adv"><span class="name">The Expansionist</span><span class="pos">Rebuild = extract a themeable, white-label, multi-market design system.</span><span class="pill yes">Sees upside</span></div>
+  </div>
+
+  <h2 class="sec">Where the council agrees</h2>
+  <div class="cols">
+    <div class="box"><h4>The foundation already matches</h4><ul><li>Palette, Epilogue/Inter/Amiri fonts, glassmorphism, tokens, nav, dashboards, component library already moved to <code>DESIGN.md</code> and test-green.</li><li>A rebuild re-derives what exists.</li></ul></div>
+    <div class="box"><h4>One screenshot ≠ 52 pages</h4><ul><li>A dashboard, a checkout, and a Quran reader are different animals.</li><li>"Rebuild to the reference" really means improvising 51 screens — <em>more</em> risk, not less.</li></ul></div>
+    <div class="box"><h4>"Presentation-only" is incoherent here</h4><ul><li>Quran audio-sync &amp; memorization state live in the component tree; auth rides CSRF interceptors; RTL font-loading triggers.</li><li>You can't re-author from scratch without touching logic — violating the user's own constraint.</li></ul></div>
+    <div class="box"><h4>It destroys the safety nets</h4><ul><li>Dark-mode Playwright baselines &amp; the i18n parity test are pinned to the current DOM.</li><li>From-scratch invalidates all of them on day one — regression net gone.</li></ul></div>
+  </div>
+
+  <h2 class="sec">Where the council clashes</h2>
+  <div class="box clash">
+    <h4>Ambition vs. vehicle</h4>
+    <p style="margin:0; font-size:.94rem">The Expansionist alone argues the rebuild unlocks a <strong>themeable, white-label, multi-market, module-sellable platform</strong>. Every peer reviewer flagged this as the biggest blind spot — and the resolution is clean: <strong>those goals live in the token/component layer that already exists.</strong> Keep the ambition; reject the rebuild as its vehicle. Harden the component library <em>as you re-author each page</em>, and the white-label upside arrives as a byproduct of the safe path.</p>
+  </div>
+
+  <h2 class="sec">Blind spots peer review caught</h2>
+  <div class="cols">
+    <div class="box blind"><h4>Nobody asked "why now?"</h4><ul><li>Finishing a green redesign then wanting to nuke it signals dissatisfaction with a <em>specific visible result</em> — a perception problem, not an engineering one. 52 rewrites won't fix it.</li></ul></div>
+    <div class="box blind"><h4>The single screenshot is a comms gap</h4><ul><li>The cheap fix is <em>more reference screens</em>, not a blind rebuild against one PNG.</li></ul></div>
+    <div class="box blind"><h4>Honest-data traps</h4><ul><li>A "premium" rebuild will feel pressure to make Homework/Attendance preview pages and the static teacher directory <em>look</em> real — reintroducing the fabricated-social-proof bugs already removed.</li></ul></div>
+    <div class="box blind"><h4>Opportunity cost unpriced</h4><ul><li>Rebuild-weeks were never weighed against shipping features or the do-nothing option.</li></ul></div>
+  </div>
+
+  <h2 class="sec">The recommended path</h2>
+  <ol class="plan">
+    <li><strong>Audit before cutting.</strong> Screenshot all ~52 pages (light + dark + mobile), score each against <code>DESIGN.md</code> + <code>screen.png</code>, produce a ranked "does-not-meet-bar" list. <em>That list is the plan</em> — not "everything."</li>
+    <li><strong>Re-author, don't rebuild.</strong> Keep the file, every hook/handler/route/data-binding; rewrite only the JSX structure and CSS. One PR per page, e2e per PR, re-baseline intentionally.</li>
+    <li><strong>Sequence by risk.</strong> Public/marketing pages first. Checkout, auth, admin financial dashboards, and the Quran reader go <em>last</em> or stay as-is — their behavior is welded to markup.</li>
+    <li><strong>Capture the upside safely.</strong> Harden shared components + tokens into a documented, themeable system as you touch each page — white-label/multi-market as a byproduct.</li>
+    <li><strong>Resolve the "why" first.</strong> Identify which specific pages triggered "not premium enough" and confirm the applied tokens actually match the screenshot. The real job is likely 4–6 pages, not 52.</li>
+  </ol>
+
+  <div class="first">
+    <p class="lbl">The one thing to do first</p>
+    <p>Screenshot every page as it looks <em>today</em> and lay each thumbnail beside <code>screen.png</code>. Produce one ranked list: already-good / needs re-authoring / do-not-touch. That single artifact turns "rebuild everything" into a bounded, senior-level plan — and will almost certainly show the job is a fraction of 52 pages.</p>
+  </div>
+
+  <h2 class="sec">Full advisor responses</h2>
+
+  <details>
+    <summary>The Contrarian — "Don't cancel. Finish polishing."</summary>
+    <div class="body">The single reference screenshot is the fatal flaw that unravels everything. You'd throw away 52 working pages to chase one PNG that cannot specify a Quran mushaf reader, an admin RBAC financial dashboard, a 6-locale RTL layout, or a Stripe checkout — so "rebuild to match the reference" is fiction; you'd improvise 51 of 52 screens from taste, minus the safety of working markup. The constraint contradicts itself: "presentation-only, zero functional change" while rebuilding every component isn't achievable, because presentation and behavior are welded (the Quran fetch effect owns player-state resets; auth depends on CSRF interceptors; RTL font-loading triggers). You already won — #51–#55 landed the tokens, fonts, palette, shell — so a full rebuild discards proven, test-green code to re-derive the same colors. And your safety nets betray you: the dark-mode Playwright baselines and i18n parity test are pinned to the current DOM, so a rebuild invalidates every baseline on day one, exactly when you most need the net. What does "premium SaaS" buy that phase-6 polish on the existing tree doesn't? If the answer is "it feels cleaner," that's the most expensive feeling in software.</div>
+  </details>
+
+  <details>
+    <summary>The First Principles Thinker — "Don't rebuild. Audit."</summary>
+    <div class="body">The real goal isn't a better-looking frontend — it's shippable commercial credibility with the least risk of breaking a working product. "Rebuild vs incremental" is the wrong axis; the right axis is what actually blocks commercial release, and whether pixel-perfection unblocks it. You already migrated the token layer, fonts, glassmorphism, nav, dashboards, and component library to the reference — the visual foundation <em>is</em> the target. A rebuild throws away six phases to re-derive the same tokens and re-earn RTL correctness, 6-locale parity, dark-mode baselines, and the Quran reader's polish. One <code>screen.png</code> can't specify 52 pages. What you're actually solving is likely: a few pages still look amateur, inconsistency between pages, or launch anxiety — none of which is "rewrite everything." Reframe: screenshot all 52 pages, rank them against the reference, and rebuild only the pages that fail, page-by-page, behind your existing baselines. Which specific pages don't meet the bar — and why isn't that list your plan?</div>
+  </details>
+
+  <details>
+    <summary>The Expansionist — "Build the rebuild as a product foundation." (dissent)</summary>
+    <div class="body">You're not rebuilding a frontend, you're extracting a productizable design system. A full rebuild forces you to formalize every component into a documented, themeable library — and once tokens are truly the single source of truth, "Heritage Emerald" becomes one theme among many. That's white-label capability: sell the platform to other academies, mosques, and madrasas, each with their own palette swapped at the token layer, zero code changes. The Quran reader is your moat — componentized, it becomes an embeddable widget or a premium tier. The 6-locale full-RTL i18n is criminally underpriced: a clean rebuild ships to Arabic, European, and Latin markets simultaneously. Componentization compounds — every CSS file retired into the design system lowers the marginal cost of page 53, 60, 100. "Looks nicer" is the floor; the ceiling is a themeable, multi-market, module-sellable platform. <em>(Peer-review note: every reviewer flagged this — the upside is real but reachable via the token/component layer that already exists, without a rebuild.)</em></div>
+  </details>
+
+  <details>
+    <summary>The Outsider — "Don't burn the working house down for a mood board."</summary>
+    <div class="body">They already have a design they spent significant effort building; it's done, it passes tests, real users use it daily — and the plan is to delete all of it? My first question isn't "how," it's "why." "Looks like premium SaaS" is a vibe, not a problem — nobody paying for Quran courses ever churned because the site lacked Stripe-dashboard energy. Rebuilding 52 screens to match a picture of ONE screen means improvising 51 screens that drift in 51 directions. A first-time visitor notices whether the page loads fast, whether they can find the course, whether they can pay without the form breaking, whether the Quran text renders correctly — not the exact green or the glass blur. "Premium SaaS" is the costume of a B2B tool a manager buys, not a place parents send kids to learn Quran. Redesign the 3–4 screens that hurt most, ship them, look again.</div>
+  </details>
+
+  <details>
+    <summary>The Executor — "Same destination, no revenue outage."</summary>
+    <div class="body">No. A ground-up rebuild of 52 pages + 107 components with a small team, in production, is how you introduce regressions into revenue flows you swore not to touch. Monday morning: pick the ONE ugliest high-traffic page (not checkout, not Quran), re-author its markup/CSS against the reference while keeping every hook, handler, and binding wired. If that takes a day and passes e2e, multiply by 52 — that number scares you into staying incremental. From-scratch gets stuck on: RTL mirroring (load-bearing, invisible until a native reader hits an LTR bug); dark-mode baselines (a 52 × light/dark/mobile re-baseline treadmill where you can't tell intended change from regression); payment/auth JSX (re-verify MFA, IP whitelist, guest checkout — one fat-finger loses payments); and the Quran engine (audio-sync + memorization state lives IN the component tree, so "presentation only" is a lie). Keep incremental — page-by-page re-author, logic frozen, one PR per page, e2e per PR. Quran and checkout go last, or never.</div>
+  </details>
+
+  <details>
+    <summary>Peer-review highlights (anonymized voting)</summary>
+    <div class="body">
+      <p class="role">Strongest response</p>
+      Split between <strong>The Executor</strong> (three reviewers — the only advisor to convert the argument into a falsifiable velocity test and give a concrete Monday move) and <strong>The Contrarian</strong> (two reviewers — lands the decisive technical kill-shot: baselines pinned to the current DOM, behavior welded to markup).
+      <p class="role">Biggest blind spot</p>
+      Unanimous: <strong>The Expansionist</strong> — answers a different question (white-label business strategy) whose payoff is already a property of the existing token layer, while ignoring the single-screenshot problem and every regression risk.
+      <p class="role">What all five missed</p>
+      Nobody asked <strong>who is demanding this and why now</strong> (likely stakeholder/perception anxiety, not engineering); the single screenshot is a <strong>communication failure</strong> whose fix is more references, not more rebuilds; the <strong>honest-data pages</strong> (Homework/Attendance previews, static teacher directory) are traps a "premium" rebuild would push toward faking; and the <strong>opportunity cost / do-nothing option</strong> was never priced.
+    </div>
+  </details>
+
+  <footer>
+    Generated by the LLM Council · 5 advisors + anonymized peer review + chairman synthesis · 2026-07-17.<br>
+    Full transcript saved alongside this report as <code>council-transcript-20260717.md</code>.
+  </footer>
+
+</div>
+</body>
+</html>

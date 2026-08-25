@@ -660,7 +660,7 @@
       "haveAccount": "Already have an account?",
       "signIn": "Sign in",
       "back": "← Back to website",
-      "gdprConsent": "I agree to the <a href=\"/privacy\" style=\"color:var(--green)\">Privacy Policy</a> and consent to Al-Rahma Academy processing my personal data to manage my account and lessons.",
+      "gdprConsent": "I agree to the <a style=\"color:var(--green)\">Privacy Policy</a> and consent to Al-Rahma Academy processing my personal data to manage my account and lessons.",
       "gdprRequired": "Please accept the privacy policy to continue.",
       "errorFallback": "Registration failed. Please try again."
     },

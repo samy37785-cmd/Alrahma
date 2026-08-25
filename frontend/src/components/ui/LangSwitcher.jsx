@@ -35,7 +35,7 @@ export default function LangSwitcher() {
   const select = (code) => {
     setOpen(false);
     if (code === lang) return;
-    window.location.assign(switchLanguageHref(window.location.pathname, window.location.search, code));
+    window.location.assign(switchLanguageHref(window.location.pathname, window.location.search, window.location.hash, code));
   };
 
   return (

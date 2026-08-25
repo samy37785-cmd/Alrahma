@@ -5,11 +5,11 @@
   "type": "module",
   "description": "Al-Rahma Academy — Learn the Holy Quran Online (React + Vite)",
   "engines": {
-    "node": ">=20"
+    "node": "^22.17.0 || >=24.0.0"
   },
   "scripts": {
     "dev": "vite",
-    "prebuild": "node scripts/gen-sitemap.mjs",
+    "prebuild": "node scripts/check-no-locale-shadow.mjs && node scripts/gen-sitemap.mjs",
     "build": "vite build",
     "postbuild": "node scripts/prerender.mjs",
     "verify:prerender": "node scripts/verify-prerender.mjs",

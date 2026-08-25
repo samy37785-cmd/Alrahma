@@ -44,6 +44,23 @@ export function stripLangPrefix(pathname) {
 // navigation target (not a client-side route), because <BrowserRouter>'s
 // basename is fixed at initial mount from whatever URL main.jsx first saw —
 // only a fresh page load recomputes it for the new language.
-export function switchLanguageHref(pathname, search, lang) {
-  return pathFor(stripLangPrefix(pathname), lang) + (search || '');
+//
+// Persists the choice to localStorage right here rather than leaving it to
+// each caller: every current (and realistically, future) call site does a
+// full window.location.assign(...) immediately after computing this href,
+// bypassing setLang()/React state entirely — without this, localStorage['lang']
+// would go stale relative to the URL the visitor actually lands on. Also
+// strips a legacy ?lang= param (naively concatenating `search` would produce
+// a self-contradictory /fr/page?lang=de) and preserves the hash, which a
+// direct string-concat approach previously dropped (e.g. #hifz, #trial).
+export function switchLanguageHref(pathname, search, hash, lang) {
+  try {
+    localStorage.setItem('lang', lang);
+  } catch {
+    // Private browsing / storage disabled — navigation still works below.
+  }
+  const params = new URLSearchParams(search || '');
+  params.delete('lang');
+  const qs = params.toString();
+  return pathFor(stripLangPrefix(pathname), lang) + (qs ? `?${qs}` : '') + (hash || '');
 }

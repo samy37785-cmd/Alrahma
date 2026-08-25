@@ -255,7 +255,7 @@ export default function Header() {
                     className={`nav__mobile-lang-btn${lang === code ? " nav__mobile-lang-btn--active" : ""}`}
                     onClick={() => {
                       if (code === lang) return;
-                      window.location.assign(switchLanguageHref(location.pathname, location.search, code));
+                      window.location.assign(switchLanguageHref(location.pathname, location.search, location.hash, code));
                     }}
                     aria-pressed={lang === code}
                   >

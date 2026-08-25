@@ -33,6 +33,19 @@ export default [
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
       'no-unused-vars': ['warn', { varsIgnorePattern: '^[A-Z_]' }],
       'react/prop-types': 'off',
+      // Internal links must use <Link to="..."> (react-router-dom), never a raw
+      // href, so language-prefixed URLs (/fr/..., /it/...) are respected — a
+      // raw href does a full navigation that drops the current basename and
+      // silently bounces the visitor back to English. Matches only a single
+      // leading slash (href="/foo"); external URLs, mailto:/tel:, and
+      // same-page "#hash" anchors are unaffected.
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "JSXAttribute[name.name='href'] > Literal[value=/^\\/(?!\\/)/]",
+          message: 'Internal links must use <Link to="..."> from react-router-dom, not a raw href, so language-prefixed URLs are respected.',
+        },
+      ],
     },
   },
 

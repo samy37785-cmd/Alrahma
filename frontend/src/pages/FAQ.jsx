@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import PageBar from '../components/layout/PageBar';
 import useSEO from '../hooks/useSEO';
 import Breadcrumbs from '../components/ui/Breadcrumbs';
@@ -73,7 +74,7 @@ export default function FAQ() {
 
         <div className="faq-cta">
           <p>{pg.stillQuestion}</p>
-          <a href="/#trial" className="btn btn--green">{pg.bookTrial}</a>
+          <Link to="/#trial" className="btn btn--green">{pg.bookTrial}</Link>
           <a
             href="https://wa.me/201016054663"
             className="btn btn--ghost"

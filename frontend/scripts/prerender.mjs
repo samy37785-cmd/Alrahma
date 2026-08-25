@@ -66,12 +66,19 @@ const CONCURRENCY = 6;
 // once real posts exist (seoRoutes.mjs has zero blog-slug entries today).
 const ALLOWED_BACKEND_PATTERN = /^\/api\/blog\/?(?:\?.*)?$/;
 
-// External read-only APIs some tool pages call live on mount (found by
-// actually running this guard, not by the earlier static grep — quran.js
-// hits these three hosts; same set already allowed in vercel.json's CSP
-// connect-src). GET-only here is enforced same as the backend check: these
-// are safe reads, but a non-GET to any of them would still be unexpected.
-const ALLOWED_EXTERNAL_HOSTS = new Set(['api.quran.com', 'verses.quran.com', 'api.alquran.cloud']);
+// External read-only APIs some tool pages call live on mount. quran.js hits
+// api.quran.com/verses.quran.com/api.alquran.cloud (already allowed in
+// vercel.json's CSP connect-src); download.quranicaudio.com is where
+// getChapterAudio()'s response points the Quran reader's <audio src> at
+// (vercel.json's CSP media-src) — found only once the request-guard
+// predicate was broadened to actually route every cross-origin request
+// through this check (previously silently allowed through unrouted, unseen,
+// exactly the gap that broadening fixed). GET-only here is enforced same as
+// the backend check: these are safe reads, but a non-GET to any of them
+// would still be unexpected.
+const ALLOWED_EXTERNAL_HOSTS = new Set([
+  'api.quran.com', 'verses.quran.com', 'api.alquran.cloud', 'download.quranicaudio.com',
+]);
 
 // VerseOfTheDayPage.jsx's getVerse() call (api.quran.com) is the one legitimate
 // external call that must NOT be allowed through during prerender: capturing
@@ -81,6 +88,16 @@ const ALLOWED_EXTERNAL_HOSTS = new Set(['api.quran.com', 'verses.quran.com', 'ap
 // never a wrong verse — while real visitors' own browsers make this same
 // request live and unblocked after hydration, unaffected by this guard.
 const TIME_SENSITIVE_BLOCKS = [{ route: '/tools/verse-of-the-day', hostname: 'api.quran.com' }];
+
+// <VercelAnalytics /> (App.jsx) renders unconditionally on every page and
+// loads this script + sends a pageview beacon in a real production build —
+// which `vite preview` here serves. Previously silently allowed through by
+// the narrower request-guard predicate (never even reached the handler);
+// broadening that predicate (see below) means it now would be, and 234+
+// real beacons per build is neither wanted (pollutes real Analytics data)
+// nor a security-relevant "violation" — block it everywhere, deliberately,
+// same as TIME_SENSITIVE_BLOCKS but not tied to one specific route.
+const GLOBALLY_BLOCKED_HOSTS = new Set(['va.vercel-scripts.com']);
 
 function log(msg) {
   console.log(`[prerender] ${msg}`);
@@ -207,16 +224,31 @@ async function main() {
       // CSS, fonts, images) through a Node round-trip is slow enough under
       // CONCURRENCY-way parallelism to blow past networkidle's timeout on
       // its own — confirmed by a real run timing out on plain page loads
-      // once the catch-all pattern was tried. Only /api/* and the external
-      // API hosts are ever worth inspecting; everything else should never
-      // even reach this handler.
+      // once the catch-all pattern was tried. Same-origin non-/api/ asset
+      // requests still bypass this handler entirely for that reason.
+      //
+      // Everything CROSS-origin is routed regardless of whether its hostname
+      // is recognized — this used to be `ALLOWED_EXTERNAL_HOSTS.has(url.hostname)`,
+      // which meant a call to any host NOT in that set (and not /api/*) never
+      // reached the handler at all: silently allowed through, never checked
+      // for GET-only, never logged as a violation. Routing by origin instead
+      // means an unrecognized host still hits the handler below, which
+      // already correctly treats "not /api/* and not an allowlisted external
+      // GET" as a violation and aborts it — so this predicate change alone
+      // closes the gap, no handler-body change needed. To re-verify by hand:
+      // temporarily point one live external call (e.g. VerseOfTheDayPage's
+      // fetch) at an unlisted host, confirm `npm run build` fails with that
+      // host named in a violation, then revert.
       let current = null;
+      const previewOrigin = new URL(PREVIEW_URL).origin;
       await page.route(
-        (url) => url.pathname.startsWith('/api/') || ALLOWED_EXTERNAL_HOSTS.has(url.hostname),
+        (url) => url.pathname.startsWith('/api/') || url.origin !== previewOrigin,
         (route, req) => {
           if (!current) return route.continue();
           const method = req.method();
           const url = new URL(req.url());
+
+          if (GLOBALLY_BLOCKED_HOSTS.has(url.hostname)) return route.abort(); // deliberate, not a violation
 
           const blockedForCapture = TIME_SENSITIVE_BLOCKS.some(
             (b) => b.route === current.route && b.hostname === url.hostname,
@@ -309,6 +341,28 @@ async function main() {
           }
         }, { realUrl, hreflang, dir, lang });
 
+        // Real, per-pair post-hydration gate — not a post-hoc sample. Runs
+        // for all 234 pairs, right here before the file is written, while
+        // the page is still fully hydrated and its canonical/hreflang/lang
+        // tags have just been corrected above. Confirms React actually
+        // rendered the intended page (not <Routes>'s path="*" NotFound, and
+        // not an empty #root — the signature of a same-path static file
+        // under frontend/public/ silently shadowing this route, exactly the
+        // public/fr/, public/it/ bug this file's header documents) and that
+        // the tags just patched actually landed. A static-HTML-only check
+        // (verify-prerender.mjs) or a console-errors-only check can't see
+        // any of this — it needs a real, already-hydrated browser page.
+        const hydrationCheck = await page.evaluate(({ realUrl, lang }) => ({
+          isNotFound: !!document.querySelector('.notfound-page'),
+          reactMounted: (document.getElementById('root')?.children.length ?? 0) > 0,
+          actualLang: document.documentElement.getAttribute('lang'),
+          canonicalHref: document.head.querySelector('link[rel="canonical"]')?.href || null,
+        }), { realUrl, lang });
+        if (hydrationCheck.isNotFound) violations.push(`${lang} ${route} → rendered NotFound after hydration`);
+        if (!hydrationCheck.reactMounted) violations.push(`${lang} ${route} → React never mounted (#root empty) — likely shadowed by a static file`);
+        if (hydrationCheck.actualLang !== lang) violations.push(`${lang} ${route} → documentElement.lang is "${hydrationCheck.actualLang}", expected "${lang}"`);
+        if (hydrationCheck.canonicalHref !== realUrl) violations.push(`${lang} ${route} → canonical is "${hydrationCheck.canonicalHref}", expected "${realUrl}"`);
+
         const html = await page.content();
         const outPath = join(distDir, outputRelPathFor(route, lang));
         mkdirSync(dirname(outPath), { recursive: true });
@@ -324,62 +378,11 @@ async function main() {
     log(`  ${done}/${pairs.length} written`);
 
     if (violations.length > 0) {
-      log('FAILED — non-GET or non-allowlisted requests observed during prerender:');
+      log('FAILED — request-guard or post-hydration violations observed during prerender:');
       for (const v of violations) log(`  ${v}`);
       process.exitCode = 1;
     } else {
-      log(`wrote ${pairs.length} prerendered files.`);
-
-      // Post-hydration spot check: reload a representative sample of the
-      // files just written — through the same preview server, as a real
-      // browser would — and confirm React actually renders the intended
-      // page once it mounts, not <Routes>'s path="*" NotFound. This is the
-      // exact class of bug a static-HTML-only check (verify-prerender.mjs)
-      // or a console-errors-only check can't see: a language-prefixed URL
-      // whose live app has no matching route renders NotFound cleanly, with
-      // no console/pageerror event at all. Blocking — this is precisely the
-      // gap that let that bug ship once already.
-      const spotChecks = LANGS.flatMap((lang) => [
-        { route: '/', lang },
-        { route: '/courses/ijazah', lang },
-      ]);
-      const notFoundHits = [];
-      const checkPage = await context.newPage();
-      for (const { route, lang } of spotChecks) {
-        const errors = [];
-        const onConsole = (msg) => { if (msg.type() === 'error') errors.push(msg.text()); };
-        const onPageError = (err) => errors.push(String(err));
-        checkPage.on('console', onConsole);
-        checkPage.on('pageerror', onPageError);
-        const outPath = `${PREVIEW_URL}${pathFor(route, lang)}`;
-        try {
-          await checkPage.goto(outPath, { waitUntil: 'networkidle' });
-          const state = await checkPage.evaluate(() => ({
-            isNotFound: !!document.querySelector('.notfound-page'),
-            // A same-path file under frontend/public/ (or any other static
-            // file that shadows this route) never loads the SPA bundle at
-            // all, so #root stays empty — .notfound-page alone can't catch
-            // that, since there's no React there to render it. Confirmed as
-            // a real, previously-shipped bug (see this file's header).
-            reactMounted: (document.getElementById('root')?.children.length ?? 0) > 0,
-          }));
-          if (state.isNotFound) notFoundHits.push(`${lang} ${route} → rendered NotFound after hydration at ${outPath}`);
-          if (!state.reactMounted) notFoundHits.push(`${lang} ${route} → React never mounted (#root empty) at ${outPath} — likely shadowed by a static file`);
-        } finally {
-          checkPage.off('console', onConsole);
-          checkPage.off('pageerror', onPageError);
-        }
-        if (errors.length > 0) {
-          log(`WARN console errors on ${lang} ${route}: ${errors.join(' | ')}`);
-        }
-      }
-      await checkPage.close();
-
-      if (notFoundHits.length > 0) {
-        log('FAILED — prerendered page(s) rendered NotFound once React hydrated:');
-        for (const h of notFoundHits) log(`  ${h}`);
-        process.exitCode = 1;
-      }
+      log(`wrote ${pairs.length} prerendered files — all ${pairs.length} passed the post-hydration gate (no NotFound, React mounted, lang and canonical correct).`);
     }
 
     await browser.close();

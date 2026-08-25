@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 import Breadcrumbs from '../components/ui/Breadcrumbs';
@@ -110,7 +111,7 @@ export default function TermsOfService() {
             <p>
               We process your personal data in accordance with the EU General Data Protection
               Regulation (GDPR). We never sell your data to third parties. For full details,
-              see our <a href="/academy/privacy">Privacy Policy</a>.
+              see our <Link to="/academy/privacy">Privacy Policy</Link>.
             </p>
 
             <h2>11. Limitation of Liability</h2>

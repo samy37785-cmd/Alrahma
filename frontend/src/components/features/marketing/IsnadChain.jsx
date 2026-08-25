@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import Reveal from '../../ui/Reveal';
 
 const CHAIN = [
@@ -71,12 +72,12 @@ export default function IsnadChain() {
           </blockquote>
           <cite className="isnad__cite">— Sahih Al-Bukhari</cite>
           <div className="isnad__cta-row">
-            <a href="/enroll" className="btn btn--gold">
+            <Link to="/enroll" className="btn btn--gold">
               Give your child this gift →
-            </a>
-            <a href="/teachers" className="btn btn--ghost">
+            </Link>
+            <Link to="/academy/teachers" className="btn btn--ghost">
               Meet our Ijazah holders
-            </a>
+            </Link>
           </div>
         </Reveal>
       </div>

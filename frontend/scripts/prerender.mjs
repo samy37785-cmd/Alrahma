@@ -328,20 +328,19 @@ async function main() {
         const expectedOgLocale = OG_LOCALE_MAP[lang];
 
         // One retry on: a timed-out navigation, a timed-out post-navigation
-        // lang-attribute wait, OR a metadata mismatch that's plausibly this
-        // same-origin race, not a real bug — under CONCURRENCY-way
-        // parallelism, vite preview's SPA fallback (see the comment above
-        // about "the base shell for a not-yet-written path") can momentarily
-        // serve a DIFFERENT already-prerendered page's full HTML (whichever
-        // pair last overwrote plain index.html — always the en/'/' pair, the
-        // only one whose output path IS index.html) for a route/lang pair
-        // whose own file doesn't exist yet. React itself always mounts the
-        // correct page from the real URL (createRoot clears the container),
-        // but the served document's original <head> tags occasionally
-        // outrace useSEO.js's own head rewrite within this check's budget.
-        // A full fresh re-navigation resolves it: by the second attempt the
-        // race window has passed. A genuine routing/metadata bug reproduces
-        // identically on the retry and still fails below.
+        // lang-attribute wait, OR a metadata mismatch that's plausibly a
+        // same-origin race, not a real bug. dist/index.html itself is no
+        // longer part of that race (its write is now deferred until every
+        // pair is captured — see the comment by deferredHomeHtml's
+        // declaration above), but useSEO.js's effect (which sets canonical/
+        // hreflang/og:locale) still runs asynchronously after mount — on a
+        // heavier route (bigger chunk, a data lookup before first render)
+        // under CONCURRENCY-way parallelism and a loaded build machine, it
+        // can genuinely still be pending when this check runs. The
+        // waitForFunction below polls for canonical specifically, rather
+        // than sleeping a fixed duration, so the common case doesn't pay for
+        // the worst case; a real routing/metadata bug still won't converge
+        // within the timeout and reproduces identically on the retry.
         let hydrationCheck;
         for (let attempt = 1; ; attempt++) {
           try {
@@ -352,10 +351,15 @@ async function main() {
             log(`WARN retrying ${lang} ${route} after a navigation timeout...`);
             continue;
           }
-          // Real timer, not requestAnimationFrame — rAF can stall indefinitely
-          // for a background/inactive page in headless mode, with no timeout
-          // to fall back on since page.evaluate() has none by default.
-          await page.waitForTimeout(50);
+          // Wait for useSEO.js's effect to have actually set canonical to
+          // the real URL — not a fixed sleep. Swallowed on timeout: a
+          // genuine bug (or a route legitimately never reaching this state)
+          // still surfaces below as a normal, named violation.
+          await page.waitForFunction(
+            (expected) => document.head.querySelector('link[rel="canonical"]')?.href === expected,
+            realUrl,
+            { timeout: 5_000 },
+          ).catch(() => {});
 
           // Real, per-pair post-hydration gate — not a post-hoc sample, and
           // not a patch-then-check (an earlier version of this manually

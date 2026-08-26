@@ -2,6 +2,11 @@
   "lang": "it",
   "dir": "ltr",
   "tagline": "Impara il Corano Online",
+  "a11y": {
+    "skipToContent": "Vai al contenuto principale",
+    "chooseLanguage": "Scegli la lingua",
+    "selectLanguage": "Seleziona la lingua"
+  },
   "nav": {
     "home": "Home",
     "about": "Chi Siamo",

@@ -4,12 +4,10 @@
  * drift into disagreeing about what a given {route, lang} pair's real URL or
  * hreflang set is. Pure Node ESM — no browser globals, no JSX.
  */
-import translations, { LANGS } from '../src/i18n/index.js';
-import { pathFor } from '../src/utils/localePath.js';
+import { LANGS } from '../src/i18n/index.js';
+import { pathFor, ORIGIN, urlFor, hreflangSetFor } from '../src/utils/localePath.js';
 
-export { LANGS };
-
-export const ORIGIN = 'https://al-rahmaacademy.com';
+export { LANGS, ORIGIN, urlFor, hreflangSetFor };
 
 // Routes that would stay in seoRoutes.mjs (real, indexable, in the sitemap)
 // but get excluded from prerender.mjs's headless-capture matrix specifically
@@ -31,27 +29,11 @@ export const PRERENDER_EXCLUDED_ROUTES = new Set();
 // the same code, not two independent implementations that happen to agree.
 export { pathFor };
 
-export function urlFor(route, lang) {
-  return ORIGIN + pathFor(route, lang);
-}
-
-// The 6-language + x-default hreflang set for one route. Backs both the
-// in-page <link rel=alternate> injection (prerender.mjs) and the sitemap's
-// <xhtml:link> children (gen-sitemap.mjs) — one function, so reciprocity is
-// structural rather than something two separate scripts have to agree on by
-// convention.
-export function hreflangSetFor(route) {
-  const entries = LANGS.map((lang) => ({ hreflang: lang, href: urlFor(route, lang) }));
-  entries.push({ hreflang: 'x-default', href: urlFor(route, 'en') });
-  return entries;
-}
-
-// Mirrors LangContext.jsx's own dir-attribute logic exactly (translations[lang]?.dir
-// || 'ltr') rather than hardcoding a lang→dir map, so the prerendered output can
-// never disagree with what the live client-rendered app actually does.
-export function dirFor(lang) {
-  return translations[lang]?.dir || 'ltr';
-}
+// urlFor/hreflangSetFor now live in src/utils/localePath.js (re-exported
+// above) so useSEO.js can compute the identical runtime hreflang set React
+// itself renders — this file used to define its own copies, which is how a
+// prior version of the app shipped hreflang that only ever got set at build
+// time and went stale after a client-side navigation.
 
 // Filesystem output path (relative to dist/) for a given {route, lang} pair.
 // Mirrors pathFor's URL shape: home becomes an index.html directly under the

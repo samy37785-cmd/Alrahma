@@ -13,6 +13,20 @@ import { LANGS } from '../i18n/index.js';
 
 const PREFIXED_LANGS = LANGS.filter((l) => l !== 'en');
 
+export const ORIGIN = 'https://al-rahmaacademy.com';
+
+// Open Graph locale codes per language — used by useSEO.js at runtime and by
+// prerender.mjs to keep the static-file default (index.html's og:locale) and
+// the live/prerendered per-language value from ever disagreeing.
+export const OG_LOCALE_MAP = {
+  en: 'en_GB',
+  ar: 'ar_EG',
+  it: 'it_IT',
+  fr: 'fr_FR',
+  de: 'de_DE',
+  es: 'es_ES',
+};
+
 // Reads the leading path segment; returns the recognized language and the
 // basename to hand to <BrowserRouter>, or { lang: null, basename: '' } when
 // the URL is unprefixed (English, or not a recognized language segment at
@@ -28,6 +42,37 @@ export function langFromPath(pathname) {
 export function pathFor(route, lang) {
   if (lang === 'en') return route;
   return route === '/' ? `/${lang}/` : `/${lang}${route}`;
+}
+
+export function urlFor(route, lang) {
+  return ORIGIN + pathFor(route, lang);
+}
+
+// The 6-language + x-default hreflang set for one route. Backs both the
+// in-page <link rel=alternate> injection (useSEO.js at runtime, prerender.mjs
+// at build time) and the sitemap's <xhtml:link> children (gen-sitemap.mjs) —
+// one function, so reciprocity is structural rather than three separate
+// places that happen to agree by convention.
+export function hreflangSetFor(route) {
+  const entries = LANGS.map((lang) => ({ hreflang: lang, href: urlFor(route, lang) }));
+  entries.push({ hreflang: 'x-default', href: urlFor(route, 'en') });
+  return entries;
+}
+
+// The URL to navigate to when going "home" from anywhere, optionally with a
+// same-page hash (e.g. "#trial"). Exists because a literal `to="/"` or
+// `to="/#trial"` on a react-router <Link> resolves to a pathname of exactly
+// "/", which react-router's useHref/useResolvedPath special-cases: it sets
+// the joined path to the raw basename with no separator, skipping the
+// joinPaths() call every other route goes through. Under a language prefix
+// that produces "/fr#trial" instead of the canonical "/fr/#trial" — a real,
+// confirmed bug (any other route is unaffected, since joinPaths only skips
+// for this exact "/" case). Reads the current language from the URL itself
+// so callers never need to thread lang through — same self-contained
+// pattern as switchLanguageHref reading window.location directly.
+export function homeHref(hash) {
+  const { lang } = langFromPath(window.location.pathname);
+  return pathFor('/', lang || 'en') + (hash ? `#${hash}` : '');
 }
 
 // Inverse of pathFor: given a full pathname (with or without a language

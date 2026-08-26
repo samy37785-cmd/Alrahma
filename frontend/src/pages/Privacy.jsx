@@ -1,3 +1,4 @@
+import { homeHref } from '../utils/localePath';
 import PageBar from '../components/layout/PageBar';
 import { site } from '../data';
 import useSEO from '../hooks/useSEO';
@@ -7,7 +8,7 @@ export default function Privacy() {
   useSEO({ title: 'Privacy Policy', description: 'Read the AL-Rahma Academy privacy policy to understand how we collect, use and protect your personal data.' });
   return (
     <div className="legal">
-      <PageBar to="/" />
+      <PageBar to={homeHref()} />
 
       <Breadcrumbs items={[{ label: 'Academy', to: '/academy' }, { label: 'Privacy Policy' }]} />
 

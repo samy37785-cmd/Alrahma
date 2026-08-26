@@ -2,6 +2,11 @@
   "lang": "de",
   "dir": "ltr",
   "tagline": "Lerne den Koran Online",
+  "a11y": {
+    "skipToContent": "Zum Hauptinhalt springen",
+    "chooseLanguage": "Sprache wählen",
+    "selectLanguage": "Sprache auswählen"
+  },
   "nav": {
     "home": "Startseite",
     "about": "Über uns",

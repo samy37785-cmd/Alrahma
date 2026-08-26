@@ -17,7 +17,7 @@ const FLAG = {
 };
 
 export default function LangSwitcher() {
-  const { lang } = useLang();
+  const { lang, t } = useLang();
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
@@ -39,7 +39,7 @@ export default function LangSwitcher() {
   };
 
   return (
-    <div className="ls" ref={ref} aria-label="Choose language">
+    <div className="ls" ref={ref} aria-label={t.a11y.chooseLanguage}>
       <button
         type="button"
         className={`ls__trigger${open ? ' ls__trigger--open' : ''}`}
@@ -55,7 +55,7 @@ export default function LangSwitcher() {
       </button>
 
       {open && (
-        <ul className="ls__menu" role="listbox" aria-label="Select language">
+        <ul className="ls__menu" role="listbox" aria-label={t.a11y.selectLanguage}>
           {LANGS.map((code) => (
             <li key={code} role="option" aria-selected={lang === code}>
               <button

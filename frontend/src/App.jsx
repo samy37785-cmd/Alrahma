@@ -14,6 +14,7 @@ import { Analytics as VercelAnalytics } from '@vercel/analytics/react';
 import ErrorBoundary from './components/ui/ErrorBoundary';
 import ContentGuard from './components/ui/ContentGuard';
 import LiveChat from './components/ui/LiveChat';
+import SkipLink from './components/ui/SkipLink';
 
 // Route-level code splitting
 const Home               = lazy(() => import('./pages/Home'));
@@ -106,7 +107,7 @@ export default function App({ basename = '' }) {
         <VercelAnalytics />
         <LiveChat />
         <ContentGuard />
-        <a href="#main-content" className="skip-link">Skip to main content</a>
+        <SkipLink />
         <Suspense fallback={<PageFallback />}>
         <Routes>
           {/* ── Home ── */}

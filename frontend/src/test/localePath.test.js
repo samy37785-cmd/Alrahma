@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { langFromPath, pathFor, stripLangPrefix, switchLanguageHref } from '../utils/localePath.js';
+import { langFromPath, pathFor, stripLangPrefix, switchLanguageHref, homeHref } from '../utils/localePath.js';
 
 // Regression coverage for the /fr/resources/faq class of bug: switching
 // language must never lose the current hash or non-lang query params, must
@@ -72,5 +72,28 @@ describe('switchLanguageHref', () => {
   it('persists the target language to localStorage', () => {
     switchLanguageHref('/fr/', '', '', 'de');
     expect(localStorage.getItem('lang')).toBe('de');
+  });
+});
+
+describe('homeHref', () => {
+  // Regression coverage for the /fr#trial (missing trailing slash) bug:
+  // React Router's useHref/useResolvedPath special-cases a resolved
+  // pathname of exactly "/" and skips joinPaths, so a literal
+  // `to="/"`/`to="/#hash"` under a non-English basename renders without the
+  // trailing slash pathFor otherwise always adds for the home route.
+  it('produces a slash-terminated home path under a language prefix', () => {
+    window.history.pushState({}, '', '/fr/courses/ijazah');
+    expect(homeHref()).toBe('/fr/');
+  });
+
+  it('appends a hash after the trailing slash under a language prefix', () => {
+    window.history.pushState({}, '', '/fr/courses/ijazah');
+    expect(homeHref('trial')).toBe('/fr/#trial');
+  });
+
+  it('never prefixes English, hash included', () => {
+    window.history.pushState({}, '', '/resources/faq');
+    expect(homeHref()).toBe('/');
+    expect(homeHref('pricing')).toBe('/#pricing');
   });
 });

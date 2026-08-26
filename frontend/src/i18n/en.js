@@ -2,6 +2,11 @@
   "lang": "en",
   "dir": "ltr",
   "tagline": "Learn the Holy Quran Online",
+  "a11y": {
+    "skipToContent": "Skip to main content",
+    "chooseLanguage": "Choose language",
+    "selectLanguage": "Select language"
+  },
   "nav": {
     "home": "Home",
     "about": "About",

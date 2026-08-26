@@ -9,10 +9,19 @@
  * from window.location.pathname alone, so a query-param-localized page can
  * never be self-canonical). This script visits every {route, lang} pair from
  * seoRoutes.mjs × the 6 supported languages in a headless browser, captures
- * the fully-rendered DOM, corrects the tags useSEO.js gets wrong for a
- * query-param-driven capture, and writes one real HTML file per pair into
- * dist/ — no vercel.json routing change needed, Vercel already resolves an
- * exact static file before its SPA catch-all rewrite.
+ * the fully-rendered DOM, and writes one real HTML file per pair into dist/
+ * — no vercel.json routing change needed, Vercel already resolves an exact
+ * static file before its SPA catch-all rewrite.
+ *
+ * Capture now navigates to the real prefixed URL (see the worker loop
+ * below), so useSEO.js's own canonical/hreflang/og:locale/og:url all compute
+ * correctly at capture time with no manual DOM patching needed afterward —
+ * an earlier version of this script navigated via a `?lang=` query string
+ * instead (useSEO.js couldn't derive a prefixed canonical from that) and
+ * patched the captured DOM to compensate; that patch outlived the query-
+ * string capture it was written for and had gone circular (it overwrote
+ * canonical.href to the expected value, then a "correctness" check read that
+ * same overwritten value back) before being removed here.
  *
  * IMPORTANT: this relies on nothing else placing a same-path file under
  * frontend/public/<lang>/... — such a file would be copied into dist/ by
@@ -38,7 +47,12 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { seoRoutes } from './seoRoutes.mjs';
-import { LANGS, urlFor, hreflangSetFor, dirFor, outputRelPathFor, pathFor, PRERENDER_EXCLUDED_ROUTES } from './prerender-seo-tags.mjs';
+import { LANGS, urlFor, hreflangSetFor, outputRelPathFor, pathFor, PRERENDER_EXCLUDED_ROUTES } from './prerender-seo-tags.mjs';
+import { OG_LOCALE_MAP } from '../src/utils/localePath.js';
+
+// Must match useSEO.js's SITE constant + its no-`title`-prop fallback
+// template exactly — used by the route-identity check below.
+const DEFAULT_TITLE = 'AL-Rahma Academy — Learn the Holy Quran Online';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const frontendRoot = join(__dirname, '..');
@@ -294,74 +308,100 @@ async function main() {
         // (this pair's own output doesn't exist until after this capture),
         // then client-side routing takes it from there, same as production.
         const target = `${PREVIEW_URL}${pathFor(route, lang)}`;
-        // One retry on a timed-out navigation OR a timed-out post-navigation
-        // lang-attribute wait: under CONCURRENCY-way parallelism (and on a
-        // shared CI/dev machine, or Vercel's own resource-constrained build
-        // container, with other load), a single otherwise-healthy page can
-        // occasionally miss its budget at either step — confirmed in
-        // practice both as page.goto missing networkidle and, separately, as
-        // this waitForFunction alone timing out with the navigation already
-        // complete. Retrying the whole { goto, waitForFunction } sequence
-        // (not just goto) closes that second case. A genuine routing bug
-        // fails the same page every time regardless of retries.
+        const realUrl = urlFor(route, lang);
+        const expectedHreflang = hreflangSetFor(route).map(({ hreflang, href }) => `${hreflang}:${href}`).sort();
+        const expectedOgLocale = OG_LOCALE_MAP[lang];
+
+        // One retry on: a timed-out navigation, a timed-out post-navigation
+        // lang-attribute wait, OR a metadata mismatch that's plausibly this
+        // same-origin race, not a real bug — under CONCURRENCY-way
+        // parallelism, vite preview's SPA fallback (see the comment above
+        // about "the base shell for a not-yet-written path") can momentarily
+        // serve a DIFFERENT already-prerendered page's full HTML (whichever
+        // pair last overwrote plain index.html — always the en/'/' pair, the
+        // only one whose output path IS index.html) for a route/lang pair
+        // whose own file doesn't exist yet. React itself always mounts the
+        // correct page from the real URL (createRoot clears the container),
+        // but the served document's original <head> tags occasionally
+        // outrace useSEO.js's own head rewrite within this check's budget.
+        // A full fresh re-navigation resolves it: by the second attempt the
+        // race window has passed. A genuine routing/metadata bug reproduces
+        // identically on the retry and still fails below.
+        let hydrationCheck;
         for (let attempt = 1; ; attempt++) {
           try {
             await page.goto(target, { waitUntil: 'networkidle', timeout: 45_000 });
             await page.waitForFunction((l) => document.documentElement.getAttribute('lang') === l, lang, { timeout: 15_000 });
-            break;
           } catch (err) {
             if (attempt >= 2 || !(err instanceof Error) || !err.message.includes('Timeout')) throw err;
-            log(`WARN retrying ${lang} ${route} after a timeout...`);
+            log(`WARN retrying ${lang} ${route} after a navigation timeout...`);
+            continue;
           }
+          // Real timer, not requestAnimationFrame — rAF can stall indefinitely
+          // for a background/inactive page in headless mode, with no timeout
+          // to fall back on since page.evaluate() has none by default.
+          await page.waitForTimeout(50);
+
+          // Real, per-pair post-hydration gate — not a post-hoc sample, and
+          // not a patch-then-check (an earlier version of this manually
+          // overwrote canonical.href/hreflang/lang/dir to the expected values
+          // and then read those same overwritten values back, so it could
+          // never catch React actually rendering something wrong-but-present
+          // — see this file's header). Runs for all 234 pairs, right here
+          // while the page is still fully hydrated, reading only what
+          // React/useSEO.js/LangContext.jsx actually produced with no
+          // patching first — the goto above already waits for
+          // documentElement.lang to be correct, which LangContext.jsx sets
+          // together with dir in the same effect, so both are already
+          // genuine by this point.
+          //
+          // What this gate cannot see: a client-side <Link> navigation to a
+          // different route — this script always does a fresh page.goto per
+          // pair, never a same-page transition, so it structurally can't
+          // catch hreflang/og:locale going stale after an internal-link
+          // click. That's covered instead by e2e/seo-schema.spec.mjs's real
+          // click-driven test.
+          hydrationCheck = await page.evaluate(({ realUrl, lang }) => ({
+            isNotFound: !!document.querySelector('.notfound-page'),
+            reactMounted: (document.getElementById('root')?.children.length ?? 0) > 0,
+            actualLang: document.documentElement.getAttribute('lang'),
+            canonicalHref: document.head.querySelector('link[rel="canonical"]')?.href || null,
+            hreflangHrefs: Array.from(document.head.querySelectorAll('link[rel="alternate"][hreflang]'))
+              .map((el) => `${el.hreflang}:${el.href}`)
+              .sort(),
+            ogLocale: document.head.querySelector('meta[property="og:locale"]')?.getAttribute('content') || null,
+            title: document.title,
+          }), { realUrl, lang });
+
+          const metadataMismatch = hydrationCheck.canonicalHref !== realUrl
+            || JSON.stringify(hydrationCheck.hreflangHrefs) !== JSON.stringify(expectedHreflang)
+            || hydrationCheck.ogLocale !== expectedOgLocale;
+          if (metadataMismatch && attempt < 2) {
+            log(`WARN retrying ${lang} ${route} after a stale-fallback-shell metadata mismatch...`);
+            continue;
+          }
+          break;
         }
-        // Real timer, not requestAnimationFrame — rAF can stall indefinitely
-        // for a background/inactive page in headless mode, with no timeout
-        // to fall back on since page.evaluate() has none by default.
-        await page.waitForTimeout(50);
 
-        const realUrl = urlFor(route, lang);
-        const hreflang = hreflangSetFor(route);
-        const dir = dirFor(lang);
-        await page.evaluate(({ realUrl, hreflang, dir, lang }) => {
-          const canonical = document.head.querySelector('link[rel="canonical"]');
-          if (canonical) canonical.href = realUrl;
-          const ogUrl = document.head.querySelector('meta[property="og:url"]');
-          if (ogUrl) ogUrl.setAttribute('content', realUrl);
-
-          document.documentElement.setAttribute('lang', lang);
-          document.documentElement.setAttribute('dir', dir);
-
-          document.head.querySelectorAll('link[rel="alternate"][hreflang]').forEach((el) => el.remove());
-          for (const { hreflang: hl, href } of hreflang) {
-            const link = document.createElement('link');
-            link.rel = 'alternate';
-            link.hreflang = hl;
-            link.href = href;
-            document.head.appendChild(link);
-          }
-        }, { realUrl, hreflang, dir, lang });
-
-        // Real, per-pair post-hydration gate — not a post-hoc sample. Runs
-        // for all 234 pairs, right here before the file is written, while
-        // the page is still fully hydrated and its canonical/hreflang/lang
-        // tags have just been corrected above. Confirms React actually
-        // rendered the intended page (not <Routes>'s path="*" NotFound, and
-        // not an empty #root — the signature of a same-path static file
-        // under frontend/public/ silently shadowing this route, exactly the
-        // public/fr/, public/it/ bug this file's header documents) and that
-        // the tags just patched actually landed. A static-HTML-only check
-        // (verify-prerender.mjs) or a console-errors-only check can't see
-        // any of this — it needs a real, already-hydrated browser page.
-        const hydrationCheck = await page.evaluate(({ realUrl, lang }) => ({
-          isNotFound: !!document.querySelector('.notfound-page'),
-          reactMounted: (document.getElementById('root')?.children.length ?? 0) > 0,
-          actualLang: document.documentElement.getAttribute('lang'),
-          canonicalHref: document.head.querySelector('link[rel="canonical"]')?.href || null,
-        }), { realUrl, lang });
         if (hydrationCheck.isNotFound) violations.push(`${lang} ${route} → rendered NotFound after hydration`);
         if (!hydrationCheck.reactMounted) violations.push(`${lang} ${route} → React never mounted (#root empty) — likely shadowed by a static file`);
         if (hydrationCheck.actualLang !== lang) violations.push(`${lang} ${route} → documentElement.lang is "${hydrationCheck.actualLang}", expected "${lang}"`);
         if (hydrationCheck.canonicalHref !== realUrl) violations.push(`${lang} ${route} → canonical is "${hydrationCheck.canonicalHref}", expected "${realUrl}"`);
+        if (JSON.stringify(hydrationCheck.hreflangHrefs) !== JSON.stringify(expectedHreflang)) {
+          violations.push(`${lang} ${route} → hreflang set is wrong: got ${JSON.stringify(hydrationCheck.hreflangHrefs)}, expected ${JSON.stringify(expectedHreflang)}`);
+        }
+        if (hydrationCheck.ogLocale !== expectedOgLocale) {
+          violations.push(`${lang} ${route} → og:locale is "${hydrationCheck.ogLocale}", expected "${expectedOgLocale}"`);
+        }
+        // Route-identity check: a non-home page must produce a page-specific
+        // <title>, not useSEO.js's generic no-title-prop fallback — catches
+        // "some page rendered, not necessarily the *right* page" (a
+        // React Router matching bug), which #root-non-empty/lang-correct/
+        // canonical-correct alone could still miss if it renders a
+        // plausible-looking wrong page.
+        if (route !== '/' && hydrationCheck.title === DEFAULT_TITLE) {
+          violations.push(`${lang} ${route} → <title> is the generic site default ("${DEFAULT_TITLE}") — this route isn't setting its own title`);
+        }
 
         const html = await page.content();
         const outPath = join(distDir, outputRelPathFor(route, lang));

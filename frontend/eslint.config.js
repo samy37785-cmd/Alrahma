@@ -45,6 +45,10 @@ export default [
           selector: "JSXAttribute[name.name='href'] > Literal[value=/^\\/(?!\\/)/]",
           message: 'Internal links must use <Link to="..."> from react-router-dom, not a raw href, so language-prefixed URLs are respected.',
         },
+        {
+          selector: "JSXAttribute[name.name='to'] > Literal[value=/^\\/(#.*)?$/]",
+          message: 'Use homeHref() from utils/localePath, not a literal to="/" or to="/#hash" — react-router-dom drops the language-prefix basename\'s trailing slash for the exact home route (e.g. renders "/fr#trial" instead of "/fr/#trial").',
+        },
       ],
     },
   },

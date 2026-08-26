@@ -1,6 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { site } from '../../data';
 import { useLang } from '../../context/LangContext';
+import { homeHref } from '../../utils/localePath';
 
 export default function Brand({ light = false }) {
   const { t } = useLang();
@@ -12,7 +13,7 @@ export default function Brand({ light = false }) {
   };
 
   return (
-    <Link to="/" onClick={handleClick} className={`brand${light ? ' brand--light' : ''}`}>
+    <Link to={homeHref()} onClick={handleClick} className={`brand${light ? ' brand--light' : ''}`}>
       <span className="brand__text">
         <strong>{site.name}</strong>
         <small>{t.tagline}</small>

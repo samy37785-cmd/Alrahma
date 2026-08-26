@@ -2,6 +2,11 @@
   "lang": "ar",
   "dir": "rtl",
   "tagline": "تعلم القرآن الكريم أونلاين",
+  "a11y": {
+    "skipToContent": "تخطي إلى المحتوى الرئيسي",
+    "chooseLanguage": "اختر اللغة",
+    "selectLanguage": "حدد اللغة"
+  },
   "nav": {
     "home": "الرئيسية",
     "about": "من نحن",

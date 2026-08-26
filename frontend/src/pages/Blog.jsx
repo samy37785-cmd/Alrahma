@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
+import { homeHref } from '../utils/localePath';
 import PageBar from '../components/layout/PageBar';
 import { CATEGORY_COLORS } from '../data/marketing/blogPosts';
 import { useBlogPosts, BLOG_KEYS } from '../hooks/useBlog';
@@ -55,7 +56,7 @@ export default function Blog() {
 
   return (
     <div className="blog-page">
-      <PageBar to="/" label={bl.backToSite} />
+      <PageBar to={homeHref()} label={bl.backToSite} />
 
       <Breadcrumbs items={[{ label: 'Resources', to: '/resources' }, { label: bl.heading }]} />
 

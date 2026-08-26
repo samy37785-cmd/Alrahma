@@ -11,7 +11,7 @@ import LangSwitcher from "../ui/LangSwitcher";
 import Avatar from "../ui/Avatar";
 import CommandPalette from "../ui/CommandPalette";
 import { LANGS } from "../../i18n";
-import { switchLanguageHref } from "../../utils/localePath";
+import { switchLanguageHref, homeHref } from "../../utils/localePath";
 import {
   BookOpenIcon, StarIcon, ScrollIcon, MosqueIcon, AlphabetIcon,
   BeadsIcon, LibraryIcon, CompassIcon, CalendarIcon, HandIcon, VerseIcon,
@@ -160,7 +160,7 @@ export default function Header() {
     <>
       <header className={`header${scrolled ? " header--scrolled" : ""}`} id="top">
         <div className="container header__inner">
-          <Link to="/" onClick={handleBrandClick} className="header__brand-link" aria-label="Al-Rahma Academy home">
+          <Link to={homeHref()} onClick={handleBrandClick} className="header__brand-link" aria-label="Al-Rahma Academy home">
             <BrandLockup orientation="horizontal" plain showBismillah={false} size={40} className="header__lockup" />
           </Link>
 

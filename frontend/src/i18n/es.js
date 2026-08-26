@@ -2,6 +2,11 @@
   "lang": "es",
   "dir": "ltr",
   "tagline": "Aprende el Corán en Línea",
+  "a11y": {
+    "skipToContent": "Ir al contenido principal",
+    "chooseLanguage": "Elegir idioma",
+    "selectLanguage": "Seleccionar idioma"
+  },
   "nav": {
     "home": "Inicio",
     "about": "Nosotros",

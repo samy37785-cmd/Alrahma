@@ -216,6 +216,21 @@ async function main() {
     const violations = [];
     let nextIndex = 0;
     let done = 0;
+    // The en/'/' pair's output path IS dist/index.html — the exact file vite
+    // preview's SPA fallback serves for any not-yet-captured route/lang pair
+    // (see the retry comment above). Writing it immediately, mid-build, was
+    // the actual root cause of that race: as soon as this one pair finished,
+    // the "safe" generic fallback shell silently became a fully-hydrated
+    // English-home page for the rest of the build, so any other in-flight
+    // pair could get served THAT instead of the harmless Vite shell. Retrying
+    // on a detected mismatch (still done above) made this survivable locally
+    // but not under Vercel's build container, where it reproduced far more
+    // often. Deferring this one write until every pair is captured removes
+    // the race outright: dist/index.html stays `vite build`'s own untouched
+    // output for the whole prerendering pass, so the fallback is always
+    // harmless, and only gets overwritten with the real hydrated home page
+    // once nothing can still be served through it as a fallback.
+    let deferredHomeHtml = null;
     log(`prerendering ${pairs.length} {route, lang} pairs (${CONCURRENCY} workers)...`);
 
     async function worker() {
@@ -404,9 +419,15 @@ async function main() {
         }
 
         const html = await page.content();
-        const outPath = join(distDir, outputRelPathFor(route, lang));
-        mkdirSync(dirname(outPath), { recursive: true });
-        writeFileSync(outPath, html);
+        const outRelPath = outputRelPathFor(route, lang);
+        if (outRelPath === 'index.html') {
+          // Deferred — see the comment by this variable's declaration above.
+          deferredHomeHtml = html;
+        } else {
+          const outPath = join(distDir, outRelPath);
+          mkdirSync(dirname(outPath), { recursive: true });
+          writeFileSync(outPath, html);
+        }
 
         done += 1;
         if (done % 20 === 0) log(`  ${done}/${pairs.length} written`);
@@ -415,6 +436,14 @@ async function main() {
     }
 
     await Promise.all(Array.from({ length: CONCURRENCY }, worker));
+
+    // Safe to write now — every other pair has already been captured, so
+    // nothing can be served this file as a wrong-page SPA fallback anymore.
+    if (deferredHomeHtml) {
+      const homeOutPath = join(distDir, 'index.html');
+      mkdirSync(dirname(homeOutPath), { recursive: true });
+      writeFileSync(homeOutPath, deferredHomeHtml);
+    }
     log(`  ${done}/${pairs.length} written`);
 
     if (violations.length > 0) {

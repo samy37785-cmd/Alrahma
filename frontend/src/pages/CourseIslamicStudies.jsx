@@ -32,11 +32,12 @@ export default function CourseIslamicStudies() {
     schema: {
       '@context': 'https://schema.org',
       '@type': 'Course',
+      // inLanguage is the page's current language — see CourseIjazah.jsx for rationale.
       name: 'Islamic Studies Course',
       description: 'A comprehensive, source-based curriculum covering Aqeedah, Fiqh, Seerah, Hadith and Tafsir — 5 structured modules taught by certified scholars in your own language.',
       provider: { '@type': 'EducationalOrganization', name: 'Al-Rahma Academy', sameAs: 'https://al-rahmaacademy.com' },
       educationalLevel: 'All levels',
-      inLanguage: ['en', 'ar'],
+      inLanguage: lang,
       teaches: 'Aqeedah, Fiqh, Seerah, Hadith, Tafsir, Islamic Studies',
       hasCourseInstance: { '@type': 'CourseInstance', courseMode: 'online' },
     },

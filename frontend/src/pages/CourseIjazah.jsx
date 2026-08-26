@@ -301,11 +301,16 @@ export default function CourseIjazah() {
     schema: {
       '@context': 'https://schema.org',
       '@type': 'Course',
+      // inLanguage follows the current page's language (visible content),
+      // not a hardcoded subset — a French page's visible text is French,
+      // so the structured data must not claim en/ar only. Teaching
+      // availability (which tutors speak which languages) is separate
+      // editorial content, not encoded here; see teachers.js for the source.
       name: 'Quran Ijazah Certification Course',
       description: "Earn a formal Quran Ijazah with a continuous Sanad to the Prophet ﷺ. Study Matn Al-Jazariyyah, Al-Shatibiyyah and the Seven Qira'at with certified Al-Azhar scholars.",
       provider: { '@type': 'EducationalOrganization', name: 'Al-Rahma Academy', sameAs: 'https://al-rahmaacademy.com' },
       educationalLevel: 'Advanced',
-      inLanguage: ['en', 'ar'],
+      inLanguage: lang,
       teaches: 'Quran Ijazah, Tajweed, Matn Al-Jazariyyah, Al-Shatibiyyah, Seven Qira\'at',
       hasCourseInstance: { '@type': 'CourseInstance', courseMode: 'online' },
     },

@@ -38,13 +38,21 @@ import App from './App.jsx';
 import './styles.css';
 import { initSentry } from './utils/sentry.js';
 import { loadArabicFontsIdle } from './utils/loadArabicFonts.js';
+import { langFromPath } from './utils/localePath.js';
 
 initSentry();
+
+// The URL's leading language segment (e.g. /fr/courses → basename "/fr")
+// becomes <BrowserRouter>'s basename, computed once here before the router
+// ever mounts — this is what makes a prerendered /fr/... file actually
+// render instead of every existing unprefixed <Route path="/courses"> 404ing
+// on hydration. See src/utils/localePath.js.
+const { basename } = langFromPath(window.location.pathname);
 
 const rootElement = document.getElementById('root');
 const app = (
   <React.StrictMode>
-    <App />
+    <App basename={basename} />
   </React.StrictMode>
 );
 

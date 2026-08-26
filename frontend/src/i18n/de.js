@@ -2,6 +2,11 @@
   "lang": "de",
   "dir": "ltr",
   "tagline": "Lerne den Koran Online",
+  "a11y": {
+    "skipToContent": "Zum Hauptinhalt springen",
+    "chooseLanguage": "Sprache wählen",
+    "selectLanguage": "Sprache auswählen"
+  },
   "nav": {
     "home": "Startseite",
     "about": "Über uns",
@@ -660,7 +665,7 @@
       "haveAccount": "Bereits ein Konto?",
       "signIn": "Anmelden",
       "back": "← Zurück zur Website",
-      "gdprConsent": "Ich stimme der <a href=\"/privacy\" style=\"color:var(--green)\">Datenschutzerklärung</a> zu und willige ein, dass Al-Rahma Academy meine personenbezogenen Daten zur Verwaltung meines Kontos und meiner Unterrichtsstunden verarbeitet.",
+      "gdprConsent": "Ich stimme der <a style=\"color:var(--green)\">Datenschutzerklärung</a> zu und willige ein, dass Al-Rahma Academy meine personenbezogenen Daten zur Verwaltung meines Kontos und meiner Unterrichtsstunden verarbeitet.",
       "gdprRequired": "Bitte akzeptiere die Datenschutzerklärung, um fortzufahren.",
       "errorFallback": "Registrierung fehlgeschlagen. Bitte erneut versuchen."
     },

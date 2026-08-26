@@ -24,9 +24,13 @@
   <meta name="author" content="Al-Rahma Academy" />
   <link rel="canonical" href="https://al-rahmaacademy.com/" />
 
-  <!-- hreflang — only en/it/fr are real, self-canonical, reciprocal pages.
-       ar/es/de are query-param only (?lang=), not distinct indexable URLs —
-       omitted until Phase 2 prerenders real /ar/, /es/, /de/ pages. -->
+  <!-- hreflang — this static 4-entry block is a vite dev/vite preview
+       fallback only. In the shipped build, scripts/prerender.mjs's postbuild
+       step overwrites this file (and every other prerendered route) with
+       the real, per-route, all-6-language hreflang set computed by
+       scripts/prerender-seo-tags.mjs — see that file for the source of
+       truth. This block exists only so `vite dev`/`vite preview` (which
+       never run the prerender step) still ship something reasonable. -->
   <link rel="alternate" hreflang="en"       href="https://al-rahmaacademy.com/" />
   <link rel="alternate" hreflang="it"       href="https://al-rahmaacademy.com/it/" />
   <link rel="alternate" hreflang="fr"       href="https://al-rahmaacademy.com/fr/" />
@@ -43,6 +47,11 @@
   <meta property="og:image"        content="https://al-rahmaacademy.com/og-cover.svg" />
   <meta property="og:image:width"  content="1200" />
   <meta property="og:image:height" content="630" />
+  <!-- og:locale — this static English-only block is a vite dev/vite preview
+       fallback only, same as the hreflang block above. useSEO.js's
+       setMultiMeta overwrites it per-language on every real mount/navigation
+       (see src/utils/localePath.js's OG_LOCALE_MAP), and the shipped build's
+       prerendered files capture that already-corrected value post-hydration. -->
   <meta property="og:locale"      content="en_GB" />
   <meta property="og:locale:alternate" content="ar_EG" />
   <meta property="og:locale:alternate" content="it_IT" />
@@ -211,15 +220,7 @@
     "name": "Al-Rahma Academy",
     "description": "Online Quran and Arabic academy for Muslim communities in Europe",
     "inLanguage": ["en", "ar", "it", "es", "de", "fr"],
-    "publisher": { "@id": "https://al-rahmaacademy.com/#organization" },
-    "potentialAction": {
-      "@type": "SearchAction",
-      "target": {
-        "@type": "EntryPoint",
-        "urlTemplate": "https://al-rahmaacademy.com/academy/teachers?q={search_term_string}"
-      },
-      "query-input": "required name=search_term_string"
-    }
+    "publisher": { "@id": "https://al-rahmaacademy.com/#organization" }
   }
   </script>
 

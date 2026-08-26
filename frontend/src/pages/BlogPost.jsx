@@ -1,4 +1,6 @@
 import { useParams, Link, Navigate } from 'react-router-dom';
+import { homeHref } from '../utils/localePath';
+// home trial CTA uses raw <a href> — see homeHref() docs
 import PageBar from '../components/layout/PageBar';
 import { CATEGORY_COLORS } from '../data/marketing/blogPosts';
 import { useBlogPost, useBlogPosts } from '../hooks/useBlog';
@@ -176,7 +178,7 @@ export default function BlogPost() {
         <div className="blog-post__cta">
           <h3>Ready to start your Quran journey?</h3>
           <p>Book a free trial session with one of our certified teachers — no commitment required.</p>
-          <Link to="/#trial" className="btn btn--green">Book a Free Trial</Link>
+          <a href={homeHref('trial')} className="btn btn--green">Book a Free Trial</a>
         </div>
       </main>
     </div>

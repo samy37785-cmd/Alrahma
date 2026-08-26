@@ -45,6 +45,13 @@ verification; batching them contradicts the roadmap's own risk rules.
   regressions there.
 - **Backend Prettier mass-format**: deferred permanently unless the team
   wants the git-blame churn; lint (0 errors) already gates style basics.
-- **Locale `index.html` mirrors (`public/fr`, `public/it`)**: hand-mirrored
-  today; generating them at prebuild needs a template + per-locale meta
-  data set — worth doing next time their content actually changes.
+- **Locale `index.html` mirrors (`public/fr`, `public/it`)**: removed in the
+  Phase 2 routing-fix pass — these were legacy Phase-1 static pages that
+  silently shadowed the real SPA at `/fr/` and `/it/` (Vite copies `public/`
+  into `dist/` before `scripts/prerender.mjs` runs, and both `vite preview`
+  and Vercel resolve an exact static file before the SPA catch-all). The
+  real, i18n-driven Home page already carries equal-or-richer translated
+  content for both languages, so `scripts/prerender.mjs` now generates a real
+  file for every route in every language uniformly — no per-locale mirror
+  needed. `scripts/check-no-locale-shadow.mjs` (a `prebuild` step) fails the
+  build if a `public/<locale>/` directory reappears.

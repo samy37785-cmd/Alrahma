@@ -14,6 +14,7 @@ import { Analytics as VercelAnalytics } from '@vercel/analytics/react';
 import ErrorBoundary from './components/ui/ErrorBoundary';
 import ContentGuard from './components/ui/ContentGuard';
 import LiveChat from './components/ui/LiveChat';
+import SkipLink from './components/ui/SkipLink';
 
 // Route-level code splitting
 const Home               = lazy(() => import('./pages/Home'));
@@ -91,7 +92,7 @@ function PageFallback() {
   );
 }
 
-export default function App() {
+export default function App({ basename = '' }) {
   return (
     <ErrorBoundary>
     <QueryProvider>
@@ -99,14 +100,14 @@ export default function App() {
     <LangProvider>
     <AuthProvider>
     <AdminAuthProvider>
-      <BrowserRouter>
+      <BrowserRouter basename={basename}>
         <ScrollToTop />
         <RoutePrefetcher />
         <Analytics />
         <VercelAnalytics />
         <LiveChat />
         <ContentGuard />
-        <a href="#main-content" className="skip-link">Skip to main content</a>
+        <SkipLink />
         <Suspense fallback={<PageFallback />}>
         <Routes>
           {/* ── Home ── */}

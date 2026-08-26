@@ -11,6 +11,7 @@ import LangSwitcher from "../ui/LangSwitcher";
 import Avatar from "../ui/Avatar";
 import CommandPalette from "../ui/CommandPalette";
 import { LANGS } from "../../i18n";
+import { switchLanguageHref, homeHref } from "../../utils/localePath";
 import {
   BookOpenIcon, StarIcon, ScrollIcon, MosqueIcon, AlphabetIcon,
   BeadsIcon, LibraryIcon, CompassIcon, CalendarIcon, HandIcon, VerseIcon,
@@ -30,7 +31,7 @@ export default function Header() {
   const [cmdOpen, setCmdOpen]       = useState(false);
   const [scrolled, setScrolled]     = useState(false);
   const { user, isAdmin, isTeacher, isParent, logout } = useAuth();
-  const { t, lang, setLang } = useLang();
+  const { t, lang } = useLang();
   const { dark, toggle: toggleDark } = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
@@ -108,9 +109,12 @@ export default function Header() {
   const handleLogout = () => { closeAll(); logout(); navigate("/"); };
 
   /* Same as Brand.jsx: on any inner page → navigate home; already on
-     home → just scroll to top. */
-  const handleBrandClick = () => {
-    if (location.pathname === "/") window.scrollTo({ top: 0, behavior: "smooth" });
+     home → just scroll to top. Uses raw <a href> — see homeHref() docs. */
+  const handleBrandClick = (e) => {
+    if (location.pathname === "/") {
+      e.preventDefault();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
   };
 
   /* Swipe-up gesture closes the mobile drawer */
@@ -159,9 +163,9 @@ export default function Header() {
     <>
       <header className={`header${scrolled ? " header--scrolled" : ""}`} id="top">
         <div className="container header__inner">
-          <Link to="/" onClick={handleBrandClick} className="header__brand-link" aria-label="Al-Rahma Academy home">
+          <a href={homeHref()} onClick={handleBrandClick} className="header__brand-link" aria-label="Al-Rahma Academy home">
             <BrandLockup orientation="horizontal" plain showBismillah={false} size={40} className="header__lockup" />
-          </Link>
+          </a>
 
           <nav
             className={`nav${mobileOpen ? " open" : ""}`}
@@ -252,7 +256,10 @@ export default function Header() {
                   <button
                     key={code}
                     className={`nav__mobile-lang-btn${lang === code ? " nav__mobile-lang-btn--active" : ""}`}
-                    onClick={() => setLang(code)}
+                    onClick={() => {
+                      if (code === lang) return;
+                      window.location.assign(switchLanguageHref(location.pathname, location.search, location.hash, code));
+                    }}
                     aria-pressed={lang === code}
                   >
                     {FLAG[code]} {code.toUpperCase()}

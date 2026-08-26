@@ -32,11 +32,12 @@ export default function CourseIslamicStudies() {
     schema: {
       '@context': 'https://schema.org',
       '@type': 'Course',
+      // inLanguage is the page's current language — see CourseIjazah.jsx for rationale.
       name: 'Islamic Studies Course',
       description: 'A comprehensive, source-based curriculum covering Aqeedah, Fiqh, Seerah, Hadith and Tafsir — 5 structured modules taught by certified scholars in your own language.',
       provider: { '@type': 'EducationalOrganization', name: 'Al-Rahma Academy', sameAs: 'https://al-rahmaacademy.com' },
       educationalLevel: 'All levels',
-      inLanguage: ['en', 'ar'],
+      inLanguage: lang,
       teaches: 'Aqeedah, Fiqh, Seerah, Hadith, Tafsir, Islamic Studies',
       hasCourseInstance: { '@type': 'CourseInstance', courseMode: 'online' },
     },
@@ -67,7 +68,7 @@ export default function CourseIslamicStudies() {
               <button className="btn btn--gold btn--lg" onClick={() => navigate('/enroll?course=islamic-studies')}>
                 {ui.bookTrial}
               </button>
-              <Link to="/teachers" className="btn btn--ghost-white">{ui.viewTeachers}</Link>
+              <Link to="/academy/teachers" className="btn btn--ghost-white">{ui.viewTeachers}</Link>
             </div>
           </div>
         </section>
@@ -187,7 +188,7 @@ export default function CourseIslamicStudies() {
                 <button type="button" className="btn btn--gold btn--block" onClick={() => navigate('/enroll?course=islamic-studies')}>
                   {ui.bookTrial}
                 </button>
-                <Link to="/teachers" className="cl__enroll-link">{ui.browseTeachers}</Link>
+                <Link to="/academy/teachers" className="cl__enroll-link">{ui.browseTeachers}</Link>
               </div>
             </div>
           </div>

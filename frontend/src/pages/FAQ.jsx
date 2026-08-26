@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { homeHref } from '../utils/localePath';
 import PageBar from '../components/layout/PageBar';
 import useSEO from '../hooks/useSEO';
 import Breadcrumbs from '../components/ui/Breadcrumbs';
@@ -21,7 +22,7 @@ export default function FAQ() {
 
   return (
     <div className="faq-page">
-      <PageBar to="/" label={pg.backToSite} />
+      <PageBar to={homeHref()} label={pg.backToSite} />
 
       <Breadcrumbs items={[{ label: 'Resources', to: '/resources' }, { label: pg.heading }]} />
 
@@ -73,7 +74,7 @@ export default function FAQ() {
 
         <div className="faq-cta">
           <p>{pg.stillQuestion}</p>
-          <a href="/#trial" className="btn btn--green">{pg.bookTrial}</a>
+          <a href={homeHref('trial')} className="btn btn--green">{pg.bookTrial}</a>
           <a
             href="https://wa.me/201016054663"
             className="btn btn--ghost"

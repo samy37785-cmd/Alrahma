@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
+import { homeHref } from '../../utils/localePath';
 import CommandPalette from '../ui/CommandPalette';
 import NotificationPanel from '../ui/NotificationPanel';
 import LangSwitcher from '../ui/LangSwitcher';
@@ -166,14 +167,14 @@ export default function DashboardLayout({ children }) {
         aria-label="Main navigation"
         aria-modal={mobileOpen ? 'true' : undefined}
       >
-        {/* Brand */}
-        <Link to="/" className="ds-brand">
+        {/* Brand — raw <a href> (see homeHref() docs) */}
+        <a href={homeHref()} className="ds-brand">
           <BrandIcon size={34} className="ds-brand__logo" />
           <div className="ds-brand__text">
             <span className="ds-brand__name">Al-Rahma</span>
             <span className="ds-brand__sub">Academy</span>
           </div>
-        </Link>
+        </a>
 
         {/* Collapse toggle (desktop) */}
         <button

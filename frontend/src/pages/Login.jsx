@@ -5,6 +5,7 @@ import Brand from '../components/layout/Brand';
 import useSEO from '../hooks/useSEO';
 import { useLang } from '../context/LangContext';
 import { googleLogin } from '../api/authApi';
+import { homeHref } from '../utils/localePath';
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
@@ -179,7 +180,7 @@ export default function Login() {
           <Link to="/forgot-password">{lg.forgot}</Link>
         </p>
         <p className="auth__switch">
-          <Link to="/">{lg.back}</Link>
+          <a href={homeHref()}>{lg.back}</a>
         </p>
       </div>
     </div>

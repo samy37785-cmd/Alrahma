@@ -18,7 +18,13 @@ permissions:
   contents: read
 
 env:
-  NODE_VERSION: '20'
+  # @sparticuz/chromium@149 (frontend/scripts/prerender.mjs's Vercel-only
+  # Chromium binary) requires Node ^22.17.0 || >=24.0.0 — bumped here (and in
+  # both package.json engines fields + .nvmrc) so CI actually matches what
+  # the project declares it needs, rather than running a Node version older
+  # than one of its own dependencies requires just because that dependency
+  # only ever loads conditionally on Vercel's build container.
+  NODE_VERSION: '22'
 
 jobs:
   backend:
@@ -85,9 +91,29 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
+      # `npm run build`'s postbuild step (scripts/prerender.mjs) spins up the
+      # real backend + in-memory MongoDB and a headless Chromium to capture
+      # every prerendered page — same isolated stack the e2e job already
+      # uses, needed here too now that Build below exercises it.
+      - name: Cache mongodb-memory-server binaries
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/mongodb-binaries
+          key: mongodb-binaries-${{ runner.os }}-${{ hashFiles('backend/package-lock.json') }}
+          restore-keys: |
+            mongodb-binaries-${{ runner.os }}-
+
       - name: Install dependencies
         working-directory: frontend
         run: npm ci
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm ci
+
+      - name: Install Chromium
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
 
       - name: Lint
         working-directory: frontend
@@ -101,15 +127,19 @@ jobs:
         working-directory: frontend
         run: npm run build
 
+      - name: Verify prerendered output
+        working-directory: frontend
+        run: npm run verify:prerender
+
   e2e:
     name: E2E smoke (Playwright)
     runs-on: ubuntu-latest
-    # Non-blocking while the suite proves itself (Phase 0 of the refactoring
-    # roadmap). Screenshot comparisons are skipped on CI (playwright.config.js
-    # sets ignoreSnapshots — baselines are rendered on the dev machine and
-    # Linux can't match them pixel-for-pixel); this job runs the functional
-    # smoke flows against the real backend + in-memory MongoDB.
-    continue-on-error: true
+    # Screenshot comparisons are skipped on CI (playwright.config.js sets
+    # ignoreSnapshots — baselines are rendered on the dev machine and Linux
+    # can't match them pixel-for-pixel); this job runs the functional smoke
+    # flows against the real backend + in-memory MongoDB. Blocking: the
+    # Phase 0 refactoring roadmap this job's non-blocking status was tied to
+    # is complete (see CLAUDE.md), and the suite has been consistently green.
     steps:
       - uses: actions/checkout@v4
 

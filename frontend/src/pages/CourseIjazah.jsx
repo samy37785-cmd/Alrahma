@@ -301,11 +301,16 @@ export default function CourseIjazah() {
     schema: {
       '@context': 'https://schema.org',
       '@type': 'Course',
+      // inLanguage follows the current page's language (visible content),
+      // not a hardcoded subset — a French page's visible text is French,
+      // so the structured data must not claim en/ar only. Teaching
+      // availability (which tutors speak which languages) is separate
+      // editorial content, not encoded here; see teachers.js for the source.
       name: 'Quran Ijazah Certification Course',
       description: "Earn a formal Quran Ijazah with a continuous Sanad to the Prophet ﷺ. Study Matn Al-Jazariyyah, Al-Shatibiyyah and the Seven Qira'at with certified Al-Azhar scholars.",
       provider: { '@type': 'EducationalOrganization', name: 'Al-Rahma Academy', sameAs: 'https://al-rahmaacademy.com' },
       educationalLevel: 'Advanced',
-      inLanguage: ['en', 'ar'],
+      inLanguage: lang,
       teaches: 'Quran Ijazah, Tajweed, Matn Al-Jazariyyah, Al-Shatibiyyah, Seven Qira\'at',
       hasCourseInstance: { '@type': 'CourseInstance', courseMode: 'online' },
     },
@@ -336,7 +341,7 @@ export default function CourseIjazah() {
               <button className="btn btn--gold btn--lg" onClick={() => navigate('/enroll?course=ijazah')}>
                 {ui.bookTrial}
               </button>
-              <Link to="/teachers" className="btn btn--ghost-white">{ui.viewTeachers}</Link>
+              <Link to="/academy/teachers" className="btn btn--ghost-white">{ui.viewTeachers}</Link>
             </div>
           </div>
         </section>
@@ -446,7 +451,7 @@ export default function CourseIjazah() {
                 <button type="button" className="btn btn--gold btn--block" onClick={() => navigate('/enroll?course=ijazah')}>
                   {ui.bookTrial}
                 </button>
-                <Link to="/teachers" className="cl__enroll-link">{ui.browseTeachers}</Link>
+                <Link to="/academy/teachers" className="cl__enroll-link">{ui.browseTeachers}</Link>
               </div>
             </div>
           </div>

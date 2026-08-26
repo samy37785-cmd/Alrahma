@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
+import { homeHref } from '../utils/localePath';
 import PageBar from '../components/layout/PageBar';
 import { capturePaypalPayment } from '../api/paymentApi';
 import { useLang } from '../context/LangContext';
@@ -38,13 +39,13 @@ export default function PaymentResult({ cancelled = false }) {
 
   return (
     <div className="legal">
-      <PageBar to="/" label={pm.backToSite} />
+      <PageBar to={homeHref()} label={pm.backToSite} />
 
       <main className="container legal__main payment-result">
         <div className="payment-result__icon">{ICONS[state]}</div>
         <h1>{view.title}</h1>
         <p className="payment-result__sub">{view.sub}</p>
-        <Link to="/#pricing" className="btn btn--gold">{pm.backToPricing}</Link>
+        <a href={homeHref('pricing')} className="btn btn--gold">{pm.backToPricing}</a>
       </main>
     </div>
   );

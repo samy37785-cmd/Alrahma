@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useLang } from '../../context/LangContext';
+import { homeHref } from '../../utils/localePath';
 
 /**
  * Visible breadcrumb trail. The matching BreadcrumbList JSON-LD is emitted
@@ -13,7 +14,10 @@ import { useLang } from '../../context/LangContext';
 export default function Breadcrumbs({ items = [] }) {
   const { t, lang } = useLang();
   const homeLabel = lang === 'ar' ? 'الرئيسية' : (t?.nav?.home || 'Home');
-  const trail = [{ label: homeLabel, to: '/' }, ...items];
+  // Home crumb must use a raw <a href> with the locale-prefixed homeHref(),
+  // not <Link to="/"> — the latter loses the trailing slash under basename
+  // ("/fr" instead of "/fr/") and breaks canonical parity.
+  const trail = [{ label: homeLabel, to: homeHref(), isHome: true }, ...items];
 
   return (
     <nav className="breadcrumbs" aria-label="Breadcrumb">
@@ -25,7 +29,9 @@ export default function Breadcrumbs({ items = [] }) {
               <li key={i} className="breadcrumbs__item">
                 {last || !it.to
                   ? <span className="breadcrumbs__current" aria-current="page">{it.label}</span>
-                  : <Link className="breadcrumbs__link" to={it.to}>{it.label}</Link>}
+                  : it.isHome
+                    ? <a className="breadcrumbs__link" href={it.to}>{it.label}</a>
+                    : <Link className="breadcrumbs__link" to={it.to}>{it.label}</Link>}
                 {!last && <span className="breadcrumbs__sep" aria-hidden="true">›</span>}
               </li>
             );

@@ -2,6 +2,11 @@
   "lang": "it",
   "dir": "ltr",
   "tagline": "Impara il Corano Online",
+  "a11y": {
+    "skipToContent": "Vai al contenuto principale",
+    "chooseLanguage": "Scegli la lingua",
+    "selectLanguage": "Seleziona la lingua"
+  },
   "nav": {
     "home": "Home",
     "about": "Chi Siamo",
@@ -660,7 +665,7 @@
       "haveAccount": "Hai già un account?",
       "signIn": "Accedi",
       "back": "← Torna al sito",
-      "gdprConsent": "Accetto l'<a href=\"/privacy\" style=\"color:var(--green)\">Informativa sulla Privacy</a> e acconsento che Al-Rahma Academy tratti i miei dati personali per gestire il mio account e le lezioni.",
+      "gdprConsent": "Accetto l'<a style=\"color:var(--green)\">Informativa sulla Privacy</a> e acconsento che Al-Rahma Academy tratti i miei dati personali per gestire il mio account e le lezioni.",
       "gdprRequired": "Accetta l'informativa sulla privacy per continuare.",
       "errorFallback": "Registrazione non riuscita. Riprova."
     },

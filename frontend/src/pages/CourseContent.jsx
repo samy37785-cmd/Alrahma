@@ -137,7 +137,7 @@ export default function CourseContent() {
       </div>
     );
   }
-  if (isError || !course) return <div className="auth"><div className="auth__card"><p className="auth__error">{cc.notFound}</p><Link to={homeHref()}>← {cc.myAccount}</Link></div></div>;
+  if (isError || !course) return <div className="auth"><div className="auth__card"><p className="auth__error">{cc.notFound}</p><a href={homeHref()}>← {cc.myAccount}</a></div></div>;
 
   const getLabel = (type) => {
     if (type === 'youtube' || type === 'video') return cc.watch;
@@ -164,7 +164,7 @@ export default function CourseContent() {
         {!isActive ? (
           <div style={{ background: '#fff8e7', border: '1px solid #f0c040', borderRadius: 10, padding: '20px 24px', marginTop: '2rem' }}>
             <p style={{ margin: 0, fontWeight: 600 }}>{cc.needSub}</p>
-            <Link to={homeHref('pricing')} className="btn btn--green btn--sm" style={{ marginTop: '12px', display: 'inline-block' }}>{cc.viewPlans}</Link>
+            <a href={homeHref('pricing')} className="btn btn--green btn--sm" style={{ marginTop: '12px', display: 'inline-block' }}>{cc.viewPlans}</a>
           </div>
         ) : total > 0 ? (
           <div style={{ marginTop: '2rem' }}>

@@ -160,7 +160,7 @@ export default function Register() {
           {rg.haveAccount} <Link to="/login">{rg.signIn}</Link>
         </p>
         <p className="auth__switch">
-          <Link to={homeHref()}>{rg.back}</Link>
+          <a href={homeHref()}>{rg.back}</a>
         </p>
       </div>
     </div>

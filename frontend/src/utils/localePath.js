@@ -60,16 +60,22 @@ export function hreflangSetFor(route) {
 }
 
 // The URL to navigate to when going "home" from anywhere, optionally with a
-// same-page hash (e.g. "#trial"). Exists because a literal `to="/"` or
-// `to="/#trial"` on a react-router <Link> resolves to a pathname of exactly
-// "/", which react-router's useHref/useResolvedPath special-cases: it sets
-// the joined path to the raw basename with no separator, skipping the
-// joinPaths() call every other route goes through. Under a language prefix
-// that produces "/fr#trial" instead of the canonical "/fr/#trial" — a real,
-// confirmed bug (any other route is unaffected, since joinPaths only skips
-// for this exact "/" case). Reads the current language from the URL itself
-// so callers never need to thread lang through — same self-contained
-// pattern as switchLanguageHref reading window.location directly.
+// same-page hash (e.g. "#trial"). Returns the full locale-prefixed path
+// (e.g. "/fr/", "/fr/#trial", "/") — the canonical href for the home page
+// in the current language.
+//
+// MUST be used with a raw `<a href={homeHref()}>`, NOT with
+// `<Link to={homeHref()}>`. When a `<Link>` renders under a non-English
+// `<BrowserRouter basename="/fr">`, react-router's useHref/useResolvedPath
+// special-cases a literal "/" (skips joinPaths → "/fr" without trailing
+// slash) and normal-joins "/fr/" → "/fr/fr/" (duplicate prefix, real 404).
+// No value of `to` can produce the correct "/fr/" via `<Link>` under a
+// basename — the only href that is both duplicate-free and
+// trailing-slash-canonical is the raw `<a href>`, which bypasses the
+// basename join entirely. This is verified live: /fr/resources/faq's two
+// home links rendered as "/fr/fr/" and clicked to a 404 before this fix.
+// Reads the current language from the URL itself so callers never need to
+// thread lang through — same self-contained pattern as switchLanguageHref.
 export function homeHref(hash) {
   const { lang } = langFromPath(window.location.pathname);
   return pathFor('/', lang || 'en') + (hash ? `#${hash}` : '');

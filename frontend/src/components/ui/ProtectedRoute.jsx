@@ -1,7 +1,6 @@
 import { useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { homeHref } from '../../utils/localePath';
 
 // Guards a route.
 //  - Not logged in            -> redirect to /login.
@@ -24,7 +23,13 @@ export default function ProtectedRoute({ children, adminOnly = false, role = nul
     if (!sessionChecked) return null; // still confirming — don't redirect yet
     return <Navigate to="/login" replace />;
   }
-  if (adminOnly && !isAdmin) return <Navigate to={homeHref()} replace />;
-  if (role && user.role !== role && !isAdmin) return <Navigate to={homeHref()} replace />;
+  // Home redirect must not use homeHref() with <Navigate> — homeHref() returns
+  // "/fr/" which under basename "/fr" would become "/fr/fr/" (real 404, verified).
+  // Using router-relative "/" avoids the duplicate; Vercel's "/fr" → "/fr/" 301
+  // then restores the canonical trailing slash server-side before the next HTML.
+  // eslint-disable-next-line no-restricted-syntax
+  if (adminOnly && !isAdmin) return <Navigate to="/" replace />;
+  // eslint-disable-next-line no-restricted-syntax
+  if (role && user.role !== role && !isAdmin) return <Navigate to="/" replace />;
   return children;
 }

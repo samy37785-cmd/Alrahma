@@ -1,4 +1,3 @@
-import { Link } from 'react-router-dom';
 import { homeHref } from '../../../utils/localePath';
 import Brand from '../../layout/Brand';
 import { TRANSLATIONS } from '../../../data/quranLangs';
@@ -58,7 +57,7 @@ export default function QuranTopBar({
           >🌙</button>
           <button className="qlc__bar-icon" onClick={() => window.print()} title="Print (P)">🖨</button>
 
-          <Link to={homeHref()} className="btn btn--ghost btn--sm qlc__back">{ui.back}</Link>
+          <a href={homeHref()} className="btn btn--ghost btn--sm qlc__back">{ui.back}</a>
         </div>
       </div>
     </header>

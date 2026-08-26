@@ -109,9 +109,12 @@ export default function Header() {
   const handleLogout = () => { closeAll(); logout(); navigate("/"); };
 
   /* Same as Brand.jsx: on any inner page → navigate home; already on
-     home → just scroll to top. */
-  const handleBrandClick = () => {
-    if (location.pathname === "/") window.scrollTo({ top: 0, behavior: "smooth" });
+     home → just scroll to top. Uses raw <a href> — see homeHref() docs. */
+  const handleBrandClick = (e) => {
+    if (location.pathname === "/") {
+      e.preventDefault();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
   };
 
   /* Swipe-up gesture closes the mobile drawer */
@@ -160,9 +163,9 @@ export default function Header() {
     <>
       <header className={`header${scrolled ? " header--scrolled" : ""}`} id="top">
         <div className="container header__inner">
-          <Link to={homeHref()} onClick={handleBrandClick} className="header__brand-link" aria-label="Al-Rahma Academy home">
+          <a href={homeHref()} onClick={handleBrandClick} className="header__brand-link" aria-label="Al-Rahma Academy home">
             <BrandLockup orientation="horizontal" plain showBismillah={false} size={40} className="header__lockup" />
-          </Link>
+          </a>
 
           <nav
             className={`nav${mobileOpen ? " open" : ""}`}

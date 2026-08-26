@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { homeHref } from '../utils/localePath';
+// home pricing CTA uses raw <a href> — see homeHref() docs
 import { useInvoices } from '../hooks/useBilling';
 import InvoiceModal from '../components/ui/InvoiceModal';
 import CancelSurvey from '../components/ui/CancelSurvey';
@@ -43,9 +44,9 @@ export default function Billing() {
           <h1 className="ds-page-hd__title">{b.heading}</h1>
           <p className="ds-page-hd__sub">{b.sub}</p>
         </div>
-        <Link to={homeHref('pricing')} className="btn btn--green btn--sm" style={{ borderRadius: 9, alignSelf: 'flex-start' }}>
+        <a href={homeHref('pricing')} className="btn btn--green btn--sm" style={{ borderRadius: 9, alignSelf: 'flex-start' }}>
           Upgrade Plan
-        </Link>
+        </a>
       </div>
 
       {/* KPI row */}

@@ -180,7 +180,7 @@ export default function Login() {
           <Link to="/forgot-password">{lg.forgot}</Link>
         </p>
         <p className="auth__switch">
-          <Link to={homeHref()}>{lg.back}</Link>
+          <a href={homeHref()}>{lg.back}</a>
         </p>
       </div>
     </div>

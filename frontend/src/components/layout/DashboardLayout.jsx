@@ -167,14 +167,14 @@ export default function DashboardLayout({ children }) {
         aria-label="Main navigation"
         aria-modal={mobileOpen ? 'true' : undefined}
       >
-        {/* Brand */}
-        <Link to={homeHref()} className="ds-brand">
+        {/* Brand — raw <a href> (see homeHref() docs) */}
+        <a href={homeHref()} className="ds-brand">
           <BrandIcon size={34} className="ds-brand__logo" />
           <div className="ds-brand__text">
             <span className="ds-brand__name">Al-Rahma</span>
             <span className="ds-brand__sub">Academy</span>
           </div>
-        </Link>
+        </a>
 
         {/* Collapse toggle (desktop) */}
         <button

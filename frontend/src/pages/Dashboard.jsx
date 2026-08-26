@@ -212,7 +212,7 @@ export default function Dashboard() {
         </div>
         <div className="ds-page-hd__actions">
           {!isActive && (
-            <Link to={homeHref('pricing')} className="btn btn--green btn--sm">Renew Plan</Link>
+            <a href={homeHref('pricing')} className="btn btn--green btn--sm">Renew Plan</a>
           )}
           {!enrollment && isActive && (
             <Link to="/enroll" className="btn btn--green btn--sm">Enroll Now</Link>
@@ -255,9 +255,9 @@ export default function Dashboard() {
         }}>
           <span>⚠</span>
           <span style={{ flex: 1 }}>Your subscription has expired. Your learning progress is saved.</span>
-          <Link to={homeHref('pricing')} className="btn btn--sm" style={{ background: 'var(--color-danger)', color: '#fff', borderRadius: 6, padding: '5px 12px', fontSize: '0.78rem', fontWeight: 700 }}>
+          <a href={homeHref('pricing')} className="btn btn--sm" style={{ background: 'var(--color-danger)', color: '#fff', borderRadius: 6, padding: '5px 12px', fontSize: '0.78rem', fontWeight: 700 }}>
             Renew
-          </Link>
+          </a>
         </div>
       )}
 
@@ -269,7 +269,7 @@ export default function Dashboard() {
           borderRadius: 10, marginBottom: 18, fontSize: '0.82rem', color: 'var(--color-warning-text)',
         }}>
           ⏰ Your plan expires in <strong>{days} day{days !== 1 ? 's' : ''}</strong> — renew to keep learning uninterrupted.
-          <Link to={homeHref('pricing')} style={{ marginLeft: 'auto', fontWeight: 700, color: 'var(--color-warning-text)', textDecoration: 'underline' }}>Renew</Link>
+          <a href={homeHref('pricing')} style={{ marginLeft: 'auto', fontWeight: 700, color: 'var(--color-warning-text)', textDecoration: 'underline' }}>Renew</a>
         </div>
       )}
 

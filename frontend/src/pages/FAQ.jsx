@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { homeHref } from '../utils/localePath';
 import PageBar from '../components/layout/PageBar';
 import useSEO from '../hooks/useSEO';
@@ -75,7 +74,7 @@ export default function FAQ() {
 
         <div className="faq-cta">
           <p>{pg.stillQuestion}</p>
-          <Link to={homeHref('trial')} className="btn btn--green">{pg.bookTrial}</Link>
+          <a href={homeHref('trial')} className="btn btn--green">{pg.bookTrial}</a>
           <a
             href="https://wa.me/201016054663"
             className="btn btn--ghost"

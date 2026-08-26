@@ -375,9 +375,9 @@ export default function Profile() {
                   <div style={{ padding: '10px 14px', background: 'var(--color-warning-surface)', borderRadius: 9, border: '1px solid var(--color-warning-border)', marginBottom: 12, fontSize: '0.82rem', color: 'var(--color-warning-text)' }}>
                     ⚠ {pg.noSub}
                   </div>
-                  <Link to={homeHref('pricing')} className="btn btn--green" style={{ width: '100%', justifyContent: 'center', borderRadius: 9, fontSize: '0.855rem' }}>
+                  <a href={homeHref('pricing')} className="btn btn--green" style={{ width: '100%', justifyContent: 'center', borderRadius: 9, fontSize: '0.855rem' }}>
                     {pg.viewPlans}
-                  </Link>
+                  </a>
                 </div>
               )}
             </div>

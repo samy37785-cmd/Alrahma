@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import Brand from '../components/layout/Brand';
 import { useAdminAuth } from '../context/AdminAuthContext';
 import { useLang } from '../context/LangContext';
+import { safeInternalDestination } from '../utils/safeRedirect';
 
 // Second-factor sign-in for the admin console: the hardened AdminUser +
 // TOTP-MFA session required by /api/v1/admin/* (see AdminAuthContext /
@@ -11,6 +12,7 @@ import { useLang } from '../context/LangContext';
 // the site-wide /login page's regular User session.
 export default function AdminLogin() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { t } = useLang();
   const lg = t.authPg.adminLogin;
   const { login, confirmMfaSetup, verifyMfa, pendingStage, mfaSetupInfo } = useAdminAuth();
@@ -20,6 +22,11 @@ export default function AdminLogin() {
   const [totp, setTotp]         = useState('');
   const [error, setError]       = useState('');
   const [busy, setBusy]         = useState(false);
+
+  const returnToAdmin = () => {
+    const destination = safeInternalDestination(location.state?.from, '/admin');
+    navigate(destination.startsWith('/admin') && destination !== '/admin/login' ? destination : '/admin', { replace: true });
+  };
 
   const handleCredentials = async (e) => {
     e.preventDefault();
@@ -40,7 +47,7 @@ export default function AdminLogin() {
     setBusy(true);
     try {
       await confirmMfaSetup(totp, email);
-      navigate('/admin', { replace: true });
+      returnToAdmin();
     } catch (err) {
       setError(err.response?.data?.message || lg.invalidCodeFallback);
     } finally {
@@ -54,7 +61,7 @@ export default function AdminLogin() {
     setBusy(true);
     try {
       await verifyMfa(totp);
-      navigate('/admin', { replace: true });
+      returnToAdmin();
     } catch (err) {
       setError(err.response?.data?.message || lg.invalidCodeFallback);
     } finally {

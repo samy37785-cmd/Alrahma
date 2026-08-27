@@ -2,7 +2,8 @@ import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useParams } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { AdminAuthProvider } from './context/AdminAuthContext';
-import { LangProvider } from './context/LangContext';
+import { LangProvider, useLang } from './context/LangContext';
+import { getExperienceText } from './i18n/experience';
 import { ThemeProvider } from './context/ThemeContext';
 import { QueryProvider } from './context/QueryProvider';
 import ProtectedRoute from './components/ui/ProtectedRoute';
@@ -90,21 +91,26 @@ function PageFallback() {
   );
 }
 
+function LocalizedSkipLink() {
+  const { lang } = useLang();
+  return <a href="#main-content" className="skip-link">{getExperienceText(lang).skipToContent}</a>;
+}
+
 export default function App() {
   return (
     <ErrorBoundary>
     <QueryProvider>
     <ThemeProvider>
+    <BrowserRouter>
     <LangProvider>
     <AuthProvider>
     <AdminAuthProvider>
-      <BrowserRouter>
         <ScrollToTop />
         <RoutePrefetcher />
         <Analytics />
         <LiveChat />
         <ContentGuard />
-        <a href="#main-content" className="skip-link">Skip to main content</a>
+        <LocalizedSkipLink />
         <Suspense fallback={<PageFallback />}>
         <Routes>
           {/* ── Home ── */}
@@ -197,10 +203,10 @@ export default function App() {
           <Route path="*" element={<NotFound />} />
         </Routes>
         </Suspense>
-      </BrowserRouter>
     </AdminAuthProvider>
     </AuthProvider>
     </LangProvider>
+    </BrowserRouter>
     </ThemeProvider>
     </QueryProvider>
     </ErrorBoundary>

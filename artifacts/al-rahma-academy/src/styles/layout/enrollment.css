@@ -16,8 +16,8 @@
   padding: 18px 24px; margin-bottom: 28px;
 }
 .enroll__trust-quote {
-  flex: 1; min-width: 200px; position: relative; padding-left: 12px;
-  border-left: 3px solid var(--green);
+  flex: 1; min-width: 200px; position: relative; padding-inline-start: 12px;
+  border-inline-start: 3px solid var(--green);
 }
 .enroll__trust-quote p { font-size: .9rem; color: var(--ink); font-style: italic; margin-bottom: 4px; line-height: 1.5; }
 .enroll__trust-quote footer { font-size: .78rem; color: var(--muted); font-weight: 600; }
@@ -54,7 +54,7 @@
 .enroll__step-label { font-size: .75rem; font-weight: 600; color: var(--muted); text-align: center; }
 .enroll__step-item.active .enroll__step-label, .enroll__step-item.done .enroll__step-label { color: var(--green); }
 .enroll__step-line {
-  position: absolute; top: 24px; left: calc(50% + 28px);
+  position: absolute; top: 24px; inset-inline-start: calc(50% + 28px);
   width: calc(100% - 56px); height: 2px;
   background: var(--line); z-index: 1; transition: background .3s;
 }
@@ -121,13 +121,13 @@
 .enroll__tcard {
   display: flex; align-items: center; gap: 14px; padding: 16px;
   border-radius: var(--radius); border: 2px solid var(--line);
-  background: #fff; cursor: pointer; text-align: left; font-family: inherit;
+  background: #fff; cursor: pointer; text-align: start; font-family: inherit;
   transition: all .2s; position: relative;
 }
 .enroll__tcard:hover { border-color: var(--green); background: var(--green-light); }
 .enroll__tcard.selected { border-color: var(--green); background: var(--green-light); }
 .enroll__tcard-check {
-  position: absolute; top: 8px; right: 10px;
+  position: absolute; top: 8px; inset-inline-end: 10px;
   width: 22px; height: 22px; border-radius: 50%;
   background: var(--green); color: #fff; font-size: .8rem;
   display: flex; align-items: center; justify-content: center; font-weight: 700;
@@ -142,10 +142,10 @@
 .enroll__tcard-info strong { display: block; font-size: .95rem; color: var(--green-deep); font-family: var(--serif); }
 .enroll__tcard-info span { display: block; font-size: .78rem; color: var(--muted); }
 .enroll__tcard-info p { font-size: .78rem; color: var(--green); font-weight: 600; margin-top: 2px; }
-.enroll__tcard-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; }
+.enroll__tcard-meta { display: flex; flex-direction: column; align-items: end; gap: 4px; flex-shrink: 0; }
 .enroll__tcard-rating { font-size: .82rem; font-weight: 700; color: var(--gold-dark); }
 .enroll__tcard-f { font-size: .7rem; background: #fde; color: #a03060; border-radius: 999px; padding: 2px 8px; }
-.enroll__tcard-tags { display: flex; flex-wrap: wrap; gap: 4px; grid-column: 1 / -1; padding-left: 66px; }
+.enroll__tcard-tags { display: flex; flex-wrap: wrap; gap: 4px; grid-column: 1 / -1; padding-inline-start: 66px; }
 .enroll__tcard-lang { font-size: .7rem; background: var(--green-light); color: var(--green-deep); border-radius: 999px; padding: 2px 8px; font-weight: 600; }
 
 /* Plan grid in step 4 */
@@ -158,14 +158,14 @@
 .enroll__plan-card:hover { border-color: var(--green); transform: translateY(-4px); box-shadow: var(--shadow-md); }
 .enroll__plan-card.selected { border-color: var(--green); box-shadow: 0 0 0 3px rgba(11,110,79,.2); }
 .enroll__plan-card.featured { border-color: var(--gold); }
-.enroll__plan-tag { position: absolute; top: 10px; right: 10px; background: var(--gold); color: #2a1f00; font-size: .7rem; font-weight: 700; padding: 3px 10px; border-radius: 999px; }
+.enroll__plan-tag { position: absolute; top: 10px; inset-inline-end: 10px; background: var(--gold); color: #2a1f00; font-size: .7rem; font-weight: 700; padding: 3px 10px; border-radius: 999px; }
 .enroll__plan-icon { font-size: 1.8rem; margin: 20px 0 6px; }
 .enroll__plan-card h3 { font-size: 1.1rem; color: var(--green-deep); margin-bottom: 6px; }
 .enroll__plan-price { margin-bottom: 14px; }
-.enroll__plan-price s { color: var(--muted); font-size: .85rem; margin-right: 4px; }
+.enroll__plan-price s { color: var(--muted); font-size: .85rem; margin-inline-end: 4px; }
 .enroll__plan-price strong { font-size: 1.9rem; font-weight: 800; color: var(--green); }
 .enroll__plan-price span { font-size: .85rem; color: var(--muted); }
-.enroll__plan-card ul { text-align: left; padding: 0 20px; list-style: none; margin-bottom: 12px; }
+.enroll__plan-card ul { text-align: start; padding: 0 20px; list-style: none; margin-bottom: 12px; }
 .enroll__plan-card li { font-size: .82rem; color: var(--ink); padding: 5px 0; border-bottom: 1px dashed var(--line); }
 .enroll__plan-card li::before { content: '✓ '; color: var(--gold-dark); font-weight: 700; }
 .enroll__plan-selected { color: var(--green); font-weight: 700; font-size: .85rem; margin-top: 8px; }
@@ -214,13 +214,13 @@
 
 /* Confetti container */
 .enroll__confetti {
-  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  position: absolute; inset: 0;
   pointer-events: none; overflow: hidden;
 }
 .enroll__confetti-piece {
   position: absolute;
   top: -10px;
-  left: var(--c-left);
+  inset-inline-start: var(--c-left);
   width: var(--c-size);
   height: var(--c-size);
   background: var(--c-color);
@@ -286,7 +286,7 @@
   padding: 24px 28px;
   margin: 0 auto 32px;
   max-width: 500px;
-  text-align: left;
+  text-align: start;
 }
 .enroll__next-title {
   font-size: .78rem; font-weight: 700; letter-spacing: .1em;
@@ -315,7 +315,7 @@
   font-size: .8rem; color: var(--text-secondary); line-height: 1.55;
 }
 .enroll__next-step-connector {
-  position: absolute; left: 18px; top: 36px; bottom: 0;
+  position: absolute; inset-inline-start: 18px; top: 36px; bottom: 0;
   width: 2px; background: var(--border-default);
 }
 
@@ -330,7 +330,7 @@
   .tpg__avatar-col { width: 100%; flex-direction: row; justify-content: flex-start; padding: 20px; gap: 16px; }
   .tpg__filters-inner { flex-direction: column; }
   .tpg__stats-inner { flex-wrap: wrap; justify-content: center; }
-  .tpg__stat { padding: 12px 20px; border-right: 0; border-bottom: 1px solid rgba(255,255,255,.12); }
+  .tpg__stat { padding: 12px 20px; border-inline-end: 0; border-bottom: 1px solid rgba(255,255,255,.12); }
   .enroll__card { padding: 24px 20px; }
   .enroll__row { grid-template-columns: 1fr; }
   .enroll__subject-grid { grid-template-columns: repeat(2, 1fr); }

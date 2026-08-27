@@ -10,6 +10,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import PreviewBanner from '../components/ui/PreviewBanner';
 import { useAuth } from '../context/AuthContext';
+import { useLang } from '../context/LangContext';
 import {
   FileText, Plus, Clock, Check, X, Upload, Download, MessageSquare,
   AlertCircle, ChevronDown, ChevronUp, Star, BookOpen, Filter,
@@ -17,19 +18,46 @@ import {
 } from 'lucide-react';
 
 /* ── Status config ──────────────────────────────────────────────── */
-const HW_STATUS = {
-  pending:   { label: 'Pending',    color: '#d97706', bg: '#fef3c7' },
-  submitted: { label: 'Submitted',  color: '#2563eb', bg: '#dbeafe' },
-  graded:    { label: 'Graded',     color: '#16a34a', bg: '#dcfce7' },
-  late:      { label: 'Late',       color: '#dc2626', bg: '#fee2e2' },
-  overdue:   { label: 'Overdue',    color: '#dc2626', bg: '#fee2e2' },
+const COPY = {
+  en: {
+    statuses: { all: 'All', pending: 'Pending', submitted: 'Submitted', graded: 'Graded', late: 'Late', overdue: 'Overdue' },
+    subjects: { Quran: 'Quran', Arabic: 'Arabic', Tajweed: 'Tajweed', Hifz: 'Hifz', 'Islamic Studies': 'Islamic Studies' },
+    types: { written: 'Written', memorization: 'Memorization', essay: 'Essay', quiz: 'Quiz', project: 'Project' },
+    overdue: (days) => `${days}d overdue`, today: 'Due today', tomorrow: 'Due tomorrow', dueIn: (days) => `Due in ${days}d`,
+    createDialog: 'Create assignment', newAssignment: 'New Assignment', close: 'Close', title: 'Title', titlePlaceholder: 'Assignment title', description: 'Description', descriptionPlaceholder: 'Instructions for students…', subject: 'Subject', type: 'Type', deadline: 'Deadline', points: 'Points', cancel: 'Cancel', assign: 'Assign',
+    submitDialog: 'Submit homework', submit: 'Submit', notes: 'Notes (optional)', notesPlaceholder: 'Add any notes for your teacher…', attach: 'Click to attach a file',
+    pointsShort: 'pts', submittedCount: (submitted, total) => `${submitted}/${total} submitted`, score: (grade, points) => `Score: ${grade}/${points}`, teacherFeedback: 'Teacher Feedback', submitWork: 'Submit Work', awaitingGrading: 'Submitted — awaiting grading', scoreLabel: (points) => `Score (/${points})`, feedback: 'Feedback', feedbackPlaceholder: 'Optional feedback…', grade: 'Grade', studentsSubmitted: (submitted, total) => `${submitted} / ${total} students submitted`,
+    preview: 'Preview — assignments shown here are illustrative. Creating, submitting, and grading aren’t connected to a real backend yet, so nothing is actually saved.', actionError: 'That action wasn’t saved — this page is a preview.', dismiss: 'Dismiss',
+    assignments: 'Assignments', homework: 'Homework', teacherSubtitle: 'Manage and grade student assignments', studentSubtitle: 'View and submit your homework', newAssignmentButton: 'New Assignment',
+    total: 'Total', filterSubject: 'Filter by subject', allSubjects: 'All Subjects', noAssignments: 'No assignments found', changeFilter: 'Try changing the filter', createFirst: 'Create your first assignment above', caughtUp: 'You’re all caught up!',
+  },
+  ar: {
+    statuses: { all: 'الكل', pending: 'قيد الانتظار', submitted: 'تم التسليم', graded: 'تم التقييم', late: 'متأخر', overdue: 'فات الموعد' },
+    subjects: { Quran: 'القرآن', Arabic: 'العربية', Tajweed: 'التجويد', Hifz: 'الحفظ', 'Islamic Studies': 'الدراسات الإسلامية' },
+    types: { written: 'كتابي', memorization: 'حفظ', essay: 'مقال', quiz: 'اختبار', project: 'مشروع' },
+    overdue: (days) => `متأخر ${days} يوم`, today: 'موعده اليوم', tomorrow: 'موعده غدًا', dueIn: (days) => `موعده بعد ${days} يوم`,
+    createDialog: 'إنشاء واجب', newAssignment: 'واجب جديد', close: 'إغلاق', title: 'العنوان', titlePlaceholder: 'عنوان الواجب', description: 'الوصف', descriptionPlaceholder: 'تعليمات للطلاب…', subject: 'المادة', type: 'النوع', deadline: 'الموعد النهائي', points: 'الدرجات', cancel: 'إلغاء', assign: 'تعيين',
+    submitDialog: 'تسليم الواجب', submit: 'تسليم', notes: 'ملاحظات (اختياري)', notesPlaceholder: 'أضف أي ملاحظات لمعلمك…', attach: 'انقر لإرفاق ملف',
+    pointsShort: 'درجة', submittedCount: (submitted, total) => `تم تسليم ${submitted}/${total}`, score: (grade, points) => `النتيجة: ${grade}/${points}`, teacherFeedback: 'ملاحظات المعلم', submitWork: 'تسليم العمل', awaitingGrading: 'تم التسليم — بانتظار التقييم', scoreLabel: (points) => `النتيجة (/${points})`, feedback: 'ملاحظات', feedbackPlaceholder: 'ملاحظات اختيارية…', grade: 'تقييم', studentsSubmitted: (submitted, total) => `سلّم ${submitted} من ${total} طالبًا`,
+    preview: 'معاينة — الواجبات المعروضة هنا توضيحية. الإنشاء والتسليم والتقييم غير متصلة بخادم فعلي بعد، لذا لن يُحفظ شيء.', actionError: 'لم يتم حفظ هذا الإجراء — هذه الصفحة للمعاينة.', dismiss: 'إخفاء',
+    assignments: 'الواجبات', homework: 'الواجب المنزلي', teacherSubtitle: 'إدارة واجبات الطلاب وتقييمها', studentSubtitle: 'عرض واجباتك وتسليمها', newAssignmentButton: 'واجب جديد',
+    total: 'الإجمالي', filterSubject: 'تصفية حسب المادة', allSubjects: 'كل المواد', noAssignments: 'لم يتم العثور على واجبات', changeFilter: 'جرّب تغيير التصفية', createFirst: 'أنشئ واجبك الأول أعلاه', caughtUp: 'أنت منجز لكل واجباتك!',
+  },
 };
 
-function statusBadge(status) {
-  const s = HW_STATUS[status] || { label: status, color: 'var(--text-secondary)', bg: 'var(--bg-page)' };
+const HW_STATUS = {
+  pending:   { color: '#d97706', bg: '#fef3c7' },
+  submitted: { color: '#2563eb', bg: '#dbeafe' },
+  graded:    { color: '#16a34a', bg: '#dcfce7' },
+  late:      { color: '#dc2626', bg: '#fee2e2' },
+  overdue:   { color: '#dc2626', bg: '#fee2e2' },
+};
+
+function statusBadge(status, copy) {
+  const s = HW_STATUS[status] || { color: 'var(--text-secondary)', bg: 'var(--bg-page)' };
   return (
     <span style={{ display: 'inline-block', background: s.bg, color: s.color, padding: '3px 9px', borderRadius: 99, fontSize: '0.72rem', fontWeight: 700, border: `1px solid ${s.color}33` }}>
-      {s.label}
+       {copy.statuses[status] || status}
     </span>
   );
 }
@@ -42,14 +70,16 @@ function deadlineColor(deadline) {
   return 'var(--text-secondary)';
 }
 
-function formatDeadline(iso) {
+function formatDeadline(iso, copy, lang) {
   const d = new Date(iso);
   const diff = Math.ceil((d - Date.now()) / (1000 * 60 * 60 * 24));
   const abs = Math.abs(diff);
-  if (diff < 0)  return `${abs}d overdue`;
-  if (diff === 0) return 'Due today';
-  if (diff === 1) return 'Due tomorrow';
-  return `Due in ${diff}d`;
+  const number = new Intl.NumberFormat(lang === 'ar' ? 'ar' : 'en').format(abs);
+  const futureNumber = new Intl.NumberFormat(lang === 'ar' ? 'ar' : 'en').format(diff);
+  if (diff < 0) return copy.overdue(number);
+  if (diff === 0) return copy.today;
+  if (diff === 1) return copy.tomorrow;
+  return copy.dueIn(futureNumber);
 }
 
 /* ── API ────────────────────────────────────────────────────────── */
@@ -73,6 +103,8 @@ async function fetchHomework(role) {
 
 /* ── Create Assignment modal ────────────────────────────────────── */
 function CreateModal({ onClose, onSave }) {
+  const { lang } = useLang();
+  const copy = COPY[lang] || COPY.en;
   const [form, setForm] = useState({
     title: '', subject: 'Quran', type: 'written', deadline: '',
     points: 10, description: '',
@@ -85,17 +117,17 @@ function CreateModal({ onClose, onSave }) {
   };
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }} role="dialog" aria-modal="true" aria-label="Create assignment">
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }} role="dialog" aria-modal="true" aria-label={copy.createDialog}>
       <div style={{ background: 'var(--bg-surface)', borderRadius: 14, padding: 24, width: '100%', maxWidth: 500, boxShadow: 'var(--shadow-xl)', maxHeight: '90vh', overflowY: 'auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 20 }}>
-          <h2 style={{ margin: 0, fontWeight: 800, fontSize: '1.1rem', color: 'var(--text-primary)' }}>New Assignment</h2>
-          <button onClick={onClose} aria-label="Close" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}><X size={18} /></button>
+          <h2 style={{ margin: 0, fontWeight: 800, fontSize: '1.1rem', color: 'var(--text-primary)' }}>{copy.newAssignment}</h2>
+          <button onClick={onClose} aria-label={copy.close} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}><X size={18} /></button>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           {[
-            { label: 'Title', key: 'title', type: 'text', placeholder: 'Assignment title' },
-            { label: 'Description', key: 'description', type: 'textarea', placeholder: 'Instructions for students…' },
+            { label: copy.title, key: 'title', type: 'text', placeholder: copy.titlePlaceholder },
+            { label: copy.description, key: 'description', type: 'textarea', placeholder: copy.descriptionPlaceholder },
           ].map(({ label, key, type, placeholder }) => (
             <div key={key}>
               <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 4 }}>{label}</label>
@@ -121,31 +153,31 @@ function CreateModal({ onClose, onSave }) {
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div>
-              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 4 }}>Subject</label>
+               <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 4 }}>{copy.subject}</label>
               <select value={form.subject} onChange={(e) => setForm((f) => ({ ...f, subject: e.target.value }))} style={fieldStyle}>
-                {['Quran','Arabic','Tajweed','Hifz','Islamic Studies'].map(s => <option key={s}>{s}</option>)}
+                {['Quran','Arabic','Tajweed','Hifz','Islamic Studies'].map(s => <option key={s} value={s}>{copy.subjects[s]}</option>)}
               </select>
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 4 }}>Type</label>
+               <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 4 }}>{copy.type}</label>
               <select value={form.type} onChange={(e) => setForm((f) => ({ ...f, type: e.target.value }))} style={fieldStyle}>
-                {['written','memorization','essay','quiz','project'].map(t => <option key={t}>{t}</option>)}
+                {['written','memorization','essay','quiz','project'].map(t => <option key={t} value={t}>{copy.types[t]}</option>)}
               </select>
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 4 }}>Deadline</label>
+               <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 4 }}>{copy.deadline}</label>
               <input type="datetime-local" value={form.deadline} onChange={(e) => setForm((f) => ({ ...f, deadline: e.target.value }))} style={fieldStyle} />
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 4 }}>Points</label>
+               <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 4 }}>{copy.points}</label>
               <input type="number" min={1} max={100} value={form.points} onChange={(e) => setForm((f) => ({ ...f, points: Number(e.target.value) }))} style={fieldStyle} />
             </div>
           </div>
         </div>
 
         <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
-          <button onClick={onClose} style={{ flex: 1, padding: '9px', border: '1px solid var(--border-default)', borderRadius: 8, background: 'var(--bg-surface)', color: 'var(--text-primary)', fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font-sans)' }}>Cancel</button>
-          <button onClick={() => { onSave(form); onClose(); }} disabled={!form.title || !form.deadline} style={{ flex: 1, padding: '9px', border: 'none', borderRadius: 8, background: 'var(--color-primary)', color: '#fff', fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font-sans)', opacity: !form.title || !form.deadline ? 0.5 : 1 }}>Assign</button>
+           <button onClick={onClose} style={{ flex: 1, padding: '9px', border: '1px solid var(--border-default)', borderRadius: 8, background: 'var(--bg-surface)', color: 'var(--text-primary)', fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font-sans)' }}>{copy.cancel}</button>
+           <button onClick={() => { onSave(form); onClose(); }} disabled={!form.title || !form.deadline} style={{ flex: 1, padding: '9px', border: 'none', borderRadius: 8, background: 'var(--color-primary)', color: '#fff', fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font-sans)', opacity: !form.title || !form.deadline ? 0.5 : 1 }}>{copy.assign}</button>
         </div>
       </div>
     </div>
@@ -154,25 +186,27 @@ function CreateModal({ onClose, onSave }) {
 
 /* ── Submit homework modal (student) ────────────────────────────── */
 function SubmitModal({ hw, onClose, onSubmit }) {
+  const { lang } = useLang();
+  const copy = COPY[lang] || COPY.en;
   const [notes, setNotes] = useState('');
   const fileRef = useRef();
   const [file, setFile] = useState(null);
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }} role="dialog" aria-modal="true" aria-label="Submit homework">
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }} role="dialog" aria-modal="true" aria-label={copy.submitDialog}>
       <div style={{ background: 'var(--bg-surface)', borderRadius: 14, padding: 24, width: '100%', maxWidth: 440, boxShadow: 'var(--shadow-xl)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
-          <h2 style={{ margin: 0, fontWeight: 800, fontSize: '1.05rem', color: 'var(--text-primary)' }}>Submit: {hw.title}</h2>
-          <button onClick={onClose} aria-label="Close" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}><X size={18} /></button>
+          <h2 style={{ margin: 0, fontWeight: 800, fontSize: '1.05rem', color: 'var(--text-primary)' }}>{copy.submit}: {hw.title}</h2>
+          <button onClick={onClose} aria-label={copy.close} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}><X size={18} /></button>
         </div>
 
         <div style={{ marginBottom: 14 }}>
-          <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 4 }}>Notes (optional)</label>
+          <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 4 }}>{copy.notes}</label>
           <textarea
             rows={3}
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            placeholder="Add any notes for your teacher…"
+            placeholder={copy.notesPlaceholder}
             style={{ width: '100%', padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: 8, background: 'var(--bg-page)', color: 'var(--text-primary)', fontSize: '0.85rem', fontFamily: 'var(--font-sans)', resize: 'vertical', boxSizing: 'border-box' }}
           />
         </div>
@@ -189,18 +223,18 @@ function SubmitModal({ hw, onClose, onSubmit }) {
           ) : (
             <div style={{ color: 'var(--text-secondary)', fontSize: '0.82rem' }}>
               <Upload size={20} style={{ margin: '0 auto 6px', display: 'block', opacity: 0.5 }} aria-hidden="true" />
-              Click to attach a file
+               {copy.attach}
             </div>
           )}
         </div>
 
         <div style={{ display: 'flex', gap: 10 }}>
-          <button onClick={onClose} style={{ flex: 1, padding: '9px', border: '1px solid var(--border-default)', borderRadius: 8, background: 'var(--bg-surface)', color: 'var(--text-primary)', fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font-sans)' }}>Cancel</button>
+          <button onClick={onClose} style={{ flex: 1, padding: '9px', border: '1px solid var(--border-default)', borderRadius: 8, background: 'var(--bg-surface)', color: 'var(--text-primary)', fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font-sans)' }}>{copy.cancel}</button>
           <button
             onClick={() => { onSubmit({ hwId: hw._id, notes, file }); onClose(); }}
             style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '9px', border: 'none', borderRadius: 8, background: 'var(--color-primary)', color: '#fff', fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font-sans)' }}
           >
-            <Send size={13} aria-hidden="true" /> Submit
+             <Send size={13} aria-hidden="true" /> {copy.submit}
           </button>
         </div>
       </div>
@@ -210,6 +244,8 @@ function SubmitModal({ hw, onClose, onSubmit }) {
 
 /* ── Assignment card ────────────────────────────────────────────── */
 function AssignmentCard({ hw, isTeacher, onSubmit, onGrade }) {
+  const { lang } = useLang();
+  const copy = COPY[lang] || COPY.en;
   const [expanded, setExpanded] = useState(false);
   const [gradeVal, setGradeVal] = useState(hw.grade ?? '');
   const [feedbackVal, setFeedbackVal] = useState(hw.feedback ?? '');
@@ -221,7 +257,7 @@ function AssignmentCard({ hw, isTeacher, onSubmit, onGrade }) {
       {/* Card header */}
       <button
         onClick={() => setExpanded((e) => !e)}
-        style={{ width: '100%', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', padding: '16px 20px', fontFamily: 'var(--font-sans)' }}
+         style={{ width: '100%', textAlign: 'start', background: 'none', border: 'none', cursor: 'pointer', padding: '16px 20px', fontFamily: 'var(--font-sans)' }}
         aria-expanded={expanded}
       >
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
@@ -232,26 +268,29 @@ function AssignmentCard({ hw, isTeacher, onSubmit, onGrade }) {
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
               <span style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.95rem' }}>{hw.title}</span>
-              {statusBadge(effectiveStatus)}
+               {statusBadge(effectiveStatus, copy)}
             </div>
             <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', marginTop: 5 }}>
               <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 3 }}>
-                <BookOpen size={11} aria-hidden="true" /> {hw.subject}
+                 <BookOpen size={11} aria-hidden="true" /> {copy.subjects[hw.subject] || hw.subject}
               </span>
               <span style={{ fontSize: '0.75rem', color: deadlineColor(hw.deadline), fontWeight: 600, display: 'flex', alignItems: 'center', gap: 3 }}>
-                <Calendar size={11} aria-hidden="true" /> {formatDeadline(hw.deadline)}
+                 <Calendar size={11} aria-hidden="true" />
+                 <time dateTime={hw.deadline} title={new Intl.DateTimeFormat(lang === 'ar' ? 'ar' : 'en', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(hw.deadline))}>
+                   {formatDeadline(hw.deadline, copy, lang)}
+                 </time>
               </span>
               <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 3 }}>
-                <Star size={11} aria-hidden="true" /> {hw.points} pts
+                 <Star size={11} aria-hidden="true" /> {hw.points} {copy.pointsShort}
               </span>
               {isTeacher && (
                 <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                  {hw.submissions}/{hw.totalStudents} submitted
+                   {copy.submittedCount(hw.submissions, hw.totalStudents)}
                 </span>
               )}
               {hw.grade !== null && hw.grade !== undefined && (
                 <span style={{ fontSize: '0.75rem', color: '#16a34a', fontWeight: 700 }}>
-                  Score: {hw.grade}/{hw.points}
+                   {copy.score(hw.grade, hw.points)}
                 </span>
               )}
             </div>
@@ -272,7 +311,7 @@ function AssignmentCard({ hw, isTeacher, onSubmit, onGrade }) {
           {hw.status === 'graded' && hw.feedback && (
             <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, padding: '10px 14px', marginBottom: 14 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontWeight: 700, color: '#15803d', fontSize: '0.78rem', marginBottom: 4 }}>
-                <MessageSquare size={12} aria-hidden="true" /> Teacher Feedback
+                 <MessageSquare size={12} aria-hidden="true" /> {copy.teacherFeedback}
               </div>
               <p style={{ margin: 0, color: '#166534', fontSize: '0.85rem' }}>{hw.feedback}</p>
             </div>
@@ -284,14 +323,14 @@ function AssignmentCard({ hw, isTeacher, onSubmit, onGrade }) {
               onClick={() => onSubmit(hw)}
               style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--color-primary)', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', fontFamily: 'var(--font-sans)' }}
             >
-              <Upload size={13} aria-hidden="true" /> Submit Work
+               <Upload size={13} aria-hidden="true" /> {copy.submitWork}
             </button>
           )}
 
           {/* Student: submitted state */}
           {!isTeacher && hw.status === 'submitted' && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#2563eb', fontSize: '0.82rem', fontWeight: 700 }}>
-              <Check size={14} aria-hidden="true" /> Submitted — awaiting grading
+               <Check size={14} aria-hidden="true" /> {copy.awaitingGrading}
             </div>
           )}
 
@@ -299,7 +338,7 @@ function AssignmentCard({ hw, isTeacher, onSubmit, onGrade }) {
           {isTeacher && hw.status !== 'graded' && (
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 3 }}>Score (/{hw.points})</label>
+                 <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 3 }}>{copy.scoreLabel(hw.points)}</label>
                 <input
                   type="number" min={0} max={hw.points}
                   value={gradeVal}
@@ -308,12 +347,12 @@ function AssignmentCard({ hw, isTeacher, onSubmit, onGrade }) {
                 />
               </div>
               <div style={{ flex: 1, minWidth: 180 }}>
-                <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 3 }}>Feedback</label>
+                 <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 3 }}>{copy.feedback}</label>
                 <input
                   type="text"
                   value={feedbackVal}
                   onChange={(e) => setFeedbackVal(e.target.value)}
-                  placeholder="Optional feedback…"
+                   placeholder={copy.feedbackPlaceholder}
                   style={{ width: '100%', padding: '7px 10px', border: '1px solid var(--border-default)', borderRadius: 8, background: 'var(--bg-page)', color: 'var(--text-primary)', fontSize: '0.85rem', fontFamily: 'var(--font-sans)', boxSizing: 'border-box' }}
                 />
               </div>
@@ -322,7 +361,7 @@ function AssignmentCard({ hw, isTeacher, onSubmit, onGrade }) {
                 disabled={gradeVal === ''}
                 style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'var(--color-primary)', color: '#fff', border: 'none', borderRadius: 8, padding: '7px 14px', fontWeight: 700, fontSize: '0.82rem', cursor: gradeVal === '' ? 'not-allowed' : 'pointer', fontFamily: 'var(--font-sans)', opacity: gradeVal === '' ? 0.5 : 1 }}
               >
-                <Check size={12} aria-hidden="true" /> Grade
+                 <Check size={12} aria-hidden="true" /> {copy.grade}
               </button>
             </div>
           )}
@@ -330,7 +369,7 @@ function AssignmentCard({ hw, isTeacher, onSubmit, onGrade }) {
           {/* Teacher: view submissions link */}
           {isTeacher && (
             <div style={{ marginTop: 12, fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-              <span style={{ fontWeight: 700, color: hw.submissions > 0 ? '#2563eb' : 'var(--text-secondary)' }}>{hw.submissions}</span> / {hw.totalStudents} students submitted
+               {copy.studentsSubmitted(hw.submissions, hw.totalStudents)}
             </div>
           )}
         </div>
@@ -344,6 +383,8 @@ function AssignmentCard({ hw, isTeacher, onSubmit, onGrade }) {
    ════════════════════════════════════════════════════════════════ */
 export default function HomeworkPage() {
   const { isTeacher } = useAuth();
+  const { lang } = useLang();
+  const copy = COPY[lang] || COPY.en;
   const queryClient = useQueryClient();
   const [createOpen, setCreateOpen] = useState(false);
   const [submitTarget, setSubmitTarget] = useState(null);
@@ -423,7 +464,7 @@ export default function HomeworkPage() {
     <DashboardLayout>
       <div style={{ maxWidth: 860, margin: '0 auto' }}>
         <PreviewBanner>
-          Preview — assignments shown here are illustrative. Creating, submitting, and grading aren&apos;t connected to a real backend yet, so nothing is actually saved.
+          {copy.preview}
         </PreviewBanner>
 
         {actionFailed && (
@@ -432,13 +473,13 @@ export default function HomeworkPage() {
             background: 'var(--color-danger-surface)', border: '1px solid var(--color-danger-border)',
             borderRadius: 10, marginBottom: 18, fontSize: '0.82rem', color: 'var(--color-danger-text)',
           }} role="alert">
-            <span style={{ flex: 1 }}>That action wasn&apos;t saved — this page is a preview.</span>
+             <span style={{ flex: 1 }}>{copy.actionError}</span>
             <button
               type="button"
               onClick={dismissActionError}
               style={{ background: 'none', border: 'none', color: 'var(--color-danger-text)', fontWeight: 700, cursor: 'pointer', fontSize: '0.78rem', fontFamily: 'var(--font-sans)' }}
             >
-              Dismiss
+               {copy.dismiss}
             </button>
           </div>
         )}
@@ -447,10 +488,10 @@ export default function HomeworkPage() {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
           <div>
             <h1 style={{ margin: 0, fontWeight: 800, fontSize: '1.4rem', color: 'var(--text-primary)' }}>
-              {isTeacher ? 'Assignments' : 'Homework'}
+               {isTeacher ? copy.assignments : copy.homework}
             </h1>
             <p style={{ margin: '2px 0 0', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-              {isTeacher ? 'Manage and grade student assignments' : 'View and submit your homework'}
+               {isTeacher ? copy.teacherSubtitle : copy.studentSubtitle}
             </p>
           </div>
           {isTeacher && (
@@ -458,7 +499,7 @@ export default function HomeworkPage() {
               onClick={() => setCreateOpen(true)}
               style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--color-primary)', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 14px', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', fontFamily: 'var(--font-sans)' }}
             >
-              <Plus size={14} aria-hidden="true" /> New Assignment
+               <Plus size={14} aria-hidden="true" /> {copy.newAssignmentButton}
             </button>
           )}
         </div>
@@ -466,10 +507,10 @@ export default function HomeworkPage() {
         {/* Stats */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(140px,1fr))', gap: 10, marginBottom: 20 }}>
           {[
-            { label: 'Total',    value: stats.total,   color: '#2176c7', Icon: FileText },
-            { label: 'Pending',  value: stats.pending, color: '#d97706', Icon: Clock },
-            { label: 'Graded',   value: stats.graded,  color: '#16a34a', Icon: Check },
-            { label: 'Overdue',  value: stats.overdue, color: '#dc2626', Icon: AlertCircle },
+             { label: copy.total,                value: stats.total,   color: '#2176c7', Icon: FileText },
+             { label: copy.statuses.pending,     value: stats.pending, color: '#d97706', Icon: Clock },
+             { label: copy.statuses.graded,      value: stats.graded,  color: '#16a34a', Icon: Check },
+             { label: copy.statuses.overdue,     value: stats.overdue, color: '#dc2626', Icon: AlertCircle },
           ].map(({ label, value, color, Icon }) => (
             <div key={label} className="ds-card" style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
               <div style={{ width: 36, height: 36, borderRadius: 9, background: `${color}22`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -497,10 +538,10 @@ export default function HomeworkPage() {
                   background: filter === f ? 'var(--color-primary)' : 'var(--bg-surface)',
                   color: filter === f ? '#fff' : 'var(--text-secondary)',
                   fontWeight: 600, fontSize: '0.78rem', cursor: 'pointer',
-                  fontFamily: 'var(--font-sans)', textTransform: 'capitalize',
+                  fontFamily: 'var(--font-sans)',
                 }}
               >
-                {f}
+                 {copy.statuses[f]}
               </button>
             ))}
           </div>
@@ -508,10 +549,10 @@ export default function HomeworkPage() {
           <select
             value={subjectFilter}
             onChange={(e) => setSubjectFilter(e.target.value)}
-            style={{ padding: '5px 10px', border: '1px solid var(--border-default)', borderRadius: 8, background: 'var(--bg-surface)', color: 'var(--text-secondary)', fontSize: '0.78rem', fontFamily: 'var(--font-sans)', cursor: 'pointer', marginLeft: 'auto' }}
-            aria-label="Filter by subject"
+             style={{ padding: '5px 10px', border: '1px solid var(--border-default)', borderRadius: 8, background: 'var(--bg-surface)', color: 'var(--text-secondary)', fontSize: '0.78rem', fontFamily: 'var(--font-sans)', cursor: 'pointer', marginInlineStart: 'auto' }}
+             aria-label={copy.filterSubject}
           >
-            {subjects.map((s) => <option key={s} value={s}>{s === 'all' ? 'All Subjects' : s}</option>)}
+             {subjects.map((s) => <option key={s} value={s}>{s === 'all' ? copy.allSubjects : (copy.subjects[s] || s)}</option>)}
           </select>
         </div>
 
@@ -523,9 +564,9 @@ export default function HomeworkPage() {
         ) : filtered.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-secondary)' }}>
             <FileText size={40} style={{ margin: '0 auto 12px', opacity: 0.3 }} aria-hidden="true" />
-            <div style={{ fontWeight: 600 }}>No assignments found</div>
+             <div style={{ fontWeight: 600 }}>{copy.noAssignments}</div>
             <div style={{ fontSize: '0.82rem', marginTop: 4 }}>
-              {filter !== 'all' ? 'Try changing the filter' : isTeacher ? 'Create your first assignment above' : 'You\'re all caught up!'}
+               {filter !== 'all' ? copy.changeFilter : isTeacher ? copy.createFirst : copy.caughtUp}
             </div>
           </div>
         ) : (

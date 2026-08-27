@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Wishlist from '../pages/Wishlist';
+import { LangProvider } from '../context/LangContext';
 
 // Feature Sprint 3: the dedicated "My Wishlist" page — did not exist at all
 // before this sprint (the hook/API/backend were fully built but had zero
@@ -28,7 +29,9 @@ function renderPage() {
   return render(
     <QueryClientProvider client={qc}>
       <MemoryRouter>
-        <Wishlist />
+        <LangProvider>
+          <Wishlist />
+        </LangProvider>
       </MemoryRouter>
     </QueryClientProvider>,
   );

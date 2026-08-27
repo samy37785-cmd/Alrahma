@@ -1,19 +1,21 @@
 import { useState, useEffect, useRef } from 'react';
-import { Link, useNavigate, useSearchParams, Navigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useSearchParams, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Brand from '../components/layout/Brand';
 import useSEO from '../hooks/useSEO';
 import { useLang } from '../context/LangContext';
 import { googleLogin } from '../api/authApi';
+import { safeInternalDestination } from '../utils/safeRedirect';
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
 export default function Login() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const lg = t.authPg.login;
   useSEO({ title: lg.title, noindex: true });
   const { login, setUser, user, authLoading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
@@ -24,9 +26,9 @@ export default function Login() {
   const goToRole = (user) => {
     const roleDest = { admin: '/admin', teacher: '/teacher', parent: '/parent' }[user?.role] || '/dashboard';
     const raw = searchParams.get('redirect') || '';
-    // Only allow relative internal paths (prevents open redirect to external URLs)
-    const redirect = raw.startsWith('/') && !raw.startsWith('//') ? raw : null;
-    navigate(redirect || roleDest, { replace: true });
+    const queryRedirect = safeInternalDestination(raw, '');
+    const destination = safeInternalDestination(location.state?.from, queryRedirect || roleDest);
+    navigate(destination, { replace: true });
   };
 
   useEffect(() => {
@@ -89,7 +91,7 @@ export default function Login() {
   if (authLoading) return null;
   if (user) {
     const dest = { admin: '/admin', teacher: '/teacher', parent: '/parent' }[user.role] || '/dashboard';
-    return <Navigate to={dest} replace />;
+    return <Navigate to={safeInternalDestination(location.state?.from, dest)} replace />;
   }
 
   return (
@@ -130,16 +132,16 @@ export default function Login() {
                 autoComplete="current-password"
                 enterKeyHint="go"
                 required
-                style={{ paddingRight: '2.75rem' }}
+                style={{ paddingInlineEnd: '2.75rem' }}
                 aria-invalid={error ? 'true' : undefined}
                 aria-describedby={error ? 'login-error' : undefined}
               />
               <button
                 type="button"
                 onClick={() => setShowPwd((v) => !v)}
-                aria-label={showPwd ? 'Hide password' : 'Show password'}
+                aria-label={showPwd ? (lang === 'ar' ? 'إخفاء كلمة المرور' : 'Hide password') : (lang === 'ar' ? 'إظهار كلمة المرور' : 'Show password')}
                 style={{
-                  position: 'absolute', right: 6, top: '50%', transform: 'translateY(-50%)',
+                  position: 'absolute', insetInlineEnd: 6, top: '50%', transform: 'translateY(-50%)',
                   background: 'none', border: 'none', cursor: 'pointer',
                   color: 'var(--text-secondary)', padding: '0', lineHeight: 1,
                   minWidth: 44, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -167,8 +169,8 @@ export default function Login() {
 
         {GOOGLE_CLIENT_ID && (
           <>
-            <div className="auth__divider"><span>or</span></div>
-            <div ref={googleBtnRef} className="auth__google-btn" aria-label="Sign in with Google" />
+            <div className="auth__divider"><span>{lang === 'ar' ? 'أو' : 'or'}</span></div>
+            <div ref={googleBtnRef} className="auth__google-btn" aria-label={lang === 'ar' ? 'تسجيل الدخول باستخدام Google' : 'Sign in with Google'} />
           </>
         )}
 

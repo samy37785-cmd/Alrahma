@@ -11,6 +11,7 @@ import LangSwitcher from "../ui/LangSwitcher";
 import Avatar from "../ui/Avatar";
 import CommandPalette from "../ui/CommandPalette";
 import { LANGS } from "../../i18n";
+import { getExperienceText } from "../../i18n/experience";
 import {
   BookOpenIcon, StarIcon, ScrollIcon, MosqueIcon, AlphabetIcon,
   BeadsIcon, LibraryIcon, CompassIcon, CalendarIcon, HandIcon, VerseIcon,
@@ -31,6 +32,7 @@ export default function Header() {
   const [scrolled, setScrolled]     = useState(false);
   const { user, isAdmin, isTeacher, isParent, logout } = useAuth();
   const { t, lang, setLang } = useLang();
+  const copy = getExperienceText(lang).header;
   const { dark, toggle: toggleDark } = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
@@ -153,20 +155,20 @@ export default function Header() {
     { to: "/academy/privacy",  label: n.privacy,  Icon: LockIcon },
   ], [n]);
 
-  const userName = user?.name?.split(" ")[0] ?? "Account";
+  const userName = user?.name?.split(" ")[0] ?? copy.account;
 
   return (
     <>
       <header className={`header${scrolled ? " header--scrolled" : ""}`} id="top">
         <div className="container header__inner">
-          <Link to="/" onClick={handleBrandClick} className="header__brand-link" aria-label="Al-Rahma Academy home">
+          <Link to="/" onClick={handleBrandClick} className="header__brand-link" aria-label={copy.home}>
             <BrandLockup orientation="horizontal" plain showBismillah={false} size={40} className="header__lockup" />
           </Link>
 
           <nav
             className={`nav${mobileOpen ? " open" : ""}`}
             id="nav"
-            aria-label="Main navigation"
+            aria-label={copy.openNavigation}
             ref={navRef}
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
@@ -185,13 +187,13 @@ export default function Header() {
                     to="/profile"
                     className="nav__mobile-profile-edit"
                     onClick={closeAll}
-                    aria-label="Edit profile"
+                    aria-label={copy.editProfile}
                   >
                     <SettingsIcon size={16} />
                   </Link>
                 </div>
                 <div className="nav__mobile-account">
-                  <span className="nav__mobile-account-label">My Account</span>
+                  <span className="nav__mobile-account-label">{copy.myAccount}</span>
                   <Link
                     to={isAdmin ? '/admin' : isTeacher ? '/teacher' : isParent ? '/parent' : '/dashboard'}
                     className="nav__mobile-account-link"
@@ -221,10 +223,10 @@ export default function Header() {
             <button
               className="nav__mobile-search"
               onClick={() => { setCmdOpen(true); setMobileOpen(false); }}
-              aria-label="Search pages and tools"
+              aria-label={copy.searchPages}
             >
               <span className="nav__mobile-search-icon"><SearchIcon size={16} /></span>
-              <span>Search pages, tools…</span>
+              <span>{copy.searchPrompt}</span>
               <kbd>Ctrl K</kbd>
             </button>
 
@@ -233,13 +235,13 @@ export default function Header() {
               <button
                 className="nav__mobile-theme-btn"
                 onClick={toggleDark}
-                aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
+                aria-label={dark ? copy.lightMode : copy.darkMode}
               >
                 <span className="nav__mobile-theme-icon">
                   {dark ? <SunIconOutline size={18} /> : <MoonIcon size={18} />}
                 </span>
                 <span className="nav__mobile-theme-label">
-                  {dark ? "Light Mode" : "Dark Mode"}
+                  {dark ? copy.lightMode : copy.darkMode}
                 </span>
                 <span
                   className={`nav__mobile-toggle${dark ? " nav__mobile-toggle--on" : ""}`}
@@ -247,7 +249,7 @@ export default function Header() {
                 />
               </button>
 
-              <div className="nav__mobile-langs" role="group" aria-label="Select language">
+              <div className="nav__mobile-langs" role="group" aria-label={copy.selectLanguage}>
                 {LANGS.map((code) => (
                   <button
                     key={code}
@@ -281,7 +283,7 @@ export default function Header() {
               <Link
                 to="/messages"
                 className="nav__bell"
-                aria-label={unreadCount > 0 ? `${unreadCount} unread messages` : "Messages"}
+                aria-label={unreadCount > 0 ? copy.unreadMessages(unreadCount) : copy.messages}
                 onClick={closeAll}
               >
                 <BellIcon size={18} />
@@ -297,8 +299,8 @@ export default function Header() {
             <button
               className="nav__theme-toggle btn btn--icon btn--ghost-inv btn--sm"
               onClick={toggleDark}
-              aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
-              title={dark ? "Light mode" : "Dark mode"}
+              aria-label={dark ? copy.lightMode : copy.darkMode}
+              title={dark ? copy.lightMode : copy.darkMode}
             >
               {dark ? <SunIconOutline size={18} /> : <MoonIcon size={18} />}
             </button>
@@ -322,7 +324,7 @@ export default function Header() {
                   onClick={() => userMenu.setOpen((v) => !v)}
                   aria-expanded={userMenu.open}
                   aria-haspopup="menu"
-                  aria-label={`Account menu for ${userName}`}
+                  aria-label={copy.accountMenu(userName)}
                 >
                   <Avatar name={user.name} size="xs" />
                   <span className="nav__user-name">{userName}</span>
@@ -376,8 +378,8 @@ export default function Header() {
             <button
               className="nav__search-btn btn btn--icon btn--ghost-inv btn--sm"
               onClick={() => setCmdOpen(true)}
-              aria-label="Search (Ctrl+K)"
-              title="Search (Ctrl+K)"
+              aria-label={copy.searchPages}
+              title={copy.searchPages}
             >
               <SearchIcon size={18} />
             </button>
@@ -385,7 +387,7 @@ export default function Header() {
             {/* Hamburger — shown only on mobile */}
             <button
               className="nav-toggle"
-              aria-label={mobileOpen ? "Close navigation menu" : "Open navigation menu"}
+              aria-label={mobileOpen ? copy.closeNavigation : copy.openNavigation}
               aria-expanded={mobileOpen}
               aria-controls="nav"
               onClick={() => setMobileOpen((v) => !v)}

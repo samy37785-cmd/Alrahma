@@ -1,39 +1,48 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useLang } from '../../context/LangContext';
+import { getExperienceText } from '../../i18n/experience';
 
 const STATIC_ITEMS = [
-  { group: 'Navigation', icon: '◧', label: 'Student Dashboard',  to: '/dashboard',          role: 'student' },
-  { group: 'Navigation', icon: '◧', label: 'Teacher Dashboard',  to: '/teacher',            role: 'teacher' },
-  { group: 'Navigation', icon: '◧', label: 'Admin Dashboard',    to: '/admin',              role: 'admin' },
-  { group: 'Navigation', icon: '◧', label: 'Parent Dashboard',   to: '/parent',             role: 'parent' },
-  { group: 'Navigation', icon: '✉', label: 'Messages',           to: '/messages' },
-  { group: 'Navigation', icon: '💳', label: 'Billing & Invoices',to: '/billing' },
-  { group: 'Navigation', icon: '👤', label: 'Profile & Settings',to: '/profile' },
-  { group: 'Tools',      icon: '📖', label: 'Quran Reader',      to: '/tools/quran-reader' },
-  { group: 'Tools',      icon: '🕌', label: 'Prayer Times',      to: '/tools/prayer-times' },
-  { group: 'Tools',      icon: '📿', label: 'Tasbeeh Counter',   to: '/tools/tasbeeh' },
-  { group: 'Tools',      icon: '🧭', label: 'Qibla Direction',   to: '/tools/qibla' },
-  { group: 'Tools',      icon: '📅', label: 'Islamic Calendar',  to: '/tools/islamic-calendar' },
-  { group: 'Tools',      icon: '🔤', label: 'Arabic Alphabet',   to: '/tools/arabic-alphabet' },
-  { group: 'Resources',  icon: '📝', label: 'Blog',              to: '/resources/blog' },
-  { group: 'Resources',  icon: '❓', label: 'FAQ',               to: '/resources/faq' },
-  { group: 'Courses',    icon: '📚', label: 'Quran Courses',     to: '/courses/quran' },
-  { group: 'Courses',    icon: '📚', label: 'Arabic Courses',    to: '/courses/arabic' },
-  { group: 'Courses',    icon: '📚', label: 'Ijazah',            to: '/courses/ijazah' },
+  { group: 'navigation', icon: '◧', label: 'studentDashboard', to: '/dashboard', role: 'student' },
+  { group: 'navigation', icon: '◧', label: 'teacherDashboard', to: '/teacher', role: 'teacher' },
+  { group: 'navigation', icon: '◧', label: 'adminDashboard', to: '/admin', role: 'admin' },
+  { group: 'navigation', icon: '◧', label: 'parentDashboard', to: '/parent', role: 'parent' },
+  { group: 'navigation', icon: '✉', label: 'messages', to: '/messages' },
+  { group: 'navigation', icon: '💳', label: 'billing', to: '/billing' },
+  { group: 'navigation', icon: '👤', label: 'profile', to: '/profile' },
+  { group: 'tools', icon: '📖', label: 'quranReader', to: '/tools/quran-reader' },
+  { group: 'tools', icon: '🕌', label: 'prayerTimes', to: '/tools/prayer-times' },
+  { group: 'tools', icon: '📿', label: 'tasbeeh', to: '/tools/tasbeeh' },
+  { group: 'tools', icon: '🧭', label: 'qibla', to: '/tools/qibla' },
+  { group: 'tools', icon: '📅', label: 'calendar', to: '/tools/islamic-calendar' },
+  { group: 'tools', icon: '🔤', label: 'alphabet', to: '/tools/arabic-alphabet' },
+  { group: 'resources', icon: '📝', label: 'blog', to: '/resources/blog' },
+  { group: 'resources', icon: '❓', label: 'faq', to: '/resources/faq' },
+  { group: 'courses', icon: '📚', label: 'quranCourses', to: '/courses/quran' },
+  { group: 'courses', icon: '📚', label: 'arabicCourses', to: '/courses/arabic' },
+  { group: 'courses', icon: '📚', label: 'ijazah', to: '/courses/ijazah' },
 ];
 
 export default function CommandPalette({ onClose }) {
   const { isAdmin, isTeacher, isParent } = useAuth();
+  const { lang } = useLang();
   const navigate   = useNavigate();
   const inputRef   = useRef(null);
   const listRef    = useRef(null);
   const [query, setQuery]     = useState('');
   const [cursor, setCursor]   = useState(0);
+  const copy = getExperienceText(lang).command;
 
   const role = isAdmin ? 'admin' : isTeacher ? 'teacher' : isParent ? 'parent' : 'student';
+  const items = STATIC_ITEMS.map((item) => ({
+    ...item,
+    group: copy.groups[item.group],
+    label: copy.items[item.label],
+  }));
 
-  const filtered = STATIC_ITEMS.filter((item) => {
+  const filtered = items.filter((item) => {
     if (item.role && item.role !== role) return false;
     if (!query) return true;
     return item.label.toLowerCase().includes(query.toLowerCase()) ||
@@ -72,7 +81,7 @@ export default function CommandPalette({ onClose }) {
   };
 
   return (
-    <div className="ds-cmd-backdrop" onClick={onClose} role="dialog" aria-modal="true" aria-label="Command palette">
+    <div className="ds-cmd-backdrop" onClick={onClose} role="dialog" aria-modal="true" aria-label={copy.dialog}>
       <div className="ds-cmd" onClick={(e) => e.stopPropagation()}>
         {/* Search input */}
         <div className="ds-cmd__search">
@@ -80,7 +89,8 @@ export default function CommandPalette({ onClose }) {
           <input
             ref={inputRef}
             className="ds-cmd__input"
-            placeholder="Search pages, tools, courses…"
+            placeholder={copy.placeholder}
+            aria-label={copy.placeholder}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKey}
@@ -90,6 +100,7 @@ export default function CommandPalette({ onClose }) {
           {query && (
             <button
               onClick={() => setQuery('')}
+              aria-label={copy.close}
               style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', fontSize: '0.8rem' }}
             >
               ✕
@@ -101,7 +112,7 @@ export default function CommandPalette({ onClose }) {
         <div className="ds-cmd__results" ref={listRef}>
           {flat.length === 0 ? (
             <div className="ds-cmd__empty">
-              No results for &ldquo;{query}&rdquo;
+              {copy.noResults(query)}
             </div>
           ) : (
             Object.entries(grouped).map(([group, items]) => (
@@ -129,9 +140,9 @@ export default function CommandPalette({ onClose }) {
 
         {/* Footer hints */}
         <div className="ds-cmd__footer">
-          <span className="ds-cmd__hint"><kbd>↑↓</kbd> Navigate</span>
-          <span className="ds-cmd__hint"><kbd>↵</kbd> Go</span>
-          <span className="ds-cmd__hint"><kbd>Esc</kbd> Close</span>
+          <span className="ds-cmd__hint"><kbd>↑↓</kbd> {copy.navigate}</span>
+          <span className="ds-cmd__hint"><kbd>↵</kbd> {copy.go}</span>
+          <span className="ds-cmd__hint"><kbd>Esc</kbd> {copy.close}</span>
         </div>
       </div>
     </div>

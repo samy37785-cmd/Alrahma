@@ -1,8 +1,12 @@
 import { useState, useEffect } from 'react';
 import { submitTrial } from '../../api/contentApi';
 import { useModalA11y } from '../../hooks/useModalA11y';
+import { useLang } from '../../context/LangContext';
+import { getExperienceText } from '../../i18n/experience';
 
 export default function QuickTrialModal({ open, onClose }) {
+  const { lang } = useLang();
+  const copy = getExperienceText(lang).quickTrial;
   const [form, setForm] = useState({ name: '', email: '', whatsapp: '' });
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
@@ -29,15 +33,15 @@ export default function QuickTrialModal({ open, onClose }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.name.trim()) { setError('Please enter your name.'); return; }
-    if (!EMAIL_RE.test(form.email.trim())) { setError('Please enter a valid email address.'); return; }
+    if (!form.name.trim()) { setError(copy.nameRequired); return; }
+    if (!EMAIL_RE.test(form.email.trim())) { setError(copy.emailInvalid); return; }
     setLoading(true);
     setError('');
     try {
       await submitTrial({ ...form, source: 'hero-quick-trial' });
       setDone(true);
     } catch {
-      setError('Something went wrong. Please try again or contact us on WhatsApp.');
+      setError(copy.submitError);
     } finally {
       setLoading(false);
     }
@@ -48,43 +52,38 @@ export default function QuickTrialModal({ open, onClose }) {
       className="qtm-overlay"
       role="dialog"
       aria-modal="true"
-      aria-label="Book your free trial"
+      aria-label={copy.dialog}
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div className="qtm">
-        <button className="qtm__close" onClick={onClose} aria-label="Close dialog">✕</button>
+        <button className="qtm__close" onClick={onClose} aria-label={copy.close}>✕</button>
 
         {done ? (
           <div className="qtm__success">
             <div className="qtm__success-icon" aria-hidden="true">🎉</div>
-            <h2>You&apos;re booked in!</h2>
-            <p>
-              We&apos;ll message you on WhatsApp within <strong>2 hours</strong> to confirm
-              your free 30-minute trial lesson with a certified Al-Azhar tutor.
-            </p>
+            <h2>{copy.successTitle}</h2>
+            <p>{copy.successBody}</p>
             <p className="qtm__blessing" dir="rtl" lang="ar">بارك الله فيكم</p>
             <button className="btn btn--green btn--block" onClick={onClose}>
-              Got it — can&apos;t wait!
+              {copy.successAction}
             </button>
           </div>
         ) : (
           <>
             <div className="qtm__header">
               <span className="qtm__badge" aria-hidden="true">🎓</span>
-              <h2 className="qtm__title">Start with a free lesson</h2>
-              <p className="qtm__sub">
-                30 minutes · certified Al-Azhar tutor · no payment, no commitment.
-              </p>
+              <h2 className="qtm__title">{copy.title}</h2>
+              <p className="qtm__sub">{copy.subtitle}</p>
             </div>
 
             <form className="qtm__form" onSubmit={handleSubmit} noValidate>
               <div className="qtm__field">
-                <label htmlFor="qtm-name">Your name</label>
+                <label htmlFor="qtm-name">{copy.name}</label>
                 <input
                   id="qtm-name"
                   ref={firstRef}
                   type="text"
-                  placeholder="Ahmed, Fatima, John…"
+                  placeholder={copy.namePlaceholder}
                   value={form.name}
                   onChange={(e) => set('name', e.target.value)}
                   autoComplete="name"
@@ -92,7 +91,7 @@ export default function QuickTrialModal({ open, onClose }) {
               </div>
 
               <div className="qtm__field">
-                <label htmlFor="qtm-email">Email address</label>
+                <label htmlFor="qtm-email">{copy.email}</label>
                 <input
                   id="qtm-email"
                   type="email"
@@ -105,8 +104,8 @@ export default function QuickTrialModal({ open, onClose }) {
 
               <div className="qtm__field">
                 <label htmlFor="qtm-wa">
-                  WhatsApp number
-                  <span className="qtm__optional"> (optional — we reply faster)</span>
+                  {copy.whatsapp}
+                  <span className="qtm__optional">{copy.optional}</span>
                 </label>
                 <input
                   id="qtm-wa"
@@ -121,14 +120,12 @@ export default function QuickTrialModal({ open, onClose }) {
               {error && <p className="qtm__error" role="alert">{error}</p>}
 
               <button type="submit" className="btn btn--gold btn--block" disabled={loading} aria-busy={loading}>
-                {loading ? 'Booking…' : 'Book my free trial →'}
+                {loading ? copy.booking : copy.submit}
               </button>
             </form>
 
             <ul className="qtm__footer">
-              <li>✓ No credit card</li>
-              <li>✓ No commitment</li>
-              <li>✓ We reply within 2 hours</li>
+              {copy.perks.map((perk) => <li key={perk}>✓ {perk}</li>)}
             </ul>
           </>
         )}

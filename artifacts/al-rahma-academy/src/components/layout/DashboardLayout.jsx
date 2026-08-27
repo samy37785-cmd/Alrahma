@@ -11,7 +11,9 @@ import {
   Mail, FileText, BookMarked, Heart, Sparkles, Users2, MessageCircle,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { useLang } from '../../context/LangContext';
 import { useTheme } from '../../context/ThemeContext';
+import { getExperienceText } from '../../i18n/experience';
 import CommandPalette from '../ui/CommandPalette';
 import NotificationPanel from '../ui/NotificationPanel';
 import LangSwitcher from '../ui/LangSwitcher';
@@ -30,6 +32,9 @@ import MobileBottomNav from './MobileBottomNav';
 
 export default function DashboardLayout({ children }) {
   const { user, logout, isAdmin, isTeacher, isParent } = useAuth();
+  const { lang } = useLang();
+  const dashboardCopy = getExperienceText(lang).dashboard;
+  const { shell, sections, items: itemLabels, roles } = dashboardCopy;
   const { dark, toggle } = useTheme();
   const navigate  = useNavigate();
   const location  = useLocation();
@@ -146,7 +151,7 @@ export default function DashboardLayout({ children }) {
 
   const initials = user?.name ? getNameInitials(user.name) : '?';
 
-  const userName = user?.name?.split(' ')[0] ?? 'Account';
+  const userName = user?.name?.split(' ')[0] ?? shell.account;
 
   return (
     <div className={`ds${collapsed ? ' ds--collapsed' : ''}${mobileOpen ? ' ds--mobile-open' : ''}`}>
@@ -155,7 +160,7 @@ export default function DashboardLayout({ children }) {
         type="button"
         className="ds-overlay"
         onClick={() => setMobileOpen(false)}
-        aria-label="Close navigation"
+        aria-label={shell.closeNavigation}
         tabIndex={mobileOpen ? 0 : -1}
       />
 
@@ -163,7 +168,7 @@ export default function DashboardLayout({ children }) {
       <aside
         ref={sidebarRef}
         className="ds-sidebar"
-        aria-label="Main navigation"
+        aria-label={shell.mainNavigation}
         aria-modal={mobileOpen ? 'true' : undefined}
       >
         {/* Brand */}
@@ -171,7 +176,7 @@ export default function DashboardLayout({ children }) {
           <BrandIcon size={34} className="ds-brand__logo" />
           <div className="ds-brand__text">
             <span className="ds-brand__name">Al-Rahma</span>
-            <span className="ds-brand__sub">Academy</span>
+            <span className="ds-brand__sub">{shell.academy}</span>
           </div>
         </Link>
 
@@ -179,8 +184,8 @@ export default function DashboardLayout({ children }) {
         <button
           className="ds-collapse-btn"
           onClick={() => setCollapsed((c) => !c)}
-          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          title={collapsed ? 'Expand' : 'Collapse'}
+          aria-label={collapsed ? shell.expandSidebar : shell.collapseSidebar}
+          title={collapsed ? shell.expand : shell.collapse}
         >
           {collapsed
             ? <ChevronRight size={11} aria-hidden="true" />
@@ -189,12 +194,12 @@ export default function DashboardLayout({ children }) {
         </button>
 
         {/* Navigation */}
-        <nav className="ds-nav" aria-label="Dashboard navigation">
+        <nav className="ds-nav" aria-label={shell.dashboardNavigation}>
           {items.map((item, i) => {
             if (item.section !== undefined) {
               return collapsed
                 ? <div key={i} style={{ height: 8 }} />
-                : <div key={i} className="ds-nav__section">{item.section}</div>;
+                : <div key={i} className="ds-nav__section">{sections[item.section]}</div>;
             }
 
             if (item.external) {
@@ -203,13 +208,13 @@ export default function DashboardLayout({ children }) {
                   key={item.to}
                   href={item.to}
                   className="ds-nav__item"
-                  title={item.label}
+                  title={itemLabels[item.labelKey]}
                   target="_blank"
                   rel="noopener noreferrer"
-                  aria-label={item.label}
+                  aria-label={itemLabels[item.labelKey]}
                 >
                   <span className="ds-nav__icon"><NavIcon icon={item.icon} /></span>
-                  {!collapsed && <span className="ds-nav__label">{item.label}</span>}
+                  {!collapsed && <span className="ds-nav__label">{itemLabels[item.labelKey]}</span>}
                 </a>
               );
             }
@@ -222,10 +227,10 @@ export default function DashboardLayout({ children }) {
                 className={({ isActive }) =>
                   `ds-nav__item${isActive ? ' ds-nav__item--active' : ''}`
                 }
-                title={collapsed ? item.label : undefined}
+                title={collapsed ? itemLabels[item.labelKey] : undefined}
                 aria-label={
                   collapsed
-                    ? (item.badge > 0 ? `${item.label} (${item.badge} unread)` : item.label)
+                    ? (item.badge > 0 ? `${itemLabels[item.labelKey]} (${item.badge} ${shell.unread})` : itemLabels[item.labelKey])
                     : undefined
                 }
               >
@@ -238,9 +243,9 @@ export default function DashboardLayout({ children }) {
                 </span>
                 {!collapsed && (
                   <>
-                    <span className="ds-nav__label">{item.label}</span>
+                    <span className="ds-nav__label">{itemLabels[item.labelKey]}</span>
                     {item.badge > 0 && (
-                      <span className="ds-nav__badge" aria-label={`${item.badge} unread`}>
+                      <span className="ds-nav__badge" aria-label={`${item.badge} ${shell.unread}`}>
                         {item.badge > 9 ? '9+' : item.badge}
                       </span>
                     )}
@@ -262,7 +267,7 @@ export default function DashboardLayout({ children }) {
             {!collapsed && (
               <div className="ds-sidebar__user-info">
                 <span className="ds-sidebar__user-name">{user?.name}</span>
-                <span className="ds-sidebar__user-role">{roleLabel(user, isAdmin, isTeacher, isParent)}</span>
+                <span className="ds-sidebar__user-role">{roleLabel(user, isAdmin, isTeacher, isParent, roles)}</span>
               </div>
             )}
           </div>
@@ -278,7 +283,7 @@ export default function DashboardLayout({ children }) {
             ref={burgerRef}
             className="ds-header__burger"
             onClick={() => setMobileOpen((o) => !o)}
-            aria-label={mobileOpen ? 'Close navigation' : 'Open navigation'}
+            aria-label={mobileOpen ? shell.closeNavigation : shell.openNavigation}
             aria-expanded={mobileOpen}
           >
             {mobileOpen
@@ -291,11 +296,11 @@ export default function DashboardLayout({ children }) {
           <button
             className="ds-search-btn"
             onClick={() => setCmdOpen(true)}
-            aria-label="Search anything (Ctrl+K)"
+            aria-label={shell.search}
             aria-keyshortcuts="Control+k Meta+k"
           >
             <span className="ds-search-btn__icon"><Search size={14} aria-hidden="true" /></span>
-            <span className="ds-search-btn__text">Search anything…</span>
+            <span className="ds-search-btn__text">{shell.searchPrompt}</span>
             <kbd className="ds-search-btn__kbd">⌘K</kbd>
           </button>
 
@@ -310,8 +315,8 @@ export default function DashboardLayout({ children }) {
             <button
               className="ds-icon-btn"
               onClick={toggle}
-              aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'}
-              title={dark ? 'Light mode' : 'Dark mode'}
+              aria-label={dark ? shell.lightMode : shell.darkMode}
+              title={dark ? shell.lightMode : shell.darkMode}
             >
               {dark ? <Sun size={17} aria-hidden="true" /> : <Moon size={17} aria-hidden="true" />}
             </button>
@@ -321,7 +326,7 @@ export default function DashboardLayout({ children }) {
               <button
                 className="ds-icon-btn"
                 onClick={() => setNotifOpen((o) => !o)}
-                aria-label={`Notifications${notifUnreadCount > 0 ? ` (${notifUnreadCount} unread)` : ''}`}
+                aria-label={`${shell.notifications}${notifUnreadCount > 0 ? ` (${notifUnreadCount} ${shell.unread})` : ''}`}
                 aria-expanded={notifOpen}
                 aria-haspopup="dialog"
               >
@@ -340,7 +345,7 @@ export default function DashboardLayout({ children }) {
               <button
                 className="ds-user-btn"
                 onClick={() => setUserMenu((o) => !o)}
-                aria-label="User menu"
+                aria-label={shell.userMenu}
                 aria-expanded={userMenu}
                 aria-haspopup="menu"
               >
@@ -358,7 +363,7 @@ export default function DashboardLayout({ children }) {
               </button>
 
               {userMenu && (
-                <div className="ds-dropdown" role="menu" aria-label="User menu">
+                <div className="ds-dropdown" role="menu" aria-label={shell.userMenu}>
                   <div className="ds-dropdown__header">
                     <span className="ds-dropdown__name">{user?.name}</span>
                     <span className="ds-dropdown__email">{user?.email}</span>
@@ -369,7 +374,7 @@ export default function DashboardLayout({ children }) {
                     onClick={() => setUserMenu(false)}
                     role="menuitem"
                   >
-                    <User size={14} aria-hidden="true" /> Profile
+                    <User size={14} aria-hidden="true" /> {shell.profile}
                   </Link>
                   {!isAdmin && !isTeacher && !isParent && (
                     <Link
@@ -378,7 +383,7 @@ export default function DashboardLayout({ children }) {
                       onClick={() => setUserMenu(false)}
                       role="menuitem"
                     >
-                      <CreditCard size={14} aria-hidden="true" /> Billing
+                      <CreditCard size={14} aria-hidden="true" /> {shell.billing}
                     </Link>
                   )}
                   <div className="ds-dropdown__divider" />
@@ -387,7 +392,7 @@ export default function DashboardLayout({ children }) {
                     onClick={handleLogout}
                     role="menuitem"
                   >
-                    <LogOut size={14} aria-hidden="true" /> Log out
+                    <LogOut size={14} aria-hidden="true" /> {shell.logout}
                   </button>
                 </div>
               )}

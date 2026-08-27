@@ -2,8 +2,12 @@ import { Link } from 'react-router-dom';
 import { Heart, BookOpen } from 'lucide-react';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import { useWishlist, useRemoveFromWishlist, useClearWishlist } from '../hooks/useWishlist';
+import { useLang } from '../context/LangContext';
+import { getExperienceText } from '../i18n/experience';
 
 export default function Wishlist() {
+  const { lang } = useLang();
+  const copy = getExperienceText(lang).wishlist;
   const { data, isLoading, isError, refetch } = useWishlist();
   const removeMutation = useRemoveFromWishlist();
   const clearMutation = useClearWishlist();
@@ -17,11 +21,11 @@ export default function Wishlist() {
     <DashboardLayout>
       <div className="ds-page-hd">
         <div>
-          <div className="ds-page-hd__eyebrow"><Heart size={12} aria-hidden="true" /> Wishlist</div>
+          <div className="ds-page-hd__eyebrow"><Heart size={12} aria-hidden="true" /> {copy.eyebrow}</div>
           <h1 className="ds-page-hd__title">
-            My Wishlist{!isLoading && !isError && courses.length > 0 && ` (${courses.length})`}
+            {copy.title}{!isLoading && !isError && courses.length > 0 && ` (${courses.length})`}
           </h1>
-          <p className="ds-page-hd__sub">Courses you&apos;re considering enrolling in.</p>
+          <p className="ds-page-hd__sub">{copy.subtitle}</p>
         </div>
         {courses.length > 0 && (
           <button
@@ -31,7 +35,7 @@ export default function Wishlist() {
             disabled={clearMutation.isPending}
             onClick={() => clearMutation.mutate()}
           >
-            {clearMutation.isPending ? 'Clearing…' : 'Clear all'}
+            {clearMutation.isPending ? copy.clearing : copy.clearAll}
           </button>
         )}
       </div>
@@ -46,25 +50,25 @@ export default function Wishlist() {
           ) : isError ? (
             <div className="ds-empty">
               <div className="ds-empty__icon" style={{ width: 40, height: 40, fontSize: '1.1rem' }}>⚠️</div>
-              <div className="ds-empty__title" style={{ fontSize: '0.9rem' }}>Couldn&apos;t load your wishlist.</div>
+              <div className="ds-empty__title" style={{ fontSize: '0.9rem' }}>{copy.loadError}</div>
               <button
                 type="button"
                 className="btn btn--sm"
                 style={{ marginTop: 10, borderRadius: 8 }}
                 onClick={() => refetch()}
               >
-                Try again
+                {copy.tryAgain}
               </button>
             </div>
           ) : courses.length === 0 ? (
             <div className="ds-empty">
               <div className="ds-empty__icon" style={{ width: 40, height: 40, fontSize: '1.1rem' }}>💭</div>
-              <div className="ds-empty__title" style={{ fontSize: '0.9rem' }}>Your wishlist is empty</div>
+              <div className="ds-empty__title" style={{ fontSize: '0.9rem' }}>{copy.emptyTitle}</div>
               <div className="ds-empty__desc" style={{ fontSize: '0.78rem' }}>
-                Save courses you&apos;re interested in from your dashboard to find them here later.
+                {copy.emptyHint}
               </div>
               <Link to="/dashboard" className="btn btn--green btn--sm" style={{ marginTop: 12, borderRadius: 8 }}>
-                Browse courses →
+                {copy.browseCourses}
               </Link>
             </div>
           ) : (
@@ -89,15 +93,15 @@ export default function Wishlist() {
                       {course.title}
                     </div>
                     <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: 2 }}>
-                      {course.level || 'All levels'}{addedAt && ` · saved ${new Date(addedAt).toLocaleDateString()}`}
+                      {course.level || copy.allLevels}{addedAt && ` · ${copy.savedOn(new Date(addedAt).toLocaleDateString(lang === 'ar' ? 'ar-EG' : undefined))}`}
                     </div>
                   </div>
                   <Link to={`/courses/${course._id}`} className="btn btn--green btn--sm" style={{ borderRadius: 8, fontSize: '0.78rem', flexShrink: 0 }}>
-                    View
+                    {copy.view}
                   </Link>
                   <button
                     type="button"
-                    aria-label={`Remove ${course.title} from wishlist`}
+                    aria-label={copy.remove(course.title)}
                     disabled={removeMutation.isPending}
                     onClick={() => removeMutation.mutate(course._id)}
                     style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, flexShrink: 0 }}

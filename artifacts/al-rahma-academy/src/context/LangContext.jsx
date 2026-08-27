@@ -1,9 +1,50 @@
-import { createContext, useState, useContext, useMemo, useEffect, useCallback } from 'react';
+import { createContext, useState, useContext, useMemo, useEffect, useCallback, useRef } from 'react';
+import { useInRouterContext, useLocation, useNavigate } from 'react-router-dom';
 import translations, { LANGS } from '../i18n';
 
 const LangContext = createContext(null);
 
+function LanguageUrlSync({ lang, selectionVersion, onUrlLanguage }) {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const handledSelectionVersion = useRef(selectionVersion);
+
+  useEffect(() => {
+    const search = new URLSearchParams(location.search);
+    const urlLang = search.get('lang');
+
+    // A direct picker action wins over the query value from the previous render.
+    if (handledSelectionVersion.current !== selectionVersion) {
+      handledSelectionVersion.current = selectionVersion;
+      if (urlLang !== lang) {
+        search.set('lang', lang);
+        navigate(
+          { pathname: location.pathname, search: `?${search.toString()}`, hash: location.hash },
+          { replace: true },
+        );
+      }
+      return;
+    }
+
+    if (urlLang && LANGS.includes(urlLang) && urlLang !== lang) {
+      onUrlLanguage(urlLang);
+      return;
+    }
+    if (urlLang !== lang) {
+      search.set('lang', lang);
+      navigate(
+        { pathname: location.pathname, search: `?${search.toString()}`, hash: location.hash },
+        { replace: true },
+      );
+    }
+  }, [lang, location.hash, location.pathname, location.search, navigate, onUrlLanguage, selectionVersion]);
+
+  return null;
+}
+
 export function LangProvider({ children }) {
+  const inRouter = useInRouterContext();
+  const [selectionVersion, setSelectionVersion] = useState(0);
   const [lang, setLangState] = useState(() => {
     try {
       const urlParam = new URLSearchParams(window.location.search).get('lang');
@@ -17,8 +58,22 @@ export function LangProvider({ children }) {
 
   const setLang = useCallback((code) => {
     if (!LANGS.includes(code)) return;
-    localStorage.setItem('lang', code);
+    try {
+      localStorage.setItem('lang', code);
+    } catch {
+      // Language selection still works when storage is unavailable.
+    }
     setLangState(code);
+    setSelectionVersion((version) => version + 1);
+  }, []);
+
+  const setLangFromUrl = useCallback((code) => {
+    setLangState(code);
+    try {
+      localStorage.setItem('lang', code);
+    } catch {
+      // Language selection still works when storage is unavailable.
+    }
   }, []);
 
   // Apply dir and lang attributes on the root <html> element
@@ -33,7 +88,12 @@ export function LangProvider({ children }) {
     [lang, setLang]
   );
 
-  return <LangContext.Provider value={value}>{children}</LangContext.Provider>;
+  return (
+    <LangContext.Provider value={value}>
+      {inRouter && <LanguageUrlSync lang={lang} selectionVersion={selectionVersion} onUrlLanguage={setLangFromUrl} />}
+      {children}
+    </LangContext.Provider>
+  );
 }
 
 // eslint-disable-next-line react-refresh/only-export-components

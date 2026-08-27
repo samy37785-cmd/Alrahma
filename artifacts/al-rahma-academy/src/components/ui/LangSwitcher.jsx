@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useLang } from '../../context/LangContext';
 import { LANGS, LANG_LABELS } from '../../i18n';
+import { getExperienceText } from '../../i18n/experience';
 
 const LANG_FULL = {
   en: 'English',
@@ -17,6 +18,7 @@ const FLAG = {
 
 export default function LangSwitcher() {
   const { lang, setLang } = useLang();
+  const copy = getExperienceText(lang).language;
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
@@ -30,7 +32,7 @@ export default function LangSwitcher() {
   const select = (code) => { setLang(code); setOpen(false); };
 
   return (
-    <div className="ls" ref={ref} aria-label="Choose language">
+    <div className="ls" ref={ref} aria-label={copy.choose}>
       <button
         type="button"
         className={`ls__trigger${open ? ' ls__trigger--open' : ''}`}
@@ -46,7 +48,7 @@ export default function LangSwitcher() {
       </button>
 
       {open && (
-        <ul className="ls__menu" role="listbox" aria-label="Select language">
+        <ul className="ls__menu" role="listbox" aria-label={copy.select}>
           {LANGS.map((code) => (
             <li key={code} role="option" aria-selected={lang === code}>
               <button

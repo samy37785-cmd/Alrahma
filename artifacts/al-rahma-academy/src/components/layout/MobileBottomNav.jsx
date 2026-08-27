@@ -1,9 +1,13 @@
 import { NavLink, useLocation } from 'react-router-dom';
+import { useLang } from '../../context/LangContext';
+import { getExperienceText } from '../../i18n/experience';
 import NavIcon from './NavIcon';
 import { bottomNavFor } from './dashboardNav';
 
 export default function MobileBottomNav({ isAdmin, isTeacher, isParent, unreadCount }) {
   const location = useLocation();
+  const { lang } = useLang();
+  const { shell, items: itemLabels } = getExperienceText(lang).dashboard;
   const items = bottomNavFor(isAdmin, isTeacher, isParent, unreadCount);
 
   const isActive = (item) => {
@@ -12,14 +16,16 @@ export default function MobileBottomNav({ isAdmin, isTeacher, isParent, unreadCo
   };
 
   return (
-    <nav className="ds-bottom-nav" aria-label="Mobile navigation">
+    <nav className="ds-bottom-nav" aria-label={shell.mobileNavigation}>
       {items.map((item) => (
         <NavLink
           key={item.to}
           to={item.to}
           className={`ds-bottom-nav__item${isActive(item) ? ' ds-bottom-nav__item--active' : ''}`}
           aria-current={isActive(item) ? 'page' : undefined}
-          aria-label={item.badge > 0 ? `${item.label} (${item.badge} unread)` : item.label}
+          aria-label={item.badge > 0
+            ? `${itemLabels[item.labelKey]} (${item.badge} ${shell.unread})`
+            : itemLabels[item.labelKey]}
         >
           <span className="ds-bottom-nav__icon">
             <item.icon size={22} aria-hidden="true" />
@@ -29,7 +35,7 @@ export default function MobileBottomNav({ isAdmin, isTeacher, isParent, unreadCo
               </span>
             )}
           </span>
-          <span className="ds-bottom-nav__label">{item.label}</span>
+          <span className="ds-bottom-nav__label">{itemLabels[item.labelKey]}</span>
         </NavLink>
       ))}
     </nav>

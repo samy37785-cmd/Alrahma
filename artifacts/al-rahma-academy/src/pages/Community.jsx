@@ -15,8 +15,12 @@ import {
 import { useAuth } from '../context/AuthContext';
 import '../styles/community.css';
 import { formatDayMonth as fmtDate } from '../utils/date';
+import { useLang } from '../context/LangContext';
+import { getExperienceText } from '../i18n/experience';
 
 function CommentThread({ postId }) {
+  const { lang } = useLang();
+  const copy = getExperienceText(lang).community;
   const { data: comments = [], isLoading } = usePostComments(postId);
   const createComment = useCreateComment(postId);
   const deleteComment = useDeleteComment(postId);
@@ -37,14 +41,14 @@ function CommentThread({ postId }) {
       ) : (
         comments.map((c) => (
           <div key={c._id} className="community-comment">
-            <span className="community-comment__author">{c.author?.name || 'Student'}</span>
+            <span className="community-comment__author">{c.author?.name || copy.student}</span>
             <span className="community-comment__body">{c.body}</span>
             {c.author?._id === user?._id && (
               <button
                 type="button"
                 className="community-comment__delete"
                 onClick={() => deleteComment.mutate(c._id)}
-                aria-label="Delete comment"
+                aria-label={copy.deleteComment}
               >
                 <Trash2 size={12} aria-hidden="true" />
               </button>
@@ -53,7 +57,7 @@ function CommentThread({ postId }) {
         ))
       )}
       {comments.length === 0 && !isLoading && (
-        <div className="community-comments__empty">No comments yet.</div>
+        <div className="community-comments__empty">{copy.noComments}</div>
       )}
       <div className="community-comments__composer">
         <input
@@ -61,10 +65,10 @@ function CommentThread({ postId }) {
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-          placeholder="Write a comment… (reviewed before it appears)"
+          placeholder={copy.commentPlaceholder}
           maxLength={1000}
         />
-        <button type="button" onClick={handleSubmit} aria-label="Send comment">
+        <button type="button" onClick={handleSubmit} aria-label={copy.sendComment}>
           <Send size={14} aria-hidden="true" />
         </button>
       </div>
@@ -73,6 +77,8 @@ function CommentThread({ postId }) {
 }
 
 function PostCard({ post, onDelete, mine = false }) {
+  const { lang } = useLang();
+  const copy = getExperienceText(lang).community;
   const toggleLike = useToggleLike();
   const { user } = useAuth();
   const [showComments, setShowComments] = useState(false);
@@ -81,11 +87,11 @@ function PostCard({ post, onDelete, mine = false }) {
   return (
     <div className="community-post">
       <div className="community-post__hd">
-        <span className="community-post__author">{post.author?.name || 'Student'}</span>
+        <span className="community-post__author">{post.author?.name || copy.student}</span>
         <span className="community-post__date">{fmtDate(post.createdAt)}</span>
-        {mine && <span className={`ds-badge ds-badge--${post.status === 'approved' ? 'green' : post.status === 'rejected' ? 'red' : 'yellow'}`}>{post.status}</span>}
+        {mine && <span className={`ds-badge ds-badge--${post.status === 'approved' ? 'green' : post.status === 'rejected' ? 'red' : 'yellow'}`}>{copy.status[post.status] || post.status}</span>}
         {post.author?._id === user?._id && (
-          <button type="button" className="community-post__delete" onClick={() => onDelete(post._id)} aria-label="Delete post">
+          <button type="button" className="community-post__delete" onClick={() => onDelete(post._id)} aria-label={copy.deletePost}>
             <Trash2 size={14} aria-hidden="true" />
           </button>
         )}
@@ -111,6 +117,8 @@ function PostCard({ post, onDelete, mine = false }) {
 }
 
 export default function Community() {
+  const { lang } = useLang();
+  const copy = getExperienceText(lang).community;
   const [tab, setTab] = useState('feed');
   const [draft, setDraft] = useState('');
   const { data: feed = { posts: [] }, isLoading: feedLoading } = useCommunityFeed();
@@ -129,9 +137,9 @@ export default function Community() {
     <DashboardLayout>
       <div className="ds-page-hd">
         <div className="ds-page-hd__left">
-          <div className="ds-page-hd__eyebrow"><Users size={12} aria-hidden="true" /> Community</div>
-          <h1 className="ds-page-hd__title">Al-Rahma Community</h1>
-          <p className="ds-page-hd__sub">Share reflections and connect with fellow students. Every post and comment is reviewed before it&apos;s visible to others.</p>
+          <div className="ds-page-hd__eyebrow"><Users size={12} aria-hidden="true" /> {copy.eyebrow}</div>
+          <h1 className="ds-page-hd__title">{copy.title}</h1>
+          <p className="ds-page-hd__sub">{copy.subtitle}</p>
         </div>
       </div>
 
@@ -139,32 +147,32 @@ export default function Community() {
         <textarea
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
-          placeholder="Share a reflection with the community…"
+          placeholder={copy.postPlaceholder}
           rows={3}
           maxLength={2000}
         />
         <button type="button" className="btn btn--green btn--sm" onClick={handlePost} disabled={!draft.trim() || createPost.isPending}>
-          Post
+          {copy.post}
         </button>
       </div>
 
       <div className="ds-tabs" style={{ marginBottom: 16 }} role="tablist">
-        <button type="button" className="ds-tab" role="tab" aria-selected={tab === 'feed'} onClick={() => setTab('feed')}>Feed</button>
-        <button type="button" className="ds-tab" role="tab" aria-selected={tab === 'mine'} onClick={() => setTab('mine')}>My Posts</button>
+        <button type="button" className="ds-tab" role="tab" aria-selected={tab === 'feed'} onClick={() => setTab('feed')}>{copy.feed}</button>
+        <button type="button" className="ds-tab" role="tab" aria-selected={tab === 'mine'} onClick={() => setTab('mine')}>{copy.myPosts}</button>
       </div>
 
       {tab === 'feed' ? (
         feedLoading ? (
           <Skeleton height={100} radius="var(--radius-md)" />
         ) : feed.posts.length === 0 ? (
-          <div className="ds-empty"><div className="ds-empty__title">No posts yet</div><div className="ds-empty__desc">Be the first to share something with the community.</div></div>
+          <div className="ds-empty"><div className="ds-empty__title">{copy.noPosts}</div><div className="ds-empty__desc">{copy.firstPost}</div></div>
         ) : (
           feed.posts.map((p) => <PostCard key={p._id} post={p} onDelete={(id) => deletePost.mutate(id)} />)
         )
       ) : mineLoading ? (
         <Skeleton height={100} radius="var(--radius-md)" />
       ) : myPosts.length === 0 ? (
-        <div className="ds-empty"><div className="ds-empty__title">You haven&apos;t posted yet</div></div>
+        <div className="ds-empty"><div className="ds-empty__title">{copy.notPosted}</div></div>
       ) : (
         myPosts.map((p) => <PostCard key={p._id} post={p} onDelete={(id) => deletePost.mutate(id)} mine />)
       )}

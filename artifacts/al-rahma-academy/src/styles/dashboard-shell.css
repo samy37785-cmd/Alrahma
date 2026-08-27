@@ -25,7 +25,7 @@
   display: flex;
   flex-direction: column;
   background: var(--p-green-900);
-  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  border-inline-end: 1px solid rgba(255, 255, 255, 0.06);
   transition: width var(--duration-slow) var(--ease-default);
   overflow: hidden;
   z-index: var(--z-sticky);
@@ -73,7 +73,7 @@
 .ds-collapse-btn {
   position: absolute;
   top: 22px;
-  right: -11px;
+  inset-inline-end: -11px;
   width: 22px;
   height: 22px;
   background: var(--p-green-500);
@@ -135,7 +135,7 @@
   border: none;
   background: none;
   width: 100%;
-  text-align: left;
+  text-align: start;
   line-height: 1;
   -webkit-tap-highlight-color: transparent;
 }
@@ -155,12 +155,13 @@
 .ds-nav__item--active::before {
   content: '';
   position: absolute;
-  left: 0;
+  inset-inline-start: 0;
   top: 5px;
   bottom: 5px;
   width: 3px;
   background: #5de3a8;
-  border-radius: 0 3px 3px 0;
+  border-start-end-radius: 3px;
+  border-end-end-radius: 3px;
 }
 
 .ds-nav__icon {
@@ -179,7 +180,7 @@
 .ds-nav__icon-dot {
   position: absolute;
   top: -3px;
-  right: -5px;
+  inset-inline-end: -5px;
   width: 7px;
   height: 7px;
   background: var(--color-danger, #ef4444);
@@ -318,7 +319,7 @@
   border: 1px solid var(--border-default);
   border-radius: 9px;
   cursor: pointer;
-  text-align: left;
+  text-align: start;
   font-size: 0.82rem;
   color: var(--text-secondary);
   transition: var(--transition-base);
@@ -354,7 +355,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-left: auto;
+  margin-inline-start: auto;
 }
 
 .ds-icon-btn {
@@ -383,7 +384,7 @@
 .ds-icon-btn__dot {
   position: absolute;
   top: 6px;
-  right: 6px;
+  inset-inline-end: 6px;
   width: 7px;
   height: 7px;
   background: var(--color-danger);
@@ -442,7 +443,7 @@
 .ds-dropdown {
   position: absolute;
   top: calc(100% + 6px);
-  right: 0;
+  inset-inline-end: 0;
   min-width: 175px;
   background: var(--bg-surface);
   border: 1px solid var(--border-default);
@@ -486,7 +487,7 @@
   border: none;
   background: none;
   width: 100%;
-  text-align: left;
+  text-align: start;
   cursor: pointer;
   text-decoration: none;
   transition: var(--transition-colors);
@@ -1330,7 +1331,7 @@
 .ds-notif {
   position: absolute;
   top: calc(100% + 8px);
-  right: 0;
+  inset-inline-end: 0;
   width: 340px;
   max-height: 440px;
   background: var(--bg-surface);
@@ -1568,10 +1569,10 @@ html.dark .ds-hifz-cell--none    { background: #1a2820; color: var(--text-second
 @media (max-width: 900px) {
   .ds-sidebar {
     position: fixed;
-    left: 0;
+    inset-inline-start: 0;
     top: 0;
     height: 100%;
-    transform: translateX(-100%);
+    transform: translateX(var(--ds-sidebar-offscreen, -100%));
     transition: transform var(--duration-slow) var(--ease-default);
     z-index: var(--z-overlay);
     width: var(--sidebar-width) !important;
@@ -1628,8 +1629,7 @@ html.dark .ds-hifz-cell--none    { background: #1a2820; color: var(--text-second
 @media (max-width: 480px) {
   .ds-notif {
     position: fixed;
-    left: 12px;
-    right: 12px;
+    inset-inline: 12px;
     top: calc(58px + max(0px, env(safe-area-inset-top, 0px)) + 8px);
     width: auto;
     max-height: 70vh;
@@ -1654,19 +1654,12 @@ html.dark .ds-hifz-cell--none    { background: #1a2820; color: var(--text-second
 
 /* ── RTL sidebar: slide from right ───────────────────────────────── */
 [dir="rtl"] .ds-sidebar {
-  left: auto;
-  right: 0;
-  transform: translateX(100%);
+  --ds-sidebar-offscreen: 100%;
 }
 [dir="rtl"] .ds--mobile-open .ds-sidebar {
   transform: translateX(0);
 }
-[dir="rtl"] .ds-nav__item { text-align: right; }
-[dir="rtl"] .ds-nav__item--active::before {
-  left: auto;
-  right: 0;
-  border-radius: 3px 0 0 3px;
-}
+[dir="rtl"] .ds-nav__item { text-align: start; }
 
 /* ════════════════════════════════════════════════════════════════════
    MOBILE BOTTOM NAVIGATION
@@ -1681,8 +1674,7 @@ html.dark .ds-hifz-cell--none    { background: #1a2820; color: var(--text-second
     display: flex;
     position: fixed;
     bottom: 0;
-    left: 0;
-    right: 0;
+    inset-inline: 0;
     height: calc(var(--ds-bottom-nav-h) + env(safe-area-inset-bottom, 0px));
     padding-bottom: env(safe-area-inset-bottom, 0px);
     background: var(--bg-surface);
@@ -1725,8 +1717,7 @@ html.dark .ds-hifz-cell--none    { background: #1a2820; color: var(--text-second
     content: '';
     position: absolute;
     top: 0;
-    left: 25%;
-    right: 25%;
+    inset-inline: 25%;
     height: 2px;
     background: var(--color-primary);
     border-radius: 0 0 2px 2px;
@@ -1744,7 +1735,7 @@ html.dark .ds-hifz-cell--none    { background: #1a2820; color: var(--text-second
   .ds-bottom-nav__badge {
     position: absolute;
     top: -4px;
-    right: -6px;
+    inset-inline-end: -6px;
     min-width: 16px;
     height: 16px;
     background: var(--color-danger);
@@ -1773,12 +1764,6 @@ html.dark .ds-hifz-cell--none    { background: #1a2820; color: var(--text-second
 /* Dark mode bottom nav */
 html.dark .ds-bottom-nav {
   box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.3);
-}
-
-/* RTL bottom nav */
-[dir="rtl"] .ds-bottom-nav__badge {
-  right: auto;
-  left: -6px;
 }
 
 /* ════════════════════════════════════════════════════════════════════

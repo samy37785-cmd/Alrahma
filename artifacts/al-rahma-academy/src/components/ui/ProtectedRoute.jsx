@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
 // Guards a route.
@@ -14,6 +14,11 @@ import { useAuth } from '../../context/AuthContext';
 // render nothing rather than bouncing to /login and back.
 export default function ProtectedRoute({ children, adminOnly = false, role = null }) {
   const { user, isAdmin, sessionChecked, ensureSession } = useAuth();
+  const location = useLocation();
+  const redirect = (pathname) => ({
+    pathname,
+    search: location.search,
+  });
 
   useEffect(() => {
     if (!user && !sessionChecked) ensureSession();
@@ -21,9 +26,9 @@ export default function ProtectedRoute({ children, adminOnly = false, role = nul
 
   if (!user) {
     if (!sessionChecked) return null; // still confirming — don't redirect yet
-    return <Navigate to="/login" replace />;
+    return <Navigate to={redirect('/login')} state={{ from: location }} replace />;
   }
-  if (adminOnly && !isAdmin) return <Navigate to="/" replace />;
-  if (role && user.role !== role && !isAdmin) return <Navigate to="/" replace />;
+  if (adminOnly && !isAdmin) return <Navigate to={redirect('/')} replace />;
+  if (role && user.role !== role && !isAdmin) return <Navigate to={redirect('/')} replace />;
   return children;
 }

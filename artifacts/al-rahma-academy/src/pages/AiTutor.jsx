@@ -11,8 +11,12 @@ import {
 import { streamTutorMessage } from '../api/aiTutorApi';
 import '../styles/ai-tutor.css';
 import { formatDayMonth as fmtDate } from '../utils/date';
+import { useLang } from '../context/LangContext';
+import { getExperienceText } from '../i18n/experience';
 
 export default function AiTutor() {
+  const { lang } = useLang();
+  const copy = getExperienceText(lang).aiTutor;
   const [activeId, setActiveId] = useState(null);
   const [draft, setDraft] = useState('');
   const [streamingText, setStreamingText] = useState('');
@@ -78,16 +82,16 @@ export default function AiTutor() {
     <DashboardLayout>
       <div className="ds-page-hd">
         <div className="ds-page-hd__left">
-          <div className="ds-page-hd__eyebrow"><Sparkles size={12} aria-hidden="true" /> AI Tutor</div>
-          <h1 className="ds-page-hd__title">Ask your AI study assistant</h1>
-          <p className="ds-page-hd__sub">Supplementary help with Quran, Tajweed, Arabic, and Islamic Studies. Not a substitute for your assigned tutor.</p>
+          <div className="ds-page-hd__eyebrow"><Sparkles size={12} aria-hidden="true" /> {copy.eyebrow}</div>
+          <h1 className="ds-page-hd__title">{copy.title}</h1>
+          <p className="ds-page-hd__sub">{copy.subtitle}</p>
         </div>
       </div>
 
       <div className="ai-tutor">
         <aside className="ai-tutor__sidebar">
           <button type="button" className="btn btn--green btn--sm ai-tutor__new" onClick={handleNewChat}>
-            <Plus size={14} aria-hidden="true" /> New chat
+            <Plus size={14} aria-hidden="true" /> {copy.newChat}
           </button>
           <div className="ai-tutor__list">
             {listLoading ? (
@@ -96,7 +100,7 @@ export default function AiTutor() {
                 <Skeleton height={44} radius="var(--radius-md)" />
               </>
             ) : conversations.length === 0 ? (
-              <div className="ai-tutor__empty-list">No conversations yet</div>
+              <div className="ai-tutor__empty-list">{copy.noConversations}</div>
             ) : (
               conversations.map((c) => (
                 <div
@@ -110,7 +114,7 @@ export default function AiTutor() {
                     type="button"
                     className="ai-tutor__list-item-delete"
                     onClick={(e) => handleDelete(c._id, e)}
-                    aria-label="Delete conversation"
+                    aria-label={copy.deleteConversation}
                   >
                     <Trash2 size={13} aria-hidden="true" />
                   </button>
@@ -125,7 +129,7 @@ export default function AiTutor() {
             {!activeId && !sending ? (
               <div className="ai-tutor__welcome">
                 <Sparkles size={28} aria-hidden="true" />
-                <p>Ask about a Tajweed rule, an Arabic word, a Surah, or anything you&apos;re studying.</p>
+                <p>{copy.welcome}</p>
               </div>
             ) : convoLoading ? (
               <Skeleton height={80} radius="var(--radius-md)" />
@@ -138,7 +142,7 @@ export default function AiTutor() {
                 ))}
                 {sending && (
                   <div className="ai-tutor__bubble ai-tutor__bubble--assistant">
-                    {streamingText || <span className="ai-tutor__typing">Thinking…</span>}
+                    {streamingText || <span className="ai-tutor__typing">{copy.thinking}</span>}
                   </div>
                 )}
                 {error && <div className="ai-tutor__error">{error}</div>}
@@ -157,7 +161,7 @@ export default function AiTutor() {
                   handleSend();
                 }
               }}
-              placeholder="Ask your AI tutor…"
+              placeholder={copy.placeholder}
               rows={2}
               maxLength={4000}
               disabled={sending}
@@ -167,7 +171,7 @@ export default function AiTutor() {
               className="btn btn--green ai-tutor__send"
               onClick={handleSend}
               disabled={sending || !draft.trim()}
-              aria-label="Send message"
+              aria-label={copy.send}
             >
               <Send size={16} aria-hidden="true" />
             </button>

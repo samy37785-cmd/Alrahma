@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Al-Rahma Academy"
+description = "An online Quran learning platform with courses, Quran study tools, progress tracking, live classes, community features, and student dashboards for learners and families."
+version = "1.0.0"
+id = "artifacts/al-rahma-academy"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 19795
+
+[services.development]
+run = "pnpm --filter @workspace/al-rahma-academy run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/al-rahma-academy", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/al-rahma-academy/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "19795"
+BASE_PATH = "/"

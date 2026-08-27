@@ -1,0 +1,1 @@
+- [Fresh-browser verification](fresh-browser-verification.md) — after dependency changes, a reused screenshot context can show stale Vite chunks; verify in a fresh browser context.

@@ -1,0 +1,386 @@
+/* ══════════════════════════════════════════════════════════════════
+   Adhkar translations (meaning + virtue + context) per dhikr id.
+   The Arabic text itself (to be recited) stays in Adhkar.jsx; this file
+   provides the meaning/translation shown beneath it for non-Arabic
+   readers, plus translated virtue (fadl) and context labels.
+   Indexed by item id, then language code. Arabic uses the page data.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* Hadith source transliteration — shared by all Latin-script languages */
+export const SOURCE_TR = {
+  'مسلم': 'Muslim',
+  'البخاري': 'Al-Bukhari',
+  'الترمذي': 'At-Tirmidhi',
+  'أبو داود': 'Abu Dawud',
+  'أبو داود والترمذي': 'Abu Dawud & At-Tirmidhi',
+  'أبو داود وابن ماجه': 'Abu Dawud & Ibn Majah',
+  'أبو داود والنسائي': 'Abu Dawud & An-Nasa\'i',
+  'الترمذي والنسائي': 'At-Tirmidhi & An-Nasa\'i',
+  'البخاري ومسلم': 'Al-Bukhari & Muslim',
+  'النسائي والطبراني': 'An-Nasa\'i & At-Tabarani',
+  'ابن السني': 'Ibn As-Sunni',
+};
+
+export const sourceTr = (src, lang) => (lang === 'ar' ? src : (SOURCE_TR[src] || src));
+
+/* meaning = translation of the dhikr · fadl = its virtue · context = occasion */
+export const ADHKAR_TR = {
+  /* ── أذكار الصباح ── */
+  sb1: {
+    en: { meaning: 'We have entered the morning and the dominion belongs to Allah. Praise is for Allah. There is no god but Allah alone, with no partner; His is the dominion and His is the praise, and He is able to do all things. My Lord, I ask You for the good of this day and the good after it, and I seek refuge in You from the evil of this day and the evil after it. My Lord, I seek refuge in You from laziness and the misery of old age. My Lord, I seek refuge in You from torment in the Fire and torment in the grave.', fadl: 'Morning supplication for protection from the evil of the day.' },
+    it: { meaning: 'Siamo entrati nel mattino e il regno appartiene ad Allah. La lode è per Allah. Non c\'è dio all\'infuori di Allah, l\'Unico, senza associati; Suo è il regno e Sua è la lode, ed Egli ha potere su ogni cosa. Mio Signore, Ti chiedo il bene di questo giorno e il bene che lo segue, e cerco rifugio in Te dal male di questo giorno e dal male che lo segue. Mio Signore, cerco rifugio in Te dalla pigrizia e dalla miseria della vecchiaia. Mio Signore, cerco rifugio in Te dal castigo del Fuoco e dal castigo della tomba.', fadl: 'Supplica del mattino per la protezione dal male del giorno.' },
+    es: { meaning: 'Hemos amanecido y el dominio pertenece a Allah. La alabanza es para Allah. No hay dios sino Allah, el Único, sin asociado; Suyo es el dominio y Suya la alabanza, y Él tiene poder sobre todas las cosas. Señor mío, Te pido el bien de este día y el bien que le sigue, y me refugio en Ti del mal de este día y del mal que le sigue. Señor mío, me refugio en Ti de la pereza y de la miseria de la vejez. Señor mío, me refugio en Ti del castigo del Fuego y del castigo de la tumba.', fadl: 'Súplica de la mañana para protegerse del mal del día.' },
+    de: { meaning: 'Wir haben den Morgen erreicht und die Herrschaft gehört Allah. Alles Lob gebührt Allah. Es gibt keinen Gott außer Allah allein, ohne Teilhaber; Sein ist die Herrschaft und Sein ist das Lob, und Er hat Macht über alle Dinge. Mein Herr, ich bitte Dich um das Gute dieses Tages und das Gute danach, und ich suche Zuflucht bei Dir vor dem Übel dieses Tages und dem Übel danach. Mein Herr, ich suche Zuflucht bei Dir vor Trägheit und dem Elend des Alters. Mein Herr, ich suche Zuflucht bei Dir vor der Strafe des Feuers und der Strafe des Grabes.', fadl: 'Morgenbittgebet zum Schutz vor dem Übel des Tages.' },
+    fr: { meaning: 'Nous voici au matin et la royauté appartient à Allah. La louange est à Allah. Il n\'y a de dieu qu\'Allah, l\'Unique, sans associé ; à Lui la royauté et à Lui la louange, et Il est capable de toute chose. Mon Seigneur, je Te demande le bien de ce jour et le bien qui le suit, et je cherche refuge auprès de Toi contre le mal de ce jour et le mal qui le suit. Mon Seigneur, je cherche refuge auprès de Toi contre la paresse et la misère de la vieillesse. Mon Seigneur, je cherche refuge auprès de Toi contre le châtiment du Feu et le châtiment de la tombe.', fadl: 'Invocation du matin pour se protéger du mal de la journée.' },
+  },
+  sb2: {
+    en: { meaning: 'O Allah, by You we enter the morning and by You we enter the evening, by You we live and by You we die, and to You is the resurrection.', fadl: 'Morning remembrance acknowledging Allah\'s blessing.' },
+    it: { meaning: 'O Allah, per Te entriamo nel mattino e per Te entriamo nella sera, per Te viviamo e per Te moriamo, e a Te è la resurrezione.', fadl: 'Ricordo del mattino che riconosce la grazia di Allah.' },
+    es: { meaning: 'Oh Allah, por Ti amanecemos y por Ti anochecemos, por Ti vivimos y por Ti morimos, y hacia Ti es la resurrección.', fadl: 'Recuerdo de la mañana reconociendo la gracia de Allah.' },
+    de: { meaning: 'O Allah, durch Dich erleben wir den Morgen und durch Dich den Abend, durch Dich leben wir und durch Dich sterben wir, und zu Dir ist die Auferstehung.', fadl: 'Morgengedenken, das Allahs Gnade anerkennt.' },
+    fr: { meaning: 'Ô Allah, c\'est par Toi que nous atteignons le matin et par Toi le soir, par Toi nous vivons et par Toi nous mourons, et vers Toi est la résurrection.', fadl: 'Rappel du matin reconnaissant la grâce d\'Allah.' },
+  },
+  sb3: {
+    en: { meaning: 'O Allah, You are my Lord, there is no god but You. You created me and I am Your servant, and I uphold Your covenant and promise as much as I can. I seek refuge in You from the evil I have done. I acknowledge Your favour upon me and I acknowledge my sin, so forgive me, for none forgives sins but You.', fadl: 'The chief of seeking forgiveness — whoever says it in the morning with certainty and dies that day enters Paradise.' },
+    it: { meaning: 'O Allah, Tu sei il mio Signore, non c\'è dio all\'infuori di Te. Mi hai creato e io sono Tuo servo, e mantengo il Tuo patto e la Tua promessa per quanto posso. Cerco rifugio in Te dal male che ho commesso. Riconosco il Tuo favore su di me e riconosco il mio peccato, perciò perdonami, poiché nessuno perdona i peccati all\'infuori di Te.', fadl: 'Il principe delle richieste di perdono — chi lo dice al mattino con certezza e muore quel giorno entra in Paradiso.' },
+    es: { meaning: 'Oh Allah, Tú eres mi Señor, no hay dios sino Tú. Me creaste y soy Tu siervo, y cumplo Tu pacto y Tu promesa tanto como puedo. Me refugio en Ti del mal que he hecho. Reconozco Tu favor sobre mí y reconozco mi pecado, así que perdóname, pues nadie perdona los pecados sino Tú.', fadl: 'El señor de las peticiones de perdón — quien lo dice por la mañana con certeza y muere ese día entra al Paraíso.' },
+    de: { meaning: 'O Allah, Du bist mein Herr, es gibt keinen Gott außer Dir. Du hast mich erschaffen und ich bin Dein Diener, und ich halte Deinen Bund und Dein Versprechen, so gut ich kann. Ich suche Zuflucht bei Dir vor dem Übel, das ich getan habe. Ich erkenne Deine Gunst über mir an und erkenne meine Sünde an, so vergib mir, denn niemand vergibt die Sünden außer Dir.', fadl: 'Der Herr der Vergebungsbitten — wer es morgens mit Gewissheit spricht und an jenem Tag stirbt, tritt ins Paradies ein.' },
+    fr: { meaning: 'Ô Allah, Tu es mon Seigneur, il n\'y a de dieu que Toi. Tu m\'as créé et je suis Ton serviteur, et je respecte Ton pacte et Ta promesse autant que je peux. Je cherche refuge auprès de Toi contre le mal que j\'ai commis. Je reconnais Ta faveur sur moi et je reconnais mon péché, alors pardonne-moi, car nul ne pardonne les péchés sauf Toi.', fadl: 'Le maître des demandes de pardon — quiconque le dit le matin avec certitude et meurt ce jour-là entre au Paradis.' },
+  },
+  sb4: {
+    en: { meaning: 'O Allah, grant me wellbeing in my body. O Allah, grant me wellbeing in my hearing. O Allah, grant me wellbeing in my sight. There is no god but You.', fadl: 'Asking for wellbeing in the body and the senses.' },
+    it: { meaning: 'O Allah, concedimi salute nel mio corpo. O Allah, concedimi salute nel mio udito. O Allah, concedimi salute nella mia vista. Non c\'è dio all\'infuori di Te.', fadl: 'Richiesta di benessere nel corpo e nei sensi.' },
+    es: { meaning: 'Oh Allah, concédeme bienestar en mi cuerpo. Oh Allah, concédeme bienestar en mi oído. Oh Allah, concédeme bienestar en mi vista. No hay dios sino Tú.', fadl: 'Petición de bienestar en el cuerpo y los sentidos.' },
+    de: { meaning: 'O Allah, schenke mir Wohlbefinden in meinem Körper. O Allah, schenke mir Wohlbefinden in meinem Gehör. O Allah, schenke mir Wohlbefinden in meinem Sehen. Es gibt keinen Gott außer Dir.', fadl: 'Bitte um Wohlergehen für Körper und Sinne.' },
+    fr: { meaning: 'Ô Allah, accorde-moi la santé dans mon corps. Ô Allah, accorde-moi la santé dans mon ouïe. Ô Allah, accorde-moi la santé dans ma vue. Il n\'y a de dieu que Toi.', fadl: 'Demande de bien-être pour le corps et les sens.' },
+  },
+  sb5: {
+    en: { meaning: 'O Allah, I ask You for pardon and wellbeing in this world and the Hereafter. O Allah, I ask You for pardon and wellbeing in my religion, my worldly life, my family and my wealth. O Allah, conceal my faults and calm my fears.', fadl: 'Comprehensive of the good of this world and the Hereafter.' },
+    it: { meaning: 'O Allah, Ti chiedo il perdono e il benessere in questo mondo e nell\'Aldilà. O Allah, Ti chiedo il perdono e il benessere nella mia religione, nella mia vita, nella mia famiglia e nei miei beni. O Allah, copri le mie mancanze e placa le mie paure.', fadl: 'Comprende il bene di questo mondo e dell\'Aldilà.' },
+    es: { meaning: 'Oh Allah, Te pido el perdón y el bienestar en este mundo y en el Más Allá. Oh Allah, Te pido el perdón y el bienestar en mi religión, mi vida, mi familia y mis bienes. Oh Allah, cubre mis faltas y calma mis temores.', fadl: 'Abarca el bien de este mundo y del Más Allá.' },
+    de: { meaning: 'O Allah, ich bitte Dich um Vergebung und Wohlergehen in dieser Welt und im Jenseits. O Allah, ich bitte Dich um Vergebung und Wohlergehen in meiner Religion, meinem Leben, meiner Familie und meinem Besitz. O Allah, verbirg meine Mängel und besänftige meine Ängste.', fadl: 'Umfasst das Gute dieser Welt und des Jenseits.' },
+    fr: { meaning: 'Ô Allah, je Te demande le pardon et le bien-être dans ce monde et dans l\'au-delà. Ô Allah, je Te demande le pardon et le bien-être dans ma religion, ma vie, ma famille et mes biens. Ô Allah, couvre mes défauts et apaise mes craintes.', fadl: 'Englobe le bien de ce monde et de l\'au-delà.' },
+  },
+  sb6: {
+    en: { meaning: 'I seek refuge in the perfect words of Allah from the evil of what He has created.', fadl: 'Whoever says it three times, no harm will reach him that night.' },
+    it: { meaning: 'Cerco rifugio nelle parole perfette di Allah dal male di ciò che Egli ha creato.', fadl: 'Chi lo dice tre volte, nessun danno lo raggiungerà quella notte.' },
+    es: { meaning: 'Me refugio en las palabras perfectas de Allah del mal de lo que Él ha creado.', fadl: 'Quien lo dice tres veces, ningún daño le alcanzará esa noche.' },
+    de: { meaning: 'Ich suche Zuflucht in den vollkommenen Worten Allahs vor dem Übel dessen, was Er erschaffen hat.', fadl: 'Wer es dreimal spricht, dem widerfährt in jener Nacht kein Schaden.' },
+    fr: { meaning: 'Je cherche refuge dans les paroles parfaites d\'Allah contre le mal de ce qu\'Il a créé.', fadl: 'Quiconque le dit trois fois, aucun mal ne l\'atteindra cette nuit-là.' },
+  },
+  sb7: {
+    en: { meaning: 'In the name of Allah, with whose name nothing on earth or in the heavens can cause harm, and He is the All-Hearing, the All-Knowing.', fadl: 'Whoever says it three times, nothing will harm him.' },
+    it: { meaning: 'Nel nome di Allah, con il cui nome nulla sulla terra o nei cieli può nuocere, ed Egli è Colui che tutto ascolta, Colui che tutto sa.', fadl: 'Chi lo dice tre volte, nulla potrà nuocergli.' },
+    es: { meaning: 'En el nombre de Allah, con cuyo nombre nada en la tierra ni en los cielos puede causar daño, y Él es Quien todo lo oye, Quien todo lo sabe.', fadl: 'Quien lo dice tres veces, nada le dañará.' },
+    de: { meaning: 'Im Namen Allahs, mit dessen Namen nichts auf der Erde oder in den Himmeln Schaden zufügen kann, und Er ist der Allhörende, der Allwissende.', fadl: 'Wer es dreimal spricht, dem schadet nichts.' },
+    fr: { meaning: 'Au nom d\'Allah, dont le nom protège de tout mal sur terre comme au ciel, et Il est l\'Audient, l\'Omniscient.', fadl: 'Quiconque le dit trois fois, rien ne lui nuira.' },
+  },
+  sb8: {
+    en: { meaning: 'I am pleased with Allah as my Lord, with Islam as my religion, and with Muhammad ﷺ as my Prophet.', fadl: 'Allah has promised to please whoever says it on the Day of Resurrection.' },
+    it: { meaning: 'Sono soddisfatto di Allah come mio Signore, dell\'Islam come mia religione e di Muhammad ﷺ come mio Profeta.', fadl: 'Allah ha promesso di compiacere chi lo dice nel Giorno della Resurrezione.' },
+    es: { meaning: 'Estoy complacido con Allah como mi Señor, con el Islam como mi religión y con Muhammad ﷺ como mi Profeta.', fadl: 'Allah ha prometido complacer a quien lo dice en el Día de la Resurrección.' },
+    de: { meaning: 'Ich bin zufrieden mit Allah als meinem Herrn, mit dem Islam als meiner Religion und mit Muhammad ﷺ als meinem Propheten.', fadl: 'Allah hat versprochen, denjenigen am Tag der Auferstehung zufrieden zu stellen, der es spricht.' },
+    fr: { meaning: 'Je suis satisfait d\'Allah comme Seigneur, de l\'Islam comme religion et de Muhammad ﷺ comme Prophète.', fadl: 'Allah a promis de satisfaire au Jour de la Résurrection celui qui le dit.' },
+  },
+  sb9: {
+    en: { meaning: 'Glory be to Allah and praise be to Him.', fadl: 'Whoever says it a hundred times, his sins are forgiven even if they were like the foam of the sea.' },
+    it: { meaning: 'Gloria ad Allah e lode a Lui.', fadl: 'Chi lo dice cento volte, i suoi peccati sono perdonati anche se fossero come la schiuma del mare.' },
+    es: { meaning: 'Gloria a Allah y alabanza a Él.', fadl: 'Quien lo dice cien veces, sus pecados son perdonados aunque fueran como la espuma del mar.' },
+    de: { meaning: 'Gepriesen sei Allah und Lob sei Ihm.', fadl: 'Wer es hundertmal spricht, dem werden die Sünden vergeben, selbst wenn sie wie der Schaum des Meeres wären.' },
+    fr: { meaning: 'Gloire et louange à Allah.', fadl: 'Quiconque le dit cent fois, ses péchés sont pardonnés même s\'ils étaient comme l\'écume de la mer.' },
+  },
+  sb10: {
+    en: { meaning: 'There is no god but Allah alone, with no partner; His is the dominion and His is the praise, and He is able to do all things.', fadl: 'Saying it ten times equals freeing four slaves from the children of Ismail.' },
+    it: { meaning: 'Non c\'è dio all\'infuori di Allah, l\'Unico, senza associati; Suo è il regno e Sua è la lode, ed Egli ha potere su ogni cosa.', fadl: 'Dirlo dieci volte equivale a liberare quattro schiavi tra i figli di Ismaele.' },
+    es: { meaning: 'No hay dios sino Allah, el Único, sin asociado; Suyo es el dominio y Suya la alabanza, y Él tiene poder sobre todas las cosas.', fadl: 'Decirlo diez veces equivale a liberar a cuatro esclavos de los hijos de Ismael.' },
+    de: { meaning: 'Es gibt keinen Gott außer Allah allein, ohne Teilhaber; Sein ist die Herrschaft und Sein ist das Lob, und Er hat Macht über alle Dinge.', fadl: 'Es zehnmal zu sprechen entspricht der Befreiung von vier Sklaven aus den Kindern Ismaels.' },
+    fr: { meaning: 'Il n\'y a de dieu qu\'Allah, l\'Unique, sans associé ; à Lui la royauté et à Lui la louange, et Il est capable de toute chose.', fadl: 'Le dire dix fois équivaut à affranchir quatre esclaves parmi les enfants d\'Ismaël.' },
+  },
+
+  /* ── أذكار المساء ── */
+  ms1: {
+    en: { meaning: 'We have entered the evening and the dominion belongs to Allah. Praise is for Allah. There is no god but Allah alone, with no partner; His is the dominion and His is the praise, and He is able to do all things. My Lord, I ask You for the good of this night and the good after it, and I seek refuge in You from the evil of this night and the evil after it. My Lord, I seek refuge in You from laziness and the misery of old age. My Lord, I seek refuge in You from torment in the Fire and torment in the grave.', fadl: 'Evening supplication for protection from the evil of the night.' },
+    it: { meaning: 'Siamo entrati nella sera e il regno appartiene ad Allah. La lode è per Allah. Non c\'è dio all\'infuori di Allah, l\'Unico, senza associati; Suo è il regno e Sua è la lode, ed Egli ha potere su ogni cosa. Mio Signore, Ti chiedo il bene di questa notte e il bene che la segue, e cerco rifugio in Te dal male di questa notte e dal male che la segue. Mio Signore, cerco rifugio in Te dalla pigrizia e dalla miseria della vecchiaia. Mio Signore, cerco rifugio in Te dal castigo del Fuoco e dal castigo della tomba.', fadl: 'Supplica della sera per la protezione dal male della notte.' },
+    es: { meaning: 'Hemos anochecido y el dominio pertenece a Allah. La alabanza es para Allah. No hay dios sino Allah, el Único, sin asociado; Suyo es el dominio y Suya la alabanza, y Él tiene poder sobre todas las cosas. Señor mío, Te pido el bien de esta noche y el bien que le sigue, y me refugio en Ti del mal de esta noche y del mal que le sigue. Señor mío, me refugio en Ti de la pereza y de la miseria de la vejez. Señor mío, me refugio en Ti del castigo del Fuego y del castigo de la tumba.', fadl: 'Súplica de la noche para protegerse del mal de la noche.' },
+    de: { meaning: 'Wir haben den Abend erreicht und die Herrschaft gehört Allah. Alles Lob gebührt Allah. Es gibt keinen Gott außer Allah allein, ohne Teilhaber; Sein ist die Herrschaft und Sein ist das Lob, und Er hat Macht über alle Dinge. Mein Herr, ich bitte Dich um das Gute dieser Nacht und das Gute danach, und ich suche Zuflucht bei Dir vor dem Übel dieser Nacht und dem Übel danach. Mein Herr, ich suche Zuflucht bei Dir vor Trägheit und dem Elend des Alters. Mein Herr, ich suche Zuflucht bei Dir vor der Strafe des Feuers und der Strafe des Grabes.', fadl: 'Abendbittgebet zum Schutz vor dem Übel der Nacht.' },
+    fr: { meaning: 'Nous voici au soir et la royauté appartient à Allah. La louange est à Allah. Il n\'y a de dieu qu\'Allah, l\'Unique, sans associé ; à Lui la royauté et à Lui la louange, et Il est capable de toute chose. Mon Seigneur, je Te demande le bien de cette nuit et le bien qui la suit, et je cherche refuge auprès de Toi contre le mal de cette nuit et le mal qui la suit. Mon Seigneur, je cherche refuge auprès de Toi contre la paresse et la misère de la vieillesse. Mon Seigneur, je cherche refuge auprès de Toi contre le châtiment du Feu et le châtiment de la tombe.', fadl: 'Invocation du soir pour se protéger du mal de la nuit.' },
+  },
+  ms2: {
+    en: { meaning: 'O Allah, by You we enter the evening and by You we enter the morning, by You we live and by You we die, and to You is the final return.', fadl: 'Evening remembrance acknowledging Allah\'s blessing.' },
+    it: { meaning: 'O Allah, per Te entriamo nella sera e per Te entriamo nel mattino, per Te viviamo e per Te moriamo, e a Te è il ritorno finale.', fadl: 'Ricordo della sera che riconosce la grazia di Allah.' },
+    es: { meaning: 'Oh Allah, por Ti anochecemos y por Ti amanecemos, por Ti vivimos y por Ti morimos, y hacia Ti es el retorno final.', fadl: 'Recuerdo de la noche reconociendo la gracia de Allah.' },
+    de: { meaning: 'O Allah, durch Dich erleben wir den Abend und durch Dich den Morgen, durch Dich leben wir und durch Dich sterben wir, und zu Dir ist die endgültige Rückkehr.', fadl: 'Abendgedenken, das Allahs Gnade anerkennt.' },
+    fr: { meaning: 'Ô Allah, c\'est par Toi que nous atteignons le soir et par Toi le matin, par Toi nous vivons et par Toi nous mourons, et vers Toi est le retour final.', fadl: 'Rappel du soir reconnaissant la grâce d\'Allah.' },
+  },
+  ms3: {
+    en: { meaning: 'O Allah, You are my Lord, there is no god but You. You created me and I am Your servant, and I uphold Your covenant and promise as much as I can. I seek refuge in You from the evil I have done. I acknowledge Your favour upon me and I acknowledge my sin, so forgive me, for none forgives sins but You.', fadl: 'The chief of seeking forgiveness in the evening — whoever says it and dies that night enters Paradise.' },
+    it: { meaning: 'O Allah, Tu sei il mio Signore, non c\'è dio all\'infuori di Te. Mi hai creato e io sono Tuo servo, e mantengo il Tuo patto e la Tua promessa per quanto posso. Cerco rifugio in Te dal male che ho commesso. Riconosco il Tuo favore su di me e riconosco il mio peccato, perciò perdonami, poiché nessuno perdona i peccati all\'infuori di Te.', fadl: 'Il principe delle richieste di perdono la sera — chi lo dice e muore quella notte entra in Paradiso.' },
+    es: { meaning: 'Oh Allah, Tú eres mi Señor, no hay dios sino Tú. Me creaste y soy Tu siervo, y cumplo Tu pacto y Tu promesa tanto como puedo. Me refugio en Ti del mal que he hecho. Reconozco Tu favor sobre mí y reconozco mi pecado, así que perdóname, pues nadie perdona los pecados sino Tú.', fadl: 'El señor de las peticiones de perdón por la noche — quien lo dice y muere esa noche entra al Paraíso.' },
+    de: { meaning: 'O Allah, Du bist mein Herr, es gibt keinen Gott außer Dir. Du hast mich erschaffen und ich bin Dein Diener, und ich halte Deinen Bund und Dein Versprechen, so gut ich kann. Ich suche Zuflucht bei Dir vor dem Übel, das ich getan habe. Ich erkenne Deine Gunst über mir an und erkenne meine Sünde an, so vergib mir, denn niemand vergibt die Sünden außer Dir.', fadl: 'Der Herr der Vergebungsbitten am Abend — wer es spricht und in jener Nacht stirbt, tritt ins Paradies ein.' },
+    fr: { meaning: 'Ô Allah, Tu es mon Seigneur, il n\'y a de dieu que Toi. Tu m\'as créé et je suis Ton serviteur, et je respecte Ton pacte et Ta promesse autant que je peux. Je cherche refuge auprès de Toi contre le mal que j\'ai commis. Je reconnais Ta faveur sur moi et je reconnais mon péché, alors pardonne-moi, car nul ne pardonne les péchés sauf Toi.', fadl: 'Le maître des demandes de pardon le soir — quiconque le dit et meurt cette nuit-là entre au Paradis.' },
+  },
+  ms4: {
+    en: { meaning: 'I seek refuge in the perfect words of Allah from the evil of what He has created.', fadl: 'Protection from the evil of the night.' },
+    it: { meaning: 'Cerco rifugio nelle parole perfette di Allah dal male di ciò che Egli ha creato.', fadl: 'Protezione dal male della notte.' },
+    es: { meaning: 'Me refugio en las palabras perfectas de Allah del mal de lo que Él ha creado.', fadl: 'Protección del mal de la noche.' },
+    de: { meaning: 'Ich suche Zuflucht in den vollkommenen Worten Allahs vor dem Übel dessen, was Er erschaffen hat.', fadl: 'Schutz vor dem Übel der Nacht.' },
+    fr: { meaning: 'Je cherche refuge dans les paroles parfaites d\'Allah contre le mal de ce qu\'Il a créé.', fadl: 'Protection contre le mal de la nuit.' },
+  },
+  ms5: {
+    en: { meaning: 'O Allah, grant me wellbeing in my body. O Allah, grant me wellbeing in my hearing. O Allah, grant me wellbeing in my sight. There is no god but You.', fadl: 'Asking for wellbeing in the body and the senses in the evening.' },
+    it: { meaning: 'O Allah, concedimi salute nel mio corpo. O Allah, concedimi salute nel mio udito. O Allah, concedimi salute nella mia vista. Non c\'è dio all\'infuori di Te.', fadl: 'Richiesta di benessere nel corpo e nei sensi alla sera.' },
+    es: { meaning: 'Oh Allah, concédeme bienestar en mi cuerpo. Oh Allah, concédeme bienestar en mi oído. Oh Allah, concédeme bienestar en mi vista. No hay dios sino Tú.', fadl: 'Petición de bienestar en el cuerpo y los sentidos por la noche.' },
+    de: { meaning: 'O Allah, schenke mir Wohlbefinden in meinem Körper. O Allah, schenke mir Wohlbefinden in meinem Gehör. O Allah, schenke mir Wohlbefinden in meinem Sehen. Es gibt keinen Gott außer Dir.', fadl: 'Bitte um Wohlergehen für Körper und Sinne am Abend.' },
+    fr: { meaning: 'Ô Allah, accorde-moi la santé dans mon corps. Ô Allah, accorde-moi la santé dans mon ouïe. Ô Allah, accorde-moi la santé dans ma vue. Il n\'y a de dieu que Toi.', fadl: 'Demande de bien-être pour le corps et les sens le soir.' },
+  },
+  ms6: {
+    en: { meaning: 'In the name of Allah, with whose name nothing on earth or in the heavens can cause harm, and He is the All-Hearing, the All-Knowing.', fadl: 'Whoever says it three times in the evening, no affliction will befall him.' },
+    it: { meaning: 'Nel nome di Allah, con il cui nome nulla sulla terra o nei cieli può nuocere, ed Egli è Colui che tutto ascolta, Colui che tutto sa.', fadl: 'Chi lo dice tre volte la sera, nessuna afflizione lo colpirà.' },
+    es: { meaning: 'En el nombre de Allah, con cuyo nombre nada en la tierra ni en los cielos puede causar daño, y Él es Quien todo lo oye, Quien todo lo sabe.', fadl: 'Quien lo dice tres veces por la noche, ninguna aflicción le sobrevendrá.' },
+    de: { meaning: 'Im Namen Allahs, mit dessen Namen nichts auf der Erde oder in den Himmeln Schaden zufügen kann, und Er ist der Allhörende, der Allwissende.', fadl: 'Wer es abends dreimal spricht, den trifft kein Unheil.' },
+    fr: { meaning: 'Au nom d\'Allah, dont le nom protège de tout mal sur terre comme au ciel, et Il est l\'Audient, l\'Omniscient.', fadl: 'Quiconque le dit trois fois le soir, aucun malheur ne l\'atteindra.' },
+  },
+
+  /* ── أذكار النوم ── */
+  nw1: {
+    en: { meaning: 'In Your name, O Allah, I die and I live.', fadl: 'Said when going to sleep.' },
+    it: { meaning: 'Nel Tuo nome, o Allah, muoio e vivo.', fadl: 'Si dice prima di dormire.' },
+    es: { meaning: 'En Tu nombre, oh Allah, muero y vivo.', fadl: 'Se dice al ir a dormir.' },
+    de: { meaning: 'In Deinem Namen, o Allah, sterbe ich und lebe ich.', fadl: 'Wird beim Schlafengehen gesprochen.' },
+    fr: { meaning: 'En Ton nom, ô Allah, je meurs et je vis.', fadl: 'Se dit au moment de dormir.' },
+  },
+  nw2: {
+    en: { meaning: 'O Allah, protect me from Your punishment on the Day You resurrect Your servants.', fadl: 'Protection from the torment of the grave.' },
+    it: { meaning: 'O Allah, proteggimi dal Tuo castigo nel Giorno in cui resusciterai i Tuoi servi.', fadl: 'Protezione dal castigo della tomba.' },
+    es: { meaning: 'Oh Allah, protégeme de Tu castigo el Día en que resucites a Tus siervos.', fadl: 'Protección del castigo de la tumba.' },
+    de: { meaning: 'O Allah, bewahre mich vor Deiner Strafe an dem Tag, an dem Du Deine Diener auferweckst.', fadl: 'Schutz vor der Grabesstrafe.' },
+    fr: { meaning: 'Ô Allah, protège-moi de Ton châtiment le Jour où Tu ressusciteras Tes serviteurs.', fadl: 'Protection contre le châtiment de la tombe.' },
+  },
+  nw3: {
+    en: { meaning: 'Glory be to Allah (33), praise be to Allah (33), Allah is the Greatest (34).', fadl: 'Better than a servant — the Prophet ﷺ said it is better than what you asked for.' },
+    it: { meaning: 'Gloria ad Allah (33), lode ad Allah (33), Allah è il Più Grande (34).', fadl: 'Meglio di un servitore — il Profeta ﷺ disse che è meglio di ciò che avete chiesto.' },
+    es: { meaning: 'Gloria a Allah (33), alabanza a Allah (33), Allah es el más Grande (34).', fadl: 'Mejor que un sirviente — el Profeta ﷺ dijo que es mejor que lo que pedisteis.' },
+    de: { meaning: 'Gepriesen sei Allah (33), Lob sei Allah (33), Allah ist der Größte (34).', fadl: 'Besser als ein Diener — der Prophet ﷺ sagte, es sei besser als das, worum ihr gebeten habt.' },
+    fr: { meaning: 'Gloire à Allah (33), louange à Allah (33), Allah est le Plus Grand (34).', fadl: 'Meilleur qu\'un serviteur — le Prophète ﷺ dit que cela vaut mieux que ce que vous avez demandé.' },
+  },
+  nw4: {
+    en: { meaning: 'O Allah, I submit myself to You, entrust my affair to You, turn my face to You, and rely upon You, in hope and fear of You. There is no refuge nor escape from You except to You. I believe in Your Book which You revealed and in Your Prophet whom You sent.', fadl: 'Whoever dies that night dies upon the natural disposition (fitrah).' },
+    it: { meaning: 'O Allah, mi affido a Te, affido a Te il mio destino, volgo a Te il mio volto e mi appoggio a Te, con speranza e timore di Te. Non c\'è rifugio né scampo da Te se non presso di Te. Credo nel Tuo Libro che hai rivelato e nel Tuo Profeta che hai inviato.', fadl: 'Chi muore quella notte muore secondo la natura originaria (fitra).' },
+    es: { meaning: 'Oh Allah, me entrego a Ti, confío a Ti mi asunto, vuelvo mi rostro hacia Ti y me apoyo en Ti, con esperanza y temor de Ti. No hay refugio ni escape de Ti sino hacia Ti. Creo en Tu Libro que revelaste y en Tu Profeta que enviaste.', fadl: 'Quien muere esa noche muere en la naturaleza original (fitra).' },
+    de: { meaning: 'O Allah, ich ergebe mich Dir, vertraue Dir meine Angelegenheit an, wende mein Gesicht Dir zu und stütze mich auf Dich, in Hoffnung und Furcht vor Dir. Es gibt keine Zuflucht noch Entrinnen vor Dir außer zu Dir. Ich glaube an Dein Buch, das Du herabgesandt hast, und an Deinen Propheten, den Du gesandt hast.', fadl: 'Wer in jener Nacht stirbt, stirbt im Urzustand (Fitra).' },
+    fr: { meaning: 'Ô Allah, je me soumets à Toi, je Te confie mon affaire, je tourne mon visage vers Toi et je m\'appuie sur Toi, par espoir et crainte de Toi. Il n\'y a de refuge ni d\'échappatoire à Toi qu\'auprès de Toi. Je crois en Ton Livre que Tu as révélé et en Ton Prophète que Tu as envoyé.', fadl: 'Quiconque meurt cette nuit-là meurt selon la nature première (fitra).' },
+  },
+  nw5: {
+    en: { meaning: 'Surah Al-Ikhlas: Say, He is Allah, the One. Allah, the Eternal Refuge. He neither begets nor is born, nor is there to Him any equivalent.', fadl: 'Sufficient against everything — recited with the two refuge surahs three times.' },
+    it: { meaning: 'Sura Al-Ikhlas: Di\': Egli, Allah, è Uno. Allah, l\'Assoluto. Non ha generato e non è stato generato, e nessuno è uguale a Lui.', fadl: 'Sufficiente contro ogni cosa — recitata con le due sure del rifugio tre volte.' },
+    es: { meaning: 'Sura Al-Ijlás: Di: Él es Allah, Uno. Allah, el Absoluto. No engendró ni fue engendrado, y no hay nada igual a Él.', fadl: 'Suficiente contra todo — recitada con las dos suras del refugio tres veces.' },
+    de: { meaning: 'Sure Al-Ichlas: Sag: Er ist Allah, ein Einziger. Allah, der Überlegene. Er zeugt nicht und ist nicht gezeugt worden, und niemand ist Ihm gleich.', fadl: 'Genügt gegen alles — mit den beiden Schutzsuren dreimal rezitiert.' },
+    fr: { meaning: 'Sourate Al-Ikhlas : Dis : Il est Allah, Unique. Allah, le Refuge éternel. Il n\'engendre pas et n\'est pas engendré, et nul ne Lui est égal.', fadl: 'Suffit contre toute chose — récitée avec les deux sourates de refuge trois fois.' },
+  },
+
+  /* ── أذكار الاستيقاظ ── */
+  iq1: {
+    en: { meaning: 'Praise be to Allah who gave us life after causing us to die, and to Him is the resurrection.', fadl: 'The first thing a Muslim says upon waking.' },
+    it: { meaning: 'Lode ad Allah che ci ha dato la vita dopo averci fatto morire, e a Lui è la resurrezione.', fadl: 'La prima cosa che il musulmano dice al risveglio.' },
+    es: { meaning: 'Alabanza a Allah que nos dio la vida después de hacernos morir, y hacia Él es la resurrección.', fadl: 'Lo primero que dice el musulmán al despertar.' },
+    de: { meaning: 'Lob sei Allah, der uns das Leben gab, nachdem Er uns hatte sterben lassen, und zu Ihm ist die Auferstehung.', fadl: 'Das Erste, was der Muslim beim Aufwachen spricht.' },
+    fr: { meaning: 'Louange à Allah qui nous a redonné la vie après nous avoir fait mourir, et c\'est vers Lui qu\'est la résurrection.', fadl: 'La première chose que le musulman dit au réveil.' },
+  },
+  iq2: {
+    en: { meaning: 'There is no god but Allah alone, with no partner; His is the dominion and His is the praise, and He is able to do all things. Glory be to Allah, praise be to Allah, there is no god but Allah, Allah is the Greatest, and there is no might nor power except with Allah, the Most High, the Magnificent.', fadl: 'Whoever says it then supplicates, his supplication is answered.' },
+    it: { meaning: 'Non c\'è dio all\'infuori di Allah, l\'Unico, senza associati; Suo è il regno e Sua è la lode, ed Egli ha potere su ogni cosa. Gloria ad Allah, lode ad Allah, non c\'è dio all\'infuori di Allah, Allah è il Più Grande, e non c\'è forza né potere se non in Allah, l\'Altissimo, il Magnifico.', fadl: 'Chi lo dice e poi supplica, la sua supplica viene esaudita.' },
+    es: { meaning: 'No hay dios sino Allah, el Único, sin asociado; Suyo es el dominio y Suya la alabanza, y Él tiene poder sobre todas las cosas. Gloria a Allah, alabanza a Allah, no hay dios sino Allah, Allah es el más Grande, y no hay fuerza ni poder sino en Allah, el Altísimo, el Magnífico.', fadl: 'Quien lo dice y luego suplica, su súplica es respondida.' },
+    de: { meaning: 'Es gibt keinen Gott außer Allah allein, ohne Teilhaber; Sein ist die Herrschaft und Sein ist das Lob, und Er hat Macht über alle Dinge. Gepriesen sei Allah, Lob sei Allah, es gibt keinen Gott außer Allah, Allah ist der Größte, und es gibt keine Macht noch Kraft außer bei Allah, dem Höchsten, dem Gewaltigen.', fadl: 'Wer es spricht und dann bittet, dessen Bittgebet wird erhört.' },
+    fr: { meaning: 'Il n\'y a de dieu qu\'Allah, l\'Unique, sans associé ; à Lui la royauté et à Lui la louange, et Il est capable de toute chose. Gloire à Allah, louange à Allah, il n\'y a de dieu qu\'Allah, Allah est le Plus Grand, et il n\'y a de force ni de puissance qu\'en Allah, le Très-Haut, l\'Immense.', fadl: 'Quiconque le dit puis invoque, son invocation est exaucée.' },
+  },
+  iq3: {
+    en: { meaning: 'O Allah, I ask You for the good of this day: its triumph, its victory, its light, its blessing and its guidance; and I seek refuge in You from the evil within it and the evil after it.', fadl: 'Asking for the good of the day and warding off its evils.' },
+    it: { meaning: 'O Allah, Ti chiedo il bene di questo giorno: il suo trionfo, la sua vittoria, la sua luce, la sua benedizione e la sua guida; e cerco rifugio in Te dal male in esso e dal male dopo di esso.', fadl: 'Richiesta del bene del giorno e allontanamento dei suoi mali.' },
+    es: { meaning: 'Oh Allah, Te pido el bien de este día: su triunfo, su victoria, su luz, su bendición y su guía; y me refugio en Ti del mal que hay en él y del mal posterior.', fadl: 'Petición del bien del día y protección de sus males.' },
+    de: { meaning: 'O Allah, ich bitte Dich um das Gute dieses Tages: seinen Erfolg, seinen Sieg, sein Licht, seinen Segen und seine Rechtleitung; und ich suche Zuflucht bei Dir vor dem Übel darin und dem Übel danach.', fadl: 'Bitte um das Gute des Tages und Abwehr seiner Übel.' },
+    fr: { meaning: 'Ô Allah, je Te demande le bien de ce jour : son succès, sa victoire, sa lumière, sa bénédiction et sa guidée ; et je cherche refuge auprès de Toi contre le mal qu\'il contient et le mal qui le suit.', fadl: 'Demande du bien du jour et protection contre ses maux.' },
+  },
+
+  /* ── أذكار بعد الصلاة ── */
+  bs1: {
+    en: { meaning: 'I seek the forgiveness of Allah.', fadl: 'Seeking forgiveness after every prayer.' },
+    it: { meaning: 'Chiedo il perdono di Allah.', fadl: 'Richiesta di perdono dopo ogni preghiera.' },
+    es: { meaning: 'Pido el perdón de Allah.', fadl: 'Pedir perdón después de cada oración.' },
+    de: { meaning: 'Ich bitte Allah um Vergebung.', fadl: 'Um Vergebung bitten nach jedem Gebet.' },
+    fr: { meaning: 'Je demande pardon à Allah.', fadl: 'Demander pardon après chaque prière.' },
+  },
+  bs2: {
+    en: { meaning: 'O Allah, You are Peace and from You comes peace. Blessed are You, O Owner of Majesty and Honour.', fadl: 'Said immediately after every prayer.' },
+    it: { meaning: 'O Allah, Tu sei la Pace e da Te proviene la pace. Benedetto sei Tu, o Possessore di Maestà e Onore.', fadl: 'Si dice subito dopo ogni preghiera.' },
+    es: { meaning: 'Oh Allah, Tú eres la Paz y de Ti proviene la paz. Bendito eres, oh Poseedor de Majestad y Honor.', fadl: 'Se dice inmediatamente después de cada oración.' },
+    de: { meaning: 'O Allah, Du bist der Friede und von Dir kommt der Friede. Gesegnet bist Du, o Besitzer der Erhabenheit und Ehre.', fadl: 'Wird unmittelbar nach jedem Gebet gesprochen.' },
+    fr: { meaning: 'Ô Allah, Tu es la Paix et de Toi vient la paix. Béni sois-Tu, ô Détenteur de la Majesté et de la Générosité.', fadl: 'Se dit aussitôt après chaque prière.' },
+  },
+  bs3: {
+    en: { meaning: 'There is no god but Allah alone, with no partner; His is the dominion and His is the praise, and He is able to do all things. O Allah, none can withhold what You give, and none can give what You withhold, and no wealth or might can benefit anyone against You.', fadl: 'Said after every obligatory prayer.' },
+    it: { meaning: 'Non c\'è dio all\'infuori di Allah, l\'Unico, senza associati; Suo è il regno e Sua è la lode, ed Egli ha potere su ogni cosa. O Allah, nessuno può trattenere ciò che Tu concedi, e nessuno può concedere ciò che Tu trattieni, e nessuna ricchezza o potenza giova a nessuno contro di Te.', fadl: 'Si dice dopo ogni preghiera obbligatoria.' },
+    es: { meaning: 'No hay dios sino Allah, el Único, sin asociado; Suyo es el dominio y Suya la alabanza, y Él tiene poder sobre todas las cosas. Oh Allah, nadie puede retener lo que Tú das, ni nadie puede dar lo que Tú retienes, y de nada sirve la riqueza ni el poder ante Ti.', fadl: 'Se dice después de cada oración obligatoria.' },
+    de: { meaning: 'Es gibt keinen Gott außer Allah allein, ohne Teilhaber; Sein ist die Herrschaft und Sein ist das Lob, und Er hat Macht über alle Dinge. O Allah, niemand kann zurückhalten, was Du gibst, und niemand kann geben, was Du zurückhältst, und kein Reichtum oder Macht nützt jemandem gegen Dich.', fadl: 'Wird nach jedem Pflichtgebet gesprochen.' },
+    fr: { meaning: 'Il n\'y a de dieu qu\'Allah, l\'Unique, sans associé ; à Lui la royauté et à Lui la louange, et Il est capable de toute chose. Ô Allah, nul ne peut retenir ce que Tu donnes, et nul ne peut donner ce que Tu retiens, et nulle richesse ou puissance ne profite à personne contre Toi.', fadl: 'Se dit après chaque prière obligatoire.' },
+  },
+  bs4: {
+    en: { meaning: 'Glory be to Allah (33), praise be to Allah (33), Allah is the Greatest (34).', fadl: 'Glorifying, praising and magnifying after prayer — complete the hundred with the testimony of faith.' },
+    it: { meaning: 'Gloria ad Allah (33), lode ad Allah (33), Allah è il Più Grande (34).', fadl: 'Glorificare, lodare e magnificare dopo la preghiera — completa il centinaio con l\'attestazione di fede.' },
+    es: { meaning: 'Gloria a Allah (33), alabanza a Allah (33), Allah es el más Grande (34).', fadl: 'Glorificar, alabar y engrandecer tras la oración — completa el centenar con el testimonio de fe.' },
+    de: { meaning: 'Gepriesen sei Allah (33), Lob sei Allah (33), Allah ist der Größte (34).', fadl: 'Lobpreisen, Loben und Verherrlichen nach dem Gebet — vervollständige die Hundert mit dem Glaubensbekenntnis.' },
+    fr: { meaning: 'Gloire à Allah (33), louange à Allah (33), Allah est le Plus Grand (34).', fadl: 'Glorifier, louer et magnifier après la prière — compléter la centaine par l\'attestation de foi.' },
+  },
+  bs5: {
+    en: { meaning: 'O Allah, help me to remember You, to thank You, and to worship You in the best manner.', fadl: 'Said after every prayer — the Prophet ﷺ advised Muadh ibn Jabal with it.' },
+    it: { meaning: 'O Allah, aiutami a ricordarTi, a ringraziarTi e ad adorarTi nel modo migliore.', fadl: 'Si dice dopo ogni preghiera — il Profeta ﷺ lo raccomandò a Muadh ibn Jabal.' },
+    es: { meaning: 'Oh Allah, ayúdame a recordarte, a agradecerte y a adorarte de la mejor manera.', fadl: 'Se dice después de cada oración — el Profeta ﷺ se lo aconsejó a Muadh ibn Yabal.' },
+    de: { meaning: 'O Allah, hilf mir, Deiner zu gedenken, Dir zu danken und Dich auf beste Weise anzubeten.', fadl: 'Wird nach jedem Gebet gesprochen — der Prophet ﷺ empfahl es Muadh ibn Dschabal.' },
+    fr: { meaning: 'Ô Allah, aide-moi à T\'évoquer, à Te remercier et à T\'adorer de la meilleure manière.', fadl: 'Se dit après chaque prière — le Prophète ﷺ l\'a recommandé à Mu\'adh ibn Jabal.' },
+  },
+  bs6: {
+    en: { meaning: 'Ayat al-Kursi: Allah — there is no god but He, the Ever-Living, the Sustainer of all. Neither drowsiness nor sleep overtakes Him. To Him belongs whatever is in the heavens and the earth. Who can intercede with Him except by His permission? He knows what is before them and what is behind them, and they encompass nothing of His knowledge except what He wills. His Throne extends over the heavens and the earth, and their preservation does not tire Him. He is the Most High, the Magnificent.', fadl: 'Whoever recites it after each prayer, nothing stands between him and Paradise except death.' },
+    it: { meaning: 'Ayat al-Kursi: Allah — non c\'è dio all\'infuori di Lui, il Vivente, l\'Autosussistente. Non Lo prende né sonnolenza né sonno. A Lui appartiene quanto è nei cieli e sulla terra. Chi può intercedere presso di Lui se non con il Suo permesso? Egli conosce ciò che è davanti a loro e ciò che è dietro di loro, ed essi non abbracciano nulla della Sua scienza se non ciò che Egli vuole. Il Suo Trono si estende sui cieli e sulla terra, e la loro custodia non Lo affatica. Egli è l\'Altissimo, il Magnifico.', fadl: 'Chi la recita dopo ogni preghiera, nulla lo separa dal Paradiso se non la morte.' },
+    es: { meaning: 'Ayat al-Kursi: Allah — no hay dios sino Él, el Viviente, el Sustentador. No Lo toma somnolencia ni sueño. Suyo es cuanto hay en los cielos y en la tierra. ¿Quién puede interceder ante Él sino con Su permiso? Conoce lo que tienen delante y lo que tienen detrás, y no abarcan nada de Su conocimiento salvo lo que Él quiere. Su Trono se extiende sobre los cielos y la tierra, y su custodia no Le fatiga. Él es el Altísimo, el Magnífico.', fadl: 'Quien la recita tras cada oración, nada se interpone entre él y el Paraíso salvo la muerte.' },
+    de: { meaning: 'Ayat al-Kursi: Allah — es gibt keinen Gott außer Ihm, dem Lebendigen, dem Beständigen. Ihn überkommt weder Schlummer noch Schlaf. Ihm gehört, was in den Himmeln und auf der Erde ist. Wer kann bei Ihm Fürsprache einlegen außer mit Seiner Erlaubnis? Er weiß, was vor ihnen und was hinter ihnen ist, und sie umfassen nichts von Seinem Wissen außer dem, was Er will. Sein Thron umfasst die Himmel und die Erde, und ihre Bewahrung ermüdet Ihn nicht. Er ist der Höchste, der Gewaltige.', fadl: 'Wer sie nach jedem Gebet rezitiert, den trennt nichts vom Paradies außer dem Tod.' },
+    fr: { meaning: 'Ayat al-Kursi : Allah — il n\'y a de dieu que Lui, le Vivant, Celui qui subsiste par Lui-même. Ni somnolence ni sommeil ne Le saisissent. À Lui appartient ce qui est dans les cieux et sur la terre. Qui peut intercéder auprès de Lui sans Sa permission ? Il sait ce qui est devant eux et derrière eux, et ils n\'embrassent de Sa science que ce qu\'Il veut. Son Trône s\'étend sur les cieux et la terre, et leur garde ne Lui pèse point. Il est le Très-Haut, l\'Immense.', fadl: 'Quiconque la récite après chaque prière, rien ne le sépare du Paradis sinon la mort.' },
+  },
+
+  /* ── أذكار الحياة اليومية ── */
+  hy1: {
+    en: { meaning: 'In the name of Allah.', fadl: 'Said when entering the home — remembering Allah keeps Satan from the house.', context: 'Entering the home' },
+    it: { meaning: 'Nel nome di Allah.', fadl: 'Si dice entrando in casa — ricordare Allah tiene Satana lontano dalla casa.', context: 'Entrare in casa' },
+    es: { meaning: 'En el nombre de Allah.', fadl: 'Se dice al entrar en casa — recordar a Allah mantiene a Satán fuera del hogar.', context: 'Entrar en casa' },
+    de: { meaning: 'Im Namen Allahs.', fadl: 'Wird beim Betreten des Hauses gesprochen — das Gedenken Allahs hält Satan vom Haus fern.', context: 'Das Haus betreten' },
+    fr: { meaning: 'Au nom d\'Allah.', fadl: 'Se dit en entrant chez soi — évoquer Allah tient Satan éloigné de la maison.', context: 'Entrer dans la maison' },
+  },
+  hy2: {
+    en: { meaning: 'In the name of Allah we enter, in the name of Allah we leave, and upon Allah our Lord we rely.', fadl: 'Said when entering and leaving the home.', context: 'Entering and leaving the home' },
+    it: { meaning: 'Nel nome di Allah entriamo, nel nome di Allah usciamo, e su Allah nostro Signore confidiamo.', fadl: 'Si dice entrando e uscendo di casa.', context: 'Entrare e uscire di casa' },
+    es: { meaning: 'En el nombre de Allah entramos, en el nombre de Allah salimos, y en Allah nuestro Señor confiamos.', fadl: 'Se dice al entrar y salir de casa.', context: 'Entrar y salir de casa' },
+    de: { meaning: 'Im Namen Allahs treten wir ein, im Namen Allahs gehen wir hinaus, und auf Allah, unseren Herrn, verlassen wir uns.', fadl: 'Wird beim Betreten und Verlassen des Hauses gesprochen.', context: 'Haus betreten und verlassen' },
+    fr: { meaning: 'Au nom d\'Allah nous entrons, au nom d\'Allah nous sortons, et c\'est sur Allah notre Seigneur que nous nous appuyons.', fadl: 'Se dit en entrant et en sortant de la maison.', context: 'Entrer et sortir de la maison' },
+  },
+  hy3: {
+    en: { meaning: 'O Allah, I seek refuge in You from the male and female devils.', fadl: 'Said when entering the lavatory.', context: 'Entering the lavatory' },
+    it: { meaning: 'O Allah, cerco rifugio in Te dai demoni maschi e femmine.', fadl: 'Si dice entrando nel bagno.', context: 'Entrare in bagno' },
+    es: { meaning: 'Oh Allah, me refugio en Ti de los demonios machos y hembras.', fadl: 'Se dice al entrar al baño.', context: 'Entrar al baño' },
+    de: { meaning: 'O Allah, ich suche Zuflucht bei Dir vor den männlichen und weiblichen Teufeln.', fadl: 'Wird beim Betreten der Toilette gesprochen.', context: 'Die Toilette betreten' },
+    fr: { meaning: 'Ô Allah, je cherche refuge auprès de Toi contre les démons mâles et femelles.', fadl: 'Se dit en entrant aux toilettes.', context: 'Entrer aux toilettes' },
+  },
+  hy4: {
+    en: { meaning: 'I seek Your forgiveness.', fadl: 'Said when leaving the lavatory.', context: 'Leaving the lavatory' },
+    it: { meaning: 'Chiedo il Tuo perdono.', fadl: 'Si dice uscendo dal bagno.', context: 'Uscire dal bagno' },
+    es: { meaning: 'Pido Tu perdón.', fadl: 'Se dice al salir del baño.', context: 'Salir del baño' },
+    de: { meaning: 'Ich bitte Dich um Vergebung.', fadl: 'Wird beim Verlassen der Toilette gesprochen.', context: 'Die Toilette verlassen' },
+    fr: { meaning: 'Je demande Ton pardon.', fadl: 'Se dit en sortant des toilettes.', context: 'Sortir des toilettes' },
+  },
+  hy5: {
+    en: { meaning: 'In the name of Allah. O Allah, bless for us what You have provided us, and protect us from the punishment of the Fire.', fadl: 'Said before eating.', context: 'Before eating' },
+    it: { meaning: 'Nel nome di Allah. O Allah, benedici per noi ciò che ci hai provveduto e proteggici dal castigo del Fuoco.', fadl: 'Si dice prima di mangiare.', context: 'Prima del pasto' },
+    es: { meaning: 'En el nombre de Allah. Oh Allah, bendice para nosotros lo que nos has provisto y protégenos del castigo del Fuego.', fadl: 'Se dice antes de comer.', context: 'Antes de comer' },
+    de: { meaning: 'Im Namen Allahs. O Allah, segne für uns, was Du uns beschert hast, und bewahre uns vor der Strafe des Feuers.', fadl: 'Wird vor dem Essen gesprochen.', context: 'Vor dem Essen' },
+    fr: { meaning: 'Au nom d\'Allah. Ô Allah, bénis pour nous ce que Tu nous as accordé et protège-nous du châtiment du Feu.', fadl: 'Se dit avant de manger.', context: 'Avant le repas' },
+  },
+  hy6: {
+    en: { meaning: 'Praise be to Allah who has fed us and given us drink and made us Muslims.', fadl: 'Said after eating.', context: 'After eating' },
+    it: { meaning: 'Lode ad Allah che ci ha nutriti, ci ha dissetati e ci ha resi musulmani.', fadl: 'Si dice dopo aver mangiato.', context: 'Dopo il pasto' },
+    es: { meaning: 'Alabanza a Allah que nos ha alimentado, nos ha dado de beber y nos ha hecho musulmanes.', fadl: 'Se dice después de comer.', context: 'Después de comer' },
+    de: { meaning: 'Lob sei Allah, der uns gespeist und getränkt und uns zu Muslimen gemacht hat.', fadl: 'Wird nach dem Essen gesprochen.', context: 'Nach dem Essen' },
+    fr: { meaning: 'Louange à Allah qui nous a nourris, nous a abreuvés et a fait de nous des musulmans.', fadl: 'Se dit après avoir mangé.', context: 'Après le repas' },
+  },
+  hy7: {
+    en: { meaning: 'In the name of Allah, I rely upon Allah, and there is no might nor power except with Allah.', fadl: 'Said when leaving home — it is said to him: you are guided, sufficed and protected.', context: 'Leaving the home' },
+    it: { meaning: 'Nel nome di Allah, confido in Allah, e non c\'è forza né potere se non in Allah.', fadl: 'Si dice uscendo di casa — gli viene detto: sei guidato, ti basta e sei protetto.', context: 'Uscire di casa' },
+    es: { meaning: 'En el nombre de Allah, confío en Allah, y no hay fuerza ni poder sino en Allah.', fadl: 'Se dice al salir de casa — se le dice: estás guiado, te basta y estás protegido.', context: 'Salir de casa' },
+    de: { meaning: 'Im Namen Allahs, ich verlasse mich auf Allah, und es gibt keine Macht noch Kraft außer bei Allah.', fadl: 'Wird beim Verlassen des Hauses gesprochen — ihm wird gesagt: du bist rechtgeleitet, versorgt und beschützt.', context: 'Das Haus verlassen' },
+    fr: { meaning: 'Au nom d\'Allah, je m\'appuie sur Allah, et il n\'y a de force ni de puissance qu\'en Allah.', fadl: 'Se dit en sortant de chez soi — on lui dit : tu es guidé, suffi et protégé.', context: 'Sortir de la maison' },
+  },
+  hy8: {
+    en: { meaning: 'O Allah, place light in my heart, light on my tongue, light in my hearing, and light in my sight.', fadl: 'Supplication for entering the mosque.', context: 'Entering the mosque' },
+    it: { meaning: 'O Allah, poni luce nel mio cuore, luce sulla mia lingua, luce nel mio udito e luce nella mia vista.', fadl: 'Supplica per entrare in moschea.', context: 'Entrare in moschea' },
+    es: { meaning: 'Oh Allah, pon luz en mi corazón, luz en mi lengua, luz en mi oído y luz en mi vista.', fadl: 'Súplica para entrar en la mezquita.', context: 'Entrar en la mezquita' },
+    de: { meaning: 'O Allah, lege Licht in mein Herz, Licht auf meine Zunge, Licht in mein Gehör und Licht in mein Sehen.', fadl: 'Bittgebet für das Betreten der Moschee.', context: 'Die Moschee betreten' },
+    fr: { meaning: 'Ô Allah, place une lumière dans mon cœur, une lumière sur ma langue, une lumière dans mon ouïe et une lumière dans ma vue.', fadl: 'Invocation pour entrer à la mosquée.', context: 'Entrer à la mosquée' },
+  },
+
+  /* ── أذكار المناسبات ── */
+  mn1: {
+    en: { meaning: 'O Allah, I ask You for its good, the good within it, and the good it was sent with; and I seek refuge in You from its evil, the evil within it, and the evil it was sent with.', fadl: 'Supplication during wind.', context: 'When the wind blows' },
+    it: { meaning: 'O Allah, Ti chiedo il suo bene, il bene che contiene e il bene con cui è stato inviato; e cerco rifugio in Te dal suo male, dal male che contiene e dal male con cui è stato inviato.', fadl: 'Supplica durante il vento.', context: 'Quando soffia il vento' },
+    es: { meaning: 'Oh Allah, Te pido su bien, el bien que contiene y el bien con que fue enviado; y me refugio en Ti de su mal, del mal que contiene y del mal con que fue enviado.', fadl: 'Súplica durante el viento.', context: 'Cuando sopla el viento' },
+    de: { meaning: 'O Allah, ich bitte Dich um sein Gutes, das Gute darin und das Gute, womit er gesandt wurde; und ich suche Zuflucht bei Dir vor seinem Übel, dem Übel darin und dem Übel, womit er gesandt wurde.', fadl: 'Bittgebet bei Wind.', context: 'Wenn der Wind weht' },
+    fr: { meaning: 'Ô Allah, je Te demande son bien, le bien qu\'il contient et le bien avec lequel il a été envoyé ; et je cherche refuge auprès de Toi contre son mal, le mal qu\'il contient et le mal avec lequel il a été envoyé.', fadl: 'Invocation lors du vent.', context: 'Quand le vent souffle' },
+  },
+  mn2: {
+    en: { meaning: 'O Allah, give us a relieving, wholesome, fruitful rain — beneficial not harmful, soon not delayed.', fadl: 'Supplication for rain.', context: 'When asking for rain' },
+    it: { meaning: 'O Allah, dacci una pioggia soccorrevole, sana e feconda — benefica non dannosa, presto e non in ritardo.', fadl: 'Supplica per la pioggia.', context: 'Quando si chiede la pioggia' },
+    es: { meaning: 'Oh Allah, danos una lluvia socorredora, saludable y fructífera — beneficiosa, no dañina, pronta, no tardía.', fadl: 'Súplica por la lluvia.', context: 'Al pedir lluvia' },
+    de: { meaning: 'O Allah, gib uns einen erquickenden, heilsamen, fruchtbaren Regen — nützlich, nicht schädlich, bald, nicht verzögert.', fadl: 'Bittgebet um Regen.', context: 'Wenn um Regen gebeten wird' },
+    fr: { meaning: 'Ô Allah, donne-nous une pluie secourable, salutaire et fertile — bénéfique et non nuisible, prompte et non tardive.', fadl: 'Invocation pour la pluie.', context: 'En demandant la pluie' },
+  },
+  mn3: {
+    en: { meaning: 'We have been given rain by the grace and mercy of Allah.', fadl: 'Said after rainfall.', context: 'After rain' },
+    it: { meaning: 'Ci è stata data la pioggia per grazia e misericordia di Allah.', fadl: 'Si dice dopo la pioggia.', context: 'Dopo la pioggia' },
+    es: { meaning: 'Se nos ha dado la lluvia por la gracia y misericordia de Allah.', fadl: 'Se dice después de la lluvia.', context: 'Después de la lluvia' },
+    de: { meaning: 'Uns wurde Regen gegeben durch die Gnade und Barmherzigkeit Allahs.', fadl: 'Wird nach dem Regen gesprochen.', context: 'Nach dem Regen' },
+    fr: { meaning: 'La pluie nous a été donnée par la grâce et la miséricorde d\'Allah.', fadl: 'Se dit après la pluie.', context: 'Après la pluie' },
+  },
+  mn4: {
+    en: { meaning: 'O Allah, I seek refuge in You from worry and grief, from incapacity and laziness, from cowardice and miserliness, from the burden of debt and the domination of men.', fadl: 'Supplication against worry and grief.', context: 'In times of worry and grief' },
+    it: { meaning: 'O Allah, cerco rifugio in Te dall\'angoscia e dalla tristezza, dall\'incapacità e dalla pigrizia, dalla codardia e dall\'avarizia, dal peso del debito e dal predominio degli uomini.', fadl: 'Supplica contro l\'angoscia e la tristezza.', context: 'Nei momenti di angoscia e tristezza' },
+    es: { meaning: 'Oh Allah, me refugio en Ti de la angustia y la tristeza, de la incapacidad y la pereza, de la cobardía y la avaricia, del peso de la deuda y del dominio de los hombres.', fadl: 'Súplica contra la angustia y la tristeza.', context: 'En momentos de angustia y tristeza' },
+    de: { meaning: 'O Allah, ich suche Zuflucht bei Dir vor Sorge und Kummer, vor Unfähigkeit und Trägheit, vor Feigheit und Geiz, vor der Last der Schulden und der Übermacht der Menschen.', fadl: 'Bittgebet gegen Sorge und Kummer.', context: 'In Zeiten von Sorge und Kummer' },
+    fr: { meaning: 'Ô Allah, je cherche refuge auprès de Toi contre le souci et la tristesse, l\'incapacité et la paresse, la lâcheté et l\'avarice, le poids de la dette et la domination des hommes.', fadl: 'Invocation contre le souci et la tristesse.', context: 'En cas de souci et de tristesse' },
+  },
+  mn5: {
+    en: { meaning: 'There is no god but Allah, the Magnificent, the Forbearing. There is no god but Allah, Lord of the Mighty Throne. There is no god but Allah, Lord of the heavens, Lord of the earth, and Lord of the Noble Throne.', fadl: 'Supplication in times of distress.', context: 'In times of distress' },
+    it: { meaning: 'Non c\'è dio all\'infuori di Allah, il Magnifico, il Magnanimo. Non c\'è dio all\'infuori di Allah, Signore del Trono immenso. Non c\'è dio all\'infuori di Allah, Signore dei cieli, Signore della terra e Signore del Trono nobile.', fadl: 'Supplica nei momenti di afflizione.', context: 'Nei momenti di afflizione' },
+    es: { meaning: 'No hay dios sino Allah, el Magnífico, el Indulgente. No hay dios sino Allah, Señor del Trono inmenso. No hay dios sino Allah, Señor de los cielos, Señor de la tierra y Señor del Trono noble.', fadl: 'Súplica en momentos de aflicción.', context: 'En momentos de aflicción' },
+    de: { meaning: 'Es gibt keinen Gott außer Allah, dem Gewaltigen, dem Nachsichtigen. Es gibt keinen Gott außer Allah, dem Herrn des gewaltigen Throns. Es gibt keinen Gott außer Allah, dem Herrn der Himmel, dem Herrn der Erde und dem Herrn des edlen Throns.', fadl: 'Bittgebet in Zeiten der Not.', context: 'In Zeiten der Not' },
+    fr: { meaning: 'Il n\'y a de dieu qu\'Allah, l\'Immense, le Magnanime. Il n\'y a de dieu qu\'Allah, Seigneur du Trône immense. Il n\'y a de dieu qu\'Allah, Seigneur des cieux, Seigneur de la terre et Seigneur du noble Trône.', fadl: 'Invocation dans les moments de détresse.', context: 'Dans les moments de détresse' },
+  },
+  mn6: {
+    en: { meaning: 'O Allah, I seek Your guidance through Your knowledge, I seek Your power through Your might, and I ask You of Your immense bounty; for You are able while I am not, You know while I do not, and You are the Knower of the unseen. O Allah, if You know this matter to be good for me in my religion, my livelihood and the outcome of my affairs, then decree it for me, make it easy for me, and bless me in it. And if You know this matter to be bad for me, then turn it away from me and turn me away from it, and decree for me what is good wherever it may be, and make me content with it.', fadl: 'The supplication of the prayer of guidance (Istikharah) — name the matter in place of "this matter".', context: 'Seeking guidance (Istikharah)' },
+    it: { meaning: 'O Allah, cerco la Tua guida tramite la Tua scienza, cerco la Tua forza tramite la Tua potenza e Ti chiedo della Tua immensa grazia; poiché Tu puoi e io non posso, Tu sai e io non so, e Tu sei il Conoscitore dell\'invisibile. O Allah, se sai che questa cosa è un bene per me nella mia religione, nella mia vita e nell\'esito delle mie faccende, allora decretala per me, facilitamela e benedicimi in essa. E se sai che questa cosa è un male per me, allora allontanala da me e allontana me da essa, e decreta per me il bene ovunque sia, e rendimene soddisfatto.', fadl: 'La supplica della preghiera di consultazione (Istikhara) — nomina la cosa al posto di "questa cosa".', context: 'Richiesta di guida (Istikhara)' },
+    es: { meaning: 'Oh Allah, busco Tu guía por Tu conocimiento, busco Tu fuerza por Tu poder y Te pido de Tu inmensa gracia; pues Tú puedes y yo no, Tú sabes y yo no, y Tú eres el Conocedor de lo oculto. Oh Allah, si sabes que este asunto es bueno para mí en mi religión, mi vida y el desenlace de mis asuntos, decrétalo para mí, facilítamelo y bendíceme en él. Y si sabes que este asunto es malo para mí, apártalo de mí y apártame de él, y decreta para mí el bien dondequiera que esté, y haz que me contente con ello.', fadl: 'La súplica de la oración de consulta (Istijara) — nombra el asunto en lugar de "este asunto".', context: 'Buscar guía (Istijara)' },
+    de: { meaning: 'O Allah, ich suche Deine Rechtleitung durch Dein Wissen, ich suche Deine Kraft durch Deine Macht, und ich bitte Dich um Deine gewaltige Gunst; denn Du vermagst, während ich nicht vermag, Du weißt, während ich nicht weiß, und Du bist der Kenner des Verborgenen. O Allah, wenn Du weißt, dass diese Sache gut für mich ist in meiner Religion, meinem Leben und dem Ausgang meiner Angelegenheiten, so bestimme sie für mich, mache sie mir leicht und segne mich darin. Und wenn Du weißt, dass diese Sache schlecht für mich ist, so wende sie von mir ab und mich von ihr ab, und bestimme für mich das Gute, wo immer es sei, und mache mich damit zufrieden.', fadl: 'Das Bittgebet des Rechtleitungsgebets (Istichara) — nenne die Angelegenheit anstelle von „diese Sache“.', context: 'Rechtleitung suchen (Istichara)' },
+    fr: { meaning: 'Ô Allah, je cherche Ta guidée par Ta science, je cherche Ta force par Ta puissance et je Te demande de Ton immense grâce ; car Tu peux alors que je ne peux pas, Tu sais alors que je ne sais pas, et Tu es le Connaisseur de l\'invisible. Ô Allah, si Tu sais que cette affaire est un bien pour moi dans ma religion, ma vie et l\'issue de mes affaires, alors décrète-la pour moi, facilite-la-moi et bénis-moi en elle. Et si Tu sais que cette affaire est un mal pour moi, alors éloigne-la de moi et éloigne-moi d\'elle, et décrète pour moi le bien où qu\'il soit, puis fais que j\'en sois satisfait.', fadl: 'L\'invocation de la prière de consultation (Istikhara) — nommer l\'affaire à la place de « cette affaire ».', context: 'Rechercher la guidée (Istikhara)' },
+  },
+  mn7: {
+    en: { meaning: 'O Allah, ease for us this journey of ours and fold up its distance for us. O Allah, You are the Companion on the journey and the Guardian over the family.', fadl: 'Supplication for travel.', context: 'When travelling' },
+    it: { meaning: 'O Allah, facilitaci questo nostro viaggio e accorcia per noi la sua distanza. O Allah, Tu sei il Compagno nel viaggio e il Custode della famiglia.', fadl: 'Supplica per il viaggio.', context: 'Durante il viaggio' },
+    es: { meaning: 'Oh Allah, facilítanos este viaje nuestro y acorta para nosotros su distancia. Oh Allah, Tú eres el Compañero en el viaje y el Guardián de la familia.', fadl: 'Súplica para el viaje.', context: 'Al viajar' },
+    de: { meaning: 'O Allah, erleichtere uns diese unsere Reise und falte ihre Entfernung für uns zusammen. O Allah, Du bist der Begleiter auf der Reise und der Hüter über die Familie.', fadl: 'Bittgebet für die Reise.', context: 'Beim Reisen' },
+    fr: { meaning: 'Ô Allah, facilite-nous ce voyage et replie pour nous sa distance. Ô Allah, Tu es le Compagnon dans le voyage et le Gardien de la famille.', fadl: 'Invocation pour le voyage.', context: 'En voyage' },
+  },
+  mn8: {
+    en: { meaning: 'Glory be to the One who has subjected this to us, for we could not have done it ourselves, and indeed to our Lord we will return.', fadl: 'Said when boarding a car, plane or any means of transport.', context: 'Boarding a vehicle' },
+    it: { meaning: 'Gloria a Colui che ci ha sottomesso questo, mentre noi non avremmo potuto farlo da soli, e in verità al nostro Signore faremo ritorno.', fadl: 'Si dice salendo in auto, aereo o qualsiasi mezzo.', context: 'Salire su un mezzo' },
+    es: { meaning: 'Gloria a Quien nos ha sometido esto, cuando nosotros no habríamos podido hacerlo, y en verdad a nuestro Señor regresaremos.', fadl: 'Se dice al subir a un coche, avión o cualquier medio.', context: 'Subir a un vehículo' },
+    de: { meaning: 'Gepriesen sei Der, Der uns dies dienstbar gemacht hat, denn wir hätten es nicht selbst vermocht, und zu unserem Herrn werden wir gewiss zurückkehren.', fadl: 'Wird beim Besteigen von Auto, Flugzeug oder jedem Verkehrsmittel gesprochen.', context: 'Ein Fahrzeug besteigen' },
+    fr: { meaning: 'Gloire à Celui qui nous a soumis cela, alors que nous n\'aurions pu le faire nous-mêmes, et c\'est vers notre Seigneur que nous retournerons.', fadl: 'Se dit en montant en voiture, en avion ou dans tout moyen de transport.', context: 'Monter dans un véhicule' },
+  },
+
+  /* ── الرقية الشرعية ── */
+  rq1: {
+    en: { meaning: 'In the name of Allah I perform ruqyah upon you, from everything that harms you, from the evil of every soul or envious eye. May Allah heal you. In the name of Allah I perform ruqyah upon you.', fadl: 'The ruqyah of the Prophet ﷺ.', context: 'Ruqyah' },
+    it: { meaning: 'Nel nome di Allah eseguo la ruqya su di te, da tutto ciò che ti nuoce, dal male di ogni anima o occhio invidioso. Che Allah ti guarisca. Nel nome di Allah eseguo la ruqya su di te.', fadl: 'La ruqya del Profeta ﷺ.', context: 'Ruqya' },
+    es: { meaning: 'En el nombre de Allah hago ruqya sobre ti, de todo lo que te daña, del mal de toda alma u ojo envidioso. Que Allah te sane. En el nombre de Allah hago ruqya sobre ti.', fadl: 'La ruqya del Profeta ﷺ.', context: 'Ruqya' },
+    de: { meaning: 'Im Namen Allahs vollziehe ich Ruqya über dich, vor allem, was dir schadet, vor dem Übel jeder Seele oder jedes neidischen Auges. Möge Allah dich heilen. Im Namen Allahs vollziehe ich Ruqya über dich.', fadl: 'Die Ruqya des Propheten ﷺ.', context: 'Ruqya' },
+    fr: { meaning: 'Au nom d\'Allah je pratique la roqya sur toi, contre tout ce qui te nuit, contre le mal de toute âme ou de tout œil envieux. Qu\'Allah te guérisse. Au nom d\'Allah je pratique la roqya sur toi.', fadl: 'La roqya du Prophète ﷺ.', context: 'Roqya' },
+  },
+  rq2: {
+    en: { meaning: 'I seek refuge in the perfect words of Allah from every devil and poisonous creature, and from every harmful, envious eye.', fadl: 'The ruqyah of Al-Hasan and Al-Husayn — the Prophet ﷺ used to recite it over them.', context: 'Seeking refuge' },
+    it: { meaning: 'Cerco rifugio nelle parole perfette di Allah da ogni demone e creatura velenosa, e da ogni occhio nocivo e invidioso.', fadl: 'La ruqya di al-Hasan e al-Husayn — il Profeta ﷺ la recitava su di loro.', context: 'Ricerca di rifugio' },
+    es: { meaning: 'Me refugio en las palabras perfectas de Allah de todo demonio y criatura venenosa, y de todo ojo dañino y envidioso.', fadl: 'La ruqya de al-Hasan y al-Husayn — el Profeta ﷺ la recitaba sobre ellos.', context: 'Búsqueda de refugio' },
+    de: { meaning: 'Ich suche Zuflucht in den vollkommenen Worten Allahs vor jedem Teufel und Giftgetier und vor jedem schädlichen, neidischen Auge.', fadl: 'Die Ruqya von al-Hasan und al-Husain — der Prophet ﷺ pflegte sie über ihnen zu rezitieren.', context: 'Zuflucht suchen' },
+    fr: { meaning: 'Je cherche refuge dans les paroles parfaites d\'Allah contre tout démon et créature venimeuse, et contre tout œil nuisible et envieux.', fadl: 'La roqya d\'al-Hasan et al-Husayn — le Prophète ﷺ la récitait sur eux.', context: 'Recherche de refuge' },
+  },
+  rq3: {
+    en: { meaning: 'O Allah, Lord of mankind, remove the harm and heal, for You are the Healer; there is no healing but Your healing — a healing that leaves no illness behind.', fadl: 'Ruqyah for the sick.', context: 'Visiting the sick' },
+    it: { meaning: 'O Allah, Signore degli uomini, rimuovi il male e guarisci, poiché Tu sei il Guaritore; non c\'è guarigione se non la Tua guarigione — una guarigione che non lascia alcuna malattia.', fadl: 'Ruqya per il malato.', context: 'Visitare il malato' },
+    es: { meaning: 'Oh Allah, Señor de los hombres, retira el mal y sana, pues Tú eres el Sanador; no hay curación sino Tu curación — una curación que no deja ninguna enfermedad.', fadl: 'Ruqya para el enfermo.', context: 'Visitar al enfermo' },
+    de: { meaning: 'O Allah, Herr der Menschen, nimm das Leid hinweg und heile, denn Du bist der Heiler; es gibt keine Heilung außer Deiner Heilung — eine Heilung, die keine Krankheit zurücklässt.', fadl: 'Ruqya für den Kranken.', context: 'Den Kranken besuchen' },
+    fr: { meaning: 'Ô Allah, Seigneur des hommes, ôte le mal et guéris, car Tu es le Guérisseur ; il n\'y a de guérison que la Tienne — une guérison qui ne laisse aucune maladie.', fadl: 'Roqya pour le malade.', context: 'Visiter le malade' },
+  },
+};

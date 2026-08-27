@@ -22,6 +22,8 @@ import {
 } from 'recharts';
 
 import { CHART_COLORS } from './chartColors.js';
+import { useOptionalLang } from '../../context/LangContext';
+import { getExperienceText } from '../../i18n/experience';
 export { CHART_COLORS } from './chartColors.js';
 
 const SERIES_PALETTE = [
@@ -307,7 +309,9 @@ export function DsPieChart({
 /* ════════════════════════════════════════════════════════════════
    DsChartEmpty — empty state when data is []
    ════════════════════════════════════════════════════════════════ */
-export function DsChartEmpty({ height = 200, message = 'No data yet' }) {
+export function DsChartEmpty({ height = 200, message }) {
+  const { lang = 'en' } = useOptionalLang() || {};
+  const localizedMessage = message || getExperienceText(lang).ui.noChartData;
   return (
     <div
       style={{
@@ -327,7 +331,7 @@ export function DsChartEmpty({ height = 200, message = 'No data yet' }) {
         <rect x="3" y="3" width="18" height="18" rx="2" />
         <path d="M3 9h18M9 21V9" />
       </svg>
-      <span style={{ fontSize: '0.82rem' }}>{message}</span>
+      <span style={{ fontSize: '0.82rem' }}>{localizedMessage}</span>
     </div>
   );
 }
@@ -335,8 +339,9 @@ export function DsChartEmpty({ height = 200, message = 'No data yet' }) {
 /* ════════════════════════════════════════════════════════════════
    DsChartLoading — shimmer skeleton
    ════════════════════════════════════════════════════════════════ */
-export function DsChartLoading({ height = 200 }) {
+export function DsChartLoading({ height = 200, ariaLabel }) {
+  const { lang = 'en' } = useOptionalLang() || {};
   return (
-    <div className="ds-skel" style={{ height, borderRadius: 10 }} role="status" aria-label="Loading chart" />
+    <div className="ds-skel" style={{ height, borderRadius: 10 }} role="status" aria-label={ariaLabel || getExperienceText(lang).ui.loadingChart} />
   );
 }

@@ -15,11 +15,36 @@ if (Number.isNaN(port) || port <= 0) {
 
 const basePath = process.env.BASE_PATH ?? '/';
 
+const localizedStaticPages = () => ({
+  name: 'localized-static-pages',
+  configureServer(server) {
+    server.middlewares.use((req, _res, next) => {
+      if (!req.url) return next();
+      const url = new URL(req.url, 'http://localhost');
+      if (url.pathname === '/it/' || url.pathname === '/fr/') {
+        req.url = `${url.pathname}index.html${url.search}`;
+      }
+      next();
+    });
+  },
+  configurePreviewServer(server) {
+    server.middlewares.use((req, _res, next) => {
+      if (!req.url) return next();
+      const url = new URL(req.url, 'http://localhost');
+      if (url.pathname === '/it/' || url.pathname === '/fr/') {
+        req.url = `${url.pathname}index.html${url.search}`;
+      }
+      next();
+    });
+  },
+});
+
 export default defineConfig({
   base: basePath,
   plugins: [
     react(),
     tailwindcss(),
+    localizedStaticPages(),
     runtimeErrorOverlay(),
     ...(process.env.NODE_ENV !== 'production' &&
     process.env.REPL_ID !== undefined

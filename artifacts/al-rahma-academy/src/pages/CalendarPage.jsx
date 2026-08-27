@@ -41,7 +41,53 @@ const COPY = {
     quran: 'القرآن', arabic: 'العربية', islamic_studies: 'الدراسات الإسلامية', tajweed: 'التجويد', hifz: 'الحفظ',
     minute: 'د', hour: 'س',
   },
+  it: {
+    calendar: 'Calendario delle lezioni', scheduledSessions: 'Le tue lezioni programmate', newSession: 'Nuova lezione',
+    refresh: 'Aggiorna', previous: 'Precedente', next: 'Successivo', today: 'Oggi', calendarView: 'Vista calendario',
+    month: 'Mese', week: 'Settimana', day: 'Giorno', more: 'altri', close: 'Chiudi', time: 'Orario',
+    teacher: 'Insegnante', platform: 'Piattaforma', status: 'Stato', joinSession: 'Partecipa alla lezione',
+    completed: 'Completata', cancelled: 'Annullata', scheduled: 'Programmata',
+    noSessions: 'Non ci sono lezioni programmate per questo giorno.', loadError: 'Impossibile caricare il programma delle lezioni',
+    tryAgain: 'Riprova', thisMonth: 'Questo mese', upcoming: 'In arrivo',
+    quran: 'Corano', arabic: 'Arabo', islamic_studies: 'Studi islamici', tajweed: 'Tajwid', hifz: 'Memorizzazione',
+    minute: 'm', hour: 'h',
+  },
+  es: {
+    calendar: 'Calendario de clases', scheduledSessions: 'Tus clases programadas', newSession: 'Nueva clase',
+    refresh: 'Actualizar', previous: 'Anterior', next: 'Siguiente', today: 'Hoy', calendarView: 'Vista de calendario',
+    month: 'Mes', week: 'Semana', day: 'Día', more: 'más', close: 'Cerrar', time: 'Hora',
+    teacher: 'Profesor', platform: 'Plataforma', status: 'Estado', joinSession: 'Unirse a la clase',
+    completed: 'Completada', cancelled: 'Cancelada', scheduled: 'Programada',
+    noSessions: 'No hay clases programadas para este día.', loadError: 'No se pudo cargar tu horario de clases',
+    tryAgain: 'Intentar de nuevo', thisMonth: 'Este mes', upcoming: 'Próximas',
+    quran: 'Corán', arabic: 'Árabe', islamic_studies: 'Estudios islámicos', tajweed: 'Taywid', hifz: 'Memorización',
+    minute: 'min', hour: 'h',
+  },
+  de: {
+    calendar: 'Unterrichtskalender', scheduledSessions: 'Deine geplanten Unterrichtsstunden', newSession: 'Neue Unterrichtsstunde',
+    refresh: 'Aktualisieren', previous: 'Zurück', next: 'Weiter', today: 'Heute', calendarView: 'Kalenderansicht',
+    month: 'Monat', week: 'Woche', day: 'Tag', more: 'mehr', close: 'Schließen', time: 'Uhrzeit',
+    teacher: 'Lehrkraft', platform: 'Plattform', status: 'Status', joinSession: 'An Unterrichtsstunde teilnehmen',
+    completed: 'Abgeschlossen', cancelled: 'Abgesagt', scheduled: 'Geplant',
+    noSessions: 'Für diesen Tag sind keine Unterrichtsstunden geplant.', loadError: 'Dein Stundenplan konnte nicht geladen werden',
+    tryAgain: 'Erneut versuchen', thisMonth: 'Dieser Monat', upcoming: 'Bevorstehend',
+    quran: 'Koran', arabic: 'Arabisch', islamic_studies: 'Islamische Studien', tajweed: 'Tadschwīd', hifz: 'Auswendiglernen',
+    minute: 'Min.', hour: 'Std.',
+  },
+  fr: {
+    calendar: 'Calendrier des cours', scheduledSessions: 'Vos cours programmés', newSession: 'Nouveau cours',
+    refresh: 'Actualiser', previous: 'Précédent', next: 'Suivant', today: "Aujourd’hui", calendarView: 'Vue du calendrier',
+    month: 'Mois', week: 'Semaine', day: 'Jour', more: 'autres', close: 'Fermer', time: 'Heure',
+    teacher: 'Enseignant', platform: 'Plateforme', status: 'Statut', joinSession: 'Rejoindre le cours',
+    completed: 'Terminé', cancelled: 'Annulé', scheduled: 'Programmé',
+    noSessions: 'Aucun cours n’est programmé pour ce jour.', loadError: 'Impossible de charger votre emploi du temps',
+    tryAgain: 'Réessayer', thisMonth: 'Ce mois-ci', upcoming: 'À venir',
+    quran: 'Coran', arabic: 'Arabe', islamic_studies: 'Études islamiques', tajweed: 'Tajwid', hifz: 'Mémorisation',
+    minute: 'min', hour: 'h',
+  },
 };
+
+const LOCALES = { en: 'en-US', ar: 'ar-EG', it: 'it-IT', es: 'es-ES', de: 'de-DE', fr: 'fr-FR' };
 
 function isSameDay(a, b) {
   return a.getFullYear() === b.getFullYear()
@@ -418,7 +464,7 @@ export default function CalendarPage() {
   const { isTeacher } = useAuth();
   const { lang } = useLang();
   const c = COPY[lang] || COPY.en;
-  const locale = lang === 'ar' ? 'ar-EG' : 'en';
+  const locale = LOCALES[lang] || LOCALES.en;
   const today = new Date();
   const [view,      setView]      = useState('month');
   const [cursor,    setCursor]    = useState(new Date(today.getFullYear(), today.getMonth(), 1));

@@ -4,7 +4,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import BrandLockup from "../ui/BrandLockup";
 import { useAuth } from "../../context/AuthContext";
-import { useLang } from "../../context/LangContext";
+import { useLang, withLanguage } from "../../context/LangContext";
 import { useTheme } from "../../context/ThemeContext";
 import { useEscapeKey } from "../../hooks/useEscapeKey";
 import LangSwitcher from "../ui/LangSwitcher";
@@ -106,8 +106,12 @@ export default function Header() {
     [courses, tools, resources, academy, userMenu].forEach((d) => d.setOpen(false));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const isActive = (path) => location.pathname === path || location.pathname.startsWith(path + "/");
-  const handleLogout = () => { closeAll(); logout(); navigate("/"); };
+  const localizedTo = useCallback((to) => withLanguage(to, lang), [lang]);
+  const isActive = (path) => {
+    const pathname = path.split(/[?#]/, 1)[0];
+    return location.pathname === pathname || location.pathname.startsWith(pathname + "/");
+  };
+  const handleLogout = () => { closeAll(); logout(); navigate(localizedTo("/")); };
 
   /* Same as Brand.jsx: on any inner page → navigate home; already on
      home → just scroll to top. */
@@ -128,32 +132,32 @@ export default function Header() {
   }, []);
 
   const COURSES_ITEMS = useMemo(() => [
-    { to: "/courses/quran",           label: n.quranTajweed,   Icon: BookOpenIcon },
-    { to: "/courses/quran#hifz",      label: n.hifzMem,        Icon: StarIcon },
-    { to: "/courses/ijazah",          label: n.quranIjazah,    Icon: ScrollIcon },
-    { to: "/courses/islamic-studies", label: n.islamicStudies, Icon: MosqueIcon },
-    { to: "/courses/arabic",          label: n.arabicAlphabet, Icon: AlphabetIcon },
-  ], [n]);
+    { to: localizedTo("/courses/quran"),           label: n.quranTajweed,   Icon: BookOpenIcon },
+    { to: localizedTo("/courses/quran#hifz"),      label: n.hifzMem,        Icon: StarIcon },
+    { to: localizedTo("/courses/ijazah"),          label: n.quranIjazah,    Icon: ScrollIcon },
+    { to: localizedTo("/courses/islamic-studies"), label: n.islamicStudies, Icon: MosqueIcon },
+    { to: localizedTo("/courses/arabic"),          label: n.arabicAlphabet, Icon: AlphabetIcon },
+  ], [localizedTo, n]);
   const TOOLS_ITEMS = useMemo(() => [
-    { to: "/tools/quran-reader",      label: n.quranReader,     Icon: BookOpenIcon },
-    { to: "/tools/adhkar",            label: n.adhkar,          Icon: BeadsIcon },
-    { to: "/tools/hadith",            label: n.hadith,          Icon: LibraryIcon },
-    { to: "/tools/prayer-times",      label: n.prayerTimes,     Icon: MosqueIcon },
-    { to: "/tools/qibla",             label: n.qibla,           Icon: CompassIcon },
-    { to: "/tools/islamic-calendar",  label: n.islamicCalendar, Icon: CalendarIcon },
-    { to: "/tools/verse-of-the-day",  label: n.verseOfDay,      Icon: VerseIcon },
-    { to: "/tools/tasbeeh",           label: n.tasbeehCounter,  Icon: HandIcon },
-    { to: "/tools/arabic-alphabet",   label: n.arabicAlphabet,  Icon: AlphabetIcon },
-  ], [n]);
+    { to: localizedTo("/tools/quran-reader"),      label: n.quranReader,     Icon: BookOpenIcon },
+    { to: localizedTo("/tools/adhkar"),            label: n.adhkar,          Icon: BeadsIcon },
+    { to: localizedTo("/tools/hadith"),            label: n.hadith,          Icon: LibraryIcon },
+    { to: localizedTo("/tools/prayer-times"),      label: n.prayerTimes,     Icon: MosqueIcon },
+    { to: localizedTo("/tools/qibla"),             label: n.qibla,           Icon: CompassIcon },
+    { to: localizedTo("/tools/islamic-calendar"),  label: n.islamicCalendar, Icon: CalendarIcon },
+    { to: localizedTo("/tools/verse-of-the-day"),  label: n.verseOfDay,      Icon: VerseIcon },
+    { to: localizedTo("/tools/tasbeeh"),           label: n.tasbeehCounter,  Icon: HandIcon },
+    { to: localizedTo("/tools/arabic-alphabet"),   label: n.arabicAlphabet,  Icon: AlphabetIcon },
+  ], [localizedTo, n]);
   const RESOURCES_ITEMS = useMemo(() => [
-    { to: "/resources/blog", label: n.blog, Icon: EditIcon },
-    { to: "/resources/faq",  label: n.faq,  Icon: MessageIcon },
-  ], [n]);
+    { to: localizedTo("/resources/blog"), label: n.blog, Icon: EditIcon },
+    { to: localizedTo("/resources/faq"),  label: n.faq,  Icon: MessageIcon },
+  ], [localizedTo, n]);
   const ACADEMY_ITEMS = useMemo(() => [
-    { to: "/academy/about",    label: n.about,    Icon: AboutIcon },
-    { to: "/academy/teachers", label: n.teachers, Icon: TeacherIcon },
-    { to: "/academy/privacy",  label: n.privacy,  Icon: LockIcon },
-  ], [n]);
+    { to: localizedTo("/academy/about"),    label: n.about,    Icon: AboutIcon },
+    { to: localizedTo("/academy/teachers"), label: n.teachers, Icon: TeacherIcon },
+    { to: localizedTo("/academy/privacy"),  label: n.privacy,  Icon: LockIcon },
+  ], [localizedTo, n]);
 
   const userName = user?.name?.split(" ")[0] ?? copy.account;
 
@@ -161,7 +165,7 @@ export default function Header() {
     <>
       <header className={`header${scrolled ? " header--scrolled" : ""}`} id="top">
         <div className="container header__inner">
-          <Link to="/" onClick={handleBrandClick} className="header__brand-link" aria-label={copy.home}>
+          <Link to={localizedTo("/")} onClick={handleBrandClick} className="header__brand-link" aria-label={copy.home}>
             <BrandLockup orientation="horizontal" plain showBismillah={false} size={40} className="header__lockup" />
           </Link>
 
@@ -184,7 +188,7 @@ export default function Header() {
                     <span className="nav__mobile-profile-role">{user.role}</span>
                   </div>
                   <Link
-                    to="/profile"
+                    to={localizedTo("/profile")}
                     className="nav__mobile-profile-edit"
                     onClick={closeAll}
                     aria-label={copy.editProfile}
@@ -195,7 +199,7 @@ export default function Header() {
                 <div className="nav__mobile-account">
                   <span className="nav__mobile-account-label">{copy.myAccount}</span>
                   <Link
-                    to={isAdmin ? '/admin' : isTeacher ? '/teacher' : isParent ? '/parent' : '/dashboard'}
+                    to={localizedTo(isAdmin ? '/admin' : isTeacher ? '/teacher' : isParent ? '/parent' : '/dashboard')}
                     className="nav__mobile-account-link"
                     onClick={closeAll}
                   >
@@ -204,7 +208,7 @@ export default function Header() {
                     </span>
                     <span>{n.dashboard}</span>
                   </Link>
-                  <Link to="/billing" className="nav__mobile-account-link" onClick={closeAll}>
+                  <Link to={localizedTo("/billing")} className="nav__mobile-account-link" onClick={closeAll}>
                     <span className="nav__mobile-account-icon"><CardIcon size={ICON_SIZE} /></span>
                     <span>{n.invoices}</span>
                   </Link>
@@ -213,11 +217,11 @@ export default function Header() {
             )}
 
             {/* ── Main nav items ── */}
-            <NavDropdown state={courses}   label={n.courses}   items={COURSES_ITEMS}   hubTo="/courses"   isActive={isActive} closeAll={closeAll} viewAllLabel={n.viewAll} allLabel={n.allLabel} />
-            <NavDropdown state={tools}     label={n.tools}     items={TOOLS_ITEMS}     hubTo="/tools"     isActive={isActive} closeAll={closeAll} viewAllLabel={n.viewAll} allLabel={n.allLabel} wide />
-            <NavDropdown state={resources} label={n.resources} items={RESOURCES_ITEMS} hubTo="/resources" isActive={isActive} closeAll={closeAll} viewAllLabel={n.viewAll} allLabel={n.allLabel} />
-            <NavDropdown state={academy}   label={n.academy}   items={ACADEMY_ITEMS}   hubTo="/academy"   isActive={isActive} closeAll={closeAll} viewAllLabel={n.viewAll} allLabel={n.allLabel} />
-            <Link to="/enroll" className="nav__cta" onClick={closeAll}>{n.trial}</Link>
+            <NavDropdown state={courses}   label={n.courses}   items={COURSES_ITEMS}   hubTo={localizedTo("/courses")}   isActive={isActive} closeAll={closeAll} viewAllLabel={n.viewAll} allLabel={n.allLabel} />
+            <NavDropdown state={tools}     label={n.tools}     items={TOOLS_ITEMS}     hubTo={localizedTo("/tools")}     isActive={isActive} closeAll={closeAll} viewAllLabel={n.viewAll} allLabel={n.allLabel} wide />
+            <NavDropdown state={resources} label={n.resources} items={RESOURCES_ITEMS} hubTo={localizedTo("/resources")} isActive={isActive} closeAll={closeAll} viewAllLabel={n.viewAll} allLabel={n.allLabel} />
+            <NavDropdown state={academy}   label={n.academy}   items={ACADEMY_ITEMS}   hubTo={localizedTo("/academy")}   isActive={isActive} closeAll={closeAll} viewAllLabel={n.viewAll} allLabel={n.allLabel} />
+            <Link to={localizedTo("/enroll")} className="nav__cta" onClick={closeAll}>{n.trial}</Link>
 
             {/* ── Mobile-only: search / command palette trigger ── */}
             <button
@@ -269,7 +273,7 @@ export default function Header() {
                 <LogoutIcon size={ICON_SIZE} /> {n.logout}
               </button>
             ) : (
-              <Link to="/login" className="nav__mobile-login-link" onClick={closeAll}>
+              <Link to={localizedTo("/login")} className="nav__mobile-login-link" onClick={closeAll}>
                 {n.login}
               </Link>
             )}
@@ -281,7 +285,7 @@ export default function Header() {
             {/* Bell — visible in header on all screen sizes when logged in */}
             {user && (
               <Link
-                to="/messages"
+                to={localizedTo("/messages")}
                 className="nav__bell"
                 aria-label={unreadCount > 0 ? copy.unreadMessages(unreadCount) : copy.messages}
                 onClick={closeAll}
@@ -310,7 +314,7 @@ export default function Header() {
 
             {/* Parent quick-link — desktop only */}
             {isParent && (
-              <Link to="/parent" className="header__role-btn btn btn--outline btn--sm" onClick={closeAll}>
+              <Link to={localizedTo("/parent")} className="header__role-btn btn btn--outline btn--sm" onClick={closeAll}>
                 <UsersIcon size={15} />
                 <span>{n.myChildren}</span>
               </Link>
@@ -337,7 +341,7 @@ export default function Header() {
                   <ul className="nav__dropdown-menu nav__dropdown-menu--right" role="menu">
                     <li role="none">
                       <Link
-                        to={isAdmin ? '/admin' : isTeacher ? '/teacher' : isParent ? '/parent' : '/dashboard'}
+                        to={localizedTo(isAdmin ? '/admin' : isTeacher ? '/teacher' : isParent ? '/parent' : '/dashboard')}
                         className="nav__dropdown-item"
                         onClick={closeAll}
                         role="menuitem"
@@ -349,13 +353,13 @@ export default function Header() {
                       </Link>
                     </li>
                     <li role="none">
-                      <Link to="/billing" className="nav__dropdown-item" onClick={closeAll} role="menuitem">
+                      <Link to={localizedTo("/billing")} className="nav__dropdown-item" onClick={closeAll} role="menuitem">
                         <span className="nav__dropdown-item-icon" aria-hidden="true"><CardIcon size={ICON_SIZE} /></span>
                         {n.invoices}
                       </Link>
                     </li>
                     <li role="none">
-                      <Link to="/profile" className="nav__dropdown-item" onClick={closeAll} role="menuitem">
+                      <Link to={localizedTo("/profile")} className="nav__dropdown-item" onClick={closeAll} role="menuitem">
                         <span className="nav__dropdown-item-icon" aria-hidden="true"><SettingsIcon size={ICON_SIZE} /></span>
                         {n.profile}
                       </Link>
@@ -371,7 +375,7 @@ export default function Header() {
                 )}
               </div>
             ) : (
-              <Link to="/login" className="btn btn--ghost-inv btn--sm">{n.login}</Link>
+              <Link to={localizedTo("/login")} className="btn btn--ghost-inv btn--sm">{n.login}</Link>
             )}
 
             {/* Search / Command Palette — desktop only; mobile has its own in the drawer */}

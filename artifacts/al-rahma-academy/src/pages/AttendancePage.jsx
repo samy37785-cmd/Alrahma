@@ -56,7 +56,69 @@ const COPY = {
     rate: 'النسبة', action: 'الإجراء', onTrack: 'على المسار', needsAttention: 'يحتاج إلى اهتمام', atRisk: 'معرّض للخطر',
     viewDetails: 'عرض التفاصيل',
   },
+  it: {
+    statuses: { present: 'Presente', absent: 'Assente', late: 'In ritardo', excused: 'Giustificato', none: 'Nessuna lezione' },
+    subjects: { Quran: 'Corano', Arabic: 'Arabo', Tajweed: 'Tajwid', Hifz: 'Memorizzazione', 'Islamic Studies': 'Studi islamici' },
+    less: 'Meno', more: 'Più', markAttendance: 'Registra presenze', close: 'Chiudi', date: 'Data', subject: 'Materia',
+    student: 'Studente', cancel: 'Annulla', saveAttendance: 'Salva presenze', markAs: 'Segna {name} come {status}',
+    preview: 'Anteprima — la cronologia delle presenze, l’elenco degli studenti e le percentuali sono illustrativi. La registrazione delle presenze non è ancora collegata a un backend reale, quindi nulla verrà salvato.',
+    saveError: 'Le presenze non sono state salvate — questa pagina è un’anteprima.', dismiss: 'Ignora', attendance: 'Presenze',
+    trackPresence: 'Monitora la presenza alle lezioni nel tempo', export: 'Esporta', myOverview: 'La mia panoramica',
+    attendanceRate: 'Tasso di presenza', excellent: 'Eccellente', good: 'Buono', needsImprovement: 'Da migliorare',
+    sessionsOf: 'su {count} lezioni', lastYear: 'Presenze nell’ultimo anno', sessionLog: 'Registro delle lezioni',
+    records: '{count} record', noRecords: 'Nessun record di presenza', attendanceRecords: 'Record presenze',
+    teacher: 'Insegnante', status: 'Stato', notes: 'Note', previousPage: 'Pagina precedente', nextPage: 'Pagina successiva',
+    of: 'di', studentsOverview: 'Panoramica studenti', studentsAttendanceOverview: 'Panoramica delle presenze degli studenti',
+    rate: 'Tasso', action: 'Azione', onTrack: 'In regola', needsAttention: 'Richiede attenzione', atRisk: 'A rischio', viewDetails: 'Vedi dettagli',
+  },
+  es: {
+    statuses: { present: 'Presente', absent: 'Ausente', late: 'Tarde', excused: 'Justificado', none: 'Sin clase' },
+    subjects: { Quran: 'Corán', Arabic: 'Árabe', Tajweed: 'Taywid', Hifz: 'Memorización', 'Islamic Studies': 'Estudios islámicos' },
+    less: 'Menos', more: 'Más', markAttendance: 'Registrar asistencia', close: 'Cerrar', date: 'Fecha', subject: 'Materia',
+    student: 'Estudiante', cancel: 'Cancelar', saveAttendance: 'Guardar asistencia', markAs: 'Marcar a {name} como {status}',
+    preview: 'Vista previa: el historial de asistencia, la lista de estudiantes y las tasas son ilustrativos. Registrar asistencia aún no está conectado a un backend real, por lo que no se guardará nada.',
+    saveError: 'La asistencia no se guardó; esta página es una vista previa.', dismiss: 'Descartar', attendance: 'Asistencia',
+    trackPresence: 'Sigue la asistencia a las clases a lo largo del tiempo', export: 'Exportar', myOverview: 'Mi resumen',
+    attendanceRate: 'Tasa de asistencia', excellent: 'Excelente', good: 'Buena', needsImprovement: 'Necesita mejorar',
+    sessionsOf: 'de {count} clases', lastYear: 'Asistencia durante el último año', sessionLog: 'Registro de clases',
+    records: '{count} registros', noRecords: 'Aún no hay registros de asistencia', attendanceRecords: 'Registros de asistencia',
+    teacher: 'Profesor', status: 'Estado', notes: 'Notas', previousPage: 'Página anterior', nextPage: 'Página siguiente',
+    of: 'de', studentsOverview: 'Resumen de estudiantes', studentsAttendanceOverview: 'Resumen de asistencia de estudiantes',
+    rate: 'Tasa', action: 'Acción', onTrack: 'Al día', needsAttention: 'Necesita atención', atRisk: 'En riesgo', viewDetails: 'Ver detalles',
+  },
+  de: {
+    statuses: { present: 'Anwesend', absent: 'Abwesend', late: 'Verspätet', excused: 'Entschuldigt', none: 'Keine Unterrichtsstunde' },
+    subjects: { Quran: 'Koran', Arabic: 'Arabisch', Tajweed: 'Tadschwīd', Hifz: 'Auswendiglernen', 'Islamic Studies': 'Islamische Studien' },
+    less: 'Weniger', more: 'Mehr', markAttendance: 'Anwesenheit erfassen', close: 'Schließen', date: 'Datum', subject: 'Fach',
+    student: 'Schüler/in', cancel: 'Abbrechen', saveAttendance: 'Anwesenheit speichern', markAs: '{name} als {status} markieren',
+    preview: 'Vorschau — der Anwesenheitsverlauf, die Schülerliste und die Quoten sind beispielhaft. Das Erfassen der Anwesenheit ist noch nicht mit einem echten Backend verbunden; daher wird nichts gespeichert.',
+    saveError: 'Die Anwesenheit wurde nicht gespeichert — diese Seite ist eine Vorschau.', dismiss: 'Schließen', attendance: 'Anwesenheit',
+    trackPresence: 'Teilnahme an Unterrichtsstunden im Zeitverlauf verfolgen', export: 'Exportieren', myOverview: 'Meine Übersicht',
+    attendanceRate: 'Anwesenheitsquote', excellent: 'Ausgezeichnet', good: 'Gut', needsImprovement: 'Verbesserungsbedarf',
+    sessionsOf: 'von {count} Unterrichtsstunden', lastYear: 'Anwesenheit im letzten Jahr', sessionLog: 'Unterrichtsprotokoll',
+    records: '{count} Einträge', noRecords: 'Noch keine Anwesenheitseinträge', attendanceRecords: 'Anwesenheitseinträge',
+    teacher: 'Lehrkraft', status: 'Status', notes: 'Notizen', previousPage: 'Vorherige Seite', nextPage: 'Nächste Seite',
+    of: 'von', studentsOverview: 'Schülerübersicht', studentsAttendanceOverview: 'Anwesenheitsübersicht der Schüler',
+    rate: 'Quote', action: 'Aktion', onTrack: 'Auf Kurs', needsAttention: 'Benötigt Aufmerksamkeit', atRisk: 'Gefährdet', viewDetails: 'Details anzeigen',
+  },
+  fr: {
+    statuses: { present: 'Présent', absent: 'Absent', late: 'En retard', excused: 'Excusé', none: 'Aucun cours' },
+    subjects: { Quran: 'Coran', Arabic: 'Arabe', Tajweed: 'Tajwid', Hifz: 'Mémorisation', 'Islamic Studies': 'Études islamiques' },
+    less: 'Moins', more: 'Plus', markAttendance: 'Saisir les présences', close: 'Fermer', date: 'Date', subject: 'Matière',
+    student: 'Élève', cancel: 'Annuler', saveAttendance: 'Enregistrer les présences', markAs: 'Marquer {name} comme {status}',
+    preview: 'Aperçu — l’historique des présences, la liste des élèves et les taux ci-dessous sont fournis à titre indicatif. La saisie des présences n’est pas encore reliée à un véritable backend, donc rien ne sera enregistré.',
+    saveError: 'Les présences n’ont pas été enregistrées — cette page est un aperçu.', dismiss: 'Ignorer', attendance: 'Présences',
+    trackPresence: 'Suivez la présence aux cours au fil du temps', export: 'Exporter', myOverview: 'Mon aperçu',
+    attendanceRate: 'Taux de présence', excellent: 'Excellent', good: 'Bon', needsImprovement: 'À améliorer',
+    sessionsOf: 'sur {count} cours', lastYear: 'Présences au cours de la dernière année', sessionLog: 'Journal des cours',
+    records: '{count} enregistrements', noRecords: 'Aucun enregistrement de présence', attendanceRecords: 'Enregistrements de présence',
+    teacher: 'Enseignant', status: 'Statut', notes: 'Notes', previousPage: 'Page précédente', nextPage: 'Page suivante',
+    of: 'sur', studentsOverview: 'Aperçu des élèves', studentsAttendanceOverview: 'Aperçu des présences des élèves',
+    rate: 'Taux', action: 'Action', onTrack: 'Sur la bonne voie', needsAttention: 'Nécessite une attention', atRisk: 'À risque', viewDetails: 'Voir les détails',
+  },
 };
+
+const LOCALES = { en: 'en-US', ar: 'ar-EG', it: 'it-IT', es: 'es-ES', de: 'de-DE', fr: 'fr-FR' };
 
 function interpolate(text, values) {
   return text.replace(/\{(\w+)\}/g, (_, key) => values[key] ?? '');
@@ -161,7 +223,7 @@ function AttendanceHeatmap({ records, lang, copy }) {
     weeks.forEach((week, wi) => {
       const m = week[0].date.getMonth();
       if (m !== lastMonth) {
-        labels.push({ weekIndex: wi, label: new Intl.DateTimeFormat(lang === 'ar' ? 'ar-EG' : 'en-US', { month: 'short' }).format(week[0].date) });
+        labels.push({ weekIndex: wi, label: new Intl.DateTimeFormat(LOCALES[lang] || LOCALES.en, { month: 'short' }).format(week[0].date) });
         lastMonth = m;
       }
     });
@@ -189,7 +251,7 @@ function AttendanceHeatmap({ records, lang, copy }) {
         <div style={{ display: 'flex', gap: GAP }}>
           {/* Day labels */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: GAP, marginInlineEnd: 2 }}>
-            {Array.from({ length: 7 }, (_, i) => new Intl.DateTimeFormat(lang === 'ar' ? 'ar-EG' : 'en-US', { weekday: 'narrow' }).format(new Date(2023, 0, 1 + i))).map((d, i) => (
+            {Array.from({ length: 7 }, (_, i) => new Intl.DateTimeFormat(LOCALES[lang] || LOCALES.en, { weekday: 'narrow' }).format(new Date(2023, 0, 1 + i))).map((d, i) => (
               <div key={i} style={{ width: CELL, height: CELL, fontSize: '0.6rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>
                 {i % 2 === 1 ? d : ''}
               </div>
@@ -213,7 +275,7 @@ function AttendanceHeatmap({ records, lang, copy }) {
                   onMouseOver={(e) => (e.currentTarget.style.transform = 'scale(1.3)')}
                   onMouseOut={(e) => (e.currentTarget.style.transform = 'scale(1)')}
                   role={cell.recs.length > 0 ? 'button' : undefined}
-                  aria-label={cell.recs.length > 0 ? `${cell.date.toLocaleDateString(lang === 'ar' ? 'ar-EG' : 'en-US')}: ${copy.statuses[cell.status]}` : undefined}
+                  aria-label={cell.recs.length > 0 ? `${cell.date.toLocaleDateString(LOCALES[lang] || LOCALES.en)}: ${copy.statuses[cell.status]}` : undefined}
                 />
               ))}
             </div>
@@ -239,7 +301,7 @@ function AttendanceHeatmap({ records, lang, copy }) {
           borderRadius: 8, padding: '8px 12px', boxShadow: 'var(--shadow-md)',
           fontSize: '0.75rem', color: 'var(--text-primary)', minWidth: 140,
         }}>
-          <div style={{ fontWeight: 700, marginBottom: 4 }}>{tooltip.cell.date.toLocaleDateString(lang === 'ar' ? 'ar-EG' : 'en-US', { dateStyle: 'full' })}</div>
+          <div style={{ fontWeight: 700, marginBottom: 4 }}>{tooltip.cell.date.toLocaleDateString(LOCALES[lang] || LOCALES.en, { dateStyle: 'full' })}</div>
           {tooltip.cell.recs.map((r, i) => (
             <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
               <span style={{ width: 8, height: 8, borderRadius: '50%', background: STATUS[r.status]?.color, flexShrink: 0 }} />
@@ -345,7 +407,7 @@ export default function AttendancePage() {
   const { isTeacher } = useAuth();
   const { lang } = useLang();
   const copy = COPY[lang] || COPY.en;
-  const locale = lang === 'ar' ? 'ar-EG' : 'en-US';
+  const locale = LOCALES[lang] || LOCALES.en;
   const queryClient = useQueryClient();
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [markOpen, setMarkOpen] = useState(false);

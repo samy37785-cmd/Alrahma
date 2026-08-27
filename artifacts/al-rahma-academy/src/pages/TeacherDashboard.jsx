@@ -118,7 +118,7 @@ export default function TeacherDashboard() {
       {/* Page header */}
       <div className="ds-page-hd">
         <div>
-          <div className="ds-page-hd__eyebrow"><GraduationCap size={14} style={{ display: 'inline', marginRight: 5 }} aria-hidden="true" /> Teacher Portal</div>
+          <div className="ds-page-hd__eyebrow"><GraduationCap size={14} style={{ display: 'inline', marginRight: 5 }} aria-hidden="true" /> {t.dashboard.roles.teacher}</div>
           <h1 className="ds-page-hd__title">Welcome, {user?.name?.split(' ')[0]}</h1>
           <p className="ds-page-hd__sub">Manage your students, track progress, and schedule live sessions.</p>
         </div>
@@ -131,13 +131,13 @@ export default function TeacherDashboard() {
             <CalendarDays size={13} aria-hidden="true" /> Schedule Class
           </button>
           <Link to="/attendance" className="btn btn--ghost btn--sm" style={{ borderRadius: 8, display: 'flex', alignItems: 'center', gap: 5 }}>
-            <CheckSquare size={13} aria-hidden="true" /> Attendance
+            <CheckSquare size={13} aria-hidden="true" /> {t.dashboard.items.attendance}
           </Link>
           <Link to="/homework" className="btn btn--ghost btn--sm" style={{ borderRadius: 8, display: 'flex', alignItems: 'center', gap: 5 }}>
-            <FileText size={13} aria-hidden="true" /> Homework
+            <FileText size={13} aria-hidden="true" /> {t.dashboard.items.homework}
           </Link>
           <Link to="/messages" className="btn btn--ghost btn--sm" style={{ borderRadius: 8, display: 'flex', alignItems: 'center', gap: 5 }}>
-            <MessageSquare size={13} aria-hidden="true" /> Messages
+            <MessageSquare size={13} aria-hidden="true" /> {t.dashboard.items.messages}
           </Link>
         </div>
       </div>
@@ -199,7 +199,7 @@ export default function TeacherDashboard() {
           {/* Students */}
           <div className="ds-card">
             <div className="ds-card__hd">
-              <span className="ds-card__title"><span className="ds-card__title-icon"><Users size={14} aria-hidden="true" /></span> My Students ({students.length})</span>
+              <span className="ds-card__title"><span className="ds-card__title-icon"><Users size={14} aria-hidden="true" /></span> {t.dashboard.roles.student} ({students.length})</span>
             </div>
             <div style={{ padding: '10px 18px 0' }}>
               <input
@@ -412,7 +412,7 @@ export default function TeacherDashboard() {
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontWeight: 600, fontSize: '0.8rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.title}</div>
                       <div style={{ fontSize: '0.68rem', color: 'var(--text-secondary)' }}>
-                        {new Date(c.startsAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                         {new Date(c.startsAt).toLocaleDateString(lang, { day: 'numeric', month: 'short' })}
                         {' · '}{new Date(c.startsAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </div>
                     </div>
@@ -467,10 +467,10 @@ export default function TeacherDashboard() {
             </div>
             <div className="ds-card__body" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {[
-                { to: '/calendar',   Icon: Calendar,     label: 'View Calendar',  sub: 'Monthly schedule view' },
-                { to: '/attendance', Icon: CheckSquare,  label: 'Mark Attendance', sub: 'One-click session marking' },
-                { to: '/homework',   Icon: FileText,     label: 'Assignments',    sub: 'Create & grade homework' },
-                { to: '/messages',   Icon: MessageSquare, label: 'Messages',      sub: 'Student communications' },
+                { to: '/calendar', Icon: Calendar, label: t.dashboard.items.calendar, sub: 'Monthly schedule view' },
+                { to: '/attendance', Icon: CheckSquare, label: t.dashboard.items.attendance, sub: 'One-click session marking' },
+                { to: '/homework', Icon: FileText, label: t.dashboard.items.homework, sub: 'Create & grade homework' },
+                { to: '/messages', Icon: MessageSquare, label: t.dashboard.items.messages, sub: 'Student communications' },
               ].map(({ to, Icon, label, sub }) => (
                 <Link key={to} to={to} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 10px', borderRadius: 9, background: 'var(--bg-page)', border: '1px solid var(--border-subtle)', textDecoration: 'none' }}>
                   <div style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--color-primary-surface, #e6f4ef)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>

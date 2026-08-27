@@ -57,6 +57,30 @@ describe('language routing and document direction', () => {
     });
   });
 
+  it.each(['it', 'es', 'de', 'fr'])(
+    'loads and preserves the %s language on a deep-link route',
+    async (locale) => {
+      window.history.replaceState({}, '', `/courses?lang=${locale}#quran`);
+
+      render(
+        <BrowserRouter>
+          <LangProvider>
+            <LanguageHarness />
+          </LangProvider>
+        </BrowserRouter>,
+      );
+
+      await waitFor(() => expect(screen.getByLabelText('language')).toHaveTextContent(locale));
+      expect(document.documentElement).toHaveAttribute('lang', locale);
+      expect(document.documentElement).toHaveAttribute('dir', 'ltr');
+
+      fireEvent.click(screen.getByRole('link', { name: 'Tools' }));
+      await waitFor(() => {
+        expect(screen.getByLabelText('location')).toHaveTextContent(`/tools?lang=${locale}#reader`);
+      });
+    },
+  );
+
   it('renders representative conversion UI in Arabic', () => {
     render(
       <BrowserRouter>

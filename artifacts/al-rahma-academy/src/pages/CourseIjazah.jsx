@@ -5,7 +5,7 @@ import Footer from '../components/layout/Footer';
 import Reveal from '../components/ui/Reveal';
 import useSEO from '../hooks/useSEO';
 import Breadcrumbs from '../components/ui/Breadcrumbs';
-import { useLang } from '../context/LangContext';
+import { useLang, withLanguage } from '../context/LangContext';
 import { COURSE_UI } from '../i18n/coursePages';
 
 /* ─── Static data (bilingual) ─── */
@@ -333,10 +333,10 @@ export default function CourseIjazah() {
               }
             </p>
             <div className="cl__hero-actions">
-              <button className="btn btn--gold btn--lg" onClick={() => navigate('/enroll?course=ijazah')}>
+              <button className="btn btn--gold btn--lg" onClick={() => navigate(withLanguage('/enroll?course=ijazah', lang))}>
                 {ui.bookTrial}
               </button>
-              <Link to="/teachers" className="btn btn--ghost-white">{ui.viewTeachers}</Link>
+              <Link to={withLanguage('/teachers', lang)} className="btn btn--ghost-white">{ui.viewTeachers}</Link>
             </div>
           </div>
         </section>
@@ -443,10 +443,10 @@ export default function CourseIjazah() {
                 <ul className="cl__enroll-perks">
                   {perks.map((p) => <li key={p}>✓ {p}</li>)}
                 </ul>
-                <button type="button" className="btn btn--gold btn--block" onClick={() => navigate('/enroll?course=ijazah')}>
+                <button type="button" className="btn btn--gold btn--block" onClick={() => navigate(withLanguage('/enroll?course=ijazah', lang))}>
                   {ui.bookTrial}
                 </button>
-                <Link to="/teachers" className="cl__enroll-link">{ui.browseTeachers}</Link>
+                <Link to={withLanguage('/teachers', lang)} className="cl__enroll-link">{ui.browseTeachers}</Link>
               </div>
             </div>
           </div>

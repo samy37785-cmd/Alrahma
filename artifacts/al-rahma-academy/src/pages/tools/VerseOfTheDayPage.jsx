@@ -16,13 +16,18 @@ const clean = (html = '') =>
 
 export default function VerseOfTheDayPage() {
   const { lang } = useLang();
-  const isAr = lang === 'ar';
+  const copy = {
+    en: { title: 'Verse of the Day', description: 'A handpicked Quran verse every day with English translation — start your day with the words of Allah.', tools: 'Tools', prayerTools: 'Prayer Tools', eyebrow: 'Islamic Tools', hero: 'A carefully chosen verse for each day of the month with translation. Begin your day with the words of Allah.', loadError: 'Could not load the verse. Check your connection.', copy: '📋 Copy', copied: '✓ Copied!', share: '🔗 Share', shared: '✓ Shared!', whatsapp: 'Share on WhatsApp', read: '📖 Read full chapter', readLabel: 'Read in context', hint: '📸 Screenshot the card above to share it on Instagram or WhatsApp Stories', cta: 'Want to learn to recite verses like this with a certified Al-Azhar tutor?', trial: 'Book a Free Trial Lesson →', note: 'No credit card · Cancel anytime', related: 'Related tools', also: 'Also try:', prayer: 'Prayer Times', qibla: 'Qibla Direction', calendar: 'Islamic Calendar', adhkar: 'Daily Adhkar', today: "Today's Verse", quran: 'Quran', learn: 'Learn Quran at alrahma.academy' },
+    ar: { title: 'آية اليوم', description: 'آية قرآنية يومية مختارة مع ترجمتها — ابدأ يومك بكلام الله.', tools: 'الأدوات', prayerTools: 'أدوات الصلاة', eyebrow: 'الأدوات الإسلامية', hero: 'آية قرآنية مختارة لكل يوم من أيام الشهر مع ترجمتها. ابدأ يومك بكلام الله.', loadError: 'تعذّر تحميل الآية. تحقّق من اتصالك.', copy: '📋 نسخ', copied: '✓ تم النسخ!', share: '🔗 مشاركة', shared: '✓ تمت المشاركة!', whatsapp: 'شارك على واتساب', read: '📖 اقرأ السورة كاملة', readLabel: 'اقرأ في السياق', hint: '📸 التقط صورة للبطاقة أعلاه وشاركها على إنستغرام أو حالات واتساب', cta: 'هل تريد تعلّم تلاوة آيات كهذه مع معلم معتمد من الأزهر؟', trial: 'ابدأ درساً تجريبياً مجانياً ←', note: 'لا حاجة لبطاقة ائتمان · ألغِ في أي وقت', related: 'أدوات مرتبطة', also: 'استكشف أيضاً:', prayer: 'مواقيت الصلاة', qibla: 'اتجاه القبلة', calendar: 'التقويم الإسلامي', adhkar: 'الأذكار اليومية', today: 'آية اليوم', quran: 'القرآن', learn: 'تعلّم القرآن مع أكاديمية الرحمة' },
+    it: { title: 'Versetto del giorno', description: 'Un versetto del Corano scelto ogni giorno con traduzione — inizia la giornata con le parole di Allah.', tools: 'Strumenti', prayerTools: 'Strumenti per la preghiera', eyebrow: 'Strumenti islamici', hero: 'Un versetto scelto con cura per ogni giorno del mese, con traduzione. Inizia la giornata con le parole di Allah.', loadError: 'Impossibile caricare il versetto. Controlla la connessione.', copy: '📋 Copia', copied: '✓ Copiato!', share: '🔗 Condividi', shared: '✓ Condiviso!', whatsapp: 'Condividi su WhatsApp', read: '📖 Leggi la sura completa', readLabel: 'Leggi nel contesto', hint: '📸 Fai uno screenshot della scheda per condividerla su Instagram o nelle Storie di WhatsApp', cta: 'Vuoi imparare a recitare versetti come questo con un insegnante certificato di Al-Azhar?', trial: 'Prenota una lezione di prova gratuita →', note: 'Nessuna carta di credito · Annulla quando vuoi', related: 'Strumenti correlati', also: 'Prova anche:', prayer: 'Orari di preghiera', qibla: 'Direzione della Qibla', calendar: 'Calendario islamico', adhkar: 'Adhkar quotidiani', today: 'Versetto del giorno', quran: 'Corano', learn: 'Impara il Corano con Al-Rahma Academy' },
+    es: { title: 'Versículo del día', description: 'Un versículo del Corán seleccionado cada día con traducción — comienza el día con las palabras de Allah.', tools: 'Herramientas', prayerTools: 'Herramientas de oración', eyebrow: 'Herramientas islámicas', hero: 'Un versículo cuidadosamente elegido para cada día del mes, con traducción. Comienza tu día con las palabras de Allah.', loadError: 'No se pudo cargar el versículo. Comprueba tu conexión.', copy: '📋 Copiar', copied: '✓ ¡Copiado!', share: '🔗 Compartir', shared: '✓ ¡Compartido!', whatsapp: 'Compartir en WhatsApp', read: '📖 Leer la sura completa', readLabel: 'Leer en contexto', hint: '📸 Haz una captura de la tarjeta para compartirla en Instagram o en los estados de WhatsApp', cta: '¿Quieres aprender a recitar versículos como este con un profesor certificado de Al-Azhar?', trial: 'Reserva una clase de prueba gratuita →', note: 'Sin tarjeta de crédito · Cancela cuando quieras', related: 'Herramientas relacionadas', also: 'Prueba también:', prayer: 'Horarios de oración', qibla: 'Dirección de la Qibla', calendar: 'Calendario islámico', adhkar: 'Adhkar diarios', today: 'Versículo del día', quran: 'Corán', learn: 'Aprende el Corán con Al-Rahma Academy' },
+    de: { title: 'Vers des Tages', description: 'Jeden Tag ein ausgewählter Koranvers mit Übersetzung — beginne deinen Tag mit den Worten Allahs.', tools: 'Werkzeuge', prayerTools: 'Gebetswerkzeuge', eyebrow: 'Islamische Werkzeuge', hero: 'Ein sorgfältig ausgewählter Vers für jeden Tag des Monats mit Übersetzung. Beginne deinen Tag mit den Worten Allahs.', loadError: 'Der Vers konnte nicht geladen werden. Prüfe deine Verbindung.', copy: '📋 Kopieren', copied: '✓ Kopiert!', share: '🔗 Teilen', shared: '✓ Geteilt!', whatsapp: 'Über WhatsApp teilen', read: '📖 Ganze Sure lesen', readLabel: 'Im Kontext lesen', hint: '📸 Mache einen Screenshot der Karte und teile ihn auf Instagram oder in WhatsApp-Statusmeldungen', cta: 'Möchtest du lernen, Verse wie diesen mit einem zertifizierten Al-Azhar-Lehrer zu rezitieren?', trial: 'Kostenlose Probestunde buchen →', note: 'Keine Kreditkarte · Jederzeit kündbar', related: 'Verwandte Werkzeuge', also: 'Auch ausprobieren:', prayer: 'Gebetszeiten', qibla: 'Qibla-Richtung', calendar: 'Islamischer Kalender', adhkar: 'Tägliche Adhkar', today: 'Vers des Tages', quran: 'Koran', learn: 'Lerne den Koran mit Al-Rahma Academy' },
+    fr: { title: 'Verset du jour', description: 'Un verset du Coran choisi chaque jour avec sa traduction — commencez la journée par les paroles d’Allah.', tools: 'Outils', prayerTools: 'Outils de prière', eyebrow: 'Outils islamiques', hero: 'Un verset soigneusement choisi pour chaque jour du mois, avec sa traduction. Commencez votre journée avec les paroles d’Allah.', loadError: 'Impossible de charger le verset. Vérifiez votre connexion.', copy: '📋 Copier', copied: '✓ Copié !', share: '🔗 Partager', shared: '✓ Partagé !', whatsapp: 'Partager sur WhatsApp', read: '📖 Lire la sourate entière', readLabel: 'Lire dans son contexte', hint: '📸 Faites une capture de la carte pour la partager sur Instagram ou dans les statuts WhatsApp', cta: 'Voulez-vous apprendre à réciter des versets comme celui-ci avec un professeur certifié d’Al-Azhar ?', trial: 'Réserver un cours d’essai gratuit →', note: 'Sans carte bancaire · Annulez à tout moment', related: 'Outils associés', also: 'À découvrir aussi :', prayer: 'Heures de prière', qibla: 'Direction de la Qibla', calendar: 'Calendrier islamique', adhkar: 'Adhkar quotidiens', today: 'Verset du jour', quran: 'Coran', learn: 'Apprenez le Coran avec Al-Rahma Academy' },
+  }[lang] || {};
 
   useSEO({
-    title: isAr ? 'آية اليوم' : 'Verse of the Day',
-    description: isAr
-      ? 'آية قرآنية يومية مختارة مع ترجمتها — ابدأ يومك بكلام الله.'
-      : 'A handpicked Quran verse every day with English translation — start your day with the words of Allah.',
+    title: copy.title,
+    description: copy.description,
   });
 
   const [verse,      setVerse]      = useState(null);
@@ -43,7 +48,7 @@ export default function VerseOfTheDayPage() {
   const [s, v] = verseKey.split(':');
 
   const handleCopy = async () => {
-    const text = `${arabic}\n\n"${trans}"\n— Quran ${verseKey}\n\nalrahma.academy`;
+    const text = `${arabic}\n\n"${trans}"\n— ${copy.quran} ${verseKey}\n\nalrahma.academy`;
     await navigator.clipboard.writeText(text).catch(() => {});
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
@@ -51,9 +56,9 @@ export default function VerseOfTheDayPage() {
 
   const handleShare = async () => {
     const url  = `${window.location.origin}/tools/quran-reader#s=${s}&v=${v}`;
-    const text = `Today's Verse (${verseKey})\n\n${arabic}\n\n"${trans}"\n\nLearn Quran at alrahma.academy`;
+    const text = `${copy.today} (${verseKey})\n\n${arabic}\n\n"${trans}"\n\n${copy.learn}`;
     if (navigator.share) {
-      try { await navigator.share({ title: `Quran ${verseKey}`, text, url }); setShared(true); setTimeout(() => setShared(false), 2500); }
+      try { await navigator.share({ title: `${copy.quran} ${verseKey}`, text, url }); setShared(true); setTimeout(() => setShared(false), 2500); }
       catch { /* cancelled */ }
     } else {
       await navigator.clipboard.writeText(`${text}\n${url}`).catch(() => {});
@@ -62,27 +67,23 @@ export default function VerseOfTheDayPage() {
     }
   };
 
-  const waUrl = `https://wa.me/?text=${encodeURIComponent(`🌿 Today's Verse (${verseKey})\n\n${arabic}\n\n"${trans}"\n\n📖 Learn Quran online: ${window.location.origin}`)}`;
+  const waUrl = `https://wa.me/?text=${encodeURIComponent(`🌿 ${copy.today} (${verseKey})\n\n${arabic}\n\n"${trans}"\n\n📖 ${copy.learn}: ${window.location.origin}`)}`;
 
   return (
     <>
       <Header />
       <main id="main-content" className="it__main">
         <Breadcrumbs items={[
-          { label: isAr ? 'الأدوات' : 'Tools', to: '/tools' },
-          { label: isAr ? 'أدوات الصلاة' : 'Prayer Tools', to: '/tools/prayer' },
-          { label: isAr ? 'آية اليوم' : 'Verse of the Day' },
+          { label: copy.tools, to: '/tools' },
+          { label: copy.prayerTools, to: '/tools/prayer' },
+          { label: copy.title },
         ]} />
 
         <section className="it__hero">
           <div className="container it__hero-inner">
-            <p className="eyebrow">{isAr ? 'الأدوات الإسلامية' : 'Islamic Tools'}</p>
-            <h1>{isAr ? 'آية اليوم' : 'Verse of the Day'}</h1>
-            <p className="it__hero-sub">
-              {isAr
-                ? 'آية قرآنية مختارة لكل يوم من أيام الشهر مع ترجمتها. ابدأ يومك بكلام الله.'
-                : 'A carefully chosen verse for each day of the month with translation. Begin your day with the words of Allah.'}
-            </p>
+            <p className="eyebrow">{copy.eyebrow}</p>
+            <h1>{copy.title}</h1>
+            <p className="it__hero-sub">{copy.hero}</p>
           </div>
         </section>
 
@@ -91,7 +92,7 @@ export default function VerseOfTheDayPage() {
 
             {/* ── Shareable verse card ── */}
             <div className="votd-card" ref={cardRef}>
-              <p className="votd-card__brand">Al-Rahma Academy · {isAr ? 'آية اليوم' : 'Verse of the Day'}</p>
+              <p className="votd-card__brand">Al-Rahma Academy · {copy.title}</p>
 
               <div className="votd-card__divider" aria-hidden="true">
                 <span className="votd-card__diamond">◆</span>
@@ -110,13 +111,13 @@ export default function VerseOfTheDayPage() {
                       <span className="votd-card__quote">&quot;</span>
                     </p>
                   )}
-                  <p className="votd-card__ref">Quran · {verseKey}</p>
+                  <p className="votd-card__ref">{copy.quran} · {verseKey}</p>
                 </>
               ) : !verseError ? (
                 <div className="it__spin"><div className="it__spinner" /></div>
               ) : (
                 <p className="it__empty" style={{ padding: '2rem' }}>
-                  {isAr ? 'تعذّر تحميل الآية.' : 'Could not load the verse. Check your connection.'}
+                  {copy.loadError}
                 </p>
               )}
             </div>
@@ -127,17 +128,17 @@ export default function VerseOfTheDayPage() {
                 <button
                   className={`votd-btn votd-btn--copy${copied ? ' done' : ''}`}
                   onClick={handleCopy}
-                  aria-label={isAr ? 'نسخ' : 'Copy text'}
+                  aria-label={copy.copy}
                 >
-                  {copied ? '✓ Copied!' : '📋 Copy'}
+                  {copied ? copy.copied : copy.copy}
                 </button>
 
                 <button
                   className={`votd-btn votd-btn--share${shared ? ' done' : ''}`}
                   onClick={handleShare}
-                  aria-label={isAr ? 'مشاركة' : 'Share'}
+                  aria-label={copy.share}
                 >
-                  {shared ? '✓ Shared!' : '🔗 Share'}
+                  {shared ? copy.shared : copy.share}
                 </button>
 
                 <a
@@ -145,7 +146,7 @@ export default function VerseOfTheDayPage() {
                   href={waUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  aria-label={isAr ? 'شارك على واتساب' : 'Share on WhatsApp'}
+                  aria-label={copy.whatsapp}
                 >
                   💬 WhatsApp
                 </a>
@@ -153,9 +154,9 @@ export default function VerseOfTheDayPage() {
                 <Link
                   className="votd-btn votd-btn--quran"
                   to={`/tools/quran-reader#s=${s}&v=${v}`}
-                  aria-label={isAr ? 'اقرأ السياق' : 'Read in context'}
+                  aria-label={copy.readLabel}
                 >
-                  📖 {isAr ? 'اقرأ الآية' : 'Read full chapter'}
+                  {copy.read}
                 </Link>
               </div>
             )}
@@ -163,34 +164,30 @@ export default function VerseOfTheDayPage() {
             {/* ── Screenshot tip ── */}
             {verse && (
               <p className="votd-hint">
-                {isAr
-                  ? '📸 التقط صورة للبطاقة أعلاه وشاركها على وسائل التواصل الاجتماعي'
-                  : '📸 Screenshot the card above to share it on Instagram or WhatsApp Stories'}
+                {copy.hint}
               </p>
             )}
 
             {/* ── Enrollment CTA ── */}
             <div className="votd-enroll-cta">
               <p className="votd-enroll-cta__text">
-                {isAr
-                  ? 'هل تريد تعلّم هذه الآيات مع معلم معتمد من الأزهر؟'
-                  : 'Want to learn to recite verses like this with a certified Al-Azhar tutor?'}
+                {copy.cta}
               </p>
               <Link to="/enroll" className="btn btn--gold">
-                {isAr ? 'ابدأ درساً مجانياً' : 'Book a Free Trial Lesson →'}
+                {copy.trial}
               </Link>
               <span className="votd-enroll-cta__note">
-                {isAr ? 'بدون بطاقة ائتمان · الغاء في أي وقت' : 'No credit card · Cancel anytime'}
+                {copy.note}
               </span>
             </div>
           </div>
 
-          <nav className="it__also-try" aria-label={isAr ? 'أدوات مرتبطة' : 'Related tools'}>
-            <span className="it__also-try__label">{isAr ? 'استكشف أيضاً:' : 'Also try:'}</span>
-            <Link to="/tools/prayer-times">🕌 {isAr ? 'مواقيت الصلاة' : 'Prayer Times'}</Link>
-            <Link to="/tools/qibla">🧭 {isAr ? 'اتجاه القبلة' : 'Qibla Direction'}</Link>
-            <Link to="/tools/islamic-calendar">📅 {isAr ? 'التقويم الإسلامي' : 'Islamic Calendar'}</Link>
-            <Link to="/tools/adhkar">📿 {isAr ? 'الأذكار' : 'Daily Adhkar'}</Link>
+          <nav className="it__also-try" aria-label={copy.related}>
+            <span className="it__also-try__label">{copy.also}</span>
+            <Link to="/tools/prayer-times">🕌 {copy.prayer}</Link>
+            <Link to="/tools/qibla">🧭 {copy.qibla}</Link>
+            <Link to="/tools/islamic-calendar">📅 {copy.calendar}</Link>
+            <Link to="/tools/adhkar">📿 {copy.adhkar}</Link>
           </nav>
         </div>
       </main>

@@ -43,7 +43,45 @@ const COPY = {
     assignments: 'الواجبات', homework: 'الواجب المنزلي', teacherSubtitle: 'إدارة واجبات الطلاب وتقييمها', studentSubtitle: 'عرض واجباتك وتسليمها', newAssignmentButton: 'واجب جديد',
     total: 'الإجمالي', filterSubject: 'تصفية حسب المادة', allSubjects: 'كل المواد', noAssignments: 'لم يتم العثور على واجبات', changeFilter: 'جرّب تغيير التصفية', createFirst: 'أنشئ واجبك الأول أعلاه', caughtUp: 'أنت منجز لكل واجباتك!',
   },
+  it: {
+    statuses: { all: 'Tutti', pending: 'In attesa', submitted: 'Consegnato', graded: 'Valutato', late: 'In ritardo', overdue: 'Scaduto' }, subjects: { Quran: 'Corano', Arabic: 'Arabo', Tajweed: 'Tajwid', Hifz: 'Memorizzazione', 'Islamic Studies': 'Studi islamici' }, types: { written: 'Scritto', memorization: 'Memorizzazione', essay: 'Tema', quiz: 'Quiz', project: 'Progetto' },
+    overdue: (days) => `${days} g di ritardo`, today: 'Scade oggi', tomorrow: 'Scade domani', dueIn: (days) => `Scade tra ${days} g`,
+    createDialog: 'Crea compito', newAssignment: 'Nuovo compito', close: 'Chiudi', title: 'Titolo', titlePlaceholder: 'Titolo del compito', description: 'Descrizione', descriptionPlaceholder: 'Istruzioni per gli studenti…', subject: 'Materia', type: 'Tipo', deadline: 'Scadenza', points: 'Punti', cancel: 'Annulla', assign: 'Assegna',
+    submitDialog: 'Consegna compito', submit: 'Consegna', notes: 'Note (facoltative)', notesPlaceholder: 'Aggiungi note per il tuo insegnante…', attach: 'Fai clic per allegare un file',
+    pointsShort: 'pt', submittedCount: (submitted, total) => `${submitted}/${total} consegnati`, score: (grade, points) => `Punteggio: ${grade}/${points}`, teacherFeedback: "Commento dell'insegnante", submitWork: 'Consegna lavoro', awaitingGrading: 'Consegnato — in attesa di valutazione', scoreLabel: (points) => `Punteggio (/${points})`, feedback: 'Commento', feedbackPlaceholder: 'Commento facoltativo…', grade: 'Valuta', studentsSubmitted: (submitted, total) => `${submitted} / ${total} studenti hanno consegnato`,
+    preview: 'Anteprima — i compiti mostrati sono illustrativi. La creazione, consegna e valutazione non sono ancora collegate a un backend reale, quindi nulla viene salvato.', actionError: 'L’azione non è stata salvata — questa pagina è un’anteprima.', dismiss: 'Ignora',
+    assignments: 'Compiti', homework: 'Compiti a casa', teacherSubtitle: 'Gestisci e valuta i compiti degli studenti', studentSubtitle: 'Visualizza e consegna i tuoi compiti', newAssignmentButton: 'Nuovo compito', total: 'Totale', filterSubject: 'Filtra per materia', allSubjects: 'Tutte le materie', noAssignments: 'Nessun compito trovato', changeFilter: 'Prova a modificare il filtro', createFirst: 'Crea il tuo primo compito qui sopra', caughtUp: 'Hai completato tutto!',
+  },
+  es: {
+    statuses: { all: 'Todos', pending: 'Pendiente', submitted: 'Entregado', graded: 'Calificado', late: 'Tarde', overdue: 'Vencido' }, subjects: { Quran: 'Corán', Arabic: 'Árabe', Tajweed: 'Taywid', Hifz: 'Memorización', 'Islamic Studies': 'Estudios islámicos' }, types: { written: 'Escrito', memorization: 'Memorización', essay: 'Ensayo', quiz: 'Cuestionario', project: 'Proyecto' },
+    overdue: (days) => `${days} d de retraso`, today: 'Vence hoy', tomorrow: 'Vence mañana', dueIn: (days) => `Vence en ${days} d`,
+    createDialog: 'Crear tarea', newAssignment: 'Nueva tarea', close: 'Cerrar', title: 'Título', titlePlaceholder: 'Título de la tarea', description: 'Descripción', descriptionPlaceholder: 'Instrucciones para estudiantes…', subject: 'Materia', type: 'Tipo', deadline: 'Fecha límite', points: 'Puntos', cancel: 'Cancelar', assign: 'Asignar',
+    submitDialog: 'Entregar tarea', submit: 'Entregar', notes: 'Notas (opcional)', notesPlaceholder: 'Añade notas para tu profesor…', attach: 'Haz clic para adjuntar un archivo',
+    pointsShort: 'pts', submittedCount: (submitted, total) => `${submitted}/${total} entregadas`, score: (grade, points) => `Puntuación: ${grade}/${points}`, teacherFeedback: 'Comentarios del profesor', submitWork: 'Entregar trabajo', awaitingGrading: 'Entregado — pendiente de calificación', scoreLabel: (points) => `Puntuación (/${points})`, feedback: 'Comentarios', feedbackPlaceholder: 'Comentarios opcionales…', grade: 'Calificar', studentsSubmitted: (submitted, total) => `${submitted} / ${total} estudiantes entregaron`,
+    preview: 'Vista previa: las tareas mostradas son ilustrativas. La creación, entrega y calificación aún no están conectadas a un backend real, por lo que no se guarda nada.', actionError: 'La acción no se guardó; esta página es una vista previa.', dismiss: 'Descartar',
+    assignments: 'Tareas', homework: 'Deberes', teacherSubtitle: 'Gestiona y califica las tareas de los estudiantes', studentSubtitle: 'Consulta y entrega tus deberes', newAssignmentButton: 'Nueva tarea', total: 'Total', filterSubject: 'Filtrar por materia', allSubjects: 'Todas las materias', noAssignments: 'No se encontraron tareas', changeFilter: 'Intenta cambiar el filtro', createFirst: 'Crea tu primera tarea arriba', caughtUp: '¡Estás al día!',
+  },
+  de: {
+    statuses: { all: 'Alle', pending: 'Ausstehend', submitted: 'Eingereicht', graded: 'Bewertet', late: 'Verspätet', overdue: 'Überfällig' }, subjects: { Quran: 'Koran', Arabic: 'Arabisch', Tajweed: 'Tadschwīd', Hifz: 'Auswendiglernen', 'Islamic Studies': 'Islamische Studien' }, types: { written: 'Schriftlich', memorization: 'Auswendiglernen', essay: 'Aufsatz', quiz: 'Quiz', project: 'Projekt' },
+    overdue: (days) => `${days} T überfällig`, today: 'Heute fällig', tomorrow: 'Morgen fällig', dueIn: (days) => `Fällig in ${days} T`,
+    createDialog: 'Aufgabe erstellen', newAssignment: 'Neue Aufgabe', close: 'Schließen', title: 'Titel', titlePlaceholder: 'Aufgabentitel', description: 'Beschreibung', descriptionPlaceholder: 'Anweisungen für Schüler…', subject: 'Fach', type: 'Art', deadline: 'Frist', points: 'Punkte', cancel: 'Abbrechen', assign: 'Zuweisen',
+    submitDialog: 'Hausaufgabe einreichen', submit: 'Einreichen', notes: 'Notizen (optional)', notesPlaceholder: 'Notizen für deine Lehrkraft…', attach: 'Klicken, um eine Datei anzuhängen',
+    pointsShort: 'Pkt.', submittedCount: (submitted, total) => `${submitted}/${total} eingereicht`, score: (grade, points) => `Punktzahl: ${grade}/${points}`, teacherFeedback: 'Feedback der Lehrkraft', submitWork: 'Arbeit einreichen', awaitingGrading: 'Eingereicht — wartet auf Bewertung', scoreLabel: (points) => `Punktzahl (/${points})`, feedback: 'Feedback', feedbackPlaceholder: 'Optionales Feedback…', grade: 'Bewerten', studentsSubmitted: (submitted, total) => `${submitted} / ${total} Schüler haben eingereicht`,
+    preview: 'Vorschau — die gezeigten Aufgaben sind beispielhaft. Erstellen, Einreichen und Bewerten sind noch nicht mit einem echten Backend verbunden, daher wird nichts gespeichert.', actionError: 'Die Aktion wurde nicht gespeichert — diese Seite ist eine Vorschau.', dismiss: 'Schließen',
+    assignments: 'Aufgaben', homework: 'Hausaufgaben', teacherSubtitle: 'Schüleraufgaben verwalten und bewerten', studentSubtitle: 'Hausaufgaben ansehen und einreichen', newAssignmentButton: 'Neue Aufgabe', total: 'Gesamt', filterSubject: 'Nach Fach filtern', allSubjects: 'Alle Fächer', noAssignments: 'Keine Aufgaben gefunden', changeFilter: 'Versuche, den Filter zu ändern', createFirst: 'Erstelle oben deine erste Aufgabe', caughtUp: 'Du bist auf dem Laufenden!',
+  },
+  fr: {
+    statuses: { all: 'Tous', pending: 'En attente', submitted: 'Remis', graded: 'Noté', late: 'En retard', overdue: 'En retard' }, subjects: { Quran: 'Coran', Arabic: 'Arabe', Tajweed: 'Tajwid', Hifz: 'Mémorisation', 'Islamic Studies': 'Études islamiques' }, types: { written: 'Écrit', memorization: 'Mémorisation', essay: 'Dissertation', quiz: 'Quiz', project: 'Projet' },
+    overdue: (days) => `${days} j de retard`, today: "À rendre aujourd’hui", tomorrow: 'À rendre demain', dueIn: (days) => `À rendre dans ${days} j`,
+    createDialog: 'Créer un devoir', newAssignment: 'Nouveau devoir', close: 'Fermer', title: 'Titre', titlePlaceholder: 'Titre du devoir', description: 'Description', descriptionPlaceholder: 'Instructions pour les élèves…', subject: 'Matière', type: 'Type', deadline: 'Échéance', points: 'Points', cancel: 'Annuler', assign: 'Assigner',
+    submitDialog: 'Remettre le devoir', submit: 'Remettre', notes: 'Notes (facultatif)', notesPlaceholder: 'Ajoutez des notes pour votre enseignant…', attach: 'Cliquez pour joindre un fichier',
+    pointsShort: 'pts', submittedCount: (submitted, total) => `${submitted}/${total} remis`, score: (grade, points) => `Score : ${grade}/${points}`, teacherFeedback: "Commentaire de l’enseignant", submitWork: 'Remettre le travail', awaitingGrading: 'Remis — en attente de notation', scoreLabel: (points) => `Score (/${points})`, feedback: 'Commentaire', feedbackPlaceholder: 'Commentaire facultatif…', grade: 'Noter', studentsSubmitted: (submitted, total) => `${submitted} / ${total} élèves ont remis leur travail`,
+    preview: 'Aperçu — les devoirs affichés sont fournis à titre indicatif. La création, la remise et la notation ne sont pas encore reliées à un véritable backend, donc rien n’est enregistré.', actionError: 'Cette action n’a pas été enregistrée — cette page est un aperçu.', dismiss: 'Ignorer',
+    assignments: 'Devoirs', homework: 'Devoirs à la maison', teacherSubtitle: 'Gérez et notez les devoirs des élèves', studentSubtitle: 'Consultez et remettez vos devoirs', newAssignmentButton: 'Nouveau devoir', total: 'Total', filterSubject: 'Filtrer par matière', allSubjects: 'Toutes les matières', noAssignments: 'Aucun devoir trouvé', changeFilter: 'Essayez de modifier le filtre', createFirst: 'Créez votre premier devoir ci-dessus', caughtUp: 'Vous êtes à jour !',
+  },
 };
+
+const LOCALES = { en: 'en-US', ar: 'ar-EG', it: 'it-IT', es: 'es-ES', de: 'de-DE', fr: 'fr-FR' };
 
 const HW_STATUS = {
   pending:   { color: '#d97706', bg: '#fef3c7' },
@@ -74,8 +112,8 @@ function formatDeadline(iso, copy, lang) {
   const d = new Date(iso);
   const diff = Math.ceil((d - Date.now()) / (1000 * 60 * 60 * 24));
   const abs = Math.abs(diff);
-  const number = new Intl.NumberFormat(lang === 'ar' ? 'ar' : 'en').format(abs);
-  const futureNumber = new Intl.NumberFormat(lang === 'ar' ? 'ar' : 'en').format(diff);
+  const number = new Intl.NumberFormat(LOCALES[lang] || LOCALES.en).format(abs);
+  const futureNumber = new Intl.NumberFormat(LOCALES[lang] || LOCALES.en).format(diff);
   if (diff < 0) return copy.overdue(number);
   if (diff === 0) return copy.today;
   if (diff === 1) return copy.tomorrow;
@@ -83,7 +121,55 @@ function formatDeadline(iso, copy, lang) {
 }
 
 /* ── API ────────────────────────────────────────────────────────── */
-async function fetchHomework(role) {
+const DEMO_HOMEWORK = {
+  ar: [
+    ['سورة البقرة، الآيات 1–10', 'احفظ الآيات ورتلها بأحكام التجويد الصحيحة.', ''],
+    ['تمرين تصريف الأفعال العربية', 'أكمل ورقة عمل تصريف الأفعال للفصول 3–5.', 'جهد رائع! ركّز على صيغة المثنى.'],
+    ['مقال عن أحكام التجويد', 'اكتب مقالًا من 300 كلمة عن أحكام المد.', ''],
+    ['تأمل في التاريخ الإسلامي', 'اكتب تأملًا شخصيًا عن الفترة الإسلامية المبكرة.', ''],
+    ['مراجعة صفحة الحفظ 12', 'راجع الصفحة 12 وتدرّب على تلاوتها غيبًا.', ''],
+  ],
+  it: [
+    ['Sura Al-Baqara, versetti 1–10', 'Memorizza e recita con il corretto tajwid.', ''],
+    ['Esercizio di coniugazione dei verbi arabi', 'Completa il foglio di lavoro sulla coniugazione dei verbi per i capitoli 3–5.', 'Ottimo impegno! Lavora sulla forma duale.'],
+    ['Tema sulle regole del tajwid', 'Scrivi un tema di 300 parole sulle regole del Madd.', ''],
+    ['Riflessione sulla storia islamica', 'Scrivi una riflessione personale sul primo periodo islamico.', ''],
+    ['Ripasso della pagina 12 di Hifz', 'Ripassa ed esercitati a recitare a memoria la pagina 12.', ''],
+  ],
+  es: [
+    ['Sura Al-Báqara, versículos 1–10', 'Memoriza y recita con el taywid adecuado.', ''],
+    ['Ejercicio de conjugación de verbos árabes', 'Completa la hoja de ejercicios de conjugación verbal de los capítulos 3–5.', '¡Gran esfuerzo! Trabaja en la forma dual.'],
+    ['Ensayo sobre las reglas del taywid', 'Escribe un ensayo de 300 palabras sobre las reglas del Madd.', ''],
+    ['Reflexión sobre la historia islámica', 'Escribe una reflexión personal sobre el período islámico temprano.', ''],
+    ['Repaso de la página 12 de Hifz', 'Repasa y practica recitar de memoria la página 12.', ''],
+  ],
+  de: [
+    ['Sure Al-Baqara, Verse 1–10', 'Lerne sie auswendig und rezitiere sie mit korrektem Tadschwīd.', ''],
+    ['Übung zur Konjugation arabischer Verben', 'Bearbeite das Arbeitsblatt zur Verbkonjugation für die Kapitel 3–5.', 'Großartige Leistung! Arbeite an der Dualform.'],
+    ['Aufsatz über die Tadschwīd-Regeln', 'Schreibe einen 300-Wörter-Aufsatz über die Regeln des Madd.', ''],
+    ['Reflexion über die islamische Geschichte', 'Schreibe eine persönliche Reflexion über die frühe islamische Zeit.', ''],
+    ['Wiederholung von Hifz Seite 12', 'Wiederhole Seite 12 und übe, sie auswendig zu rezitieren.', ''],
+  ],
+  fr: [
+    ['Sourate Al-Baqara, versets 1 à 10', 'Mémorisez et récitez avec un tajwid correct.', ''],
+    ['Exercice de conjugaison des verbes arabes', 'Complétez la fiche de conjugaison des verbes pour les chapitres 3 à 5.', 'Excellent effort ! Travaillez la forme du duel.'],
+    ['Dissertation sur les règles du tajwid', 'Rédigez une dissertation de 300 mots sur les règles du Madd.', ''],
+    ['Réflexion sur l’histoire islamique', 'Rédigez une réflexion personnelle sur la première période islamique.', ''],
+    ['Révision de la page 12 de Hifz', 'Révisez et entraînez-vous à réciter la page 12 de mémoire.', ''],
+  ],
+};
+
+function localizeDemoHomework(assignments, lang) {
+  const translations = DEMO_HOMEWORK[lang];
+  return translations
+    ? assignments.map((assignment, index) => {
+      const [title, description, feedback] = translations[index];
+      return { ...assignment, title, description, feedback };
+    })
+    : assignments;
+}
+
+async function fetchHomework(role, lang) {
   try {
     const { default: http } = await import('../api/http');
     const res = await http.get(role === 'teacher' ? '/api/homework/assigned' : '/api/homework/mine');
@@ -91,13 +177,13 @@ async function fetchHomework(role) {
   } catch {
     const now = Date.now();
     const DAY = 86400000;
-    return [
+    return localizeDemoHomework([
       { _id: 'hw1', title: 'Surah Al-Baqarah verses 1–10', subject: 'Quran', type: 'memorization', deadline: new Date(now + 2 * DAY).toISOString(), status: 'pending', points: 10, description: 'Memorize and recite with proper tajweed.', submissions: 3, totalStudents: 5, grade: null, feedback: '' },
       { _id: 'hw2', title: 'Arabic Verb Conjugation Exercise', subject: 'Arabic', type: 'written', deadline: new Date(now - 1 * DAY).toISOString(), status: 'graded', points: 20, description: 'Complete the verb conjugation worksheet for chapters 3–5.', submissions: 5, totalStudents: 5, grade: 17, feedback: 'Great effort! Work on the dual form.' },
       { _id: 'hw3', title: 'Tajweed Rules Essay', subject: 'Tajweed', type: 'written', deadline: new Date(now + 5 * DAY).toISOString(), status: 'submitted', points: 15, description: 'Write a 300-word essay on the rules of Madd.', submissions: 2, totalStudents: 5, grade: null, feedback: '' },
       { _id: 'hw4', title: 'Islamic History Reflection', subject: 'Islamic Studies', type: 'essay', deadline: new Date(now + 0.3 * DAY).toISOString(), status: 'pending', points: 25, description: 'Write a personal reflection on the early Islamic period.', submissions: 1, totalStudents: 5, grade: null, feedback: '' },
       { _id: 'hw5', title: 'Hifz Page 12 Review', subject: 'Hifz', type: 'memorization', deadline: new Date(now - 3 * DAY).toISOString(), status: 'late', points: 10, description: 'Review and be able to recite page 12 from memory.', submissions: 0, totalStudents: 5, grade: null, feedback: '' },
-    ];
+    ], lang);
   }
 }
 
@@ -276,7 +362,7 @@ function AssignmentCard({ hw, isTeacher, onSubmit, onGrade }) {
               </span>
               <span style={{ fontSize: '0.75rem', color: deadlineColor(hw.deadline), fontWeight: 600, display: 'flex', alignItems: 'center', gap: 3 }}>
                  <Calendar size={11} aria-hidden="true" />
-                 <time dateTime={hw.deadline} title={new Intl.DateTimeFormat(lang === 'ar' ? 'ar' : 'en', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(hw.deadline))}>
+                 <time dateTime={hw.deadline} title={new Intl.DateTimeFormat(LOCALES[lang] || LOCALES.en, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(hw.deadline))}>
                    {formatDeadline(hw.deadline, copy, lang)}
                  </time>
               </span>
@@ -394,8 +480,8 @@ export default function HomeworkPage() {
   const role = isTeacher ? 'teacher' : 'student';
 
   const { data: homework = [], isLoading } = useQuery({
-    queryKey: ['homework', role],
-    queryFn: () => fetchHomework(role),
+    queryKey: ['homework', role, lang],
+    queryFn: () => fetchHomework(role, lang),
     staleTime: 2 * 60 * 1000,
   });
 

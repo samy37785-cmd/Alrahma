@@ -5,143 +5,91 @@ import useSEO from '../hooks/useSEO';
 import { useLang } from '../context/LangContext';
 import { site } from '../data/site';
 
-const LAST_UPDATED = '28 June 2026';
+const policies = {
+  en: { title: 'Terms of Service', academy: 'Academy', updated: 'Last updated: 28 June 2026', seo: 'Terms and conditions governing your use of Al-Rahma Academy\'s online Quran and Islamic education services.', headings: ['1. Services', '2. Subscriptions & Payment', '3. 14-Day Money-Back Guarantee', '4. Cancellation', '5. Free Trial', '6. Lesson Scheduling & Rescheduling', '7. Tutor Matching & Changes', '8. Conduct & Safety', '9. Intellectual Property', '10. Data Protection (GDPR)', '11. Limitation of Liability', '12. Governing Law', '13. Contact'], intro: 'These Terms of Service ("Terms") govern your access to and use of Al-Rahma Academy\'s online education platform, including all lessons, courses, tools, and related services (collectively, the "Services"). By registering or using the Services, you agree to be bound by these Terms.', services: 'Al-Rahma Academy provides one-to-one online Quran, Arabic, and Islamic Studies lessons delivered live via video call (Zoom or Skype). All tutors hold verified Al-Azhar University qualifications and an Ijazah with a continuous chain of transmission (sanad).', payment: ['Subscriptions are billed monthly per student enrolled.', 'Payment is processed securely via Stripe (card) or PayPal.', 'Prices are displayed in Euros (€) and are inclusive of any applicable VAT.', 'Your subscription renews automatically each month unless cancelled at least 24 hours before the renewal date.', 'Discounted promotional prices apply only to the period stated at the time of purchase.'], refund: 'If you are not satisfied with your first subscription period for any reason, you may request a full refund within 14 calendar days of your initial payment. To request a refund, contact us at', refundEnd: 'or via WhatsApp at', refundNote: 'Refunds are processed within 5–10 business days to your original payment method.', guarantee: 'The money-back guarantee applies to the first subscription period only. Subsequent renewals may be cancelled for a pro-rated credit at our discretion.', cancellation: 'You may cancel your subscription at any time from your Billing page or by contacting support. Cancellation takes effect at the end of the current billing period; you retain access to scheduled lessons until then. No partial refunds are issued for unused days beyond the 14-day guarantee window.', trial: 'New students receive two complimentary trial lessons with no payment required. The free trial is available once per student. After the trial, you may choose any subscription plan or opt not to continue — there is no obligation.', scheduling: ['Lessons must be rescheduled at least 24 hours in advance.', 'Lessons cancelled within 24 hours are forfeited unless due to an emergency.', 'Tutors may reschedule with 24-hour notice; persistent rescheduling qualifies you for a tutor change at no cost.'], matching: 'We match each student with a suitable tutor based on their goals, language, and schedule. If you are unhappy with your assigned tutor for any reason, you may request a change at no cost — simply contact support via email or WhatsApp. We aim to complete all tutor changes within 48 hours.', conduct: 'All lessons are conducted in a respectful, professional environment. Recording of lessons by students or parents requires prior written consent from the tutor. Lessons involving children under 13 require a parent or guardian to be present or immediately accessible during the session.', ip: 'All course materials, recordings (where provided), and content created by Al-Rahma Academy remain our intellectual property. You may not reproduce, distribute, or resell our materials without prior written permission.', data: 'We process your personal data in accordance with the EU General Data Protection Regulation (GDPR). We never sell your data to third parties. For full details, see our', privacy: 'Privacy Policy', liability: 'Al-Rahma Academy\'s total liability to you for any claim arising from these Terms shall not exceed the amount you paid us in the 30 days preceding the claim. We are not liable for indirect, incidental, or consequential damages.', law: 'These Terms are governed by the laws of the Arab Republic of Egypt. Any disputes shall be submitted to the competent courts of Cairo, Egypt, without prejudice to any mandatory consumer protection rights you may have under EU law.', contact: 'For any questions about these Terms, please contact us:', email: 'Email:', whatsapp: 'WhatsApp:', response: 'Response time: within 2 hours during business days (Sat–Thu, 08:00–23:00 Cairo time)' },
+  ar: { title: 'شروط الخدمة', academy: 'الأكاديمية', updated: 'آخر تحديث: ٢٨ يونيو ٢٠٢٦', seo: 'الشروط والأحكام التي تحكم استخدامك لخدمات أكاديمية الرحمة التعليمية عبر الإنترنت للقرآن الكريم والدراسات الإسلامية.', headings: ['١. الخدمات', '٢. الاشتراكات والدفع', '٣. ضمان استرداد الأموال خلال ١٤ يومًا', '٤. الإلغاء', '٥. التجربة المجانية', '٦. جدولة الدروس وإعادة جدولتها', '٧. مواءمة المدرسين وتغييرهم', '٨. السلوك والسلامة', '٩. الملكية الفكرية', '١٠. حماية البيانات (GDPR)', '١١. تحديد المسؤولية', '١٢. القانون الحاكم', '١٣. التواصل'], intro: 'تحكم شروط الخدمة هذه ("الشروط") وصولك إلى منصة أكاديمية الرحمة التعليمية عبر الإنترنت واستخدامك لها، بما في ذلك جميع الدروس والدورات والأدوات والخدمات ذات الصلة (ويشار إليها مجتمعةً باسم "الخدمات"). بتسجيلك أو استخدامك للخدمات، فإنك توافق على الالتزام بهذه الشروط.', services: 'تقدم أكاديمية الرحمة دروسًا فردية عبر الإنترنت في القرآن الكريم واللغة العربية والدراسات الإسلامية، تُقدَّم مباشرةً عبر مكالمات الفيديو (Zoom أو Skype). ويحمل جميع المدرسين مؤهلات موثقة من جامعة الأزهر وإجازة بسند متصل.', payment: ['تُحتسب الاشتراكات شهريًا عن كل طالب مسجل.', 'تُعالَج المدفوعات بأمان عبر Stripe (البطاقة) أو PayPal.', 'تُعرض الأسعار باليورو (€) وتشمل أي ضريبة قيمة مضافة واجبة التطبيق.', 'يتجدد اشتراكك تلقائيًا كل شهر ما لم يُلغَ قبل موعد التجديد بما لا يقل عن ٢٤ ساعة.', 'تسري الأسعار الترويجية المخفضة فقط خلال الفترة المذكورة وقت الشراء.'], refund: 'إذا لم تكن راضيًا عن فترة اشتراكك الأولى لأي سبب، فيمكنك طلب استرداد كامل المبلغ خلال ١٤ يومًا تقويميًا من دفعتك الأولى. لطلب استرداد المبلغ، تواصل معنا عبر', refundEnd: 'أو عبر واتساب على', refundNote: 'وتُعالَج عمليات الاسترداد خلال ٥–١٠ أيام عمل وتُعاد إلى وسيلة الدفع الأصلية.', guarantee: 'يسري ضمان استرداد الأموال على فترة الاشتراك الأولى فقط. ويمكن إلغاء التجديدات اللاحقة مقابل رصيد تناسبي وفقًا لتقديرنا.', cancellation: 'يمكنك إلغاء اشتراكك في أي وقت من صفحة الفوترة الخاصة بك أو بالتواصل مع الدعم. يسري الإلغاء في نهاية فترة الفوترة الحالية؛ وتحتفظ بإمكانية الوصول إلى الدروس المجدولة حتى ذلك الحين. لا تُصدر عمليات استرداد جزئية للأيام غير المستخدمة بعد مهلة الضمان البالغة ١٤ يومًا.', trial: 'يحصل الطلاب الجدد على درسين تجريبيين مجانيين دون الحاجة إلى دفع. تتاح التجربة المجانية مرة واحدة لكل طالب. بعد التجربة، يمكنك اختيار أي خطة اشتراك أو عدم الاستمرار — ولا يوجد أي التزام.', scheduling: ['يجب إعادة جدولة الدروس قبل موعدها بما لا يقل عن ٢٤ ساعة مسبقًا.', 'تُعد الدروس الملغاة خلال ٢٤ ساعة مُفوَّتة ما لم يكن الإلغاء بسبب حالة طارئة.', 'يجوز للمدرسين إعادة الجدولة بإشعار قبل ٢٤ ساعة؛ وتؤهلك إعادة الجدولة المتكررة لتغيير المدرس دون تكلفة.'], matching: 'نوفّق بين كل طالب ومدرس مناسب بناءً على أهدافه ولغته وجدوله. إذا لم تكن راضيًا عن المدرس المعيّن لك لأي سبب، فيمكنك طلب تغييره دون تكلفة — ما عليك سوى التواصل مع الدعم عبر البريد الإلكتروني أو واتساب. نهدف إلى إتمام جميع تغييرات المدرسين خلال ٤٨ ساعة.', conduct: 'تُعقد جميع الدروس في بيئة محترمة ومهنية. يتطلب تسجيل الدروس من قبل الطلاب أو أولياء الأمور موافقة خطية مسبقة من المدرس. وتتطلب الدروس التي تشمل أطفالًا دون سن ١٣ عامًا حضور أحد الوالدين أو الوصي أو إمكانية الوصول إليه فورًا أثناء الجلسة.', ip: 'تظل جميع مواد الدورات والتسجيلات (حيثما تُوفَّر) والمحتوى الذي أنشأته أكاديمية الرحمة ملكيتنا الفكرية. لا يجوز لك نسخ موادنا أو توزيعها أو إعادة بيعها دون إذن خطي مسبق.', data: 'نعالج بياناتك الشخصية وفقًا للائحة العامة لحماية البيانات في الاتحاد الأوروبي (GDPR). ولا نبيع بياناتك مطلقًا لأطراف ثالثة. للاطلاع على التفاصيل كاملةً، راجع', privacy: 'سياسة الخصوصية', liability: 'لا تتجاوز المسؤولية الإجمالية لأكاديمية الرحمة تجاهك عن أي مطالبة ناشئة عن هذه الشروط المبلغ الذي دفعته لنا خلال الثلاثين يومًا السابقة للمطالبة. ولا نتحمل المسؤولية عن الأضرار غير المباشرة أو العرضية أو التبعية.', law: 'تخضع هذه الشروط لقوانين جمهورية مصر العربية. ويُعرض أي نزاع على المحاكم المختصة في القاهرة، مصر، دون إخلال بأي حقوق إلزامية لحماية المستهلك قد تتمتع بها بموجب قانون الاتحاد الأوروبي.', contact: 'لأي استفسارات بشأن هذه الشروط، يُرجى التواصل معنا:', email: 'البريد الإلكتروني:', whatsapp: 'واتساب:', response: 'وقت الاستجابة: خلال ساعتين في أيام العمل (السبت–الخميس، ٠٨:٠٠–٢٣:٠٠ بتوقيت القاهرة)' },
+  it: { title: 'Termini di servizio', academy: 'Accademia', updated: 'Ultimo aggiornamento: 28 giugno 2026', seo: 'Termini e condizioni che regolano l’uso dei servizi online di istruzione coranica e islamica di Al-Rahma Academy.', headings: ['1. Servizi','2. Abbonamenti e pagamenti','3. Garanzia di rimborso di 14 giorni','4. Cancellazione','5. Prova gratuita','6. Programmazione e riprogrammazione delle lezioni','7. Abbinamento e cambi dei tutor','8. Condotta e sicurezza','9. Proprietà intellettuale','10. Protezione dei dati (GDPR)','11. Limitazione di responsabilità','12. Legge applicabile','13. Contatti'], intro: 'I presenti Termini di servizio (“Termini”) disciplinano l’accesso e l’uso della piattaforma educativa online di Al-Rahma Academy, comprese tutte le lezioni, i corsi, gli strumenti e i servizi correlati (collettivamente, i “Servizi”). Registrandoti o utilizzando i Servizi, accetti di essere vincolato dai presenti Termini.', services: 'Al-Rahma Academy offre lezioni individuali online di Corano, arabo e studi islamici, erogate dal vivo tramite videochiamata (Zoom o Skype). Tutti i tutor possiedono qualifiche verificate dell’Università di Al-Azhar e un’Ijazah con catena ininterrotta di trasmissione (sanad).', payment: ['Gli abbonamenti sono fatturati mensilmente per ogni studente iscritto.','I pagamenti sono elaborati in modo sicuro tramite Stripe (carta) o PayPal.','I prezzi sono indicati in euro (€) e includono l’IVA applicabile.','L’abbonamento si rinnova automaticamente ogni mese salvo cancellazione almeno 24 ore prima della data di rinnovo.','I prezzi promozionali scontati si applicano solo per il periodo indicato al momento dell’acquisto.'], refund: 'Se non sei soddisfatto del tuo primo periodo di abbonamento per qualsiasi motivo, puoi richiedere un rimborso completo entro 14 giorni di calendario dal pagamento iniziale. Per richiedere un rimborso, contattaci a', refundEnd: 'o via WhatsApp al', refundNote: 'I rimborsi vengono elaborati entro 5–10 giorni lavorativi sul metodo di pagamento originale.', guarantee: 'La garanzia di rimborso si applica solo al primo periodo di abbonamento. I rinnovi successivi possono essere cancellati con un credito proporzionale a nostra discrezione.', cancellation: 'Puoi annullare l’abbonamento in qualsiasi momento dalla pagina Fatturazione o contattando l’assistenza. La cancellazione ha effetto al termine del periodo di fatturazione corrente; fino ad allora mantieni l’accesso alle lezioni programmate. Non vengono emessi rimborsi parziali per i giorni non utilizzati oltre il periodo di garanzia di 14 giorni.', trial: 'I nuovi studenti ricevono due lezioni di prova gratuite senza pagamento. La prova gratuita è disponibile una volta per studente. Dopo la prova puoi scegliere un piano di abbonamento o non proseguire: non vi è alcun obbligo.', scheduling: ['Le lezioni devono essere riprogrammate almeno 24 ore in anticipo.','Le lezioni cancellate entro 24 ore sono perse, salvo emergenza.','I tutor possono riprogrammare con preavviso di 24 ore; riprogrammazioni persistenti danno diritto a cambiare tutor senza costi.'], matching: 'Abbiniamo ogni studente a un tutor adatto in base a obiettivi, lingua e orario. Se non sei soddisfatto del tutor assegnato per qualsiasi motivo, puoi richiedere un cambio senza costi: contatta l’assistenza via e-mail o WhatsApp. Puntiamo a completare ogni cambio tutor entro 48 ore.', conduct: 'Tutte le lezioni si svolgono in un ambiente rispettoso e professionale. La registrazione delle lezioni da parte di studenti o genitori richiede il previo consenso scritto del tutor. Per lezioni con bambini sotto i 13 anni, un genitore o tutore deve essere presente o immediatamente reperibile durante la sessione.', ip: 'Tutti i materiali dei corsi, le registrazioni (ove fornite) e i contenuti creati da Al-Rahma Academy restano nostra proprietà intellettuale. Non puoi riprodurre, distribuire o rivendere i nostri materiali senza previa autorizzazione scritta.', data: 'Trattiamo i tuoi dati personali in conformità al Regolamento generale sulla protezione dei dati dell’UE (GDPR). Non vendiamo mai i tuoi dati a terzi. Per tutti i dettagli, consulta la nostra', privacy: 'Informativa sulla privacy', liability: 'La responsabilità totale di Al-Rahma Academy nei tuoi confronti per qualsiasi reclamo derivante dai presenti Termini non supererà l’importo che ci hai pagato nei 30 giorni precedenti il reclamo. Non siamo responsabili per danni indiretti, incidentali o consequenziali.', law: 'I presenti Termini sono regolati dalle leggi della Repubblica Araba d’Egitto. Eventuali controversie saranno sottoposte ai tribunali competenti del Cairo, Egitto, senza pregiudizio dei diritti obbligatori di tutela dei consumatori di cui potresti beneficiare ai sensi del diritto dell’UE.', contact: 'Per qualsiasi domanda sui presenti Termini, contattaci:', email: 'E-mail:', whatsapp: 'WhatsApp:', response: 'Tempo di risposta: entro 2 ore nei giorni lavorativi (sab–gio, 08:00–23:00 ora del Cairo)' },
+};
+
+const translated = {
+  it: {
+    intro: 'I presenti Termini di servizio (“Termini”) disciplinano l’accesso e l’uso della piattaforma educativa online di Al-Rahma Academy, comprese tutte le lezioni, i corsi, gli strumenti e i servizi correlati (collettivamente, i “Servizi”). Registrandoti o utilizzando i Servizi, accetti di essere vincolato dai presenti Termini.',
+    services: 'Al-Rahma Academy offre lezioni individuali online di Corano, arabo e studi islamici, erogate dal vivo tramite videochiamata (Zoom o Skype). Tutti i tutor possiedono qualifiche verificate dell’Università di Al-Azhar e un’Ijazah con catena ininterrotta di trasmissione (sanad).',
+  },
+  es: {
+    title: 'Términos del servicio', academy: 'Academia', updated: 'Última actualización: 28 de junio de 2026',
+    seo: 'Términos y condiciones que rigen el uso de los servicios en línea de enseñanza del Corán y educación islámica de Al-Rahma Academy.',
+    headings: ['1. Servicios', '2. Suscripciones y pagos', '3. Garantía de devolución de 14 días', '4. Cancelación', '5. Prueba gratuita', '6. Programación y cambios de las clases', '7. Asignación y cambios de tutor', '8. Conducta y seguridad', '9. Propiedad intelectual', '10. Protección de datos (RGPD)', '11. Limitación de responsabilidad', '12. Ley aplicable', '13. Contacto'],
+    intro: 'Estos Términos del servicio (“Términos”) rigen tu acceso y uso de la plataforma educativa en línea de Al-Rahma Academy, incluidas todas las clases, cursos, herramientas y servicios relacionados (conjuntamente, los “Servicios”). Al registrarte o utilizar los Servicios, aceptas quedar sujeto a estos Términos.',
+    services: 'Al-Rahma Academy ofrece clases individuales en línea de Corán, árabe y estudios islámicos impartidas en directo por videollamada (Zoom o Skype). Todos los tutores poseen titulaciones verificadas de la Universidad de Al-Azhar y una Ijazah con una cadena de transmisión continua (sanad).',
+    payment: ['Las suscripciones se facturan mensualmente por cada estudiante inscrito.', 'El pago se procesa de forma segura mediante Stripe (tarjeta) o PayPal.', 'Los precios se muestran en euros (€) e incluyen el IVA aplicable.', 'La suscripción se renueva automáticamente cada mes, salvo que se cancele al menos 24 horas antes de la fecha de renovación.', 'Los precios promocionales con descuento solo se aplican durante el periodo indicado al realizar la compra.'],
+    refund: 'Si no estás satisfecho con tu primer periodo de suscripción por cualquier motivo, puedes solicitar un reembolso completo en los 14 días naturales siguientes al pago inicial. Para solicitarlo, escríbenos a', refundEnd: 'o por WhatsApp al', refundNote: 'Los reembolsos se tramitan en un plazo de 5–10 días laborables y se devuelven al método de pago original.',
+    guarantee: 'La garantía de devolución solo se aplica al primer periodo de suscripción. Las renovaciones posteriores pueden cancelarse por un crédito prorrateado a nuestra discreción.',
+    cancellation: 'Puedes cancelar tu suscripción en cualquier momento desde la página de Facturación o contactando con soporte. La cancelación surte efecto al final del periodo de facturación actual; hasta entonces conservas el acceso a las clases programadas. No se realizan reembolsos parciales por días no utilizados fuera del plazo de garantía de 14 días.',
+    trial: 'Los nuevos estudiantes reciben dos clases de prueba gratuitas sin necesidad de pagar. La prueba gratuita está disponible una vez por estudiante. Después puedes elegir cualquier plan de suscripción o no continuar: no existe ninguna obligación.',
+    scheduling: ['Las clases deben cambiarse con al menos 24 horas de antelación.', 'Las clases canceladas con menos de 24 horas se pierden, salvo que se deba a una emergencia.', 'Los tutores pueden cambiar una clase con 24 horas de aviso; los cambios persistentes te permiten solicitar otro tutor sin coste.'],
+    matching: 'Asignamos a cada estudiante un tutor adecuado según sus objetivos, idioma y horario. Si por cualquier motivo no estás satisfecho con el tutor asignado, puedes solicitar un cambio sin coste: contacta con soporte por correo electrónico o WhatsApp. Nuestro objetivo es completar los cambios de tutor en un plazo de 48 horas.',
+    conduct: 'Todas las clases se desarrollan en un entorno respetuoso y profesional. Los estudiantes o padres necesitan el consentimiento previo por escrito del tutor para grabar las clases. En las clases de menores de 13 años, un padre, madre o tutor debe estar presente o disponible de inmediato durante la sesión.',
+    ip: 'Todos los materiales de los cursos, las grabaciones (cuando se proporcionen) y el contenido creado por Al-Rahma Academy siguen siendo nuestra propiedad intelectual. No puedes reproducir, distribuir ni revender nuestros materiales sin permiso previo por escrito.',
+    data: 'Tratamos tus datos personales de acuerdo con el Reglamento General de Protección de Datos de la UE (RGPD). Nunca vendemos tus datos a terceros. Para conocer todos los detalles, consulta nuestra', privacy: 'Política de privacidad',
+    liability: 'La responsabilidad total de Al-Rahma Academy frente a ti por cualquier reclamación derivada de estos Términos no superará el importe que nos hayas pagado durante los 30 días anteriores a la reclamación. No respondemos de daños indirectos, incidentales o consecuentes.',
+    law: 'Estos Términos se rigen por las leyes de la República Árabe de Egipto. Cualquier disputa se someterá a los tribunales competentes de El Cairo, Egipto, sin perjuicio de los derechos obligatorios de protección del consumidor que puedas tener conforme al Derecho de la UE.',
+    contact: 'Si tienes preguntas sobre estos Términos, contáctanos:', email: 'Correo electrónico:', whatsapp: 'WhatsApp:', response: 'Tiempo de respuesta: en un plazo de 2 horas durante los días laborables (sáb–jue, 08:00–23:00, hora de El Cairo)',
+  },
+  de: {
+    title: 'Nutzungsbedingungen', academy: 'Akademie', updated: 'Zuletzt aktualisiert: 28. Juni 2026',
+    seo: 'Nutzungsbedingungen für die Online-Koran- und Islamunterrichtsdienste der Al-Rahma Academy.',
+    headings: ['1. Leistungen', '2. Abonnements und Zahlung', '3. 14-tägige Geld-zurück-Garantie', '4. Kündigung', '5. Kostenlose Probestunde', '6. Unterrichtsplanung und Umbuchung', '7. Zuordnung und Wechsel von Lehrkräften', '8. Verhalten und Sicherheit', '9. Geistiges Eigentum', '10. Datenschutz (DSGVO)', '11. Haftungsbeschränkung', '12. Anwendbares Recht', '13. Kontakt'],
+    intro: 'Diese Nutzungsbedingungen („Bedingungen“) regeln Ihren Zugang zur Online-Bildungsplattform der Al-Rahma Academy und deren Nutzung, einschließlich aller Unterrichtsstunden, Kurse, Tools und zugehörigen Dienste (zusammen die „Leistungen“). Mit der Registrierung oder Nutzung der Leistungen stimmen Sie diesen Bedingungen zu.',
+    services: 'Die Al-Rahma Academy bietet individuellen Online-Unterricht in Koran, Arabisch und Islamwissenschaften an, der live per Videoanruf (Zoom oder Skype) stattfindet. Alle Lehrkräfte verfügen über geprüfte Qualifikationen der Al-Azhar-Universität und eine Ijazah mit ununterbrochener Überlieferungskette (Sanad).',
+    payment: ['Abonnements werden monatlich pro angemeldetem Schüler abgerechnet.', 'Die Zahlung wird sicher über Stripe (Karte) oder PayPal abgewickelt.', 'Die Preise werden in Euro (€) angezeigt und enthalten die anwendbare Mehrwertsteuer.', 'Ihr Abonnement verlängert sich automatisch jeden Monat, sofern Sie nicht mindestens 24 Stunden vor dem Verlängerungstermin kündigen.', 'Ermäßigte Aktionspreise gelten nur für den beim Kauf angegebenen Zeitraum.'],
+    refund: 'Wenn Sie mit Ihrem ersten Abonnementzeitraum aus irgendeinem Grund nicht zufrieden sind, können Sie innerhalb von 14 Kalendertagen nach Ihrer ersten Zahlung eine vollständige Erstattung beantragen. Wenden Sie sich dazu an', refundEnd: 'oder per WhatsApp an', refundNote: 'Erstattungen werden innerhalb von 5–10 Werktagen über die ursprüngliche Zahlungsmethode abgewickelt.',
+    guarantee: 'Die Geld-zurück-Garantie gilt nur für den ersten Abonnementzeitraum. Nachfolgende Verlängerungen können nach unserem Ermessen gegen eine anteilige Gutschrift gekündigt werden.',
+    cancellation: 'Sie können Ihr Abonnement jederzeit über die Abrechnungsseite oder durch Kontaktaufnahme mit dem Support kündigen. Die Kündigung wird zum Ende des laufenden Abrechnungszeitraums wirksam; bis dahin behalten Sie den Zugang zu geplanten Unterrichtsstunden. Nach Ablauf der 14-tägigen Garantie werden keine anteiligen Erstattungen für ungenutzte Tage gewährt.',
+    trial: 'Neue Schüler erhalten zwei kostenlose Probestunden ohne Zahlung. Die kostenlose Probe ist einmal pro Schüler verfügbar. Danach können Sie einen beliebigen Tarif wählen oder nicht fortfahren – es besteht keine Verpflichtung.',
+    scheduling: ['Unterrichtsstunden müssen mindestens 24 Stunden im Voraus umgebucht werden.', 'Innerhalb von 24 Stunden abgesagte Stunden verfallen, außer bei einem Notfall.', 'Lehrkräfte können mit 24 Stunden Vorankündigung umbuchen; bei wiederholten Umbuchungen können Sie kostenlos die Lehrkraft wechseln.'],
+    matching: 'Wir ordnen jedem Schüler anhand seiner Ziele, Sprache und seines Zeitplans eine geeignete Lehrkraft zu. Wenn Sie mit der zugewiesenen Lehrkraft aus irgendeinem Grund unzufrieden sind, können Sie kostenlos einen Wechsel beantragen – kontaktieren Sie den Support per E-Mail oder WhatsApp. Wir bemühen uns, jeden Wechsel innerhalb von 48 Stunden abzuschließen.',
+    conduct: 'Alle Unterrichtsstunden finden in einer respektvollen, professionellen Umgebung statt. Schüler oder Eltern benötigen für Aufnahmen vorher die schriftliche Zustimmung der Lehrkraft. Bei Unterricht mit Kindern unter 13 Jahren muss ein Elternteil oder eine erziehungsberechtigte Person anwesend oder während der Sitzung sofort erreichbar sein.',
+    ip: 'Alle Kursmaterialien, bereitgestellten Aufnahmen und von der Al-Rahma Academy erstellten Inhalte bleiben unser geistiges Eigentum. Ohne vorherige schriftliche Genehmigung dürfen Sie unsere Materialien nicht vervielfältigen, verbreiten oder weiterverkaufen.',
+    data: 'Wir verarbeiten Ihre personenbezogenen Daten gemäß der Datenschutz-Grundverordnung der EU (DSGVO). Wir verkaufen Ihre Daten niemals an Dritte. Einzelheiten finden Sie in unserer', privacy: 'Datenschutzerklärung',
+    liability: 'Die Gesamthaftung der Al-Rahma Academy für Ansprüche aus diesen Bedingungen ist auf den Betrag begrenzt, den Sie uns in den 30 Tagen vor dem Anspruch gezahlt haben. Für indirekte, zufällige oder Folgeschäden haften wir nicht.',
+    law: 'Diese Bedingungen unterliegen dem Recht der Arabischen Republik Ägypten. Streitigkeiten werden den zuständigen Gerichten in Kairo, Ägypten, vorgelegt, unbeschadet zwingender Verbraucherschutzrechte nach EU-Recht.',
+    contact: 'Bei Fragen zu diesen Bedingungen kontaktieren Sie uns bitte:', email: 'E-Mail:', whatsapp: 'WhatsApp:', response: 'Antwortzeit: innerhalb von 2 Stunden an Werktagen (Sa–Do, 08:00–23:00 Uhr Kairoer Zeit)',
+  },
+  fr: {
+    title: 'Conditions d’utilisation', academy: 'Académie', updated: 'Dernière mise à jour : 28 juin 2026',
+    seo: 'Conditions régissant l’utilisation des services en ligne d’enseignement du Coran et d’éducation islamique d’Al-Rahma Academy.',
+    headings: ['1. Services', '2. Abonnements et paiements', '3. Garantie satisfait ou remboursé de 14 jours', '4. Résiliation', '5. Essai gratuit', '6. Planification et report des cours', '7. Attribution et changement de tuteur', '8. Comportement et sécurité', '9. Propriété intellectuelle', '10. Protection des données (RGPD)', '11. Limitation de responsabilité', '12. Droit applicable', '13. Contact'],
+    intro: 'Les présentes Conditions d’utilisation (« Conditions ») régissent votre accès à la plateforme d’enseignement en ligne d’Al-Rahma Academy et son utilisation, y compris toutes les leçons, cours, outils et services connexes (collectivement, les « Services »). En vous inscrivant aux Services ou en les utilisant, vous acceptez les présentes Conditions.',
+    services: 'Al-Rahma Academy propose des leçons individuelles en ligne de Coran, d’arabe et d’études islamiques, dispensées en direct par appel vidéo (Zoom ou Skype). Tous les tuteurs possèdent des qualifications vérifiées de l’Université Al-Azhar et une Ijazah assortie d’une chaîne de transmission continue (sanad).',
+    payment: ['Les abonnements sont facturés chaque mois pour chaque élève inscrit.', 'Le paiement est traité de manière sécurisée par Stripe (carte) ou PayPal.', 'Les prix sont affichés en euros (€) et incluent la TVA applicable.', 'Votre abonnement est renouvelé automatiquement chaque mois, sauf résiliation au moins 24 heures avant la date de renouvellement.', 'Les prix promotionnels réduits s’appliquent uniquement pendant la période indiquée lors de l’achat.'],
+    refund: 'Si vous n’êtes pas satisfait de votre première période d’abonnement, vous pouvez demander un remboursement intégral dans les 14 jours calendaires suivant votre paiement initial. Pour cela, contactez-nous à', refundEnd: 'ou par WhatsApp au', refundNote: 'Les remboursements sont traités sous 5 à 10 jours ouvrés sur votre moyen de paiement initial.',
+    guarantee: 'La garantie satisfait ou remboursé s’applique uniquement à la première période d’abonnement. Les renouvellements suivants peuvent être résiliés contre un avoir au prorata, à notre discrétion.',
+    cancellation: 'Vous pouvez résilier votre abonnement à tout moment depuis votre page de facturation ou en contactant l’assistance. La résiliation prend effet à la fin de la période de facturation en cours ; vous gardez jusque-là l’accès aux cours programmés. Aucun remboursement partiel n’est accordé pour les jours inutilisés après la garantie de 14 jours.',
+    trial: 'Les nouveaux élèves bénéficient de deux cours d’essai gratuits, sans paiement requis. L’essai gratuit est disponible une fois par élève. Après l’essai, vous pouvez choisir un abonnement ou ne pas poursuivre : aucun engagement n’est requis.',
+    scheduling: ['Les cours doivent être reportés au moins 24 heures à l’avance.', 'Les cours annulés moins de 24 heures à l’avance sont perdus, sauf en cas d’urgence.', 'Les tuteurs peuvent reporter un cours avec un préavis de 24 heures ; des reports répétés vous permettent de demander gratuitement un changement de tuteur.'],
+    matching: 'Nous attribuons à chaque élève un tuteur adapté à ses objectifs, sa langue et ses disponibilités. Si vous n’êtes pas satisfait de votre tuteur pour quelque raison que ce soit, vous pouvez demander un changement gratuitement : contactez l’assistance par e-mail ou WhatsApp. Nous visons un changement sous 48 heures.',
+    conduct: 'Tous les cours se déroulent dans un environnement respectueux et professionnel. L’enregistrement des cours par les élèves ou les parents nécessite l’accord écrit préalable du tuteur. Pour les cours d’enfants de moins de 13 ans, un parent ou un responsable légal doit être présent ou immédiatement joignable pendant la séance.',
+    ip: 'Tous les supports de cours, enregistrements fournis et contenus créés par Al-Rahma Academy restent notre propriété intellectuelle. Vous ne pouvez pas reproduire, distribuer ou revendre nos supports sans autorisation écrite préalable.',
+    data: 'Nous traitons vos données personnelles conformément au Règlement général sur la protection des données de l’UE (RGPD). Nous ne vendons jamais vos données à des tiers. Pour plus de détails, consultez notre', privacy: 'Politique de confidentialité',
+    liability: 'La responsabilité totale d’Al-Rahma Academy pour toute réclamation découlant des présentes Conditions ne dépassera pas le montant que vous nous avez payé au cours des 30 jours précédant la réclamation. Nous ne sommes pas responsables des dommages indirects, accessoires ou consécutifs.',
+    law: 'Les présentes Conditions sont régies par les lois de la République arabe d’Égypte. Tout litige sera soumis aux tribunaux compétents du Caire, en Égypte, sans préjudice des droits impératifs de protection des consommateurs prévus par le droit de l’UE.',
+    contact: 'Pour toute question concernant ces Conditions, contactez-nous :', email: 'E-mail :', whatsapp: 'WhatsApp :', response: 'Délai de réponse : sous 2 heures les jours ouvrés (sam.–jeu., 08 h 00–23 h 00, heure du Caire)',
+  },
+};
 
 export default function TermsOfService() {
   const { lang } = useLang();
-  const isArabic = lang === 'ar';
-  const updatedDate = isArabic ? '٢٨ يونيو ٢٠٢٦' : LAST_UPDATED;
-
-  useSEO({
-    title: isArabic ? 'شروط الخدمة' : 'Terms of Service',
-    description: isArabic
-      ? 'الشروط والأحكام التي تحكم استخدامك لخدمات أكاديمية الرحمة التعليمية عبر الإنترنت للقرآن الكريم والدراسات الإسلامية.'
-      : 'Terms and conditions governing your use of Al-Rahma Academy\'s online Quran and Islamic education services.',
-    noindex: false,
-  });
-
-  return (
-    <>
-      <Header />
-      <main>
-        <Breadcrumbs items={[{ label: isArabic ? 'الأكاديمية' : 'Academy', to: '/academy' }, { label: isArabic ? 'شروط الخدمة' : 'Terms of Service' }]} />
-        <section className="legal-page">
-          <div className="container legal-page__inner">
-            <h1>{isArabic ? 'شروط الخدمة' : 'Terms of Service'}</h1>
-            <p className="legal-page__meta">{isArabic ? 'آخر تحديث:' : 'Last updated:'} {updatedDate}</p>
-
-            <p>
-              {isArabic
-                ? 'تحكم شروط الخدمة هذه ("الشروط") وصولك إلى منصة أكاديمية الرحمة التعليمية عبر الإنترنت واستخدامك لها، بما في ذلك جميع الدروس والدورات والأدوات والخدمات ذات الصلة (ويشار إليها مجتمعةً باسم "الخدمات"). بتسجيلك أو استخدامك للخدمات، فإنك توافق على الالتزام بهذه الشروط.'
-                : 'These Terms of Service ("Terms") govern your access to and use of Al-Rahma Academy\'s online education platform, including all lessons, courses, tools, and related services (collectively, the "Services"). By registering or using the Services, you agree to be bound by these Terms.'}
-            </p>
-
-            <h2>{isArabic ? '١. الخدمات' : '1. Services'}</h2>
-            <p>
-              {isArabic
-                ? 'تقدم أكاديمية الرحمة دروسًا فردية عبر الإنترنت في القرآن الكريم واللغة العربية والدراسات الإسلامية، تُقدَّم مباشرةً عبر مكالمات الفيديو (Zoom أو Skype). ويحمل جميع المدرسين مؤهلات موثقة من جامعة الأزهر وإجازة بسند متصل.'
-                : 'Al-Rahma Academy provides one-to-one online Quran, Arabic, and Islamic Studies lessons delivered live via video call (Zoom or Skype). All tutors hold verified Al-Azhar University qualifications and an Ijazah with a continuous chain of transmission (sanad).'}
-            </p>
-
-            <h2>{isArabic ? '٢. الاشتراكات والدفع' : '2. Subscriptions & Payment'}</h2>
-            <ul>
-              <li>{isArabic ? 'تُحتسب الاشتراكات شهريًا عن كل طالب مسجل.' : 'Subscriptions are billed monthly per student enrolled.'}</li>
-              <li>{isArabic ? 'تُعالَج المدفوعات بأمان عبر Stripe (البطاقة) أو PayPal.' : 'Payment is processed securely via Stripe (card) or PayPal.'}</li>
-              <li>{isArabic ? 'تُعرض الأسعار باليورو (€) وتشمل أي ضريبة قيمة مضافة واجبة التطبيق.' : 'Prices are displayed in Euros (€) and are inclusive of any applicable VAT.'}</li>
-              <li>{isArabic ? 'يتجدد اشتراكك تلقائيًا كل شهر ما لم يُلغَ قبل موعد التجديد بما لا يقل عن ٢٤ ساعة.' : 'Your subscription renews automatically each month unless cancelled at least 24 hours before the renewal date.'}</li>
-              <li>{isArabic ? 'تسري الأسعار الترويجية المخفضة فقط خلال الفترة المذكورة وقت الشراء.' : 'Discounted promotional prices apply only to the period stated at the time of purchase.'}</li>
-            </ul>
-
-            <h2>{isArabic ? '٣. ضمان استرداد الأموال خلال ١٤ يومًا' : '3. 14-Day Money-Back Guarantee'}</h2>
-            <p>
-              {isArabic ? 'إذا لم تكن راضيًا عن فترة اشتراكك الأولى لأي سبب، فيمكنك طلب استرداد كامل المبلغ خلال ' : 'If you are not satisfied with your first subscription period for any reason, you may request a full refund within '}
-              <strong>{isArabic ? '١٤ يومًا تقويميًا' : '14 calendar days'}</strong>
-              {isArabic ? ' من دفعتك الأولى. لطلب استرداد المبلغ، تواصل معنا عبر ' : ' of your initial payment. To request a refund, contact us at '}
-              <a href={`mailto:${site.email}`}>{site.email}</a>{isArabic ? ' أو عبر واتساب على ' : ' or via WhatsApp at '}
-              <a href={`https://wa.me/${site.whatsapp}`}>{site.whatsappDisplay}</a>.
-              {isArabic ? ' وتُعالَج عمليات الاسترداد خلال ٥–١٠ أيام عمل وتُعاد إلى وسيلة الدفع الأصلية.' : ' Refunds are processed within 5–10 business days to your original payment method.'}
-            </p>
-            <p>
-              {isArabic ? 'يسري ضمان استرداد الأموال على فترة الاشتراك ' : 'The money-back guarantee applies to the '}
-              <em>{isArabic ? 'الأولى' : 'first'}</em>
-              {isArabic ? ' فقط. ويمكن إلغاء التجديدات اللاحقة مقابل رصيد تناسبي وفقًا لتقديرنا.' : ' subscription period only. Subsequent renewals may be cancelled for a pro-rated credit at our discretion.'}
-            </p>
-
-            <h2>{isArabic ? '٤. الإلغاء' : '4. Cancellation'}</h2>
-            <p>
-              {isArabic
-                ? 'يمكنك إلغاء اشتراكك في أي وقت من صفحة الفوترة الخاصة بك أو بالتواصل مع الدعم. يسري الإلغاء في نهاية فترة الفوترة الحالية؛ وتحتفظ بإمكانية الوصول إلى الدروس المجدولة حتى ذلك الحين. لا تُصدر عمليات استرداد جزئية للأيام غير المستخدمة بعد مهلة الضمان البالغة ١٤ يومًا.'
-                : 'You may cancel your subscription at any time from your Billing page or by contacting support. Cancellation takes effect at the end of the current billing period; you retain access to scheduled lessons until then. No partial refunds are issued for unused days beyond the 14-day guarantee window.'}
-            </p>
-
-            <h2>{isArabic ? '٥. التجربة المجانية' : '5. Free Trial'}</h2>
-            <p>
-              {isArabic
-                ? 'يحصل الطلاب الجدد على درسين تجريبيين مجانيين دون الحاجة إلى دفع. تتاح التجربة المجانية مرة واحدة لكل طالب. بعد التجربة، يمكنك اختيار أي خطة اشتراك أو عدم الاستمرار — ولا يوجد أي التزام.'
-                : 'New students receive two complimentary trial lessons with no payment required. The free trial is available once per student. After the trial, you may choose any subscription plan or opt not to continue — there is no obligation.'}
-            </p>
-
-            <h2>{isArabic ? '٦. جدولة الدروس وإعادة جدولتها' : '6. Lesson Scheduling & Rescheduling'}</h2>
-            <ul>
-              <li>{isArabic ? 'يجب إعادة جدولة الدروس قبل موعدها بما لا يقل عن ' : 'Lessons must be rescheduled at least '}<strong>{isArabic ? '٢٤ ساعة مسبقًا' : '24 hours in advance'}</strong>.</li>
-              <li>{isArabic ? 'تُعد الدروس الملغاة خلال ٢٤ ساعة مُفوَّتة ما لم يكن الإلغاء بسبب حالة طارئة.' : 'Lessons cancelled within 24 hours are forfeited unless due to an emergency.'}</li>
-              <li>{isArabic ? 'يجوز للمدرسين إعادة الجدولة بإشعار قبل ٢٤ ساعة؛ وتؤهلك إعادة الجدولة المتكررة لتغيير المدرس دون تكلفة.' : 'Tutors may reschedule with 24-hour notice; persistent rescheduling qualifies you for a tutor change at no cost.'}</li>
-            </ul>
-
-            <h2>{isArabic ? '٧. مواءمة المدرسين وتغييرهم' : '7. Tutor Matching & Changes'}</h2>
-            <p>
-              {isArabic
-                ? 'نوفّق بين كل طالب ومدرس مناسب بناءً على أهدافه ولغته وجدوله. إذا لم تكن راضيًا عن المدرس المعيّن لك لأي سبب، فيمكنك طلب تغييره دون تكلفة — ما عليك سوى التواصل مع الدعم عبر البريد الإلكتروني أو واتساب. نهدف إلى إتمام جميع تغييرات المدرسين خلال ٤٨ ساعة.'
-                : 'We match each student with a suitable tutor based on their goals, language, and schedule. If you are unhappy with your assigned tutor for any reason, you may request a change at no cost — simply contact support via email or WhatsApp. We aim to complete all tutor changes within 48 hours.'}
-            </p>
-
-            <h2>{isArabic ? '٨. السلوك والسلامة' : '8. Conduct & Safety'}</h2>
-            <p>
-              {isArabic
-                ? 'تُعقد جميع الدروس في بيئة محترمة ومهنية. يتطلب تسجيل الدروس من قبل الطلاب أو أولياء الأمور موافقة خطية مسبقة من المدرس. وتتطلب الدروس التي تشمل أطفالًا دون سن ١٣ عامًا حضور أحد الوالدين أو الوصي أو إمكانية الوصول إليه فورًا أثناء الجلسة.'
-                : 'All lessons are conducted in a respectful, professional environment. Recording of lessons by students or parents requires prior written consent from the tutor. Lessons involving children under 13 require a parent or guardian to be present or immediately accessible during the session.'}
-            </p>
-
-            <h2>{isArabic ? '٩. الملكية الفكرية' : '9. Intellectual Property'}</h2>
-            <p>
-              {isArabic
-                ? 'تظل جميع مواد الدورات والتسجيلات (حيثما تُوفَّر) والمحتوى الذي أنشأته أكاديمية الرحمة ملكيتنا الفكرية. لا يجوز لك نسخ موادنا أو توزيعها أو إعادة بيعها دون إذن خطي مسبق.'
-                : 'All course materials, recordings (where provided), and content created by Al-Rahma Academy remain our intellectual property. You may not reproduce, distribute, or resell our materials without prior written permission.'}
-            </p>
-
-            <h2>{isArabic ? '١٠. حماية البيانات (GDPR)' : '10. Data Protection (GDPR)'}</h2>
-            <p>
-              {isArabic ? 'نعالج بياناتك الشخصية وفقًا للائحة العامة لحماية البيانات في الاتحاد الأوروبي (GDPR). ولا نبيع بياناتك مطلقًا لأطراف ثالثة. للاطلاع على التفاصيل كاملةً، راجع ' : 'We process your personal data in accordance with the EU General Data Protection Regulation (GDPR). We never sell your data to third parties. For full details, see our '}
-              <a href="/academy/privacy">{isArabic ? 'سياسة الخصوصية' : 'Privacy Policy'}</a>.
-            </p>
-
-            <h2>{isArabic ? '١١. تحديد المسؤولية' : '11. Limitation of Liability'}</h2>
-            <p>
-              {isArabic
-                ? 'لا تتجاوز المسؤولية الإجمالية لأكاديمية الرحمة تجاهك عن أي مطالبة ناشئة عن هذه الشروط المبلغ الذي دفعته لنا خلال الثلاثين يومًا السابقة للمطالبة. ولا نتحمل المسؤولية عن الأضرار غير المباشرة أو العرضية أو التبعية.'
-                : 'Al-Rahma Academy\'s total liability to you for any claim arising from these Terms shall not exceed the amount you paid us in the 30 days preceding the claim. We are not liable for indirect, incidental, or consequential damages.'}
-            </p>
-
-            <h2>{isArabic ? '١٢. القانون الحاكم' : '12. Governing Law'}</h2>
-            <p>
-              {isArabic
-                ? 'تخضع هذه الشروط لقوانين جمهورية مصر العربية. ويُعرض أي نزاع على المحاكم المختصة في القاهرة، مصر، دون إخلال بأي حقوق إلزامية لحماية المستهلك قد تتمتع بها بموجب قانون الاتحاد الأوروبي.'
-                : 'These Terms are governed by the laws of the Arab Republic of Egypt. Any disputes shall be submitted to the competent courts of Cairo, Egypt, without prejudice to any mandatory consumer protection rights you may have under EU law.'}
-            </p>
-
-            <h2>{isArabic ? '١٣. التواصل' : '13. Contact'}</h2>
-            <p>
-              {isArabic ? 'لأي استفسارات بشأن هذه الشروط، يُرجى التواصل معنا:' : 'For any questions about these Terms, please contact us:'}
-            </p>
-            <ul>
-              <li>{isArabic ? 'البريد الإلكتروني:' : 'Email:'} <a href={`mailto:${site.email}`}>{site.email}</a></li>
-              <li>{isArabic ? 'واتساب:' : 'WhatsApp:'} <a href={`https://wa.me/${site.whatsapp}`}>{site.whatsappDisplay}</a></li>
-              <li>{isArabic ? 'وقت الاستجابة: خلال ساعتين في أيام العمل (السبت–الخميس، ٠٨:٠٠–٢٣:٠٠ بتوقيت القاهرة)' : 'Response time: within 2 hours during business days (Sat–Thu, 08:00–23:00 Cairo time)'}</li>
-            </ul>
-          </div>
-        </section>
-      </main>
-      <Footer />
-    </>
-  );
+  const base = policies[lang] || policies.en;
+  const c = { ...policies.en, ...base, ...(translated[lang] || {}) };
+  useSEO({ title: c.title, description: c.seo, noindex: false });
+  return <><Header /><main><Breadcrumbs items={[{ label: c.academy, to: '/academy' }, { label: c.title }]} /><section className="legal-page"><div className="container legal-page__inner">
+    <h1>{c.title}</h1><p className="legal-page__meta">{c.updated}</p><p>{c.intro}</p>
+    <h2>{c.headings[0]}</h2><p>{c.services}</p><h2>{c.headings[1]}</h2><ul>{c.payment.map(x => <li key={x}>{x}</li>)}</ul>
+    <h2>{c.headings[2]}</h2><p>{c.refund} <a href={`mailto:${site.email}`}>{site.email}</a> {c.refundEnd} <a href={`https://wa.me/${site.whatsapp}`}>{site.whatsappDisplay}</a>. {c.refundNote}</p><p>{c.guarantee}</p>
+    <h2>{c.headings[3]}</h2><p>{c.cancellation}</p><h2>{c.headings[4]}</h2><p>{c.trial}</p><h2>{c.headings[5]}</h2><ul>{c.scheduling.map(x => <li key={x}>{x}</li>)}</ul>
+    <h2>{c.headings[6]}</h2><p>{c.matching}</p><h2>{c.headings[7]}</h2><p>{c.conduct}</p><h2>{c.headings[8]}</h2><p>{c.ip}</p>
+    <h2>{c.headings[9]}</h2><p>{c.data} <a href="/academy/privacy">{c.privacy}</a>.</p><h2>{c.headings[10]}</h2><p>{c.liability}</p><h2>{c.headings[11]}</h2><p>{c.law}</p>
+    <h2>{c.headings[12]}</h2><p>{c.contact}</p><ul><li>{c.email} <a href={`mailto:${site.email}`}>{site.email}</a></li><li>{c.whatsapp} <a href={`https://wa.me/${site.whatsapp}`}>{site.whatsappDisplay}</a></li><li>{c.response}</li></ul>
+  </div></section></main><Footer /></>;
 }

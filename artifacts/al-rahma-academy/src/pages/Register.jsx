@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import Brand from '../components/layout/Brand';
 import useSEO from '../hooks/useSEO';
 import { useLang } from '../context/LangContext';
+import { getExperienceText } from '../i18n/experience';
 
 function GdprText({ raw }) {
   const m = raw.match(/^([\s\S]*?)<a[^>]*>([\s\S]*?)<\/a>([\s\S]*)$/);
@@ -19,10 +20,11 @@ function GdprText({ raw }) {
 }
 
 export default function Register() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const rg = t.authPg.register;
   const profile = t.authPg.profile;
   const networkError = t.authPg.login.networkError;
+  const authCopy = getExperienceText(lang).auth;
   useSEO({ title: rg.title, noindex: true });
   const { register, user } = useAuth();
   const navigate = useNavigate();
@@ -115,7 +117,7 @@ export default function Register() {
               <button
                 type="button"
                 onClick={() => setShowPwd((v) => !v)}
-                aria-label={showPwd ? 'Hide password' : 'Show password'}
+                aria-label={showPwd ? authCopy.hidePassword : authCopy.showPassword}
                 style={{
                   position: 'absolute', right: 6, top: '50%', transform: 'translateY(-50%)',
                   background: 'none', border: 'none', cursor: 'pointer',

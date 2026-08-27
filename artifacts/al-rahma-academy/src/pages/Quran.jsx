@@ -5,6 +5,7 @@ import '../styles/quran-mushaf.css';
 import '../styles/hifz.css';
 import { loadArabicFontsNow } from '../utils/loadArabicFonts';
 import { useTheme } from '../context/ThemeContext';
+import { useLang } from '../context/LangContext';
 
 // Verse text is Arabic almost end-to-end here — trigger the Amiri font swap
 // immediately instead of waiting for the generic idle-callback in main.jsx.
@@ -37,9 +38,14 @@ const HIFZ_RECITERS = RECITERS.filter((r) => r.verseId != null);
 const NO_BASMALAH   = new Set([1, 9]);
 
 export default function Quran() {
+  const { lang: siteLang } = useLang();
+  // The reader's interface follows the site language. Its translation picker
+  // remains separate: readers may keep, for example, an Italian translation
+  // while browsing the surrounding interface in another site language.
+  const ui = getUI(siteLang);
   useSEO({
-    title: 'Quran Learning Center',
-    description: 'Read, listen and memorise the Holy Quran in 40+ languages with 20+ reciters. Tafsir, Hifz mode, keyboard shortcuts.',
+    title: ui.seoTitle,
+    description: ui.seoDescription,
   });
 
   /* ── Persisted preferences ───────────────────────────────────── */
@@ -89,8 +95,9 @@ export default function Quran() {
   const [juzNum, setJuzNum]                 = useState(1);
   const [hizbNum, setHizbNum]               = useState(1);
   const [quickNavOpen, setQuickNavOpen]     = useState(false);
-  const [lang, setLang]                     = useState('en');
-  const ui                                  = getUI(lang);
+  const [lang, setLang]                     = useState(() => (
+    TRANSLATIONS.some((translation) => translation.lang === siteLang) ? siteLang : 'en'
+  ));
   const transObj                            = TRANSLATIONS.find((t) => t.lang === lang) || TRANSLATIONS[0];
   const translationId                       = transObj.id;
   const [tab, setTab]                       = useState('reading');

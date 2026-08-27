@@ -1,7 +1,7 @@
 ﻿const fr = {
   "lang": "fr",
   "dir": "ltr",
-  "tagline": "Apprenez le Coran en Ligne",
+  "tagline": "Apprenez le Coran en ligne",
   "nav": {
     "home": "Accueil",
     "about": "À propos",
@@ -10,57 +10,57 @@
     "testimonials": "Témoignages",
     "contact": "Contact",
     "teachers": "Enseignants",
-    "tools": "Outils Islamiques",
+    "tools": "Outils islamiques",
     "adhkar": "Adhkar",
-    "hadith": "Bibliothèque Hadith",
-    "trial": "Essai Gratuit",
+    "hadith": "Bibliothèque de hadiths",
+    "trial": "Essai gratuit",
     "login": "Connexion",
     "dashboard": "Tableau de bord",
     "invoices": "Mes Factures",
     "resources": "Ressources",
     "academy": "Académie",
-    "quranTajweed": "Coran & Tajweed",
+    "quranTajweed": "Coran et tajwid",
     "hifzMem": "Mémorisation (Hifz)",
     "quranIjazah": "Ijazah du Coran",
-    "islamicStudies": "Études Islamiques",
-    "arabicAlphabet": "Alphabet Arabe",
+    "islamicStudies": "Études islamiques",
+    "arabicAlphabet": "Alphabet arabe",
     "quranReader": "Lecteur du Coran",
-    "prayerTimes": "Heures de Prière",
-    "qibla": "Direction Qibla",
-    "islamicCalendar": "Calendrier Islamique",
-    "verseOfDay": "Verset du Jour",
-    "tasbeehCounter": "Compteur Tasbeeh",
+    "prayerTimes": "Horaires de prière",
+    "qibla": "Direction de la qibla",
+    "islamicCalendar": "Calendrier islamique",
+    "verseOfDay": "Verset du jour",
+    "tasbeehCounter": "Compteur de tasbih",
     "blog": "Blog & Articles",
     "faq": "FAQ",
     "privacy": "Politique de Confidentialité",
     "profile": "Mon Profil",
     "myChildren": "Mes Enfants",
     "logout": "Déconnexion",
-    "teacher": "Espace Enseignant",
+    "teacher": "Espace enseignant",
     "viewAll": "Voir tout",
     "allLabel": "Tout"
   },
   "hero": {
-    "eyebrow": "Coran • Arabe • Études Islamiques",
-    "title": "Offrez à Votre Enfant le Don du Coran",
-    "titleHighlight": "le Don du Coran",
-    "sub": "Des enseignants certifiés Al-Azhar apprennent à votre enfant en tête-à-tête — un savoir authentique et une chaîne qui remonte au Prophète ﷺ.",
-    "cta1": "Réservez un Essai Gratuit",
-    "cta2": "📚 Voir les Cours",
-    "cta3": "Voir les Cours",
-    "badge1": "✓ 2 Cours d'essai gratuits",
-    "badge2": "✓ Disponible 24h/24 7j/7",
-    "badge3": "✓ Enseignantes disponibles",
+    "eyebrow": "Coran · arabe · études islamiques",
+    "title": "Offrez à votre enfant le cadeau du Coran",
+    "titleHighlight": "le Coran",
+    "sub": "Des enseignants certifiés par Al-Azhar accompagnent votre enfant en cours individuel — en anglais, italien, français, allemand ou espagnol. Un savoir authentique, transmis par une chaîne remontant au Prophète ﷺ.",
+    "cta1": "Réserver un essai gratuit",
+    "cta2": "📚 Découvrir les cours",
+    "cta3": "Parcourir les cours",
+    "badge1": "✓ 2 leçons d’essai gratuites — sans carte bancaire",
+    "badge2": "✓ Enseignants titulaires d’une ijaza avec chaîne vérifiée",
+    "badge3": "✓ Enseignantes disponibles · horaires 24 h/24, 7 j/7",
     "verseQuote": "\"Lis au nom de ton Seigneur qui a créé.\"",
-    "verseRef": "Surah Al-'Alaq · 96:1",
+    "verseRef": "Sourate Al-‘Alaq · 96:1",
     "iqraRead": "Lis",
-    "studentsCount": "1 200+ étudiants",
+    "studentsCount": "Plus de 1 200 élèves",
     "certifiedTutors": "Enseignants certifiés",
     "watchDemo": "Voir un cours en direct",
     "liveSessions": "Cours individuels en direct",
-    "scroll": "Défiler",
-    "microcopy": ["Sans carte bancaire", "Séance gratuite 30 min", "Annulez à tout moment"],
-    "statsLabels": ["Leçons", "Note", "Pays", "Tuteurs"],
+    "scroll": "Faire défiler",
+    "microcopy": ["Sans carte bancaire", "Séance gratuite de 30 min", "Annulez à tout moment"],
+    "statsLabels": ["Leçons", "Note", "Pays", "Enseignants"],
     "activityFrom": "de",
     "activityActions": [
       "vient de réserver un cours d'essai",
@@ -105,19 +105,19 @@
   },
   "steps": {
     "eyebrow": "Comment ça marche",
-    "heading": "Votre Voyage vers le Coran",
+    "heading": "Votre cheminement vers le Coran",
     "items": [
       {
         "title": "Parlez-nous de votre enfant",
-        "text": "Un formulaire de 2 minutes — âge, niveau, objectifs. Nous lisons chaque mot pour choisir le bon enseignant."
+        "text": "Un formulaire de deux minutes : âge, niveau, objectifs. Nous lisons chaque réponse afin de vous proposer l’enseignant le plus adapté."
       },
       {
         "title": "Rencontrez votre enseignant",
-        "text": "Nous sélectionnons un enseignant certifié adapté à l'âge et aux objectifs de votre enfant. Session gratuite de 30 minutes — sans carte, sans engagement."
+        "text": "Nous sélectionnons un enseignant certifié adapté à l’âge et aux objectifs de votre enfant. Une séance gratuite de 30 minutes — sans carte bancaire ni engagement."
       },
       {
-        "title": "Commencez un voyage sans fin",
-        "text": "La première vraie leçon. Votre enfant récite. La chaîne du savoir qui remonte au Prophète ﷺ passe à travers lui."
+        "title": "Entamez un parcours pour la vie",
+        "text": "La première véritable leçon commence. Votre enfant récite et s’inscrit dans la chaîne du savoir qui remonte au Prophète ﷺ."
       }
     ]
   },
@@ -129,7 +129,7 @@
     "items": [
       {
         "title": "Lecture du Coran (Noorani Qaida)",
-        "text": "Apprenez à lire le Coran correctement depuis les bases des lettres et sons arabes.",
+        "text": "Apprenez à lire correctement le Coran, dès les fondements : les lettres et les sons arabes.",
         "points": [
           "Lettres arabes et prononciation",
           "Méthode Noorani Qaida étape par étape",
@@ -147,7 +147,7 @@
       },
       {
         "title": "Mémorisation du Coran (Hifz)",
-        "text": "Programmes de mémorisation structurés avec des outils de répétition et des tests.",
+        "text": "Des programmes de mémorisation structurés, avec outils de répétition, tests de mémoire et plans de révision.",
         "points": [
           "Plan de mémorisation personnalisé",
           "Révision quotidienne et suivi des progrès",
@@ -156,24 +156,24 @@
       },
       {
         "title": "Cours Ijazah du Coran",
-        "text": "Obtenez une certification formelle (Ijazah) avec une chaîne de transmission authentifiée.",
+        "text": "Obtenez une ijaza officielle avec une chaîne de transmission ininterrompue.",
         "points": [
-          "Sanad connecté au Prophète ﷺ",
+          "Sanad remontant au Prophète ﷺ",
           "Matn Al-Jazariyyah et Al-Shatibiyyah",
           "Certificat Ijazah officiel délivré"
         ]
       },
       {
         "title": "Études Islamiques",
-        "text": "Apprenez les fondements d'Aqeedah, Fiqh, Seerah et la pratique islamique quotidienne.",
+        "text": "Découvrez les fondements de l’aqida, du fiqh, de la sîra et de la pratique islamique quotidienne.",
         "points": [
           "5 modules — Aqeedah, Fiqh, Seerah, Hadith, Tafsir",
           "Sources islamiques primaires authentiques",
-          "Enseigné dans votre propre langue"
+          "Enseignés dans votre langue"
         ]
       },
       {
-        "title": "Alphabet Arabe et Italien",
+        "title": "Alphabet arabe et italien",
         "text": "Apprenez les lettres en arabe et en italien ensemble, avec une prononciation audio interactive.",
         "points": [
           "28 lettres arabes avec audio",
@@ -193,7 +193,7 @@
       },
       {
         "level": "Tous les niveaux",
-        "duration": "En cours"
+        "duration": "En continu"
       },
       {
         "level": "Avancé",
@@ -205,15 +205,15 @@
       },
       {
         "level": "Débutant",
-        "duration": "Enfants et Adultes"
+        "duration": "Enfants et adultes"
       }
     ]
   },
   "about": {
     "eyebrow": "À propos",
-    "heading": "Notre Mission et Vision",
-    "mission": "Former des étudiants dévoués capables de présenter une image authentique de l'Islam — en offrant une éducation coranique et arabe de qualité pour les communautés musulmanes en Europe et au-delà.",
-    "vision": "Atteindre un leadership reconnu dans l'éducation coranique et islamique en ligne au niveau européen, en devenant le premier choix de confiance pour les familles musulmanes.",
+    "heading": "Notre mission et notre vision",
+    "mission": "Former des élèves engagés, capables de transmettre une image authentique de l’islam, en proposant un enseignement de qualité du Coran et de l’arabe aux communautés musulmanes d’Europe et d’ailleurs.",
+    "vision": "Devenir une référence reconnue de l’enseignement coranique et islamique en ligne en Europe, et le choix de confiance des familles musulmanes.",
     "description": "Al-Rahma Academy est une plateforme en ligne dédiée qui relie des étudiants du monde entier au Saint Coran et à la langue arabe. Nos enseignants égyptiens, natifs et qualifiés, dispensent des cours particuliers en direct — pour les enfants comme pour les adultes, partout dans le monde.",
     "statsLabel": [
       "Années d'expérience",
@@ -221,47 +221,47 @@
       "Étudiants satisfaits",
       "Heures d'enseignement"
     ],
-    "objectivesHeading": "Nos Objectifs",
-    "valuesHeading": "Nos Valeurs",
-    "offersHeading": "Ce Que Nous Offrons"
+    "objectivesHeading": "Nos objectifs",
+    "valuesHeading": "Nos valeurs",
+    "offersHeading": "Ce que nous proposons"
   },
   "pricing": {
     "eyebrow": "Tarifs",
-    "heading": "Nos Plans Tarifaires",
+    "heading": "Nos formules tarifaires",
     "perMonth": "/ mois",
     "off": "% de réduction",
     "sessions": "séances/mois",
     "getStarted": "Commencer",
     "mostPopular": "Le plus populaire",
     "sub": "Plans mensuels abordables facturés par étudiant. Résiliez à tout moment.",
-    "banner": "🎓 Tarif Fondateurs",
-    "bannerText": "Tarif fondateurs verrouillé à vie — les prix augmentent avec notre croissance",
+    "banner": "🎓 Tarif fondateur",
+    "bannerText": "Le tarif fondateur est garanti à vie ; il augmentera à mesure que nous grandirons.",
     "youSave": "Vous économisez",
-    "perHour": "/ heure équivalent",
+    "perHour": "/ heure (équivalent)",
     "cancelNote": "Annulez à tout moment — sans contrat",
-    "refundInline": "Remboursement complet sous 14 jours si insatisfait",
+    "refundInline": "Remboursement intégral sous 14 jours en cas d’insatisfaction",
     "refundTitle": "Garantie de remboursement de 14 jours",
-    "refundSub": "Pas satisfait ? Nous remboursons chaque centime sous 14 jours — sans questions.",
+    "refundSub": "Vous n’êtes pas satisfait ? Nous vous remboursons intégralement sous 14 jours, sans aucune question.",
     "securePayment": "Paiement sécurisé",
     "cancelAnytime": "Annulez à tout moment",
     "azharCertified": "32 enseignants certifiés Al-Azhar",
-    "familiesServed": "+9 000 leçons données",
-    "countries": "Étudiants de 40+ pays",
+    "familiesServed": "Plus de 9 000 leçons dispensées",
+    "countries": "Élèves dans plus de 40 pays",
     "gdprNote": "Conforme RGPD — vos données sont en sécurité",
     "offerEnds": "L'offre se termine dimanche",
-    "spotsLeft": "Seulement {n} places restantes cette semaine",
+    "spotsLeft": "Plus que {n} places à tarif réduit cette semaine",
     "showPricesIn": "Afficher les prix en :"
   },
   "testimonials": {
     "eyebrow": "Témoignages",
-    "heading": "Ce que disent nos étudiants",
-    "sub": "Des expériences réelles de vrais étudiants — dans leurs propres mots.",
+    "heading": "Ce que disent nos élèves",
+    "sub": "Des expériences authentiques, racontées par nos élèves eux-mêmes.",
     "happyStudents": "leçons dispensées dans le monde entier",
     "joinToday": "Rejoignez-les aujourd'hui →"
   },
   "trial": {
     "eyebrow": "Essai gratuit",
-    "heading": "Réservez 2 Cours d'Essai Gratuits",
+    "heading": "Réservez vos 2 leçons d’essai gratuites",
     "sub": "Remplissez le formulaire et notre équipe vous contactera pour planifier votre premier cours. Aucun paiement requis.",
     "bullets": [
       "Sans engagement",
@@ -284,12 +284,12 @@
       "course": "Sélectionnez un cours",
       "message": "Parlez-nous de l'étudiant, âge, niveau..."
     },
-    "submit": "Demander un Essai Gratuit",
+    "submit": "Demander un essai gratuit",
     "sending": "Envoi en cours...",
-    "success": "Merci ! Nous vous contacterons bientôt, in shaa Allah.",
+    "success": "Merci ! Nous vous contacterons très prochainement, incha’Allah.",
     "errorOffline": "Serveur hors ligne — contactez-nous directement :",
     "whatsappBtn": "Écrire sur WhatsApp",
-    "emailBtn": "Envoyer un Email",
+    "emailBtn": "Nous envoyer un e-mail",
     "errorServer": "Erreur serveur — contactez-nous directement.",
     "errorGeneric": "Envoi impossible. Veuillez réessayer.",
     "planMessage": "Je suis intéressé par l'offre {plan}."
@@ -305,11 +305,11 @@
     "successHeading": "Vérifiez votre boîte de réception !",
     "successSub": "Votre guide de Tajweed gratuit est en route. Cela peut prendre une minute ou deux.",
     "error": "Quelque chose s'est mal passé. Veuillez réessayer.",
-    "privacy": "Pas de spam. Désabonnement à tout moment."
+    "privacy": "Aucun spam. Désabonnement à tout moment."
   },
   "footer": {
     "about": "Éducation authentique en ligne de Coran, d'arabe et d'Islam pour des étudiants de tous âges, partout dans le monde.",
-    "quickLinks": "Liens Rapides",
+    "quickLinks": "Liens rapides",
     "coursesCol": "Cours",
     "contact": "Contact",
     "whatsapp": "Écrire sur WhatsApp",
@@ -345,24 +345,24 @@
     "teachersLink": "Nos enseignants",
     "terms": "Conditions d'utilisation",
     "refundPolicy": "Politique de remboursement",
-    "trustBadges": ["Garantie de remboursement 14 jours", "32 enseignants certifiés Al-Azhar", "Étudiants de 40+ pays", "Note moyenne 4,9★", "Réponse en 2 heures"],
-    "supportHours": "Support : Sam–Jeu · 08h00–23h00 (Le Caire)",
+    "trustBadges": ["Garantie de remboursement sous 14 jours", "32 enseignants certifiés par Al-Azhar", "Élèves dans plus de 40 pays", "Note moyenne : 4,9★", "Réponse sous 2 heures"],
+    "supportHours": "Assistance : sam.–jeu. · 08 h 00–23 h 00 (Le Caire)",
     "replyBadge": "Réponse ≤ 2h"
   },
   "teachersPg": {
     "eyebrow": "Rencontrez l'équipe",
-    "title": "Nos Enseignants Qualifiés",
+    "title": "Nos enseignants qualifiés",
     "sub": "Chaque enseignant d'Al-Rahma Academy est un diplômé vérifié de l'Université Al-Azhar, titulaire d'un Ijazah authentique avec une chaîne de transmission ininterrompue.",
     "badges": [
       "🎓 Certifié Al-Azhar",
-      "📜 Titulaires Ijazah",
-      "👩‍🏫 Enseignantes Disponibles",
-      "♿ Soutien Besoins Spéciaux"
+      "📜 Titulaires d’une ijaza",
+      "👩‍🏫 Enseignantes disponibles",
+      "♿ Accompagnement des besoins particuliers"
     ],
     "stats": [
       {
         "n": "10+",
-        "l": "Enseignants Experts"
+        "l": "Enseignants experts"
       },
       {
         "n": "500+",
@@ -370,15 +370,15 @@
       },
       {
         "n": "4,9★",
-        "l": "Note Moyenne"
+        "l": "Note moyenne"
       },
       {
         "n": "9 000+",
-        "l": "Heures d'Enseignement"
+        "l": "Heures d’enseignement"
       }
     ],
     "filterSubject": "Matière :",
-    "filterGender": "Genre :",
+    "filterGender": "Sexe :",
     "filterLang": "Langue :",
     "subjects": [
       {
@@ -434,33 +434,33 @@
     ],
     "noMatch": "Aucun enseignant ne correspond aux filtres sélectionnés.",
     "resetFilters": "Réinitialiser les filtres",
-    "female": "👩‍🏫 Féminin",
-    "male": "👨‍🏫 Masculin",
+    "female": "👩‍🏫 Femme",
+    "male": "👨‍🏫 Homme",
     "alazhar": "🏅 Al-Azhar",
     "rate": "Noter :",
     "reviews": "avis",
     "showLess": "Moins ↑",
-    "readBio": "Lire bio ↓",
+    "readBio": "Lire la biographie ↓",
     "enrollWith": "S'inscrire avec",
     "ctaTitle": "Prêt à commencer votre parcours avec le Coran ?",
     "ctaSub": "Réservez deux cours d'essai gratuits — aucun paiement requis.",
-    "ctaBtn": "Commencer l'Inscription →"
+    "ctaBtn": "Commencer l’inscription →"
   },
   "tp": {
     "alazharBadge": "🏅 Certifié Al-Azhar",
     "femaleBadge": "👩‍🏫 Enseignante",
     "maleBadge": "👨‍🏫 Enseignant",
     "enrollWith": "S'inscrire avec",
-    "allTeachers": "← Tous les Enseignants",
+    "allTeachers": "← Tous les enseignants",
     "reviews": "avis",
-    "female": "Féminin",
-    "male": "Masculin",
+    "female": "Femme",
+    "male": "Homme",
     "instructor": "Enseignant",
-    "teachingLangs": "Langues d'Enseignement",
+    "teachingLangs": "Langues d’enseignement",
     "specialties": "Spécialités",
     "about": "À propos de",
     "credentials": "Qualifications",
-    "studentRating": "Note des Étudiants",
+    "studentRating": "Note attribuée par les élèves",
     "rateThis": "Noter cet enseignant :",
     "thanks": "✓ Merci !",
     "trialDesc": "Commencez avec 2 cours d'essai gratuits — aucun paiement requis.",
@@ -470,24 +470,24 @@
       "✓ Tout appareil — Zoom ou Skype",
       "✓ Annulez quand vous voulez"
     ],
-    "startEnroll": "Commencer l'Inscription →",
+    "startEnroll": "Commencer l’inscription →",
     "browseOthers": "← Voir d'autres enseignants",
     "notFound": "Enseignant non trouvé.",
     "backToAll": "← Retour à tous les enseignants"
   },
   "tutors": {
-    "eyebrow": "Notre Équipe",
-    "heading": "Nos Enseignants Certifiés",
+    "eyebrow": "Notre équipe",
+    "heading": "Nos enseignants certifiés",
     "sub": "Chaque enseignant est un diplômé vérifié d'Al-Azhar, titulaire d'un Ijazah authentique — sélectionné personnellement pour ses connaissances, sa patience et son dévouement.",
     "creds": [
       "Diplômé d'Al-Azhar",
       "Ijazah avec Sanad",
       "Fiqh · Tafsir · Aqeedah",
-      "6 Langues Européennes"
+      "6 langues européennes"
     ],
-    "viewProfile": "Voir le Profil",
+    "viewProfile": "Voir le profil",
     "enroll": "S'inscrire →",
-    "viewAll": "Voir Tous les Enseignants →",
+    "viewAll": "Voir tous les enseignants et leurs profils →",
     "yourRating": "Votre note :",
     "rate": "Noter :",
     "introVideo": "Vidéo de présentation",
@@ -547,21 +547,21 @@
   },
   "trust": {
     "eyebrow": "Pourquoi les familles nous font confiance",
-    "heading": "Construit sur la Transparence et l'Authenticité",
-    "sub": "Chaque affirmation sur cette page est vérifiable. Nous croyons que la confiance se gagne par des preuves.",
+    "heading": "Fondé sur la transparence et l’authenticité",
+    "sub": "Chaque affirmation de cette page peut être vérifiée. La confiance se gagne par des preuves, non par des promesses.",
     "items": [
-      { "stat": "32", "label": "Enseignants certifiés Al-Azhar", "desc": "Chaque enseignant détient un Ijazah vérifié avec une chaîne de savoir jusqu'au Prophète ﷺ." },
-      { "stat": "< 2h", "label": "Temps de réponse du support", "desc": "Nous répondons à chaque message en 2 heures — votre parcours d'apprentissage ne peut pas attendre." },
+      { "stat": "32", "label": "Enseignants certifiés par Al-Azhar", "desc": "Chaque enseignant détient une ijaza vérifiée et une chaîne de transmission ininterrompue remontant au Prophète ﷺ." },
+      { "stat": "< 2h", "label": "Délai de réponse de l’assistance", "desc": "Nous répondons à chaque message sous deux heures, car votre apprentissage ne peut pas attendre." },
       { "stat": "40+", "label": "Pays", "desc": "Des familles de plus de 40 pays font confiance à Al-Rahma Academy pour une éducation coranique authentique." },
-      { "stat": "14", "label": "Jours de garantie de remboursement", "desc": "Pas satisfait ? Nous remboursons 100% en 14 jours — sans questions, sans paperasse." }
+      { "stat": "14", "label": "Jours de garantie de remboursement", "desc": "Pas satisfait ? Nous vous remboursons intégralement sous 14 jours, sans questions ni formalités." }
     ],
-    "gdprTitle": "Conforme RGPD",
-    "gdprDesc": "Vos données sont protégées par la réglementation européenne. Aucune donnée vendue. Jamais.",
+    "gdprTitle": "Conforme au RGPD",
+    "gdprDesc": "Vos données sont protégées par la réglementation européenne. Elles ne sont jamais vendues.",
     "sslTitle": "Chiffrement SSL",
     "sslDesc": "Tous les paiements et données personnelles sont chiffrés de bout en bout.",
     "supportTitle": "Support en 2 heures",
-    "supportDesc": "De vraies personnes, pas des bots. Nous répondons en 2 heures, 7 jours sur 7.",
-    "azharTitle": "Vérifié Al-Azhar",
+    "supportDesc": "Des personnes, pas des robots. Nous répondons sous deux heures, 7 jours sur 7.",
+    "azharTitle": "Vérifié par Al-Azhar",
     "azharDesc": "Partenariat officiel avec des enseignants certifiés par l'Université Al-Azhar, Le Caire.",
     "countriesLabel": "Des étudiants de 40+ pays font confiance à Al-Rahma Academy"
   },
@@ -574,7 +574,7 @@
     "leaveMessage": "Laisser un message",
     "repliesMinutes": "Répond généralement en quelques minutes",
     "repliesHours": "Nous répondons en quelques heures",
-    "badges": ["Sans engagement long terme", "Annulez à tout moment", "Chaîne Ijazah certifiée", "Enseignantes disponibles", "Planification 24 / 7", "Conforme", "Réponse en 2 heures"]
+    "badges": ["Sans engagement de longue durée", "Annulez à tout moment", "Chaîne de transmission certifiée", "Enseignantes disponibles", "Horaires 24 h/24, 7 j/7", "Conforme au RGPD", "Réponse sous 2 heures"]
   },
   "blog": {
     "eyebrow": "Notre Blog",
@@ -584,7 +584,7 @@
     "readArticle": "Lire l'article →"
   },
   "notFound": {
-    "title": "Page Non Trouvée",
+    "title": "Page introuvable",
     "sub": "La page que vous cherchez n'existe pas ou a été déplacée.",
     "goHome": "Aller à l'accueil",
     "readBlog": "Lire notre Blog",
@@ -592,7 +592,7 @@
   },
   "faqPg": {
     "eyebrow": "Vous avez des questions ?",
-    "heading": "Questions Fréquentes",
+    "heading": "Questions fréquentes",
     "sub": "Tout ce que vous devez savoir sur Al-Rahma Academy et nos cours en ligne du Coran.",
     "backToSite": "Retour au site",
     "stillQuestion": "Encore une question ?",
@@ -604,9 +604,9 @@
   "courseContent": {
     "loading": "Chargement…",
     "notFound": "Cours introuvable.",
-    "myAccount": "← Mon Compte",
+    "myAccount": "← Mon compte",
     "needSub": "Vous avez besoin d'un abonnement actif pour accéder aux contenus du cours.",
-    "viewPlans": "Voir les Plans",
+    "viewPlans": "Voir les formules",
     "materials": "Contenu du cours",
     "noMaterials": "Aucun contenu n'a encore été ajouté. Revenez bientôt !",
     "watch": "Regarder",
@@ -758,17 +758,17 @@
   },
   "enroll": {
     "steps": {
-      "aboutYou": "À Propos de Vous",
-      "yourGoals": "Vos Objectifs",
-      "yourTeacher": "Votre Enseignant",
-      "yourPlan": "Votre Plan"
+      "aboutYou": "À votre sujet",
+      "yourGoals": "Vos objectifs",
+      "yourTeacher": "Votre enseignant",
+      "yourPlan": "Votre formule"
     },
-    "eyebrow": "Commencez Votre Parcours",
+    "eyebrow": "Commencez votre parcours",
     "heading": "Inscrivez-vous à Al-Rahma Academy",
     "tagline": "4 étapes simples pour commencer à apprendre le Coran avec un enseignant certifié par Al-Azhar.",
     "step1": {
       "title": "Parlez-nous de vous",
-      "sub": "Nous utiliserons ceci pour vous trouver le bon enseignant et le bon horaire.",
+      "sub": "Ces informations nous aideront à vous proposer l’enseignant et les horaires qui vous conviennent.",
       "fullName": "Nom complet *",
       "email": "Adresse email *",
       "whatsapp": "Numéro WhatsApp",
@@ -789,8 +789,8 @@
         "eveningSub": "17 h – 22 h",
         "lateNight": "Nuit tardive",
         "lateNightSub": "22 h – 2 h",
-        "weekends": "Weekends",
-        "weekendsSub": "Sam & Dim"
+        "weekends": "Week-ends",
+        "weekendsSub": "Sam. et dim. uniquement"
       }
     },
     "step2": {
@@ -799,47 +799,47 @@
       "subjects": "Matières",
       "prefLang": "Langue d'enseignement préférée",
       "level": "Votre niveau",
-      "levelBeginner": "Débutant — tout juste commencer",
+      "levelBeginner": "Débutant — je commence tout juste",
       "levelIntermediate": "Intermédiaire — quelques connaissances",
       "levelAdvanced": "Avancé — étude approfondie",
       "ageGroup": "Groupe d'âge",
       "ageChild": "Enfant (moins de 12)",
       "ageTeen": "Adolescent (12–17)",
       "ageAdult": "Adulte (18+)",
-      "teacherPref": "Préférence de genre de l'enseignant",
+      "teacherPref": "Préférence concernant l’enseignant",
       "prefAny": "🤝 Pas de préférence",
       "prefMale": "👨‍🏫 Enseignant",
       "prefFemale": "👩‍🏫 Enseignante",
       "subjectLabels": [
-        "Lecture Coran",
+        "Lecture du Coran",
         "Tajweed",
         "Mémorisation (Hifz)",
         "Cours Ijazah",
-        "Langue Arabe",
-        "Études Islamiques",
-        "Tafsir Coranique",
-        "Seerah Prophétique"
+        "Langue arabe",
+        "Études islamiques",
+        "Tafsir coranique",
+        "Sîra prophétique"
       ]
     },
     "step3": {
       "title": "Choisissez votre enseignant",
-      "noMatch": "Aucune correspondance exacte — affichage de tous les enseignants disponibles.",
+      "noMatch": "Aucune correspondance exacte n’a été trouvée ; tous les enseignants disponibles sont affichés. Choisissez celui qui vous convient.",
       "matchSingular": "enseignant correspond à vos préférences.",
       "matchPlural": "enseignants correspondent à vos préférences.",
-      "female": "Féminin"
+      "female": "Femme"
     },
     "step4": {
-      "title": "Choisissez votre plan",
-      "sub": "Tous les plans incluent des cours particuliers avec votre enseignant. Résiliez à tout moment.",
+      "title": "Choisissez votre formule",
+      "sub": "Toutes les formules comprennent des cours individuels avec l’enseignant de votre choix. Résiliez à tout moment.",
       "perMo": "/mois",
       "selected": "✓ Sélectionné",
       "summaryTitle": "Résumé de l'inscription",
       "summaryStudent": "Étudiant",
       "summaryEmail": "Email",
       "summaryTeacher": "Enseignant",
-      "summaryPlan": "Plan",
+      "summaryPlan": "Formule",
       "summaryLang": "Langue",
-      "confirmPay": "Confirmer et Procéder au Paiement →"
+      "confirmPay": "Confirmer et passer au paiement →"
     },
     "success": {
       "icon": "🎉",
@@ -854,8 +854,8 @@
       "nextTitle": "Ce qui se passe ensuite",
       "nextSteps": [
         { "icon": "📧", "title": "Email de confirmation", "text": "Vérifiez votre boîte de réception — nous confirmerons les détails de votre inscription dans les prochaines heures." },
-        { "icon": "👨‍🏫", "title": "Rencontrez votre enseignant", "text": "Nous vous attribuerons un tuteur certifié en fonction de vos objectifs et préférences d'horaires." },
-        { "icon": "🎓", "title": "Première leçon", "text": "Votre première session en direct sera planifiée dans les 2–3 jours. Votre voyage commence." }
+        { "icon": "👨‍🏫", "title": "Rencontrez votre enseignant", "text": "Nous vous attribuerons un enseignant certifié selon vos objectifs et vos préférences horaires." },
+        { "icon": "🎓", "title": "Première leçon", "text": "Votre première séance en direct sera planifiée sous deux à trois jours. Votre parcours commence." }
       ]
     },
     "nav": {
@@ -867,7 +867,7 @@
       "nameRequired": "Le nom complet est obligatoire.",
       "emailRequired": "L'adresse email est obligatoire.",
       "emailInvalid": "Veuillez entrer une adresse email valide.",
-      "phoneInvalid": "Veuillez entrer un numéro de téléphone valide.",
+      "phoneInvalid": "Veuillez saisir un numéro de téléphone valide (par exemple : +33 6 12 34 56 78).",
       "subjectRequired": "Veuillez sélectionner au moins une matière.",
       "teacherRequired": "Veuillez choisir un enseignant.",
       "submitFailed": "Échec de l'envoi. Veuillez réessayer."
@@ -875,7 +875,7 @@
   },
   "tasbeeh": {
     "press": "Appuyez",
-    "pressHint": "ou Space / Entrée",
+    "pressHint": "ou Espace / Entrée",
     "goal": "Objectif :",
     "resetThis": "↺ Réinitialiser ceci",
     "clearAll": "↺ Tout effacer",
@@ -886,8 +886,8 @@
   },
   "adhkar": {
     "eyebrow": "De Hisnul Muslim",
-    "heading": "Bibliothèque d'Adhkar et Du'a",
-    "sub": "Adhkar quotidiens avec diacritiques complets, vertus et sources",
+    "heading": "Bibliothèque d’adhkar et de duʿa",
+    "sub": "Adhkar quotidiens avec vocalisation complète, mérites et sources",
     "doneToday": "Complétés aujourd'hui :",
     "resetAll": "Tout réinitialiser",
     "searchPlaceholder": "🔍 Rechercher adhkar…",
@@ -900,23 +900,23 @@
     "doneBtn": "✅ Fait",
     "notDoneBtn": "☐ Fait",
     "categories": {
-      "sabah": "Adhkar du Matin",
-      "masaa": "Adhkar du Soir",
-      "nawm": "Adhkar du Sommeil",
-      "istiqath": "Adhkar du Réveil",
-      "baadSalah": "Après la Prière",
-      "hayat": "Vie Quotidienne",
+      "sabah": "Adhkar du matin",
+      "masaa": "Adhkar du soir",
+      "nawm": "Adhkar du sommeil",
+      "istiqath": "Adhkar du réveil",
+      "baadSalah": "Après la prière",
+      "hayat": "Vie quotidienne",
       "munasabat": "Occasions",
       "ruqya": "Ruqyah"
     }
   },
   "dashboard": {
-    "bar": "Al-Rahma · Tableau de Bord",
+    "bar": "Al-Rahma · Tableau de bord",
     "backToSite": "← Retour au site",
     "settings": "Paramètres",
     "logout": "Déconnexion",
     "welcome": "Bon retour,",
-    "planCard": "Votre Plan",
+    "planCard": "Votre formule",
     "sessionsCard": "Séances / semaine",
     "daysCard": "Jours restants",
     "statusCard": "Statut",
@@ -924,25 +924,25 @@
     "inactive": "Inactif",
     "noSub": "Aucun plan actif",
     "tutor": "Votre Enseignant",
-    "noTutor": "Enseignant à assigner",
+    "noTutor": "Un enseignant vous sera attribué",
     "subjects": "Matières :",
-    "contactTutor": "WhatsApp Enseignant",
-    "joinLesson": "Rejoindre le Cours",
-    "quickActions": "Actions Rapides",
-    "viewInvoices": "Voir les Factures",
-    "myCourses": "Mes Cours",
-    "profileSettings": "Profil & Paramètres",
-    "viewPlans": "Voir les Plans",
-    "enrollNow": "S'inscrire Maintenant",
-    "myCoursesTitle": "Mes Cours",
+    "contactTutor": "Contacter l’enseignant sur WhatsApp",
+    "joinLesson": "Rejoindre le cours",
+    "quickActions": "Actions rapides",
+    "viewInvoices": "Voir les factures",
+    "myCourses": "Mes cours",
+    "profileSettings": "Profil et paramètres",
+    "viewPlans": "Voir les formules",
+    "enrollNow": "S’inscrire maintenant",
+    "myCoursesTitle": "Mes cours",
     "startLearning": "Commencer →",
     "noCoursesMsg": "Inscrivez-vous à un plan pour accéder à vos cours.",
     "scheduleNote": "Votre enseignant vous enverra le lien Zoom sur WhatsApp avant chaque cours.",
     "loading": "Chargement du tableau de bord…",
     "renewSub": "Renouveler l'abonnement",
-    "subExpires": "Abonnement expire",
+    "subExpires": "L’abonnement expire",
     "subExpired": "Abonnement expiré",
-    "upcomingClasses": "📅 Prochains cours en direct",
+    "upcomingClasses": "📅 Prochaines leçons en direct",
     "joinBtn": "Rejoindre",
     "linkSoon": "lien bientôt",
     "forStudent": "pour",
@@ -961,16 +961,16 @@
       "speakGoodOrSilent": { "gloss": "Que celui qui croit en Allah et au Jour dernier dise du bien ou se taise.", "source": "Sahih al-Boukhari 6018 · Sahih Muslim 47" },
       "strongBeliever":    { "gloss": "Le croyant fort est meilleur et plus aimé d'Allah que le croyant faible, bien qu'il y ait du bien en chacun.", "source": "Sahih Muslim 2664" }
     },
-    "pulseTitle": "Pouls Spirituel",
+    "pulseTitle": "Repère spirituel",
     "pulseCta": "Voir tous les horaires de prière →",
-    "plannerTitle": "Planificateur Intelligent",
-    "plannerScheduleTitle": "Programme d'aujourd'hui",
+    "plannerTitle": "Planificateur intelligent",
+    "plannerScheduleTitle": "Programme du jour",
     "plannerScheduleEmpty": "Aucun cours prévu aujourd'hui",
-    "plannerHabitsTitle": "Habitudes Quotidiennes",
+    "plannerHabitsTitle": "Habitudes quotidiennes",
     "plannerHabitLesson": "Terminer la leçon du jour",
     "plannerHabitQuran": "Réciter le Coran pendant 10 minutes",
     "plannerHabitDua": "Faire une dua pour faciliter l'apprentissage",
-    "plannerReflectionTitle": "Réflexion Quotidienne",
+    "plannerReflectionTitle": "Réflexion du jour",
     "plannerReflectionPlaceholder": "Qu'avez-vous appris ou pour quoi êtes-vous reconnaissant aujourd'hui ?",
     "plannerSave": "Enregistrer",
     "plannerSaved": "Enregistré ✓",
@@ -980,7 +980,7 @@
   "billing": {
     "bar": "Al-Rahma · Facturation",
     "backToSite": "← Retour au site",
-    "heading": "Factures et Facturation",
+    "heading": "Factures et paiements",
     "sub": "Toutes vos factures mensuelles — cliquez sur une ligne pour voir les détails.",
     "discountNotice": "Une réduction de 25% est appliquée à toutes vos factures. Les prix originaux sont barrés.",
     "loading": "Chargement des factures…",
@@ -996,23 +996,23 @@
     "paidStatus": "✓ Payé"
   },
   "checkout": {
-    "secureCheckout": "🔒 Paiement Sécurisé",
+    "secureCheckout": "🔒 Paiement sécurisé",
     "planSuffix": "Plan",
     "perMonth": "/ mois",
     "offApplied": "% DE RÉDUCTION appliqué",
-    "fullName": "Nom Complet",
+    "fullName": "Nom complet",
     "email": "Email",
     "mobile": "Mobile",
     "optional": "optionnel",
-    "cardPayment": "💳 Paiement par Carte",
+    "cardPayment": "💳 Paiement par carte",
     "international": "🌍 International — En Ligne",
-    "manualBank": "🏦 Banque & Virement Manuel",
+    "manualBank": "🏦 Banque et virement manuel",
     "transferDetails": "Détails du virement",
     "reference": "Numéro de Référence / Confirmation",
     "refPlaceholder": "ex. MTCN, ID de transaction, réf. de virement…",
     "processing": "Traitement en cours…",
-    "submitRequest": "Envoyer la Demande de Paiement",
-    "completePayment": "Finaliser le Paiement",
+    "submitRequest": "Envoyer la demande de paiement",
+    "completePayment": "Finaliser le paiement",
     "verifyNote": "Nous vérifierons votre virement dans les 24 heures et activerons votre plan.",
     "secureNote": "Les détails de la carte sont saisis sur la page sécurisée de la passerelle. Résiliez à tout moment.",
     "successMsg": "✅ Demande de paiement reçue ! Nous vérifierons et activerons votre plan dans les 24 heures. Vérifiez votre email pour la confirmation.",
@@ -1036,7 +1036,7 @@
     "refresh": "Rafraîchir la page"
   },
   "alphabet": {
-    "title": "Alphabet Arabe et Italien",
+    "title": "Alphabet arabe et italien",
     "listenFull": "Écouter tout l'alphabet",
     "prevBtn": "← Précédent",
     "nextBtn": "Suivant →",
@@ -1058,7 +1058,7 @@
     "tabRepeat": "Répétition",
     "tabTest": "Test",
     "closeLabel": "Fermer",
-    "progress": "{count}/{total} {chapter} mémorisée",
+    "progress": "{count}/{total} versets de {chapter} mémorisés",
     "markMem": "Marquer les versets {from}–{to} comme mémorisés",
     "unmark": "Démarquer",
     "fromVerse": "Du verset",
@@ -1077,11 +1077,11 @@
   },
   "hadith": {
     "pageTitle": "Bibliothèque des Hadiths",
-    "pageDesc": "Parcourez et recherchez 13 collections de hadiths authentiques dont le Sahih Boukhary, le Sahih Muslim, le Riyad As-Salihin, et plus encore.",
+    "pageDesc": "Parcourez et recherchez 13 recueils de hadiths authentiques, dont Sahih al-Bukhari, Sahih Muslim et Riyad as-Salihin.",
     "badge": "📚 Bibliothèque des Hadiths",
     "back": "Toutes les collections",
-    "heroTitle": "Bibliothèque islamique des Hadiths",
-    "heroSub": "Parcourez et recherchez 13 collections de hadiths authentiques — en arabe et en anglais — hébergées directement ici",
+    "heroTitle": "Bibliothèque islamique de hadiths",
+    "heroSub": "Parcourez et recherchez 13 recueils de hadiths authentiques, en arabe et en anglais, disponibles ici même.",
     "hadiths": "hadiths",
     "hadithSingle": "hadith",
     "courseNote": "Ces livres sont étudiés dans notre",
@@ -1100,7 +1100,7 @@
     "pageOf": "Page {page} sur {total}",
     "noResults": "Aucun résultat pour « {query} »",
     "clearSearch": "Effacer la recherche",
-    "ctaPrompt": "Vous souhaitez étudier ces livres avec un érudit certifié ?",
+    "ctaPrompt": "Vous souhaitez étudier ces ouvrages avec un érudit certifié ?",
     "ctaBtn": "Cours d'études islamiques →",
     "browse": "Parcourir →"
   },
@@ -1115,24 +1115,24 @@
     "allCourses": "Tous les cours",
     "courses": {
       "eyebrow": "Nos Cours",
-      "heading": "Apprenez le Coran & les Sciences Islamiques en Ligne",
+      "heading": "Apprenez le Coran et les sciences islamiques en ligne",
       "sub": "Des cours individuels en direct avec des enseignants certifiés Al-Azhar — en 17 langues, à votre rythme, depuis n'importe où.",
       "cards": [
         { "icon": "📖", "title": "Lecture du Coran & Tajweed", "desc": "Apprenez à lire le Coran correctement avec les règles du Tajweed auprès d'enseignants certifiés.", "badge": "Populaire" },
         { "icon": "🧠", "title": "Mémorisation du Coran (Hifz)", "desc": "Programmes de mémorisation structurés avec révision quotidienne et suivi des progrès.", "badge": "" },
-        { "icon": "📜", "title": "Ijazah du Coran", "desc": "Obtenez une certification Ijazah officielle avec un Sanad relié au Prophète ﷺ.", "badge": "Avancé" },
-        { "icon": "🕌", "title": "Études Islamiques", "desc": "Apprenez l'Aqeedah, le Fiqh, la Seerah et la pratique islamique quotidienne dans votre langue.", "badge": "" },
-        { "icon": "🔤", "title": "Alphabet Arabe", "desc": "Maîtrisez les 28 lettres arabes avec prononciation audio et exercices interactifs.", "badge": "Débutant" },
-        { "icon": "🎓", "title": "Cours d'Essai Gratuit", "desc": "Essayez un cours gratuit avec l'un de nos enseignants Al-Azhar certifiés — sans engagement.", "badge": "Gratuit" }
+        { "icon": "📜", "title": "Ijaza du Coran", "desc": "Obtenez une ijaza officielle avec un sanad remontant au Prophète ﷺ.", "badge": "Avancé" },
+        { "icon": "🕌", "title": "Études islamiques", "desc": "Apprenez l’aqida, le fiqh, la sîra et la pratique islamique quotidienne dans votre langue.", "badge": "" },
+        { "icon": "🔤", "title": "Alphabet arabe", "desc": "Maîtrisez les 28 lettres arabes grâce à la prononciation audio et à des exercices interactifs.", "badge": "Débutant" },
+        { "icon": "🎓", "title": "Leçon d’essai gratuite", "desc": "Essayez gratuitement une leçon avec l’un de nos enseignants certifiés par Al-Azhar, sans engagement.", "badge": "Gratuit" }
       ]
     },
     "quran": {
       "eyebrow": "Cours de Coran",
-      "heading": "Cours de Coran & Tajweed",
+      "heading": "Cours de Coran et de tajwid",
       "sub": "De votre toute première lettre à une récitation parfaite — nos enseignants Al-Azhar certifiés vous guident à chaque étape, dans votre langue.",
-      "relatedHeading": "Outil Associé",
-      "relatedDesc": "Pratiquez votre récitation avec notre Lecteur du Coran gratuit — écoutez plusieurs récitants et suivez le texte.",
-      "relatedBtn": "Ouvrir le Lecteur du Coran →",
+      "relatedHeading": "Outil associé",
+      "relatedDesc": "Entraînez-vous à la récitation avec notre lecteur du Coran gratuit : écoutez plusieurs récitateurs et suivez le texte.",
+      "relatedBtn": "Ouvrir le lecteur du Coran →",
       "cards": [
         { "icon": "📖", "title": "Lecture du Coran (Noorani Qaida)", "desc": "Commencez de zéro — apprenez les lettres arabes, la prononciation et lisez le Coran de façon autonome.", "points": ["Lettres arabes & prononciation", "Méthode Noorani Qaida étape par étape", "Lire le Coran de façon autonome"] },
         { "icon": "🎙️", "title": "Récitation avec Tajweed", "desc": "Maîtrisez toutes les règles du Tajweed pour une récitation coranique belle et précise.", "points": ["Toutes les règles du Tajweed (Hafs & Warsh)", "Correction en direct par un enseignant certifié", "Matériaux de pratique audio et vidéo"] },
@@ -1140,53 +1140,53 @@
       ]
     },
     "arabic": {
-      "eyebrow": "Alphabet Arabe",
-      "heading": "Alphabet Arabe",
-      "sub": "Apprenez les 28 lettres arabes avec des guides de prononciation audio. Le premier pas idéal avant de lire le Coran.",
-      "learnHeading": "Ce Que Vous Apprendrez",
+      "eyebrow": "Alphabet arabe",
+      "heading": "Alphabet arabe et italien",
+      "sub": "Apprenez les 28 lettres arabes grâce à des guides de prononciation audio et à leurs équivalents phonétiques italiens. Le premier pas idéal avant de lire le Coran.",
+      "learnHeading": "Ce que vous apprendrez",
       "learnPoints": [
         "Les 28 lettres arabes — nom, son et forme écrite",
         "Pratique interactive dans le navigateur avec retour audio instantané",
-        "Équivalents phonétiques pour chaque lettre",
+        "Équivalents phonétiques italiens pour chaque lettre",
         "Signes vocaliques (harakat) : Fatha, Kasra, Damma, Sukun",
         "Tanwin, Shadda, Ta Marbuta et autres symboles essentiels",
         "Comment joindre les lettres et reconnaître les mots"
       ],
-      "tryHeading": "Essayez la Leçon Interactive",
+      "tryHeading": "Essayez la leçon interactive",
       "tryDesc": "Pratiquez les lettres arabes directement dans votre navigateur — sans téléchargement.",
-      "tryBtn": "Commencer la Leçon Gratuite",
-      "nextHeading": "Prochaine Étape : Heures de Prière",
-      "nextDesc": "Une fois que vous connaissez l'alphabet arabe, pratiquez la lecture des noms et heures de prière avec nos outils islamiques.",
-      "nextBtn": "Ouvrir les Heures de Prière →"
+      "tryBtn": "Commencer la leçon gratuite",
+      "nextHeading": "Étape suivante : horaires de prière",
+      "nextDesc": "Une fois l’alphabet arabe maîtrisé, entraînez-vous à lire les noms et les horaires de prière avec nos outils islamiques.",
+      "nextBtn": "Ouvrir les horaires de prière →"
     },
     "tools": {
-      "eyebrow": "Outils Islamiques",
-      "heading": "Des Outils Gratuits pour Chaque Musulman",
+      "eyebrow": "Outils islamiques",
+      "heading": "Des outils gratuits pour chaque musulman",
       "sub": "Une collection croissante d'outils islamiques gratuits pour vous aider à adorer, apprendre et progresser — créée avec soin par l'équipe d'Al-Rahma Academy.",
       "cards": [
         { "icon": "📖", "title": "Lecteur du Coran", "desc": "Lisez et écoutez le Coran complet avec plusieurs récitants, traductions, Tafsir et mode Hifz." },
         { "icon": "📿", "title": "Adhkar & Invocations", "desc": "Adhkar du matin et du soir, dhikr après la prière, et du'a pour toutes les occasions." },
         { "icon": "📚", "title": "Bibliothèque de Hadith", "desc": "Parcourez Al-Arba'een Al-Nawawiyyah, les Hadiths Qudsi et d'autres collections de hadiths." },
-        { "icon": "🕌", "title": "Prière & Outils Islamiques", "desc": "Heures de prière, boussole Qibla, calendrier islamique et Verset du Jour — quatre outils pour le culte quotidien." },
-        { "icon": "✋", "title": "Compteur Tasbeeh", "desc": "Compteur de dhikr numérique pour SubhanAllah, Alhamdulillah, AllahuAkbar et plus." },
-        { "icon": "🔤", "title": "Alphabet Arabe", "desc": "Apprenez les 28 lettres arabes avec prononciation audio, pratique au micro et enregistrements complets." }
+        { "icon": "🕌", "title": "Prière et outils islamiques", "desc": "Horaires de prière, boussole de la qibla, calendrier islamique et verset du jour : quatre outils pour le culte quotidien." },
+        { "icon": "✋", "title": "Compteur de tasbih", "desc": "Compteur numérique de dhikr pour SubhanAllah, Alhamdulillah, Allahu Akbar et bien plus, avec suivi des progrès." },
+        { "icon": "🔤", "title": "Alphabet arabe", "desc": "Apprenez les 28 lettres arabes avec prononciation audio, entraînement au microphone et enregistrements de l’alphabet complet." }
       ]
     },
     "resources": {
       "eyebrow": "Ressources",
-      "heading": "Tout Ce Dont Vous Avez Besoin pour Commencer",
+      "heading": "Tout ce dont vous avez besoin pour commencer",
       "sub": "Parcourez nos articles de blog, nos questions fréquentes et apprenez-en plus sur Al-Rahma Academy et nos enseignants.",
       "cards": [
         { "icon": "✍️", "title": "Blog & Articles", "desc": "Conseils, guides et histoires sur l'apprentissage du Coran, le Tajweed, le Hifz et la vie islamique." },
         { "icon": "❓", "title": "FAQ", "desc": "Réponses aux questions les plus courantes sur les cours, les tarifs, les horaires et plus encore." },
-        { "icon": "🏫", "title": "À Propos de l'Académie", "desc": "Notre mission, notre méthodologie et les valeurs qui guident Al-Rahma Academy." },
-        { "icon": "👨‍🏫", "title": "Nos Enseignants", "desc": "Rencontrez nos érudits Al-Azhar certifiés et nos expérimentés professeurs de Coran." }
+        { "icon": "🏫", "title": "À propos de l’académie", "desc": "Notre mission, notre méthodologie et les valeurs qui guident Al-Rahma Academy." },
+        { "icon": "👨‍🏫", "title": "Nos enseignants", "desc": "Rencontrez nos érudits certifiés par Al-Azhar et nos professeurs de Coran expérimentés." }
       ]
     },
     "academy": {
       "eyebrow": "Al-Rahma Academy",
-      "heading": "Un Foyer de Confiance pour l'Apprentissage du Coran",
-      "sub": "Connecter les familles musulmanes du monde entier avec des enseignants Al-Azhar certifiés — apportant la tradition du savoir islamique dans chaque foyer.",
+      "heading": "Un lieu de confiance pour apprendre le Coran",
+      "sub": "Nous mettons en relation les familles musulmanes du monde entier et des enseignants certifiés par Al-Azhar, afin de transmettre la tradition du savoir islamique dans chaque foyer.",
       "cards": [
         { "icon": "🏫", "title": "Qui Sommes-Nous", "desc": "Notre mission, histoire, méthodologie et les valeurs qui définissent Al-Rahma Academy." },
         { "icon": "👨‍🏫", "title": "Nos Enseignants", "desc": "Rencontrez nos érudits Al-Azhar certifiés et expérimentés professeurs de Coran et d'études islamiques." },

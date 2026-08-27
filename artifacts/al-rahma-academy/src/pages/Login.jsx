@@ -6,12 +6,14 @@ import useSEO from '../hooks/useSEO';
 import { useLang } from '../context/LangContext';
 import { googleLogin } from '../api/authApi';
 import { safeInternalDestination } from '../utils/safeRedirect';
+import { getExperienceText } from '../i18n/experience';
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
 export default function Login() {
   const { t, lang } = useLang();
   const lg = t.authPg.login;
+  const authCopy = getExperienceText(lang).auth;
   useSEO({ title: lg.title, noindex: true });
   const { login, setUser, user, authLoading } = useAuth();
   const navigate = useNavigate();
@@ -139,7 +141,7 @@ export default function Login() {
               <button
                 type="button"
                 onClick={() => setShowPwd((v) => !v)}
-                aria-label={showPwd ? (lang === 'ar' ? 'إخفاء كلمة المرور' : 'Hide password') : (lang === 'ar' ? 'إظهار كلمة المرور' : 'Show password')}
+                aria-label={showPwd ? authCopy.hidePassword : authCopy.showPassword}
                 style={{
                   position: 'absolute', insetInlineEnd: 6, top: '50%', transform: 'translateY(-50%)',
                   background: 'none', border: 'none', cursor: 'pointer',
@@ -169,8 +171,8 @@ export default function Login() {
 
         {GOOGLE_CLIENT_ID && (
           <>
-            <div className="auth__divider"><span>{lang === 'ar' ? 'أو' : 'or'}</span></div>
-            <div ref={googleBtnRef} className="auth__google-btn" aria-label={lang === 'ar' ? 'تسجيل الدخول باستخدام Google' : 'Sign in with Google'} />
+            <div className="auth__divider"><span>{authCopy.or}</span></div>
+            <div ref={googleBtnRef} className="auth__google-btn" aria-label={authCopy.signInWithGoogle} />
           </>
         )}
 

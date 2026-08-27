@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Reveal from '../../ui/Reveal';
 import { TEACHERS } from '../../../data';
-import { useLang } from '../../../context/LangContext';
+import { useLang, withLanguage } from '../../../context/LangContext';
 
 /* Inline SVG icons — Lucide-style, consistent with the rest of the homepage. */
 const STAR_ICON = (
@@ -86,11 +86,11 @@ function VideoModal({ teacher, onClose }) {
   );
 }
 
-function TutorAvatar({ teacher, tp, initials, size = 'md', onPlay }) {
+function TutorAvatar({ teacher, tp, initials, lang, size = 'md', onPlay }) {
   return (
     <div className={`tc3__avatar-col tc3__avatar-col--${size}`}>
       <Link
-        to={`/teachers/${teacher.id}`}
+        to={withLanguage(`/teachers/${teacher.id}`, lang)}
         className="tc3__avatar-ring"
         style={{ '--avatar-ring-color': teacher.color }}
       >
@@ -142,11 +142,11 @@ function TutorCard({ t: teacher }) {
         <VideoModal teacher={teacher} onClose={() => setVideoOpen(false)} />
       )}
 
-      <TutorAvatar teacher={teacher} tp={tp} initials={initials} onPlay={() => setVideoOpen(true)} />
+      <TutorAvatar teacher={teacher} tp={tp} initials={initials} lang={lang} onPlay={() => setVideoOpen(true)} />
 
       <div className="tc3__main">
         <div className="tc3__head">
-          <Link to={`/teachers/${teacher.id}`} className="tc3__name-link">
+          <Link to={withLanguage(`/teachers/${teacher.id}`, lang)} className="tc3__name-link">
             <h3 className="tc3__name-ar" dir="rtl">{teacher.nameAr}</h3>
             <p className="tc3__name-en">{teacher.nameEn}</p>
           </Link>
@@ -177,11 +177,11 @@ function TutorCard({ t: teacher }) {
           <button
             type="button"
             className="tc3__cta"
-            onClick={() => navigate(`/enroll?teacher=${teacher.id}`)}
+            onClick={() => navigate(withLanguage(`/enroll?teacher=${teacher.id}`, lang))}
           >
             {ut.enroll}
           </button>
-          <Link to={`/teachers/${teacher.id}`} className="tc3__cta-link">
+          <Link to={withLanguage(`/teachers/${teacher.id}`, lang)} className="tc3__cta-link">
             {ut.viewProfile}
           </Link>
         </div>
@@ -220,11 +220,11 @@ function SpotlightCard({ teacher }) {
       </span>
 
       <div className="tc3__spotlight-inner">
-        <TutorAvatar teacher={teacher} tp={tp} initials={initials} size="lg" onPlay={() => setVideoOpen(true)} />
+        <TutorAvatar teacher={teacher} tp={tp} initials={initials} lang={lang} size="lg" onPlay={() => setVideoOpen(true)} />
 
         <div className="tc3__spotlight-body">
           <div className="tc3__head">
-            <Link to={`/teachers/${teacher.id}`} className="tc3__name-link">
+            <Link to={withLanguage(`/teachers/${teacher.id}`, lang)} className="tc3__name-link">
               <h3 className="tc3__name-ar" dir="rtl">{teacher.nameAr}</h3>
               <p className="tc3__name-en">{teacher.nameEn}</p>
             </Link>
@@ -244,11 +244,11 @@ function SpotlightCard({ teacher }) {
             <button
               type="button"
               className="tc3__cta"
-              onClick={() => navigate(`/enroll?teacher=${teacher.id}`)}
+              onClick={() => navigate(withLanguage(`/enroll?teacher=${teacher.id}`, lang))}
             >
               {ut.enroll}
             </button>
-            <Link to={`/teachers/${teacher.id}`} className="tc3__cta-link">
+            <Link to={withLanguage(`/teachers/${teacher.id}`, lang)} className="tc3__cta-link">
               {ut.viewProfile}
             </Link>
           </div>
@@ -259,7 +259,7 @@ function SpotlightCard({ teacher }) {
 }
 
 export default function Tutors() {
-  const { t: i18n } = useLang();
+  const { lang, t: i18n } = useLang();
   const ut = i18n.tutors;
   const spotlight = useSpotlightTeacher(TEACHERS);
   const rest = useMemo(() => TEACHERS.filter((t) => t.id !== spotlight.id), [spotlight]);
@@ -289,7 +289,7 @@ export default function Tutors() {
         </Reveal>
 
         <Reveal className="tc2__footer">
-          <Link to="/teachers" className="btn btn--ghost">
+          <Link to={withLanguage("/teachers", lang)} className="btn btn--ghost">
             {ut.viewAll}
           </Link>
         </Reveal>

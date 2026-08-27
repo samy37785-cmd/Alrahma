@@ -4,6 +4,17 @@ import translations, { LANGS } from '../i18n';
 
 const LangContext = createContext(null);
 
+// Use this for internal targets that include their own query string or hash.
+// URLSearchParams retains target-specific values (for example, teacher/course)
+// while ensuring an explicit language selection survives the transition.
+export function withLanguage(to, lang) {
+  const [pathAndSearch, hash = ''] = to.split('#', 2);
+  const [pathname, searchString = ''] = pathAndSearch.split('?', 2);
+  const search = new URLSearchParams(searchString);
+  search.set('lang', lang);
+  return `${pathname}?${search.toString()}${hash ? `#${hash}` : ''}`;
+}
+
 function LanguageUrlSync({ lang, selectionVersion, onUrlLanguage }) {
   const location = useLocation();
   const navigate = useNavigate();
@@ -101,4 +112,9 @@ export function useLang() {
   const ctx = useContext(LangContext);
   if (!ctx) throw new Error('useLang must be used inside <LangProvider>');
   return ctx;
+}
+
+// eslint-disable-next-line react-refresh/only-export-components
+export function useOptionalLang() {
+  return useContext(LangContext);
 }

@@ -197,7 +197,7 @@ export default function Dashboard() {
       <div className="ds-page-hd">
         <div className="ds-page-hd__left">
           <div className="ds-page-hd__eyebrow">
-            <Star size={12} aria-hidden="true" /> Student Dashboard
+            <Star size={12} aria-hidden="true" /> {t.dashboard.roles.student} {t.dashboard.items.dashboard}
           </div>
           <h1 className="ds-page-hd__title">
             {greeting(t.dashboard)}, {user?.name?.split(' ')[0]}
@@ -217,7 +217,7 @@ export default function Dashboard() {
             <Link to="/enroll" className="btn btn--green btn--sm">Enroll Now</Link>
           )}
           <Link to="/courses" className="btn btn--ghost btn--sm">
-            <BookOpen size={14} aria-hidden="true" /> Browse Courses
+            <BookOpen size={14} aria-hidden="true" /> {t.dashboard.items.courses}
           </Link>
           <Link to="/ai-tutor" className="btn btn--green btn--sm">
             <Sparkles size={14} aria-hidden="true" /> Ask AI Tutor
@@ -849,7 +849,7 @@ export default function Dashboard() {
               <div className="ds-quick-actions">
                 <Link to="/messages" className="ds-quick-action">
                   <span className="ds-quick-action__icon"><MessageSquare size={16} aria-hidden="true" /></span>
-                  <span className="ds-quick-action__label">Messages</span>
+                  <span className="ds-quick-action__label">{t.dashboard.items.messages}</span>
                 </Link>
                 <Link to="/tools/quran-reader" className="ds-quick-action">
                   <span className="ds-quick-action__icon"><Book size={16} aria-hidden="true" /></span>
@@ -857,11 +857,11 @@ export default function Dashboard() {
                 </Link>
                 <Link to="/billing" className="ds-quick-action">
                   <span className="ds-quick-action__icon"><CreditCard size={16} aria-hidden="true" /></span>
-                  <span className="ds-quick-action__label">Billing</span>
+                  <span className="ds-quick-action__label">{t.dashboard.items.billing}</span>
                 </Link>
                 <Link to="/calendar" className="ds-quick-action">
                   <span className="ds-quick-action__icon"><CalendarDays size={16} aria-hidden="true" /></span>
-                  <span className="ds-quick-action__label">Schedule</span>
+                  <span className="ds-quick-action__label">{t.dashboard.items.calendar}</span>
                 </Link>
                 <a href={`https://wa.me/${site.whatsapp}`} target="_blank" rel="noopener noreferrer" className="ds-quick-action">
                   <span className="ds-quick-action__icon"><MessageCircle size={16} aria-hidden="true" /></span>

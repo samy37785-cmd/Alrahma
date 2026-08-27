@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import Reveal from '../../ui/Reveal';
 import { useLang } from '../../../context/LangContext';
 import { TESTIMONIAL_TEXT, pick } from '../../../i18n/content';
+import { getExperienceText } from '../../../i18n/experience';
 import { TESTIMONIALS as ALL, HAPPY_STUDENTS, SHOW_TESTIMONIALS } from '../../../data/marketing/socialProof';
 
 /* Same open-book icon used by Courses.jsx — replaces the raw 📖 emoji that
@@ -19,6 +20,7 @@ function BookIcon() {
 
 export default function Testimonials() {
   const { t, lang } = useLang();
+  const ui = getExperienceText(lang).ui;
   const [idx, setIdx] = useState(0);
   const total = ALL.length;
 
@@ -113,17 +115,17 @@ export default function Testimonials() {
             </div>
 
             <div className="tst__controls">
-              <button className="tst__btn" onClick={prev} aria-label="Previous">‹</button>
+              <button className="tst__btn" onClick={prev} aria-label={ui.previous}>‹</button>
               <div className="tst__dots">
                 {ALL.map((_, i) => (
                   <button key={i}
                     className={`tst__dot${i === idx ? ' active' : ''}`}
                     onClick={() => setIdx(i)}
-                    aria-label={`Go to review ${i + 1}`}
+                    aria-label={ui.goToReview(i + 1)}
                   />
                 ))}
               </div>
-              <button className="tst__btn" onClick={next} aria-label="Next">›</button>
+              <button className="tst__btn" onClick={next} aria-label={ui.next}>›</button>
             </div>
           </div>
 

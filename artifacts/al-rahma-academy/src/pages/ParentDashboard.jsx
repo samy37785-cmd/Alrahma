@@ -15,11 +15,13 @@ import {
 import { getNameInitials } from '../utils/nameInitials';
 import { formatTime as fmtTime } from '../utils/date';
 import ChildModal from '../components/features/parent/ChildModal';
+import { getDashboardCopy } from '../i18n/experience';
 
 export default function ParentDashboard() {
   const { user }   = useAuth();
   const { t, lang } = useLang();
   const L          = t.parentDash;
+  const D          = getDashboardCopy(lang);
   const queryClient = useQueryClient();
 
   const [code,      setCode]      = useState('');
@@ -49,7 +51,7 @@ export default function ParentDashboard() {
       setMsg(L.linked); setCode(''); setError('');
       queryClient.invalidateQueries({ queryKey: ['parent', 'children'] });
     },
-    onError: (err) => setError(err.response?.data?.message || 'Could not link'),
+    onError: (err) => setError(err.response?.data?.message || D.linkError),
   });
 
   const unlinkMutation = useMutation({
@@ -57,7 +59,7 @@ export default function ParentDashboard() {
     onSuccess: (_, id) => {
       queryClient.setQueryData(['parent', 'children'], (old = []) => old.filter((c) => c._id !== id));
     },
-    onError: (err) => setError(err.response?.data?.message || 'Could not unlink'),
+    onError: (err) => setError(err.response?.data?.message || D.unlinkError),
   });
 
   const handleLink = (e) => {
@@ -76,9 +78,9 @@ export default function ParentDashboard() {
       {/* Page header */}
       <div className="ds-page-hd">
         <div>
-          <div className="ds-page-hd__eyebrow"><Users size={14} style={{ display: 'inline', marginRight: 5 }} aria-hidden="true" /> Parent Portal</div>
-          <h1 className="ds-page-hd__title">Welcome, {user?.name?.split(' ')[0]}</h1>
-          <p className="ds-page-hd__sub">Monitor your children&apos;s Islamic education journey.</p>
+          <div className="ds-page-hd__eyebrow"><Users size={14} style={{ display: 'inline', marginRight: 5 }} aria-hidden="true" /> {D.parentPortal}</div>
+          <h1 className="ds-page-hd__title">{D.welcome} {user?.name?.split(' ')[0]}</h1>
+          <p className="ds-page-hd__sub">{D.parentIntro}</p>
         </div>
         <div className="ds-page-hd__actions">
           <button
@@ -87,16 +89,16 @@ export default function ParentDashboard() {
             onClick={() => setShowReport(true)}
             disabled={children.length === 0}
           >
-            <Download size={13} aria-hidden="true" /> Weekly Report
+            <Download size={13} aria-hidden="true" /> {D.weeklyReport}
           </button>
           <Link to="/attendance" className="btn btn--ghost btn--sm" style={{ borderRadius: 8, display: 'flex', alignItems: 'center', gap: 5 }}>
-            <CheckSquare size={13} aria-hidden="true" /> Attendance
+            <CheckSquare size={13} aria-hidden="true" /> {t.dashboard.items.attendance}
           </Link>
           <Link to="/homework" className="btn btn--ghost btn--sm" style={{ borderRadius: 8, display: 'flex', alignItems: 'center', gap: 5 }}>
-            <FileText size={13} aria-hidden="true" /> Homework
+            <FileText size={13} aria-hidden="true" /> {t.dashboard.items.homework}
           </Link>
           <Link to="/calendar" className="btn btn--ghost btn--sm" style={{ borderRadius: 8, display: 'flex', alignItems: 'center', gap: 5 }}>
-            <Calendar size={13} aria-hidden="true" /> Calendar
+            <Calendar size={13} aria-hidden="true" /> {t.dashboard.items.calendar}
           </Link>
         </div>
       </div>
@@ -106,24 +108,24 @@ export default function ParentDashboard() {
         <div className="ds-stat">
           <div className="ds-stat__top"><div className="ds-stat__icon ds-stat__icon--green"><Users size={18} aria-hidden="true" /></div></div>
           <div className="ds-stat__value">{children.length}</div>
-          <div className="ds-stat__label">Linked Children</div>
+          <div className="ds-stat__label">{D.linkedChildren}</div>
         </div>
         <div className="ds-stat">
           <div className="ds-stat__top"><div className="ds-stat__icon ds-stat__icon--blue"><CalendarDays size={18} aria-hidden="true" /></div></div>
           <div className="ds-stat__value">{todayClasses.length}</div>
-          <div className="ds-stat__label">Classes Today</div>
-          <div className="ds-stat__sub">{classes.length} total upcoming</div>
+          <div className="ds-stat__label">{D.classesToday}</div>
+          <div className="ds-stat__sub">{classes.length} {D.totalUpcoming}</div>
         </div>
         <div className="ds-stat">
           <div className="ds-stat__top"><div className="ds-stat__icon ds-stat__icon--purple"><Brain size={18} aria-hidden="true" /></div></div>
           <div className="ds-stat__value">{totalVerses}</div>
-          <div className="ds-stat__label">Verses Memorized</div>
-          <div className="ds-stat__sub">Across all children</div>
+          <div className="ds-stat__label">{D.versesMemorized}</div>
+          <div className="ds-stat__sub">{D.acrossChildren}</div>
         </div>
         <div className="ds-stat">
           <div className="ds-stat__top"><div className="ds-stat__icon ds-stat__icon--gold"><ClipboardList size={18} aria-hidden="true" /></div></div>
           <div className="ds-stat__value">{totalRecords}</div>
-          <div className="ds-stat__label">Teacher Records</div>
+          <div className="ds-stat__label">{D.teacherRecords}</div>
         </div>
       </div>
 
@@ -185,7 +187,7 @@ export default function ParentDashboard() {
               <div className="ds-empty">
                 <div className="ds-empty__icon">👧</div>
                 <div className="ds-empty__title">{L.noChildren}</div>
-                <div className="ds-empty__desc">Use the link code from your child&apos;s profile to connect their account.</div>
+                <div className="ds-empty__desc">{D.noChildrenHelp}</div>
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '0 18px 18px' }}>
@@ -231,14 +233,14 @@ export default function ParentDashboard() {
           {/* Upcoming classes */}
           <div className="ds-card">
             <div className="ds-card__hd">
-              <span className="ds-card__title"><span className="ds-card__title-icon"><Clock size={14} aria-hidden="true" /></span> Upcoming Classes</span>
-              <Link to="/calendar" style={{ fontSize: '0.75rem', color: 'var(--text-brand)', fontWeight: 600, textDecoration: 'none' }}>View all</Link>
+              <span className="ds-card__title"><span className="ds-card__title-icon"><Clock size={14} aria-hidden="true" /></span> {D.upcomingClasses}</span>
+              <Link to="/calendar" style={{ fontSize: '0.75rem', color: 'var(--text-brand)', fontWeight: 600, textDecoration: 'none' }}>{D.viewAll}</Link>
             </div>
             <div className="ds-card__body" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {classes.length === 0 ? (
                 <div className="ds-empty" style={{ padding: '16px 0' }}>
                   <div className="ds-empty__icon" style={{ width: 38, height: 38, fontSize: '1rem' }}>📅</div>
-                  <div className="ds-empty__title" style={{ fontSize: '0.82rem' }}>No upcoming classes</div>
+                  <div className="ds-empty__title" style={{ fontSize: '0.82rem' }}>{D.noUpcomingClasses}</div>
                 </div>
               ) : (
                 classes.slice(0, 5).map((c) => (
@@ -247,13 +249,13 @@ export default function ParentDashboard() {
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontWeight: 600, fontSize: '0.845rem', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.title}</div>
                       <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
-                        {new Date(c.startsAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                        {new Date(c.startsAt).toLocaleDateString(lang, { day: 'numeric', month: 'short' })}
                         {' · '}{fmtTime(c.startsAt)}
                         {c.student?.name && ` · ${c.student.name}`}
                       </div>
                     </div>
                     {c.meetingUrl && (
-                      <a href={c.meetingUrl} target="_blank" rel="noopener noreferrer" className="btn btn--green btn--sm" style={{ borderRadius: 6, fontSize: '0.72rem', flexShrink: 0 }}>Join</a>
+                      <a href={c.meetingUrl} target="_blank" rel="noopener noreferrer" className="btn btn--green btn--sm" style={{ borderRadius: 6, fontSize: '0.72rem', flexShrink: 0 }}>{D.join}</a>
                     )}
                   </div>
                 ))
@@ -265,7 +267,7 @@ export default function ParentDashboard() {
           {children.length > 0 && (
             <div className="ds-card">
               <div className="ds-card__hd">
-                <span className="ds-card__title"><span className="ds-card__title-icon"><BarChart3 size={14} aria-hidden="true" /></span> Progress Overview</span>
+                <span className="ds-card__title"><span className="ds-card__title-icon"><BarChart3 size={14} aria-hidden="true" /></span> {D.progressOverview}</span>
               </div>
               <div className="ds-card__body" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 {children.map((child) => (
@@ -275,7 +277,7 @@ export default function ParentDashboard() {
                         {child.name?.split(' ')[0]}
                       </div>
                       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                        <span className="ds-badge ds-badge--green"><Brain size={10} style={{ display: 'inline', marginRight: 3 }} aria-hidden="true" />{child.memorizedVerses || 0} verses</span>
+                        <span className="ds-badge ds-badge--green"><Brain size={10} style={{ display: 'inline', marginRight: 3 }} aria-hidden="true" />{child.memorizedVerses || 0} {L.verses}</span>
                         <span className="ds-badge ds-badge--gray"><ClipboardList size={10} style={{ display: 'inline', marginRight: 3 }} aria-hidden="true" />{child.recordCount || 0}</span>
                       </div>
                     </div>
@@ -284,7 +286,7 @@ export default function ParentDashboard() {
                       style={{ borderRadius: 7, fontSize: '0.75rem', flexShrink: 0 }}
                       onClick={() => setOpenId(child._id)}
                     >
-                      View
+                      {L.view}
                     </button>
                   </div>
                 ))}
@@ -295,14 +297,14 @@ export default function ParentDashboard() {
           {/* Quick links */}
           <div className="ds-card">
             <div className="ds-card__hd">
-              <span className="ds-card__title">Track Progress</span>
+              <span className="ds-card__title">{D.trackProgress}</span>
             </div>
             <div className="ds-card__body" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {[
-                { to: '/attendance', Icon: CheckSquare,  label: 'Attendance',     sub: 'View session presence history' },
-                { to: '/homework',   Icon: FileText,     label: 'Homework',       sub: 'Track assignments and grades' },
-                { to: '/calendar',   Icon: Calendar,     label: 'Schedule',       sub: 'See upcoming class sessions' },
-                { to: '/messages',   Icon: MessageSquare, label: 'Messages',     sub: 'Contact teachers directly' },
+                { to: '/attendance', Icon: CheckSquare,  label: t.dashboard.items.attendance, sub: D.attendanceHelp },
+                { to: '/homework', Icon: FileText, label: t.dashboard.items.homework, sub: D.homeworkHelp },
+                { to: '/calendar', Icon: Calendar, label: t.dashboard.items.calendar, sub: D.scheduleHelp },
+                { to: '/messages', Icon: MessageSquare, label: t.dashboard.items.messages, sub: D.messagesHelp },
               ].map(({ to, Icon, label, sub }) => (
                 <Link key={to} to={to} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 10px', borderRadius: 9, background: 'var(--bg-page)', border: '1px solid var(--border-subtle)', textDecoration: 'none' }}>
                   <div style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--color-primary-surface, #e6f4ef)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -323,9 +325,9 @@ export default function ParentDashboard() {
             border: '1px solid var(--color-primary-border)', borderRadius: 12,
             fontSize: '0.82rem', color: 'var(--text-brand)',
           }}>
-            <div style={{ fontWeight: 700, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 5 }}><GraduationCap size={13} aria-hidden="true" /> Parent Tip</div>
+            <div style={{ fontWeight: 700, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 5 }}><GraduationCap size={13} aria-hidden="true" /> {D.parentTip}</div>
             <p style={{ margin: 0, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-              Encourage your child to recite their memorized surahs daily. Consistent revision is key to retention.
+              {D.parentTipText}
             </p>
           </div>
         </div>
@@ -338,7 +340,7 @@ export default function ParentDashboard() {
           onClick={() => setShowReport(false)}
           role="dialog"
           aria-modal="true"
-          aria-label="Weekly Progress Report"
+          aria-label={D.reportDialog}
         >
           <div
             ref={reportRef}
@@ -348,27 +350,27 @@ export default function ParentDashboard() {
             {/* Report header */}
             <div style={{ background: 'var(--grad-green, linear-gradient(135deg,#0b6e4f,#1a9e72))', padding: '28px 32px', borderRadius: '18px 18px 0 0', position: 'relative' }}>
               <div style={{ color: 'rgba(255,255,255,.7)', fontSize: '0.7rem', fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: 8 }}>
-                Weekly Progress Report — {new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
+                {D.reportDialog} — {new Date().toLocaleDateString(lang, { day: 'numeric', month: 'long', year: 'numeric' })}
               </div>
               <h2 style={{ color: '#fff', fontWeight: 800, fontSize: '1.4rem', margin: 0 }}>
                 Al-Rahma Academy
               </h2>
               <p style={{ color: 'rgba(255,255,255,.75)', margin: '6px 0 0', fontSize: '0.88rem' }}>
-                Learning progress report for your {children.length > 1 ? `${children.length} children` : 'child'}
+                {D.reportFor(children.length)}
               </p>
               <button
                 style={{ position: 'absolute', top: 16, right: 16, background: 'rgba(255,255,255,.15)', border: '1px solid rgba(255,255,255,.3)', color: '#fff', borderRadius: 8, width: 36, height: 36, cursor: 'pointer', fontSize: '1.1rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                 onClick={() => setShowReport(false)}
-                aria-label="Close"
+                aria-label={D.close}
               >×</button>
             </div>
 
             {/* Summary KPIs */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 1, background: 'var(--border-default)', margin: 0 }}>
               {[
-                { icon: '📅', value: classes.filter((c) => new Date(c.startsAt) > new Date(Date.now() - 7*86400000)).length, label: 'Classes this week' },
-                { icon: '🧠', value: totalVerses, label: 'Total verses memorized' },
-                { icon: '📋', value: totalRecords, label: 'Teacher records' },
+                { icon: '📅', value: classes.filter((c) => new Date(c.startsAt) > new Date(Date.now() - 7*86400000)).length, label: D.classesWeek },
+                { icon: '🧠', value: totalVerses, label: D.totalVerses },
+                { icon: '📋', value: totalRecords, label: D.teacherRecords },
               ].map((k) => (
                 <div key={k.label} style={{ background: 'var(--bg-surface)', padding: '20px', textAlign: 'center' }}>
                   <div style={{ fontSize: '1.5rem', marginBottom: 6 }}>{k.icon}</div>
@@ -381,7 +383,7 @@ export default function ParentDashboard() {
             {/* Per-child breakdown */}
             <div style={{ padding: '24px 28px' }}>
               <h3 style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary)', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 6 }}>
-                <GraduationCap size={16} aria-hidden="true" /> Children Progress
+                <GraduationCap size={16} aria-hidden="true" /> {D.childrenProgress}
               </h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                 {children.map((child) => (
@@ -398,11 +400,11 @@ export default function ParentDashboard() {
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                       <div style={{ padding: '10px 12px', background: 'var(--color-success-surface)', borderRadius: 8, border: '1px solid var(--color-success-border)' }}>
                         <div style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--color-success-text)' }}>{child.memorizedVerses || 0}</div>
-                        <div style={{ fontSize: '0.68rem', color: 'var(--text-secondary)', marginTop: 2 }}>Verses memorized</div>
+                        <div style={{ fontSize: '0.68rem', color: 'var(--text-secondary)', marginTop: 2 }}>{D.versesMemorized}</div>
                       </div>
                       <div style={{ padding: '10px 12px', background: 'var(--color-primary-surface)', borderRadius: 8, border: '1px solid var(--color-primary-border)' }}>
                         <div style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--color-primary)' }}>{child.recordCount || 0}</div>
-                        <div style={{ fontSize: '0.68rem', color: 'var(--text-secondary)', marginTop: 2 }}>Teacher records</div>
+                        <div style={{ fontSize: '0.68rem', color: 'var(--text-secondary)', marginTop: 2 }}>{D.teacherRecords}</div>
                       </div>
                     </div>
                   </div>
@@ -417,18 +419,18 @@ export default function ParentDashboard() {
                 style={{ flex: 1, justifyContent: 'center', borderRadius: 10, display: 'flex', alignItems: 'center', gap: 7 }}
                 onClick={() => window.print()}
               >
-                <Download size={15} aria-hidden="true" /> Print / Save as PDF
+                <Download size={15} aria-hidden="true" /> {D.printPdf}
               </button>
               <button
                 className="btn btn--ghost"
                 style={{ borderRadius: 10, display: 'flex', alignItems: 'center', gap: 6 }}
                 onClick={() => {
-                  const txt = `📊 Weekly report from Al-Rahma Academy:\n${children.map((c) => `• ${c.name}: ${c.memorizedVerses||0} verses memorized, ${c.recordCount||0} teacher records`).join('\n')}\nTotal classes this week: ${classes.filter((c)=>new Date(c.startsAt)>new Date(Date.now()-7*86400000)).length}`;
-                  if (navigator.share) navigator.share({ title: 'Weekly Report', text: txt }).catch(()=>{});
+                  const txt = D.shareText(children, classes.filter((c)=>new Date(c.startsAt)>new Date(Date.now()-7*86400000)).length);
+                  if (navigator.share) navigator.share({ title: D.shareTitle, text: txt }).catch(()=>{});
                   else navigator.clipboard?.writeText(txt);
                 }}
               >
-                <Share2 size={15} aria-hidden="true" /> Share
+                <Share2 size={15} aria-hidden="true" /> {D.share}
               </button>
             </div>
           </div>
@@ -474,9 +476,7 @@ export default function ParentDashboard() {
                   {L.unlink}?
                 </div>
                 <p style={{ margin: 0, fontSize: '0.84rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-                  {lang === 'ar'
-                    ? 'سيتم إلغاء ربط هذا الحساب. يمكنك إعادة ربطه في أي وقت.'
-                    : 'This child will be unlinked from your account. You can re-link them anytime using their link code.'}
+                  {D.unlinkHelp}
                 </p>
               </div>
             </div>

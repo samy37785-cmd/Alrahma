@@ -1,4 +1,6 @@
 import { useModalA11y } from '../../hooks/useModalA11y';
+import { useLang } from '../../context/LangContext';
+import { getExperienceText } from '../../i18n/experience';
 
 /**
  * THE shared modal (roadmap Phase 6). Composes the design-system kit
@@ -25,11 +27,13 @@ export default function Modal({
   subtitle,
   size,
   ariaLabel,
-  closeLabel = 'Close',
+  closeLabel,
   footer,
   className = '',
   children,
 }) {
+  const { lang } = useLang();
+  const localizedCloseLabel = closeLabel || getExperienceText(lang).ui.close;
   const firstFocusRef = useModalA11y(open, onClose);
   if (!open) return null;
 
@@ -52,7 +56,7 @@ export default function Modal({
             type="button"
             className="ds-modal__close"
             onClick={onClose}
-            aria-label={closeLabel}
+            aria-label={localizedCloseLabel}
           >
             ×
           </button>

@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useLang } from '../../context/LangContext';
+import { getExperienceText } from '../../i18n/experience';
 
 /**
  * Visible breadcrumb trail. The matching BreadcrumbList JSON-LD is emitted
@@ -12,11 +13,12 @@ import { useLang } from '../../context/LangContext';
  */
 export default function Breadcrumbs({ items = [] }) {
   const { t, lang } = useLang();
-  const homeLabel = lang === 'ar' ? 'الرئيسية' : (t?.nav?.home || 'Home');
+  const copy = getExperienceText(lang).ui;
+  const homeLabel = t?.nav?.home || copy.home;
   const trail = [{ label: homeLabel, to: '/' }, ...items];
 
   return (
-    <nav className="breadcrumbs" aria-label="Breadcrumb">
+    <nav className="breadcrumbs" aria-label={copy.breadcrumb}>
       <div className="container">
         <ol className="breadcrumbs__list">
           {trail.map((it, i) => {
@@ -24,7 +26,7 @@ export default function Breadcrumbs({ items = [] }) {
             return (
               <li key={i} className="breadcrumbs__item">
                 {last || !it.to
-                  ? <span className="breadcrumbs__current" aria-current="page">{it.label}</span>
+                  ? <span className="breadcrumbs__current" aria-current="page" aria-label={`${copy.currentPage}: ${it.label}`}>{it.label}</span>
                   : <Link className="breadcrumbs__link" to={it.to}>{it.label}</Link>}
                 {!last && <span className="breadcrumbs__sep" aria-hidden="true">›</span>}
               </li>

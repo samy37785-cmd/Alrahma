@@ -4,7 +4,7 @@ import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 import useSEO from '../hooks/useSEO';
 import Breadcrumbs from '../components/ui/Breadcrumbs';
-import { useLang } from '../context/LangContext';
+import { useLang, withLanguage } from '../context/LangContext';
 import { TEACHERS, TEACHER_CREDENTIALS as CREDENTIALS } from '../data';
 import { loadArabicFontsNow } from '../utils/loadArabicFonts';
 
@@ -131,7 +131,7 @@ export default function Teachers() {
     return true;
   });
 
-  const onEnroll = (id) => navigate(`/enroll?teacher=${id}`);
+  const onEnroll = (id) => navigate(withLanguage(`/enroll?teacher=${id}`, lang));
 
   const langFilters = [
     { v:'all', l: isAr ? 'الكل' : 'All' },
@@ -230,7 +230,7 @@ export default function Teachers() {
           <div className="container tpg__cta-inner">
             <h2>{ui.ctaTitle}</h2>
             <p>{ui.ctaSub}</p>
-            <button type="button" className="btn btn--gold btn--lg" onClick={() => navigate('/enroll')}>
+            <button type="button" className="btn btn--gold btn--lg" onClick={() => navigate(withLanguage('/enroll', lang))}>
               {ui.ctaBtn}
             </button>
           </div>

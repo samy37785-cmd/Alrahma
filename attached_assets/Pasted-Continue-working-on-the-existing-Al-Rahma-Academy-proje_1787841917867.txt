@@ -1,0 +1,65 @@
+Continue working on the existing Al-Rahma Academy project.
+
+I want you to fully review and improve the entire website, focusing on all pages and all currently supported languages.
+
+First, inspect the project and divide this work into small, logical tasks. Reuse everything you already learned about the project and do not unnecessarily rescan or re-analyze unchanged files.
+
+Work efficiently and cost-consciously:
+
+* Start with the cheapest/fastest suitable reasoning/model for simple tasks.
+* Use normal Power-level capability when needed.
+* Escalate only for genuinely difficult bugs or risky multi-file problems.
+* Do NOT use Max-tier models/reasoning without my explicit approval.
+* Do not waste expensive reasoning on repetitive translation, file discovery, or simple page checks.
+
+Then complete the work language by language and page by page.
+
+For every supported language:
+
+* Visit/review every relevant page.
+* Find missing, untranslated, incorrect, literal, awkward, or low-quality translations.
+* Rewrite them into natural, professional native-quality language.
+* Keep the intended meaning of the original content.
+* Keep Islamic, Qur'an, Tajweed, Hifz, Ijazah, Arabic-learning and academy terminology accurate and consistent.
+* Fix English fallbacks and hard-coded user-facing text where appropriate.
+* Check navigation, buttons, forms, validation messages, course content, pricing, enrollment, login, resources, tools, FAQ, footer, dashboard/user areas and every other user-facing section you discover.
+* Check that longer translations do not break the UI.
+* Give Arabic special attention for RTL, alignment and mixed Arabic/Latin content.
+
+Also check localization-related:
+
+* routes and deep links
+* page titles and meta descriptions
+* canonical URLs
+* hreflang
+* language switching
+* missing translation keys
+
+Do not redesign the website or change unrelated functionality.
+
+Preserve the existing backend, authentication, registration, payments, APIs and working application logic unless a change is genuinely required to fix a discovered issue.
+
+After each logical language/batch, verify the affected pages. Use targeted tests during the work instead of repeatedly running the entire suite. At meaningful checkpoints and at the end, run the necessary build, typecheck and existing tests to make sure nothing was broken.
+
+IMPORTANT:
+Do not treat this as one huge uncontrolled task.
+
+Create a clear task plan first, then execute it systematically:
+Audit → language by language → page verification → RTL/localization → SEO localization → final verification.
+
+Use checkpoints so progress is preserved.
+
+Do not mark the overall task complete until every supported language and every relevant user-facing page discovered during the audit has been reviewed.
+
+At the end, give me a concise report showing:
+
+* languages completed
+* pages reviewed
+* translations improved/fixed
+* page/localization bugs fixed
+* RTL issues fixed
+* SEO/hreflang issues fixed
+* build/test results
+* anything that still requires external configuration
+
+Start by creating the task breakdown, then proceed.

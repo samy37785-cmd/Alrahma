@@ -1,0 +1,50 @@
+After completing the page-by-page and language-by-language localization work, continue with a complete Technical SEO, Multilingual SEO, AEO, and GEO review of the same website.
+
+Keep this as a separate phase of the same project and reuse the project knowledge you already gathered. Do not unnecessarily rescan the entire repository.
+
+Review and fix what can safely be improved inside the website, including:
+
+* titles and meta descriptions
+* canonical URLs
+* hreflang across all supported languages
+* sitemap and robots.txt
+* indexability and crawlability
+* internal linking
+* duplicate or conflicting metadata
+* structured data / Schema.org
+* Organization, Course, FAQ, Article and other schemas only where genuinely applicable
+* broken or misleading structured data
+* multilingual SEO consistency
+* language-specific URLs
+* page headings and content structure
+* semantic HTML where relevant
+* image alt text where appropriate
+* obvious technical performance issues that affect SEO
+* Core Web Vitals-related issues that can safely be improved in the code
+* content structure that helps search engines understand each page
+* AEO: make important content clear and answer-friendly for search/answer engines
+* GEO: improve content structure, entity clarity, factual consistency and machine readability for generative/AI search systems
+
+Do not keyword-stuff, generate spam pages, fabricate reviews, ratings, statistics, credentials, testimonials, or claims.
+
+Do not change the meaning of religious content simply for SEO.
+
+Preserve the website's existing design and functionality.
+
+Use cheap/fast capability for repetitive audits and simple fixes. Use Power-level reasoning only when necessary. Do not use Max-tier models/reasoning without my explicit approval.
+
+Validate the site after the changes and include SEO/AEO/GEO work in the final completion report.
+
+The execution order should be:
+
+1. Project/page/language audit
+2. Full localization — language by language and page by page
+3. Localization verification
+4. Technical + Multilingual SEO
+5. AEO
+6. GEO
+7. Final cross-language/site verification
+8. Build/tests
+9. Final report
+
+Treat all of this as one structured project, but execute it as separate manageable tasks/checkpoints rather than one uncontrolled operation.

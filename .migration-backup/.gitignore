@@ -1,0 +1,13 @@
+node_modules
+dist
+.vite
+*.local
+.env
+backend/.env
+.cache
+.puppeteer
+coverage
+
+# Playwright (e2e) run artifacts — baselines in e2e/__screenshots__ ARE committed
+test-results
+playwright-report

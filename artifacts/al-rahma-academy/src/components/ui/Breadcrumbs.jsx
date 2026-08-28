@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { useLang } from '../../context/LangContext';
+import { useLang, withLanguage } from '../../context/LangContext';
 import { getExperienceText } from '../../i18n/experience';
 
 /**
@@ -27,7 +27,7 @@ export default function Breadcrumbs({ items = [] }) {
               <li key={i} className="breadcrumbs__item">
                 {last || !it.to
                   ? <span className="breadcrumbs__current" aria-current="page" aria-label={`${copy.currentPage}: ${it.label}`}>{it.label}</span>
-                  : <Link className="breadcrumbs__link" to={it.to}>{it.label}</Link>}
+                  : <Link className="breadcrumbs__link" to={withLanguage(it.to, lang)}>{it.label}</Link>}
                 {!last && <span className="breadcrumbs__sep" aria-hidden="true">›</span>}
               </li>
             );

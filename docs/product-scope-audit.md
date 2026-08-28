@@ -1,256 +1,323 @@
 # Product Data Scope Reset + Supabase Minimal Baseline Audit
 
-**Date:** 2026-08-28 (v3)
-**Branch:** `docs/product-scope-closure-v3` (off `cf24eb7` on `main`) —
-kept off `main` deliberately per this revision's own instruction, instead
-of continuing to commit documentation-only changes directly to `main`.
+**Date:** 2026-08-28 (final — self-contained)
+**Branch:** `docs/product-scope-closure-v3` (off `cf24eb7` on `main`)
 **Scope of evidence:** `artifacts/al-rahma-academy` and `artifacts/api-server` only.
 `.migration-backup/` (the old MongoDB/Express backend) is historical
-reference only.
+reference only and was never used as a source of truth for any decision
+in this document.
 
-**Revision note:** this is v3, replacing v2. v2 answered the 3 original
-open questions; the product owner then added a further round of
-corrections (financial-ledger shape, provider-event idempotency, audit
-log, account/checkout policy, enrollment field accuracy). **v1's 13-table
-and v2's 18-table proposals are both superseded — do not build against
-either. This document (v3, 20 tables) is the only current baseline.**
+This document is self-contained — it does not require reading prior git
+history to understand why any table was kept, dropped, or added.
 
 ## ⚠️ What approving this document does and does not authorize
 
 **Approving this document approves a *design* only.** It does **not**
 authorize:
-- dropping, altering, or pushing anything to the real Supabase project,
-- running `drizzle-kit push` (not used as a deployment mechanism at all
-  going forward — see §11),
+- dropping, altering, or applying anything on the real Supabase project,
+- running `drizzle-kit push` (not used as a deployment mechanism at all —
+  see §11),
 - any `git push`, merge, or deploy.
 
 Every one of those is a **separate, explicit permission**, asked for at
-the time it's actually about to happen — never implied by "the design was
-approved." See §12 ("Status") for exactly what has and hasn't happened so
-far, and §13 ("Next Step") for what happens after this document is
-approved, which is *authoring migration files locally*, nothing remote.
+the time it's actually about to happen. Beyond that: **the schema alone
+is never applied to any remote environment, even once fully finished.**
+RLS can be designed later, locally — but schema, RLS, and grants must all
+be complete and tested together before any remote apply happens, as one
+single, separately-permitted release. A schema-only partial apply is
+explicitly out of scope for every stage of this work, not just this
+document.
 
-## 1–2. Feature Inventory / API-Data Flow
+## 1. Current Product Feature Inventory (inlined, evidence-based)
 
-Unchanged from v1/v2 — see git history of this file if the full narrative
-is needed again. Nothing about the underlying evidence changed in this
-revision, only the schema/policy conclusions drawn from it.
+Built from a full read of `artifacts/al-rahma-academy`'s routes, forms,
+API layer, and `artifacts/api-server` — not `.migration-backup`.
 
-## 3. Locked Product Decisions (carried over from v2, still in force)
+**Real, wired, but CUT per the product owner's decision** (the old
+teacher/parent/student system and its educational dashboards are not part
+of the product going forward, regardless of currently being wired): the
+`role` field (student/teacher/parent/admin) and all role-based routing/
+nav; the student `Dashboard.jsx`, `TeacherDashboard.jsx`,
+`ParentDashboard.jsx`; `CourseContent.jsx` (lesson viewer) + course
+progress; `StudentModal.jsx` (teacher notes on students); live-class
+scheduling; Hifz progress as a teacher-assessed record; certificate
+issuance; parent↔child linking; dashboard messages/notifications (the old
+shape — see §5 for what's kept instead); `AttendancePage.jsx`/
+`HomeworkPage.jsx` (already explicitly fake/preview via their own in-code
+`PreviewBanner` — never real to begin with); Community (posts/comments/
+likes) and Wishlist (explicitly out of scope); referrals (already
+orphaned — link generation with no backing API calls anywhere); AI Tutor
+(explicitly deferred, not deleted-forever).
 
-Accounts are `user`/`admin` only, `plans` is admin-managed pricing (server
-verifies against the provider's price ID, never trusts a client-sent
-amount), Stripe is a recurring monthly subscription, `notifications` is
-back in with an LMS-free type set, admin scope is the fixed 12-area list
-from v2 (Overview/Users/Enrollments/Trials/Plans/Subscriptions/Payments/
-Coupons/Blog/Testimonials/Newsletter/Notifications), `testimonials` is
-admin-curated only. All unchanged by v3 — see v2 (prior commit) for the
-full reasoning on each if needed.
+**Real, wired, STAYS**: public marketing pages/hubs (static content, not
+DB-driven); Blog; trial-request lead capture; newsletter signup; course
+enrollment + real payment (Stripe/PayPal/manual, now modeled as a
+recurring subscription — see §7); a plain, non-role user account kept for
+Quran-tool progress persistence; the Quran reader tool and its 3
+persistence hooks (bookmarks, reading progress, memorization stats); most
+standalone client tools (Adhkar, Hadith library, Prayer times, Qibla,
+Islamic calendar, Verse-of-the-day, Tasbeeh, Arabic alphabet, Hifz-review
+flashcards) — client-only or calling fully external, secret-free APIs,
+needing no backend at all; the hardened internal admin login (TOTP MFA,
+separate from the regular-user system) — this is the "internal admin"
+kept, scoped down to only the surviving features (§6).
 
-## 4. New Policy Corrections (v3)
+**Real, wired, REDESIGNED**: course/teacher Reviews → replaced by a plain
+admin-curated **Testimonials** table (no reviewer account, no dashboard,
+no moderation workflow — admin authors and publishes directly).
 
-1. **Account required to pay, not to inquire.** Free-trial requests and
-   the enrollment/lead form can be submitted **without** an account
-   (matches today's actual `Enroll.jsx`/`Trial.jsx` behavior — no login
-   gate on either). Starting any **paid** checkout (Stripe, PayPal, or
-   manual-payment submission) requires being logged in as a `user`.
-   Consequently `subscriptions.user_id` and `invoices.user_id` are **NOT
-   NULL** (payments also — see §6). No account is ever silently created
-   from an email address inside a webhook handler — an account only ever
-   comes from a real Supabase Auth signup. Public signup always creates
-   `role='user'`; `admin` is never assigned from client metadata, signup,
-   or a webhook — only via the out-of-band process already documented in
-   v2 §5.
-2. **`enrollments` corrected to match the real form**, not a generic
-   guess: `times` (jsonb/array — availability), `subjects` (jsonb/array),
-   `preferred_teacher_key` (a stable identifier for the *static* teacher
-   directory entry the lead picked — **not** a foreign key to `profiles`,
-   since `Teachers.jsx`'s directory is explicitly static/fictional
-   marketing content with no real account behind it, confirmed in v1 §1),
-   `preferred_teacher_name` (a snapshot string, so the lead record still
-   reads sensibly even if the static directory entry is later renamed or
-   removed), `requested_plan_slug` (a snapshot of the plan the lead
-   selected — text, not a live FK, so it survives a plan being renamed or
-   retired). **Caveat, stated plainly rather than guessed past:** the
-   exact field list above is informed by the v1 evidence pass (which
-   confirmed `EnrollWizard`/`Enroll.jsx` collect teacher/subjects/level/
-   age/plan-shaped data) but has not been re-verified field-by-field
-   against `Enroll.jsx`'s current literal prop/state names — that
-   verification happens when the migration file is actually authored
-   (§13), not asserted here with false precision. If the product decision
-   later is to remove teacher selection from the UI entirely, that is a
-   **separate UI decision** to make explicitly — this schema does not
-   silently drop the already-existing lead data shape in anticipation of
-   it.
+**Confirmed not real / already dead**, unaffected by the scope decision:
+`contact_messages` — the submit function exists in the data layer but has
+zero call sites; no Contact page exists. `TajweedCheckerPage.jsx` brands
+itself "AI-Powered" but makes no AI/backend call at all — a labeling
+inaccuracy, not a schema question. Also dead: `classApi.updateClass`,
+`courseApi.getMyHifz`/`markHifz`, `enrollmentApi.getEnrollments`/
+`updateEnrollment`, `notificationApi.deleteNotif`, `quran.searchQuran`,
+and the entire `searchApi.js` feature (implemented end-to-end, zero UI
+entry point) — noted for later cleanup, not acted on here.
 
-## 5. Financial Model Correction (v3) — `payments` as an immutable ledger
+## 2. Current API/Data Flow (inlined)
 
-`payments` is redesigned from "one row per transaction, mutable" to an
-**append-only financial ledger**:
-- `kind` enum(`charge`, `refund`) — a refund is its own row, not a status
-  flip on the original charge.
-- `parent_payment_id` (nullable, self-referencing → `payments.id`) links a
-  refund row back to the charge it refunds. Multiple/partial refunds are
-  supported (several refund rows can point at the same parent charge; the
-  sum of refunded amounts is a derived value, not a stored one).
-- Money is stored as **`amount_minor` (integer, minor currency units —
-  cents)**, never a bare float/ambiguous numeric.
-- **Snapshot fields at time of payment** — `plan_slug_snapshot`,
-  `amount_minor_snapshot`, `currency_snapshot`, `provider_price_id_snapshot`
-  — captured once, at write time, from whatever `plans` looked like *then*.
-  This is what makes historical payments/invoices immune to a later plan
-  price edit (per §3's plan-versioning rule: a Stripe price is never
-  edited in place, only superseded — the snapshot is the local mirror of
-  that discipline).
-- **No full raw gateway payload stored on `payments`.** Full webhook
-  payloads live only in `provider_events` (§6), and even there are
-  redacted/hashed, not stored verbatim — `payments` gets a small
-  `gateway_metadata` jsonb restricted to an explicit allowlist of
-  non-sensitive fields (e.g. payment method brand/last4-masked, receipt
-  URL — never full card data, never a customer's full billing address
-  unless a real feature needs it). The exact allowlist and a retention/
-  purge policy for `gateway_metadata` is written out as code comments
-  when the migration is authored (§13), not left implicit.
+`artifacts/api-server` handles exactly one route locally
+(`GET /healthz`); every other `/api/*` call — including every one this
+document keeps — is a transparent reverse-proxy to `UPSTREAM_API_ORIGIN`
+(defaults to the real Render backend). No `vercel.json` and no dev-proxy
+config exist yet in `artifacts/al-rahma-academy` to reproduce that mapping
+outside the current Replit-style same-origin setup — addressing that is a
+later stage, not started here. The Quran tool's external API calls
+(`api/quran.js`) bypass this entirely — no backend involvement, already
+and permanently independent of Render/Supabase.
 
-## 6. New Table: `provider_events` — the real idempotency ledger
+## 3. Locked Account & Checkout Policy
+
+- Exactly two account kinds: `user` and `admin`. Public registration
+  always creates `role='user'`; `admin` can never be selected or granted
+  via public signup or any client-supplied metadata, no matter what is
+  sent — the insert trigger enforces this unconditionally (§11). No
+  `student`/`teacher`/`parent`/`editor`/`viewer`/`super-admin`.
+  `role` is never user-editable. Sensitive admin operations require AAL2
+  (Supabase's MFA assurance level) — an RLS-design concern for the next
+  stage, noted here so the schema accounts for it correctly today.
+- Free-trial requests and the enrollment/lead form can be submitted
+  **without** an account (matches `Enroll.jsx`/`Trial.jsx`'s real
+  behavior — no login gate on either today). Starting any **paid**
+  checkout (Stripe, PayPal, or manual-payment submission) requires being
+  logged in as a `user`. Consequently `subscriptions.user_id`,
+  `invoices.user_id`, `payments.user_id`, and `manual_payments.user_id`
+  are all **NOT NULL**.
+- No account is ever silently created from an email address inside a
+  webhook handler — an account only ever comes from a real Supabase Auth
+  signup.
+- A `user` account keeps: basic identity fields; Quran bookmarks; Quran
+  reading progress; Quran memorization stats; notifications +
+  notification preferences; their own subscription and invoices (read
+  access to what belongs to them — an RLS concern for later, but the
+  schema is shaped to make that check trivial: every row a user should
+  see has a direct `user_id` column).
+
+## 4. Plans & Pricing
+
+A small, admin-manageable `plans` table (not an LMS `courses` table —
+marketing course content stays static, code-level content as it is
+today; `plans` is pricing/catalog data only). The frontend never sends a
+trusted amount or determines the final price; the server resolves the
+plan from the DB and verifies it against the payment provider's own price
+ID. Changing a Stripe price means creating a new Stripe Price and
+deactivating the old one — a historical Stripe Price (or a historical
+`plans` row) is never edited in place; every `payments`/`invoices` row
+also snapshots the plan's price/currency/provider-price-id *at the time
+of that payment* (§7), so a later plan change never reinterprets
+historical financial records.
+
+## 5. Notifications
+
+Restored (not dropped), re-scoped away from the old LMS event types.
+Type set: `payment_received`, `payment_failed`, `subscription_renewed`,
+`subscription_expiring`, `trial_status`, `admin_announcement`,
+`daily_reminder`. A `notification_preferences` table holds per-user
+daily-reminder opt-in/time, language, and timezone. In-app only for now —
+no push tokens/device registration table; web push or email delivery is
+a later decision, not built speculatively. **The scheduler/cron that
+would actually enqueue `daily_reminder` rows is explicitly not part of
+this baseline** — the schema only guarantees that *if* something tries to
+insert a duplicate reminder, the database rejects it (a `dedupe_key`
+uniqueness constraint, §9). Users only ever read/mark their own
+notifications; only admin/system processes create them.
+
+## 6. Approved Admin Scope
+
+Overview (limited), Users, Enrollments, Trial requests, Plans/pricing,
+Subscriptions, Payments/manual payments/invoices/refunds, Coupons, Blog,
+Testimonials, Newsletter, Notifications/announcements. Explicitly **not**
+in scope: teacher management, parent/student dashboards, classes,
+certificates, community.
+
+## 7. Payment Model
+
+Stripe is a **recurring monthly subscription**, not a one-time purchase.
+`subscriptions` is a table separate from `payments`: `subscriptions`
+holds the current subscription state per user; `payments` is an
+**append-oriented financial ledger** — every individual transaction
+attempt is its own row, with a small, explicit set of safe status
+transitions (`pending → succeeded`, `pending → failed`; nothing else
+mutates once a row is finalized). A **refund is always a new row**
+(`kind='refund'`, linked via `parent_payment_id`), never an update that
+flips the original charge's status — this supports multiple and partial
+refunds against one charge naturally, and keeps the ledger's history
+honest.
+
+Stripe webhooks (recorded through `provider_events`, §8) are the sole
+source of truth for subscription state — the client never self-reports
+"I'm subscribed now." PayPal (the current Orders-API integration) is a
+**single payment granting a fixed access period**, not a recurring
+subscription — `subscriptions` still gets a row (so "does this user
+currently have access" is one query regardless of provider), but its
+`cancel_at_period_end`/`canceled_at` fields don't meaningfully apply to
+it; it simply expires at `current_period_end` unless a new payment
+extends it. A real PayPal *subscriptions* API integration, if built
+later, is a separately-designed path. Manual payment follows the same
+fixed-period-grant shape, reviewed by admin — activating the
+corresponding `subscriptions` row happens **only** via an atomic RPC
+after admin approval (never an implicit side effect of
+`manual_payments.status` changing; the exact RPC is a later-stage design
+item, deferred, not built in this pass — see §12).
+
+Money is always **`amount_minor`, an integer in minor currency units**
+(cents), never a bare float. Three related amounts are distinguished by
+name on every `payments`/`invoices` row: **`amount_minor`** is the actual
+amount charged; **`plan_amount_minor_snapshot`** is the plan's price
+*before* any discount; **`discount_minor_snapshot`** is the actual
+discount applied — for a charge row, `amount_minor` reconciles to
+`plan_amount_minor_snapshot - discount_minor_snapshot`. No full raw
+gateway webhook payload is ever stored on `payments` — only a small,
+explicitly allowlisted `gateway_metadata` (payment-method brand, masked
+last4, receipt URL; never full card data or a full billing address unless
+a real feature needs it). Full (redacted) payloads live only in
+`provider_events` (§8), and even there are hashed/summarized, not stored
+verbatim.
+
+Coupons must state their own discount duration explicitly — a
+`discount_scope` (`first_payment_only` / `fixed_duration` / `forever`)
+plus a `discount_duration_cycles` (used only for `fixed_duration`) —
+nothing assumes a coupon discount silently applies forever on a recurring
+subscription.
+
+## 8. Webhook Idempotency — `provider_events`
 
 Every inbound Stripe/PayPal webhook event is recorded here **before**
-being acted on — this is the idempotency boundary, not
-`payments.gateway_event_id` (v2's draft conflated the two; corrected now):
-`provider`, `provider_event_id`, `event_type`, `payload_hash` (integrity/
-dedup check) plus a small redacted `payload_summary` jsonb (never the full
-raw payload with secrets), `received_at`, `processed_at` (nullable until
-handled), `processing_status` enum(`pending`,`processed`,`failed`,
-`ignored`), `error_code` (nullable). **`unique(provider,
-provider_event_id)`** is the hard idempotency guarantee — a duplicate
-webhook delivery is rejected at the DB level before any business logic
-runs, not just de-duplicated by application code.
+being acted on — this is the real idempotency boundary, decoupled from
+`payments`. Columns: `provider`, `provider_event_id`, `event_type`,
+`payload_hash` (integrity/dedup check) plus a small redacted
+`payload_summary` (never the full raw payload with secrets),
+`received_at`, `processed_at`, `processing_status`
+(`pending`/`processed`/`failed`/`ignored`), `error_code`.
+**`unique(provider, provider_event_id)`** is the hard idempotency
+guarantee — a duplicate webhook delivery is rejected at the database
+level before any business logic runs. A duplicate-delivery unique
+violation is an expected, caught outcome (idempotent success), never
+treated as a 500 error by whatever code eventually processes these.
 
-## 7. Provider Behavior, Stated Explicitly (v3)
+## 9. Enrollment Form — Exact Field List
 
-- **Stripe**: recurring monthly subscription. Webhooks (verified via
-  `provider_events`) are the sole source of truth for subscription state —
-  the client never self-reports "I'm subscribed now."
-- **PayPal (current integration)**: Orders API — a **single payment**
-  that grants a fixed access period, **not** a recurring subscription.
-  `subscriptions` still gets a row for a PayPal grant (so "does this user
-  currently have access" is one query regardless of provider), but its
-  `cancel_at_period_end`/`canceled_at` fields don't meaningfully apply —
-  it just expires at `current_period_end` unless a new payment extends it.
-  If a real PayPal *subscriptions* API integration replaces this later,
-  that's a distinct, separately-designed path, not assumed here.
-- **Manual payment**: same fixed-period-grant shape as PayPal — one
-  period, reviewed by admin. Activating the `subscriptions` row happens
-  **only** via an atomic RPC after admin approval (never an implicit side
-  effect of `manual_payments.status` changing) — the RPC's exact shape is
-  an RLS/function-design detail for §13's next stage, not this document.
-- `subscriptions` therefore intentionally serves two different real
-  shapes (Stripe's true auto-renewing subscription vs. PayPal/manual's
-  fixed-period grant) without claiming the latter two auto-renew.
+Corrected to match the real form, not a generic guess: `name`, `email`,
+`whatsapp`, `country`, `city`, `timezone`, **`times`** (jsonb array —
+availability slots), **`subjects`** (jsonb array), `lang`, `level`,
+`age_group`, `gender_pref`, **`preferred_teacher_key`** (a stable
+identifier for a **static, non-account-backed** teacher-directory entry —
+`Teachers.jsx`'s directory is real editorial marketing content, just not
+tied to any real account, so this is intentionally not a foreign key to
+`profiles`), **`preferred_teacher_name`** (a snapshot string, so the lead
+record still reads sensibly even if the directory entry is later renamed
+or removed), **`requested_plan_slug`** (a snapshot of the plan the lead
+selected — text, never a live FK, and never trusted as a financial
+reference — it's a lead-capture snapshot only), `status`, `notes`,
+timestamps. No `user_id` — enrollment stays guest-submittable (§3). If a
+future product decision removes teacher selection from the UI entirely,
+that is a **separate UI decision** — this schema does not silently drop
+the already-existing lead-data shape in anticipation of it.
 
-## 8. New Table: `admin_audit_log`
+## 10. Testimonials
 
-Simple, append-only: `actor_admin_id` (→`profiles`), `action`,
-`resource_type`, `resource_id`, `before`/`after` (jsonb, secrets stripped
-— same discipline as the old backend's audit log, per the earlier Render-
-backend audit), `created_at`. Records: admin-role promotion, manual-
-payment approval/rejection, refunds, plan changes, content changes
-(blog/testimonials), announcements. **No `UPDATE`/`DELETE` from the
-application** — enforced at the RLS layer in §13's next stage; this
-document just fixes the intent so the RLS design isn't inventing the rule
-later.
+Admin-curated only. No `reviewer_id`/user-account link, no user-
+submission flow, no moderation workflow — admin writes and publishes
+directly, like a blog post. `rating`, if present, is 1–5.
 
-## 9. `notifications` Corrections (v3)
+## 11. Authentication Model
 
-Adds `scheduled_for` (nullable timestamp — lets `daily_reminder` rows be
-created ahead of their send time) and `dedupe_key` (text, nullable) with
-a `unique(user_id, dedupe_key)` constraint (only enforced when
-`dedupe_key` is not null) — this is what actually prevents a double-fired
-daily-reminder job from creating two rows for the same user/day, at the
-DB level rather than hoping application logic catches it. Read/mark-read
-stays user-scoped to their own rows; creation stays system/admin-only.
-In-app only, as already decided in v2 — no push-token table.
+`profiles(id → auth.users, email, name, role enum('user','admin') default
+'user', created_at, updated_at)`. The insert trigger on `auth.users`
+always creates `role='user'`, ignoring any client-supplied metadata role
+claim entirely — no branching logic of any kind. Email/password signup
+only, unless phone auth is explicitly decided and documented later — not
+assumed. Promoting an account to `admin` is a deliberate out-of-band
+action (a direct, audited operation), never a signup-time choice or a
+client-callable RPC. No gamification, no teacher/parent fields, no
+`subscription_*` columns on `profiles` itself (that state lives in
+`subscriptions`, not denormalized onto the account row).
 
-## 10. `plans` Corrections (v3)
+## 12. Table Inventory — Final Recount
 
-`amount_minor` (integer, not a bare `amount`), `currency` constrained to
-an explicit ISO allowlist (exact list — e.g. USD/EUR/EGP/GBP — confirmed
-when the migration is authored, not invented here), `stripe_price_id`/
-`paypal_plan_id` unique **when not null** (so multiple plans can share a
-null value during setup without a false unique-conflict, but no two real
-provider price IDs ever collide). A plan price change is a new row/new
-provider price + deactivating the old one — already stated in v2,
-reinforced here by §5's snapshot fields so historical `payments`/
-`invoices` are never reinterpreted through a plan's current price.
-**Coupons must state their own discount duration explicitly** — a new
-`discount_scope` enum(`first_payment_only`, `fixed_duration`, `forever`)
-on `coupons`, plus a `discount_duration_cycles` (nullable integer, used
-only when `discount_scope = 'fixed_duration'`) — nothing assumes a coupon
-discount silently applies forever on a recurring subscription.
+Of the 34 tables pushed in the now-superseded `ae47640`:
 
-## 11. Migration Policy (v3)
-
-**`drizzle-kit push` is not used as a deployment mechanism going
-forward.** It applies a computed diff directly with no reviewable
-artifact — fine for Stage 1's throwaway verification, wrong for anything
-meant to be a durable, auditable change. From here on, schema changes are
-expressed as **versioned SQL migration files** (e.g. via `drizzle-kit
-generate`, reviewed as a diff before ever being applied to any database,
-real or otherwise). This document does not apply anything — §13 covers
-what happens next, entirely locally.
-
-## 12. Required vs Obsolete Tables — Final Recount (v3)
-
-**KEEP — 14 tables** (same 14 as v2, shapes corrected per §5–§10 above):
-`profiles`, `quran_bookmarks`, `quran_reading_progress`,
-`quran_memorization_stats`, `enrollments` (corrected, §4.2), `payments`
-(redesigned as a ledger, §5), `manual_payments`, `invoices` (`user_id` now
-`NOT NULL`, §4.1), `coupons` (discount-scope fields added, §10),
+**KEEP — 14 tables** (redesigned per §3–§11 where noted): `profiles`,
+`quran_bookmarks`, `quran_reading_progress`, `quran_memorization_stats`,
+`enrollments`, `payments`, `manual_payments`, `invoices`, `coupons`,
 `coupon_redemptions`, `trial_requests`, `subscribers`, `blogs`,
-`notifications` (scheduling/dedupe fields added, §9).
+`notifications`.
 
-**NEW — 6 tables**: `plans`, `subscriptions` (`user_id` now `NOT NULL`,
-§4.1), `notification_preferences`, `testimonials`, `provider_events`
-(§6), `admin_audit_log` (§8).
+**NEW — 6 tables**: `plans`, `subscriptions`, `notification_preferences`,
+`testimonials`, `provider_events`, `admin_audit_log`.
 
-**DROP — 20 tables** (unchanged from v2): `profile_children`,
-`admin_lockouts`, `courses`, `course_progress`, `certificates`,
-`student_records`, `live_classes`, `hifz_progress`, `referrals`,
-`messages`, `reviews` (superseded by `testimonials`), `posts`,
-`post_likes`, `comments`, `wishlist_items`, `tutor_conversations`
-(deferred), `system_config`, `system_audit_log`, `rate_limit_counters`,
-`contact_messages`.
+**DROP — 20 tables**: `profile_children`, `admin_lockouts`, `courses`,
+`course_progress`, `certificates`, `student_records`, `live_classes`,
+`hifz_progress`, `referrals`, `messages`, `reviews` (superseded by
+`testimonials`), `posts`, `post_likes`, `comments`, `wishlist_items`,
+`tutor_conversations` (deferred), `system_config`, `system_audit_log`,
+`rate_limit_counters`, `contact_messages`.
 
 14 KEEP + 20 DROP = 34 ✓ (every table `ae47640` pushed is accounted for).
 
-**Final schema = 14 + 6 = 20 tables.** This count is the `public` schema
-only — it does **not** include `auth.users` (Supabase-managed, never
-created or counted as one of ours).
+**Final schema = 14 + 6 = 20 tables**, `public` schema only — does
+**not** include `auth.users` (Supabase-managed, never created or counted
+as one of ours).
 
-## 13. Next Step (design-local only — see the warning banner at the top)
+**`ae47640` is superseded and is not a valid base to build on as-is** —
+its 34-table schema encodes the old LMS product scope and predates every
+decision in this document.
 
-Once this v3 document is approved as a **design**:
-1. Author the 20-table schema as versioned migration files (not
-   `drizzle-kit push`) — new/replaced `lib/db/src/schema/*.ts` plus
-   generated SQL migration file(s).
-2. Write local tests for the schema (constraint checks, the
-   `provider_events` idempotency unique constraint, the `notifications`
-   dedupe constraint, etc.) — run locally, nothing remote.
-3. **Stop and ask separately** before any of: pushing/applying a migration
-   to the real Supabase project, dropping the old 34 tables there, `git
-   push`, merge, or deploy. None of those follow automatically from
-   finishing steps 1–2.
-4. RLS design is its own later stage, after the schema itself is settled
-   and (separately) actually applied.
+## 13. Migration Policy
+
+`drizzle-kit push` is **not** used as a deployment mechanism going
+forward. It applies a computed diff directly with no reviewable artifact
+— acceptable for Stage 1's throwaway verification pass, wrong for
+anything meant to be durable and auditable. From here on, schema changes
+are expressed as **versioned SQL migration files**, reviewed as a diff
+before ever being applied to any database, real or otherwise.
+
+## 14. Remaining Deferred Items (explicitly not built in this document or the schema that follows it)
+
+- RLS policies themselves, and the grants that go with them (§ warning
+  banner — schema is never applied alone).
+- The atomic RPC that turns an admin-approved `manual_payments` row into
+  an active `subscriptions` row.
+- Atomic `max_uses` enforcement for coupon redemption (needs a
+  count-then-insert transaction, not a static constraint).
+- The actual `daily_reminder` scheduler/cron.
+- Confirming the exact `currency`/`language` allowlists against real
+  product requirements (currently narrowed to what old-backend evidence
+  actually showed — `USD` and `en`/`ar` — rather than guessed wider).
+- Exact PayPal integration confirmation (Orders API one-time vs. any
+  future recurring-subscriptions API).
 
 ## Status
 
-- `scripts/post-merge.sh`'s `pnpm --filter db push` line: removed,
+- `scripts/post-merge.sh`'s risky `pnpm --filter db push` line: removed,
   committed on `main` (`3c10a40`).
-- v1/v2 of this document: committed on `main` (`3c10a40`, `cf24eb7`).
-- **v3 (this revision) is being committed on the new branch
-  `docs/product-scope-closure-v3`, not `main`**, per this revision's own
-  instruction.
-- No SQL, no migration file, no RLS written yet. Nothing applied, dropped,
-  or pushed on the real Supabase project. No `git push`. `ae47640` still
-  sits unmodified in history, documented as superseded since v2.
+- This document (final, self-contained revision): committed on
+  `docs/product-scope-closure-v3`.
+- No SQL, no migration file, no RLS written yet as of this commit — see
+  the branch's subsequent commits for the local-only schema/migration/
+  test work that follows this document's approval.
+- Nothing applied, dropped, or pushed on the real Supabase project at any
+  point. No `git push`. `ae47640` still sits unmodified in history,
+  documented as superseded.

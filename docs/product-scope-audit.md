@@ -129,13 +129,35 @@ also snapshots the plan's price/currency/provider-price-id *at the time
 of that payment* (§7), so a later plan change never reinterprets
 historical financial records.
 
+**Currency (baseline remediation — corrected from an earlier, weakly-
+evidenced "USD" conclusion):** `currency_code` is `EUR` only, directly
+re-verified against the live app. `Pricing.jsx`'s canonical/base price
+data is EUR (a client-side USD/GBP/SAR toggle exists but is display-only
+— `CheckoutModal.jsx`'s actual pay button hardcodes `€` regardless of
+that toggle, so no real charge is ever made in anything but EUR).
+`TermsOfService.jsx` states outright, across all 6 locales, that prices
+are in EUR and VAT-inclusive — a contractual statement, not a UI detail.
+The earlier "USD" conclusion rested on an env var (`BANK_CURRENCY`) that
+had no literal value in the repo and doesn't even exist inside the live
+app's own directory; the same variable, wherever it's genuinely set,
+is itself `EUR`. Not widened to `['EUR', 'USD']` — the USD toggle never
+reaches an actual charge, so treating it as a real transactional
+currency would be guessing wider than the evidence shows, the same
+mistake being corrected here just in the other direction.
+
 ## 5. Notifications
 
 Restored (not dropped), re-scoped away from the old LMS event types.
 Type set: `payment_received`, `payment_failed`, `subscription_renewed`,
 `subscription_expiring`, `trial_status`, `admin_announcement`,
 `daily_reminder`. A `notification_preferences` table holds per-user
-daily-reminder opt-in/time, language, and timezone. In-app only for now —
+daily-reminder opt-in/time, language, and timezone — **language allowlist
+is `en`/`ar`/`it`/`es`/`de`/`fr`** (baseline remediation: corrected from
+an earlier `en`/`ar`-only narrowing that turned out to be based on a
+mistaken read of an unrelated column; re-verified directly against the
+live app's actual i18n system — `i18n/index.js`'s `LANGS` const, 6
+complete translation files, a working `/{lang}/...` router, a passing
+routing test — which genuinely serves all 6). In-app only for now —
 no push tokens/device registration table; web push or email delivery is
 a later decision, not built speculatively. **The scheduler/cron that
 would actually enqueue `daily_reminder` rows is explicitly not part of
@@ -164,7 +186,15 @@ mutates once a row is finalized). A **refund is always a new row**
 (`kind='refund'`, linked via `parent_payment_id`), never an update that
 flips the original charge's status — this supports multiple and partial
 refunds against one charge naturally, and keeps the ledger's history
-honest.
+honest. A refund insert is validated by a real trigger
+(`validate_refund_insert()`, baseline remediation — a first version only
+checked the parent's `kind`, which a review found left real corruption
+risk): the parent charge is locked (`SELECT ... FOR UPDATE`, serializing
+concurrent refunds against it), must itself be `status = 'succeeded'`,
+the refund's `user_id`/`currency_snapshot`/`gateway` must match the
+parent's, and the running total of refunds against that parent (this one
+included) can never exceed the original charge amount — verified with a
+real two-connection concurrency test, not just a sequential one.
 
 Stripe webhooks (recorded through `provider_events`, §8) are the sole
 source of truth for subscription state — the client never self-reports
@@ -210,12 +240,22 @@ being acted on — this is the real idempotency boundary, decoupled from
 `payload_hash` (integrity/dedup check) plus a small redacted
 `payload_summary` (never the full raw payload with secrets),
 `received_at`, `processed_at`, `processing_status`
-(`pending`/`processed`/`failed`/`ignored`), `error_code`.
+(`pending`/`processing`/`processed`/`failed`/`ignored`), `error_code`.
 **`unique(provider, provider_event_id)`** is the hard idempotency
 guarantee — a duplicate webhook delivery is rejected at the database
 level before any business logic runs. A duplicate-delivery unique
 violation is an expected, caught outcome (idempotent success), never
 treated as a 500 error by whatever code eventually processes these.
+
+**Claiming is two-phase (baseline remediation — a first version claimed
+*after* doing the side-effect work, which a review found didn't actually
+prevent two workers from both performing it):** `claim_provider_event()`
+does the atomic `pending → processing` claim **before** any side-effect
+work runs — only the worker that gets a row back may proceed;
+`complete_provider_event()` then does `processing → processed/failed`
+once the work is actually done. A second claim attempt on an
+already-claimed event returns zero rows (idempotent no-op), verified with
+a real two-connection concurrency test.
 
 ## 9. Enrollment Form — Exact Field List
 
@@ -303,21 +343,36 @@ before ever being applied to any database, real or otherwise.
 - Atomic `max_uses` enforcement for coupon redemption (needs a
   count-then-insert transaction, not a static constraint).
 - The actual `daily_reminder` scheduler/cron.
-- Confirming the exact `currency`/`language` allowlists against real
-  product requirements (currently narrowed to what old-backend evidence
-  actually showed — `USD` and `en`/`ar` — rather than guessed wider).
+- **Rate limiting on guest-submittable public forms** (`enrollments`,
+  `trial_requests`, `subscribers`) — an earlier decision was "Postgres
+  counters, no new external service," but `rate_limit_counters` is
+  itself on this document's DROP list (§12, cut in the Product Data
+  Scope Reset). That conflict was surfaced, not silently resolved; the
+  user's explicit call was to leave rate limiting deferred for this
+  pass rather than pick a mechanism now. The RLS matrix's `anon INSERT`
+  policies on these 3 tables carry no rate-limit enforcement as a
+  result — a real gap until this is designed.
 - Exact PayPal integration confirmation (Orders API one-time vs. any
   future recurring-subscriptions API).
+- ~~Confirming the exact `currency`/`language` allowlists against real
+  product requirements~~ — **done** (baseline remediation): re-verified
+  directly against the live app. `currency_code` is `EUR` only (§4);
+  `notification_preferences.language` allows `en`/`ar`/`it`/`es`/`de`/`fr`
+  (§5). The original narrowing (`USD`, `en`/`ar`) rested on weak/
+  mistaken evidence, corrected once a review caught it.
 
 ## Status
 
 - `scripts/post-merge.sh`'s risky `pnpm --filter db push` line: removed,
   committed on `main` (`3c10a40`).
-- This document (final, self-contained revision): committed on
-  `docs/product-scope-closure-v3`.
-- No SQL, no migration file, no RLS written yet as of this commit — see
-  the branch's subsequent commits for the local-only schema/migration/
-  test work that follows this document's approval.
+- This document (v3-final, self-contained revision, later corrected by
+  baseline remediation — see the currency/language/refund/claim-event
+  notes throughout): committed on `docs/product-scope-closure-v3`.
+- The 20-table schema, its versioned migrations, and a local Docker
+  Postgres test suite (62 real-SQL assertions, including 2 genuine
+  concurrency tests) exist as subsequent commits on this same branch —
+  RLS itself is still design-only (`docs/rls-matrix-draft.md`), not yet
+  written as SQL or applied anywhere.
 - Nothing applied, dropped, or pushed on the real Supabase project at any
   point. No `git push`. `ae47640` still sits unmodified in history,
   documented as superseded.

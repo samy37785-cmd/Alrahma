@@ -28,22 +28,41 @@
 
 ## Target state
 
-This local baseline: 20 tables + 11 enums + 6 hand-authored
+This local baseline: 20 tables + 11 enums + 8 hand-authored
 functions/triggers, defined in `lib/db/src/schema/*.ts` and captured as
 versioned migrations in `lib/db/drizzle/0000_init_20_table_baseline.sql`
-and `0001_functions_triggers.sql`, verified end-to-end (36/36 real-SQL
-assertions, twice-run idempotent `migrate()`) against a throwaway local
-Docker Postgres — never against the real project.
+and `0001_functions_triggers.sql`, verified end-to-end (62/62 real-SQL
+assertions including 2 genuine concurrency tests, twice-run idempotent
+`migrate()`) against a throwaway local Docker Postgres — never against
+the real project.
 
 ## Options for getting from current to target
 
 ### Option A — Full reset (drop + reapply)
 
 `DROP SCHEMA public CASCADE` on the real project, then apply this
-baseline's two migrations fresh, as if it were an empty database (which
-is exactly what they're designed for).
+baseline's two migrations.
 
-- Simplest, matches exactly what's already been tested.
+**Correction (baseline remediation):** the migration files as committed
+are **not** actually "as if it were an empty database" the way this
+option originally claimed — `0000_init_20_table_baseline.sql` only
+contains `public`-schema objects (a review caught that it used to also
+`CREATE SCHEMA auth`/`CREATE TABLE auth.users`, which would fail
+outright against the real project since Supabase already owns both; that
+was hand-stripped out — see the schema commit). `DROP SCHEMA public
+CASCADE` leaves `auth`/`auth.users` untouched, which is exactly what
+these migrations now assume: `public.profiles.id`'s foreign key expects
+`auth.users` to already exist, not to be created by this migration. So
+the accurate description of this option is: `DROP SCHEMA public CASCADE`
+(never touches `auth`), then apply the two migrations against the
+now-empty `public` schema with `auth.users` already in place — not
+"as if empty" in the sense of an empty *database*, only an empty
+`public` schema.
+
+- Simplest, matches exactly what's already been tested (the local test
+  harness's `auth.users` stub exists purely to simulate this same
+  precondition — a schema where `auth.users` already exists before
+  these migrations run).
 - **Destructive**: erases every row the old 34-table schema currently
   holds. Only defensible if the "what's actually in there" check above
   comes back empty or entirely disposable test data, and even then only

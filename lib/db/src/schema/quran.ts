@@ -1,18 +1,11 @@
 import { integer, jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { profiles } from "./profiles";
 
-/** Was `HifzProgress.js` — one row per (user, surah). */
-export const hifzProgress = pgTable("hifz_progress", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  userId: uuid("user_id")
-    .notNull()
-    .references(() => profiles.id, { onDelete: "cascade" }),
-  chapterId: integer("chapter_id").notNull(), // surah 1-114
-  chapterName: text("chapter_name").notNull(),
-  totalVerses: integer("total_verses").notNull(),
-  memorizedVerses: jsonb("memorized_verses").$type<number[]>().notNull().default([]),
-  lastRevised: timestamp("last_revised", { withTimezone: true }),
-});
+// Note: `hifz_progress` (the old HifzProgress.js model) is intentionally
+// NOT re-exported here — it was a teacher-assessed record tied to the
+// cut teacher/student system (docs/product-scope-audit.md §12, DROP
+// list). The 3 tables below are pure per-user tool progress, unrelated
+// to any teacher relationship, and stay.
 
 /** Was `QuranBookmark.js`. */
 export const quranBookmarks = pgTable("quran_bookmarks", {

@@ -1,136 +1,134 @@
 import {
-  boolean,
+  type AnyPgColumn,
+  check,
   integer,
   jsonb,
-  numeric,
   pgTable,
-  primaryKey,
   text,
   timestamp,
+  uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { profiles } from "./profiles";
+import { plans } from "./plans";
+import { subscriptions } from "./subscriptions";
+import {
+  currencyCodeEnum,
+  paymentGatewayEnum,
+  paymentKindEnum,
+  paymentStatusEnum,
+  providerEventStatusEnum,
+} from "./enums";
 
 /**
- * Was `Payment.js`. `gatewayOrderId` stays unique — that uniqueness IS the
- * idempotency mechanism the old Stripe/PayPal webhook handlers relied on
- * (`findOneAndUpdate({gatewayOrderId, status:{$ne:'paid'}})`); the Stage-4
- * Edge Functions port that to a Postgres
- * `UPDATE ... WHERE gateway_order_id = $1 AND status != 'paid' RETURNING *`
- * against this same constraint — see docs/render-to-supabase-migration.md.
+ * Append-oriented financial ledger (docs/product-scope-audit.md §7) — one
+ * row per transaction ATTEMPT, not a mutable "current state of this
+ * payment" record. `user_id` is NOT NULL: paid checkout requires login.
+ *
+ * `kind` distinguishes a charge from a refund; a refund is always its own
+ * new row (`parent_payment_id` → the charge it refunds), never an UPDATE
+ * that flips the original charge's status — this is what makes
+ * multiple/partial refunds against one charge representable at all.
+ *
+ * Status transitions are deliberately limited to `pending→succeeded` and
+ * `pending→failed`; once a row is `succeeded`/`failed` it is frozen. This
+ * can't be expressed as a plain CHECK (it needs to see the OLD row), so
+ * it's enforced by a `BEFORE UPDATE` trigger hand-authored in the
+ * migration SQL (`enforce_payment_status_transition()`), not here. A
+ * `BEFORE DELETE` trigger (`forbid_payment_delete()`) blocks deletion
+ * outright — this is a real constraint now, ahead of the RLS/grants
+ * layer that will reinforce it later. A third trigger
+ * (`forbid_refund_of_refund()`) rejects a refund row whose
+ * `parent_payment_id` points at another refund instead of a charge — the
+ * CHECK below only guarantees a refund always names *some* parent; the
+ * trigger guarantees that parent is a charge.
+ *
+ * Money is always `amount_minor` — an integer in minor currency units.
+ * Three related amounts are distinguished by name on every row:
+ * `amount_minor` (actual charged), `plan_amount_minor_snapshot`
+ * (pre-discount price), `discount_minor_snapshot` (actual discount
+ * applied) — captured once, at write time, from `plans`, so a later plan
+ * price edit never reinterprets this row.
+ *
+ * No full raw gateway webhook payload is stored here — `gateway_metadata`
+ * is an explicitly allowlisted jsonb (payment-method brand, masked
+ * last4, receipt URL only; never full card data or a full billing
+ * address unless a real feature needs it — nothing sensitive is ever
+ * written here, so no purge/retention job is needed for this column).
+ * The full (redacted) webhook payload lives only in `provider_events`.
  */
-export const payments = pgTable("payments", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  userId: uuid("user_id").references(() => profiles.id, { onDelete: "set null" }),
-  plan: text("plan").notNull(),
-  amount: numeric("amount", { precision: 10, scale: 2 }).notNull(),
-  currency: text("currency").notNull().default("USD"),
-  couponCode: text("coupon_code"),
-  discountAmount: numeric("discount_amount", { precision: 10, scale: 2 }),
-  gateway: text("gateway").notNull(), // 'stripe' | 'paypal'
-  method: text("method"),
-  customerName: text("customer_name"),
-  customerEmail: text("customer_email"),
-  customerPhone: text("customer_phone"),
-  status: text("status").notNull().default("pending"),
-  gatewayOrderId: text("gateway_order_id").notNull().unique(),
-  gatewayTxnId: text("gateway_txn_id"),
-  stripeCustomerId: text("stripe_customer_id"),
-  stripeSubscriptionId: text("stripe_subscription_id"),
-  // Last raw gateway payload — jsonb, same "keep the evidence" purpose as
-  // the old Mongo `raw: Mixed` field.
-  raw: jsonb("raw"),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-});
-
-/**
- * Was `ManualPayment.js`. Approve/reject is a plain RLS-gated admin UPDATE
- * (no Edge Function needed) but still needs the same atomic
- * `WHERE status = 'pending'` claim pattern the old code used, to avoid a
- * double-approve race — enforce that in the RLS/RPC written in Stage 2,
- * not just in application code.
- */
-export const manualPayments = pgTable("manual_payments", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  userId: uuid("user_id").references(() => profiles.id, { onDelete: "set null" }),
-  plan: text("plan").notNull(),
-  amount: numeric("amount", { precision: 10, scale: 2 }).notNull(),
-  currency: text("currency").notNull().default("USD"),
-  method: text("method").notNull(), // wu | moneygram | payoneer | bank | paypal_manual
-  couponCode: text("coupon_code"),
-  discountAmount: numeric("discount_amount", { precision: 10, scale: 2 }),
-  customerName: text("customer_name").notNull(),
-  customerEmail: text("customer_email").notNull(),
-  customerPhone: text("customer_phone"),
-  reference: text("reference"),
-  notes: text("notes"),
-  status: text("status").notNull().default("pending"),
-  adminNote: text("admin_note"),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
-});
-
-/** Was `Invoice.js`. `gatewayInvoiceId` unique = renewal-webhook dedupe key. */
-export const invoices = pgTable("invoices", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  invoiceNumber: text("invoice_number").notNull().unique(),
-  userId: uuid("user_id")
-    .notNull()
-    .references(() => profiles.id, { onDelete: "cascade" }),
-  customerEmail: text("customer_email").notNull(),
-  customerName: text("customer_name").notNull(),
-  plan: text("plan").notNull(),
-  amount: numeric("amount", { precision: 10, scale: 2 }).notNull(),
-  originalAmount: numeric("original_amount", { precision: 10, scale: 2 }),
-  discountPct: numeric("discount_pct", { precision: 5, scale: 2 }),
-  currency: text("currency").notNull().default("USD"),
-  billingPeriod: text("billing_period"),
-  status: text("status").notNull().default("issued"),
-  paymentId: uuid("payment_id").references(() => payments.id, { onDelete: "set null" }),
-  gatewayInvoiceId: text("gateway_invoice_id").unique(),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-});
-
-/** Was `Coupon.js`. `usedBy[]` (embedded array of {user, usedAt}) moves to
- * the `couponRedemptions` join table below — cleaner for a per-user
- * "did I already use this coupon" RLS check than scanning a jsonb array. */
-export const coupons = pgTable("coupons", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  code: text("code").notNull().unique(),
-  description: text("description"),
-  type: text("type").notNull(), // 'percent' | 'fixed'
-  value: numeric("value", { precision: 10, scale: 2 }).notNull(),
-  maxUses: integer("max_uses"),
-  applicablePlans: jsonb("applicable_plans").$type<string[]>().notNull().default([]),
-  expiresAt: timestamp("expires_at", { withTimezone: true }),
-  active: boolean("active").notNull().default(true),
-});
-
-export const couponRedemptions = pgTable(
-  "coupon_redemptions",
+export const payments = pgTable(
+  "payments",
   {
-    couponId: uuid("coupon_id")
-      .notNull()
-      .references(() => coupons.id, { onDelete: "cascade" }),
+    id: uuid("id").primaryKey().defaultRandom(),
     userId: uuid("user_id")
       .notNull()
-      .references(() => profiles.id, { onDelete: "cascade" }),
-    usedAt: timestamp("used_at", { withTimezone: true }).notNull().defaultNow(),
+      .references(() => profiles.id, { onDelete: "restrict" }),
+    subscriptionId: uuid("subscription_id").references(() => subscriptions.id, {
+      onDelete: "set null",
+    }),
+    planId: uuid("plan_id").references(() => plans.id, { onDelete: "set null" }),
+    kind: paymentKindEnum("kind").notNull().default("charge"),
+    parentPaymentId: uuid("parent_payment_id").references(
+      (): AnyPgColumn => payments.id,
+      { onDelete: "restrict" },
+    ),
+    amountMinor: integer("amount_minor").notNull(),
+    planAmountMinorSnapshot: integer("plan_amount_minor_snapshot"),
+    discountMinorSnapshot: integer("discount_minor_snapshot").notNull().default(0),
+    currencySnapshot: currencyCodeEnum("currency_snapshot").notNull().default("USD"),
+    providerPriceIdSnapshot: text("provider_price_id_snapshot"),
+    gateway: paymentGatewayEnum("gateway").notNull(),
+    gatewayPaymentId: text("gateway_payment_id"),
+    status: paymentStatusEnum("status").notNull().default("pending"),
+    gatewayMetadata: jsonb("gateway_metadata"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [primaryKey({ columns: [t.couponId, t.userId] })],
+  (t) => [
+    check(
+      "payments_kind_parent_consistency",
+      sql`(${t.kind} = 'charge' AND ${t.parentPaymentId} IS NULL) OR (${t.kind} = 'refund' AND ${t.parentPaymentId} IS NOT NULL)`,
+    ),
+    check("payments_amount_minor_nonneg", sql`${t.amountMinor} >= 0`),
+    uniqueIndex("payments_gateway_payment_id_unique")
+      .on(t.gateway, t.gatewayPaymentId)
+      .where(sql`${t.gatewayPaymentId} IS NOT NULL`),
+  ],
 );
 
-/** Was `Referral.js`. */
-export const referrals = pgTable("referrals", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  referrerId: uuid("referrer_id")
-    .notNull()
-    .references(() => profiles.id, { onDelete: "cascade" }),
-  refereeId: uuid("referee_id").references(() => profiles.id, { onDelete: "set null" }),
-  code: text("code").notNull(),
-  status: text("status").notNull().default("pending"),
-  rewardAmount: numeric("reward_amount", { precision: 10, scale: 2 }),
-  convertedAt: timestamp("converted_at", { withTimezone: true }),
-  rewardedAt: timestamp("rewarded_at", { withTimezone: true }),
-});
+/**
+ * The real Stripe/PayPal webhook idempotency ledger — decoupled from
+ * `payments` (docs/product-scope-audit.md §8). Every inbound event is
+ * recorded here BEFORE being acted on. `unique(provider,
+ * provider_event_id)` is the hard guarantee: a duplicate delivery is
+ * rejected at the database level before any business logic runs. That
+ * unique-violation is an expected, caught outcome (idempotent success),
+ * never a 500, in whatever code processes these events.
+ *
+ * `claim_provider_event(uuid)` (hand-authored SQL function in the
+ * migration) does the atomic `pending → processed`/`failed` claim so
+ * only one worker ever processes a given event.
+ *
+ * Full raw webhook payloads are never stored — only a `payload_hash`
+ * (integrity/dedup check) and a small, redacted `payload_summary`.
+ */
+export const providerEvents = pgTable(
+  "provider_events",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    provider: paymentGatewayEnum("provider").notNull(),
+    providerEventId: text("provider_event_id").notNull(),
+    eventType: text("event_type").notNull(),
+    payloadHash: text("payload_hash").notNull(),
+    payloadSummary: jsonb("payload_summary"),
+    receivedAt: timestamp("received_at", { withTimezone: true }).notNull().defaultNow(),
+    processedAt: timestamp("processed_at", { withTimezone: true }),
+    processingStatus: providerEventStatusEnum("processing_status")
+      .notNull()
+      .default("pending"),
+    errorCode: text("error_code"),
+  },
+  (t) => [uniqueIndex("provider_events_provider_event_unique").on(t.provider, t.providerEventId)],
+);

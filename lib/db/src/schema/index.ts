@@ -1,19 +1,24 @@
-// Postgres/Supabase schema for the Render→Supabase migration
-// (docs/render-to-supabase-migration.md, Stage 1). Ported field-by-field
-// from the 31 Mongoose models in `.migration-backup/backend/models/` per
-// the migration audit — see each file's own doc comments for the mapping
-// from its old Mongo model name.
+// Postgres/Supabase schema — the locked 20-table minimal baseline
+// (docs/product-scope-audit.md, Product Scope Closure v3). The old
+// 34-table LMS/teacher/parent/student schema (Stage 1, superseded) has
+// been fully replaced; nothing in this directory exports any of the 20
+// dropped tables anymore.
 //
-// `auth.users` is Supabase-managed and never created/migrated by us
-// (see ./auth.ts). Every other table here is created by Stage 1's
-// migration and locked down by Stage 2's RLS policies — nothing in this
-// file is wired to a live app yet.
+// `auth.users` is Supabase-managed and never created/migrated by us (see
+// ./auth.ts) — it is not counted in the 20-table total. Every other table
+// here is created by this migration and is NOT yet applied to the real
+// Supabase project; RLS is a separate, later, design-then-apply pass
+// (docs/rls-matrix-draft.md).
 
 export * from "./auth";
+export * from "./enums";
 export * from "./profiles";
-export * from "./courses";
 export * from "./quran";
+export * from "./enrollments";
+export * from "./plans";
+export * from "./subscriptions";
 export * from "./payments";
-export * from "./social";
+export * from "./billing";
 export * from "./content";
-export * from "./system";
+export * from "./notifications";
+export * from "./admin";

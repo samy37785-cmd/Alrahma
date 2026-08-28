@@ -32,7 +32,7 @@ export const plans = pgTable(
     slug: text("slug").notNull().unique(),
     name: text("name").notNull(),
     amountMinor: integer("amount_minor").notNull(),
-    currency: currencyCodeEnum("currency").notNull().default("USD"),
+    currency: currencyCodeEnum("currency").notNull().default("EUR"),
     billingInterval: text("billing_interval"), // e.g. 'month'
     stripeProductId: text("stripe_product_id"),
     stripePriceId: text("stripe_price_id"),

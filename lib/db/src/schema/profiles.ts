@@ -1,4 +1,5 @@
-import { pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { authUsers } from "./auth";
 import { accountRoleEnum } from "./enums";
 
@@ -18,13 +19,24 @@ import { accountRoleEnum } from "./enums";
  * `subscription_*` columns here — subscription state lives in
  * `subscriptions` (subscriptions.ts), not denormalized onto the account.
  */
-export const profiles = pgTable("profiles", {
-  id: uuid("id")
-    .primaryKey()
-    .references(() => authUsers.id, { onDelete: "cascade" }),
-  email: text("email").notNull(),
-  name: text("name"),
-  role: accountRoleEnum("role").notNull().default("user"),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-});
+export const profiles = pgTable(
+  "profiles",
+  {
+    id: uuid("id")
+      .primaryKey()
+      .references(() => authUsers.id, { onDelete: "cascade" }),
+    email: text("email").notNull(),
+    name: text("name"),
+    role: accountRoleEnum("role").notNull().default("user"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    // Baseline remediation: `profiles.email` had no uniqueness guarantee
+    // at all. Supabase Auth itself enforces uniqueness on `auth.users`,
+    // but that's a different table/system — this is our own table's own
+    // defensive guarantee, case-insensitive (same reasoning as
+    // `coupons.code`/`subscribers.email`).
+    uniqueIndex("profiles_email_lower_unique").on(sql`lower(${t.email})`),
+  ],
+);

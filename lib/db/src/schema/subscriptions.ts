@@ -1,4 +1,4 @@
-import { boolean, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import { boolean, index, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { profiles } from "./profiles";
 import { plans } from "./plans";
@@ -46,5 +46,9 @@ export const subscriptions = pgTable(
     uniqueIndex("subscriptions_one_active_per_user")
       .on(t.userId)
       .where(sql`${t.status} = 'active'`),
+    // The partial index above only covers active rows — this plain
+    // index covers ownership-scoped queries across all statuses (e.g. a
+    // user's full subscription history).
+    index("subscriptions_user_id_idx").on(t.userId),
   ],
 );

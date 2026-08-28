@@ -1,6 +1,7 @@
 import {
   type AnyPgColumn,
   check,
+  index,
   integer,
   jsonb,
   pgTable,
@@ -39,17 +40,28 @@ import {
  * `BEFORE DELETE` trigger (`forbid_payment_delete()`) blocks deletion
  * outright — this is a real constraint now, ahead of the RLS/grants
  * layer that will reinforce it later. A third trigger
- * (`forbid_refund_of_refund()`) rejects a refund row whose
- * `parent_payment_id` points at another refund instead of a charge — the
- * CHECK below only guarantees a refund always names *some* parent; the
- * trigger guarantees that parent is a charge.
+ * (`validate_refund_insert()`, baseline remediation — was
+ * `forbid_refund_of_refund()`, which only checked the parent's `kind`)
+ * locks the parent row (`SELECT ... FOR UPDATE`, serializing concurrent
+ * refunds against the same charge) and rejects a refund insert unless:
+ * the parent is a `charge` with `status = 'succeeded'`; the new row's
+ * `user_id`/`currency_snapshot`/`gateway` match the parent's; and
+ * `sum(existing succeeded-or-pending refunds) + this amount_minor <=
+ * parent.amount_minor`. None of that is expressible as a plain CHECK
+ * (it needs to read other rows and lock against races) — see
+ * 0001_functions_triggers.sql. The CHECK below only guarantees a refund
+ * always names *some* parent; the trigger is what makes the parent
+ * actually valid.
  *
  * Money is always `amount_minor` — an integer in minor currency units.
  * Three related amounts are distinguished by name on every row:
  * `amount_minor` (actual charged), `plan_amount_minor_snapshot`
  * (pre-discount price), `discount_minor_snapshot` (actual discount
  * applied) — captured once, at write time, from `plans`, so a later plan
- * price edit never reinterprets this row.
+ * price edit never reinterprets this row. For a `charge` row with a
+ * known plan snapshot, `amount_minor` must reconcile to
+ * `plan_amount_minor_snapshot - discount_minor_snapshot` (CHECK below) —
+ * refund rows and legacy/planless charges are exempt.
  *
  * No full raw gateway webhook payload is stored here — `gateway_metadata`
  * is an explicitly allowlisted jsonb (payment-method brand, masked
@@ -77,7 +89,7 @@ export const payments = pgTable(
     amountMinor: integer("amount_minor").notNull(),
     planAmountMinorSnapshot: integer("plan_amount_minor_snapshot"),
     discountMinorSnapshot: integer("discount_minor_snapshot").notNull().default(0),
-    currencySnapshot: currencyCodeEnum("currency_snapshot").notNull().default("USD"),
+    currencySnapshot: currencyCodeEnum("currency_snapshot").notNull().default("EUR"),
     providerPriceIdSnapshot: text("provider_price_id_snapshot"),
     gateway: paymentGatewayEnum("gateway").notNull(),
     gatewayPaymentId: text("gateway_payment_id"),
@@ -92,9 +104,16 @@ export const payments = pgTable(
       sql`(${t.kind} = 'charge' AND ${t.parentPaymentId} IS NULL) OR (${t.kind} = 'refund' AND ${t.parentPaymentId} IS NOT NULL)`,
     ),
     check("payments_amount_minor_nonneg", sql`${t.amountMinor} >= 0`),
+    check(
+      "payments_amount_reconciles_to_plan_snapshot",
+      sql`(${t.kind} = 'refund') OR (${t.planAmountMinorSnapshot} IS NULL) OR (${t.amountMinor} = ${t.planAmountMinorSnapshot} - ${t.discountMinorSnapshot})`,
+    ),
     uniqueIndex("payments_gateway_payment_id_unique")
       .on(t.gateway, t.gatewayPaymentId)
       .where(sql`${t.gatewayPaymentId} IS NOT NULL`),
+    // Every ownership-scoped RLS policy on this table filters by
+    // user_id — without a plain index that's a seq scan.
+    index("payments_user_id_idx").on(t.userId),
   ],
 );
 
@@ -108,8 +127,14 @@ export const payments = pgTable(
  * never a 500, in whatever code processes these events.
  *
  * `claim_provider_event(uuid)` (hand-authored SQL function in the
- * migration) does the atomic `pending → processed`/`failed` claim so
- * only one worker ever processes a given event.
+ * migration) does the atomic `pending → processing` claim BEFORE any
+ * side-effect work runs, so only one worker ever processes a given
+ * event; `complete_provider_event(uuid, result, error_code)` then does
+ * `processing → processed/failed` once the work is actually done.
+ * (Baseline remediation: the first version of this function claimed
+ * *after* the side effect instead of before, which didn't actually
+ * prevent two workers from both performing it — see
+ * 0001_functions_triggers.sql.)
  *
  * Full raw webhook payloads are never stored — only a `payload_hash`
  * (integrity/dedup check) and a small, redacted `payload_summary`.

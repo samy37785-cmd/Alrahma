@@ -6,6 +6,7 @@ import {
   pgTable,
   text,
   timestamp,
+  uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
@@ -65,26 +66,57 @@ export const testimonials = pgTable(
     published: boolean("published").notNull().default(false),
     createdBy: uuid("created_by").references(() => profiles.id, { onDelete: "set null" }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    // Baseline remediation: was missing — `published` mutates.
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [check("testimonials_rating_range", sql`${t.rating} IS NULL OR ${t.rating} BETWEEN 1 AND 5`)],
 );
 
-/** Free-trial lead capture — guest-submittable, no `user_id` (§3). */
-export const trialRequests = pgTable("trial_requests", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  name: text("name").notNull(),
-  email: text("email").notNull(),
-  phone: text("phone"),
-  course: text("course"),
-  message: text("message"),
-  status: text("status").notNull().default("new"),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-});
+/**
+ * Free-trial lead capture — guest-submittable, no `user_id` (§3).
+ * `status` allowlist is real evidence, not guessed: matches the old
+ * `TrialRequest.js` Mongoose model exactly
+ * (`.migration-backup/backend/models/TrialRequest.js:11`,
+ * `enum: ['new', 'contacted', 'scheduled']`, default `'new'`).
+ */
+export const trialRequests = pgTable(
+  "trial_requests",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    name: text("name").notNull(),
+    email: text("email").notNull(),
+    phone: text("phone"),
+    course: text("course"),
+    message: text("message"),
+    status: text("status").notNull().default("new"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    check(
+      "trial_requests_status_allowlist",
+      sql`${t.status} IN ('new','contacted','scheduled')`,
+    ),
+  ],
+);
 
-/** Newsletter signups. */
-export const subscribers = pgTable("subscribers", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  email: text("email").notNull().unique(),
-  status: text("status").notNull().default("subscribed"),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-});
+/**
+ * Newsletter signups. `status` is a new addition (the old `Subscriber.js`
+ * model had no status field at all — just email); minimal
+ * subscribed/unsubscribed pair, matching the unsubscribe-by-signed-link
+ * flow already assumed in `docs/rls-matrix-draft.md`'s notes.
+ */
+export const subscribers = pgTable(
+  "subscribers",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    email: text("email").notNull(),
+    status: text("status").notNull().default("subscribed"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    check("subscribers_status_allowlist", sql`${t.status} IN ('subscribed','unsubscribed')`),
+    // Baseline remediation: case-insensitive uniqueness — was a plain
+    // `.unique()` on `email` (case-sensitive by default in Postgres).
+    uniqueIndex("subscribers_email_lower_unique").on(sql`lower(${t.email})`),
+  ],
+);

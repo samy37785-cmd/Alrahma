@@ -39,6 +39,9 @@ export const enrollments = pgTable(
     status: text("status").notNull().default("new"),
     notes: text("notes"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    // Baseline remediation: was missing — `status` mutates on admin
+    // review.
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
     // Structural guards, not full JSON-schema validation: both columns
@@ -52,5 +55,17 @@ export const enrollments = pgTable(
     check("enrollments_notes_len", sql`char_length(${t.notes}) <= 4000`),
     check("enrollments_times_size", sql`pg_column_size(${t.times}) <= 8192`),
     check("enrollments_subjects_size", sql`pg_column_size(${t.subjects}) <= 8192`),
+    // Baseline remediation: allowlist added. This table conflates the
+    // old system's two related-but-separate models (`Enrollment.js`:
+    // enum ['pending','contacted','enrolled','cancelled'] and
+    // `TrialRequest.js`: enum ['new','contacted','scheduled']) into one
+    // unified lead-capture table per the locked v3 field list — this
+    // allowlist is a deliberate synthesis of both vocabularies (keeping
+    // this table's already-established 'new' default), not a clean 1:1
+    // port of either.
+    check(
+      "enrollments_status_allowlist",
+      sql`${t.status} IN ('new','contacted','scheduled','enrolled','cancelled')`,
+    ),
   ],
 );

@@ -1,6 +1,7 @@
 import {
   boolean,
   check,
+  index,
   jsonb,
   pgTable,
   text,
@@ -52,6 +53,9 @@ export const notifications = pgTable(
     uniqueIndex("notifications_user_dedupe_unique")
       .on(t.userId, t.dedupeKey)
       .where(sql`${t.dedupeKey} IS NOT NULL`),
+    // Plain (non-unique) index — every RLS "read your own notifications"
+    // policy filters on this column; without it that's a seq scan.
+    index("notifications_user_id_idx").on(t.userId),
   ],
 );
 
@@ -71,12 +75,20 @@ export const notificationPreferences = pgTable(
     // Expected to be an IANA name (e.g. "Africa/Cairo") — validity is
     // checked app-side, not a DB constraint.
     timezone: text("timezone"),
-    // Narrowed to the 2 languages the active app's evidence actually
-    // supports today — extend when the real language list is confirmed,
-    // not guessed at the old system's 6.
+    // Baseline remediation: was narrowed to 'en'/'ar' on a mistaken
+    // read of one unrelated backend column — re-verified directly
+    // against the live app's actual i18n system
+    // (`artifacts/al-rahma-academy/src/i18n/index.js:17`, a working
+    // `/{lang}/...` router, 6 complete translation files, and a passing
+    // routing test), which genuinely serves all 6 of these.
     language: text("language"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [check("notification_preferences_language_allowlist", sql`${t.language} IS NULL OR ${t.language} IN ('en','ar')`)],
+  (t) => [
+    check(
+      "notification_preferences_language_allowlist",
+      sql`${t.language} IS NULL OR ${t.language} IN ('en','ar','it','es','de','fr')`,
+    ),
+  ],
 );

@@ -1,8 +1,9 @@
 -- Hand-authored functions/triggers for the 20-table baseline
 -- (docs/product-scope-audit.md). Drizzle's schema DSL (lib/db/src/schema)
 -- only expresses tables/enums/CHECK constraints/indexes — everything below
--- needs to see the OLD row on UPDATE/DELETE or run atomically, so it can't
--- be a plain CHECK and is authored directly as migration SQL instead.
+-- needs to see the OLD row on UPDATE/DELETE, read OTHER rows, or run
+-- atomically under a lock, so it can't be a plain CHECK and is authored
+-- directly as migration SQL instead.
 --
 -- This is a clean-empty-database baseline migration, verified only against
 -- a throwaway LOCAL Docker Postgres (see lib/db/test/). It has NOT been
@@ -124,31 +125,85 @@ create trigger payments_forbid_delete
 --> statement-breakpoint
 
 -- ---------------------------------------------------------------------
--- 4. forbid_refund_of_refund() — payments BEFORE INSERT.
+-- 4. validate_refund_insert() — payments BEFORE INSERT.
 --
--- The payments_kind_parent_consistency CHECK (0000) only guarantees a
--- refund row always names *some* parent_payment_id. This trigger is the
--- part that guarantees that parent is itself a charge, never another
--- refund — so a refund chain can never be built.
+-- Baseline remediation: replaces forbid_refund_of_refund(), which only
+-- checked the parent row's `kind`. A real review found that left the
+-- ledger open to financial corruption: nothing stopped a refund larger
+-- than its charge, refunds summing past the charge total, refunding a
+-- charge that never succeeded, a refund quietly disagreeing with its
+-- parent's user/currency/gateway, or two concurrent refunds each passing
+-- a stale sum check. This function closes all of those:
+--
+--   1. `SELECT ... FOR UPDATE` locks the parent row for the rest of this
+--      transaction — a second, concurrent refund INSERT against the same
+--      parent blocks until the first commits, so the sum check below can
+--      never race.
+--   2. The parent must exist, have kind = 'charge', and status =
+--      'succeeded' (refunding a pending or failed charge makes no sense).
+--   3. The new row's user_id / currency_snapshot / gateway must exactly
+--      match the parent's — a refund can't quietly disagree with what it
+--      refunds.
+--   4. sum(existing succeeded-or-pending refunds against this parent) +
+--      this row's amount_minor must not exceed the parent's amount_minor
+--      — pending refunds count too (conservative: a pending refund that
+--      later fails just frees the room back up; overcommitting while it's
+--      still pending is the unsafe direction).
+--
+-- None of this is expressible as a plain CHECK — it needs to read other
+-- rows and lock against a race, not just look at the row being inserted.
 -- ---------------------------------------------------------------------
-create or replace function public.forbid_refund_of_refund()
+create or replace function public.validate_refund_insert()
 returns trigger
 language plpgsql
 set search_path = ''
 as $$
 declare
-  parent_kind public.payment_kind;
+  parent public.payments%rowtype;
+  already_refunded integer;
 begin
-  if new.kind = 'refund' then
-    select kind into parent_kind from public.payments where id = new.parent_payment_id;
+  if new.kind <> 'refund' then
+    return new;
+  end if;
 
-    if parent_kind is null then
-      raise exception 'payments.parent_payment_id % does not reference an existing payments row', new.parent_payment_id;
-    end if;
+  select * into parent
+  from public.payments
+  where id = new.parent_payment_id
+  for update;
 
-    if parent_kind <> 'charge' then
-      raise exception 'payments row % cannot refund another refund (parent_payment_id=% has kind=%)', new.id, new.parent_payment_id, parent_kind;
-    end if;
+  if not found then
+    raise exception 'payments.parent_payment_id % does not reference an existing payments row', new.parent_payment_id;
+  end if;
+
+  if parent.kind <> 'charge' then
+    raise exception 'payments row % cannot refund another refund (parent_payment_id=% has kind=%)', new.id, new.parent_payment_id, parent.kind;
+  end if;
+
+  if parent.status <> 'succeeded' then
+    raise exception 'payments row % cannot refund a charge that has not succeeded (parent_payment_id=% has status=%)', new.id, new.parent_payment_id, parent.status;
+  end if;
+
+  if new.user_id <> parent.user_id then
+    raise exception 'refund user_id (%) does not match its parent charge''s user_id (%)', new.user_id, parent.user_id;
+  end if;
+
+  if new.currency_snapshot <> parent.currency_snapshot then
+    raise exception 'refund currency_snapshot (%) does not match its parent charge''s currency_snapshot (%)', new.currency_snapshot, parent.currency_snapshot;
+  end if;
+
+  if new.gateway <> parent.gateway then
+    raise exception 'refund gateway (%) does not match its parent charge''s gateway (%)', new.gateway, parent.gateway;
+  end if;
+
+  select coalesce(sum(amount_minor), 0) into already_refunded
+  from public.payments
+  where parent_payment_id = parent.id
+    and kind = 'refund'
+    and status in ('succeeded', 'pending');
+
+  if already_refunded + new.amount_minor > parent.amount_minor then
+    raise exception 'refund of % would exceed the refundable balance on payments row % (already refunded %, charge amount %)',
+      new.amount_minor, parent.id, already_refunded, parent.amount_minor;
   end if;
 
   return new;
@@ -156,9 +211,9 @@ end;
 $$;
 --> statement-breakpoint
 
-create trigger payments_forbid_refund_of_refund
+create trigger payments_validate_refund_insert
   before insert on public.payments
-  for each row execute procedure public.forbid_refund_of_refund();
+  for each row execute procedure public.validate_refund_insert();
 --> statement-breakpoint
 
 -- ---------------------------------------------------------------------
@@ -185,19 +240,40 @@ create trigger admin_audit_log_forbid_mutation
 --> statement-breakpoint
 
 -- ---------------------------------------------------------------------
--- 6. claim_provider_event() — atomic webhook-event claim.
+-- 6 & 7. claim_provider_event() / complete_provider_event() — a real
+-- two-phase webhook-event claim.
 --
--- provider_event_status stays exactly the user-specified 4 values
--- (pending/processed/failed/ignored) — no extra in-between 'processing'
--- state. Given that, "claim" and "record the outcome" collapse into one
--- atomic statement: the caller passes the outcome it computed, and this
--- function applies it ONLY if the row was still 'pending', so two workers
--- racing on the same webhook delivery can never both apply it. A NULL
--- return (empty result set) means the event was already claimed by
--- someone else — the caller's contract is to treat that as an idempotent
--- no-op, never a 500.
+-- Baseline remediation: the first version of this collapsed "claim" and
+-- "record outcome" into one function, called by the worker AFTER it had
+-- already performed the webhook's side effect. That didn't actually
+-- prevent a race: two workers could both see the row as 'pending', both
+-- perform the side effect, and only then race on who gets to write
+-- 'processed' — only the DB write was exclusive, not the work itself.
+--
+-- provider_event_status now has 5 values (pending/processing/processed/
+-- failed/ignored — 'processing' added). claim_provider_event() does the
+-- atomic pending -> processing claim FIRST, before any side-effect work
+-- runs; only the worker that gets a row back may proceed. Once the work
+-- is done, complete_provider_event() does the atomic processing ->
+-- processed/failed transition. A second claim attempt on an already-
+-- claimed event returns zero rows (idempotent no-op, not an error) — the
+-- expected outcome when a duplicate webhook delivery arrives while the
+-- first is still being processed.
 -- ---------------------------------------------------------------------
-create or replace function public.claim_provider_event(
+create or replace function public.claim_provider_event(p_id uuid)
+returns setof public.provider_events
+language sql
+set search_path = ''
+as $$
+  update public.provider_events
+  set processing_status = 'processing'
+  where id = p_id
+    and processing_status = 'pending'
+  returning *;
+$$;
+--> statement-breakpoint
+
+create or replace function public.complete_provider_event(
   p_id uuid,
   p_result public.provider_event_status,
   p_error_code text default null
@@ -208,7 +284,7 @@ set search_path = ''
 as $$
 begin
   if p_result not in ('processed', 'failed', 'ignored') then
-    raise exception 'claim_provider_event: p_result must be processed, failed, or ignored (got %)', p_result;
+    raise exception 'complete_provider_event: p_result must be processed, failed, or ignored (got %)', p_result;
   end if;
 
   return query
@@ -217,16 +293,17 @@ begin
       processed_at = now(),
       error_code = p_error_code
   where id = p_id
-    and processing_status = 'pending'
+    and processing_status = 'processing'
   returning *;
 end;
 $$;
 --> statement-breakpoint
 
 -- ---------------------------------------------------------------------
--- 7. set_updated_at() — generic trigger, attached to every table that has
+-- 8. set_updated_at() — generic trigger, attached to every table that has
 --    an `updated_at` column (profiles, plans, subscriptions, payments,
---    notification_preferences).
+--    notification_preferences, manual_payments, invoices, testimonials,
+--    enrollments — baseline remediation added the last 4).
 -- ---------------------------------------------------------------------
 create or replace function public.set_updated_at()
 returns trigger
@@ -263,9 +340,29 @@ create trigger payments_set_updated_at
 create trigger notification_preferences_set_updated_at
   before update on public.notification_preferences
   for each row execute procedure public.set_updated_at();
+--> statement-breakpoint
+
+create trigger manual_payments_set_updated_at
+  before update on public.manual_payments
+  for each row execute procedure public.set_updated_at();
+--> statement-breakpoint
+
+create trigger invoices_set_updated_at
+  before update on public.invoices
+  for each row execute procedure public.set_updated_at();
+--> statement-breakpoint
+
+create trigger testimonials_set_updated_at
+  before update on public.testimonials
+  for each row execute procedure public.set_updated_at();
+--> statement-breakpoint
+
+create trigger enrollments_set_updated_at
+  before update on public.enrollments
+  for each row execute procedure public.set_updated_at();
 
 -- ---------------------------------------------------------------------
--- 8. gen_random_uuid() / pgcrypto: NOT re-declared here. Every `id uuid
+-- 9. gen_random_uuid() / pgcrypto: NOT re-declared here. Every `id uuid
 -- primary key default gen_random_uuid()` in 0000 relies on
 -- gen_random_uuid() being available with no extension. PostgreSQL has
 -- shipped it as a built-in pg_catalog function (no CREATE EXTENSION

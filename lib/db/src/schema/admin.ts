@@ -1,4 +1,4 @@
-import { jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { index, jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { profiles } from "./profiles";
 
 /**
@@ -18,16 +18,24 @@ import { profiles } from "./profiles";
  * audit rows from one logical admin action (e.g. approve + notify) be
  * tied together later without a hard FK relationship.
  */
-export const adminAuditLog = pgTable("admin_audit_log", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  actorAdminId: uuid("actor_admin_id")
-    .notNull()
-    .references(() => profiles.id, { onDelete: "restrict" }),
-  action: text("action").notNull(),
-  resourceType: text("resource_type").notNull(),
-  resourceId: text("resource_id"),
-  before: jsonb("before"),
-  after: jsonb("after"),
-  correlationId: text("correlation_id"),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-});
+export const adminAuditLog = pgTable(
+  "admin_audit_log",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    actorAdminId: uuid("actor_admin_id")
+      .notNull()
+      .references(() => profiles.id, { onDelete: "restrict" }),
+    action: text("action").notNull(),
+    resourceType: text("resource_type").notNull(),
+    resourceId: text("resource_id"),
+    before: jsonb("before"),
+    after: jsonb("after"),
+    correlationId: text("correlation_id"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    // Baseline remediation: was missing — "this admin's own action
+    // history" is an expected RLS-scoped query.
+    index("admin_audit_log_actor_admin_id_idx").on(t.actorAdminId),
+  ],
+);

@@ -1,5 +1,5 @@
 {
-  "id": "fde07c6d-32f8-4669-8cab-7832f8c345ce",
+  "id": "a15ec34e-7a07-4d0b-a8c8-1612c41ec367",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -65,7 +65,23 @@
           "default": "now()"
         }
       },
-      "indexes": {},
+      "indexes": {
+        "admin_audit_log_actor_admin_id_idx": {
+          "name": "admin_audit_log_actor_admin_id_idx",
+          "columns": [
+            {
+              "expression": "actor_admin_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
         "admin_audit_log_actor_admin_id_profiles_id_fk": {
           "name": "admin_audit_log_actor_admin_id_profiles_id_fk",
@@ -130,7 +146,23 @@
           "default": "now()"
         }
       },
-      "indexes": {},
+      "indexes": {
+        "coupon_redemptions_user_id_idx": {
+          "name": "coupon_redemptions_user_id_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
         "coupon_redemptions_coupon_id_coupons_id_fk": {
           "name": "coupon_redemptions_coupon_id_coupons_id_fk",
@@ -242,18 +274,26 @@
           "default": true
         }
       },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "coupons_code_unique": {
-          "name": "coupons_code_unique",
-          "nullsNotDistinct": false,
+      "indexes": {
+        "coupons_code_upper_unique": {
+          "name": "coupons_code_upper_unique",
           "columns": [
-            "code"
-          ]
+            {
+              "expression": "upper(\"code\")",
+              "asc": true,
+              "isExpression": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {
         "coupons_value_positive": {
@@ -267,6 +307,14 @@
         "coupons_duration_cycles_consistency": {
           "name": "coupons_duration_cycles_consistency",
           "value": "(\"coupons\".\"discount_scope\" = 'fixed_duration' AND \"coupons\".\"discount_duration_cycles\" IS NOT NULL) OR (\"coupons\".\"discount_scope\" != 'fixed_duration' AND \"coupons\".\"discount_duration_cycles\" IS NULL)"
+        },
+        "coupons_max_uses_positive": {
+          "name": "coupons_max_uses_positive",
+          "value": "\"coupons\".\"max_uses\" IS NULL OR \"coupons\".\"max_uses\" > 0"
+        },
+        "coupons_duration_cycles_positive": {
+          "name": "coupons_duration_cycles_positive",
+          "value": "\"coupons\".\"discount_duration_cycles\" IS NULL OR \"coupons\".\"discount_duration_cycles\" > 0"
         }
       },
       "isRLSEnabled": false
@@ -331,14 +379,15 @@
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": true,
-          "default": "'USD'"
+          "default": "'EUR'"
         },
         "status": {
           "name": "status",
-          "type": "text",
+          "type": "invoice_status",
+          "typeSchema": "public",
           "primaryKey": false,
           "notNull": true,
-          "default": "'issued'"
+          "default": "'paid'"
         },
         "gateway_invoice_id": {
           "name": "gateway_invoice_id",
@@ -348,6 +397,13 @@
         },
         "created_at": {
           "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": true,
@@ -367,6 +423,21 @@
           ],
           "isUnique": true,
           "where": "\"invoices\".\"gateway_invoice_id\" IS NOT NULL",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "invoices_user_id_idx": {
+          "name": "invoices_user_id_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -460,7 +531,7 @@
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": true,
-          "default": "'USD'"
+          "default": "'EUR'"
         },
         "method": {
           "name": "method",
@@ -512,9 +583,32 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
         }
       },
-      "indexes": {},
+      "indexes": {
+        "manual_payments_user_id_idx": {
+          "name": "manual_payments_user_id_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
         "manual_payments_user_id_profiles_id_fk": {
           "name": "manual_payments_user_id_profiles_id_fk",
@@ -559,7 +653,12 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "manual_payments_amount_minor_nonneg": {
+          "name": "manual_payments_amount_minor_nonneg",
+          "value": "\"manual_payments\".\"amount_minor\" >= 0"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.blogs": {
@@ -715,20 +814,33 @@
           "default": "now()"
         }
       },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "subscribers_email_unique": {
-          "name": "subscribers_email_unique",
-          "nullsNotDistinct": false,
+      "indexes": {
+        "subscribers_email_lower_unique": {
+          "name": "subscribers_email_lower_unique",
           "columns": [
-            "email"
-          ]
+            {
+              "expression": "lower(\"email\")",
+              "asc": true,
+              "isExpression": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "subscribers_status_allowlist": {
+          "name": "subscribers_status_allowlist",
+          "value": "\"subscribers\".\"status\" IN ('subscribed','unsubscribed')"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.testimonials": {
@@ -787,6 +899,13 @@
         },
         "created_at": {
           "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": true,
@@ -881,7 +1000,12 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "trial_requests_status_allowlist": {
+          "name": "trial_requests_status_allowlist",
+          "value": "\"trial_requests\".\"status\" IN ('new','contacted','scheduled')"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.enrollments": {
@@ -1006,6 +1130,13 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
         }
       },
       "indexes": {},
@@ -1041,6 +1172,10 @@
         "enrollments_subjects_size": {
           "name": "enrollments_subjects_size",
           "value": "pg_column_size(\"enrollments\".\"subjects\") <= 8192"
+        },
+        "enrollments_status_allowlist": {
+          "name": "enrollments_status_allowlist",
+          "value": "\"enrollments\".\"status\" IN ('new','contacted','scheduled','enrolled','cancelled')"
         }
       },
       "isRLSEnabled": false
@@ -1090,7 +1225,23 @@
           "default": "now()"
         }
       },
-      "indexes": {},
+      "indexes": {
+        "profiles_email_lower_unique": {
+          "name": "profiles_email_lower_unique",
+          "columns": [
+            {
+              "expression": "lower(\"email\")",
+              "asc": true,
+              "isExpression": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
         "profiles_id_users_id_fk": {
           "name": "profiles_id_users_id_fk",
@@ -1168,7 +1319,29 @@
           "default": "now()"
         }
       },
-      "indexes": {},
+      "indexes": {
+        "quran_bookmarks_user_verse_unique": {
+          "name": "quran_bookmarks_user_verse_unique",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "verse_key",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
         "quran_bookmarks_user_id_profiles_id_fk": {
           "name": "quran_bookmarks_user_id_profiles_id_fk",
@@ -1344,7 +1517,7 @@
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": true,
-          "default": "'USD'"
+          "default": "'EUR'"
         },
         "billing_interval": {
           "name": "billing_interval",
@@ -1593,6 +1766,21 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
+        },
+        "subscriptions_user_id_idx": {
+          "name": "subscriptions_user_id_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {
@@ -1697,7 +1885,7 @@
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": true,
-          "default": "'USD'"
+          "default": "'EUR'"
         },
         "provider_price_id_snapshot": {
           "name": "provider_price_id_snapshot",
@@ -1769,6 +1957,21 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
+        },
+        "payments_user_id_idx": {
+          "name": "payments_user_id_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {
@@ -1836,6 +2039,10 @@
         "payments_amount_minor_nonneg": {
           "name": "payments_amount_minor_nonneg",
           "value": "\"payments\".\"amount_minor\" >= 0"
+        },
+        "payments_amount_reconciles_to_plan_snapshot": {
+          "name": "payments_amount_reconciles_to_plan_snapshot",
+          "value": "(\"payments\".\"kind\" = 'refund') OR (\"payments\".\"plan_amount_minor_snapshot\" IS NULL) OR (\"payments\".\"amount_minor\" = \"payments\".\"plan_amount_minor_snapshot\" - \"payments\".\"discount_minor_snapshot\")"
         }
       },
       "isRLSEnabled": false
@@ -2012,7 +2219,7 @@
       "checkConstraints": {
         "notification_preferences_language_allowlist": {
           "name": "notification_preferences_language_allowlist",
-          "value": "\"notification_preferences\".\"language\" IS NULL OR \"notification_preferences\".\"language\" IN ('en','ar')"
+          "value": "\"notification_preferences\".\"language\" IS NULL OR \"notification_preferences\".\"language\" IN ('en','ar','it','es','de','fr')"
         }
       },
       "isRLSEnabled": false
@@ -2114,6 +2321,21 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
+        },
+        "notifications_user_id_idx": {
+          "name": "notifications_user_id_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {
@@ -2159,7 +2381,7 @@
       "name": "currency_code",
       "schema": "public",
       "values": [
-        "USD"
+        "EUR"
       ]
     },
     "public.discount_scope": {
@@ -2169,6 +2391,15 @@
         "first_payment_only",
         "fixed_duration",
         "forever"
+      ]
+    },
+    "public.invoice_status": {
+      "name": "invoice_status",
+      "schema": "public",
+      "values": [
+        "pending",
+        "paid",
+        "cancelled"
       ]
     },
     "public.manual_payment_status": {
@@ -2224,6 +2455,7 @@
       "schema": "public",
       "values": [
         "pending",
+        "processing",
         "processed",
         "failed",
         "ignored"

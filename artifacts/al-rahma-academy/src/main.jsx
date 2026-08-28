@@ -38,13 +38,22 @@ import App from './App.jsx';
 import './styles.css';
 import { initSentry } from './utils/sentry.js';
 import { loadArabicFontsIdle } from './utils/loadArabicFonts.js';
+import { langFromPath } from './utils/localePath.js';
 
 initSentry();
+
+// The router's basename is fixed once, from whatever URL the browser first
+// requested — a non-English visit like /fr/courses/ijazah must mount
+// <BrowserRouter basename="/fr"> so every unprefixed <Route path="/courses/ijazah">
+// keeps resolving under that prefix for the rest of the session. Switching
+// language is a full page reload (see utils/localePath.js switchLanguageHref),
+// which is what lets this be computed once here rather than reactively.
+const { basename } = langFromPath(window.location.pathname);
 
 const rootElement = document.getElementById('root');
 const app = (
   <React.StrictMode>
-    <App />
+    <App basename={basename} />
   </React.StrictMode>
 );
 

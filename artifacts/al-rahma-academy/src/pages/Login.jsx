@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams, Navigate } from 'react-router-dom';
+import { homeHref } from '../utils/localePath';
 import { useAuth } from '../context/AuthContext';
 import Brand from '../components/layout/Brand';
 import useSEO from '../hooks/useSEO';
@@ -183,7 +184,7 @@ export default function Login() {
           <Link to="/forgot-password">{lg.forgot}</Link>
         </p>
         <p className="auth__switch">
-          <Link to="/">{lg.back}</Link>
+          <a href={homeHref()}>{lg.back}</a>
         </p>
       </div>
     </div>

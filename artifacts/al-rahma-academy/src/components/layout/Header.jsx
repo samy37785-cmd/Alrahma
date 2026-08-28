@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import BrandLockup from "../ui/BrandLockup";
 import { useAuth } from "../../context/AuthContext";
 import { useLang, withLanguage } from "../../context/LangContext";
+import { homeHref } from "../../utils/localePath";
 import { useTheme } from "../../context/ThemeContext";
 import { useEscapeKey } from "../../hooks/useEscapeKey";
 import LangSwitcher from "../ui/LangSwitcher";
@@ -113,10 +114,16 @@ export default function Header() {
   };
   const handleLogout = () => { closeAll(); logout(); navigate(localizedTo("/")); };
 
-  /* Same as Brand.jsx: on any inner page → navigate home; already on
-     home → just scroll to top. */
-  const handleBrandClick = () => {
-    if (location.pathname === "/") window.scrollTo({ top: 0, behavior: "smooth" });
+  /* Raw <a href={homeHref()}>, not <Link> — see utils/localePath.js's
+     homeHref() comment: react-router can't render a duplicate-free,
+     trailing-slash-correct "/fr/" via <Link> under a non-English basename.
+     On any inner page → let the real navigation happen; already on
+     home → prevent the (unnecessary) reload and just scroll to top. */
+  const handleBrandClick = (e) => {
+    if (location.pathname === "/") {
+      e.preventDefault();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
   };
 
   /* Swipe-up gesture closes the mobile drawer */
@@ -165,9 +172,9 @@ export default function Header() {
     <>
       <header className={`header${scrolled ? " header--scrolled" : ""}`} id="top">
         <div className="container header__inner">
-          <Link to={localizedTo("/")} onClick={handleBrandClick} className="header__brand-link" aria-label={copy.home}>
+          <a href={homeHref()} onClick={handleBrandClick} className="header__brand-link" aria-label={copy.home}>
             <BrandLockup orientation="horizontal" plain showBismillah={false} size={40} className="header__lockup" />
-          </Link>
+          </a>
 
           <nav
             className={`nav${mobileOpen ? " open" : ""}`}

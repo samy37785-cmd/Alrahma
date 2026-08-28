@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate, Navigate } from 'react-router-dom';
+import { homeHref } from '../utils/localePath';
 import { useAuth } from '../context/AuthContext';
 import Brand from '../components/layout/Brand';
 import useSEO from '../hooks/useSEO';
@@ -161,7 +162,7 @@ export default function Register() {
           {rg.haveAccount} <Link to="/login">{rg.signIn}</Link>
         </p>
         <p className="auth__switch">
-          <Link to="/">{rg.back}</Link>
+          <a href={homeHref()}>{rg.back}</a>
         </p>
       </div>
     </div>

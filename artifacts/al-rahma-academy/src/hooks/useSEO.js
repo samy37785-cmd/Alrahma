@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { stripLangPrefix } from '../utils/localePath';
 
 /**
  * Central SEO engine. Every public page calls this hook to drive its
@@ -53,8 +54,11 @@ function setJsonLd(id, obj) {
 
 // Build a BreadcrumbList from the URL path. /course/ijazah →
 // Home › Course › Ijazah. Returns null on the home page (no breadcrumb).
+// Strips a leading language segment first (e.g. "/fr/course/ijazah") — the
+// hardcoded "Home" item above already stands in for the language root, so
+// the raw prefix must not surface as its own spurious breadcrumb entry.
 function buildBreadcrumb(pathname) {
-  const parts = pathname.split('/').filter(Boolean);
+  const parts = stripLangPrefix(pathname).split('/').filter(Boolean);
   if (parts.length === 0) return null;
   const items = [{ name: 'Home', url: `${ORIGIN}/` }];
   let acc = '';

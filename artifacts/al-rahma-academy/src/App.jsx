@@ -96,12 +96,12 @@ function LocalizedSkipLink() {
   return <a href="#main-content" className="skip-link">{getExperienceText(lang).skipToContent}</a>;
 }
 
-export default function App() {
+export default function App({ basename = '' }) {
   return (
     <ErrorBoundary>
     <QueryProvider>
     <ThemeProvider>
-    <BrowserRouter>
+    <BrowserRouter basename={basename}>
     <LangProvider>
     <AuthProvider>
     <AdminAuthProvider>

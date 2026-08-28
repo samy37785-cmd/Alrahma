@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { routePreloadMap } from '../../routePreloadMap';
+import { stripLangPrefix } from '../../utils/localePath';
 
 // Route-level code splitting means the browser can't discover a page's JS/CSS
 // until React has already parsed the entry bundle and matched the route —
@@ -24,7 +25,11 @@ function internalPathname(anchor) {
   if (!anchor || anchor.target === '_blank' || anchor.hasAttribute('download')) return null;
   const href = anchor.getAttribute('href');
   if (!href || !href.startsWith('/')) return null;
-  return href.split('?')[0].split('#')[0];
+  // routePreloadMap is keyed by the unprefixed route (matching <Route path>
+  // in App.jsx), but a rendered href on a non-English page carries the
+  // language prefix (e.g. "/fr/courses/ijazah") — strip it before lookup,
+  // or every prefetch silently misses on every language but English.
+  return stripLangPrefix(href.split('?')[0].split('#')[0]);
 }
 
 export default function RoutePrefetcher() {

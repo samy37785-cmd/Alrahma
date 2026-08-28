@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
+import { homeHref } from '../../utils/localePath';
 import { useQuery } from '@tanstack/react-query';
 import { getUnreadCount } from '../../api/messageApi';
 import { getUnreadNotifs } from '../../api/notificationApi';
@@ -172,13 +173,13 @@ export default function DashboardLayout({ children }) {
         aria-modal={mobileOpen ? 'true' : undefined}
       >
         {/* Brand */}
-        <Link to="/" className="ds-brand">
+        <a href={homeHref()} className="ds-brand">
           <BrandIcon size={34} className="ds-brand__logo" />
           <div className="ds-brand__text">
             <span className="ds-brand__name">Al-Rahma</span>
             <span className="ds-brand__sub">{shell.academy}</span>
           </div>
-        </Link>
+        </a>
 
         {/* Collapse toggle (desktop) */}
         <button

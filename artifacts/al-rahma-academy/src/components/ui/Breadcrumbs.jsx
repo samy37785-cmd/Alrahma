@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
-import { useLang, withLanguage } from '../../context/LangContext';
+import { useLang } from '../../context/LangContext';
 import { getExperienceText } from '../../i18n/experience';
+import { homeHref } from '../../utils/localePath';
 
 /**
  * Visible breadcrumb trail. The matching BreadcrumbList JSON-LD is emitted
@@ -27,7 +28,15 @@ export default function Breadcrumbs({ items = [] }) {
               <li key={i} className="breadcrumbs__item">
                 {last || !it.to
                   ? <span className="breadcrumbs__current" aria-current="page" aria-label={`${copy.currentPage}: ${it.label}`}>{it.label}</span>
-                  : <Link className="breadcrumbs__link" to={withLanguage(it.to, lang)}>{it.label}</Link>}
+                  // The Home crumb's target is "/" — react-router can't render
+                  // that correctly via <Link> under a non-English basename
+                  // (see utils/localePath.js's homeHref() comment), so it needs
+                  // a raw <a href>. Every other crumb is a plain app-relative
+                  // path (e.g. "/blog"), which basename already resolves
+                  // correctly through a normal <Link>.
+                  : it.to === '/'
+                    ? <a className="breadcrumbs__link" href={homeHref()}>{it.label}</a>
+                    : <Link className="breadcrumbs__link" to={it.to}>{it.label}</Link>}
                 {!last && <span className="breadcrumbs__sep" aria-hidden="true">›</span>}
               </li>
             );

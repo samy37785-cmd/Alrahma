@@ -4,6 +4,7 @@ import useSEO from '../hooks/useSEO';
 import Breadcrumbs from '../components/ui/Breadcrumbs';
 import { useLang } from '../context/LangContext';
 import faqItems from '../data/faqItems';
+import { homeHref } from '../utils/localePath';
 
 export default function FAQ() {
   const { t, lang } = useLang();
@@ -73,7 +74,7 @@ export default function FAQ() {
 
         <div className="faq-cta">
           <p>{pg.stillQuestion}</p>
-          <a href="/#trial" className="btn btn--green">{pg.bookTrial}</a>
+          <a href={homeHref('trial')} className="btn btn--green">{pg.bookTrial}</a>
           <a
             href="https://wa.me/201016054663"
             className="btn btn--ghost"

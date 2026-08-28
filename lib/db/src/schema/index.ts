@@ -1,20 +1,19 @@
-// Export your models here. Add one export per file
-// export * from "./posts";
+// Postgres/Supabase schema for the Render→Supabase migration
+// (docs/render-to-supabase-migration.md, Stage 1). Ported field-by-field
+// from the 31 Mongoose models in `.migration-backup/backend/models/` per
+// the migration audit — see each file's own doc comments for the mapping
+// from its old Mongo model name.
 //
-// Each model/table should ideally be split into different files.
-// Each model/table should define a Drizzle table, insert schema, and types:
-//
-//   import { pgTable, text, serial } from "drizzle-orm/pg-core";
-//   import { createInsertSchema } from "drizzle-zod";
-//   import { z } from "zod/v4";
-//
-//   export const postsTable = pgTable("posts", {
-//     id: serial("id").primaryKey(),
-//     title: text("title").notNull(),
-//   });
-//
-//   export const insertPostSchema = createInsertSchema(postsTable).omit({ id: true });
-//   export type InsertPost = z.infer<typeof insertPostSchema>;
-//   export type Post = typeof postsTable.$inferSelect;
+// `auth.users` is Supabase-managed and never created/migrated by us
+// (see ./auth.ts). Every other table here is created by Stage 1's
+// migration and locked down by Stage 2's RLS policies — nothing in this
+// file is wired to a live app yet.
 
-export {}
+export * from "./auth";
+export * from "./profiles";
+export * from "./courses";
+export * from "./quran";
+export * from "./payments";
+export * from "./social";
+export * from "./content";
+export * from "./system";

@@ -11,6 +11,12 @@ out-tsc
 # dependencies
 node_modules
 
+# secrets — never committed; real values live only in local .env files
+.env
+.env.*
+!.env.example
+!.env*.example
+
 # IDEs and editors
 /.idea
 .project

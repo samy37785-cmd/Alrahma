@@ -1,4 +1,4 @@
-# Local schema test run — 2026-08-28T20:24:03Z
+# Local schema test run — baseline remediation — 2026-08-28T23:47:29Z
 # Target: throwaway local Docker Postgres (postgres:16), never the real Supabase project.
 
 $ node test/run-migrations.mjs
@@ -16,9 +16,11 @@ PASS  none of the 20 dropped tables exist
 PASS  subscriptions_one_active_per_user partial unique index exists
 PASS  notifications_user_dedupe_unique partial unique index exists
 PASS  provider_events_provider_event_unique unique index exists
-PASS  all 6 hand-authored functions exist
+PASS  quran_bookmarks_user_verse_unique unique index exists
+PASS  plain ownership indexes exist on every FK/ownership column from finding 8
+PASS  all 8 hand-authored functions exist
 PASS  seed: create auth.users fixtures (profiles come from the handle_new_user trigger)
-PASS  seed: create a plan fixture
+PASS  seed: create a plan fixture (EUR)
 PASS  handle_new_user() never produces role='admin' even when metadata claims it
 PASS  handle_new_user() falls back to email-local-part when no name is given
 PASS  guest enrollment insert succeeds with no user_id column at all
@@ -27,24 +29,48 @@ PASS  payments insert without user_id is rejected (paid checkout requires login)
 PASS  invalid role enum value is rejected
 PASS  invalid payment_status enum value is rejected
 PASS  negative amount_minor is rejected
-PASS  invalid currency_code enum value is rejected
+PASS  USD is rejected — currency_code is EUR-only (baseline remediation)
+PASS  EUR plan insert succeeds
 PASS  a refund with parent_payment_id NULL is rejected (kind/parent CHECK)
+PASS  a charge whose amount doesn't reconcile to plan_amount_minor_snapshot - discount is rejected
+PASS  a charge with no plan_amount_minor_snapshot is exempt from the reconciliation CHECK
+PASS  invalid enrollments.status value is rejected
+PASS  invalid trial_requests.status value is rejected
+PASS  invalid subscribers.status value is rejected
+PASS  invalid invoices.status value is rejected (now a real enum)
+PASS  notification_preferences accepts all 6 real live-app languages
+PASS  notification_preferences rejects a 7th, unsupported language
+PASS  coupons.code uniqueness is case-insensitive
+PASS  subscribers.email uniqueness is case-insensitive
+PASS  profiles.email uniqueness is case-insensitive
+PASS  quran_bookmarks: a second bookmark for the same (user, verse) is rejected
 PASS  duplicate provider_events (provider, provider_event_id) is a caught unique violation
 PASS  duplicate (user_id, dedupe_key) notification is rejected by the partial unique index
 PASS  a second notification with dedupe_key NULL for the same user is allowed (partial index)
 PASS  duplicate coupon redemption for the same (coupon, user) is rejected by the composite PK
+PASS  coupons.max_uses <= 0 is rejected
 PASS  a second ACTIVE subscription for the same user is rejected
 PASS  a second CANCELED subscription for the same user is allowed (partial index only guards 'active')
 PASS  a charge can go pending -> succeeded
 PASS  a frozen (succeeded) payments row cannot be updated at all
 PASS  a payments row cannot be deleted (forbid_payment_delete trigger)
+PASS  refunding a charge that hasn't succeeded is rejected
+PASS  a refund exceeding the charge amount is rejected
+PASS  a refund with a mismatched user_id is rejected
+PASS  a refund with a mismatched gateway is rejected
 PASS  a partial refund of the charge succeeds (new row, kind='refund')
 PASS  a second partial refund of the same charge succeeds (multi-refund reconciles)
-PASS  a refund of a refund is rejected (forbid_refund_of_refund trigger)
+PASS  a third refund that would push the total past the charge amount is rejected
+PASS  a refund of a refund is rejected (validate_refund_insert trigger)
+PASS  CONCURRENCY: two refunds racing past the remaining balance — only one succeeds
 PASS  claim_provider_event() claims a pending event exactly once
+PASS  complete_provider_event() finalizes a claimed event, and a repeat complete is a no-op
+PASS  complete_provider_event() cannot finalize an event that was never claimed
+PASS  CONCURRENCY: two workers racing claim_provider_event() on the same event — only one wins
 PASS  admin_audit_log insert succeeds
 PASS  admin_audit_log UPDATE is rejected (forbid_audit_log_mutation trigger)
 PASS  admin_audit_log DELETE is rejected (forbid_audit_log_mutation trigger)
 PASS  set_updated_at() bumps updated_at on a plans UPDATE
+PASS  set_updated_at() is attached to manual_payments/invoices/testimonials/enrollments
 
-36/36 passed.
+62/62 passed.

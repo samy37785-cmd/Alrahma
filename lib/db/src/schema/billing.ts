@@ -26,12 +26,13 @@ import {
 /**
  * A single period's proof-of-payment for admin review (docs/product-
  * scope-audit.md §7). `user_id` NOT NULL — paid checkout requires login.
- * Activating the corresponding `subscriptions` row happens ONLY via a
- * separately-designed, atomic RPC after admin approval (deferred — not
- * built in this pass; see the doc's §14). That RPC must do an atomic
- * `pending → approved` claim (`UPDATE ... WHERE status = 'pending'`) so a
- * record can never be approved twice — this table's `status` column
- * shape already supports that correctly.
+ * Review happens exclusively via `admin_review_manual_payment()` (atomic
+ * `pending → approved`/`rejected` claim, `0002_rls.sql`). Activating the
+ * corresponding `subscriptions` row on approval happens exclusively via
+ * `admin_activate_manual_subscription()` (RLS Remediation Round 3,
+ * `0006_subscription_integrity.sql`) — a second atomic claim on
+ * `status = 'approved' AND activated_at IS NULL`, so a record can never
+ * be activated twice.
  */
 export const manualPayments = pgTable(
   "manual_payments",
@@ -58,6 +59,14 @@ export const manualPayments = pgTable(
     // reviewedAt all mutate on admin review, same as every other
     // mutable-status table here.
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    // RLS Remediation Round 3 (Section C): the missing piece this table's
+    // own doc comment already flagged as deferred — set exactly once, by
+    // admin_activate_manual_subscription() (lib/db/drizzle/
+    // 0006_subscription_integrity.sql), which does an atomic `status =
+    // 'approved' AND activated_at IS NULL` claim before inserting the
+    // subscriptions row, making double-activation of the same approved
+    // manual payment structurally impossible, not just discouraged.
+    activatedAt: timestamp("activated_at", { withTimezone: true }),
   },
   (t) => [
     check("manual_payments_amount_minor_nonneg", sql`${t.amountMinor} >= 0`),

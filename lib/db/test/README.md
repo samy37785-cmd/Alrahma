@@ -29,6 +29,18 @@ node test/upgrade-scenario.local.test.mjs # 9 real-SQL assertions (self-containe
 docker rm -f alrahma-local-test-pg # tear down when done
 ```
 
+Or, from `lib/db`, once `TEST_DATABASE_URL` and the container are up:
+`pnpm run test:db` chains every step above in the same order (checksum
+guard first, so it's a real, blocking gate — nothing downstream runs if
+0000-0003 have changed) into a single command. `pnpm run
+check:published-migrations` runs just the checksum guard on its own (no
+DB/Docker needed at all — safe to run anytime, including as a fast
+pre-commit sanity check before touching anything under `lib/db/drizzle`).
+Neither script is wired into any CI pipeline yet — this repo has no
+`.github/workflows` at all today; whenever one is added for this repo,
+`test:db` (or at minimum `check:published-migrations`) belongs in it as
+a required check.
+
 **226 real-SQL assertions total against the migrated database, plus 4
 filesystem-only checksum assertions (no DB/Docker) from
 `published-migrations-checksum.test.mjs`.**

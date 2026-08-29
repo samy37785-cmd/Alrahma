@@ -9,7 +9,9 @@
   },
   "scripts": {
     "push": "drizzle-kit push --config ./drizzle.config.ts",
-    "push-force": "drizzle-kit push --force --config ./drizzle.config.ts"
+    "push-force": "drizzle-kit push --force --config ./drizzle.config.ts",
+    "check:published-migrations": "node test/published-migrations-checksum.test.mjs",
+    "test:db": "node test/published-migrations-checksum.test.mjs && node test/run-migrations.mjs && node test/schema.local.test.mjs && node test/rls.local.test.mjs && node test/rls-full-matrix.local.test.mjs && node test/acl.local.test.mjs && node test/upgrade-scenario.local.test.mjs"
   },
   "dependencies": {
     "drizzle-orm": "catalog:",

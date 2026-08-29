@@ -153,6 +153,15 @@ export const providerEvents = pgTable(
     processingStatus: providerEventStatusEnum("processing_status")
       .notNull()
       .default("pending"),
+    // RLS Remediation Round 2 (finding 7): claim_provider_event() used to
+    // set processing_status = 'processing' with no lease/timeout at all —
+    // a worker that claimed an event and then crashed left it stuck in
+    // 'processing' forever, no recovery path. Set by claim_provider_event()
+    // on claim (lib/db/drizzle/0003_provider_events_lease.sql);
+    // reclaim_stale_provider_events() resets any row whose claimed_at is
+    // older than its staleness threshold back to 'pending' (clearing this),
+    // the real recovery contract for a dead worker.
+    claimedAt: timestamp("claimed_at", { withTimezone: true }),
     errorCode: text("error_code"),
   },
   (t) => [uniqueIndex("provider_events_provider_event_unique").on(t.provider, t.providerEventId)],

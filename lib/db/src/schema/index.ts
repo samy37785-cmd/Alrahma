@@ -7,8 +7,10 @@
 // `auth.users` is Supabase-managed and never created/migrated by us (see
 // ./auth.ts) — it is not counted in the 20-table total. Every other table
 // here is created by this migration and is NOT yet applied to the real
-// Supabase project; RLS is a separate, later, design-then-apply pass
-// (docs/rls-matrix-draft.md).
+// Supabase project. RLS is implemented and locally tested
+// (lib/db/drizzle/0002_rls.sql, docs/rls-matrix.md) but likewise not yet
+// applied to the real project — that remains a separate, later,
+// explicitly-permitted step.
 
 export * from "./auth";
 export * from "./enums";

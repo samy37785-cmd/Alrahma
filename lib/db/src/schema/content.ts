@@ -103,7 +103,7 @@ export const trialRequests = pgTable(
  * Newsletter signups. `status` is a new addition (the old `Subscriber.js`
  * model had no status field at all — just email); minimal
  * subscribed/unsubscribed pair, matching the unsubscribe-by-signed-link
- * flow already assumed in `docs/rls-matrix-draft.md`'s notes.
+ * flow assumed in `docs/rls-matrix.md`'s notes.
  */
 export const subscribers = pgTable(
   "subscribers",

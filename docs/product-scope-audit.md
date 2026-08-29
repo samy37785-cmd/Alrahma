@@ -370,9 +370,11 @@ before ever being applied to any database, real or otherwise.
   notes throughout): committed on `docs/product-scope-closure-v3`.
 - The 20-table schema, its versioned migrations, and a local Docker
   Postgres test suite (62 real-SQL assertions, including 2 genuine
-  concurrency tests) exist as subsequent commits on this same branch —
-  RLS itself is still design-only (`docs/rls-matrix-draft.md`), not yet
-  written as SQL or applied anywhere.
+  concurrency tests) exist as subsequent commits on this same branch.
+  RLS is now implemented and locally tested too
+  (`lib/db/drizzle/0002_rls.sql`, `docs/rls-matrix.md`, 25/25 real
+  role-switching assertions) — not yet applied anywhere near the real
+  project.
 - Nothing applied, dropped, or pushed on the real Supabase project at any
   point. No `git push`. `ae47640` still sits unmodified in history,
   documented as superseded.

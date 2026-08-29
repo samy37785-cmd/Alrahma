@@ -33,6 +33,15 @@ node_modules
 !.vscode/launch.json
 !.vscode/extensions.json
 
+# Claude Code — local-only settings (personal permissions/config, never
+# shared). Was previously excluded only via a personal global gitignore
+# on one machine (invisible to any other clone/contributor/CI) — a real
+# gap a review caught, since `git status`/`git add -A` would treat it as
+# a normal untracked file anywhere else. `.claude/settings.json` (a
+# project-level, intentionally SHARED config, if one is ever added) is
+# deliberately NOT covered by this rule.
+.claude/settings.local.json
+
 # misc
 /.sass-cache
 /connect.lock

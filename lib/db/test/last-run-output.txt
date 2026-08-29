@@ -1,3 +1,10 @@
+=== node test/published-migrations-checksum.test.mjs (no DB needed) ===
+PASS  0000_init_20_table_baseline.sql: sha256 and journal timestamp unchanged since publication
+PASS  0001_functions_triggers.sql: sha256 and journal timestamp unchanged since publication
+PASS  0002_rls.sql: sha256 and journal timestamp unchanged since publication
+PASS  0003_provider_events_lease.sql: sha256 and journal timestamp unchanged since publication
+
+4/4 passed.
 === node test/run-migrations.mjs (1st) ===
 [migrate] applying lib/db/drizzle to postgres://postgres:***@localhost:55432/alrahma_test
 [migrate] done.

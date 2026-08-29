@@ -11,6 +11,8 @@ Supabase project.
 ## Run it yourself (clean-database scenario)
 
 ```sh
+node test/published-migrations-checksum.test.mjs # 4 assertions — no DB/Docker needed, run this first or anytime
+
 docker run --rm -d --name alrahma-local-test-pg \
   -e POSTGRES_PASSWORD=test -e POSTGRES_DB=alrahma_test \
   -p 55432:5432 postgres:16
@@ -27,7 +29,9 @@ node test/upgrade-scenario.local.test.mjs # 9 real-SQL assertions (self-containe
 docker rm -f alrahma-local-test-pg # tear down when done
 ```
 
-**226 real-SQL assertions total.**
+**226 real-SQL assertions total against the migrated database, plus 4
+filesystem-only checksum assertions (no DB/Docker) from
+`published-migrations-checksum.test.mjs`.**
 
 RLS Remediation Round 4 (`0010_round4_integrity_fixes.sql`) added no new
 migration count to the clean-scenario run above beyond the extra file
@@ -38,7 +42,15 @@ slug with retired history; `enforce_subscription_transition()` only
 fired on `UPDATE`, so a row could be *created* already invalid (e.g.
 `expired` with `cancel_at_period_end = true`, or `active` with a
 `NULL`/past `current_period_end`); `issue_invoice_from_payment()` wrote
-no `admin_audit_log` row for a real admin's genuine issuance.
+no `admin_audit_log` row for a real admin's genuine issuance. A
+follow-up review of THIS round then caught 3 further documentation-only
+defects (a wrong description of how drizzle-orm's `migrate()` actually
+recognizes an already-applied migration; `.claude/settings.local.json`
+relying on a personal global gitignore rather than this repo's own; a
+stale "3 admin RPCs" test message) — corrected, plus the new
+`published-migrations-checksum.test.mjs` guard above, which is the real,
+independent answer to "how would we actually know if 0000-0003 were
+edited" (nothing before it did).
 
 ## The upgrade/legacy-privilege-drift scenario
 
@@ -58,11 +70,24 @@ before/after/alongside them):
    `anon`/`authenticated` (simulating a leftover from before this
    engagement), and a `provider_events` row stuck in `'processing'`
    with `claimed_at = NULL` (the exact pre-fencing legacy shape).
-3. Applies the **real, full** `lib/db/drizzle` folder. Drizzle's
-   `migrate()` hashes each migration file's content and compares
-   against `__drizzle_migrations` in this database — `0000`-`0003` here
-   are byte-identical to the real folder's copies, so they're recognized
-   as already applied; only `0004`-`0009` actually run.
+3. Applies the **real, full** `lib/db/drizzle` folder. **Corrected
+   description** (a review caught this — the previous wording claimed a
+   hash comparison that doesn't happen): drizzle-orm's postgres
+   `migrate()` reads only the SINGLE most-recently-applied row from
+   `__drizzle_migrations` (`order by created_at desc limit 1`) and runs
+   every migration whose `meta/_journal.json` timestamp (`when`) is
+   newer than that one row's `created_at` — it records a sha256 hash
+   per newly-applied migration for bookkeeping, but never reads that
+   hash back to re-verify an OLDER, already-applied migration's file
+   content is unchanged (verified by reading `drizzle-orm`'s own
+   `PgDialect.migrate()` source, not assumed). So `0000`-`0003` are
+   skipped here because phase 1's trimmed journal carries the SAME
+   `when` timestamps as the real folder's `0000`-`0003` entries (byte-
+   identical copies, verified earlier) — not because their file content
+   is hash-verified against anything. This step proves the real
+   *upgrade ordering* (only the genuinely-new migrations run), not that
+   `0000`-`0003` are tamper-evident — see
+   `published-migrations-checksum.test.mjs` below for that guarantee.
 4. Proves the injected drift is gone via `has_table_privilege`/
    `has_function_privilege` (not inferred from "the migration ran
    without error"), and that the legacy stuck row was reset to
@@ -144,8 +169,9 @@ for real, proven directly rather than inferred.
 
 ## Captured output
 
-`last-run-output.txt` is a captured, real run — `run-migrations.mjs`
-twice (to prove its already-applied-migration bookkeeping across all 11
-migration files, not that the raw SQL itself is re-runnable), then all 5
-test scripts, then `tsc --noEmit` and a `drizzle-kit generate` drift
-check — not hand-edited.
+`last-run-output.txt` is a captured, real run —
+`published-migrations-checksum.test.mjs` first (no DB needed), then
+`run-migrations.mjs` twice (to prove its already-applied-migration
+bookkeeping across all 11 migration files, not that the raw SQL itself
+is re-runnable), then all 5 DB-backed test scripts, then `tsc --noEmit`
+and a `drizzle-kit generate` drift check — not hand-edited.

@@ -78,24 +78,24 @@ alter table public.admin_audit_log enable row level security;--> statement-break
 
 -- ---------------------------------------------------------------------
 -- 1. profiles
--- Owner UPDATE (name only) and the read/mark-notification RPCs below
--- deliberately have NO raw UPDATE policy for `authenticated` — they run
--- through SECURITY DEFINER RPCs instead (update_own_profile_name(),
--- mark_notification_read()), which bypass RLS as the function owner's
--- privilege and re-check ownership/role themselves. This sidesteps the
--- column-privilege problem entirely (a `role` column raw grant would let
--- a user self-promote to admin in the same UPDATE) rather than trying to
--- solve it with GRANT/REVOKE column privileges.
+-- RLS Remediation Round 2 (finding 1): a raw profiles_update_admin_aal2
+-- policy used to sit alongside admin_set_role() below, letting the same
+-- AAL2 admin session UPDATE role (or anything else) directly, bypassing
+-- the RPC's audit-log write entirely — a real, tested bypass, not
+-- hypothetical. Removed: NO raw UPDATE policy exists for `authenticated`
+-- at all now, for anyone, admin included. admin_set_role() still works
+-- regardless (SECURITY DEFINER bypasses RLS by privilege, not by this
+-- policy's presence) and is now the ONLY way to change a profiles row.
+-- Owner UPDATE (name only) is the same story, one level down:
+-- update_own_profile_name()/mark_notification_read() below are the only
+-- owner-write paths, sidestepping the column-privilege problem entirely
+-- (a `role` column raw grant would let a user self-promote to admin in
+-- the same UPDATE) rather than trying to solve it with GRANT/REVOKE
+-- column privileges.
 -- ---------------------------------------------------------------------
 create policy profiles_select_own_or_admin on public.profiles
   for select to authenticated
   using (id = auth.uid() or public.is_admin());
---> statement-breakpoint
-
-create policy profiles_update_admin_aal2 on public.profiles
-  for update to authenticated
-  using (public.is_admin_aal2())
-  with check (public.is_admin_aal2());
 --> statement-breakpoint
 
 -- Returns SETOF, not a single row: a plain `RETURNS public.profiles`
@@ -126,38 +126,69 @@ $$;
 
 -- ---------------------------------------------------------------------
 -- 2-4. quran_bookmarks / quran_reading_progress / quran_memorization_stats
--- Pure per-user tool data — owner has full CRUD, admin AAL1 can read
--- for support (no admin write path exists, matches the design doc).
+-- Pure per-user tool data — owner has full CRUD, admin AAL1 can read for
+-- support. RLS Remediation Round 2 (finding, "your call" — decided:
+-- fix now): these 3 tables used to share one FOR ALL policy whose WITH
+-- CHECK bound INSERT/UPDATE but not DELETE (Postgres only applies USING
+-- to a DELETE, never WITH CHECK) — so admin's `is_admin()` in the USING
+-- clause let them delete another user's row with zero audit trail, even
+-- though the same policy's WITH CHECK blocked them from meaningfully
+-- editing/inserting on that user's behalf. Split into two clean
+-- policies per table instead: a pure owner FOR ALL (no admin clause at
+-- all) plus a read-only admin SELECT. Admin now has ZERO write/delete
+-- capability on this data, at either AAL level — a real capability
+-- reduction, deliberate.
 -- ---------------------------------------------------------------------
 create policy quran_bookmarks_owner_all on public.quran_bookmarks
   for all to authenticated
-  using (user_id = auth.uid() or public.is_admin())
+  using (user_id = auth.uid())
   with check (user_id = auth.uid());
+--> statement-breakpoint
+
+create policy quran_bookmarks_select_admin on public.quran_bookmarks
+  for select to authenticated
+  using (public.is_admin());
 --> statement-breakpoint
 
 create policy quran_reading_progress_owner_all on public.quran_reading_progress
   for all to authenticated
-  using (user_id = auth.uid() or public.is_admin())
+  using (user_id = auth.uid())
   with check (user_id = auth.uid());
+--> statement-breakpoint
+
+create policy quran_reading_progress_select_admin on public.quran_reading_progress
+  for select to authenticated
+  using (public.is_admin());
 --> statement-breakpoint
 
 create policy quran_memorization_stats_owner_all on public.quran_memorization_stats
   for all to authenticated
-  using (user_id = auth.uid() or public.is_admin())
+  using (user_id = auth.uid())
   with check (user_id = auth.uid());
+--> statement-breakpoint
+
+create policy quran_memorization_stats_select_admin on public.quran_memorization_stats
+  for select to authenticated
+  using (public.is_admin());
 --> statement-breakpoint
 
 -- ---------------------------------------------------------------------
 -- 5. enrollments — guest-submittable (anon insert), admin-managed
 -- otherwise. No rate limiting on the anon INSERT policy — an explicitly
--- DEFERRED item (docs/product-scope-audit.md §14): the earlier "Postgres
--- counters" decision conflicts with rate_limit_counters being on the
--- DROP list, and the user chose to defer rather than pick a mechanism
--- now.
+-- DEFERRED item, but a BLOCKING one before any public/production
+-- exposure of this endpoint (docs/product-scope-audit.md §14,
+-- docs/rls-matrix.md): the earlier "Postgres counters" decision
+-- conflicts with rate_limit_counters being on the DROP list, and the
+-- user chose to defer rather than pick a mechanism now — acceptable
+-- only because this baseline is local-only and never applied anywhere.
+-- WITH CHECK now also forces status = 'new' (RLS Remediation Round 2,
+-- finding 3): used to be `with check (true)`, letting a guest submit
+-- e.g. status = 'enrolled' directly, forging the admin-review outcome
+-- on arrival.
 -- ---------------------------------------------------------------------
 create policy enrollments_insert_public on public.enrollments
   for insert to anon, authenticated
-  with check (true);
+  with check (status = 'new');
 --> statement-breakpoint
 
 create policy enrollments_select_admin on public.enrollments
@@ -202,11 +233,15 @@ create policy plans_update_admin_aal2 on public.plans
 -- 7. subscriptions — owner + admin read; writes are service_role/RPC-
 -- driven, not raw client INSERT/UPDATE (a user-initiated cancellation
 -- goes through a deferred RPC, not a direct client write — see
--- docs/rls-matrix.md note 6).
+-- docs/rls-matrix.md note 6). AAL2-tightened (RLS Remediation Round 2,
+-- finding: was AAL1-readable — this table carries provider_customer_id/
+-- provider_subscription_id, real payment-gateway identifiers, joining
+-- the already-tightened payments/manual_payments/invoices/provider_
+-- events/admin_audit_log group).
 -- ---------------------------------------------------------------------
-create policy subscriptions_select_own_or_admin on public.subscriptions
+create policy subscriptions_select_own_or_admin_aal2 on public.subscriptions
   for select to authenticated
-  using (user_id = auth.uid() or public.is_admin());
+  using (user_id = auth.uid() or public.is_admin_aal2());
 --> statement-breakpoint
 
 create policy subscriptions_update_admin_aal2 on public.subscriptions
@@ -219,22 +254,23 @@ create policy subscriptions_update_admin_aal2 on public.subscriptions
 -- 8. payments — the ledger. AAL2-tightened (baseline remediation): was
 -- AAL1-readable in the first RLS matrix draft, a user review flagged
 -- that as too permissive for financial data, tightened per an explicit
--- user decision. No raw client INSERT for a charge (server/webhook-
--- driven); admin's only INSERT path is a refund, and the recommended
--- route is issue_refund() below (atomic with the audit log), though a
--- base policy exists too for defense in depth. No UPDATE policy for any
--- authenticated role at all — even admin never hand-edits a payment row
--- (the real enforce_payment_status_transition() trigger governs
--- service_role's own updates regardless of RLS).
+-- user decision. No raw client INSERT at all, for any role including
+-- admin — RLS Remediation Round 2 (finding 1): a raw payments_insert_
+-- admin_aal2 policy used to sit alongside admin_issue_refund() below,
+-- letting the same AAL2 admin session INSERT a payments row directly —
+-- including a fabricated kind='charge' status='succeeded' row, since no
+-- trigger governs INSERT the way validate_refund_insert() governs
+-- kind='refund' rows. Removed entirely. admin_issue_refund() is now the
+-- ONLY INSERT path for anyone but service_role (the real webhook/
+-- gateway writer), and it still works regardless (SECURITY DEFINER
+-- bypasses RLS by privilege, not by this policy's presence). No UPDATE
+-- policy for any authenticated role at all — even admin never hand-
+-- edits a payment row (the real enforce_payment_status_transition()
+-- trigger governs service_role's own updates regardless of RLS).
 -- ---------------------------------------------------------------------
 create policy payments_select_own_or_admin_aal2 on public.payments
   for select to authenticated
   using (user_id = auth.uid() or public.is_admin_aal2());
---> statement-breakpoint
-
-create policy payments_insert_admin_aal2 on public.payments
-  for insert to authenticated
-  with check (public.is_admin_aal2());
 --> statement-breakpoint
 
 -- ---------------------------------------------------------------------
@@ -249,9 +285,22 @@ create policy provider_events_select_admin_aal2 on public.provider_events
 
 -- ---------------------------------------------------------------------
 -- 10. manual_payments — AAL2-tightened. Owner can submit their own
--- proof-of-payment; review is the atomic review_manual_payment() RPC
--- below (recommended path), with a base UPDATE policy for defense in
--- depth.
+-- proof-of-payment; review is exclusively admin_review_manual_payment()
+-- below. RLS Remediation Round 2 (finding 1): a raw manual_payments_
+-- update_admin_aal2 policy used to sit alongside that RPC, letting the
+-- same AAL2 admin session UPDATE status/admin_note/reviewer_admin_id/
+-- reviewed_at directly, bypassing the RPC's FOR UPDATE pending-claim
+-- (so the same row could be "approved" twice by two racing raw UPDATEs)
+-- and its audit-log write. Removed entirely — the RPC is now the ONLY
+-- review path, and still works regardless (SECURITY DEFINER bypasses
+-- RLS by privilege, not by this policy's presence).
+--
+-- manual_payments_insert_own's WITH CHECK (finding 2, Round 2): used to
+-- only test user_id = auth.uid() — status/reviewer_admin_id/reviewed_at/
+-- admin_note are real columns on this table a client could set on
+-- insert, e.g. submitting a proof-of-payment already marked 'approved'.
+-- Now forces every owner-submitted row to actually be a fresh, unreviewed
+-- pending claim.
 -- ---------------------------------------------------------------------
 create policy manual_payments_select_own_or_admin_aal2 on public.manual_payments
   for select to authenticated
@@ -260,18 +309,27 @@ create policy manual_payments_select_own_or_admin_aal2 on public.manual_payments
 
 create policy manual_payments_insert_own on public.manual_payments
   for insert to authenticated
-  with check (user_id = auth.uid());
---> statement-breakpoint
-
-create policy manual_payments_update_admin_aal2 on public.manual_payments
-  for update to authenticated
-  using (public.is_admin_aal2())
-  with check (public.is_admin_aal2());
+  with check (
+    user_id = auth.uid()
+    and status = 'pending'
+    and reviewer_admin_id is null
+    and reviewed_at is null
+    and admin_note is null
+  );
 --> statement-breakpoint
 
 -- ---------------------------------------------------------------------
 -- 11. invoices — AAL2-tightened, read-only receipts (no UPDATE policy
--- at all — an invoice is an immutable snapshot once issued).
+-- at all — an invoice is an immutable snapshot once issued). No RPC
+-- wraps invoice issuance (unlike payments/manual_payments/profiles) —
+-- it's a receipt snapshot, not a ledger mutation with a concurrency
+-- race, so there's no atomicity/locking need an RPC would add. Instead
+-- (RLS Remediation Round 2, finding 1) the raw INSERT below is backed by
+-- a real trigger, validate_invoice_insert() (0001_functions_triggers.sql,
+-- mirrors validate_refund_insert()'s pattern): rejects unless payment_id
+-- names a real, succeeded payments row with a matching user_id/
+-- currency_snapshot — a raw insert can no longer fabricate a receipt
+-- disconnected from an actual successful charge.
 -- ---------------------------------------------------------------------
 create policy invoices_select_own_or_admin_aal2 on public.invoices
   for select to authenticated
@@ -367,12 +425,14 @@ create policy testimonials_delete_admin_aal2 on public.testimonials
 --> statement-breakpoint
 
 -- ---------------------------------------------------------------------
--- 16. trial_requests — same shape as enrollments. Deferred rate
--- limiting applies here too (see the enrollments comment above).
+-- 16. trial_requests — same shape as enrollments. Deferred-but-blocking
+-- rate limiting applies here too (see the enrollments comment above).
+-- WITH CHECK forces status = 'new', same reasoning as enrollments
+-- (finding 3).
 -- ---------------------------------------------------------------------
 create policy trial_requests_insert_public on public.trial_requests
   for insert to anon, authenticated
-  with check (true);
+  with check (status = 'new');
 --> statement-breakpoint
 
 create policy trial_requests_select_admin on public.trial_requests
@@ -394,13 +454,15 @@ create policy trial_requests_delete_admin_aal2 on public.trial_requests
 -- ---------------------------------------------------------------------
 -- 17. subscribers — same guest-insert shape. No UPDATE policy for
 -- anon/authenticated at all (unsubscribe is a signed-link, service_role
--- flow, matching content.ts's doc comment on this table). Deferred rate
--- limiting applies here too — see docs/rls-matrix.md's "Deferred /
--- explicitly out of scope" section.
+-- flow, matching content.ts's doc comment on this table). Deferred-but-
+-- blocking rate limiting applies here too — see docs/rls-matrix.md's
+-- "Deferred / explicitly out of scope" section. WITH CHECK forces
+-- status = 'subscribed', same reasoning as enrollments (finding 3) — a
+-- guest signing up can't insert themselves as already 'unsubscribed'.
 -- ---------------------------------------------------------------------
 create policy subscribers_insert_public on public.subscribers
   for insert to anon, authenticated
-  with check (true);
+  with check (status = 'subscribed');
 --> statement-breakpoint
 
 create policy subscribers_select_admin on public.subscribers
@@ -424,10 +486,19 @@ create policy subscribers_delete_admin_aal2 on public.subscribers
 -- policy at all (the "mark read" mutation goes through
 -- mark_notification_read() below, so a column-privilege problem on
 -- title/body/meta never arises — same pattern as profiles.name).
+-- RLS Remediation Round 2 ("your call" — decided: AAL2 for full read):
+-- there used to be NO admin read policy on this table at all, unlike
+-- every other owner-scoped table here — now AAL2 admin gets full read
+-- access (support/compliance); AAL1 admin still gets none.
 -- ---------------------------------------------------------------------
 create policy notifications_select_own on public.notifications
   for select to authenticated
   using (user_id = auth.uid());
+--> statement-breakpoint
+
+create policy notifications_select_admin_aal2 on public.notifications
+  for select to authenticated
+  using (public.is_admin_aal2());
 --> statement-breakpoint
 
 create policy notifications_insert_admin_aal2 on public.notifications
@@ -482,19 +553,24 @@ create policy notification_preferences_update_own on public.notification_prefere
 --> statement-breakpoint
 
 -- ---------------------------------------------------------------------
--- 20. admin_audit_log — AAL2-tightened read; no UPDATE/DELETE policy at
--- all (the real forbid_audit_log_mutation() trigger already blocks
--- both, regardless of role — this is a second, redundant-by-design
--- layer, not the only one).
+-- 20. admin_audit_log — AAL2-tightened read; no INSERT/UPDATE/DELETE
+-- policy at all, for any role. RLS Remediation Round 2 (finding 1): a
+-- raw admin_audit_log_insert_admin_aal2 policy used to let any AAL2
+-- admin session insert arbitrary audit rows directly — forging a fake
+-- "this happened" entry, or omitting one, entirely independent of
+-- whether the mutation it claims to record actually occurred. Removed
+-- entirely. Every real audit-log write happens ONLY from inside
+-- admin_set_role()/admin_review_manual_payment()/admin_issue_refund()
+-- below, as the function owner (SECURITY DEFINER bypasses RLS by
+-- privilege, not by this policy's presence) — the mutation and its audit
+-- row are atomic and neither can happen without the other. UPDATE/
+-- DELETE remain policy-less too, same as before (the real forbid_audit_
+-- log_mutation() trigger already blocks both, regardless of role — a
+-- second, redundant-by-design layer, not the only one).
 -- ---------------------------------------------------------------------
 create policy admin_audit_log_select_admin_aal2 on public.admin_audit_log
   for select to authenticated
   using (public.is_admin_aal2());
---> statement-breakpoint
-
-create policy admin_audit_log_insert_admin_aal2 on public.admin_audit_log
-  for insert to authenticated
-  with check (public.is_admin_aal2());
 --> statement-breakpoint
 
 -- ---------------------------------------------------------------------
@@ -633,17 +709,106 @@ $$;
 --> statement-breakpoint
 
 -- ---------------------------------------------------------------------
--- GRANT strategy — matches Supabase's own convention: broad SQL-level
--- privileges to anon/authenticated/service_role, RLS policies (above)
--- are the real row-level gate for anon/authenticated. service_role
--- additionally has BYPASSRLS (a property of the role itself on the real
--- project, not managed here) — but BYPASSRLS only skips row-level
--- policies, it does NOT imply any base SQL privilege, so service_role
--- still needs these GRANTs like every other role (a real bug this pass
--- caught: the first version of this block only granted to anon/
--- authenticated, and service_role got "permission denied" on every
--- table until this was fixed and re-verified).
+-- GRANT strategy — RLS Remediation Round 2 (finding 5): the previous
+-- version of this block granted blanket SELECT/INSERT/UPDATE/DELETE on
+-- ALL tables and EXECUTE on ALL functions to anon/authenticated/
+-- service_role, relying entirely on RLS policies as the real boundary.
+-- Two real problems with that: (1) Postgres auto-grants EXECUTE on a
+-- newly created function to PUBLIC by default (unlike tables, which
+-- default to owner-only) — so every SECURITY DEFINER admin RPC below
+-- was reachable by literally anyone regardless of the blanket grant,
+-- protected only by each function's own internal is_admin_aal2() check,
+-- not by any privilege boundary; (2) a blanket INSERT grant on
+-- enrollments/trial_requests/subscribers let anon/authenticated specify
+-- ANY column on insert, including created_at (backdating a lead-capture
+-- row) — the WITH CHECK additions above already block a forged status
+-- value, but not a forged created_at.
+--
+-- REVOKE-from-PUBLIC first, then explicit, minimal per-role grants:
+-- anon gets read-only catalog access plus column-restricted guest-form
+-- inserts, nothing else; authenticated gets the broader base access RLS
+-- is the real gate for (admin-vs-owner is a row value checked INSIDE
+-- policies via is_admin()/is_admin_aal2(), not a separate Postgres
+-- role — so authenticated must still have base access to every table
+-- an admin policy targets, admin sessions ARE 'authenticated'), except
+-- the same 3 tables' INSERT is column-restricted here too, for the same
+-- reason as anon; service_role keeps full unrestricted access (the
+-- trusted server role, bypasses RLS by design via BYPASSRLS — but
+-- BYPASSRLS only skips row-level policies, not base SQL privileges, so
+-- it still needs real GRANTs, a bug this engagement already caught
+-- once before).
+--
+-- Functions get individual EXECUTE grants matched to who's actually
+-- meant to call them: is_admin() is referenced by an anon-visible
+-- policy (plans/blogs/testimonials SELECT), so anon needs it too;
+-- is_admin_aal2() and every owner/admin RPC are authenticated-only
+-- (the admin ones stay self-guarded internally on top of this);
+-- claim_provider_event()/complete_provider_event() are service_role-
+-- only (the webhook worker, never a client call); every 0001 trigger
+-- function gets NO grant to any client role at all — Postgres does not
+-- check EXECUTE privilege to fire a trigger, only to call a function
+-- directly in a query, so none is needed.
 -- ---------------------------------------------------------------------
+revoke all on all tables in schema public from public;--> statement-breakpoint
+revoke execute on all functions in schema public from public;--> statement-breakpoint
+
 grant usage on schema public to anon, authenticated, service_role;--> statement-breakpoint
-grant select, insert, update, delete on all tables in schema public to anon, authenticated, service_role;--> statement-breakpoint
-grant execute on all functions in schema public to anon, authenticated, service_role;
+
+-- anon — read-only public catalog + the 3 guest-insert forms only.
+grant select on public.plans, public.blogs, public.testimonials to anon;--> statement-breakpoint
+grant insert (
+  name, email, whatsapp, country, city, timezone, times, subjects, lang,
+  level, age_group, gender_pref, preferred_teacher_key,
+  preferred_teacher_name, requested_plan_slug, status, notes
+) on public.enrollments to anon, authenticated;--> statement-breakpoint
+grant insert (name, email, phone, course, message, status)
+  on public.trial_requests to anon, authenticated;--> statement-breakpoint
+grant insert (email, status) on public.subscribers to anon, authenticated;--> statement-breakpoint
+
+-- authenticated — enumerated per operation to match the actual policy
+-- set exactly (not a blanket grant minus exceptions — a table-level
+-- grant is purely additive in Postgres, so a broad grant can never be
+-- narrowed by a more specific one layered after it; the only way to
+-- keep "no policy → no privilege either" true for a table is to never
+-- grant that operation in the first place). Every table has a SELECT
+-- policy for authenticated (owner or admin), so SELECT alone stays a
+-- clean blanket grant; INSERT/UPDATE/DELETE are listed only for the
+-- tables that actually have a matching authenticated-targeted policy —
+-- notably profiles (no UPDATE — RPC-only), payments (no UPDATE/INSERT —
+-- RPC-only/service_role-only), manual_payments (no UPDATE — RPC-only),
+-- provider_events/subscriptions (no INSERT — service_role/RPC-only),
+-- and admin_audit_log (no INSERT/UPDATE/DELETE — RPC-internal-only) are
+-- deliberately absent from the corresponding list below, so a raw
+-- attempt on any of those fails at the GRANT layer, before RLS is even
+-- evaluated — true defense in depth, not RLS as the sole boundary.
+grant select on all tables in schema public to authenticated;--> statement-breakpoint
+grant insert on public.quran_bookmarks, public.quran_reading_progress,
+  public.quran_memorization_stats, public.plans, public.manual_payments,
+  public.invoices, public.coupons, public.blogs, public.testimonials,
+  public.notifications, public.notification_preferences
+  to authenticated;--> statement-breakpoint
+grant update on public.quran_bookmarks, public.quran_reading_progress,
+  public.quran_memorization_stats, public.enrollments, public.plans,
+  public.subscriptions, public.coupons, public.blogs,
+  public.testimonials, public.trial_requests, public.subscribers,
+  public.notification_preferences
+  to authenticated;--> statement-breakpoint
+grant delete on public.quran_bookmarks, public.quran_reading_progress,
+  public.quran_memorization_stats, public.enrollments, public.coupons,
+  public.blogs, public.testimonials, public.trial_requests,
+  public.subscribers, public.notifications
+  to authenticated;--> statement-breakpoint
+
+-- service_role — full, unrestricted (the trusted server role).
+grant select, insert, update, delete on all tables in schema public to service_role;--> statement-breakpoint
+
+-- Function EXECUTE grants, one per intended caller.
+grant execute on function public.is_admin() to anon, authenticated;--> statement-breakpoint
+grant execute on function public.is_admin_aal2() to authenticated;--> statement-breakpoint
+grant execute on function public.update_own_profile_name(text) to authenticated;--> statement-breakpoint
+grant execute on function public.mark_notification_read(uuid) to authenticated;--> statement-breakpoint
+grant execute on function public.admin_set_role(uuid, public.account_role) to authenticated;--> statement-breakpoint
+grant execute on function public.admin_review_manual_payment(uuid, public.manual_payment_status, text) to authenticated;--> statement-breakpoint
+grant execute on function public.admin_issue_refund(uuid, integer) to authenticated;--> statement-breakpoint
+grant execute on function public.claim_provider_event(uuid) to service_role;--> statement-breakpoint
+grant execute on function public.complete_provider_event(uuid, public.provider_event_status, text) to service_role;

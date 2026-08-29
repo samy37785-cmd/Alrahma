@@ -362,7 +362,69 @@ create trigger enrollments_set_updated_at
   for each row execute procedure public.set_updated_at();
 
 -- ---------------------------------------------------------------------
--- 9. gen_random_uuid() / pgcrypto: NOT re-declared here. Every `id uuid
+-- 9. validate_invoice_insert() — invoices BEFORE INSERT.
+--
+-- RLS Remediation Round 2 (finding 1): invoices has no RPC wrapping
+-- issuance the way profiles/manual_payments/payments do — it's a
+-- receipt snapshot, not a ledger mutation with a concurrency race, so
+-- there's no atomicity/locking need an RPC would add. The raw admin
+-- INSERT policy on invoices (0002_rls.sql) stays the real write path,
+-- but without this trigger nothing stopped it from fabricating a
+-- receipt for a payment that never happened. Mirrors validate_refund_
+-- insert()'s pattern, scoped to what's unambiguous: the new row must
+-- name a real, succeeded charge with a matching user_id/
+-- currency_snapshot. Amount reconciliation is deliberately NOT checked
+-- here (no documented formula for how amount_minor_snapshot/
+-- discount_minor_snapshot on an invoice are meant to relate to the
+-- linked payment's own amount_minor — payments.ts's own CHECK already
+-- guarantees the underlying charge is internally consistent; guessing a
+-- formula here risked rejecting a legitimate invoice on a wrong
+-- assumption).
+-- ---------------------------------------------------------------------
+create or replace function public.validate_invoice_insert()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+declare
+  linked public.payments%rowtype;
+begin
+  if new.payment_id is null then
+    raise exception 'invoices row % must reference a real payments row (payment_id is null)', new.id;
+  end if;
+
+  select * into linked
+  from public.payments
+  where id = new.payment_id;
+
+  if not found then
+    raise exception 'invoices.payment_id % does not reference an existing payments row', new.payment_id;
+  end if;
+
+  if linked.kind <> 'charge' or linked.status <> 'succeeded' then
+    raise exception 'invoices row % must reference a succeeded charge (payment_id=% has kind=%, status=%)', new.id, new.payment_id, linked.kind, linked.status;
+  end if;
+
+  if new.user_id <> linked.user_id then
+    raise exception 'invoice user_id (%) does not match its linked payment''s user_id (%)', new.user_id, linked.user_id;
+  end if;
+
+  if new.currency_snapshot <> linked.currency_snapshot then
+    raise exception 'invoice currency_snapshot (%) does not match its linked payment''s currency_snapshot (%)', new.currency_snapshot, linked.currency_snapshot;
+  end if;
+
+  return new;
+end;
+$$;
+--> statement-breakpoint
+
+create trigger invoices_validate_insert
+  before insert on public.invoices
+  for each row execute procedure public.validate_invoice_insert();
+--> statement-breakpoint
+
+-- ---------------------------------------------------------------------
+-- 10. gen_random_uuid() / pgcrypto: NOT re-declared here. Every `id uuid
 -- primary key default gen_random_uuid()` in 0000 relies on
 -- gen_random_uuid() being available with no extension. PostgreSQL has
 -- shipped it as a built-in pg_catalog function (no CREATE EXTENSION

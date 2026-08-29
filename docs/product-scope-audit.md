@@ -400,10 +400,12 @@ before ever being applied to any database, real or otherwise.
   `payments.forbid_payment_delete()`) is a legitimate follow-up, not in
   this round's scope.
 - **Subscription period-monotonicity**: `enforce_subscription_
-  transition()` (Round 3, Section C) does not enforce that `current_
-  period_end` only moves forward — no reliable rule was found for a
-  legitimate webhook resync/proration case that wouldn't also block a
-  real one.
+  transition()` (Round 3, Section C; Round 4 added `current_period_end`
+  must be after `current_period_start`, and — for `active` rows only —
+  in the future, closing 3 real gaps a fresh review found) still does
+  NOT enforce that `current_period_end` only moves forward across
+  successive updates — no reliable rule was found for a legitimate
+  webhook resync/proration case that wouldn't also block a real one.
 
 ## Status
 
@@ -412,18 +414,22 @@ before ever being applied to any database, real or otherwise.
 - This document (v3-final, self-contained revision, later corrected by
   baseline remediation — see the currency/language/refund/claim-event
   notes throughout): committed on `docs/product-scope-closure-v3`.
-- The 20-table schema, its versioned migrations (now 10, `0000` through
-  `0009_refund_integrity.sql`, through RLS Remediation Round 3), and a
-  local Docker Postgres test suite (218 real-SQL assertions across 5
-  scripts — schema/function, RLS role-switching, a systematic per-table
-  matrix sweep, direct ACL proof, and a two-phase upgrade/legacy-
-  privilege-drift scenario) exist as subsequent commits on this same
-  branch. RLS, grants (explicitly reconciled against named roles, not
-  just `PUBLIC`), webhook-lease fencing, and subscription/invoice/plan/
-  refund financial-integrity RPCs are all implemented and locally tested
-  (`lib/db/drizzle/0002_rls.sql` through `0009_refund_integrity.sql`,
-  `docs/rls-matrix.md`) — not yet applied anywhere near the real
-  project.
+- The 20-table schema, its versioned migrations (now 11, `0000` through
+  `0010_round4_integrity_fixes.sql`, through RLS Remediation Round 4),
+  and a local Docker Postgres test suite (226 real-SQL assertions across
+  5 scripts — schema/function, RLS role-switching, a systematic
+  per-table matrix sweep, direct ACL proof, and a two-phase upgrade/
+  legacy-privilege-drift scenario) exist as subsequent commits on this
+  same branch. RLS, grants (explicitly reconciled against named roles,
+  not just `PUBLIC`), webhook-lease fencing, and subscription/invoice/
+  plan/refund financial-integrity RPCs are all implemented and locally
+  tested (`lib/db/drizzle/0002_rls.sql` through
+  `0010_round4_integrity_fixes.sql`, `docs/rls-matrix.md`) — not yet
+  applied anywhere near the real project. Round 4 specifically closed 3
+  further real gaps a fresh review of Round 3's own delivery found:
+  plan-version duplication under a retired slug, subscription invariants
+  only enforced on `UPDATE` (not `INSERT`), and no audit trail on
+  invoice issuance.
 - Nothing applied, dropped, or pushed on the real Supabase project at any
   point. No `git push`. `ae47640` still sits unmodified in history,
   documented as superseded.

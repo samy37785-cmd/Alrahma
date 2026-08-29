@@ -1,4 +1,4 @@
-# RLS Matrix — Implemented (`lib/db/drizzle/0002_rls.sql` through `0009_refund_integrity.sql`)
+# RLS Matrix — Implemented (`lib/db/drizzle/0002_rls.sql` through `0010_round4_integrity_fixes.sql`)
 
 > **This document describes real, tested `CREATE POLICY`/`GRANT`/trigger
 > SQL.** Round 3 (this revision) rewrites it against the actual final
@@ -20,16 +20,29 @@
 > as proof of correct denial, unable to distinguish a `GRANT`-layer
 > denial from an RLS denial from a trigger from a constraint.
 >
-> **Tested, not just written**: `lib/db/test/rls.local.test.mjs` (67
-> assertions) + `lib/db/test/rls-full-matrix.local.test.mjs` (58
-> assertions — the systematic per-table sweep) + `lib/db/test/acl.local.
-> test.mjs` (18 assertions — direct `has_table_privilege`/`has_column_
-> privilege`/`has_function_privilege` checks against the final grant
-> matrix, not inferred from a caught error) + `lib/db/test/schema.local.
-> test.mjs` (66 assertions) + `lib/db/test/upgrade-scenario.local.
-> test.mjs` (9 assertions — the two-phase legacy-privilege-drift
-> scenario Section A's fix specifically depends on) = **218 real-SQL
-> assertions**, all passing against a throwaway local Docker Postgres,
+> **Round 4** (`0010_round4_integrity_fixes.sql`) closed 3 further real
+> gaps a fresh review of Round 3's own delivery found, none of them
+> caught by Round 3's own 218 assertions: (1) `create_plan_version()`'s
+> brand-new-plan branch could mint a second, unrelated "version 1" row
+> for a slug that already had deactivated history — `plans_slug_active_
+> unique` only ever guarded the single *active* row, never the full
+> history; (2) `enforce_subscription_transition()` only fired on
+> `UPDATE` — every `INSERT` (both RPCs that create a subscription row)
+> went through completely unchecked, so a row could be created already
+> `expired` with `cancel_at_period_end = true`, or `active` with a
+> `NULL`/past `current_period_end`; (3) `issue_invoice_from_payment()`
+> wrote no `admin_audit_log` row at all, unlike every other financially-
+> consequential admin RPC in this schema.
+>
+> **Tested, not just written**: `lib/db/test/rls.local.test.mjs` +
+> `lib/db/test/rls-full-matrix.local.test.mjs` (the systematic per-table
+> sweep) + `lib/db/test/acl.local.test.mjs` (direct `has_table_privilege`/
+> `has_column_privilege`/`has_function_privilege` checks against the
+> final grant matrix, not inferred from a caught error) +
+> `lib/db/test/schema.local.test.mjs` + `lib/db/test/upgrade-scenario.
+> local.test.mjs` (the two-phase legacy-privilege-drift scenario Section
+> A's fix specifically depends on) = **226 real-SQL assertions**, all
+> passing against a throwaway local Docker Postgres,
 > using real `SET ROLE`/session-JWT-claim role-switching (RLS is never
 > enforced for a table owner or superuser, so a real test must switch to
 > a non-owner role for a policy to matter at all). `expectReject()`
@@ -415,6 +428,20 @@ every role, no exception. `user_id`/`provider` are immutable forever.
 once, never `value → a different value`. Period-monotonicity is NOT
 enforced (deferred — see note 6 above).
 
+**Round 4**: the trigger now also fires `BEFORE INSERT`, not just
+`UPDATE` — the transition-graph/immutable-column checks above are
+skipped on `INSERT` (there is no `OLD` row to compare against), but the
+`NEW`-only invariants apply to both: `canceled_at` set iff `status =
+canceled`; `cancel_at_period_end` only `true` while `active`/`past_due`;
+`current_period_end` must be after `current_period_start` when both are
+given (new check); and an `active` row must have a real, future
+`current_period_end` — never `NULL`, never already elapsed (new check;
+`past_due` is deliberately exempt, since a real `past_due` row commonly
+carries an already-elapsed period — that's why it's `past_due`). Closes
+a real gap: previously a row could be *created* already `expired` with
+`cancel_at_period_end = true`, or `active` with a `NULL`/past period
+end — the `UPDATE`-only trigger never saw the `INSERT` that produced it.
+
 ## Invoice issuance contract (Round 3, Section D)
 
 An invoice is a receipt for exactly one succeeded charge. It is:
@@ -426,6 +453,22 @@ once issued, for every role, enforced by trigger (note 13). No credit-
 note/multiple-documents-per-payment model exists — a real product need
 for one is a deliberate new design, not a side effect of loosening the
 unique index.
+
+**Round 4**: `issue_invoice_from_payment()` now writes exactly one
+`admin_audit_log` row per genuinely NEW invoice issued by a real admin —
+gated on BOTH the `ON CONFLICT ... DO NOTHING RETURNING` insert actually
+returning a row (so an idempotent replay writes nothing further) AND
+`auth.uid() IS NOT NULL` (so a `service_role` issuance writes nothing at
+all). The second condition is a real, verified constraint, not a design
+nicety: `admin_audit_log.actor_admin_id` is `NOT NULL` with a real FK to
+`profiles`, and `auth.uid()` is `NULL` for a `service_role` session — an
+early version of this fix crashed outright on that `NOT NULL` violation
+for a `service_role` call, caught live. A `service_role`-issued invoice
+(a future automated post-charge path) still succeeds; it's simply not
+audited as an admin action, same reasoning `service_apply_subscription_
+update()` already documented for writing no audit row at all. Previously
+this RPC wrote no audit row under any caller, unlike every other
+financially-consequential admin RPC in this schema.
 
 ## Plan versioning contract (Round 3, Section E)
 
@@ -441,6 +484,18 @@ the only genuinely mutable-in-place columns, via `admin_update_plan_
 display()`/`deactivate_plan()`/`create_plan_version()` respectively. The
 public (`anon` and non-admin `authenticated`) only ever sees
 `active = true` rows.
+
+**Round 4**: a real gap in the guarantee above — `plans_slug_active_
+unique` only ever guards the single *active* row for a slug, so once
+that row was deactivated, `create_plan_version(NULL, same_slug, ...)`
+(the brand-new-plan branch) could be called again for that same slug,
+minting a second, unrelated "version 1" row rather than continuing the
+existing lineage. Closed two ways: `plans_slug_version_unique` (a real,
+unconditional unique index on `(slug, version)` — no two rows may ever
+share a pair, active or not) is the DB-level backstop; `create_plan_
+version()` also now rejects the brand-new-plan branch outright when the
+slug already has ANY row, directing the caller to version the existing
+(possibly inactive) plan via `p_old_plan_id` instead.
 
 ## Refund / provider-integration contract (Round 3, Section F)
 
@@ -498,15 +553,19 @@ a claim that it's solved.
 
 ## Status
 
-**Implemented and tested, Round 3.** `lib/db/drizzle/0004_privilege_
-reconciliation.sql` through `0009_refund_integrity.sql` (6 new
-migrations, `0000`-`0003` untouched), applied idempotently (twice, back
-to back, across all 10 migration files) to a throwaway local Docker
-Postgres, with **218 real-SQL assertions** passing across `schema.local.
-test.mjs` (66), `rls.local.test.mjs` (67), `rls-full-matrix.local.
-test.mjs` (58), `acl.local.test.mjs` (18, new this round — direct ACL
-proof, not inference), and `upgrade-scenario.local.test.mjs` (9, new
-this round — the real two-phase legacy-privilege-drift proof Section A
+**Implemented and tested, Rounds 3-4.** `lib/db/drizzle/0004_privilege_
+reconciliation.sql` through `0010_round4_integrity_fixes.sql` (7 new
+migrations, `0000`-`0003` untouched) to a throwaway local Docker
+Postgres. `migrate()` was run twice back to back across all 11
+migration files — this proves its already-applied-migration bookkeeping
+works (the second run applies nothing further), not that the migrations'
+raw SQL is itself re-runnable; several are not (e.g. `DROP CONSTRAINT`)
+and are never asked to re-run. With **226 real-SQL assertions** passing
+across `schema.local.
+test.mjs` (67), `rls.local.test.mjs` (71), `rls-full-matrix.local.
+test.mjs` (61), `acl.local.test.mjs` (18 — direct ACL
+proof, not inference), and `upgrade-scenario.local.test.mjs` (9 —
+the real two-phase legacy-privilege-drift proof Section A
 depends on). `tsc --noEmit` clean; `drizzle-kit generate` reports no
 schema drift. All captured in `lib/db/test/last-run-output.txt`. **Not
 applied to the real Supabase project** — that remains a separate,

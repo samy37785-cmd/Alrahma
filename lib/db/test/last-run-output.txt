@@ -1,11 +1,11 @@
-# Local schema test run — baseline remediation — 2026-08-28T23:47:29Z
+# Local schema+RLS test run — baseline remediation Part G — 2026-08-29T00:17:31Z
 # Target: throwaway local Docker Postgres (postgres:16), never the real Supabase project.
 
 $ node test/run-migrations.mjs
 [migrate] applying lib/db/drizzle to postgres://postgres:***@localhost:55432/alrahma_test
 [migrate] done.
 
-$ node test/run-migrations.mjs   # second run — proves idempotency
+$ node test/run-migrations.mjs   # second run — proves idempotency (0000+0001+0002)
 [migrate] applying lib/db/drizzle to postgres://postgres:***@localhost:55432/alrahma_test
 [migrate] done.
 
@@ -74,3 +74,32 @@ PASS  set_updated_at() bumps updated_at on a plans UPDATE
 PASS  set_updated_at() is attached to manual_payments/invoices/testimonials/enrollments
 
 62/62 passed.
+
+$ node test/rls.local.test.mjs
+PASS  seed: fixtures (auth.users, profiles via trigger, admin promotion, plan, a succeeded charge)
+PASS  anon can INSERT into enrollments
+PASS  anon cannot SELECT from enrollments (RLS filters to 0 rows)
+PASS  anon cannot SELECT from payments (RLS filters to 0 rows)
+PASS  user A can SELECT their own profiles row, not user B's
+PASS  user A's raw UPDATE on profiles.role is silently filtered (0 rows) — no policy permits it
+PASS  update_own_profile_name() RPC lets user A change their own name (bypasses RLS as the function owner)
+PASS  admin_set_role() RPC rejects a non-admin caller
+PASS  user A can SELECT their own payments row
+PASS  user B cannot SELECT user A's payments row (RLS filters to 0 rows)
+PASS  AAL1 admin is rejected reading payments directly (RLS filters to 0 rows)
+PASS  AAL1 admin is rejected reading manual_payments directly (RLS filters to 0 rows)
+PASS  AAL1 admin CAN read operational data (enrollments) — the confirmed AAL1/AAL2 split
+PASS  AAL2 admin CAN read payments
+PASS  AAL2 admin CAN read manual_payments (even with zero rows, the policy itself must not filter an admin out — verified via a real row)
+PASS  admin_set_role() promotes a user and writes an admin_audit_log row atomically
+PASS  admin_review_manual_payment() approves and writes an admin_audit_log row atomically
+PASS  admin_issue_refund() issues a refund and writes an admin_audit_log row atomically
+PASS  admin_issue_refund() is still governed by validate_refund_insert() — an oversized refund is rejected
+PASS  seed: a notification for user A
+PASS  user B cannot SELECT user A's notification
+PASS  mark_notification_read() lets user A mark their own notification read, but not user B's
+PASS  service_role sees all payments rows regardless of ownership (BYPASSRLS)
+PASS  service_role can INSERT a provider_events row directly (no policy needed — bypasses RLS)
+PASS  AAL2 admin CAN read provider_events; AAL1 admin cannot
+
+25/25 passed.

@@ -162,7 +162,34 @@ export const providerEvents = pgTable(
     // older than its staleness threshold back to 'pending' (clearing this),
     // the real recovery contract for a dead worker.
     claimedAt: timestamp("claimed_at", { withTimezone: true }),
+    // RLS Remediation Round 3 (Section B): the lease above had no fencing —
+    // a worker whose lease already expired and was reclaimed could still
+    // call complete_provider_event() successfully later, since that
+    // function only ever checked id + status, not who currently holds the
+    // lease. claim_token is the fencing identity: a fresh random UUID
+    // minted on every successful claim (including a reclaim-then-reclaim
+    // by a new worker); complete_provider_event() now requires the
+    // caller's token to match the row's CURRENT token, so a stale worker's
+    // completion call matches zero rows instead of closing out a claim it
+    // no longer holds. lease_expires_at replaces the old "claimed_at +
+    // fixed interval, decided at reclaim time" implicit lease with an
+    // explicit expiry set at claim time (lib/db/drizzle/
+    // 0005_provider_events_fencing.sql). attempt_count is incremented on
+    // every claim (including reclaims) — a visible retry counter; this
+    // schema deliberately does not yet enforce a max-attempts cutoff (no
+    // product policy exists for one), see that migration's doc comment.
+    claimToken: uuid("claim_token"),
+    leaseExpiresAt: timestamp("lease_expires_at", { withTimezone: true }),
+    attemptCount: integer("attempt_count").notNull().default(0),
     errorCode: text("error_code"),
   },
-  (t) => [uniqueIndex("provider_events_provider_event_unique").on(t.provider, t.providerEventId)],
+  (t) => [
+    uniqueIndex("provider_events_provider_event_unique").on(t.provider, t.providerEventId),
+    // reclaim_stale_provider_events() scans exactly this shape (processing
+    // rows, ordered/filtered by lease expiry) — a partial index keeps that
+    // a cheap index scan instead of a seq scan as the table grows.
+    index("provider_events_processing_lease_idx")
+      .on(t.leaseExpiresAt)
+      .where(sql`${t.processingStatus} = 'processing'`),
+  ],
 );

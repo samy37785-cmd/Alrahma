@@ -24,12 +24,33 @@ import { currencyCodeEnum } from "./enums";
  * mechanism; the real immutability guarantee is that `payments`/
  * `invoices` snapshot the price at time of payment (see payments.ts),
  * so a later change here never reinterprets historical financial rows.
+ *
+ * RLS Remediation Round 3 (Section E): the plain `.unique()` on `slug`
+ * used to make the paragraph above structurally impossible — two rows
+ * can never share a slug while one is flat-unique, so "a new row reuses
+ * the same slug once the old one is deactivated" had no real path.
+ * `plans_slug_active_unique` below (partial, `WHERE active`) is the
+ * actual fix: any number of INACTIVE rows may share a slug (full
+ * version history), but at most one ACTIVE row per slug ever exists —
+ * enforced by Postgres itself, not just by `create_plan_version()`'s own
+ * discipline (a real backstop against two concurrent version-creation
+ * calls both succeeding). `amount_minor`/`currency`/`stripe_product_id`/
+ * `stripe_price_id`/`paypal_plan_id`/`slug`/`version` are now enforced
+ * immutable on any existing row by `enforce_plan_immutability()`
+ * (`0008_plan_versioning.sql`) — genuinely, not just by convention; the
+ * raw admin UPDATE/INSERT policies are dropped in that same migration.
+ * `name`/`billing_interval`/`sessions_per_week`/`sessions_per_month` are
+ * catalog-defining, same as the financial columns, so they follow the
+ * same discipline: create a new version to change them, no in-place
+ * edit path exists. `display_order`/`active` are lifecycle/cosmetic, not
+ * catalog-defining — `admin_update_plan_display()`/`deactivate_plan()`
+ * are the narrow, real edit paths for those two.
  */
 export const plans = pgTable(
   "plans",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    slug: text("slug").notNull().unique(),
+    slug: text("slug").notNull(),
     name: text("name").notNull(),
     amountMinor: integer("amount_minor").notNull(),
     currency: currencyCodeEnum("currency").notNull().default("EUR"),
@@ -47,6 +68,10 @@ export const plans = pgTable(
   },
   (t) => [
     check("plans_amount_minor_nonneg", sql`${t.amountMinor} >= 0`),
+    // The real "no more than one active version per slug" guarantee —
+    // replaces the old flat unique(slug), which made versioning under
+    // the same slug structurally impossible (see the table doc comment).
+    uniqueIndex("plans_slug_active_unique").on(t.slug).where(sql`${t.active} = true`),
     // Unique only when set — several plans can share a null provider id
     // during setup without a false unique-constraint conflict, but no two
     // real provider price/plan IDs are ever allowed to collide.

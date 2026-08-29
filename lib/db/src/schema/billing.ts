@@ -78,6 +78,31 @@ export const manualPayments = pgTable(
  * Receipts. Independent snapshots so an invoice's historical content
  * never shifts if `plans`/`profiles` change later — same discipline as
  * `payments`' snapshot fields.
+ *
+ * RLS Remediation Round 3 (Section D): an invoice is a receipt for one
+ * specific succeeded charge, issued exclusively via
+ * `issue_invoice_from_payment()` (`0007_invoice_integrity.sql`) — never
+ * a raw admin INSERT, and never from a refund or a pending/failed
+ * payment. `payment_id` is `NOT NULL` + `ON DELETE RESTRICT`: payments
+ * are themselves never deleted (`forbid_payment_delete()`, 0001), so
+ * this can never actually fire in practice, but `RESTRICT` documents
+ * the real intended relationship (a receipt must always resolve to the
+ * charge it's a receipt for) rather than silently allowing a future
+ * schema change to null it out. One invoice per payment, enforced by
+ * `invoices_payment_id_unique` below — no credit-note/multiple-
+ * documents model exists in this schema; a real product need for one
+ * would be a deliberate new design, not a side effect of allowing
+ * duplicates. Immutable once issued — genuinely, not just by
+ * convention: `forbid_invoice_mutation()` (`0007_invoice_
+ * integrity.sql`) blocks `UPDATE`/`DELETE` outright, for every role
+ * including `service_role` (0002's RLS policy set alone was NOT
+ * actually enough — `service_role`'s blanket table grant + `BYPASSRLS`
+ * meant nothing stopped a raw `service_role` mutation before this
+ * trigger existed, verified live while building it). This doc comment
+ * used to claim `status` mutates (e.g. "pending → paid/cancelled") —
+ * that was never actually true once the immutable-receipt policy set
+ * shipped, and is corrected here (Round 3) to state the one real
+ * decision consistently.
  */
 export const invoices = pgTable(
   "invoices",
@@ -87,7 +112,9 @@ export const invoices = pgTable(
       .notNull()
       .references(() => profiles.id, { onDelete: "restrict" }),
     planId: uuid("plan_id").references(() => plans.id, { onDelete: "set null" }),
-    paymentId: uuid("payment_id").references(() => payments.id, { onDelete: "set null" }),
+    paymentId: uuid("payment_id")
+      .notNull()
+      .references(() => payments.id, { onDelete: "restrict" }),
     customerNameSnapshot: text("customer_name_snapshot"),
     planNameSnapshot: text("plan_name_snapshot"),
     amountMinorSnapshot: integer("amount_minor_snapshot").notNull(),
@@ -97,18 +124,26 @@ export const invoices = pgTable(
     // is real evidence, not guessed — matches the old `Invoice.js`
     // Mongoose model exactly
     // (`.migration-backup/backend/models/Invoice.js:18`,
-    // `enum: ['paid', 'pending', 'cancelled']`, default `'paid'`).
+    // `enum: ['paid', 'pending', 'cancelled']`, default `'paid'`). Round
+    // 3: the value is always 'paid' in practice now — issue_invoice_
+    // from_payment() only ever issues from a succeeded charge — but the
+    // column keeps the full historical enum rather than narrowing it to
+    // a single-value type, since that's a real vocabulary fact worth
+    // keeping even though this schema's own issuance path never
+    // produces the other two values.
     status: invoiceStatusEnum("status").notNull().default("paid"),
     gatewayInvoiceId: text("gateway_invoice_id"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    // Baseline remediation: was missing — `status` mutates (e.g.
-    // pending -> paid/cancelled).
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
     uniqueIndex("invoices_gateway_invoice_id_unique")
       .on(t.gatewayInvoiceId)
       .where(sql`${t.gatewayInvoiceId} IS NOT NULL`),
+    // The real one-invoice-per-payment guarantee — issue_invoice_from_
+    // payment()'s idempotent ON CONFLICT (payment_id) DO NOTHING relies
+    // on this exact index existing.
+    uniqueIndex("invoices_payment_id_unique").on(t.paymentId),
     index("invoices_user_id_idx").on(t.userId),
   ],
 );

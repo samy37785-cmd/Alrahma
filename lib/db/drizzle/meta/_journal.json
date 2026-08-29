@@ -50,6 +50,27 @@
       "when": 1788004691392,
       "tag": "0006_subscription_integrity",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1788005348067,
+      "tag": "0007_invoice_integrity",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1788006293100,
+      "tag": "0008_plan_versioning",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1788006294100,
+      "tag": "0009_refund_integrity",
+      "breakpoints": true
     }
   ]
 }

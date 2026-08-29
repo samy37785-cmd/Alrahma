@@ -129,8 +129,13 @@ export const payments = pgTable(
  * `claim_provider_event(uuid)` (hand-authored SQL function in the
  * migration) does the atomic `pending → processing` claim BEFORE any
  * side-effect work runs, so only one worker ever processes a given
- * event; `complete_provider_event(uuid, result, error_code)` then does
- * `processing → processed/failed` once the work is actually done.
+ * event; `complete_provider_event(id, claim_token, result, error_code)`
+ * then does `processing → processed/failed` once the work is actually
+ * done — the `claim_token` parameter (RLS Remediation Round 3, see
+ * `claim_token` below) is what makes this a FENCED completion, not just
+ * an id+status check: it must match the row's current token, so a
+ * worker whose lease already expired and was reclaimed by someone else
+ * can never complete a claim it no longer holds.
  * (Baseline remediation: the first version of this function claimed
  * *after* the side effect instead of before, which didn't actually
  * prevent two workers from both performing it — see

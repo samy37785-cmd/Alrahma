@@ -17,17 +17,28 @@ docker run --rm -d --name alrahma-local-test-pg \
 
 # wait for it to accept connections, then:
 export TEST_DATABASE_URL="postgres://postgres:test@localhost:55432/alrahma_test"
-node test/run-migrations.mjs             # applies lib/db/drizzle/*.sql (0000-0009) via drizzle-orm's migrate()
-node test/schema.local.test.mjs          # 66 real-SQL assertions (schema, constraints, functions/triggers)
-node test/rls.local.test.mjs             # 67 real-SQL assertions (specific findings: bypass closure, forgery prevention, AAL boundaries, concurrency, webhook lease + fencing, subscription/invoice/refund RPCs)
-node test/rls-full-matrix.local.test.mjs # 58 real-SQL assertions (systematic per-table sweep of docs/rls-matrix.md, incl. plan versioning + invoice issuance sweeps)
+node test/run-migrations.mjs             # applies lib/db/drizzle/*.sql (0000-0010) via drizzle-orm's migrate()
+node test/schema.local.test.mjs          # 67 real-SQL assertions (schema, constraints, functions/triggers)
+node test/rls.local.test.mjs             # 71 real-SQL assertions (specific findings: bypass closure, forgery prevention, AAL boundaries, concurrency, webhook lease + fencing, subscription/invoice/refund RPCs)
+node test/rls-full-matrix.local.test.mjs # 61 real-SQL assertions (systematic per-table sweep of docs/rls-matrix.md, incl. plan versioning + invoice issuance sweeps)
 node test/acl.local.test.mjs             # 18 real-SQL assertions (direct has_table_privilege/has_column_privilege/has_function_privilege checks — proves the GRANT matrix directly, not by inference)
 node test/upgrade-scenario.local.test.mjs # 9 real-SQL assertions (self-contained — see below; applies 0000-0003, injects legacy drift, then applies the rest and proves it's cleaned up)
 
 docker rm -f alrahma-local-test-pg # tear down when done
 ```
 
-**218 real-SQL assertions total.**
+**226 real-SQL assertions total.**
+
+RLS Remediation Round 4 (`0010_round4_integrity_fixes.sql`) added no new
+migration count to the clean-scenario run above beyond the extra file
+(`run-migrations.mjs` already applies whatever's in `lib/db/drizzle`) —
+it closed 3 real gaps a fresh review of Round 3's own delivery found:
+`create_plan_version()` could mint a duplicate "version 1" row for a
+slug with retired history; `enforce_subscription_transition()` only
+fired on `UPDATE`, so a row could be *created* already invalid (e.g.
+`expired` with `cancel_at_period_end = true`, or `active` with a
+`NULL`/past `current_period_end`); `issue_invoice_from_payment()` wrote
+no `admin_audit_log` row for a real admin's genuine issuance.
 
 ## The upgrade/legacy-privilege-drift scenario
 
@@ -134,6 +145,7 @@ for real, proven directly rather than inferred.
 ## Captured output
 
 `last-run-output.txt` is a captured, real run — `run-migrations.mjs`
-twice (to prove idempotency across all 10 migration files), then all 5
+twice (to prove its already-applied-migration bookkeeping across all 11
+migration files, not that the raw SQL itself is re-runnable), then all 5
 test scripts, then `tsc --noEmit` and a `drizzle-kit generate` drift
 check — not hand-edited.

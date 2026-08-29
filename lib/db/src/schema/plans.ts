@@ -45,6 +45,20 @@ import { currencyCodeEnum } from "./enums";
  * edit path exists. `display_order`/`active` are lifecycle/cosmetic, not
  * catalog-defining — `admin_update_plan_display()`/`deactivate_plan()`
  * are the narrow, real edit paths for those two.
+ *
+ * RLS Remediation Round 4: a real gap in Round 3's own fix —
+ * `plans_slug_active_unique` only guards ACTIVE rows, so
+ * `create_plan_version(NULL, slug, ...)` (the brand-new-plan path) could
+ * be called again for a slug that already has a deactivated history,
+ * silently minting a second, unrelated "version 1" row under the same
+ * slug. `plans_slug_version_unique` below is the real DB-level backstop
+ * — no two rows may ever share a `(slug, version)` pair, active or not —
+ * and `create_plan_version()` (`0010_round4_integrity_fixes.sql`) now
+ * also rejects the brand-new-plan path outright when the slug already
+ * has ANY row, directing the caller to version the existing (possibly
+ * inactive) plan instead. Same defense-in-depth discipline as everywhere
+ * else in this schema: a real RPC-level check plus a real index, neither
+ * one alone.
  */
 export const plans = pgTable(
   "plans",
@@ -72,6 +86,12 @@ export const plans = pgTable(
     // replaces the old flat unique(slug), which made versioning under
     // the same slug structurally impossible (see the table doc comment).
     uniqueIndex("plans_slug_active_unique").on(t.slug).where(sql`${t.active} = true`),
+    // RLS Remediation Round 4: the real DB-level "no duplicate version"
+    // guarantee — plans_slug_active_unique alone only ever guards the
+    // single active row, so a slug's inactive history could otherwise
+    // grow two unrelated rows both claiming version 1 (or any other
+    // version number colliding).
+    uniqueIndex("plans_slug_version_unique").on(t.slug, t.version),
     // Unique only when set — several plans can share a null provider id
     // during setup without a false unique-constraint conflict, but no two
     // real provider price/plan IDs are ever allowed to collide.

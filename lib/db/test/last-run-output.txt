@@ -1,12 +1,10 @@
-===== migrate() run 1 (clean apply) =====
-[migrate] applying lib/db/drizzle to postgresql://postgres:***@localhost:55432/alrahma_test
+=== node test/run-migrations.mjs (1st) ===
+[migrate] applying lib/db/drizzle to postgres://postgres:***@localhost:55432/alrahma_test
 [migrate] done.
-
-===== migrate() run 2 (idempotency check) =====
-[migrate] applying lib/db/drizzle to postgresql://postgres:***@localhost:55432/alrahma_test
+=== node test/run-migrations.mjs (2nd, proves already-applied bookkeeping) ===
+[migrate] applying lib/db/drizzle to postgres://postgres:***@localhost:55432/alrahma_test
 [migrate] done.
-
-===== schema.local.test.mjs =====
+=== node test/schema.local.test.mjs ===
 PASS  public schema has exactly 20 tables (auth.users excluded)
 PASS  auth.users exists as the single non-public, non-drizzle-internal table
 PASS  none of the 20 dropped tables exist
@@ -19,6 +17,7 @@ PASS  all 9 hand-authored 0001_functions_triggers.sql functions exist
 PASS  manual_payments.activated_at exists, is nullable, and defaults to null (Section C)
 PASS  invoices.payment_id is genuinely NOT NULL with a real unique index and ON DELETE RESTRICT (Section D)
 PASS  plans_slug_active_unique replaces the old flat unique(slug) — a partial index, WHERE active (Section E)
+PASS  plans_slug_version_unique — a real (slug, version) backstop against duplicate versions (Round 4)
 PASS  provider_events carries claim_token/lease_expires_at/attempt_count, and a partial index on the processing lease (Section B)
 PASS  seed: create auth.users fixtures (profiles come from the handle_new_user trigger)
 PASS  seed: create a plan fixture (EUR)
@@ -74,9 +73,8 @@ PASS  admin_audit_log DELETE is rejected (forbid_audit_log_mutation trigger)
 PASS  set_updated_at() bumps updated_at on a plans UPDATE
 PASS  set_updated_at() is attached to manual_payments/invoices/testimonials/enrollments
 
-66/66 passed.
-
-===== rls.local.test.mjs =====
+67/67 passed.
+=== node test/rls.local.test.mjs ===
 PASS  seed: fixtures (auth.users, profiles via trigger, admin promotion, plan, a succeeded charge)
 PASS  anon can INSERT into enrollments
 PASS  anon cannot SELECT from enrollments (denied at the GRANT layer, Round 2 tightening)
@@ -144,10 +142,13 @@ PASS  enforce_subscription_transition(): user_id and an invalid status transitio
 PASS  request_cancel_subscription(): owner can request cancellation, another user cannot
 PASS  admin_activate_manual_subscription(): AAL1 admin rejected; AAL2 admin activates; double-activation rejected; audit written exactly once
 PASS  admin_activate_manual_subscription(): a real 2-connection race on the same manual_payments row produces exactly one activation
+PASS  enforce_subscription_transition(): a row can never be INSERTed already-terminal with cancel_at_period_end still true (Round 4)
+PASS  enforce_subscription_transition(): an ACTIVE row must have a real, future current_period_end, even on INSERT (Round 4)
+PASS  enforce_subscription_transition(): current_period_end must be after current_period_start, on INSERT and UPDATE alike (Round 4)
+PASS  admin_activate_manual_subscription(): rejected when the admin passes an already-elapsed p_current_period_end (Round 4)
 
-67/67 passed.
-
-===== rls-full-matrix.local.test.mjs =====
+71/71 passed.
+=== node test/rls-full-matrix.local.test.mjs ===
 PASS  seed: all fixtures
 PASS  [profiles] owner SELECT own row, not another's
 PASS  [profiles] admin (AAL1) SELECT any row
@@ -171,6 +172,8 @@ PASS  [plans] create_plan_version(): AAL1 rejected; AAL2 creates a new version, 
 PASS  [plans] enforce_plan_immutability(): changing price on an OLD (already-superseded) row is rejected even for service_role
 PASS  [plans] deactivate_plan() / admin_update_plan_display(): AAL2 only, audited
 PASS  [plans] a race between two create_plan_version() calls on the same old row produces exactly one new active version
+PASS  [plans] create_plan_version(NULL, ...) is rejected for a slug with any existing history — the Round 4 duplicate-version fix
+PASS  [plans] create_plan_version() rejects an old_plan_id that isn't the latest version for its slug — can't fork a stale version
 PASS  [plans] anon/authenticated see only active plans — a superseded (inactive) version is invisible to the public
 PASS  [subscriptions] owner SELECT own, not another's
 PASS  [subscriptions] owner raw INSERT/DELETE both genuinely denied at the GRANT layer (verified via SQLSTATE, not inferred)
@@ -183,6 +186,7 @@ PASS  [invoices] owner SELECT own, not another's
 PASS  [invoices] AAL1 admin rejected reading directly; AAL2 admin CAN read
 PASS  [invoices] a non-admin user's own INSERT attempt is rejected at the GRANT layer (even with a real succeeded payment)
 PASS  [invoices] no UPDATE policy, and no UPDATE grant at all — even AAL2 admin's raw UPDATE is denied at the GRANT layer
+PASS  [invoices] issue_invoice_from_payment() audits a real admin's genuine issuance exactly once, NOT again on replay, and NOT at all for a service_role issuance (Round 4)
 PASS  [invoices] issue_invoice_from_payment() rejects a pending, a failed, and a refund-kind payment
 PASS  [invoices] validate_invoice_insert() rejects a mismatched amount/discount/plan/user/currency even from a raw service_role INSERT
 PASS  [coupons] anon SELECT denied at the GRANT layer
@@ -207,9 +211,8 @@ PASS  [admin_audit_log] AAL1 admin sees 0 rows (needs AAL2)
 PASS  [admin_audit_log] AAL2 admin's raw UPDATE/DELETE denied at the GRANT layer (not just the trigger)
 PASS  [admin_audit_log] service_role HAS the grant, but forbid_audit_log_mutation() trigger still rejects UPDATE/DELETE
 
-58/58 passed.
-
-===== acl.local.test.mjs =====
+61/61 passed.
+=== node test/acl.local.test.mjs ===
 PASS  PUBLIC has no table privileges and no function EXECUTE on anything in schema public
 PASS  anon: SELECT only on plans/blogs/testimonials, nothing else
 PASS  anon: column-restricted INSERT on enrollments/trial_requests/subscribers — allowed fields only, never created_at/id/status-forgery fields
@@ -230,11 +233,10 @@ PASS  schema public: USAGE granted to anon/authenticated/service_role, nothing m
 PASS  no sequences exist anywhere in schema public (every id is gen_random_uuid()-defaulted, not serial/identity)
 
 18/18 passed.
-
-===== upgrade-scenario.local.test.mjs =====
+=== node test/upgrade-scenario.local.test.mjs ===
 PASS  phase 1: apply 0000-0003 only (the pre-Round-3 baseline)
 PASS  phase 2: inject legacy privilege drift + a stuck pre-fencing provider_events row
-PASS  phase 3: apply the full migrations folder — only 0004-0009 actually run
+PASS  phase 3: apply the full migrations folder — only 0004-0010 actually run
 PASS  phase 4: the injected broad grants are gone — proven via has_table_privilege/has_function_privilege, not inferred
 PASS  phase 5: the legacy stuck provider_events row was reset to pending and is claimable again
 PASS  phase 6 (schema): exactly 20 tables in public
@@ -243,11 +245,29 @@ PASS  phase 6 (RPC): admin_record_refund() still rejects a zero amount on the up
 PASS  phase 6 (concurrency): two workers racing claim_provider_event() on the same event — only one wins, on the upgraded database
 
 9/9 passed.
-
-===== tsc --noEmit =====
+=== npx tsc --noEmit ===
 (clean, no output)
-
-===== drizzle-kit generate (drift check) =====
+=== drizzle-kit generate (drift check) ===
+Reading config file 'F:\Documents\GitHub\Alrahma\lib\db\drizzle.config.ts'
+21 tables
+admin_audit_log 9 columns 1 indexes 1 fks
+users 1 columns 0 indexes 0 fks
+coupon_redemptions 3 columns 1 indexes 2 fks
+coupons 10 columns 1 indexes 0 fks
+invoices 13 columns 3 indexes 3 fks
+manual_payments 16 columns 1 indexes 3 fks
+blogs 15 columns 0 indexes 0 fks
+subscribers 4 columns 1 indexes 0 fks
+testimonials 10 columns 0 indexes 1 fks
+trial_requests 8 columns 0 indexes 0 fks
+enrollments 20 columns 0 indexes 0 fks
+profiles 6 columns 1 indexes 1 fks
+quran_bookmarks 8 columns 1 indexes 1 fks
+quran_memorization_stats 5 columns 0 indexes 1 fks
+quran_reading_progress 5 columns 0 indexes 1 fks
+plans 16 columns 4 indexes 0 fks
+subscriptions 13 columns 3 indexes 2 fks
+payments 17 columns 2 indexes 4 fks
 provider_events 14 columns 2 indexes 0 fks
 notification_preferences 7 columns 0 indexes 1 fks
 notifications 11 columns 2 indexes 1 fks

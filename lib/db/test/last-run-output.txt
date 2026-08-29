@@ -1,15 +1,12 @@
-# Local schema+RLS test run — RLS Remediation Round 2 (final) — 2026-08-29T06:37:40Z
-# Target: throwaway local Docker Postgres (postgres:16), never the real Supabase project.
-
-$ node test/run-migrations.mjs
-[migrate] applying lib/db/drizzle to postgres://postgres:***@localhost:55432/alrahma_test
+===== migrate() run 1 (clean apply) =====
+[migrate] applying lib/db/drizzle to postgresql://postgres:***@localhost:55432/alrahma_test
 [migrate] done.
 
-$ node test/run-migrations.mjs   # second run — proves idempotency (0000+0001+0002+0003)
-[migrate] applying lib/db/drizzle to postgres://postgres:***@localhost:55432/alrahma_test
+===== migrate() run 2 (idempotency check) =====
+[migrate] applying lib/db/drizzle to postgresql://postgres:***@localhost:55432/alrahma_test
 [migrate] done.
 
-$ node test/schema.local.test.mjs
+===== schema.local.test.mjs =====
 PASS  public schema has exactly 20 tables (auth.users excluded)
 PASS  auth.users exists as the single non-public, non-drizzle-internal table
 PASS  none of the 20 dropped tables exist
@@ -19,6 +16,10 @@ PASS  provider_events_provider_event_unique unique index exists
 PASS  quran_bookmarks_user_verse_unique unique index exists
 PASS  plain ownership indexes exist on every FK/ownership column from finding 8
 PASS  all 9 hand-authored 0001_functions_triggers.sql functions exist
+PASS  manual_payments.activated_at exists, is nullable, and defaults to null (Section C)
+PASS  invoices.payment_id is genuinely NOT NULL with a real unique index and ON DELETE RESTRICT (Section D)
+PASS  plans_slug_active_unique replaces the old flat unique(slug) — a partial index, WHERE active (Section E)
+PASS  provider_events carries claim_token/lease_expires_at/attempt_count, and a partial index on the processing lease (Section B)
 PASS  seed: create auth.users fixtures (profiles come from the handle_new_user trigger)
 PASS  seed: create a plan fixture (EUR)
 PASS  handle_new_user() never produces role='admin' even when metadata claims it
@@ -65,7 +66,7 @@ PASS  a refund of a refund is rejected (validate_refund_insert trigger)
 PASS  CONCURRENCY: two refunds racing past the remaining balance — only one succeeds
 PASS  claim_provider_event() claims a pending event exactly once
 PASS  complete_provider_event() finalizes a claimed event, and a repeat complete is a no-op
-PASS  complete_provider_event() cannot finalize an event that was never claimed
+PASS  complete_provider_event() cannot finalize an event that was never claimed (no claim_token exists to match)
 PASS  CONCURRENCY: two workers racing claim_provider_event() on the same event — only one wins
 PASS  admin_audit_log insert succeeds
 PASS  admin_audit_log UPDATE is rejected (forbid_audit_log_mutation trigger)
@@ -73,9 +74,9 @@ PASS  admin_audit_log DELETE is rejected (forbid_audit_log_mutation trigger)
 PASS  set_updated_at() bumps updated_at on a plans UPDATE
 PASS  set_updated_at() is attached to manual_payments/invoices/testimonials/enrollments
 
-62/62 passed.
+66/66 passed.
 
-$ node test/rls.local.test.mjs
+===== rls.local.test.mjs =====
 PASS  seed: fixtures (auth.users, profiles via trigger, admin promotion, plan, a succeeded charge)
 PASS  anon can INSERT into enrollments
 PASS  anon cannot SELECT from enrollments (denied at the GRANT layer, Round 2 tightening)
@@ -93,15 +94,20 @@ PASS  AAL2 admin CAN read payments
 PASS  AAL2 admin CAN read manual_payments (even with zero rows, the policy itself must not filter an admin out — verified via a real row)
 PASS  admin_set_role() promotes a user and writes an admin_audit_log row atomically
 PASS  admin_review_manual_payment() approves and writes an admin_audit_log row atomically
-PASS  admin_issue_refund() issues a refund and writes an admin_audit_log row atomically
-PASS  admin_issue_refund() is still governed by validate_refund_insert() — an oversized refund is rejected
+PASS  admin_record_refund() records a refund and writes an admin_audit_log row atomically
+PASS  admin_record_refund() is still governed by validate_refund_insert() — an oversized refund is rejected
+PASS  admin_record_refund() rejects a zero or negative amount (Section F)
+PASS  validate_refund_insert() itself rejects a zero amount, even bypassing the RPC via a raw service_role INSERT
+PASS  a real 2-connection race on the refund cap produces exactly one winner (unchanged guarantee, re-verified after the Section F edit)
 PASS  AAL2 admin raw UPDATE on profiles is rejected — no policy/grant permits it any more
 PASS  AAL2 admin raw INSERT of a fabricated succeeded charge into payments is rejected
 PASS  AAL2 admin raw UPDATE on manual_payments.status is rejected
 PASS  AAL2 admin raw INSERT into admin_audit_log is rejected
-PASS  invoices: raw INSERT for a payment that never succeeded is rejected (validate_invoice_insert trigger)
-PASS  invoices: raw INSERT with a mismatched user_id is rejected
-PASS  invoices: raw INSERT tied to a real succeeded payment succeeds
+PASS  invoices: raw admin INSERT is rejected at the GRANT layer — issue_invoice_from_payment() is the only path
+PASS  issue_invoice_from_payment() issues a real invoice for the succeeded charge
+PASS  issue_invoice_from_payment() is idempotent — a repeat call returns the same invoice, never a duplicate
+PASS  invoices: raw admin UPDATE/DELETE are rejected at the GRANT layer — immutable once issued, genuinely (no policy at all)
+PASS  invoices: forbid_invoice_mutation() is a real, second layer — blocks UPDATE/DELETE even for service_role, which DOES hold the raw GRANT
 PASS  manual_payments: owner insert pre-marked 'approved' is rejected
 PASS  manual_payments: owner insert setting reviewer_admin_id is rejected
 PASS  manual_payments: a normal owner submission (pending, unreviewed) succeeds
@@ -125,14 +131,23 @@ PASS  a plain authenticated user calling claim_provider_event() is rejected (EXE
 PASS  service_role sees all payments rows regardless of ownership (BYPASSRLS)
 PASS  service_role can INSERT a provider_events row directly (no policy needed — bypasses RLS)
 PASS  AAL2 admin CAN read provider_events; AAL1 admin cannot
-PASS  claim_provider_event() sets claimed_at on claim
-PASS  reclaim_stale_provider_events() reclaims a stale 'processing' event, but not a fresh one
-PASS  a reclaimed event can be claimed again by a second worker
-PASS  a non-service authenticated session cannot call reclaim_stale_provider_events() (EXECUTE not granted)
+PASS  claim_provider_event() sets claimed_at, lease_expires_at, and a claim_token on claim
+PASS  reclaim_stale_provider_events() reclaims an event whose LEASE has expired, but not a fresh one
+PASS  a reclaimed event can be claimed again by a second worker (with a NEW claim_token, attempt_count incremented)
+PASS  reclaim_stale_provider_events() rejects a negative interval outright (Section B)
+PASS  a non-service authenticated session has NO EXECUTE on reclaim_stale_provider_events() (checked directly via ACL, not just a failed call)
+PASS  fencing: a stale worker's completion with an OLD claim_token is a silent no-op, never overwrites the new owner's outcome
+PASS  complete_provider_event() has no EXECUTE for anon/authenticated (verified directly via ACL — Round 3 fixed a real gap here)
+PASS  subscriptions: raw UPDATE is rejected at the GRANT layer, even for an AAL2 admin
+PASS  service_apply_subscription_update(): service_role upserts a stripe subscription; a non-service caller has no EXECUTE at all
+PASS  enforce_subscription_transition(): user_id and an invalid status transition are both rejected, even for service_role
+PASS  request_cancel_subscription(): owner can request cancellation, another user cannot
+PASS  admin_activate_manual_subscription(): AAL1 admin rejected; AAL2 admin activates; double-activation rejected; audit written exactly once
+PASS  admin_activate_manual_subscription(): a real 2-connection race on the same manual_payments row produces exactly one activation
 
-53/53 passed.
+67/67 passed.
 
-$ node test/rls-full-matrix.local.test.mjs
+===== rls-full-matrix.local.test.mjs =====
 PASS  seed: all fixtures
 PASS  [profiles] owner SELECT own row, not another's
 PASS  [profiles] admin (AAL1) SELECT any row
@@ -151,9 +166,14 @@ PASS  [enrollments] a plain authenticated (non-admin) session sees 0 rows
 PASS  [enrollments] admin AAL1 UPDATE/DELETE affect 0 rows (need AAL2); AAL2 succeeds
 PASS  [plans] anon SELECT active plan, not the inactive one
 PASS  [plans] admin AAL1 CAN see the inactive plan too
-PASS  [plans] admin AAL1 INSERT/UPDATE rejected (RLS, needs AAL2); AAL2 succeeds
+PASS  [plans] raw INSERT/UPDATE denied at the GRANT layer for AAL1 AND AAL2 admin alike — no raw path exists any more
+PASS  [plans] create_plan_version(): AAL1 rejected; AAL2 creates a new version, deactivates the old row
+PASS  [plans] enforce_plan_immutability(): changing price on an OLD (already-superseded) row is rejected even for service_role
+PASS  [plans] deactivate_plan() / admin_update_plan_display(): AAL2 only, audited
+PASS  [plans] a race between two create_plan_version() calls on the same old row produces exactly one new active version
+PASS  [plans] anon/authenticated see only active plans — a superseded (inactive) version is invisible to the public
 PASS  [subscriptions] owner SELECT own, not another's
-PASS  [subscriptions] owner raw INSERT/DELETE denied at the GRANT layer (service_role/RPC-driven only)
+PASS  [subscriptions] owner raw INSERT/DELETE both genuinely denied at the GRANT layer (verified via SQLSTATE, not inferred)
 PASS  [payments] owner raw INSERT/UPDATE denied at the GRANT layer
 PASS  [provider_events] a plain authenticated (non-admin) session sees 0 rows
 PASS  [provider_events] authenticated raw INSERT denied at the GRANT layer (service_role only)
@@ -161,8 +181,10 @@ PASS  [manual_payments] another user cannot SELECT it
 PASS  [manual_payments] owner raw DELETE denied at the GRANT layer
 PASS  [invoices] owner SELECT own, not another's
 PASS  [invoices] AAL1 admin rejected reading directly; AAL2 admin CAN read
-PASS  [invoices] a non-admin user's own INSERT attempt is rejected by RLS (even with a real succeeded payment)
+PASS  [invoices] a non-admin user's own INSERT attempt is rejected at the GRANT layer (even with a real succeeded payment)
 PASS  [invoices] no UPDATE policy, and no UPDATE grant at all — even AAL2 admin's raw UPDATE is denied at the GRANT layer
+PASS  [invoices] issue_invoice_from_payment() rejects a pending, a failed, and a refund-kind payment
+PASS  [invoices] validate_invoice_insert() rejects a mismatched amount/discount/plan/user/currency even from a raw service_role INSERT
 PASS  [coupons] anon SELECT denied at the GRANT layer
 PASS  [coupons] a plain authenticated (non-admin) session sees 0 rows (grant exists, RLS filters)
 PASS  [coupons] admin AAL1 CAN read; AAL1 INSERT rejected (needs AAL2); AAL2 INSERT/UPDATE/DELETE succeed
@@ -185,4 +207,49 @@ PASS  [admin_audit_log] AAL1 admin sees 0 rows (needs AAL2)
 PASS  [admin_audit_log] AAL2 admin's raw UPDATE/DELETE denied at the GRANT layer (not just the trigger)
 PASS  [admin_audit_log] service_role HAS the grant, but forbid_audit_log_mutation() trigger still rejects UPDATE/DELETE
 
-51/51 passed.
+58/58 passed.
+
+===== acl.local.test.mjs =====
+PASS  PUBLIC has no table privileges and no function EXECUTE on anything in schema public
+PASS  anon: SELECT only on plans/blogs/testimonials, nothing else
+PASS  anon: column-restricted INSERT on enrollments/trial_requests/subscribers — allowed fields only, never created_at/id/status-forgery fields
+PASS  anon: no EXECUTE on any admin/service/owner RPC — only is_admin() (referenced by an anon-visible policy)
+PASS  authenticated: SELECT on every one of the 20 tables (RLS is what actually narrows visibility, not the GRANT)
+PASS  authenticated: subscriptions has NO INSERT/UPDATE/DELETE at all — fully RPC-only (Section C)
+PASS  authenticated: invoices has NO INSERT/UPDATE/DELETE at all — issue_invoice_from_payment() is the only path (Section D)
+PASS  authenticated: plans has NO INSERT/UPDATE/DELETE at all — create_plan_version()/deactivate_plan()/admin_update_plan_display() are the only paths (Section E)
+PASS  authenticated: the remaining INSERT-granted tables are unchanged from the 0004 baseline
+PASS  authenticated: UPDATE remains granted exactly where 0002's policies still allow a raw owner/admin write
+PASS  authenticated: EXECUTE on the 3 new Section C/D/E/F RPCs it's actually meant to call (self-guarded internally)
+PASS  authenticated: NO EXECUTE on the service_role-only RPCs — webhook lease functions and the subscription upsert
+PASS  authenticated: the old admin_issue_refund(uuid, integer) function object no longer exists at all
+PASS  service_role: full SELECT/INSERT/UPDATE/DELETE on every table
+PASS  service_role: EXECUTE on the webhook lease functions and the subscription upsert
+PASS  service_role: also has EXECUTE on issue_invoice_from_payment() (an automated post-charge issuance flow) and the shared admin RPCs (self-guarded, but not force-excluded)
+PASS  schema public: USAGE granted to anon/authenticated/service_role, nothing more
+PASS  no sequences exist anywhere in schema public (every id is gen_random_uuid()-defaulted, not serial/identity)
+
+18/18 passed.
+
+===== upgrade-scenario.local.test.mjs =====
+PASS  phase 1: apply 0000-0003 only (the pre-Round-3 baseline)
+PASS  phase 2: inject legacy privilege drift + a stuck pre-fencing provider_events row
+PASS  phase 3: apply the full migrations folder — only 0004-0009 actually run
+PASS  phase 4: the injected broad grants are gone — proven via has_table_privilege/has_function_privilege, not inferred
+PASS  phase 5: the legacy stuck provider_events row was reset to pending and is claimable again
+PASS  phase 6 (schema): exactly 20 tables in public
+PASS  phase 6 (RLS): anon is denied at the GRANT layer reading payments on the upgraded database
+PASS  phase 6 (RPC): admin_record_refund() still rejects a zero amount on the upgraded database
+PASS  phase 6 (concurrency): two workers racing claim_provider_event() on the same event — only one wins, on the upgraded database
+
+9/9 passed.
+
+===== tsc --noEmit =====
+(clean, no output)
+
+===== drizzle-kit generate (drift check) =====
+provider_events 14 columns 2 indexes 0 fks
+notification_preferences 7 columns 0 indexes 1 fks
+notifications 11 columns 2 indexes 1 fks
+
+No schema changes, nothing to migrate 😴

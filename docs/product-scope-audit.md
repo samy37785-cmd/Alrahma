@@ -338,10 +338,21 @@ before ever being applied to any database, real or otherwise.
 
 - RLS policies themselves, and the grants that go with them (§ warning
   banner — schema is never applied alone).
-- The atomic RPC that turns an admin-approved `manual_payments` row into
-  an active `subscriptions` row.
+- ~~The atomic RPC that turns an admin-approved `manual_payments` row
+  into an active `subscriptions` row~~ — **done** (RLS Remediation
+  Round 3, Section C): `admin_activate_manual_subscription()`
+  (`lib/db/drizzle/0006_subscription_integrity.sql`) — an atomic second
+  claim on `status = 'approved' AND activated_at IS NULL`, so the same
+  manual-payment record can never be activated twice. Alongside it,
+  `request_cancel_subscription()` (owner-only) and `service_apply_
+  subscription_update()` (`service_role`-only, the Stripe webhook-upsert
+  path) round out subscription lifecycle management — raw `UPDATE` on
+  `subscriptions` is now closed entirely, for every role including AAL2
+  admin. See `docs/rls-matrix.md`'s subscription-transition-matrix
+  section.
 - Atomic `max_uses` enforcement for coupon redemption (needs a
-  count-then-insert transaction, not a static constraint).
+  count-then-insert transaction, not a static constraint). Still
+  deferred — not touched by Round 3.
 - The actual `daily_reminder` scheduler/cron.
 - **Rate limiting on guest-submittable public forms** (`enrollments`,
   `trial_requests`, `subscribers`) — an earlier decision was "Postgres
@@ -351,7 +362,8 @@ before ever being applied to any database, real or otherwise.
   user's explicit call was to leave rate limiting deferred for this
   pass rather than pick a mechanism now. The RLS matrix's `anon INSERT`
   policies on these 3 tables carry no rate-limit enforcement as a
-  result — a real gap until this is designed.
+  result — a real gap until this is designed. **Still a BLOCKING
+  pre-production gate**, unaffected by Round 3.
 - Exact PayPal integration confirmation (Orders API one-time vs. any
   future recurring-subscriptions API).
 - ~~Confirming the exact `currency`/`language` allowlists against real
@@ -360,6 +372,38 @@ before ever being applied to any database, real or otherwise.
   `notification_preferences.language` allows `en`/`ar`/`it`/`es`/`de`/`fr`
   (§5). The original narrowing (`USD`, `en`/`ar`) rested on weak/
   mistaken evidence, corrected once a review caught it.
+- **Real gateway-side refund integration** (RLS Remediation Round 3,
+  Section F — a newly named, explicit gap, not previously stated
+  honestly here). The refund-recording RPC used to be named `admin_
+  issue_refund()`, which implied it actually called Stripe/PayPal to
+  perform a real refund — it never did; it only ever wrote a row to the
+  internal `payments` ledger. Renamed to `admin_record_refund()` to stop
+  implying otherwise (confirmed zero real callers anywhere in the
+  tracked or untracked repo before the rename — a free, non-breaking
+  change). The actual gateway-side refund call — deciding call-order
+  (gateway-first vs. ledger-first) and wiring a real provider API call —
+  remains entirely unbuilt. See `docs/rls-matrix.md`'s refund/provider-
+  integration-contract section.
+- **Provider-events bounded-retry policy** (RLS Remediation Round 3,
+  Section B): `attempt_count` is now tracked on every claim, but no
+  give-up/dead-letter behavior acts on it — an event that keeps failing
+  retries forever until a human investigates. No product signal exists
+  yet for what the limit or the "give up" behavior should be.
+- **`plans`/`subscriptions` `service_role` `DELETE`** (RLS Remediation
+  Round 3, Sections C/E): both tables' `id` columns are referenced
+  elsewhere via `ON DELETE SET NULL` (`payments.plan_id`,
+  `invoices.plan_id`, `subscriptions.plan_id`), so a raw `service_role`
+  delete would silently orphan historical financial rows' `plan_id`. A
+  real, pre-existing (Round 2) capability, honestly documented as
+  "(convention, unused)" in `docs/rls-matrix.md` rather than additionally
+  closed — real hardening (a `forbid_*_delete()` trigger, matching
+  `payments.forbid_payment_delete()`) is a legitimate follow-up, not in
+  this round's scope.
+- **Subscription period-monotonicity**: `enforce_subscription_
+  transition()` (Round 3, Section C) does not enforce that `current_
+  period_end` only moves forward — no reliable rule was found for a
+  legitimate webhook resync/proration case that wouldn't also block a
+  real one.
 
 ## Status
 
@@ -368,12 +412,17 @@ before ever being applied to any database, real or otherwise.
 - This document (v3-final, self-contained revision, later corrected by
   baseline remediation — see the currency/language/refund/claim-event
   notes throughout): committed on `docs/product-scope-closure-v3`.
-- The 20-table schema, its versioned migrations, and a local Docker
-  Postgres test suite (62 real-SQL assertions, including 2 genuine
-  concurrency tests) exist as subsequent commits on this same branch.
-  RLS is now implemented and locally tested too
-  (`lib/db/drizzle/0002_rls.sql`, `docs/rls-matrix.md`, 25/25 real
-  role-switching assertions) — not yet applied anywhere near the real
+- The 20-table schema, its versioned migrations (now 10, `0000` through
+  `0009_refund_integrity.sql`, through RLS Remediation Round 3), and a
+  local Docker Postgres test suite (218 real-SQL assertions across 5
+  scripts — schema/function, RLS role-switching, a systematic per-table
+  matrix sweep, direct ACL proof, and a two-phase upgrade/legacy-
+  privilege-drift scenario) exist as subsequent commits on this same
+  branch. RLS, grants (explicitly reconciled against named roles, not
+  just `PUBLIC`), webhook-lease fencing, and subscription/invoice/plan/
+  refund financial-integrity RPCs are all implemented and locally tested
+  (`lib/db/drizzle/0002_rls.sql` through `0009_refund_integrity.sql`,
+  `docs/rls-matrix.md`) — not yet applied anywhere near the real
   project.
 - Nothing applied, dropped, or pushed on the real Supabase project at any
   point. No `git push`. `ae47640` still sits unmodified in history,

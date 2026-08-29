@@ -28,17 +28,23 @@
 
 ## Target state
 
-This local baseline: 20 tables + 12 enums + 8 hand-authored
-functions/triggers + full RLS (20 tables enabled, a policy per operation
-per role, 5 `SECURITY DEFINER` RPCs), defined in `lib/db/src/schema/*.ts`
-and captured as versioned migrations in
-`lib/db/drizzle/0000_init_20_table_baseline.sql`,
-`0001_functions_triggers.sql`, and `0002_rls.sql`, verified end-to-end
-(62/62 schema/function real-SQL assertions including 2 genuine
-concurrency tests, plus 25/25 real RLS role-switching assertions, all
-against a twice-run idempotent `migrate()`) against a throwaway local
-Docker Postgres — never against the real project. See
-`docs/rls-matrix.md` for the full policy-by-policy design.
+This local baseline: 20 tables + 12 enums + full RLS (20 tables enabled,
+a policy per operation per role) + grants reconciled explicitly against
+`anon`/`authenticated`/`service_role` by name (not just `PUBLIC`) +
+a fenced webhook-claim lease + hardened subscription/invoice/plan/refund
+financial-integrity RPCs, defined in `lib/db/src/schema/*.ts` and
+captured as 10 versioned migrations,
+`lib/db/drizzle/0000_init_20_table_baseline.sql` through
+`0009_refund_integrity.sql`, verified end-to-end — **218 real-SQL
+assertions** (schema/function, RLS role-switching, a systematic
+per-table matrix sweep, direct ACL proof via `has_table_privilege`/
+`has_column_privilege`/`has_function_privilege`, and a dedicated
+two-phase upgrade/legacy-privilege-drift scenario), all against a
+throwaway local Docker Postgres, applied idempotently (twice, back to
+back, across all 10 migration files) — never against the real project.
+See `docs/rls-matrix.md` for the full policy-by-policy design, including
+the fencing/subscription-transition/invoice-issuance/plan-versioning/
+refund-provider contracts Round 3 added.
 
 ## Options for getting from current to target
 
@@ -118,12 +124,19 @@ manual, carefully-reviewed backfill script is tractable.
 ## Non-negotiable preconditions before any option is executed
 
 1. ~~The RLS matrix is finalized and its `CREATE POLICY`/`GRANT` SQL is
-   written and tested~~ — **done**: `docs/rls-matrix.md` +
-   `lib/db/drizzle/0002_rls.sql`, 25/25 real role-switching tests passed
-   against the same local Docker Postgres this schema was tested on
-   (`lib/db/test/rls.local.test.mjs`, captured in
-   `lib/db/test/last-run-output.txt`). Still not applied to the real
-   project — that's what this proposal's options describe.
+   written and tested~~ — **done, through Round 3**: `docs/rls-matrix.md`
+   + `lib/db/drizzle/0002_rls.sql` through `0009_refund_integrity.sql`,
+   218 real-SQL assertions passed against the same local Docker Postgres
+   this schema was tested on (`lib/db/test/schema.local.test.mjs`,
+   `rls.local.test.mjs`, `rls-full-matrix.local.test.mjs`, `acl.local.
+   test.mjs`, `upgrade-scenario.local.test.mjs`, captured in
+   `lib/db/test/last-run-output.txt`). Round 3 specifically also proved,
+   via its own dedicated two-phase scenario, that applying these
+   migrations to a database ALREADY carrying legacy privilege drift (a
+   direct grant to `anon`/`authenticated` from before this engagement)
+   actually strips that drift — not just that a fresh database ends up
+   clean. Still not applied to the real project — that's what this
+   proposal's options describe.
 2. Schema + RLS + grants are applied together, as one release — never a
    schema-only partial apply that leaves tables open with no row
    security (the constraint `docs/product-scope-audit.md` §13 already

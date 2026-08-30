@@ -2,7 +2,7 @@
   "_comment": "LOCAL FIXTURE ONLY. This is not a real production approval — it exists so production-preflight-gate.mjs has something to test its Approval Manifest logic against on the local rehearsal stack. A real approval manifest for the actual difzynyphojgisrfvrkd project does not exist anywhere in this repository and is not created by this task. Regenerate every field below (git branch/sha, migration+tool checksums, fingerprint hash, backup bundle hash, expiry) before using this fixture, and regenerate again any time the branch advances, a migration file changes, or any checksummed tool script changes — a stale fixture is meant to make the gate FAIL, which is itself part of what gets tested.",
   "projectRef": "difzynyphojgisrfvrkd",
   "approvedBranch": "feat/supabase-option-a-preflight",
-  "approvedCommitSha": "2620636009128fe11a25144f3f0c7cac776113f8",
+  "approvedCommitSha": "7f83ead00b017754ffbbcff5fff8304d343f6c92",
   "expectedRemoteFingerprintSha256": "9501c306608b9732e533137b28d7a9429353f4ba54300dbd17290e1512105c65",
   "migrationChecksums": [
     {
@@ -61,7 +61,7 @@
     },
     {
       "file": "scripts/production-preflight-gate.mjs",
-      "sha256": "91409822bca845af05c7aa29e6c40cad6cbcac7f01bee62742454a5e5e5cb739"
+      "sha256": "0fab76e874ace857cdabf4c5a3542b68856929861e2e406455e91a7bcca9ede5"
     },
     {
       "file": "scripts/backup-bundle.mjs",
@@ -77,7 +77,7 @@
     }
   ],
   "backupBundleManifestSha256": "ce94fffc08d860b768d80567901c712bf6c583edaf80a2151a3b3e099d108e12",
-  "approvedAt": "2026-08-30T18:16:33.095Z",
-  "expiresAt": "2026-09-06T18:16:33.095Z",
+  "approvedAt": "2026-08-30T18:18:59.315Z",
+  "expiresAt": "2026-09-06T18:18:59.315Z",
   "approvedBy": "LOCAL-FIXTURE — not a real approver, never use this field's value as evidence of real sign-off"
 }

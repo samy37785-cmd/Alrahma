@@ -1,4 +1,5 @@
--- Deny-by-default posture for FUTURE functions in schema public.
+-- Deny-by-default posture for FUTURE functions/procedures in schema
+-- public.
 --
 -- This is a clean-empty-database baseline migration, verified only
 -- against a throwaway LOCAL Docker Postgres / local Supabase CLI
@@ -17,89 +18,93 @@
 -- FAR — but says nothing about a FUTURE migration's function.
 --
 -- ---------------------------------------------------------------------
--- A REAL, TESTED CORRECTION to the first version of this migration
+-- Round 2 correction (this is the second version of this migration —
+-- both prior versions were empirically tested and found wrong before
+-- being trusted, not assumed correct)
 -- ---------------------------------------------------------------------
--- The obvious-looking fix —
---   alter default privileges in schema public
---     revoke execute on functions from public;
--- — was written first, and empirically tested (not assumed) against a
--- disposable local Postgres 16 database before being committed. It
--- does NOT work: it runs without error but produces no `pg_default_acl`
--- row and has zero effect on a subsequently-created function. Root
--- cause, confirmed by direct catalog inspection
--- (`select * from pg_default_acl`) and a real behavioral test (a fresh
--- role created after the ALTER could still EXECUTE a function created
--- after the ALTER): `pg_default_acl` only stores a DELTA against
--- Postgres's hard-coded built-in default privilege set, and a REVOKE
--- that would need to express "less than the hard-coded default" simply
--- deletes any matching row instead of storing one (confirmed
--- separately: explicitly GRANTing to PUBLIC first, to force a row to
--- exist, then REVOKEing it, deletes the row back to 0 — reverting to
--- the hard-coded default rather than recording "nothing"). Postgres's
--- hard-coded default for a newly created FUNCTION is EXECUTE granted
--- to PUBLIC, and `ALTER DEFAULT PRIVILEGES ... REVOKE ... FROM PUBLIC`
--- has no mechanism to override that hard-coded default — only to undo
--- a previous `ALTER DEFAULT PRIVILEGES ... GRANT` in the same role/
--- schema/object-type slot. This is a real, general PostgreSQL
--- limitation (not Supabase- or version-specific — reproduced on plain
--- `postgres:16`), and this migration's first version would have shipped
--- a silent no-op that looked like a real safeguard.
+-- v1 tried `alter default privileges in schema public revoke execute
+-- on functions from public;` — tested, found to be a silent no-op
+-- (produces no pg_default_acl row, has zero effect on a subsequently
+-- created function). v2 replaced it with an event-trigger workaround
+-- (`revoke_public_execute_auto()`), which itself turned out to have
+-- real bugs on closer review: its exception handler swallowed errors
+-- (`WHEN OTHERS THEN RAISE LOG` — never re-raised, so a failed REVOKE
+-- inside the trigger would leave a function unprotected with no
+-- failure signal at all), and it only ever ran `REVOKE ... ON
+-- FUNCTION`, which is the wrong object-type keyword for a
+-- `CREATE PROCEDURE` (the trigger matched `CREATE PROCEDURE` command
+-- tags too, so a procedure would hit a syntax/object-type mismatch
+-- inside the swallowed exception block and end up silently
+-- unprotected).
 --
--- The REAL fix uses the same tool the real project's own
--- `rls_auto_enable()` already uses for the mirror-image problem
--- (new tables not getting RLS enabled automatically): an event
--- trigger. `revoke_public_execute_auto()` fires on every
--- `ddl_command_end` for a `CREATE FUNCTION`/`CREATE PROCEDURE` inside
--- `public` (this also fires on `CREATE OR REPLACE FUNCTION`, which
--- reports the same `CREATE FUNCTION` command tag — confirmed by
--- testing, not assumed) and explicitly revokes PUBLIC's EXECUTE on the
--- object just created, every time, unconditionally. A later, separate
--- `grant execute on function ... to service_role` (or any other role)
--- in the same or a later migration is unaffected — this only ever
--- removes the PUBLIC pseudo-role's blanket grant, never a specific
--- role's own grant.
+-- Rather than patch v2's bugs, v1's *exact* statement was re-tested
+-- with the scoping removed — and the real, root cause of v1's failure
+-- turned out to be `IN SCHEMA public` specifically, not the statement
+-- itself. Isolated with a controlled A/B test on disposable Postgres
+-- 16 (four separate runs, only one variable changed at a time):
 --
--- Verified empirically after writing this version: created an
--- `experimental_future_function()` with zero grants/revokes of its own
--- immediately after applying this migration — confirmed via
--- `has_function_privilege('anon', ..., 'execute')`,
--- `has_function_privilege('authenticated', ..., 'execute')`, and a
--- real `SET ROLE`-based call attempt, all denied. See
--- docs/option-a-surgical-reset-design.md for the full test transcript.
-create or replace function public.revoke_public_execute_auto()
-returns event_trigger
-language plpgsql
-security definer
-set search_path to 'pg_catalog'
-as $$
-declare
-  cmd record;
-begin
-  for cmd in
-    select *
-    from pg_event_trigger_ddl_commands()
-    where command_tag in ('CREATE FUNCTION', 'CREATE PROCEDURE')
-  loop
-    if cmd.schema_name = 'public' then
-      begin
-        execute format('revoke execute on function %s from public', cmd.object_identity);
-        raise log 'revoke_public_execute_auto: revoked PUBLIC execute on %', cmd.object_identity;
-      exception
-        when others then
-          raise log 'revoke_public_execute_auto: failed to revoke PUBLIC execute on %', cmd.object_identity;
-      end;
-    end if;
-  end loop;
-end;
-$$;
---> statement-breakpoint
-
-revoke execute on function public.revoke_public_execute_auto() from public;
---> statement-breakpoint
-
-drop event trigger if exists revoke_public_execute_auto_trigger;
---> statement-breakpoint
-
-create event trigger revoke_public_execute_auto_trigger on ddl_command_end
-  when tag in ('CREATE FUNCTION', 'CREATE PROCEDURE')
-  execute function public.revoke_public_execute_auto();
+--   ALTER DEFAULT PRIVILEGES FOR ROLE postgres
+--     REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC;              -- (global, no IN SCHEMA)   -> creates a pg_default_acl row, WORKS
+--   ALTER DEFAULT PRIVILEGES FOR ROLE postgres
+--     REVOKE EXECUTE ON ROUTINES FROM PUBLIC;                -- (global, ROUTINES keyword) -> also WORKS (same result as FUNCTIONS)
+--   ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
+--     REVOKE EXECUTE ON ROUTINES FROM PUBLIC;                -- (schema-scoped, ROUTINES)  -> still a no-op, 0 rows
+--
+-- Conclusion: the keyword (`FUNCTIONS` vs `ROUTINES`) made no
+-- difference in either direction — Postgres treats them as synonyms
+-- here, and both cover procedures as well as functions (confirmed
+-- separately: `CREATE PROCEDURE` after the global REVOKE below was
+-- denied to a fresh role with zero grants of its own, using the plain
+-- `FUNCTIONS` keyword). What actually mattered was `IN SCHEMA public`
+-- itself: Postgres's `pg_default_acl` only ever stores a DELTA against
+-- the hard-coded built-in default, and — empirically, not by any
+-- documented rule this investigation could find — a schema-scoped
+-- REVOKE that would need to go below that hard-coded default computes
+-- to "nothing to store" and is silently dropped, while the exact same
+-- REVOKE with no `IN SCHEMA` clause (applying to every schema `postgres`
+-- creates a function in, this project's own migrations only ever being
+-- one of them) *does* get stored and *does* take effect.
+--
+-- Also verified: this does NOT strip an existing function's real,
+-- explicit grants when a later migration redefines it with `CREATE OR
+-- REPLACE FUNCTION` (tested directly — a function granted EXECUTE to
+-- two roles kept both grants, unchanged, across a redefinition after
+-- this default-privilege rule was active). Only PUBLIC's *implicit*
+-- grant is affected; a role's own explicit grant is a separate ACL
+-- entry this statement never touches.
+--
+-- `anon, authenticated` are listed explicitly alongside `PUBLIC` below
+-- even though revoking from `PUBLIC` alone is already proven
+-- sufficient (Postgres ACL checks apply a `PUBLIC` revocation to every
+-- role, `anon`/`authenticated` included, with no membership needed —
+-- confirmed by testing a plain fresh role, not `anon`/`authenticated`
+-- specifically, and getting the same denial) — the explicit mention is
+-- redundant defense-in-depth, not required for correctness, kept
+-- because it costs nothing and makes the intent unambiguous to a
+-- future reader without requiring them to already know the PUBLIC-
+-- implies-everyone rule.
+--
+-- Scoped to `FOR ROLE postgres` — the role every migration in this
+-- project runs as (`lib/db/test/run-migrations.mjs` and
+-- `ops/option-a-rehearsal/scripts/run-migrate.mjs` both connect as
+-- `postgres`). Deliberately global (no `IN SCHEMA`) rather than
+-- scoped to `public`: not just because the schema-scoped form doesn't
+-- work (proven above), but because this project's own migrations only
+-- ever create functions in `public` anyway (`src/schema/auth.ts`'s own
+-- comment: this project never creates or modifies `auth` schema
+-- objects), so a global rule governs exactly the same real surface
+-- area a `public`-scoped one would have, with no broader practical
+-- effect.
+--
+-- Known scope limit, stated honestly rather than silently assumed
+-- equivalent: `docs/remote-supabase-inventory.md` never captured
+-- `pg_default_acl` state on the real project (that read-only pass
+-- didn't include this query) — so this migration's effect on the real
+-- project's *existing* default-ACL rows (if any) has not been
+-- independently confirmed empty/harmless before now. It is expected to
+-- be a pure addition (the real project's migration history has never
+-- run this kind of statement), but that expectation should be
+-- confirmed with a fresh read-only `select * from pg_default_acl;`
+-- pass before this migration is ever applied to the real project.
+alter default privileges for role postgres
+revoke execute on functions from public, anon, authenticated;

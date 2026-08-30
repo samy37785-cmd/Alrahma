@@ -57,17 +57,97 @@ orchestrator is the supported path; doing this by hand reintroduces
 exactly the test-isolation risk described below if the container/database
 isn't freshly created and torn down every time.
 
-### Proving the orchestrator's failure-propagation actually works
+### Proving the orchestrator's own gating logic actually works
 
-`node test/orchestrator-failure-propagation.test.mjs` is a separate,
-Docker/DB-free safe self-test (not part of `test:db`, not counted in the
-230) that proves — by really spawning a deliberately-failing child
-script and checking the result, not by reading the code and assuming —
-that a failing suite makes the orchestrator's own exit code nonzero, and
-that every step after a failure is genuinely skipped (its `run()` is
-never invoked at all, verified via a real sentinel-file side effect the
-skipped step would otherwise have produced). Run it with `pnpm run
-test:db:orchestrator-selftest`.
+`node test/orchestrator-failure-propagation.test.mjs` is a Docker/DB-free
+safe self-test — **not counted in the 230** — that proves, by really
+spawning deliberately-failing/succeeding throwaway child scripts and
+checking the result (never by reading the code and assuming), three
+things about the orchestrator itself:
+
+1. A failing suite makes the pipeline's own exit code nonzero, and every
+   step after a failure is genuinely skipped (its `run()` is never
+   invoked at all — verified via a real sentinel-file side effect the
+   skipped step would otherwise have produced).
+2. The exact assertion contract (below) correctly fails the gate for
+   every way a result could look accidentally-fine but not actually be:
+   a missing required suite, a duplicated one, one with no readable
+   summary, one reporting the wrong total, or one silently skipped —
+   and correctly passes for the one genuinely-correct 230/230 shape.
+3. Cleanup failure alone fails an otherwise-perfect run, cleanup always
+   runs (even if the test run itself crashed), and the evidence-writing
+   step only ever runs after cleanup has fully completed and been folded
+   into the decision (never before).
+
+**This self-test is a MANDATORY preflight step of `pnpm run test:db`
+itself** (`orchestrate-db-tests.mjs` runs it first, before Docker is even
+touched — if it fails for real, nothing else runs) — it is not an
+optional script that can be forgotten. It can also be run standalone via
+`pnpm run test:db:orchestrator-selftest`. Its deliberately-simulated
+failure lines are prefixed `SIMULATED-FAIL` (never bare `FAIL`) and the
+whole run is banner-wrapped when it executes inside `test:db`'s own
+output, specifically so a human or a CI log scraper can never mistake a
+manufactured fixture failure for a real one.
+
+### The exact assertion contract, and what "green" means (Stage 0 Corrective)
+
+An earlier version of this orchestrator judged a run "fully green" using
+only `aggregate.passed === aggregate.total` — too weak: it would accept
+e.g. 163/163 if one required suite's summary silently went missing.
+`orchestrator-lib.mjs`'s `DB_ASSERTION_CONTRACT` names every required
+suite and its own exact expected total up front — `evaluateAssertionContract()` fails the run unless **all** of the
+following hold:
+
+- `published-migrations-checksum` = exactly 4/4
+- `schema.local.test.mjs` = exactly 67/67
+- `rls.local.test.mjs` = exactly 71/71
+- `rls-full-matrix.local.test.mjs` = exactly 61/61
+- `acl.local.test.mjs` = exactly 18/18
+- `upgrade-scenario.local.test.mjs` = exactly 9/9
+- each of the above appears **exactly once**, was not skipped, exited 0,
+  and produced a readable `N/M passed.` summary
+- no step outside this list produced its own summary line (an
+  unaccounted-for suite can't silently inflate a sum)
+- the resulting aggregate = exactly **230/230**
+
+`start-disposable-postgres` and the two `run-migrations` steps are
+deliberately **not** part of this contract — they carry no assertion
+count — but they still have to exit 0 or the pipeline stops before any
+DB suite even runs (`runPipeline()`'s ordinary fail-fast behavior).
+
+**"Green evidence" (a run that `--write-evidence` is willing to write
+`last-run-output.txt` from) means, precisely:**
+
+1. the exact assertion contract above is satisfied (230/230, not a naive
+   sum);
+2. every step's own exit code was 0, and no step was skipped;
+3. cleanup was run AND independently verified — the disposable
+   container is confirmed absent via `docker ps`, not merely assumed
+   because `docker stop` returned success (see below).
+
+All three, together, are what `orchestrator-lib.mjs`'s
+`decideRunOutcome()`/`runLifecycle()` compute as `fullyGreen`; missing
+any one of them fails the whole run, even if the other two are perfect.
+
+### Cleanup is verified, and gates evidence (Stage 0 Corrective)
+
+An earlier version could write `last-run-output.txt` without the
+container-teardown step having been confirmed to actually succeed first
+— the write and the cleanup were sequenced independently, not causally.
+`runLifecycle()` now makes the ordering structural: `cleanup()` always
+runs immediately after the test run (success, failure, or a crash
+partway through — the same unconditional guarantee a `try/finally` gives,
+without ever swallowing a cleanup failure into silence), and its
+`verified` result is folded into the green/not-green decision **before**
+the evidence-writing step is ever reached. Cleanup itself: `docker stop`
+→ `docker ps` to confirm absence → `docker rm -f` as a fallback if it's
+still there → re-check — every one of those real exit codes is captured,
+not assumed. If the container is still present after all of that, the
+run is not fully green (regardless of how the tests themselves went),
+`last-run-output.txt` is never touched, and the container's name is
+printed so it can be cleaned up by hand. When cleanup IS verified, the
+evidence file states it explicitly: a `cleanup verified: container
+absent` line.
 
 ### Root cause of the previously-recorded 172/58 failure (Stage 0)
 
@@ -109,11 +189,14 @@ Stage 0 chat report for both runs' full output.
 **Previously recorded failure vs. current verified clean run:** any
 `last-run-output.txt` you're looking at was regenerated by
 `orchestrate-db-tests.mjs --write-evidence`, which refuses to write the
-file at all unless that specific run's own exit code was 0, its
-aggregate was exactly N/N, and no step was skipped — so the file, if
+file at all unless that specific run satisfied the exact assertion
+contract above (230/230, not a naive sum), every step's own exit code
+was 0 with nothing skipped, AND cleanup was independently verified (see
+"Cleanup is verified, and gates evidence" above) — so the file, if
 present and tracked, always reflects a run that was independently
-verified green at write time. It is still only a point-in-time snapshot
-(see below) — it does not re-verify itself on every future read.
+verified green, contract-exact, and fully cleaned up at write time. It
+is still only a point-in-time snapshot (see below) — it does not
+re-verify itself on every future read.
 
 RLS Remediation Round 4 (`0010_round4_integrity_fixes.sql`) added no new
 migration count to the clean-scenario run above beyond the extra file

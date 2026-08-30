@@ -1,13 +1,64 @@
 Regenerated 2026-08-30 by orchestrate-db-tests.mjs (Stage 0 — DB Evidence and
-Test-Gate Remediation) against a genuinely fresh, disposable local Postgres
-container created and torn down by THIS run — never a reused container/database.
-This is a point-in-time snapshot of a run that was independently verified to be
-fully green (aggregate 230/230, every
-step's own exit code 0, no step skipped). It goes stale again after any future
-migration or test change and should be regenerated alongside one — same
-discipline as test/published-migrations-checksum.test.mjs's own manifest.
-=== Stage 0 DB test-gate orchestrator run — started 2026-08-30T23:18:52.831Z ===
-Container: alrahma-dbtest-mtgfl1ni-df5451c5 (image postgres:16, bound to 127.0.0.1 only, random port, random password)
+Test-Gate Remediation, Stage 0 Corrective) against a genuinely fresh, disposable
+local Postgres container created and torn down by THIS run — never a reused
+container/database.
+
+This is a point-in-time snapshot of a run that was independently verified against
+the EXACT assertion contract (not a naive sum): 230/230
+(expected exactly 230), every required suite present exactly
+once with its own exact expected total, every step's own exit code 0, no step
+skipped.
+
+cleanup verified: container absent
+
+It goes stale again after any future migration or test change and should be
+regenerated alongside one — same discipline as
+test/published-migrations-checksum.test.mjs's own manifest.
+
+========================================================================
+=== MANDATORY ORCHESTRATOR SELF-TEST PREFLIGHT (not part of the 230 DB ===
+=== assertions — proves the orchestrator's own contract/cleanup-gating ===
+=== logic works, via REAL simulated child-process failures. Any 'FAIL'  ===
+=== or 'SIMULATED-FAIL' text below this banner is an INTENTIONAL,       ===
+=== deliberately-manufactured fixture, not a real defect.               ===
+========================================================================
+SIMULATED-FAIL (expected — orchestrator self-test fixture, not a real defect): simulated failure
+0/1 passed.
+PASS  a failing child suite makes the pipeline's overall exit code nonzero
+SIMULATED-FAIL (expected — orchestrator self-test fixture, not a real defect): simulated failure
+0/1 passed.
+PASS  a step after a failing step is skipped, and its run() is genuinely never invoked
+SIMULATED-FAIL (expected — orchestrator self-test fixture, not a real defect): simulated failure
+0/1 passed.
+PASS  subsequent stages are not counted as successful after a failure (aggregate reflects only what ran)
+PASS  trivially true
+1/1 passed.
+PASS  positive control: a pipeline of only-succeeding steps reports overall success
+[migrate] done.
+PASS  trivially true
+1/1 passed.
+PASS  a step with no 'N/M passed.' line (e.g. a migration-apply step) is excluded from the aggregate, not counted as 0/0
+PASS  contract: the fully correct 230-assertion set satisfies the contract
+PASS  contract: a required suite that exited 0 with no readable summary fails the gate
+PASS  contract: a suite reporting the wrong total (e.g. 1/1 instead of its real expected count) fails the gate
+PASS  contract: aggregate below 230 fails the gate even though every PRESENT suite has passed === total
+PASS  contract: a duplicated required suite fails the gate
+PASS  contract: a skipped required suite fails the gate
+PASS  contract: an unaccounted-for extra step with its own summary line fails the gate (can't silently inflate the total)
+PASS  lifecycle: cleanup failure blocks evidence write even when the pipeline and contract were perfect
+PASS  lifecycle: a genuinely successful test run plus a failed cleanup is an OVERALL failure, not a partial success
+PASS  lifecycle: cleanup always runs strictly before the evidence-writing step is invoked, in real temporal order
+PASS  lifecycle: cleanup still runs, and is still gated on, even when runTests() itself throws
+PASS  lifecycle: decideRunOutcome in isolation — all three of pipeline/contract/cleanup must be clean for fullyGreen
+
+17/17 passed.
+========================================================================
+=== END mandatory orchestrator self-test — exit 0. Real DB   ===
+=== suites have not started yet.                                        ===
+========================================================================
+
+=== Stage 0 DB test-gate orchestrator run — started 2026-08-30T23:45:45.756Z ===
+Container: alrahma-dbtest-mtggjm70-7fa0d032 (image postgres:16, bound to 127.0.0.1 only, random port, random password)
 
 === node test/published-migrations-checksum.test.mjs ===
 PASS  0000_init_20_table_baseline.sql: sha256 and journal timestamp unchanged since publication
@@ -19,16 +70,16 @@ PASS  0003_provider_events_lease.sql: sha256 and journal timestamp unchanged sin
 --- exit code: 0 ---
 
 === start-disposable-postgres ===
-started; TEST_DATABASE_URL=postgres://postgres:***@127.0.0.1:54559/alrahma_test
+started; TEST_DATABASE_URL=postgres://postgres:***@127.0.0.1:64546/alrahma_test
 --- exit code: 0 ---
 
 === node test/run-migrations.mjs (1st) ===
-[migrate] applying lib/db/drizzle to postgres://postgres:***@127.0.0.1:54559/alrahma_test
+[migrate] applying lib/db/drizzle to postgres://postgres:***@127.0.0.1:64546/alrahma_test
 [migrate] done.
 --- exit code: 0 ---
 
 === node test/run-migrations.mjs (2nd, proves already-applied bookkeeping) ===
-[migrate] applying lib/db/drizzle to postgres://postgres:***@127.0.0.1:54559/alrahma_test
+[migrate] applying lib/db/drizzle to postgres://postgres:***@127.0.0.1:64546/alrahma_test
 [migrate] done.
 --- exit code: 0 ---
 
@@ -294,5 +345,13 @@ OK       rls-full-matrix.local.test.mjs — exit 0 (61/61 passed.)
 OK       acl.local.test.mjs — exit 0 (18/18 passed.)
 OK       upgrade-scenario.local.test.mjs — exit 0 (9/9 passed.)
 
-Aggregate assertions: 230/230 passed.
-Overall exit code: 0
+=== Exact assertion contract ===
+OK  exact contract satisfied: 230/230 (expected exactly 230)
+Naive pipeline aggregate (informational only, NOT the green/not-green judgment): 230/230
+Pipeline overall exit code: 0
+
+=== cleanup: stopping and verifying removal of container "alrahma-dbtest-mtggjm70-7fa0d032" ===
+docker stop exit=0, final docker ps check exit=0
+cleanup verified: container absent
+
+Overall verdict: FULLY GREEN

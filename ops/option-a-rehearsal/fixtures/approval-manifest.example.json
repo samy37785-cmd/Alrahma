@@ -1,0 +1,83 @@
+{
+  "_comment": "LOCAL FIXTURE ONLY. This is not a real production approval — it exists so production-preflight-gate.mjs has something to test its Approval Manifest logic against on the local rehearsal stack. A real approval manifest for the actual difzynyphojgisrfvrkd project does not exist anywhere in this repository and is not created by this task. Regenerate every field below (git branch/sha, migration+tool checksums, fingerprint hash, backup bundle hash, expiry) before using this fixture, and regenerate again any time the branch advances, a migration file changes, or any checksummed tool script changes — a stale fixture is meant to make the gate FAIL, which is itself part of what gets tested.",
+  "projectRef": "difzynyphojgisrfvrkd",
+  "approvedBranch": "feat/supabase-option-a-preflight",
+  "approvedCommitSha": "2620636009128fe11a25144f3f0c7cac776113f8",
+  "expectedRemoteFingerprintSha256": "9501c306608b9732e533137b28d7a9429353f4ba54300dbd17290e1512105c65",
+  "migrationChecksums": [
+    {
+      "file": "0000_init_20_table_baseline.sql",
+      "sha256": "4777fcefeaee58d471eb5e0a2cfe98c034d918f420d3520d0c54ed423c6df9e7"
+    },
+    {
+      "file": "0001_functions_triggers.sql",
+      "sha256": "7d611473efe0992eabd6a921fe84421fd926dbfd0acdeb7c6978f34864de99f8"
+    },
+    {
+      "file": "0002_rls.sql",
+      "sha256": "c9a7bf64c568c48bac6ca9408e018209bce771b2eb05ac93f0819f998aafdd1a"
+    },
+    {
+      "file": "0003_provider_events_lease.sql",
+      "sha256": "2efc5648ddcbd2c38a51728add91471f8a356b786bb818eee565fe8fab0795ac"
+    },
+    {
+      "file": "0004_privilege_reconciliation.sql",
+      "sha256": "9a3314aeabe5b48f295a8058670a213901ec6ef15f23dd27d0ff27cf894f9238"
+    },
+    {
+      "file": "0005_provider_events_fencing.sql",
+      "sha256": "3f53059d365a7c2deaeaf18b388c9ede6a0c9649b0a835b07dda10bebb01ac77"
+    },
+    {
+      "file": "0006_subscription_integrity.sql",
+      "sha256": "88b3160f008cbcf8ea330161f7116a44b6f9d0bcbc7461094a832cf0d7fdfe1e"
+    },
+    {
+      "file": "0007_invoice_integrity.sql",
+      "sha256": "d9af3686ba35c5675120aeac7f4740b8eb7b7cab1fe620219c1ab9c008f8af26"
+    },
+    {
+      "file": "0008_plan_versioning.sql",
+      "sha256": "35d653f13be0ef55a5468cd17c829a3189ed09984bb18a496944571a2600320e"
+    },
+    {
+      "file": "0009_refund_integrity.sql",
+      "sha256": "5f066e2a6156b4dfc01176da1089114e5175c9c6d5694dc2a07b880ceda45d98"
+    },
+    {
+      "file": "0010_round4_integrity_fixes.sql",
+      "sha256": "a10e447d46cb42ccd0ca701295d92f61169f3c99e9030df6e646c92da1bf1eb7"
+    },
+    {
+      "file": "0011_default_privileges_deny_by_default.sql",
+      "sha256": "20c77584e4fa55df43a094edd43b12a0bcb7e909aee8f4f5e75dd8f4d1628483"
+    }
+  ],
+  "toolChecksums": [
+    {
+      "file": "sql/surgical-reset.sql",
+      "sha256": "5c109e24e349c2d20381b76ab49f7b2f913be97520abf6abe1d2ca893b3cc918"
+    },
+    {
+      "file": "scripts/production-preflight-gate.mjs",
+      "sha256": "91409822bca845af05c7aa29e6c40cad6cbcac7f01bee62742454a5e5e5cb739"
+    },
+    {
+      "file": "scripts/backup-bundle.mjs",
+      "sha256": "0ed5fea30bc7ba44daea4d65ca0d2993e1688ed52f669f434be432db607925ed"
+    },
+    {
+      "file": "scripts/restore-bundle.mjs",
+      "sha256": "979ae74943a4cac642d0673a3bb5646371b8fce71bc4dbfdbb3b01a1ec2e06f3"
+    },
+    {
+      "file": "scripts/03-surgical-reset.mjs",
+      "sha256": "f4fa9574802a773c1a202f63c3800d9ca041e6b47e4cecd54f7cf97f13a4d39a"
+    }
+  ],
+  "backupBundleManifestSha256": "ce94fffc08d860b768d80567901c712bf6c583edaf80a2151a3b3e099d108e12",
+  "approvedAt": "2026-08-30T18:16:33.095Z",
+  "expiresAt": "2026-09-06T18:16:33.095Z",
+  "approvedBy": "LOCAL-FIXTURE — not a real approver, never use this field's value as evidence of real sign-off"
+}

@@ -1,0 +1,11 @@
+# Regenerable rehearsal output (dumps, checksums, inventory snapshots) —
+# reproduce by running scripts/01-pre-drop-inventory.sh, scripts/02-dump.sh,
+# and scripts/02b-dump-cross-schema-artifacts.sh against a live rehearsal
+# stack. Never committed: these are per-run artifacts, some containing a
+# full local-only pg_dump, not a permanent record.
+out/
+
+# Convenience symlink to lib/db's node_modules (pg, drizzle-orm) so
+# scripts/run-migrate.mjs resolves without its own package.json/install.
+# Recreate with: ln -s ../../lib/db/node_modules node_modules
+node_modules

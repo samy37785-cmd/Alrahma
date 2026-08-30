@@ -78,6 +78,13 @@
       "when": 1788020443128,
       "tag": "0010_round4_integrity_fixes",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1788110400000,
+      "tag": "0011_default_privileges_deny_by_default",
+      "breakpoints": true
     }
   ]
 }

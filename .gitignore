@@ -42,6 +42,12 @@ node_modules
 # deliberately NOT covered by this rule.
 .claude/settings.local.json
 
+# Stage 0 DB test-gate orchestrator — per-run transcripts (every
+# orchestrate-db-tests.mjs invocation writes a full, timestamped log
+# here; the curated, verified-green evidence file is
+# lib/db/test/last-run-output.txt, which IS tracked).
+lib/db/test/.run-logs/
+
 # misc
 /.sass-cache
 /connect.lock

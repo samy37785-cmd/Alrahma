@@ -67,9 +67,21 @@ policy set, not the raw count.
 
 ## Behavioral checks — real data, not inferred
 
-**Signup always creates `role = 'user'`, regardless of metadata claim**
-(inserted 4 real `auth.users` rows with `raw_user_meta_data.role` unset,
-`'admin'`, `'teacher'`, and `'parent'`):
+**Correction (Surgical Reset round):** this section originally called
+the test below "signup" — it was not. It inserted rows directly into
+`auth.users` via SQL, which fires the real trigger but is not the same
+thing as a client actually signing up. Relabeled here to what was
+actually run, and superseded by a genuine HTTP-level test — see
+`docs/option-a-surgical-reset-rehearsal.md` §4, which posts real
+requests to `POST /auth/v1/signup` through the actual GoTrue endpoint
+and gets the same result (`role='user'` regardless of metadata) from
+the real signup path, not just the trigger in isolation.
+
+**Trigger integration test (direct SQL insert, not real signup) —
+`handle_new_user()` always sets `role = 'user'`, regardless of metadata
+claim** (inserted 4 real `auth.users` rows with
+`raw_user_meta_data.role` unset, `'admin'`, `'teacher'`, and
+`'parent'`):
 ```
                email               | role 
 -----------------------------------+------
@@ -85,17 +97,25 @@ as `postgres`/`service_role` — there is no other path; confirmed no
 client-callable function can set `role='admin'` in
 `docs/option-a-migration-review.md` §4).
 
-**AAL1/AAL2 contract, tested with 3 real role-switched sessions**
-(`SET LOCAL ROLE authenticated; SET LOCAL request.jwt.claims = '...'`,
-calling `admin_set_role`, matching PostgREST's real session mechanism):
+**AAL1/AAL2 contract — simulated PostgREST DB claims, not an
+Auth-issued AAL2 session** (`SET LOCAL ROLE authenticated; SET LOCAL
+request.jwt.claims = '...'` — this sets the same session GUC PostgREST
+itself sets from a real JWT, so `auth.jwt()`/`auth.uid()` inside the
+function see identical data to what a real request would produce, but
+no real MFA enrollment or challenge ever ran; a real TOTP-based AAL2
+session was not created in either rehearsal round — this remains open,
+see "What was not re-tested" in
+`docs/option-a-surgical-reset-rehearsal.md`), 3 role-switched sessions,
+calling `admin_set_role`:
 
 | Case | Caller | Expected | Actual |
 |---|---|---|---|
 | A | non-admin, `authenticated` | rejected | `ERROR: admin_set_role: caller is not an AAL2-verified admin` |
 | B | real admin, AAL1 (no MFA) | rejected | `ERROR: admin_set_role: caller is not an AAL2-verified admin` |
-| C | real admin, AAL2 | succeeds | `role → admin` (promoted the target user, audit row written) |
+| C | real admin, AAL2 (simulated claim) | succeeds | `role → admin` (promoted the target user, audit row written) |
 
-All three matched the design contract exactly.
+All three matched the design contract exactly, within the scope of what
+a simulated claim can prove.
 
 **`RETURNS trigger`/`RETURNS event_trigger` PostgREST-RPC exposure —
 tested with real HTTP calls against the local Kong/PostgREST gateway**
@@ -105,6 +125,20 @@ tested with real HTTP calls against the local Kong/PostgREST gateway**
 |---|---|---|
 | `handle_new_user` | `trigger` | `404 PGRST202` — *"Could not find the function public.handle_new_user... in the schema cache"* |
 | `rls_auto_enable` | `event_trigger` | `404 PGRST202` — same |
+
+**Correction (Surgical Reset round): the `rls_auto_enable` row above is
+wrong, and was caught by re-testing rather than reusing the old
+claim.** A fresh HTTP call this round got `401`
+(`{"code":"42501",...,"message":"permission denied for function
+rls_auto_enable"}`), not `404`. That means PostgREST's schema cache
+**did** find `rls_auto_enable` and routed the call — `RETURNS
+event_trigger` does NOT get the same schema-cache exclusion `RETURNS
+trigger` gets, contrary to what this table originally claimed. The
+`401` instead comes from a real Postgres permission check (`anon`
+lacks `EXECUTE`). See `docs/option-a-surgical-reset-rehearsal.md` §5
+for the full transcript and what this does and doesn't change about
+the underlying conclusion (still not reachable by `anon`, just via a
+different mechanism than stated here originally).
 | `admin_set_role` (control — a real, intentionally-exposed RPC) | `profiles` | `401` — *"permission denied for function admin_set_role"* (expected: `anon` has no grant) |
 
 **This directly resolves the correction the task asked for**:

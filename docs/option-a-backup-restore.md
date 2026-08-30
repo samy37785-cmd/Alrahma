@@ -88,8 +88,34 @@ approach failed, that failure is reported, not smoothed over.
    privileges only govern *future* object creation, and this project's
    own migrations `GRANT` explicitly per-object rather than relying on
    schema-level default-privilege inheritance (see
-   `docs/option-a-migration-review.md` §7) — so this gap is judged
-   low-impact but is listed as an open risk, not silently accepted.
+   `docs/option-a-migration-review.md` §7).
+
+   **Correction (Surgical Reset round): "low-impact" was asserted here
+   without a test or threat analysis backing it — removed.** At the
+   time this correction was first written, `grep -rn "alter default
+   privileges" lib/db/drizzle/*.sql` returned zero matches (migration
+   0011 at that point only *created an event trigger*, which issues its
+   REVOKE dynamically at runtime rather than as a literal `ALTER
+   DEFAULT PRIVILEGES` statement in the migration file's own text).
+   **That is no longer true.** Migration 0011 was rewritten a second
+   time (Round 2 remediation — see its own header comment for the full
+   empirical investigation) to a real, working
+   `alter default privileges for role postgres revoke execute on
+   functions from public, anon, authenticated;` statement, `FOR ROLE
+   postgres` — the exact role/statement shape this gap describes as
+   failing to restore via `pg_dump`/`pg_restore` under the unprivileged
+   `postgres` role. This is a real, direct interaction this document
+   must not understate: **a disaster-recovery restore of the real
+   project, after migration 0011 has been applied, would need to
+   either re-run migration 0011 itself post-restore (not restore its
+   effect from a `pg_dump`) or accept that the deny-by-default rule for
+   `postgres`-owned default privileges is missing until it does.**
+   `FOR ROLE supabase_admin` default-privilege rules (Supabase's own
+   pre-existing ones, not this project's) remain a separate, still-open
+   restore gap for the reason already stated: the `postgres` role
+   cannot alter a role it does not own. Both are listed as open risks
+   here with no severity label attached — this document does not judge
+   impact, only reports what was tested.
 7. **Proved the restore is functionally live, not just structurally
    present**: inserted a brand-new `auth.users` row after the restore
    completed — `public.profiles` grew from 1 row to 2, proving the

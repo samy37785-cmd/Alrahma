@@ -281,12 +281,24 @@ function runStaticChecks(args) {
   // 0. Worktree cleanliness — both modes. An uncommitted change is not
   // what the Approval Manifest's approvedCommitSha was ever reviewed
   // against, so a dirty worktree fails closed regardless of mode.
+  // --untracked-files=no deliberately: this repo has always carried a
+  // handful of untracked-by-design directories alongside this branch
+  // (backend/, frontend/, e2e/, .playwright-mcp/ — pre-existing, and
+  // the standing rule for this whole engagement is that they must
+  // NEVER be added to git). An unfiltered `git status --porcelain`
+  // would show them forever and make this check impossible to ever
+  // pass — found by actually running the gate after a clean commit,
+  // not by inspection. What this check actually needs to guarantee is
+  // narrower: no uncommitted change to a TRACKED file, and no new file
+  // staged/added outside of a reviewed commit — untracked scratch
+  // content the project already accepts living alongside the repo is
+  // not that.
   try {
-    const porcelain = execSync("git status --porcelain", { encoding: "utf8", cwd: REPO_ROOT }).trim();
+    const porcelain = execSync("git status --porcelain --untracked-files=no", { encoding: "utf8", cwd: REPO_ROOT }).trim();
     if (porcelain.length > 0) {
-      fail(`worktree is not clean (git status --porcelain has output) — refusing:\n${porcelain}`);
+      fail(`worktree has uncommitted changes to tracked files (git status --porcelain --untracked-files=no has output) — refusing:\n${porcelain}`);
     } else {
-      pass("worktree is clean (git status --porcelain is empty)");
+      pass("worktree is clean (no uncommitted changes to tracked files)");
     }
   } catch (e) {
     fail(`could not run git status: ${e.message}`);

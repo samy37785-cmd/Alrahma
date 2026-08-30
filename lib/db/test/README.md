@@ -8,42 +8,112 @@ Every script here refuses to run against anything but `localhost`/
 immediately otherwise. **Never** point `TEST_DATABASE_URL` at the real
 Supabase project.
 
-## Run it yourself (clean-database scenario)
+## Run it yourself — one self-contained command (current, since Stage 0)
 
 ```sh
-node test/published-migrations-checksum.test.mjs # 4 assertions — no DB/Docker needed, run this first or anytime
-
-docker run --rm -d --name alrahma-local-test-pg \
-  -e POSTGRES_PASSWORD=test -e POSTGRES_DB=alrahma_test \
-  -p 55432:5432 postgres:16
-
-# wait for it to accept connections, then:
-export TEST_DATABASE_URL="postgres://postgres:test@localhost:55432/alrahma_test"
-node test/run-migrations.mjs             # applies lib/db/drizzle/*.sql (0000-0010) via drizzle-orm's migrate()
-node test/schema.local.test.mjs          # 67 real-SQL assertions (schema, constraints, functions/triggers)
-node test/rls.local.test.mjs             # 71 real-SQL assertions (specific findings: bypass closure, forgery prevention, AAL boundaries, concurrency, webhook lease + fencing, subscription/invoice/refund RPCs)
-node test/rls-full-matrix.local.test.mjs # 61 real-SQL assertions (systematic per-table sweep of docs/rls-matrix.md, incl. plan versioning + invoice issuance sweeps)
-node test/acl.local.test.mjs             # 18 real-SQL assertions (direct has_table_privilege/has_column_privilege/has_function_privilege checks — proves the GRANT matrix directly, not by inference)
-node test/upgrade-scenario.local.test.mjs # 9 real-SQL assertions (self-contained — see below; applies 0000-0003, injects legacy drift, then applies the rest and proves it's cleaned up)
-
-docker rm -f alrahma-local-test-pg # tear down when done
+pnpm run test:db              # from lib/db — does EVERYTHING below, on a fresh disposable DB, then tears it down
+pnpm run test:db:write-evidence  # same, and if (and only if) the run is fully green, regenerates last-run-output.txt
+pnpm run check:published-migrations  # just the 4 filesystem checksum assertions, no DB/Docker needed
 ```
 
-Or, from `lib/db`, once `TEST_DATABASE_URL` and the container are up:
-`pnpm run test:db` chains every step above in the same order (checksum
-guard first, so it's a real, blocking gate — nothing downstream runs if
-0000-0003 have changed) into a single command. `pnpm run
-check:published-migrations` runs just the checksum guard on its own (no
-DB/Docker needed at all — safe to run anytime, including as a fast
-pre-commit sanity check before touching anything under `lib/db/drizzle`).
-Neither script is wired into any CI pipeline yet — this repo has no
-`.github/workflows` at all today; whenever one is added for this repo,
-`test:db` (or at minimum `check:published-migrations`) belongs in it as
-a required check.
+`test:db` now runs `test/orchestrate-db-tests.mjs`, which:
 
-**226 real-SQL assertions total against the migrated database, plus 4
-filesystem-only checksum assertions (no DB/Docker) from
-`published-migrations-checksum.test.mjs`.**
+1. Creates a **brand-new, uniquely-named, disposable** local Postgres
+   Docker container — random container name, random password, a
+   Docker-assigned free host port bound to `127.0.0.1` only. Never a
+   fixed name/port, and never reused across runs.
+2. Runs the checksum guard, applies `lib/db/drizzle/*.sql` twice (to keep
+   proving the already-applied-migration bookkeeping, not just that the
+   raw SQL is re-runnable), then all 5 DB-backed suites below, in order.
+3. **Always** tears the container down in a `finally` — on success,
+   on failure, or on a crash partway through. Nothing is ever left
+   running; nothing needs a manual `docker rm -f` afterward.
+4. Refuses to run against anything but `localhost`/`127.0.0.1` (the
+   `TEST_DATABASE_URL` it builds internally is never taken from — and
+   any inherited value in the parent shell's environment is deliberately
+   ignored).
+
+Suites, in the order the orchestrator runs them:
+
+- `test/schema.local.test.mjs` — 67 real-SQL assertions (schema, constraints, functions/triggers)
+- `test/rls.local.test.mjs` — 71 real-SQL assertions (specific findings: bypass closure, forgery prevention, AAL boundaries, concurrency, webhook lease + fencing, subscription/invoice/refund RPCs)
+- `test/rls-full-matrix.local.test.mjs` — 61 real-SQL assertions (systematic per-table sweep of docs/rls-matrix.md, incl. plan versioning + invoice issuance sweeps)
+- `test/acl.local.test.mjs` — 18 real-SQL assertions (direct has_table_privilege/has_column_privilege/has_function_privilege checks — proves the GRANT matrix directly, not by inference)
+- `test/upgrade-scenario.local.test.mjs` — 9 real-SQL assertions (self-contained — see below; applies 0000-0003, injects legacy drift, then applies the rest and proves it's cleaned up)
+
+**230 real-SQL/filesystem assertions total: 4 checksum + 67 schema + 71
+targeted RLS + 61 full RLS matrix + 18 ACL + 9 upgrade.** Neither
+`test:db` nor `check:published-migrations` is wired into any CI pipeline
+yet — this repo has no `.github/workflows` at all today; whenever one is
+added, `test:db` (or at minimum `check:published-migrations`) belongs in
+it as a required check.
+
+If Docker isn't available, or you specifically want to drive a container
+by hand, the manual sequence the orchestrator automates is still just
+`docker run ... -p 127.0.0.1::5432 postgres:16` → discover the assigned
+port (`docker port <name> 5432/tcp`) → `export TEST_DATABASE_URL=...` →
+run each script above with `node`, in order → `docker stop <name>`. The
+orchestrator is the supported path; doing this by hand reintroduces
+exactly the test-isolation risk described below if the container/database
+isn't freshly created and torn down every time.
+
+### Proving the orchestrator's failure-propagation actually works
+
+`node test/orchestrator-failure-propagation.test.mjs` is a separate,
+Docker/DB-free safe self-test (not part of `test:db`, not counted in the
+230) that proves — by really spawning a deliberately-failing child
+script and checking the result, not by reading the code and assuming —
+that a failing suite makes the orchestrator's own exit code nonzero, and
+that every step after a failure is genuinely skipped (its `run()` is
+never invoked at all, verified via a real sentinel-file side effect the
+skipped step would otherwise have produced). Run it with `pnpm run
+test:db:orchestrator-selftest`.
+
+### Root cause of the previously-recorded 172/58 failure (Stage 0)
+
+`last-run-output.txt` briefly recorded a run (2026-08-30, Option A Round
+2 regeneration) showing 172 PASS / 58 FAIL — **not** a real SQL/RLS
+regression. Diagnosed by actually reproducing it: the manual workflow
+this file used to document (`docker run --name alrahma-local-test-pg -p
+55432:5432 ...`, a **fixed** container name and port, never torn down
+between invocations) meant a second `test:db` run against the
+still-running container from an earlier run collided with that earlier
+run's own fixture rows — `plans_slug_active_unique`,
+`profiles_email_lower_unique`, `coupons_code_upper_unique`,
+`provider_events_provider_event_unique`, and
+`payments_gateway_payment_id_unique` all failed with literally
+`duplicate key value violates unique constraint`, all on each suite's
+OWN first-use fixture insert. A further ~8 failures in the same recorded
+run were direct knock-on effects within the same file: `test()` (see
+below) deliberately continues to the next assertion after a failure
+rather than aborting the whole file, so once an early seed insert
+silently collided, later tests in that same file that referenced its
+(never-actually-inserted) id failed too, for a secondary reason (e.g.
+`Cannot read properties of undefined (reading 'updated_at')`) — not an
+independent defect. Two suites in that same recorded run —
+`acl.local.test.mjs` (18/18) and `upgrade-scenario.local.test.mjs`
+(9/9) — passed cleanly throughout, which is the direct evidence this was
+a test-isolation bug and not a regression: ACL only checks static
+privilege grants (immune to row-level duplicates), and the upgrade
+scenario has always owned and dropped/recreated its own separate
+database on every run (see below) — the two suites that were already
+isolated were exactly the two that stayed green.
+
+The fix is `test/orchestrate-db-tests.mjs` (a fresh, uniquely-named,
+disposable container every run — see above), not any change to
+migrations or RLS SQL. Verified empirically, not assumed: the full
+230-assertion suite was run twice, each on its own independently fresh
+disposable database (Run A, Run B), and both reached 230/230. See the
+Stage 0 chat report for both runs' full output.
+
+**Previously recorded failure vs. current verified clean run:** any
+`last-run-output.txt` you're looking at was regenerated by
+`orchestrate-db-tests.mjs --write-evidence`, which refuses to write the
+file at all unless that specific run's own exit code was 0, its
+aggregate was exactly N/N, and no step was skipped — so the file, if
+present and tracked, always reflects a run that was independently
+verified green at write time. It is still only a point-in-time snapshot
+(see below) — it does not re-verify itself on every future read.
 
 RLS Remediation Round 4 (`0010_round4_integrity_fixes.sql`) added no new
 migration count to the clean-scenario run above beyond the extra file
@@ -181,9 +251,19 @@ for real, proven directly rather than inferred.
 
 ## Captured output
 
-`last-run-output.txt` is a captured, real run —
-`published-migrations-checksum.test.mjs` first (no DB needed), then
-`run-migrations.mjs` twice (to prove its already-applied-migration
-bookkeeping across all 11 migration files, not that the raw SQL itself
-is re-runnable), then all 5 DB-backed test scripts, then `tsc --noEmit`
-and a `drizzle-kit generate` drift check — not hand-edited.
+`last-run-output.txt` is a captured, real run — never hand-edited, and
+(since Stage 0) only ever written by `orchestrate-db-tests.mjs
+--write-evidence`, which refuses to touch it unless that exact run was
+independently verified fully green (see "Root cause..." above). It
+captures `published-migrations-checksum.test.mjs` first (no DB needed),
+then `run-migrations.mjs` twice (to prove its already-applied-migration
+bookkeeping across the full migration set, not that the raw SQL itself
+is re-runnable), then all 5 DB-backed test scripts — each against a
+fresh, disposable, uniquely-named container the orchestrator created and
+tore down for that run alone. It is a point-in-time snapshot, not a live
+check: it goes stale again after any future migration or test change and
+should be regenerated alongside one, same discipline as
+`test/published-migrations-checksum.test.mjs`'s own manifest. `tsc
+--noEmit` and a `drizzle-kit generate` drift check are run separately
+(see the Stage 0 chat report) and are not currently part of the captured
+file itself.

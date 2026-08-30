@@ -181,7 +181,7 @@ async function main() {
 
   // ------------------------------------------------------------------
   // T1: positive matrix — everything except worktree-cleanliness (that
-  // check runs the exact same `git status --porcelain` this repo's own
+  // check runs the exact same `git status --porcelain --untracked-files=no` this repo's own
   // live state answers; asserted separately in T1b below rather than
   // faked here).
   // ------------------------------------------------------------------
@@ -192,7 +192,7 @@ async function main() {
   );
   console.log(t1.out);
   const t1FailLines = t1.out.split("\n").filter((l) => l.startsWith("FAIL"));
-  const t1NonWorktreeFails = t1FailLines.filter((l) => !l.includes("worktree is not clean"));
+  const t1NonWorktreeFails = t1FailLines.filter((l) => !l.includes("worktree has uncommitted changes to tracked files"));
   assert.deepEqual(t1NonWorktreeFails, [], `T1: every check except worktree-cleanliness must pass; got:\n${t1NonWorktreeFails.join("\n")}`);
   assert.match(t1.out, /PASS {2}function handle_new_user: security_definer \+ search_path \+ args \+ return type \+ body hash all match/);
   assert.match(t1.out, /PASS {2}function rls_auto_enable: security_definer \+ search_path \+ args \+ return type \+ body hash all match/);
@@ -202,9 +202,9 @@ async function main() {
   assert.match(t1.out, /PASS {2}all \d+ tool file\(s\) match the approval manifest exactly/);
 
   console.log("--- T1b: the worktree-cleanliness check runs the exact command this repo's own git state answers");
-  const realPorcelain = execSync("git status --porcelain", { encoding: "utf8", cwd: repoRoot }).trim();
+  const realPorcelain = execSync("git status --porcelain --untracked-files=no", { encoding: "utf8", cwd: repoRoot }).trim();
   if (realPorcelain.length > 0) {
-    assert.ok(t1.out.includes("FAIL  worktree is not clean"), "T1b: dirty real worktree must produce the FAIL line");
+    assert.ok(t1.out.includes("FAIL  worktree has uncommitted changes to tracked files"), "T1b: dirty real worktree must produce the FAIL line");
   } else {
     assert.ok(t1.out.includes("PASS  worktree is clean"), "T1b: clean real worktree must produce the PASS line");
   }
@@ -321,7 +321,7 @@ $function$;`);
   await c7b.query(`create event trigger rls_auto_enable_trigger on ddl_command_end when tag in ('CREATE TABLE', 'CREATE TABLE AS', 'SELECT INTO') execute function public.rls_auto_enable();`);
   await c7b.end();
   const t7c = runGate({ GATE_DATABASE_URL: testUrl.toString() }, ["--mode", "local", "--approval-manifest", goodManifest, "--dump-file", path.join(scratchDir, "dump.bin"), "--checksum-file", path.join(scratchDir, "manifest-local.json")]);
-  const t7cNonWorktreeFails = t7c.out.split("\n").filter((l) => l.startsWith("FAIL") && !l.includes("worktree is not clean"));
+  const t7cNonWorktreeFails = t7c.out.split("\n").filter((l) => l.startsWith("FAIL") && !l.includes("worktree has uncommitted changes to tracked files"));
   assert.deepEqual(t7cNonWorktreeFails, [], `T7 restore-check: every check except worktree-cleanliness must pass again after restoring; got:\n${t7cNonWorktreeFails.join("\n")}`);
 
   console.log("--- cleaning up dedicated test database and scratch fixtures");

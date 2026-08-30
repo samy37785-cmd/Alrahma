@@ -122,3 +122,82 @@ whether/when the product intends to actually wire `artifacts/api-server`
 up to `@workspace/db` and cut the frontend over from the Render/Mongo
 backend to Supabase — that is a real, separate, future product decision,
 not a finding this audit can or should make on its own.
+
+## Addendum (Round 2 — untracked-folder re-audit + deploy config sweep)
+
+Per explicit instruction not to dismiss an untracked folder just because
+it's untracked, every one of the 4 untracked directories was
+re-enumerated with a full recursive listing (not a summary) this round,
+plus a repo-wide (not just `backend`/`frontend/src`) tracked-file sweep
+and a real look at deploy-platform config files. Nothing here overturns
+the Round 1 conclusion; it makes the evidence base for it wider and more
+direct.
+
+**Full recursive contents, this round, no exclusions beyond
+`node_modules`/`dist`/`coverage`/`test-results` build output:**
+
+| dir | contents |
+|---|---|
+| `backend/` | `backend/.env` (real env file, see below) + `backend/logs/*` (winston app/error/exception/rejection logs and audit-log files, dated 2026-07-07 through 2026-08-26) — **no source code**, confirmed by full recursive `find`, not a top-level guess |
+| `frontend/` | only `coverage/`, `dist/`, `node_modules/` at the top level — **no `src/`, no config files at all** |
+| `e2e/` | only `test-results/.last-run.json` — **no test source** |
+| `.playwright-mcp/` | 15 `page-*.yml` DOM snapshots + 27 `console-*.log` files, all dated 2026-08-26 through 2026-08-29 — these are this engagement's *own* browser-automation artifacts (Phase 1's Studio inventory work and Phase 2/3 tooling), not application code or a separate consumer |
+
+**`backend/.env` — real variable names, values redacted, never
+printed:** `PORT`, `ADMIN_EMAIL`, `ADMIN_ENCRYPTION_KEY`,
+`ADMIN_JWT_ACCESS_SECRET`, `ADMIN_IP_WHITELIST`, `BANK_ACCOUNT_NAME`,
+`BANK_COUNTRY`, `BANK_CURRENCY`, `BANK_IBAN`, `BANK_NAME`,
+`BANK_SWIFT`, `CLIENT_URL` (comment: "Local dev value (Render/production
+keeps its own value: https://al-rahmaacademy.com)"), `CRON_SECRET`,
+`JWT_EXPIRES_IN`, `JWT_SECRET`, `MG_RECEIVER_CITY`,
+`MG_RECEIVER_COUNTRY`, `MG_RECEIVER_NAME`, **`MONGO_URI`**,
+`PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`, `PAYPAL_ME_LINK`,
+`PAYPAL_MODE`, `PAYPAL_RECEIVER_EMAIL`, `PAYPAL_WEBHOOK_ID`,
+`PAYONEER_EMAIL`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`,
+`SMTP_HOST`, `SMTP_PASS`, `SMTP_PORT`, `SMTP_USER`, `WU_RECEIVER_CITY`,
+`WU_RECEIVER_COUNTRY`, `WU_RECEIVER_NAME`, `ANTHROPIC_API_KEY`,
+`AI_TUTOR_DAILY_MESSAGE_LIMIT`, `GOOGLE_CLIENT_ID`,
+`RENEWAL_REMINDER_DAYS`. **Zero `SUPABASE_*` names, zero
+`DATABASE_URL`/`POSTGRES_URL`-shaped name.** `MONGO_URI` corroborates,
+from live runtime config rather than only source code, that this
+backend instance is the MongoDB one — consistent with
+`.migration-backup/backend/package.json`'s `mongoose` dependency and
+`docs/product-scope-audit.md`'s historical-only labeling. `lib/db/.env`
+(the drizzle package's own env file) has exactly one variable name,
+`DATABASE_URL` — used only by this repo's own local test harness and
+rehearsal tooling, never read by `backend/`, `frontend/`, or
+`artifacts/*`.
+
+**Deploy-platform config files, repo-wide:**
+
+| file | tracked? | Supabase/project-ref/table-name reference? |
+|---|---|---|
+| `.replit` (root) | tracked | none — declares the pnpm-workspace Replit deployment target and a `postMerge` hook only |
+| `replit.md` (root) | tracked | none — explicitly documents "Existing product data: the imported academy API and its existing **MongoDB-backed** service"; the only `@workspace/db` mention is `pnpm --filter @workspace/db run push` listed as a manual, dev-only command, not part of any runtime/deploy path |
+| `.migration-backup/vercel.json` | tracked, historical | none (`grep -i "supabase"` — zero matches) |
+| `.migration-backup/render.yaml` | tracked, historical | none (`grep -i "supabase"` — zero matches) |
+| `.migration-backup/.replit` | tracked, historical | not inspected further — already covered by the historical-only banner |
+
+No `vercel.json`/`.vercel/`/`render.yaml` exists outside
+`.migration-backup/`. No live/current deploy config for either platform
+exists on this branch.
+
+**Repo-wide (not just `backend`/`frontend/src`) tracked-file sweep for
+`supabase`/`difzynyphojgisrfvrkd`/`SUPABASE_*`:** every hit (`git grep
+-il`, whole repo) falls inside exactly three families of files, and no
+others: this engagement's own `docs/option-a-*.md` and
+`docs/remote-supabase-inventory.md` reports, `lib/db/` itself (the
+schema/migration package under audit — expected, since it *is* the
+Supabase-facing design), and `ops/option-a-rehearsal/` (this
+engagement's own disposable rehearsal tooling). Zero hits in
+`artifacts/`, `backend/`, `frontend/`, `e2e/`, `.migration-backup/`, or
+any deploy config. This directly confirms, with a wider net than Round
+1's `backend`/`frontend/src`-only sweep, that no tracked application
+code or deploy configuration anywhere in the repository references
+Supabase.
+
+**Conclusion, reaffirmed with broader evidence:** the 4 untracked
+directories contain build output, logs, and this engagement's own
+browser-automation artifacts — not a second, undiscovered application.
+The Round 1 consumer matrix and its "no live code path breaks" finding
+stand unchanged.

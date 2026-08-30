@@ -42,14 +42,19 @@
 -- than an error.
 --
 -- Run only through scripts/03-surgical-reset.mjs, which enforces the
--- same localhost/127.0.0.1-only guard as run-migrate.mjs, records a
--- before/after fingerprint of everything this file promises not to
--- touch, and refuses to proceed if a view/materialized view depends on
--- any of the 34 tables below (a silent CASCADE through an unexpected
--- dependent is exactly what this design is trying to avoid — surface
--- it, don't drop through it).
-
-begin;
+-- same localhost/127.0.0.1-only guard as run-migrate.mjs, and OWNS the
+-- transaction boundary around this entire file plus its own before/
+-- after fingerprint capture and post-condition checks — on the SAME
+-- connection, in the SAME transaction, so a regression detected by the
+-- wrapper's own checks means nothing was actually committed. (This
+-- file used to wrap itself in begin/commit; a code review correctly
+-- caught that the wrapper's after-fingerprint/comparison then ran
+-- AFTER that commit had already landed — too late to prevent anything.
+-- No `begin`/`commit` here anymore; the wrapper issues both.) The
+-- wrapper also refuses to proceed if a dependent object outside the
+-- named 34-table/3-enum list depends on any of them (a silent CASCADE
+-- through an unexpected dependent is exactly what this design is
+-- trying to avoid — surface it, don't drop through it).
 
 -- ---------------------------------------------------------------------
 -- 1. The old auth.users trigger + its function, named explicitly.
@@ -120,5 +125,3 @@ drop table if exists public.wishlist_items cascade;
 drop type if exists public.role;
 drop type if exists public.subscription_provider;
 drop type if exists public.subscription_status;
-
-commit;

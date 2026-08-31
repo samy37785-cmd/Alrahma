@@ -51,15 +51,12 @@ describe('removed Attendance/Homework pages stay removed', () => {
     assertNoRemovedPathStrings('dashboardNav.js', readSrcFile('components/layout/dashboardNav.js'));
   });
 
+  // Stage 2A (see docs/user-admin-auth-contract.md) collapsed navFor()/
+  // bottomNavFor() from a 3-role (admin/teacher/parent) signature down to a
+  // single isAdmin boolean - every non-admin account normalizes to `user`.
   it('navFor() returns no /attendance or /homework entry, for any role', () => {
-    const roleCombos = [
-      [true, false, false],  // admin
-      [false, true, false],  // teacher
-      [false, false, true],  // parent
-      [false, false, false], // student/default
-    ];
-    for (const [isAdmin, isTeacher, isParent] of roleCombos) {
-      const items = navFor(isAdmin, isTeacher, isParent, 0).filter((i) => i.to);
+    for (const isAdmin of [true, false]) {
+      const items = navFor(isAdmin, 0).filter((i) => i.to);
       const paths = items.map((i) => i.to);
       expect(paths).not.toContain('/attendance');
       expect(paths).not.toContain('/homework');
@@ -67,14 +64,8 @@ describe('removed Attendance/Homework pages stay removed', () => {
   });
 
   it('bottomNavFor() returns no /attendance or /homework entry, for any role', () => {
-    const roleCombos = [
-      [true, false, false],
-      [false, true, false],
-      [false, false, true],
-      [false, false, false],
-    ];
-    for (const [isAdmin, isTeacher, isParent] of roleCombos) {
-      const items = bottomNavFor(isAdmin, isTeacher, isParent, 0).filter((i) => i.to);
+    for (const isAdmin of [true, false]) {
+      const items = bottomNavFor(isAdmin, 0).filter((i) => i.to);
       const paths = items.map((i) => i.to);
       expect(paths).not.toContain('/attendance');
       expect(paths).not.toContain('/homework');

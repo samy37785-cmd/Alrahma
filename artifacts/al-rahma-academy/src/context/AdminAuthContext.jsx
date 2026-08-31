@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useCallback } from 'react';
 import {
   adminLogin, adminMfaSetup, adminMfaConfirm, adminMfaVerify, adminLogout,
 } from '../api/adminAuthApi';
+import { isVerifiedAdminSession } from '../utils/accountRoles';
 
 const AdminAuthContext = createContext(null);
 
@@ -64,6 +65,10 @@ export function AdminAuthProvider({ children }) {
   const value = {
     adminUser, pendingStage, mfaSetupInfo,
     login, confirmMfaSetup, verifyMfa, logout,
+    // The one correct answer to "is the current visitor an admin?" - derived
+    // centrally here from the real AdminUser + MFA session, never from a
+    // regular account's `role` field. See src/utils/accountRoles.js.
+    isAdmin: isVerifiedAdminSession(adminUser),
   };
   return <AdminAuthContext.Provider value={value}>{children}</AdminAuthContext.Provider>;
 }

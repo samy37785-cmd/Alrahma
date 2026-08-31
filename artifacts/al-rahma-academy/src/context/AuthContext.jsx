@@ -101,15 +101,19 @@ export function AuthProvider({ children }) {
     persist(updated);
   }, [persist]);
 
+  // No isAdmin/isTeacher/isParent here. Stage 2A (see
+  // docs/user-admin-auth-contract.md and src/utils/accountRoles.js): a
+  // regular account's own `role` field - however it was set at signup, and
+  // whatever a legacy API response still claims - is NEVER a trust source
+  // for admin status, and teacher/parent are no longer distinct account
+  // types at all. Admin status is only ever proven by a real AdminUser +
+  // MFA session (useAdminAuth().adminUser via isVerifiedAdminSession()).
   const value = {
     user, login, register, logout, updateProfile,
     setUser: persist,
     authLoading,
     sessionChecked,
     ensureSession,
-    isAdmin:   user?.role === 'admin',
-    isTeacher: user?.role === 'teacher',
-    isParent:  user?.role === 'parent',
   };
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

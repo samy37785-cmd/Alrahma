@@ -23,13 +23,15 @@ function GdprText({ raw }) {
 export default function Register() {
   const { t, lang } = useLang();
   const rg = t.authPg.register;
-  const profile = t.authPg.profile;
   const networkError = t.authPg.login.networkError;
   const authCopy = getExperienceText(lang).auth;
   useSEO({ title: rg.title, noindex: true });
   const { register, user } = useAuth();
   const navigate = useNavigate();
-  const [form, setForm] = useState({ name: '', email: '', password: '', role: 'student' });
+  // Every public account is a plain 'user' - there is no role field to
+  // collect here. See src/utils/accountRoles.js and
+  // docs/user-admin-auth-contract.md for the full contract.
+  const [form, setForm] = useState({ name: '', email: '', password: '' });
   const [gdpr, setGdpr] = useState(false);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -44,7 +46,9 @@ export default function Register() {
     setBusy(true);
     try {
       await register(form);
-      navigate(form.role === 'parent' ? '/parent' : '/dashboard', { replace: true });
+      // Every account lands on the single generic Dashboard - no role
+      // ever routes anywhere else at signup.
+      navigate('/dashboard', { replace: true });
     } catch (err) {
       setError(err.response?.data?.message || (!err.response ? networkError : rg.errorFallback));
     } finally {
@@ -64,13 +68,6 @@ export default function Register() {
         <p className="auth__sub">{rg.sub}</p>
 
         <form onSubmit={handleSubmit} noValidate>
-          <div className="field">
-            <label htmlFor="role">{profile.accountType}</label>
-            <select id="role" name="role" value={form.role} onChange={handleChange}>
-              <option value="student">{profile.roleStudent}</option>
-              <option value="parent">{profile.roleParent}</option>
-            </select>
-          </div>
           <div className="field">
             <label htmlFor="name">{rg.name}</label>
             <input

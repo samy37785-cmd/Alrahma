@@ -9,9 +9,11 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 //
 // Mocks only the api/ network boundary (same convention as useBilling.test.jsx)
 // plus every child tab component and DashboardLayout — AdminDashboard mounts
-// all eight tabs simultaneously (hidden divs, not conditional mounting), so
+// all nine tabs simultaneously (hidden divs, not conditional mounting), so
 // rendering their real implementations here would make this test heavy and
-// brittle for behaviour this file isn't about.
+// brittle for behaviour this file isn't about. (Stage 2B: the Staff tab was
+// removed along with AdminStaffTab.jsx - see
+// docs/legacy-role-dashboard-pruning.md.)
 
 vi.mock('../api/courseApi', () => ({ getCourses: vi.fn() }));
 vi.mock('../api/paymentApi', () => ({ getManualPayments: vi.fn() }));
@@ -29,7 +31,6 @@ vi.mock('../components/features/admin/AdminTrialsTab', () => ({ default: () => <
 vi.mock('../components/features/admin/AdminPaymentsTab', () => ({ default: () => <div /> }));
 vi.mock('../components/features/admin/AdminNewsletterTab', () => ({ default: () => <div /> }));
 vi.mock('../components/features/admin/AdminUsersTab', () => ({ default: () => <div /> }));
-vi.mock('../components/features/admin/AdminStaffTab', () => ({ default: () => <div /> }));
 vi.mock('../components/features/admin/AdminClassesTab', () => ({ default: () => <div /> }));
 vi.mock('../components/features/admin/AdminReviewsTab', () => ({ default: () => <div /> }));
 vi.mock('../components/features/admin/AdminProgressModal', () => ({ default: () => <div /> }));

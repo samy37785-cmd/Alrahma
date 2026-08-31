@@ -149,6 +149,24 @@ printed so it can be cleaned up by hand. When cleanup IS verified, the
 evidence file states it explicitly: a `cleanup verified: container
 absent` line.
 
+**The presence check itself fails CLOSED (Stage 0 Final Corrective):** an
+earlier version classified a container's presence with `check.code === 0
+&& check.stdout.trim() === containerName` — if `docker ps` itself failed
+(nonzero exit, or couldn't be run at all), that expression evaluates to
+`false`, the same value as a genuinely successful check that found
+nothing. A failed presence check could therefore look exactly like
+verified absence. `orchestrator-lib.mjs`'s `interpretDockerPsResult()`
+fixes this with a strict three-state result — `true` (confirmed present),
+`false` (confirmed absent), or `null`/unknown (the check itself failed or
+threw) — and `verified` is computed only from the FINAL, independently-
+run check: `finalCheckExitCode === 0 && finalPresence === false`. A
+nonzero exit code or a thrown error is never downgraded to "absent". The
+final check's confirmed state is authoritative regardless of whether an
+earlier step (`docker stop`, or even the `rm -f` fallback) happened to
+report success or failure — a failed `docker stop` followed by a genuine
+confirmed-absent final check still verifies; a successful `docker stop`
+followed by a failed or still-present final check does not.
+
 ### Root cause of the previously-recorded 172/58 failure (Stage 0)
 
 `last-run-output.txt` briefly recorded a run (2026-08-30, Option A Round

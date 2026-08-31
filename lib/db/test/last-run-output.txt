@@ -1,4 +1,4 @@
-Regenerated 2026-08-30 by orchestrate-db-tests.mjs (Stage 0 — DB Evidence and
+Regenerated 2026-08-31 by orchestrate-db-tests.mjs (Stage 0 — DB Evidence and
 Test-Gate Remediation, Stage 0 Corrective) against a genuinely fresh, disposable
 local Postgres container created and torn down by THIS run — never a reused
 container/database.
@@ -50,15 +50,24 @@ PASS  lifecycle: a genuinely successful test run plus a failed cleanup is an OVE
 PASS  lifecycle: cleanup always runs strictly before the evidence-writing step is invoked, in real temporal order
 PASS  lifecycle: cleanup still runs, and is still gated on, even when runTests() itself throws
 PASS  lifecycle: decideRunOutcome in isolation — all three of pipeline/contract/cleanup must be clean for fullyGreen
+PASS  presence: docker ps exit 0 + output has the container name → present = true
+PASS  presence: docker ps exit 0 + empty output → present = false
+PASS  presence: docker ps exits NONZERO → unknown (null), never false
+PASS  presence: docker ps THROWS (command could not be run at all) → unknown (null)
+PASS  cleanup: a nonzero FINAL presence check makes verified=false, even if stop and the initial check looked fine
+PASS  lifecycle: a genuinely successful test run plus a FAILED final docker ps check still blocks evidence write
+PASS  cleanup: docker stop fails, but an independent final check confirms genuine absence → verified=true (the final confirmed state wins)
+PASS  cleanup: docker rm -f fails, and the final check confirms the container is STILL present → verified=false
+PASS  cleanup: the fully successful path (stop ok, initial present, rm ok, final absent) is verified=true
 
-17/17 passed.
+26/26 passed.
 ========================================================================
 === END mandatory orchestrator self-test — exit 0. Real DB   ===
 === suites have not started yet.                                        ===
 ========================================================================
 
-=== Stage 0 DB test-gate orchestrator run — started 2026-08-30T23:45:45.756Z ===
-Container: alrahma-dbtest-mtggjm70-7fa0d032 (image postgres:16, bound to 127.0.0.1 only, random port, random password)
+=== Stage 0 DB test-gate orchestrator run — started 2026-08-31T00:04:50.896Z ===
+Container: alrahma-dbtest-mtgh85sg-0b418266 (image postgres:16, bound to 127.0.0.1 only, random port, random password)
 
 === node test/published-migrations-checksum.test.mjs ===
 PASS  0000_init_20_table_baseline.sql: sha256 and journal timestamp unchanged since publication
@@ -70,16 +79,16 @@ PASS  0003_provider_events_lease.sql: sha256 and journal timestamp unchanged sin
 --- exit code: 0 ---
 
 === start-disposable-postgres ===
-started; TEST_DATABASE_URL=postgres://postgres:***@127.0.0.1:64546/alrahma_test
+started; TEST_DATABASE_URL=postgres://postgres:***@127.0.0.1:54975/alrahma_test
 --- exit code: 0 ---
 
 === node test/run-migrations.mjs (1st) ===
-[migrate] applying lib/db/drizzle to postgres://postgres:***@127.0.0.1:64546/alrahma_test
+[migrate] applying lib/db/drizzle to postgres://postgres:***@127.0.0.1:54975/alrahma_test
 [migrate] done.
 --- exit code: 0 ---
 
 === node test/run-migrations.mjs (2nd, proves already-applied bookkeeping) ===
-[migrate] applying lib/db/drizzle to postgres://postgres:***@127.0.0.1:64546/alrahma_test
+[migrate] applying lib/db/drizzle to postgres://postgres:***@127.0.0.1:54975/alrahma_test
 [migrate] done.
 --- exit code: 0 ---
 
@@ -350,8 +359,11 @@ OK  exact contract satisfied: 230/230 (expected exactly 230)
 Naive pipeline aggregate (informational only, NOT the green/not-green judgment): 230/230
 Pipeline overall exit code: 0
 
-=== cleanup: stopping and verifying removal of container "alrahma-dbtest-mtggjm70-7fa0d032" ===
-docker stop exit=0, final docker ps check exit=0
+=== cleanup: stopping and verifying removal of container "alrahma-dbtest-mtgh85sg-0b418266" ===
+docker stop: exit=0
+initial presence check: docker ps exit=0 → ABSENT
+docker rm -f fallback: not attempted (initial presence check independently confirmed ABSENT already)
+final presence check (independent, authoritative): docker ps exit=0 → ABSENT
 cleanup verified: container absent
 
 Overall verdict: FULLY GREEN

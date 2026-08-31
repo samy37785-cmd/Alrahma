@@ -240,12 +240,16 @@ should not silently reappear as a maintained codebase.
 | `git status --short` (pre-commit) | Only `.gitignore` modified, plus this new doc file (untracked) |
 | `git check-ignore -v backend/.env` | `.gitignore:15:.env	backend/.env` |
 | `git ls-files frontend backend e2e .playwright-mcp` | empty (nothing tracked under any of the four) |
+| `pnpm --filter @workspace/db run check:published-migrations` | **4/4 passed** |
+| `node lib/db/test/orchestrator-failure-propagation.test.mjs` | **26/26 passed** |
+| `pnpm run typecheck` (root) | **clean** — all 4 typechecked workspace projects (`al-rahma-academy`, `api-server`, `mockup-sandbox`, `scripts`) report Done with no errors |
+| `pnpm --filter @workspace/al-rahma-academy test` | **222/222 passed** (33 test files) — this is the count as of this Stage 1 checkpoint (commit `ba1ec29`), **before** any Stage 2 changes (e.g. the later removal of `PreviewBanner.test.jsx`); it is not a claim about the count after any subsequent stage |
+| `git diff --check` | clean, no output |
 
-Remaining verification commands (DB checksum guard, orchestrator
-self-tests, root typecheck, frontend test suite, `git diff --check`) are
-run and recorded as part of finalizing this stage; see the task's final
-report for their pass/fail results, since none of them modify anything
-this document needs to describe.
+This correction closes a gap left when this document was first written: the
+above five commands had been run and had passed, but their actual results
+were not yet transcribed into this file. No new commands were run to make
+this correction — these are the same Stage 1 results, now recorded.
 
 ## Confirmation
 

@@ -153,8 +153,8 @@ All routes are language-neutral React Router paths unless noted otherwise. Langu
 | `/profile` | students | mixed | many account, status, certificate, and quick-link strings remain English |
 | `/messages` | authenticated users | main dictionary | shared shell/notifications still expose English |
 | `/calendar` | authenticated users | English-only page | page, dates, session types, empty/error states |
-| `/attendance` | authenticated users | English-only page | page, filters, metrics, empty/error states |
-| `/homework` | authenticated users | English-only page | page, states, actions, validation |
+| `/attendance` | — | **Removed / out of current product scope** | Was a preview-only mock page (own in-code `PreviewBanner`, never connected to a real backend). Deleted in Stage 2 Batch 1 (`feat/prune-attendance-homework`); no longer routed. |
+| `/homework` | — | **Removed / out of current product scope** | Same as above — preview-only mock page, deleted in the same batch; no longer routed. |
 
 ### Role-specific and admin routes
 
@@ -243,7 +243,7 @@ The sitemap contains the main English-path routes plus `/it/` and `/fr/`; it doe
    A user can view six languages, but most pages have one language-neutral URL and one canonical. This breaks reliable localized deep links and prevents complete multilingual indexing.
 
 2. **Several high-trust and high-conversion surfaces are English-only.**  
-   Privacy, Terms, Refund Policy, Wishlist, AI Tutor, Community, Calendar, Attendance, Homework, and most of Admin are not connected to the language context.
+   Privacy, Terms, Refund Policy, Wishlist, AI Tutor, Community, Calendar, and most of Admin are not connected to the language context. (Attendance and Homework were on this list at the time of the original audit; both were removed as fake/preview-only pages in Stage 2 Batch 1 and no longer exist, so they are no longer a localization gap.)
 
 3. **Static language coverage is inconsistent.**  
    Only Italian and French have dedicated landing documents; their links include a non-existent `/en/` path and omit three supported languages.

@@ -433,3 +433,12 @@ before ever being applied to any database, real or otherwise.
 - Nothing applied, dropped, or pushed on the real Supabase project at any
   point. No `git push`. `ae47640` still sits unmodified in history,
   documented as superseded.
+- **Execution status (Stage 2 Batch 1, `feat/prune-attendance-homework`):**
+  of the CUT items listed in §1, `AttendancePage.jsx` and
+  `HomeworkPage.jsx` (and their routes, nav entries, quick links, the
+  now-orphaned `PreviewBanner` component, and their dedicated dead CSS)
+  have actually been deleted from `artifacts/al-rahma-academy`. This is a
+  partial execution of the §1 CUT list only — `TeacherDashboard.jsx`,
+  `ParentDashboard.jsx`, `CourseContent.jsx`, Community, Wishlist, and the
+  rest of that list are unchanged and still fully wired; their removal is
+  explicitly out of scope for this batch and not implied by this note.

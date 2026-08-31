@@ -51,8 +51,6 @@ const TeacherDashboard   = lazy(() => import('./pages/TeacherDashboard'));
 const ParentDashboard    = lazy(() => import('./pages/ParentDashboard'));
 const Messages           = lazy(() => import('./pages/Messages'));
 const CalendarPage       = lazy(() => import('./pages/CalendarPage'));
-const AttendancePage     = lazy(() => import('./pages/AttendancePage'));
-const HomeworkPage       = lazy(() => import('./pages/HomeworkPage'));
 const NotFound           = lazy(() => import('./pages/NotFound'));
 
 // Hub pages (new IA)
@@ -181,8 +179,6 @@ export default function App({ basename = '' }) {
           <Route path="/teacher" element={<ProtectedRoute role="teacher"><TeacherDashboard /></ProtectedRoute>} />
           <Route path="/parent" element={<ProtectedRoute role="parent"><ParentDashboard /></ProtectedRoute>} />
           <Route path="/calendar" element={<ProtectedRoute><CalendarPage /></ProtectedRoute>} />
-          <Route path="/attendance" element={<ProtectedRoute><AttendancePage /></ProtectedRoute>} />
-          <Route path="/homework" element={<ProtectedRoute><HomeworkPage /></ProtectedRoute>} />
 
           {/* ── Legacy redirects (old flat URLs → new hierarchy) ── */}
           <Route path="/quran" element={<Navigate to="/tools/quran-reader" replace />} />

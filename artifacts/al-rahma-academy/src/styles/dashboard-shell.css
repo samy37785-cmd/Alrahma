@@ -1484,30 +1484,6 @@
 .ds-hifz-cell--none   { background: var(--bg-surface-raised); color: var(--text-secondary); border-color: var(--border-subtle); }
 
 /* ════════════════════════════════════════════════════════════════════
-   ATTENDANCE DOT CALENDAR
-   ════════════════════════════════════════════════════════════════════ */
-.ds-attend-grid {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 3px;
-}
-
-.ds-attend-cell {
-  aspect-ratio: 1;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.6rem;
-  font-weight: 700;
-}
-
-.ds-attend-cell--present { background: var(--color-success-surface); color: var(--color-success-text); }
-.ds-attend-cell--absent  { background: var(--color-danger-surface);  color: var(--color-danger-text); }
-.ds-attend-cell--late    { background: var(--color-warning-surface); color: var(--color-warning-text); }
-.ds-attend-cell--none    { background: var(--bg-surface-raised); }
-
-/* ════════════════════════════════════════════════════════════════════
    ANIMATIONS
    ════════════════════════════════════════════════════════════════════ */
 @keyframes ds-fade-in {

@@ -13,7 +13,7 @@ import { SkeletonDashboard } from '../components/ui/Skeleton';
 import { DsBarChart, DsChartEmpty } from '../components/ui/DsChart';
 import {
   Users, CalendarDays, ClipboardList, Brain, GraduationCap, BarChart3,
-  Calendar, CheckSquare, FileText, MessageSquare, X, Save, AlertCircle,
+  Calendar, MessageSquare, X, Save, AlertCircle,
   Video, Clock,
 } from 'lucide-react';
 import { getNameInitials } from '../utils/nameInitials';
@@ -130,12 +130,6 @@ export default function TeacherDashboard() {
           >
             <CalendarDays size={13} aria-hidden="true" /> Schedule Class
           </button>
-          <Link to="/attendance" className="btn btn--ghost btn--sm" style={{ borderRadius: 8, display: 'flex', alignItems: 'center', gap: 5 }}>
-            <CheckSquare size={13} aria-hidden="true" /> {t.dashboard.items.attendance}
-          </Link>
-          <Link to="/homework" className="btn btn--ghost btn--sm" style={{ borderRadius: 8, display: 'flex', alignItems: 'center', gap: 5 }}>
-            <FileText size={13} aria-hidden="true" /> {t.dashboard.items.homework}
-          </Link>
           <Link to="/messages" className="btn btn--ghost btn--sm" style={{ borderRadius: 8, display: 'flex', alignItems: 'center', gap: 5 }}>
             <MessageSquare size={13} aria-hidden="true" /> {t.dashboard.items.messages}
           </Link>
@@ -468,8 +462,6 @@ export default function TeacherDashboard() {
             <div className="ds-card__body" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {[
                 { to: '/calendar', Icon: Calendar, label: t.dashboard.items.calendar, sub: 'Monthly schedule view' },
-                { to: '/attendance', Icon: CheckSquare, label: t.dashboard.items.attendance, sub: 'One-click session marking' },
-                { to: '/homework', Icon: FileText, label: t.dashboard.items.homework, sub: 'Create & grade homework' },
                 { to: '/messages', Icon: MessageSquare, label: t.dashboard.items.messages, sub: 'Student communications' },
               ].map(({ to, Icon, label, sub }) => (
                 <Link key={to} to={to} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 10px', borderRadius: 9, background: 'var(--bg-page)', border: '1px solid var(--border-subtle)', textDecoration: 'none' }}>

@@ -9,7 +9,7 @@ import DashboardLayout from '../components/layout/DashboardLayout';
 import ProgressRing from '../components/ui/ProgressRing';
 import {
   Users, CalendarDays, Brain, ClipboardList, Link2, GraduationCap,
-  BarChart3, X, Check, AlertTriangle, Calendar, CheckSquare, FileText,
+  BarChart3, X, Check, AlertTriangle, Calendar,
   MessageSquare, Clock, Download, Share2,
 } from 'lucide-react';
 import { getNameInitials } from '../utils/nameInitials';
@@ -91,12 +91,6 @@ export default function ParentDashboard() {
           >
             <Download size={13} aria-hidden="true" /> {D.weeklyReport}
           </button>
-          <Link to="/attendance" className="btn btn--ghost btn--sm" style={{ borderRadius: 8, display: 'flex', alignItems: 'center', gap: 5 }}>
-            <CheckSquare size={13} aria-hidden="true" /> {t.dashboard.items.attendance}
-          </Link>
-          <Link to="/homework" className="btn btn--ghost btn--sm" style={{ borderRadius: 8, display: 'flex', alignItems: 'center', gap: 5 }}>
-            <FileText size={13} aria-hidden="true" /> {t.dashboard.items.homework}
-          </Link>
           <Link to="/calendar" className="btn btn--ghost btn--sm" style={{ borderRadius: 8, display: 'flex', alignItems: 'center', gap: 5 }}>
             <Calendar size={13} aria-hidden="true" /> {t.dashboard.items.calendar}
           </Link>
@@ -301,8 +295,6 @@ export default function ParentDashboard() {
             </div>
             <div className="ds-card__body" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {[
-                { to: '/attendance', Icon: CheckSquare,  label: t.dashboard.items.attendance, sub: D.attendanceHelp },
-                { to: '/homework', Icon: FileText, label: t.dashboard.items.homework, sub: D.homeworkHelp },
                 { to: '/calendar', Icon: Calendar, label: t.dashboard.items.calendar, sub: D.scheduleHelp },
                 { to: '/messages', Icon: MessageSquare, label: t.dashboard.items.messages, sub: D.messagesHelp },
               ].map(({ to, Icon, label, sub }) => (

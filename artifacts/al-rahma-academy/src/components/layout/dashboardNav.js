@@ -1,6 +1,6 @@
 import { site } from '../../data/site';
 import {
-  LayoutDashboard, MessageSquare, Users, BookOpen, CreditCard, Target, UserCog, Book, User, ExternalLink, Calendar, ClipboardList, FileText, Heart, Sparkles, Users2, MessageCircle,
+  LayoutDashboard, MessageSquare, Users, BookOpen, CreditCard, Target, UserCog, Book, User, ExternalLink, Calendar, Heart, Sparkles, Users2, MessageCircle,
 } from 'lucide-react';
 
 export function navFor(isAdmin, isTeacher, isParent, unreadCount) {
@@ -24,8 +24,6 @@ export function navFor(isAdmin, isTeacher, isParent, unreadCount) {
     { to: '/teacher', icon: LayoutDashboard, labelKey: 'dashboard', end: true },
     { section: 'teaching' },
     { to: '/calendar',           icon: Calendar,      labelKey: 'calendar' },
-    { to: '/attendance',         icon: ClipboardList, labelKey: 'attendance' },
-    { to: '/homework',           icon: FileText,       labelKey: 'homework' },
     { to: '/tools/quran-reader', icon: Book,           labelKey: 'quranReader' },
     { section: 'community' },
     { to: '/messages', icon: MessageSquare, labelKey: 'messages', badge: unreadCount || 0 },
@@ -55,7 +53,6 @@ export function navFor(isAdmin, isTeacher, isParent, unreadCount) {
     { to: '/tools/quran-reader', icon: Book,        labelKey: 'quranReader' },
     { to: '/ai-tutor',           icon: Sparkles,      labelKey: 'aiTutor' },
     { to: '/calendar',           icon: Calendar,     labelKey: 'mySchedule' },
-    { to: '/homework',           icon: FileText,      labelKey: 'homework' },
     { to: '/wishlist',           icon: Heart,         labelKey: 'wishlist' },
     { section: 'community' },
     { to: '/messages',  icon: MessageSquare, labelKey: 'messages',  badge: unreadCount || 0 },

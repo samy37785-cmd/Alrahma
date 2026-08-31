@@ -13,12 +13,13 @@ import { SkeletonDashboard } from '../components/ui/Skeleton';
 import { DsBarChart, DsChartEmpty } from '../components/ui/DsChart';
 import {
   Users, CalendarDays, ClipboardList, Brain, GraduationCap, BarChart3,
-  Calendar, MessageSquare, X, Save, AlertCircle,
+  Calendar, MessageSquare, X,
   Video, Clock,
 } from 'lucide-react';
 import { getNameInitials } from '../utils/nameInitials';
 import { minutesUntil } from '../utils/date';
 import StudentModal from '../components/features/teacher/StudentModal';
+import { getExperienceText } from '../i18n/experience';
 
 /* ── i18n ──────────────────────────────────────────────────────── */
 const EMPTY_CLASS  = { student: '', title: '', startsAt: '', durationMin: 30, meetingUrl: '' };
@@ -26,6 +27,12 @@ export default function TeacherDashboard() {
   const { user }   = useAuth();
   const { t, lang } = useLang();
   const L          = t.teacherDash;
+  // Stage 2A fix (see docs/user-admin-auth-contract.md): `t.dashboard` has
+  // no `roles`/`items` sub-objects - those live in getExperienceText(lang)
+  // .dashboard instead. This page is unreachable via routing now (/teacher
+  // redirects to /dashboard) but is kept, not deleted, so it is fixed the
+  // same way as Dashboard.jsx rather than left throwing.
+  const dashboardCopy = getExperienceText(lang).dashboard;
   const queryClient = useQueryClient();
 
   const [openId,     setOpenId]     = useState(null);
@@ -118,7 +125,7 @@ export default function TeacherDashboard() {
       {/* Page header */}
       <div className="ds-page-hd">
         <div>
-          <div className="ds-page-hd__eyebrow"><GraduationCap size={14} style={{ display: 'inline', marginRight: 5 }} aria-hidden="true" /> {t.dashboard.roles.teacher}</div>
+          <div className="ds-page-hd__eyebrow"><GraduationCap size={14} style={{ display: 'inline', marginRight: 5 }} aria-hidden="true" /> {dashboardCopy.roles.teacher}</div>
           <h1 className="ds-page-hd__title">Welcome, {user?.name?.split(' ')[0]}</h1>
           <p className="ds-page-hd__sub">Manage your students, track progress, and schedule live sessions.</p>
         </div>
@@ -131,7 +138,7 @@ export default function TeacherDashboard() {
             <CalendarDays size={13} aria-hidden="true" /> Schedule Class
           </button>
           <Link to="/messages" className="btn btn--ghost btn--sm" style={{ borderRadius: 8, display: 'flex', alignItems: 'center', gap: 5 }}>
-            <MessageSquare size={13} aria-hidden="true" /> {t.dashboard.items.messages}
+            <MessageSquare size={13} aria-hidden="true" /> {dashboardCopy.items.messages}
           </Link>
         </div>
       </div>
@@ -193,7 +200,7 @@ export default function TeacherDashboard() {
           {/* Students */}
           <div className="ds-card">
             <div className="ds-card__hd">
-              <span className="ds-card__title"><span className="ds-card__title-icon"><Users size={14} aria-hidden="true" /></span> {t.dashboard.roles.student} ({students.length})</span>
+              <span className="ds-card__title"><span className="ds-card__title-icon"><Users size={14} aria-hidden="true" /></span> {dashboardCopy.roles.student} ({students.length})</span>
             </div>
             <div style={{ padding: '10px 18px 0' }}>
               <input
@@ -461,8 +468,8 @@ export default function TeacherDashboard() {
             </div>
             <div className="ds-card__body" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {[
-                { to: '/calendar', Icon: Calendar, label: t.dashboard.items.calendar, sub: 'Monthly schedule view' },
-                { to: '/messages', Icon: MessageSquare, label: t.dashboard.items.messages, sub: 'Student communications' },
+                { to: '/calendar', Icon: Calendar, label: dashboardCopy.items.calendar, sub: 'Monthly schedule view' },
+                { to: '/messages', Icon: MessageSquare, label: dashboardCopy.items.messages, sub: 'Student communications' },
               ].map(({ to, Icon, label, sub }) => (
                 <Link key={to} to={to} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 10px', borderRadius: 9, background: 'var(--bg-page)', border: '1px solid var(--border-subtle)', textDecoration: 'none' }}>
                   <div style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--color-primary-surface, #e6f4ef)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>

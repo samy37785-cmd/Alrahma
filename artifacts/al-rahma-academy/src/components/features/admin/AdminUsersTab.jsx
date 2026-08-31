@@ -1,17 +1,18 @@
 import { useState } from 'react';
-import { updateUserSubscription, updateUserRole, assignTeacher, setFamilyName } from '../../../api/adminApi';
+import { updateUserSubscription, assignTeacher, setFamilyName } from '../../../api/adminApi';
 
+// Stage 2A (see docs/user-admin-auth-contract.md, Section 9): the role
+// column used to be an interactive <select> that called updateUserRole()
+// (PATCH /v1/admin/users/:id/role) directly - a real, unaudited admin-
+// elevation path that reverse-proxies to the external, untracked Upstream
+// (see docs/legacy-roles-dashboard-reachability-audit.md). This task does
+// not wire it to any new, locally-proven RPC (admin_set_role() exists in
+// lib/db but is NOT connected here or anywhere in this app), so the
+// mutation is disabled rather than left pointed at an unverified backend.
+// Full read/write role management against a proven Supabase-backed RPC is
+// deferred to Batch 2E.
 export default function AdminUsersTab({ users, usersTotal, teachers, onOpenReport, onUsersChange, onError }) {
   const [userSearch, setUserSearch] = useState('');
-
-  const handleRoleChange = async (userId, role) => {
-    try {
-      await updateUserRole(userId, role);
-      onUsersChange((prev) => prev.map((u) => (u._id === userId ? { ...u, role, teacher: null } : u)));
-    } catch (err) {
-      onError(err.response?.data?.message || 'Could not change role');
-    }
-  };
 
   const handleAssignTeacher = async (studentId, teacherId) => {
     try {
@@ -72,12 +73,12 @@ export default function AdminUsersTab({ users, usersTotal, teachers, onOpenRepor
                 <td>{u.name}</td>
                 <td>{u.email}</td>
                 <td>
-                  <select className="admin__inline-select" value={u.role} onChange={(e) => handleRoleChange(u._id, e.target.value)}>
-                    <option value="student">student</option>
-                    <option value="teacher">teacher</option>
-                    <option value="parent">parent</option>
-                    <option value="admin">admin</option>
-                  </select>
+                  {/* Read-only: role changes are disabled here, not wired to
+                      an unproven backend mutation. See the file-level
+                      comment above and docs/user-admin-auth-contract.md. */}
+                  <span className="admin__badge" title="Role changes are disabled pending a proven backend RPC (deferred to Batch 2E)">
+                    {u.role}
+                  </span>
                 </td>
                 <td>
                   {u.role === 'student' ? (

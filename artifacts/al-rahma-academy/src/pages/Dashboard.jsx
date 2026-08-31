@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLang } from '../context/LangContext';
+import { getExperienceText } from '../i18n/experience';
 import { useDashboardData } from '../hooks/useDashboard';
 import useCountUp from '../hooks/useCountUp';
 import { getCourseProgress, getMyCertificates } from '../api/courseApi';
@@ -77,6 +78,15 @@ function greeting(d) {
 export default function Dashboard() {
   const { user } = useAuth();
   const { t, lang } = useLang();
+  // Stage 2A fix (see docs/user-admin-auth-contract.md): `t.dashboard` (the
+  // per-locale file, en.js/ar.js/...) only carries plain strings like
+  // greetingMorning/loading/quickActions - it has no `roles`/`items`
+  // sub-objects. Those live in a SEPARATE source, getExperienceText(lang)
+  // .dashboard (i18n/experience.js), which is what DashboardLayout/
+  // MobileBottomNav/CommandPalette already read correctly. Reading
+  // t.dashboard.roles/t.dashboard.items here threw a TypeError on every
+  // render; dashboardCopy is the correct, safe source for those two.
+  const dashboardCopy = getExperienceText(lang).dashboard;
 
   const { me, enrollment, courses, loading, error, refetch } = useDashboardData(!!user);
 
@@ -198,7 +208,7 @@ export default function Dashboard() {
       <div className="ds-page-hd">
         <div className="ds-page-hd__left">
           <div className="ds-page-hd__eyebrow">
-            <Star size={12} aria-hidden="true" /> {t.dashboard.roles.student} {t.dashboard.items.dashboard}
+            <Star size={12} aria-hidden="true" /> {dashboardCopy.roles.student} {dashboardCopy.items.dashboard}
           </div>
           <h1 className="ds-page-hd__title">
             {greeting(t.dashboard)}, {user?.name?.split(' ')[0]}
@@ -218,7 +228,7 @@ export default function Dashboard() {
             <Link to="/enroll" className="btn btn--green btn--sm">Enroll Now</Link>
           )}
           <Link to="/courses" className="btn btn--ghost btn--sm">
-            <BookOpen size={14} aria-hidden="true" /> {t.dashboard.items.courses}
+            <BookOpen size={14} aria-hidden="true" /> {dashboardCopy.items.courses}
           </Link>
           <Link to="/ai-tutor" className="btn btn--green btn--sm">
             <Sparkles size={14} aria-hidden="true" /> Ask AI Tutor
@@ -850,7 +860,7 @@ export default function Dashboard() {
               <div className="ds-quick-actions">
                 <Link to="/messages" className="ds-quick-action">
                   <span className="ds-quick-action__icon"><MessageSquare size={16} aria-hidden="true" /></span>
-                  <span className="ds-quick-action__label">{t.dashboard.items.messages}</span>
+                  <span className="ds-quick-action__label">{dashboardCopy.items.messages}</span>
                 </Link>
                 <Link to="/tools/quran-reader" className="ds-quick-action">
                   <span className="ds-quick-action__icon"><Book size={16} aria-hidden="true" /></span>
@@ -858,11 +868,11 @@ export default function Dashboard() {
                 </Link>
                 <Link to="/billing" className="ds-quick-action">
                   <span className="ds-quick-action__icon"><CreditCard size={16} aria-hidden="true" /></span>
-                  <span className="ds-quick-action__label">{t.dashboard.items.billing}</span>
+                  <span className="ds-quick-action__label">{dashboardCopy.items.billing}</span>
                 </Link>
                 <Link to="/calendar" className="ds-quick-action">
                   <span className="ds-quick-action__icon"><CalendarDays size={16} aria-hidden="true" /></span>
-                  <span className="ds-quick-action__label">{t.dashboard.items.calendar}</span>
+                  <span className="ds-quick-action__label">{dashboardCopy.items.calendar}</span>
                 </Link>
                 <a href={`https://wa.me/${site.whatsapp}`} target="_blank" rel="noopener noreferrer" className="ds-quick-action">
                   <span className="ds-quick-action__icon"><MessageCircle size={16} aria-hidden="true" /></span>

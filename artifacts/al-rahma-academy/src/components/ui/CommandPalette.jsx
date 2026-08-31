@@ -1,14 +1,15 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
+import { useAdminAuth } from '../../context/AdminAuthContext';
 import { useLang } from '../../context/LangContext';
 import { getExperienceText } from '../../i18n/experience';
 
+// Stage 2A (see docs/user-admin-auth-contract.md): no teacher/parent
+// destinations any more - /teacher and /parent just redirect to the
+// generic Dashboard now, so they are not worth listing separately here.
 const STATIC_ITEMS = [
-  { group: 'navigation', icon: '◧', label: 'studentDashboard', to: '/dashboard', role: 'student' },
-  { group: 'navigation', icon: '◧', label: 'teacherDashboard', to: '/teacher', role: 'teacher' },
+  { group: 'navigation', icon: '◧', label: 'studentDashboard', to: '/dashboard', role: 'user' },
   { group: 'navigation', icon: '◧', label: 'adminDashboard', to: '/admin', role: 'admin' },
-  { group: 'navigation', icon: '◧', label: 'parentDashboard', to: '/parent', role: 'parent' },
   { group: 'navigation', icon: '✉', label: 'messages', to: '/messages' },
   { group: 'navigation', icon: '💳', label: 'billing', to: '/billing' },
   { group: 'navigation', icon: '👤', label: 'profile', to: '/profile' },
@@ -26,7 +27,9 @@ const STATIC_ITEMS = [
 ];
 
 export default function CommandPalette({ onClose }) {
-  const { isAdmin, isTeacher, isParent } = useAuth();
+  // isAdmin is proven exclusively by the real AdminUser + MFA session, never
+  // by the regular account's own `role` field. See src/utils/accountRoles.js.
+  const { isAdmin } = useAdminAuth();
   const { lang } = useLang();
   const navigate   = useNavigate();
   const inputRef   = useRef(null);
@@ -35,7 +38,7 @@ export default function CommandPalette({ onClose }) {
   const [cursor, setCursor]   = useState(0);
   const copy = getExperienceText(lang).command;
 
-  const role = isAdmin ? 'admin' : isTeacher ? 'teacher' : isParent ? 'parent' : 'student';
+  const role = isAdmin ? 'admin' : 'user';
   const items = STATIC_ITEMS.map((item) => ({
     ...item,
     group: copy.groups[item.group],

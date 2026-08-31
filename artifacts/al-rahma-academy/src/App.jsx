@@ -47,8 +47,10 @@ const CourseContent      = lazy(() => import('./pages/CourseContent'));
 const CourseIjazah       = lazy(() => import('./pages/CourseIjazah'));
 const CourseIslamicStudies = lazy(() => import('./pages/CourseIslamicStudies'));
 const HadithLibrary      = lazy(() => import('./pages/HadithLibrary'));
-const TeacherDashboard   = lazy(() => import('./pages/TeacherDashboard'));
-const ParentDashboard    = lazy(() => import('./pages/ParentDashboard'));
+// TeacherDashboard/ParentDashboard are intentionally NOT imported here.
+// Stage 2A (see docs/user-admin-auth-contract.md): no route selects them
+// any more - /teacher and /parent redirect to the generic Dashboard - but
+// the files themselves are kept, not deleted (deferred to Batch 2B).
 const Messages           = lazy(() => import('./pages/Messages'));
 const CalendarPage       = lazy(() => import('./pages/CalendarPage'));
 const NotFound           = lazy(() => import('./pages/NotFound'));
@@ -174,10 +176,20 @@ export default function App({ basename = '' }) {
           <Route path="/community" element={<ProtectedRoute><Community /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
-          <Route path="/admin/login" element={<ProtectedRoute adminOnly><AdminLogin /></ProtectedRoute>} />
+          {/* /admin/login must be reachable by an unauthenticated visitor -
+              it IS the admin sign-in page, so it is deliberately not wrapped
+              in ProtectedRoute. AdminLogin itself redirects away if a valid
+              AdminUser + MFA session already exists. */}
+          <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin" element={<ProtectedRoute adminOnly><AdminSessionGate><AdminDashboard /></AdminSessionGate></ProtectedRoute>} />
-          <Route path="/teacher" element={<ProtectedRoute role="teacher"><TeacherDashboard /></ProtectedRoute>} />
-          <Route path="/parent" element={<ProtectedRoute role="parent"><ParentDashboard /></ProtectedRoute>} />
+          {/* Every public account is a plain 'user' now - a legacy teacher/
+              parent role value no longer selects a dedicated dashboard.
+              TeacherDashboard/ParentDashboard are kept (not deleted, per
+              Stage 2A scope) but are unreachable via routing; both old
+              paths simply land on the generic Dashboard. See
+              docs/user-admin-auth-contract.md. */}
+          <Route path="/teacher" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/parent" element={<Navigate to="/dashboard" replace />} />
           <Route path="/calendar" element={<ProtectedRoute><CalendarPage /></ProtectedRoute>} />
 
           {/* ── Legacy redirects (old flat URLs → new hierarchy) ── */}

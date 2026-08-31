@@ -1,21 +1,23 @@
 import { useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate, Navigate } from 'react-router-dom';
 import Brand from '../components/layout/Brand';
 import { useAdminAuth } from '../context/AdminAuthContext';
 import { useLang } from '../context/LangContext';
 import { safeInternalDestination } from '../utils/safeRedirect';
 
-// Second-factor sign-in for the admin console: the hardened AdminUser +
-// TOTP-MFA session required by /api/v1/admin/* (see AdminAuthContext /
-// AdminSessionGate). Reached only from within the console (this route is
-// itself wrapped in the regular ProtectedRoute adminOnly), and separate from
-// the site-wide /login page's regular User session.
+// Sign-in for the admin console: the hardened AdminUser + TOTP-MFA session
+// required by /api/v1/admin/* (see AdminAuthContext / AdminSessionGate).
+// Deliberately reachable by an UNAUTHENTICATED visitor - it IS the admin
+// login page, so App.jsx does not wrap this route in ProtectedRoute, and
+// this component never depends on the regular user session. If a valid
+// admin session already exists we redirect straight to /admin instead of
+// showing the form again (see the `if (adminUser)` check below).
 export default function AdminLogin() {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useLang();
   const lg = t.authPg.adminLogin;
-  const { login, confirmMfaSetup, verifyMfa, pendingStage, mfaSetupInfo } = useAdminAuth();
+  const { adminUser, login, confirmMfaSetup, verifyMfa, pendingStage, mfaSetupInfo } = useAdminAuth();
 
   const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
@@ -68,6 +70,14 @@ export default function AdminLogin() {
       setBusy(false);
     }
   };
+
+  // Already have a real, MFA-verified admin session - no need to log in
+  // again. This is the ONLY early exit; an unauthenticated visitor always
+  // reaches the form below, never a redirect to the regular /login page.
+  if (adminUser) {
+    const destination = safeInternalDestination(location.state?.from, '/admin');
+    return <Navigate to={destination.startsWith('/admin') && destination !== '/admin/login' ? destination : '/admin'} replace />;
+  }
 
   return (
     <div className="auth">

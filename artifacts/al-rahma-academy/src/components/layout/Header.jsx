@@ -4,6 +4,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import BrandLockup from "../ui/BrandLockup";
 import { useAuth } from "../../context/AuthContext";
+import { useAdminAuth } from "../../context/AdminAuthContext";
 import { useLang, withLanguage } from "../../context/LangContext";
 import { homeHref } from "../../utils/localePath";
 import { useTheme } from "../../context/ThemeContext";
@@ -18,7 +19,7 @@ import {
   BeadsIcon, LibraryIcon, CompassIcon, CalendarIcon, HandIcon, VerseIcon,
   EditIcon, MessageIcon, AboutIcon, TeacherIcon, LockIcon,
   HomeIcon, CardIcon, SettingsIcon, ShieldIcon, LogoutIcon,
-  UsersIcon, MoonIcon, SunIconOutline, ChevronDownIcon, BellIcon, SearchIcon,
+  MoonIcon, SunIconOutline, ChevronDownIcon, BellIcon, SearchIcon,
 } from "../ui/Icons";
 import { getUnreadCount } from "../../api/messageApi";
 import { NavDropdown, ICON_SIZE } from "./NavDropdown";
@@ -31,7 +32,11 @@ export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [cmdOpen, setCmdOpen]       = useState(false);
   const [scrolled, setScrolled]     = useState(false);
-  const { user, isAdmin, isTeacher, isParent, logout } = useAuth();
+  const { user, logout } = useAuth();
+  // isAdmin is proven exclusively by the real AdminUser + MFA session, never
+  // by the regular account's own `role` field. See src/utils/accountRoles.js.
+  // There is no isTeacher/isParent any more - both normalize to `user`.
+  const { isAdmin } = useAdminAuth();
   const { t, lang, setLang } = useLang();
   const copy = getExperienceText(lang).header;
   const { dark, toggle: toggleDark } = useTheme();
@@ -206,12 +211,12 @@ export default function Header() {
                 <div className="nav__mobile-account">
                   <span className="nav__mobile-account-label">{copy.myAccount}</span>
                   <Link
-                    to={localizedTo(isAdmin ? '/admin' : isTeacher ? '/teacher' : isParent ? '/parent' : '/dashboard')}
+                    to={localizedTo(isAdmin ? '/admin' : '/dashboard')}
                     className="nav__mobile-account-link"
                     onClick={closeAll}
                   >
                     <span className="nav__mobile-account-icon">
-                      {isAdmin ? <ShieldIcon size={ICON_SIZE} /> : isTeacher ? <TeacherIcon size={ICON_SIZE} /> : isParent ? <UsersIcon size={ICON_SIZE} /> : <HomeIcon size={ICON_SIZE} />}
+                      {isAdmin ? <ShieldIcon size={ICON_SIZE} /> : <HomeIcon size={ICON_SIZE} />}
                     </span>
                     <span>{n.dashboard}</span>
                   </Link>
@@ -319,14 +324,6 @@ export default function Header() {
             {/* Language switcher — desktop only; mobile uses drawer version */}
             <LangSwitcher />
 
-            {/* Parent quick-link — desktop only */}
-            {isParent && (
-              <Link to={localizedTo("/parent")} className="header__role-btn btn btn--outline btn--sm" onClick={closeAll}>
-                <UsersIcon size={15} />
-                <span>{n.myChildren}</span>
-              </Link>
-            )}
-
             {/* User dropdown — desktop only; mobile has full drawer section */}
             {user ? (
               <div className="nav__dropdown nav__dropdown--user header__user-desktop" ref={userMenu.ref}>
@@ -348,13 +345,13 @@ export default function Header() {
                   <ul className="nav__dropdown-menu nav__dropdown-menu--right" role="menu">
                     <li role="none">
                       <Link
-                        to={localizedTo(isAdmin ? '/admin' : isTeacher ? '/teacher' : isParent ? '/parent' : '/dashboard')}
+                        to={localizedTo(isAdmin ? '/admin' : '/dashboard')}
                         className="nav__dropdown-item"
                         onClick={closeAll}
                         role="menuitem"
                       >
                         <span className="nav__dropdown-item-icon" aria-hidden="true">
-                          {isAdmin ? <ShieldIcon size={ICON_SIZE} /> : isTeacher ? <TeacherIcon size={ICON_SIZE} /> : isParent ? <UsersIcon size={ICON_SIZE} /> : <HomeIcon size={ICON_SIZE} />}
+                          {isAdmin ? <ShieldIcon size={ICON_SIZE} /> : <HomeIcon size={ICON_SIZE} />}
                         </span>
                         {n.dashboard}
                       </Link>

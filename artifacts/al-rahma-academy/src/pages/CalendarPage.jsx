@@ -7,13 +7,12 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import DashboardLayout from '../components/layout/DashboardLayout';
-import { useAuth } from '../context/AuthContext';
 import { useLang } from '../context/LangContext';
 import { getClasses } from '../api/classApi';
 import { mapLiveClassToEvent } from '../utils/calendarHelpers';
 import {
   ChevronLeft, ChevronRight, Calendar, Clock, User, BookOpen,
-  Video, MapPin, Plus, Check, X, AlertCircle, RefreshCw,
+  Video, MapPin, Check, X, AlertCircle, RefreshCw,
 } from 'lucide-react';
 
 /* ── Helpers ───────────────────────────────────────────────────── */
@@ -461,7 +460,11 @@ function DayView({ date, sessions, onEventClick, c, locale }) {
    Main CalendarPage
    ════════════════════════════════════════════════════════════════ */
 export default function CalendarPage() {
-  const { isTeacher } = useAuth();
+  // Stage 2A (see docs/user-admin-auth-contract.md): there is no distinct
+  // teacher account type any more - a legacy teacher role normalizes to
+  // `user`. The former teacher-only "new session" button (gated on
+  // useAuth().isTeacher, which no longer exists) has been removed as
+  // dead code rather than redesigned; out of Stage 2A's scope.
   const { lang } = useLang();
   const c = COPY[lang] || COPY.en;
   const locale = LOCALES[lang] || LOCALES.en;
@@ -520,11 +523,6 @@ export default function CalendarPage() {
             <p style={{ margin: '2px 0 0', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>{c.scheduledSessions}</p>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            {isTeacher && (
-              <button style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--color-primary)', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 14px', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', fontFamily: 'var(--font-sans)' }}>
-                <Plus size={14} aria-hidden="true" /> {c.newSession}
-              </button>
-            )}
             <button onClick={() => refetch()} aria-label={c.refresh} style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-default)', borderRadius: 8, width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--text-secondary)' }}>
               <RefreshCw size={15} aria-hidden="true" />
             </button>

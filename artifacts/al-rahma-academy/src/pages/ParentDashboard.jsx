@@ -9,19 +9,26 @@ import DashboardLayout from '../components/layout/DashboardLayout';
 import ProgressRing from '../components/ui/ProgressRing';
 import {
   Users, CalendarDays, Brain, ClipboardList, Link2, GraduationCap,
-  BarChart3, X, Check, AlertTriangle, Calendar,
+  BarChart3, Check, AlertTriangle, Calendar,
   MessageSquare, Clock, Download, Share2,
 } from 'lucide-react';
 import { getNameInitials } from '../utils/nameInitials';
 import { formatTime as fmtTime } from '../utils/date';
 import ChildModal from '../components/features/parent/ChildModal';
-import { getDashboardCopy } from '../i18n/experience';
+import { getDashboardCopy, getExperienceText } from '../i18n/experience';
 
 export default function ParentDashboard() {
   const { user }   = useAuth();
   const { t, lang } = useLang();
   const L          = t.parentDash;
   const D          = getDashboardCopy(lang);
+  // Stage 2A fix (see docs/user-admin-auth-contract.md): `t.dashboard` has
+  // no `roles`/`items` sub-objects - those live in getExperienceText(lang)
+  // .dashboard instead (a different object than getDashboardCopy(lang)
+  // above). This page is unreachable via routing now (/parent redirects to
+  // /dashboard) but is kept, not deleted, so it is fixed the same way as
+  // Dashboard.jsx rather than left throwing.
+  const dashboardCopy = getExperienceText(lang).dashboard;
   const queryClient = useQueryClient();
 
   const [code,      setCode]      = useState('');
@@ -92,7 +99,7 @@ export default function ParentDashboard() {
             <Download size={13} aria-hidden="true" /> {D.weeklyReport}
           </button>
           <Link to="/calendar" className="btn btn--ghost btn--sm" style={{ borderRadius: 8, display: 'flex', alignItems: 'center', gap: 5 }}>
-            <Calendar size={13} aria-hidden="true" /> {t.dashboard.items.calendar}
+            <Calendar size={13} aria-hidden="true" /> {dashboardCopy.items.calendar}
           </Link>
         </div>
       </div>
@@ -295,8 +302,8 @@ export default function ParentDashboard() {
             </div>
             <div className="ds-card__body" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {[
-                { to: '/calendar', Icon: Calendar, label: t.dashboard.items.calendar, sub: D.scheduleHelp },
-                { to: '/messages', Icon: MessageSquare, label: t.dashboard.items.messages, sub: D.messagesHelp },
+                { to: '/calendar', Icon: Calendar, label: dashboardCopy.items.calendar, sub: D.scheduleHelp },
+                { to: '/messages', Icon: MessageSquare, label: dashboardCopy.items.messages, sub: D.messagesHelp },
               ].map(({ to, Icon, label, sub }) => (
                 <Link key={to} to={to} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 10px', borderRadius: 9, background: 'var(--bg-page)', border: '1px solid var(--border-subtle)', textDecoration: 'none' }}>
                   <div style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--color-primary-surface, #e6f4ef)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>

@@ -26,11 +26,16 @@ export default function Login() {
   const [showPwd, setShowPwd] = useState(false);
   const googleBtnRef = useRef(null);
 
-  const goToRole = (user) => {
-    const roleDest = { admin: '/admin', teacher: '/teacher', parent: '/parent' }[user?.role] || '/dashboard';
+  // This is the regular /login page - it authenticates a plain `user`
+  // account only. It never grants or checks admin access: a legacy
+  // `role: 'admin'` value on this response is not trusted (see
+  // src/utils/accountRoles.js / AdminAuthContext) and always lands on the
+  // generic Dashboard, same as any other account. Real admins sign in
+  // separately at /admin/login.
+  const goToRole = () => {
     const raw = searchParams.get('redirect') || '';
     const queryRedirect = safeInternalDestination(raw, '');
-    const destination = safeInternalDestination(location.state?.from, queryRedirect || roleDest);
+    const destination = safeInternalDestination(location.state?.from, queryRedirect || '/dashboard');
     navigate(destination, { replace: true });
   };
 
@@ -49,7 +54,7 @@ export default function Login() {
           try {
             const user = await googleLogin(credential);
             setUser(user);
-            goToRole(user);
+            goToRole();
           } catch (err) {
             setError(err.response?.data?.message || 'Google sign-in failed');
           } finally {
@@ -79,8 +84,8 @@ export default function Login() {
     setError('');
     setBusy(true);
     try {
-      const user = await login(form);
-      goToRole(user);
+      await login(form);
+      goToRole();
     } catch (err) {
       setError(err.response?.data?.message || (!err.response ? lg.networkError : lg.errorFallback));
     } finally {
@@ -93,8 +98,7 @@ export default function Login() {
   // Navigate before getMe() confirms the cookie is still valid.
   if (authLoading) return null;
   if (user) {
-    const dest = { admin: '/admin', teacher: '/teacher', parent: '/parent' }[user.role] || '/dashboard';
-    return <Navigate to={safeInternalDestination(location.state?.from, dest)} replace />;
+    return <Navigate to={safeInternalDestination(location.state?.from, '/dashboard')} replace />;
   }
 
   return (

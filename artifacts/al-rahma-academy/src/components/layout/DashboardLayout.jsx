@@ -12,6 +12,7 @@ import {
   Mail, FileText, BookMarked, Heart, Sparkles, Users2, MessageCircle,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { useAdminAuth } from '../../context/AdminAuthContext';
 import { useLang } from '../../context/LangContext';
 import { useTheme } from '../../context/ThemeContext';
 import { getExperienceText } from '../../i18n/experience';
@@ -32,7 +33,10 @@ import NavIcon from './NavIcon';
 import MobileBottomNav from './MobileBottomNav';
 
 export default function DashboardLayout({ children }) {
-  const { user, logout, isAdmin, isTeacher, isParent } = useAuth();
+  const { user, logout } = useAuth();
+  // isAdmin is proven exclusively by the real AdminUser + MFA session, never
+  // by the regular account's own `role` field. See src/utils/accountRoles.js.
+  const { isAdmin } = useAdminAuth();
   const { lang } = useLang();
   const dashboardCopy = getExperienceText(lang).dashboard;
   const { shell, sections, items: itemLabels, roles } = dashboardCopy;
@@ -76,8 +80,8 @@ export default function DashboardLayout({ children }) {
 
   // Memoized so nav items only re-allocate when role or badge changes
   const items = useMemo(
-    () => navFor(isAdmin, isTeacher, isParent, unreadCount),
-    [isAdmin, isTeacher, isParent, unreadCount]
+    () => navFor(isAdmin, unreadCount),
+    [isAdmin, unreadCount]
   );
 
   useEffect(() => {
@@ -268,7 +272,7 @@ export default function DashboardLayout({ children }) {
             {!collapsed && (
               <div className="ds-sidebar__user-info">
                 <span className="ds-sidebar__user-name">{user?.name}</span>
-                <span className="ds-sidebar__user-role">{roleLabel(user, isAdmin, isTeacher, isParent, roles)}</span>
+                <span className="ds-sidebar__user-role">{roleLabel(user, isAdmin, roles)}</span>
               </div>
             )}
           </div>
@@ -377,7 +381,7 @@ export default function DashboardLayout({ children }) {
                   >
                     <User size={14} aria-hidden="true" /> {shell.profile}
                   </Link>
-                  {!isAdmin && !isTeacher && !isParent && (
+                  {!isAdmin && (
                     <Link
                       to="/billing"
                       className="ds-dropdown__item"
@@ -413,8 +417,6 @@ export default function DashboardLayout({ children }) {
       {/* Mobile bottom navigation */}
       <MobileBottomNav
         isAdmin={isAdmin}
-        isTeacher={isTeacher}
-        isParent={isParent}
         unreadCount={unreadCount}
       />
     </div>

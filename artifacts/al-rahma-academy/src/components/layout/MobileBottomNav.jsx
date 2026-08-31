@@ -4,11 +4,11 @@ import { getExperienceText } from '../../i18n/experience';
 import NavIcon from './NavIcon';
 import { bottomNavFor } from './dashboardNav';
 
-export default function MobileBottomNav({ isAdmin, isTeacher, isParent, unreadCount }) {
+export default function MobileBottomNav({ isAdmin, unreadCount }) {
   const location = useLocation();
   const { lang } = useLang();
   const { shell, items: itemLabels } = getExperienceText(lang).dashboard;
-  const items = bottomNavFor(isAdmin, isTeacher, isParent, unreadCount);
+  const items = bottomNavFor(isAdmin, unreadCount);
 
   const isActive = (item) => {
     if (item.end) return location.pathname === item.to;

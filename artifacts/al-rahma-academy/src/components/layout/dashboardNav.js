@@ -3,7 +3,13 @@ import {
   LayoutDashboard, MessageSquare, Users, BookOpen, CreditCard, Target, UserCog, Book, User, ExternalLink, Calendar, Heart, Sparkles, Users2, MessageCircle,
 } from 'lucide-react';
 
-export function navFor(isAdmin, isTeacher, isParent, unreadCount) {
+// Stage 2A (see docs/user-admin-auth-contract.md): the product has exactly
+// two navigation shapes now - `isAdmin` (a real, verified AdminUser + MFA
+// session; see src/utils/accountRoles.js) and the single default `user`
+// shape below it. There is no longer a teacher/parent branch: a legacy
+// teacher/parent account normalizes to `user` and gets the same nav as
+// everyone else.
+export function navFor(isAdmin, unreadCount) {
   if (isAdmin) return [
     { section: 'main' },
     { to: '/admin',    icon: LayoutDashboard, labelKey: 'overview',  end: true },
@@ -17,33 +23,6 @@ export function navFor(isAdmin, isTeacher, isParent, unreadCount) {
     { to: '/messages', icon: MessageSquare, labelKey: 'messages', badge: unreadCount || 0 },
     { section: 'help' },
     { to: '/', icon: ExternalLink, labelKey: 'viewSite', external: true },
-  ];
-
-  if (isTeacher) return [
-    { section: 'main' },
-    { to: '/teacher', icon: LayoutDashboard, labelKey: 'dashboard', end: true },
-    { section: 'teaching' },
-    { to: '/calendar',           icon: Calendar,      labelKey: 'calendar' },
-    { to: '/tools/quran-reader', icon: Book,           labelKey: 'quranReader' },
-    { section: 'community' },
-    { to: '/messages', icon: MessageSquare, labelKey: 'messages', badge: unreadCount || 0 },
-    { section: 'account' },
-    { to: '/profile', icon: User, labelKey: 'profile' },
-    { section: 'help' },
-    { to: `https://wa.me/${site.whatsapp}`, icon: MessageCircle, labelKey: 'whatsappSupport', external: true },
-    { to: '/',                              icon: ExternalLink,  labelKey: 'viewSite',        external: true },
-  ];
-
-  if (isParent) return [
-    { section: 'main' },
-    { to: '/parent', icon: LayoutDashboard, labelKey: 'dashboard', end: true },
-    { section: 'community' },
-    { to: '/messages', icon: MessageSquare, labelKey: 'messages', badge: unreadCount || 0 },
-    { section: 'account' },
-    { to: '/profile', icon: User, labelKey: 'profile' },
-    { section: 'help' },
-    { to: `https://wa.me/${site.whatsapp}`, icon: MessageCircle, labelKey: 'whatsappSupport', external: true },
-    { to: '/',                              icon: ExternalLink,  labelKey: 'viewSite',        external: true },
   ];
 
   return [
@@ -66,29 +45,16 @@ export function navFor(isAdmin, isTeacher, isParent, unreadCount) {
   ];
 }
 
-export function roleLabel(user, isAdmin, isTeacher, isParent, roles) {
-  if (isAdmin)   return roles.administrator;
-  if (isTeacher) return roles.teacher;
-  if (isParent)  return roles.parent;
+export function roleLabel(user, isAdmin, roles) {
+  if (isAdmin) return roles.administrator;
   return user?.subscription?.plan ? roles.plan(user.subscription.plan) : roles.student;
 }
 
-export function bottomNavFor(isAdmin, isTeacher, isParent, unreadCount) {
+export function bottomNavFor(isAdmin, unreadCount) {
   if (isAdmin) return [
     { to: '/admin',    icon: LayoutDashboard, labelKey: 'overview',  end: true },
     { to: '/messages', icon: MessageSquare,   labelKey: 'messages',  badge: unreadCount },
     { to: '/admin#users', icon: Users,        labelKey: 'users' },
-    { to: '/profile',  icon: User,            labelKey: 'profile' },
-  ];
-  if (isTeacher) return [
-    { to: '/teacher',  icon: LayoutDashboard, labelKey: 'dashboard', end: true },
-    { to: '/messages', icon: MessageSquare,   labelKey: 'messages',  badge: unreadCount },
-    { to: '/calendar', icon: Calendar,        labelKey: 'calendar' },
-    { to: '/profile',  icon: User,            labelKey: 'profile' },
-  ];
-  if (isParent) return [
-    { to: '/parent',   icon: LayoutDashboard, labelKey: 'dashboard', end: true },
-    { to: '/messages', icon: MessageSquare,   labelKey: 'messages',  badge: unreadCount },
     { to: '/profile',  icon: User,            labelKey: 'profile' },
   ];
   return [

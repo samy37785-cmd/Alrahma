@@ -48,6 +48,11 @@ node_modules
 # lib/db/test/last-run-output.txt, which IS tracked).
 lib/db/test/.run-logs/
 
+# Ephemeral browser-tool output (Playwright MCP console logs and page
+# accessibility-tree snapshots written during manual/agent browsing
+# sessions). May contain session-derived data — never tracked.
+/.playwright-mcp/
+
 # misc
 /.sass-cache
 /connect.lock

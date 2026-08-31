@@ -18,7 +18,6 @@ import AdminTrialsTab     from '../components/features/admin/AdminTrialsTab';
 import AdminPaymentsTab   from '../components/features/admin/AdminPaymentsTab';
 import AdminNewsletterTab from '../components/features/admin/AdminNewsletterTab';
 import AdminUsersTab      from '../components/features/admin/AdminUsersTab';
-import AdminStaffTab      from '../components/features/admin/AdminStaffTab';
 import AdminClassesTab   from '../components/features/admin/AdminClassesTab';
 import AdminReviewsTab   from '../components/features/admin/AdminReviewsTab';
 import AdminCommunityTab from '../components/features/admin/AdminCommunityTab';
@@ -161,7 +160,6 @@ const TABS = [
   { key: 'payments',    label: 'Payments',    Icon: CreditCard },
   { key: 'trials',      label: 'Trials',      Icon: Target },
   { key: 'newsletter',  label: 'Newsletter',  Icon: Mail },
-  { key: 'staff',       label: 'Staff',       Icon: UserCog },
   { key: 'classes',     label: 'Classes',     Icon: CalendarDays },
   { key: 'reviews',     label: 'Reviews',     Icon: Star },
   { key: 'community',   label: 'Community',   Icon: Users2 },
@@ -540,7 +538,6 @@ export default function AdminDashboard() {
                       { Icon: Target,     label: `Trial Requests (${trials.length})`, tab: 'trials' },
                       { Icon: Users,      label: 'Manage Users', tab: 'users' },
                       { Icon: BookOpen,   label: 'Manage Courses', tab: 'courses' },
-                      { Icon: UserCog,    label: 'Staff Management', tab: 'staff' },
                     ].map((a) => (
                       <button
                         key={a.tab}
@@ -563,9 +560,6 @@ export default function AdminDashboard() {
                   <span className="ds-card__title">
                     <span className="ds-card__title-icon"><UserCog size={14} aria-hidden="true" /></span> Teachers ({teachers.length})
                   </span>
-                  <button className="ds-card__link" style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-brand)' }} onClick={() => setActiveTab('staff')}>
-                    Manage →
-                  </button>
                 </div>
                 <div className="ds-card__body">
                   {teachers.length === 0 ? (
@@ -671,25 +665,6 @@ export default function AdminDashboard() {
             </h2>
           </div>
           <AdminNewsletterTab subscribers={subscribers} />
-        </div>
-      </div>
-
-      {/* ── STAFF TAB ──────────────────────────────────────────────── */}
-      <div id="tabpanel-staff" role="tabpanel" aria-labelledby="tab-staff" hidden={activeTab !== 'staff'}>
-        <div className="ds-card" style={{ padding: 0, overflow: 'hidden' }}>
-          <div style={{ padding: '16px 18px', borderBottom: '1px solid var(--border-default)' }}>
-            <h2 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-              Staff Management
-            </h2>
-          </div>
-          <div style={{ padding: 18 }}>
-            <AdminStaffTab
-              teachers={teachers}
-              users={users}
-              onStaffCreated={loadAll}
-              onError={setError}
-            />
-          </div>
         </div>
       </div>
 

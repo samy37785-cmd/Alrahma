@@ -61,6 +61,9 @@ export default function AdminUsersTab({ users, usersTotal, teachers, onOpenRepor
           onChange={(e) => setUserSearch(e.target.value)}
         />
       </div>
+      <p className="admin__hint" style={{ margin: '0 0 12px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+        Role changes are disabled — this column is read-only pending a proven backend role-management RPC (deferred to Batch 2E).
+      </p>
       <div className="admin__table-wrap">
         <table className="admin__table">
           <thead>

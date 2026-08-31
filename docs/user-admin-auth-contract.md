@@ -133,3 +133,55 @@ Every guard changed in this stage — `ProtectedRoute.jsx`'s `adminOnly` check, 
 - A broader set of pre-existing, likely-dead `lucide-react` icon imports was observed (not introduced by this stage) in `Dashboard.jsx` (`Target`, `Moon`, `ListChecks`, `PenLine`) and `DashboardLayout.jsx` (a long list), plus `WishlistButton`/`DsBarChart`/`DsChartEmpty` in `Dashboard.jsx` and `NavIcon` in `MobileBottomNav.jsx`. These predate Stage 2A and were not introduced or worsened by it; a proper cleanup pass would need to verify each one individually (some may be used via dynamic/indirect references this note's grep-based check would miss) rather than being swept in here.
 - `Header.jsx`'s mobile profile strip still renders the raw, untranslated legacy `user.role` string (`<span className="nav__mobile-profile-role">{user.role}</span>`) rather than a locale-aware label. This is a cosmetic leftover, not a security or routing issue (the routing/admin-gating logic never reads this span), and is deferred to Batch 2C's broader translation cleanup rather than fixed here to avoid expanding this stage's translation-key surface.
 - `AdminUsersTab.jsx`'s role display was changed from an interactive `<select>` (calling `updateUserRole()` against the reverse-proxied, unverified external Upstream) to a read-only badge; the mutation is disabled rather than wired to `admin_set_role()` (which is not connected anywhere in this app). Full read/write role management against a proven Supabase-backed RPC is deferred to Batch 2E, as the task brief anticipated.
+
+---
+
+## Appendix (Stage 2B Part A): evidence-gap closure — everything below is corrective, added after the fact; nothing above this line was rewritten
+
+Stage 2B (see `docs/legacy-role-dashboard-pruning.md`) re-verified every claim this document made, from the actual code, not from re-reading its own prose. This appendix records what that re-verification found — most of it confirmed the original claims; two things were genuine gaps that are closed here.
+
+### A.1 Registration payload — re-verified, confirmed correct
+
+Traced the full pipeline again end to end: `Register.jsx`'s `form` state (`{name, email, password}`, populated only from `handleChange` reading the three actual named `<input>`s — there is no fourth field anywhere in the JSX) → `useAuth().register(form)` → `AuthContext.jsx`'s `register()` → `registerUser(info)` in `api/authApi.js` (`http.post('/auth/register', data)`, `data` sent verbatim) → `api/http.js`'s axios instance (its only interceptor adds a CSRF header on mutating requests; it never reads or rewrites the request body). **Confirmed: `role` is absent from the payload at every step — no query param, hidden field, or localStorage read feeds it anywhere in this path.** No fix was needed. Not claimed: whether the external Upstream still issues/expects a `role` field on its side — that remains Remote-integration-unknown, unchanged from §10 above.
+
+### A.2 Admin session — re-verified, one real (pre-existing, low-severity) gap found and precisely characterized
+
+`adminUser` comes from `AdminAuthContext.jsx`'s `useState(() => JSON.parse(localStorage.getItem('adminUser')))` — restored **as a local object-shape check only**, with **no server-side re-validation call on restore**. This is different from the regular `AuthContext`, which calls `ensureSession()` (a real `getMe()` round trip) whenever a cached profile exists. `isVerifiedAdminSession(adminUser)` is `Boolean(adminUser)` — it cannot and does not claim to know whether the object came from a real login+MFA flow (its own JSDoc says this explicitly).
+
+**Can manually editing `localStorage.adminUser` make the Admin UI shell render?** Yes. `ProtectedRoute adminOnly` and `AdminSessionGate` both pass on a mere truthy cached object, so `AdminDashboard` will mount.
+
+**Does this expose real admin data or let a real mutation succeed?** No. `AdminDashboard`'s data (`getUsers`, `getCourses`, `getManualPayments`, etc.) and every mutation go through `adminHttp`, a **separate** axios instance requiring the real httpOnly `admin_at`/`admin_rt` cookies. A forged `localStorage` profile has no such cookies, so every one of these calls 401s immediately; `adminHttp`'s existing response interceptor (unchanged, already present before Stage 2A) attempts exactly one silent refresh via the real `adminRefresh()` endpoint, which also fails with no valid `admin_rt` cookie, and then calls `clearSessionAndRedirect()` — clearing the forged `localStorage.adminUser` and doing a full `window.location.assign('/admin/login')`. In practice this is a brief (roughly one network round-trip) flash of an empty dashboard shell with no real data in it (every list/count is empty or loading), self-correcting automatically. This is the exact, already-documented design tradeoff `AdminSessionGate.jsx`'s own pre-existing comment describes ("caught on the first real API call instead ... this only needs to gate the initial render") — it predates Stage 2A and Stage 2A did not touch `AdminSessionGate.jsx`.
+
+**Why no code fix was made:** the only way to close even this narrow, no-real-exposure gap is a mount-time proactive call to `adminRefresh()` — but that endpoint rotates the one-time-use `admin_rt` cookie on every call (per its own source comment), and this repository has no way to observe or test the real backend's behavior when that rotation is triggered eagerly on every page load (multi-tab timing, an admin whose `admin_at` was still perfectly valid, etc.) without touching Remote, which this task forbids. Introducing an unproven proactive-refresh mechanism risked a real functional regression (spuriously logging out a legitimate admin) in exchange for closing a gap that already causes no real data or capability exposure. Per this task's own instruction — fix what's safely fixable, keep server enforcement as an explicit blocker rather than invent unproven validation — **no runtime behavior was changed here.** This is now precisely documented instead of left implicit.
+
+**Is Admin API enforcement itself proven server-side?** **UNKNOWN**, unchanged from §10/§13 above — this repository has no visibility into the real Upstream's cookie validation.
+
+### A.3 AdminUsersTab — re-verified, one real test-coverage gap found and closed
+
+The Stage 2A description (read-only role badge, no teacher/parent/student options, no client-side elevation, no false claim that `admin_set_role()` is wired) was confirmed accurate against the current code. Two things were fixed in Stage 2B: (1) the disabled-role-changes message was a hover-only `title` tooltip, not visible without hovering — a persistent, always-visible `<p className="admin__hint">` note was added instead; (2) **`AdminUsersTab.jsx` had zero dedicated tests** (`AdminDashboard.test.jsx` mocks it out entirely) — `AdminUsersTab.test.jsx` (5 tests) now covers: the role column is plain text with no interactive control; the disabled message is visible; no mutation is ever triggered by interacting with the badge; the still-live teacher-assignment and subscription actions are unaffected.
+
+### A.4 CalendarPage.jsx, DashboardLayout.jsx, AdminUsersTab.jsx, TeacherDashboard.jsx, ParentDashboard.jsx — Stage 2A diffs re-examined
+
+Re-read each file's exact `git diff 49fe8b5 5fac82d` in full. All five diffs are traceable, in every line, to either (a) the `isAdmin`/`isTeacher`/`isParent` sourcing fix (`useAuth()` → `useAdminAuth()`, removing dead teacher/parent branches) or (b) the `t.dashboard.roles`/`items` crash fix (`getExperienceText(lang).dashboard` retargeting) or (c) the previously-flagged dead-import cleanup (`Save`/`AlertCircle`/`X`). No unrelated change was found in any of the five; nothing needed to be reverted.
+
+### A.5 Test classification (see also §5 above, which listed the 7 Stage 2A files without categorizing them)
+
+| Test file | Category | What it actually exercises |
+|---|---|---|
+| `accountRoles.test.js` | Unit contract | Real function calls on `normalizeAccountRole`/`isRegularUser`/`isVerifiedAdminSession`, asserting real return values |
+| `Register.test.jsx` | Behavioral render + API payload | Real component render, real form fill/submit, inspects the real mock call's argument object |
+| `ProtectedRoute.test.jsx` | Behavioral render/navigation | Real `AuthProvider`+`AdminAuthProvider`+`MemoryRouter`, real redirect assertions |
+| `Dashboard.locales.test.jsx` | Behavioral render | Real component render in 6 locales, DOM assertions |
+| `Login.stage2a.test.jsx` | Behavioral render/navigation | Real component render, real form submit, real redirect assertion |
+| `appRouting.stage2a.test.js` | Static source guard | Regex over `App.jsx`'s text — **not** a rendering test |
+| `navigation.stage2a.test.js` | Mixed: unit contract (arity/return-value checks on `navFor`/`bottomNavFor`/`roleLabel`) + static source guard (the `useAdminAuth`/`useAuth()` destructure checks) | |
+
+`appRouting.stage2a.test.js` being static-only was a real gap against this task's "route redirect behavior" behavioral-coverage requirement — closed in Stage 2B by `appRouting.behavioral.stage2a.test.jsx` (new), which renders the **real, full `App` component** (mocked only at the `api/*.js` boundary) and drives real `window.history` navigation, proving `/teacher`→`/dashboard`, `/parent`→`/dashboard`, `/admin/login` reachable unauthenticated, and `/admin` denying an unauthenticated visitor — end to end, not from source text. "Admin login" behavioral coverage already existed and needed no new work: `AdminLogin.test.jsx` (pre-existing, real component render, real form interactions).
+
+### A.6 Temporary git worktree cleanup
+
+`git worktree list --porcelain` shows exactly one worktree (this repository's own working directory) and no `.git/worktrees/` entries beyond it. **No temporary worktree exists from Stage 2A or any earlier stage in this repository** — there was nothing to remove. (Sections of a broader master-reconciliation planning document, written in an earlier, separate investigation, described a hypothetical worktree-based verification strategy; no such worktree was ever actually created in this repository's real history, and none exists now.)
+
+### A.7 `git diff --cached --name-status` note
+
+Per this appendix's own verification pass: `git status --short` was clean at Stage 2B's start (confirmed against `checkpoint/stage-02a-user-admin-contract` = `5fac82d`); every `git diff --cached --name-status` check run during Stage 2B's own commit-staging steps was, by construction, a pre-commit snapshot (staged-but-not-yet-committed), and each commit was followed by a clean `git status --short` confirming the staging area was empty afterward — this is a process characteristic of how this task's own commits were made, not a new finding about Stage 2A's commits.

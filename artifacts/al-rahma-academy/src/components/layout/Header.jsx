@@ -197,7 +197,13 @@ export default function Header() {
                   <Avatar name={user.name} size="sm" />
                   <div className="nav__mobile-profile-info">
                     <span className="nav__mobile-profile-name">{user.name}</span>
-                    <span className="nav__mobile-profile-role">{user.role}</span>
+                    {/* Stage 2C (see docs/legacy-role-orphan-cleanup.md): never
+                        render the raw backend `role` field - it can still
+                        literally hold a legacy teacher/parent/student value
+                        for an old account, and it is not a trust source
+                        anyway (see accountRoles.js). Always show the same
+                        translated, generic account label. */}
+                    <span className="nav__mobile-profile-role">{copy.account}</span>
                   </div>
                   <Link
                     to={localizedTo("/profile")}

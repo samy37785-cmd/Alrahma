@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { homeHref } from '../utils/localePath';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext';
-import { getMe, getMyLinkCode } from '../api/authApi';
+import { getMe } from '../api/authApi';
 import { getCourses, getMyCertificates } from '../api/courseApi';
 import { COURSE_KEYS } from '../hooks/useCourses';
 import { useLang } from '../context/LangContext';
@@ -57,11 +57,6 @@ export default function Profile() {
   const { t } = useLang();
   const pg = t.authPg.profile;
 
-  const [linkCode, setLinkCode]       = useState('');
-  const [codeLoading, setCodeLoading] = useState(false);
-
-  const isStudent = !user?.role || user.role === 'student';
-
   const { data: me } = useQuery({
     queryKey: ['profile', 'me'],
     queryFn:  getMe,
@@ -81,16 +76,6 @@ export default function Profile() {
   });
 
   const subscription = me?.subscription ?? user?.subscription ?? null;
-
-  const revealCode = async () => {
-    setCodeLoading(true);
-    try {
-      const { code } = await getMyLinkCode();
-      setLinkCode(code);
-    } finally {
-      setCodeLoading(false);
-    }
-  };
 
   const [info, setInfo] = useState({ name: user?.name || '', email: user?.email || '' });
   const [pass, setPass] = useState({ currentPassword: '', newPassword: '', confirm: '' });
@@ -144,7 +129,11 @@ export default function Profile() {
   };
 
   const initials = getNameInitials(user?.name) || '?';
-  const roleLabel = user?.role === 'admin' ? pg.roleAdmin : user?.role === 'teacher' ? pg.roleTeacher : user?.role === 'parent' ? pg.roleParent : pg.roleStudent;
+  // Stage 2C (see docs/legacy-role-orphan-cleanup.md): the product has no
+  // teacher/parent/student account types any more - every regular account
+  // is 'user'. This label only ever distinguishes admin vs. everyone else;
+  // it is cosmetic, not a security boundary (see accountRoles.js).
+  const roleLabel = user?.role === 'admin' ? pg.roleAdmin : pg.roleUser;
 
   return (
     <DashboardLayout>
@@ -382,38 +371,6 @@ export default function Profile() {
               )}
             </div>
           </div>
-
-          {/* Parent link code */}
-          {isStudent && (
-            <div className="ds-card">
-              <div className="ds-card__hd">
-                <span className="ds-card__title"><span className="ds-card__title-icon">🔗</span> {pg.parentLink}</span>
-              </div>
-              <div className="ds-card__body">
-                <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 14, lineHeight: 1.6 }}>{pg.parentLinkDesc}</p>
-                {linkCode ? (
-                  <div>
-                    <div style={{ textAlign: 'center', padding: '14px 18px', background: 'var(--color-primary-surface)', borderRadius: 10, border: '1px dashed var(--color-primary)', marginBottom: 10 }}>
-                      <code style={{ fontSize: '1.6rem', fontWeight: 800, letterSpacing: '6px', color: 'var(--color-primary)', fontFamily: 'monospace' }}>
-                        {linkCode}
-                      </code>
-                    </div>
-                    <button
-                      className="btn btn--ghost"
-                      style={{ width: '100%', justifyContent: 'center', borderRadius: 9, fontSize: '0.82rem' }}
-                      onClick={() => navigator.clipboard?.writeText(linkCode)}
-                    >
-                      📋 {pg.copy}
-                    </button>
-                  </div>
-                ) : (
-                  <button className="btn btn--green" style={{ width: '100%', justifyContent: 'center', borderRadius: 9, fontSize: '0.855rem' }} onClick={revealCode} disabled={codeLoading}>
-                    {codeLoading ? '…' : pg.showLinkCode}
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
 
           {/* Quick links */}
           <div className="ds-card">

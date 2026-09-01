@@ -179,7 +179,15 @@ The wildcard route renders the localized `NotFound` page. An unused `src/pages/n
 
 ## Language selection, persistence, and deep links
 
-### Current behavior
+### Current behavior — SUPERSEDED, see "Stage 1 URL Closure" below
+
+> The `?lang=<code>` query-string list below describes the model as it stood
+> at the original audit date (27 August 2026). The app moved to a
+> path-prefix model (`/fr/...` + `<BrowserRouter basename>`) before this
+> stage, and Stage 1 URL Closure (see the dedicated section near the end of
+> this document) closed the remaining redirect/canonical gaps that move
+> left open. Not rewritten in place — kept here as a record of what the
+> pre-migration behavior actually was.
 
 1. On initial load, `LangProvider` checks `?lang=<code>`.
 2. If the query parameter is absent or unsupported, it reads `localStorage.lang`.
@@ -187,16 +195,16 @@ The wildcard route renders the localized `NotFound` page. An unused `src/pages/n
 4. Changing language updates local storage and React state.
 5. The root `<html>` element receives the active `lang` and `dir`.
 
-### Risks
+### Risks — see "Stage 1 URL Closure" for what has since been closed
 
-- The browser language is not detected.
-- Changing language does not update the URL.
-- A copied internal deep link normally loses language unless `?lang=` is manually present.
-- The initial `?lang=` value remains in the URL even after switching languages, so the visible URL can disagree with the active UI.
-- Query parameters are not included in canonical URLs.
-- Most localized views share one canonical URL, so search engines cannot index six distinct language versions.
-- Back/forward history does not represent language changes.
-- Static `/it/` and `/fr/` pages are separate documents, not the React routes with preserved paths.
+- The browser language is not detected. *(still open)*
+- Changing language does not update the URL. *(resolved before this stage — path prefix now IS the URL)*
+- A copied internal deep link normally loses language unless `?lang=` is manually present. *(resolved — the path prefix travels with the link)*
+- The initial `?lang=` value remains in the URL even after switching languages, so the visible URL can disagree with the active UI. *(resolved by Stage 1's legacy `?lang=` redirect — see below)*
+- Query parameters are not included in canonical URLs. *(still open pending Stage 1b's full canonical/hreflang work)*
+- Most localized views share one canonical URL, so search engines cannot index six distinct language versions. *(resolved — every language now has its own path-prefixed URL)*
+- Back/forward history does not represent language changes. *(resolved — language is baked into the URL path)*
+- Static `/it/` and `/fr/` pages are separate documents, not the React routes with preserved paths. *(resolved by Stage 1 — see below; those shadow files never existed on disk and the dead rewrite plugin that assumed they did has been removed)*
 
 ## Metadata and static language pages
 
@@ -215,9 +223,24 @@ Audit findings:
 - private pages generally do not invoke `useSEO`; crawler blocking relies mainly on `robots.txt`, route protection, and base metadata;
 - client-rendered metadata depends on crawlers executing JavaScript.
 
-### Static language landing pages
+### Static language landing pages — REMOVED, see "Stage 1 URL Closure" below
 
-Only these dedicated language documents exist:
+> This subsection described static shadow documents at `/it/index.html` and
+> `/fr/index.html`. Stage 1 URL Closure re-verified this directly against
+> the repository: **no such files, or any file matching `**/index.html`
+> other than the app's own root `index.html`, exist anywhere in the tracked
+> tree, and no build step generates them.** `vite.config.ts`'s
+> `localizedStaticPages` plugin — which rewrote `/it/`/`/fr/` requests to a
+> `index.html` under those paths — was therefore rewriting to files that
+> never existed; it has been removed. `/it/`, `/fr/`, `/ar/`, `/es/`,
+> `/de/` are now all served identically, by the same SPA `index.html` every
+> other route uses, through the general Vite dev/preview pipeline plus the
+> new canonical-redirect middleware (see below) — proven directly against a
+> real `vite preview` server with no static shadow files present. Kept here,
+> not deleted, as a record of what the audit originally (and correctly, at
+> the time) found.
+
+Historical content, no longer accurate — only these dedicated language documents were found to exist at audit time:
 
 - `/it/`;
 - `/fr/`.
@@ -233,19 +256,19 @@ The Italian and French pages:
 - contain visibly de-accented or awkward text in several places, especially French;
 - can drift from current React claims and locale files.
 
-The sitemap contains the main English-path routes plus `/it/` and `/fr/`; it does not provide language variants for internal routes or Arabic, Spanish, and German.
+The sitemap contains the main English-path routes plus `/it/` and `/fr/`; it does not provide language variants for internal routes or Arabic, Spanish, and German. *(Sitemap multi-language coverage remains deferred to Stage 1b — see below.)*
 
 ## Findings by severity
 
 ### Critical
 
-1. **Language state is not represented by stable localized URLs.**  
+1. **Language state is not represented by stable localized URLs.** *(RESOLVED by a pre-Stage-1 migration to the path-prefix model, and Stage 1 URL Closure closed the remaining redirect/canonical gaps that left open — see "Stage 1 URL Closure" below. The full canonical/hreflang/sitemap SEO layer remains Stage 1b.)*  
    A user can view six languages, but most pages have one language-neutral URL and one canonical. This breaks reliable localized deep links and prevents complete multilingual indexing.
 
 2. **Several high-trust and high-conversion surfaces are English-only.**  
    Privacy, Terms, Refund Policy, Wishlist, AI Tutor, Community, Calendar, and most of Admin are not connected to the language context. (Attendance and Homework were on this list at the time of the original audit; both were removed as fake/preview-only pages in Stage 2 Batch 1 and no longer exist, so they are no longer a localization gap.)
 
-3. **Static language coverage is inconsistent.**  
+3. **Static language coverage is inconsistent.** *(RESOLVED by Stage 1 URL Closure — the static shadow documents this finding described never existed on disk; the dead rewrite plugin that assumed they did has been removed. See "Stage 1 URL Closure" below.)*  
    Only Italian and French have dedicated landing documents; their links include a non-existent `/en/` path and omit three supported languages.
 
 ### High
@@ -365,6 +388,78 @@ Later localization tasks should preserve these invariants:
 6. Add authenticated component tests for dashboard empty/error/loading states in Arabic and German.
 7. Add visual regression coverage for Arabic RTL and long German/French strings.
 8. Add a fallback telemetry or development warning mechanism for missing localized content.
+
+## Stage 1 URL Closure (canonical path-prefix model, legacy redirects, breadcrumbs)
+
+Addendum, added by the Stage 1 URL Closure task — closes the redirect/canonical-URL gaps left open after the path-prefix migration referenced throughout this document as "resolved before/by this stage." Does not rewrite the sections above; corrective notes were added in place instead, pointing here. Ordered roughly by the task's own sections.
+
+### The model
+
+- English is unprefixed (`/`, `/courses/ijazah`, ...). Every other supported language (`fr`, `it`, `ar`, `es`, `de`) gets a leading `/{lang}` path segment (`/fr/`, `/fr/courses/ijazah`, ...). `en` never gets a `/en/` prefix.
+- The **path prefix is the single source of truth** for the active language — not a query string, not `localStorage` alone (`localStorage['lang']` is written on every language switch purely so a *future* fresh, unprefixed visit can offer the right default; it never overrides an explicit path prefix).
+- `<BrowserRouter basename>` is computed once at boot from the initial URL (`main.jsx`) — switching language is a real full-page navigation, not in-place React state.
+- `src/utils/urlCanonicalize.js`'s `computeCanonicalUrl({ pathname, search })` is the **single, shared decision function** for what a canonical URL looks like. Both the Vite dev/preview server middleware (`vite.config.ts`) and the pre-mount browser runtime fallback (`src/utils/bootRedirect.js`, wired into `main.jsx` before `createRoot`) call it — neither re-implements any part of the redirect logic, so the two can never drift from each other.
+
+### Legacy `?lang=` migration
+
+A URL still carrying the old `?lang=<code>` query parameter is migrated to the path-prefix form in one pass:
+
+| Input | Output |
+|---|---|
+| `/?lang=fr` | `/fr/` |
+| `/?lang=en` | `/` |
+| `/?lang=xx` (unsupported) | `/` (no prefix invented; `lang` still stripped) |
+| `/courses/ijazah?lang=ar&foo=bar#lesson` | `/ar/courses/ijazah?foo=bar#lesson` |
+| `/fr/courses/ijazah?lang=de&foo=bar` | `/fr/courses/ijazah?foo=bar` (an existing path prefix always wins over a conflicting `?lang=`) |
+
+`lang` is always removed from the query string once consumed; every other query parameter is preserved, in its original relative order. An unsupported or empty `lang` value never invents a prefix — it is simply dropped.
+
+### Trailing-slash policy
+
+- A bare language root gets a trailing slash: `/fr` → `/fr/` (308). `/` and `/fr/` are already canonical and are never touched.
+- An internal path never has a trailing slash: `/courses/` → `/courses` (308); `/fr/resources/faq/` → `/fr/resources/faq` (308, prefix kept).
+- Both dimensions (legacy-lang migration and trailing-slash normalization) are resolved by the same single call to `computeCanonicalUrl()`, so a URL needing both fixes gets exactly one redirect, never a chain.
+- The redirect status is **308 Permanent Redirect** (preserves method/semantics), with the canonical `pathname` + `search` in the `Location` header.
+
+### Where the 308 actually runs
+
+Verified against the real repository structure (`package.json`, `.replit`, `replit.md`, `vite.config.ts`, `public/_redirects`, and `artifacts/api-server`'s source) before implementing anything:
+
+- **Vite dev** (`pnpm run dev`) and **Vite preview** (`pnpm run serve`): implemented, via a `canonicalUrlRedirect()` Vite plugin (`configureServer`/`configurePreviewServer` middleware) in `vite.config.ts`. Proven live against a real `vite preview` server — every example in the table above returns 308 with the correct `Location`, and following the redirect lands on a 200 with no further hop.
+- Real static assets (favicon, robots.txt, sitemap.xml, hashed JS/CSS chunks, ...) and any `/api/*` path are explicitly excluded from this middleware (`src/utils/assetOrApiPath.js`) and are served untouched.
+- **`artifacts/api-server`** (the same-origin `/api` gateway) was inspected directly: it has zero static-file-serving or frontend-routing logic of its own — only `/api/*` handlers and a pure reverse proxy to the upstream academy backend. It is not a serving layer for the frontend and was correctly left untouched.
+- **Production deployment**: `.replit`/`replit.md` describe a Replit autoscale deployment running the app's own `dev`/`build`/`serve` scripts (i.e. Vite dev/preview themselves) — there is no additional, separately-owned production HTTP server in the tracked tree to attach a redirect to beyond what's already covered above. No new server was invented. If a genuinely separate production edge/CDN layer is introduced later, it will need this same 308 contract (re-using `computeCanonicalUrl()` directly, since it has zero dependencies and is trivially portable) — tracked as **deferred**, not blocking, since the runtime fallback below already covers that gap defensively today.
+- **The server can see `pathname` and `search`, never `hash`** — an HTTP request never carries a fragment. Hash preservation is proven at the runtime-utility and browser level (`src/test/urlCanonicalize.test.js`'s `formatCanonicalHref` tests, `src/test/bootRedirect.test.js`), never claimed as server-proven.
+
+### Runtime fallback (pre-mount)
+
+`src/utils/bootRedirect.js`'s `runBootRedirect()` runs in `main.jsx` **before** `createRoot()` is ever called — not inside a component or effect, so there is nothing mounted for a flash to be visible in. It calls the same `computeCanonicalUrl()` on `window.location`; if the URL isn't canonical, it calls `window.location.replace()` (never `.assign()`, so the legacy URL never enters session history) and the module's `if (!redirected)` guard skips creating a React root entirely for that pass. Covers any non-canonical URL a server 308 doesn't (a static host that doesn't run the Vite middleware, a stale bookmark, etc.). Proven idempotent (a canonical URL is always a no-op, so there is no redirect loop) and proven, via a real dynamic import of `main.jsx` with `react-dom/client` mocked, to actually skip `createRoot()` on redirect and call it exactly once otherwise.
+
+### Removed: the static-shadow-page rewrite
+
+`vite.config.ts`'s old `localizedStaticPages` plugin rewrote `/it/` and `/fr/` requests to `{path}index.html`, assuming dedicated static documents existed there. Re-verified directly: **no such files exist anywhere in the tracked tree, and no build step generates them** (confirmed by a full-tree search and by reading `scripts/gen-sitemap.mjs`, which only emits sitemap `<loc>` entries, not HTML). The plugin has been removed outright — not replaced with a new one — and `/fr/`, `/it/`, `/ar/`, `/es/`, `/de/`, and every internal locale-prefixed route are now served by the same general SPA pipeline as every other route, through the new canonical-redirect middleware. Proven live: `/fr/`, `/it/`, `/ar/`, `/fr/resources/faq`, `/it/courses/ijazah` all return 200 with real rendered HTML against a `vite preview` server with zero static shadow files present. Building a real prerendered static-HTML pipeline (so crawlers get pre-rendered markup per language) is unrelated to this removal and remains explicitly **Stage 1b**.
+
+### Internal links: canonical routes only
+
+- Programmatic navigation to the site root must never use react-router's `navigate('/')` — under a non-English `basename`, react-router's own `joinPaths` special-case for a literal `"/"` produces `/fr` with **no** trailing slash (the same issue `homeHref()` already documented for `<Link to="/">`). Fixed via a new `goHome(hash)` helper in `src/utils/localePath.js` (a full `window.location.assign(homeHref(hash))`, bypassing the router's basename join entirely) — applied to `DashboardLayout.jsx`'s logout and `EnrollWizard.jsx`'s post-enrollment "Back Home" button, the two call sites re-proven live in the current code. Internal-route navigations that aren't the special root case (e.g. `navigate('/dashboard')`) were left untouched — they resolve correctly under a basename already.
+- Every raw `<a href="/...">` internal anchor found on re-audit (`IsnadChain.jsx`'s `/enroll` and `/teachers`, `TermsOfService.jsx`'s `/academy/privacy`) was converted to a React Router `<Link>`, so `basename` correctly prefixes it for the active language. The one documented exception is `<a href={homeHref(...)}>`, for the same root-path reason `goHome()` exists.
+- Internal links pointing at deprecated compatibility aliases (`/teachers`, `/teachers/:id`, `/course/islamic-studies`, `/blog`, `/blog/:slug`) were repointed to their canonical routes (`/academy/teachers`, `/academy/teachers/:id`, `/courses/islamic-studies`, `/resources/blog`, `/resources/blog/:slug`) across `Tutors.jsx`, `TeacherProfile.jsx`, `HadithLibrary.jsx`, `CourseIslamicStudies.jsx`, `CourseIjazah.jsx`, `Blog.jsx`, and `BlogPost.jsx` (including its `Breadcrumbs` `to` target and its JSON-LD `mainEntityOfPage`).
+- **The compatibility redirects themselves are not removed** — `App.jsx` still defines `<Route path="/teachers" element={<Navigate to="/academy/teachers" replace />} />` and its siblings, since external/bookmarked links to the old paths may still exist. Only new internal code is required to use the canonical path directly.
+- Two automated, whole-`src`-tree guards (`src/test/internalLinkGuards.test.js`), using Vite's own `transformWithEsbuild` + `parseAstAsync` (already a project dependency — no new package added) to inspect real JSX prop AST nodes rather than a source-text regex, now fail the suite if either pattern is reintroduced anywhere in `src` (excluding `src/test/`, and excluding `App.jsx` for the alias guard specifically, since that file is where the compatibility redirects are legitimately defined).
+
+### BreadcrumbList JSON-LD: locale-correct URLs
+
+`useSEO.js`'s `buildBreadcrumb()` correctly stripped the locale segment from each crumb's **name** (so a French page never showed a spurious "Fr" breadcrumb) but then built every crumb's **URL** from that same locale-stripped path — silently dropping the prefix from the URL too, so a French page's `BreadcrumbList` pointed entirely at English URLs. Fixed by rebuilding each URL via `pathFor()` (the same canonical-path builder used everywhere else in the app), so this can never drift from the redirect policy above. Example (`/fr/courses/ijazah`): `Home → https://…/fr/`, `Courses → https://…/fr/courses`, `Ijazah → https://…/fr/courses/ijazah` — names stay `Home`/`Courses`/`Ijazah`, never `Fr`.
+
+### Explicitly deferred to Stage 1b
+
+Not started in this task, on purpose:
+
+- Full canonical `<link rel="canonical">` + `hreflang` alternates injection (currently the canonical tag is pathname-only and language-naive — see Findings #1/#5 above).
+- A real multi-language `sitemap.xml` (route × 6 languages, reciprocal hreflang) — `scripts/gen-sitemap.mjs` still only emits the English routes plus bare `/it/`/`/fr/` and needs a rewrite once this stage's route/prefix model is the assumed input.
+- `og:locale` / Open Graph per-language metadata.
+- A real prerendering pipeline (pre-rendered HTML per language for crawlers).
+- `FAQPage`/`Person` JSON-LD schema work.
 
 ## Audit conclusion
 

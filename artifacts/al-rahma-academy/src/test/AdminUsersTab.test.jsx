@@ -13,13 +13,18 @@ import AdminUsersTab from '../components/features/admin/AdminUsersTab';
 //   - updateUserRole is never imported/called from anywhere reachable here;
 //   - the disabled-role-changes message is visible in the rendered output,
 //     not hidden behind a hover-only tooltip;
-//   - the still-live per-student actions (teacher assignment, family name,
-//     subscription actions) keep working - Stage 2A only disabled the role
-//     mutation, nothing else.
+//   - the still-live per-student actions (family name, subscription
+//     actions) keep working - Stage 2A only disabled the role mutation,
+//     nothing else.
+//
+// Stage 2C (see docs/legacy-role-orphan-cleanup.md): the teacher-assignment
+// <select> and its `teachers` prop were removed from AdminUsersTab entirely
+// - it attached a student to a legacy teacher *account*, a relationship the
+// product no longer has. That coverage is gone with it; a static guard in
+// legacyRoleOrphanCleanup.test.js instead locks in that it can't come back.
 
 vi.mock('../api/adminApi', () => ({
   updateUserSubscription: vi.fn(),
-  assignTeacher: vi.fn(),
   setFamilyName: vi.fn(),
 }));
 
@@ -32,7 +37,6 @@ function renderTab(users = [STUDENT, ADMIN_ROW], overrides = {}) {
   const props = {
     users,
     usersTotal: users.length,
-    teachers: [{ _id: 't1', name: 'Teacher One' }],
     onOpenReport: vi.fn(),
     onUsersChange: vi.fn(),
     onError: vi.fn(),
@@ -48,10 +52,9 @@ describe('AdminUsersTab (Stage 2A read-only role column)', () => {
 
   it('renders the role as plain read-only text, not an interactive control', () => {
     renderTab();
-    // No <select> anywhere maps to a role-change control - the only
-    // <select> left is the per-student teacher-assignment one, which is
-    // a different, still-live feature.
-    expect(screen.queryByRole('combobox', { name: /role/i })).not.toBeInTheDocument();
+    // No <select> anywhere in this component maps to a role-change control
+    // (the former teacher-assignment <select> was removed in Stage 2C).
+    expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
     expect(screen.getByText('student')).toBeInTheDocument();
     expect(screen.getByText('admin')).toBeInTheDocument();
   });
@@ -71,16 +74,6 @@ describe('AdminUsersTab (Stage 2A read-only role column)', () => {
     // asserted at the module level via the mock factory above having no
     // updateUserRole export at all (a real import would throw at
     // collection time if the component still referenced it).
-  });
-
-  it('the teacher-assignment select still works for a student row (a still-live feature, unaffected by the role-mutation disable)', async () => {
-    const user = userEvent.setup();
-    adminApi.assignTeacher.mockResolvedValue({ teacher: { _id: 't1', name: 'Teacher One' } });
-    const { props } = renderTab();
-    const teacherSelect = screen.getByRole('combobox');
-    await user.selectOptions(teacherSelect, 't1');
-    expect(adminApi.assignTeacher).toHaveBeenCalledWith('s1', 't1');
-    expect(props.onUsersChange).toHaveBeenCalled();
   });
 
   it('subscription renew/deactivate actions still work, unaffected by the role-mutation disable', async () => {

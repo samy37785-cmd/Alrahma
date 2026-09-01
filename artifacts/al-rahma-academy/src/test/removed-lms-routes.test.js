@@ -73,11 +73,9 @@ describe('removed Attendance/Homework pages stay removed', () => {
   });
 
   // TeacherDashboard.jsx was deleted in Stage 2B (see
-  // docs/legacy-role-dashboard-pruning.md) - its own existence is guarded
-  // by legacyRoleDashboardPruning.test.js instead. ParentDashboard.jsx
-  // stays (Stage 2B left it BLOCKED - see that doc's Part B §9/§16), so its
-  // guard below is unchanged.
-  it('ParentDashboard.jsx has no active quick link to /attendance or /homework', () => {
-    assertNoRemovedPathStrings('ParentDashboard.jsx', readSrcFile('pages/ParentDashboard.jsx'));
-  });
+  // docs/legacy-role-dashboard-pruning.md) and ParentDashboard.jsx was
+  // deleted in Stage 2C (see docs/legacy-role-orphan-cleanup.md) - both
+  // files' own non-existence is guarded by legacyRoleOrphanCleanup.test.js
+  // instead, so there is nothing left here to read a /attendance or
+  // /homework quick link out of.
 });

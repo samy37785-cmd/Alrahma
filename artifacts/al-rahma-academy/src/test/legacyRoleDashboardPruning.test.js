@@ -5,10 +5,14 @@ import { dirname, join } from 'node:path';
 
 // Stage 2B Part B guard (see docs/legacy-role-dashboard-pruning.md): locks
 // in the file deletions and the legacy-compatibility redirects so they
-// can't silently regress. Of the 5-file manifest, only 3 were actually
-// deleted here - TeacherDashboard.jsx, StudentModal.jsx, AdminStaffTab.jsx.
-// ParentDashboard.jsx and ChildModal.jsx were left BLOCKED (see that doc's
-// Part B §9) and are intentionally NOT asserted absent below.
+// can't silently regress. Of the original 5-file manifest, 3 were deleted
+// here in Stage 2B - TeacherDashboard.jsx, StudentModal.jsx,
+// AdminStaffTab.jsx. ParentDashboard.jsx and ChildModal.jsx were left
+// BLOCKED at the time (see that doc's Part B §9) pending a product decision
+// on parent-child linking; that decision was made in Stage 2C (see
+// docs/legacy-role-orphan-cleanup.md) and both files were deleted then.
+// This file's own existence assertions for those two are updated below to
+// match; legacyRoleOrphanCleanup.test.js carries the fuller Stage 2C guard.
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const srcRoot = join(__dirname, '..');
@@ -21,9 +25,9 @@ describe('deleted files no longer exist', () => {
     expect(existsSync(join(srcRoot, 'components', 'features', 'admin', 'AdminStaffTab.jsx'))).toBe(false);
   });
 
-  it('ParentDashboard.jsx and ChildModal.jsx were intentionally NOT deleted (BLOCKED, see the pruning doc)', () => {
-    expect(existsSync(join(srcRoot, 'pages', 'ParentDashboard.jsx'))).toBe(true);
-    expect(existsSync(join(srcRoot, 'components', 'features', 'parent', 'ChildModal.jsx'))).toBe(true);
+  it('ParentDashboard.jsx and ChildModal.jsx were deleted in Stage 2C, once BLOCKED (see docs/legacy-role-orphan-cleanup.md)', () => {
+    expect(existsSync(join(srcRoot, 'pages', 'ParentDashboard.jsx'))).toBe(false);
+    expect(existsSync(join(srcRoot, 'components', 'features', 'parent', 'ChildModal.jsx'))).toBe(false);
   });
 });
 

@@ -7,8 +7,12 @@ import { getExperienceText } from '../../i18n/experience';
 // Stage 2A (see docs/user-admin-auth-contract.md): no teacher/parent
 // destinations any more - /teacher and /parent just redirect to the
 // generic Dashboard now, so they are not worth listing separately here.
+// Stage 2C Final Corrective: the regular-account entry used to be labeled
+// 'studentDashboard' ("Student dashboard") - a raw legacy role string
+// shown as UI copy, even though every regular account is just 'user'.
+// Renamed to the generic 'dashboard' key.
 const STATIC_ITEMS = [
-  { group: 'navigation', icon: '◧', label: 'studentDashboard', to: '/dashboard', role: 'user' },
+  { group: 'navigation', icon: '◧', label: 'dashboard', to: '/dashboard', role: 'user' },
   { group: 'navigation', icon: '◧', label: 'adminDashboard', to: '/admin', role: 'admin' },
   { group: 'navigation', icon: '✉', label: 'messages', to: '/messages' },
   { group: 'navigation', icon: '💳', label: 'billing', to: '/billing' },

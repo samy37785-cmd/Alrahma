@@ -4,6 +4,8 @@ import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'vite';
 
 import runtimeErrorOverlay from '@replit/vite-plugin-runtime-error-modal';
+import { computeCanonicalUrl } from './src/utils/urlCanonicalize.js';
+import { isAssetOrApiPath } from './src/utils/assetOrApiPath.js';
 
 const rawPort = process.env.PORT ?? '19795';
 
@@ -15,36 +17,44 @@ if (Number.isNaN(port) || port <= 0) {
 
 const basePath = process.env.BASE_PATH ?? '/';
 
-const localizedStaticPages = () => ({
-  name: 'localized-static-pages',
-  configureServer(server) {
-    server.middlewares.use((req, _res, next) => {
-      if (!req.url) return next();
-      const url = new URL(req.url, 'http://localhost');
-      if (url.pathname === '/it/' || url.pathname === '/fr/') {
-        req.url = `${url.pathname}index.html${url.search}`;
-      }
-      next();
-    });
-  },
-  configurePreviewServer(server) {
-    server.middlewares.use((req, _res, next) => {
-      if (!req.url) return next();
-      const url = new URL(req.url, 'http://localhost');
-      if (url.pathname === '/it/' || url.pathname === '/fr/') {
-        req.url = `${url.pathname}index.html${url.search}`;
-      }
-      next();
-    });
-  },
-});
+// Stage 1 URL Closure (see docs/localization-audit.md): permanent (308)
+// redirects to the canonical URL, using the exact same decision as the
+// browser runtime fallback (src/utils/bootRedirect.js) - both call
+// computeCanonicalUrl() and never re-implement any part of it. An HTTP
+// request never carries a hash fragment, so this only ever sees/redirects
+// on pathname + query; hash preservation is proven at the runtime-utility
+// level instead (see src/utils/urlCanonicalize.js's docs).
+const canonicalUrlRedirect = () => {
+  const middleware = (req, res, next) => {
+    if (!req.url) return next();
+    const url = new URL(req.url, 'http://localhost');
+    if (isAssetOrApiPath(url.pathname)) return next();
+
+    const canonical = computeCanonicalUrl({ pathname: url.pathname, search: url.search });
+    if (!canonical) return next();
+
+    res.statusCode = 308;
+    res.setHeader('Location', canonical.pathname + canonical.search);
+    res.end();
+  };
+
+  return {
+    name: 'canonical-url-redirect',
+    configureServer(server) {
+      server.middlewares.use(middleware);
+    },
+    configurePreviewServer(server) {
+      server.middlewares.use(middleware);
+    },
+  };
+};
 
 export default defineConfig({
   base: basePath,
   plugins: [
     react(),
     tailwindcss(),
-    localizedStaticPages(),
+    canonicalUrlRedirect(),
     runtimeErrorOverlay(),
     ...(process.env.NODE_ENV !== 'production' &&
     process.env.REPL_ID !== undefined

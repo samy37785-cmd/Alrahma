@@ -39,46 +39,59 @@ import './styles.css';
 import { initSentry } from './utils/sentry.js';
 import { loadArabicFontsIdle } from './utils/loadArabicFonts.js';
 import { langFromPath } from './utils/localePath.js';
+import { runBootRedirect } from './utils/bootRedirect.js';
 
 initSentry();
 
-// The router's basename is fixed once, from whatever URL the browser first
-// requested — a non-English visit like /fr/courses/ijazah must mount
-// <BrowserRouter basename="/fr"> so every unprefixed <Route path="/courses/ijazah">
-// keeps resolving under that prefix for the rest of the session. Switching
-// language is a full page reload (see utils/localePath.js switchLanguageHref),
-// which is what lets this be computed once here rather than reactively.
-const { basename } = langFromPath(window.location.pathname);
+// Legacy `?lang=fr` links, and any non-canonical URL a server 308 didn't
+// catch (e.g. a static host that doesn't run our Vite dev/preview
+// middleware - see vite.config.ts), must never flash the English page or a
+// NotFound before landing on the canonical URL. This must run before
+// React exists at all, not inside a component/effect after hydration -
+// there is nothing mounted yet for a flash to be visible in, and the
+// `if (!redirected)` guard below skips creating a React root entirely for
+// a URL we're about to leave.
+const redirected = runBootRedirect();
 
-const rootElement = document.getElementById('root');
-const app = (
-  <React.StrictMode>
-    <App basename={basename} />
-  </React.StrictMode>
-);
+if (!redirected) {
+  // The router's basename is fixed once, from whatever URL the browser first
+  // requested — a non-English visit like /fr/courses/ijazah must mount
+  // <BrowserRouter basename="/fr"> so every unprefixed <Route path="/courses/ijazah">
+  // keeps resolving under that prefix for the rest of the session. Switching
+  // language is a full page reload (see utils/localePath.js switchLanguageHref),
+  // which is what lets this be computed once here rather than reactively.
+  const { basename } = langFromPath(window.location.pathname);
 
-// Client-side render. createRoot cleanly replaces the static #app-loading
-// spinner (in index.html) with the rendered app — the spinner gives an instant
-// first paint while this bundle loads instead of a blank white screen.
-createRoot(rootElement).render(app);
+  const rootElement = document.getElementById('root');
+  const app = (
+    <React.StrictMode>
+      <App basename={basename} />
+    </React.StrictMode>
+  );
 
-// Load the heavy Arabic (Amiri) fonts off the critical path, once the browser
-// is idle after the first paint. Vite emits these as async CSS chunks.
-// Arabic-heavy pages (Teachers, Quran) trigger this immediately on mount
-// instead — see loadArabicFonts.js.
-loadArabicFontsIdle();
+  // Client-side render. createRoot cleanly replaces the static #app-loading
+  // spinner (in index.html) with the rendered app — the spinner gives an instant
+  // first paint while this bundle loads instead of a blank white screen.
+  createRoot(rootElement).render(app);
 
-// Service worker: production only. sw.js caches non-HTML GET requests
-// cache-first assuming Vite's content-hashed build filenames (safe — a new
-// deploy gets new hashes, so stale cache entries are simply orphaned). In
-// `vite dev`, source files are served unhashed at a stable URL and change on
-// every edit, so the same cache-first rule would instead pin the browser to
-// whatever version of a file it first saw — indefinitely, even across
-// restarts — which is exactly the "why does my dev server show old code"
-// trap this guard avoids. `vite preview` serves the real hashed build output
-// and is unaffected (import.meta.env.DEV is false there too).
-if (!import.meta.env.DEV && 'serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(() => {});
-  });
+  // Load the heavy Arabic (Amiri) fonts off the critical path, once the browser
+  // is idle after the first paint. Vite emits these as async CSS chunks.
+  // Arabic-heavy pages (Teachers, Quran) trigger this immediately on mount
+  // instead — see loadArabicFonts.js.
+  loadArabicFontsIdle();
+
+  // Service worker: production only. sw.js caches non-HTML GET requests
+  // cache-first assuming Vite's content-hashed build filenames (safe — a new
+  // deploy gets new hashes, so stale cache entries are simply orphaned). In
+  // `vite dev`, source files are served unhashed at a stable URL and change on
+  // every edit, so the same cache-first rule would instead pin the browser to
+  // whatever version of a file it first saw — indefinitely, even across
+  // restarts — which is exactly the "why does my dev server show old code"
+  // trap this guard avoids. `vite preview` serves the real hashed build output
+  // and is unaffected (import.meta.env.DEV is false there too).
+  if (!import.meta.env.DEV && 'serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(() => {});
+    });
+  }
 }

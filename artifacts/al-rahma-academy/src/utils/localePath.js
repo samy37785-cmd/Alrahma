@@ -88,6 +88,22 @@ export function homeHref(hash) {
   return pathFor('/', lang || 'en') + (hash ? `#${hash}` : '');
 }
 
+// The safe way to programmatically navigate "home" (logout, a post-success
+// "Back Home" button, ...) from anywhere in the app. NOT `navigate('/')` -
+// see homeHref()'s comment above for exactly why react-router's imperative
+// navigate() can't express the canonical locale root under a basename
+// either (same joinPaths special-case that breaks <Link to="/">): under
+// basename "/fr", navigate('/') produces "/fr" with no trailing slash, and
+// passing pathFor('/', 'fr') ("/fr/") as `to` double-prefixes to "/fr/fr/"
+// since react-router treats `to` as already basename-relative. A full
+// navigation via window.location bypasses the router's basename join
+// entirely, the same way the raw <a href={homeHref()}> exception does for
+// visual links - proven correct for en/fr/it by
+// src/test/localePath.test.js's goHome() coverage.
+export function goHome(hash) {
+  window.location.assign(homeHref(hash));
+}
+
 // Inverse of pathFor: given a full pathname (with or without a language
 // prefix), returns the underlying route as react-router sees it once
 // basename strips the prefix — i.e. what pathFor(route, 'en') would be.

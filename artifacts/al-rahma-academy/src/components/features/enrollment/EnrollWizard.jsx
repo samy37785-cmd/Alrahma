@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useLang } from '../../../context/LangContext';
+import { goHome } from '../../../utils/localePath';
 import { TEACHERS, plans } from '../../../data';
 import { PLAN_TEXT, pick } from '../../../i18n/content';
 /* ── Static data ────────────────────────────────────────────────── */
@@ -421,7 +422,10 @@ export function Success({ name }) {
         <button type="button" className="btn btn--green btn--lg" onClick={() => navigate('/dashboard')}>
           {s.goToDashboard}
         </button>
-        <button type="button" className="btn btn--ghost" onClick={() => navigate('/')}>
+        {/* Not navigate('/') - see localePath.js's goHome() comment: under
+            a non-English basename that produces "/fr" with no trailing
+            slash. */}
+        <button type="button" className="btn btn--ghost" onClick={() => goHome()}>
           {s.backHome}
         </button>
       </div>

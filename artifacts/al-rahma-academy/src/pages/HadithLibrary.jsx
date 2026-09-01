@@ -221,7 +221,7 @@ export default function HadithLibrary() {
               <span>🕌</span>
               <span>
                 {h.courseNote}{' '}
-                <Link to="/course/islamic-studies" className="hl__course-note-link">
+                <Link to="/courses/islamic-studies" className="hl__course-note-link">
                   {h.courseLink}
                 </Link>
                 {h.courseClick}
@@ -392,7 +392,7 @@ export default function HadithLibrary() {
           <div className="hl__cta">
             <div className="container">
               <p>{h.ctaPrompt}</p>
-              <Link to="/course/islamic-studies" className="btn btn--gold btn--lg">
+              <Link to="/courses/islamic-studies" className="btn btn--gold btn--lg">
                 {h.ctaBtn}
               </Link>
             </div>

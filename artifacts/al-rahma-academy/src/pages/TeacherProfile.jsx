@@ -58,7 +58,7 @@ export default function TeacherProfile() {
         <Header />
         <main style={{ padding: '80px 0', textAlign: 'center' }}>
           <h2>{tp.notFound}</h2>
-          <Link to="/teachers" className="btn btn--green" style={{ marginTop: '24px' }}>
+          <Link to="/academy/teachers" className="btn btn--green" style={{ marginTop: '24px' }}>
             {tp.backToAll}
           </Link>
         </main>
@@ -93,7 +93,7 @@ export default function TeacherProfile() {
                   onClick={() => navigate(`/enroll?teacher=${teacher.id}`)}>
                   {tp.enrollWith} {firstName} →
                 </button>
-                <Link to="/teachers" className="btn btn--ghost-white">{tp.allTeachers}</Link>
+                <Link to="/academy/teachers" className="btn btn--ghost-white">{tp.allTeachers}</Link>
               </div>
             </div>
           </div>
@@ -235,7 +235,7 @@ export default function TeacherProfile() {
                 >
                   {tp.startEnroll}
                 </button>
-                <Link to="/teachers" className="tp__back-link">
+                <Link to="/academy/teachers" className="tp__back-link">
                   {tp.browseOthers}
                 </Link>
               </div>

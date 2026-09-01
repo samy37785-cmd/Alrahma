@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 import Breadcrumbs from '../components/ui/Breadcrumbs';
@@ -89,7 +90,7 @@ export default function TermsOfService() {
     <h2>{c.headings[2]}</h2><p>{c.refund} <a href={`mailto:${site.email}`}>{site.email}</a> {c.refundEnd} <a href={`https://wa.me/${site.whatsapp}`}>{site.whatsappDisplay}</a>. {c.refundNote}</p><p>{c.guarantee}</p>
     <h2>{c.headings[3]}</h2><p>{c.cancellation}</p><h2>{c.headings[4]}</h2><p>{c.trial}</p><h2>{c.headings[5]}</h2><ul>{c.scheduling.map(x => <li key={x}>{x}</li>)}</ul>
     <h2>{c.headings[6]}</h2><p>{c.matching}</p><h2>{c.headings[7]}</h2><p>{c.conduct}</p><h2>{c.headings[8]}</h2><p>{c.ip}</p>
-    <h2>{c.headings[9]}</h2><p>{c.data} <a href="/academy/privacy">{c.privacy}</a>.</p><h2>{c.headings[10]}</h2><p>{c.liability}</p><h2>{c.headings[11]}</h2><p>{c.law}</p>
+    <h2>{c.headings[9]}</h2><p>{c.data} <Link to="/academy/privacy">{c.privacy}</Link>.</p><h2>{c.headings[10]}</h2><p>{c.liability}</p><h2>{c.headings[11]}</h2><p>{c.law}</p>
     <h2>{c.headings[12]}</h2><p>{c.contact}</p><ul><li>{c.email} <a href={`mailto:${site.email}`}>{site.email}</a></li><li>{c.whatsapp} <a href={`https://wa.me/${site.whatsapp}`}>{site.whatsappDisplay}</a></li><li>{c.response}</li></ul>
   </div></section></main><Footer /></>;
 }

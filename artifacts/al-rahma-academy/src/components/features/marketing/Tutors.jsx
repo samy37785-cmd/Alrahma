@@ -90,7 +90,7 @@ function TutorAvatar({ teacher, tp, initials, lang, size = 'md', onPlay }) {
   return (
     <div className={`tc3__avatar-col tc3__avatar-col--${size}`}>
       <Link
-        to={withLanguage(`/teachers/${teacher.id}`, lang)}
+        to={withLanguage(`/academy/teachers/${teacher.id}`, lang)}
         className="tc3__avatar-ring"
         style={{ '--avatar-ring-color': teacher.color }}
       >
@@ -146,7 +146,7 @@ function TutorCard({ t: teacher }) {
 
       <div className="tc3__main">
         <div className="tc3__head">
-          <Link to={withLanguage(`/teachers/${teacher.id}`, lang)} className="tc3__name-link">
+          <Link to={withLanguage(`/academy/teachers/${teacher.id}`, lang)} className="tc3__name-link">
             <h3 className="tc3__name-ar" dir="rtl">{teacher.nameAr}</h3>
             <p className="tc3__name-en">{teacher.nameEn}</p>
           </Link>
@@ -181,7 +181,7 @@ function TutorCard({ t: teacher }) {
           >
             {ut.enroll}
           </button>
-          <Link to={withLanguage(`/teachers/${teacher.id}`, lang)} className="tc3__cta-link">
+          <Link to={withLanguage(`/academy/teachers/${teacher.id}`, lang)} className="tc3__cta-link">
             {ut.viewProfile}
           </Link>
         </div>
@@ -224,7 +224,7 @@ function SpotlightCard({ teacher }) {
 
         <div className="tc3__spotlight-body">
           <div className="tc3__head">
-            <Link to={withLanguage(`/teachers/${teacher.id}`, lang)} className="tc3__name-link">
+            <Link to={withLanguage(`/academy/teachers/${teacher.id}`, lang)} className="tc3__name-link">
               <h3 className="tc3__name-ar" dir="rtl">{teacher.nameAr}</h3>
               <p className="tc3__name-en">{teacher.nameEn}</p>
             </Link>
@@ -248,7 +248,7 @@ function SpotlightCard({ teacher }) {
             >
               {ut.enroll}
             </button>
-            <Link to={withLanguage(`/teachers/${teacher.id}`, lang)} className="tc3__cta-link">
+            <Link to={withLanguage(`/academy/teachers/${teacher.id}`, lang)} className="tc3__cta-link">
               {ut.viewProfile}
             </Link>
           </div>
@@ -289,7 +289,7 @@ export default function Tutors() {
         </Reveal>
 
         <Reveal className="tc2__footer">
-          <Link to={withLanguage("/teachers", lang)} className="btn btn--ghost">
+          <Link to={withLanguage("/academy/teachers", lang)} className="btn btn--ghost">
             {ut.viewAll}
           </Link>
         </Reveal>

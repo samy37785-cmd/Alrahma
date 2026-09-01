@@ -101,7 +101,7 @@ export default function Blog() {
             <div className="blog-grid">
               {filtered.map((p) => (
                 <Link
-                  to={`/blog/${p.slug}`}
+                  to={`/resources/blog/${p.slug}`}
                   className="blog-card"
                   key={p.slug}
                   style={{ textDecoration: 'none' }}

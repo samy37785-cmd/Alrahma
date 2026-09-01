@@ -119,7 +119,7 @@ export default function BlogPost() {
         name: 'Al-Rahma Academy',
         logo: { '@type': 'ImageObject', url: 'https://al-rahmaacademy.com/favicon.svg' },
       },
-      mainEntityOfPage: `https://al-rahmaacademy.com/blog/${post.slug}`,
+      mainEntityOfPage: `https://al-rahmaacademy.com/resources/blog/${post.slug}`,
     } : null,
   });
 
@@ -142,7 +142,7 @@ export default function BlogPost() {
     <div className="blog-post-page">
       <PageBar to="/resources/blog" label="← Blog" />
 
-      <Breadcrumbs items={[{ label: 'Blog', to: '/blog' }, { label: post.title }]} />
+      <Breadcrumbs items={[{ label: 'Blog', to: '/resources/blog' }, { label: post.title }]} />
 
       <main id="main-content" className="container blog-post__main">
         <div className="blog-post__hero">
@@ -160,13 +160,13 @@ export default function BlogPost() {
         {(prev || next) && (
           <nav className="blog-post__nav">
             {prev && (
-              <Link to={`/blog/${prev.slug}`} className="blog-post__nav-link blog-post__nav-link--prev">
+              <Link to={`/resources/blog/${prev.slug}`} className="blog-post__nav-link blog-post__nav-link--prev">
                 <span className="blog-post__nav-dir">← Previous</span>
                 <span className="blog-post__nav-title">{prev.title}</span>
               </Link>
             )}
             {next && (
-              <Link to={`/blog/${next.slug}`} className="blog-post__nav-link blog-post__nav-link--next">
+              <Link to={`/resources/blog/${next.slug}`} className="blog-post__nav-link blog-post__nav-link--next">
                 <span className="blog-post__nav-dir">Next →</span>
                 <span className="blog-post__nav-title">{next.title}</span>
               </Link>

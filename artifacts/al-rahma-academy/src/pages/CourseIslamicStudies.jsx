@@ -67,7 +67,7 @@ export default function CourseIslamicStudies() {
               <button className="btn btn--gold btn--lg" onClick={() => navigate(withLanguage('/enroll?course=islamic-studies', lang))}>
                 {ui.bookTrial}
               </button>
-              <Link to={withLanguage('/teachers', lang)} className="btn btn--ghost-white">{ui.viewTeachers}</Link>
+              <Link to={withLanguage('/academy/teachers', lang)} className="btn btn--ghost-white">{ui.viewTeachers}</Link>
             </div>
           </div>
         </section>
@@ -187,7 +187,7 @@ export default function CourseIslamicStudies() {
                 <button type="button" className="btn btn--gold btn--block" onClick={() => navigate(withLanguage('/enroll?course=islamic-studies', lang))}>
                   {ui.bookTrial}
                 </button>
-                <Link to={withLanguage('/teachers', lang)} className="cl__enroll-link">{ui.browseTeachers}</Link>
+                <Link to={withLanguage('/academy/teachers', lang)} className="cl__enroll-link">{ui.browseTeachers}</Link>
               </div>
             </div>
           </div>

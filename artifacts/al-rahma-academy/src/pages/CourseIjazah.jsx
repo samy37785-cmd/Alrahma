@@ -336,7 +336,7 @@ export default function CourseIjazah() {
               <button className="btn btn--gold btn--lg" onClick={() => navigate(withLanguage('/enroll?course=ijazah', lang))}>
                 {ui.bookTrial}
               </button>
-              <Link to={withLanguage('/teachers', lang)} className="btn btn--ghost-white">{ui.viewTeachers}</Link>
+              <Link to={withLanguage('/academy/teachers', lang)} className="btn btn--ghost-white">{ui.viewTeachers}</Link>
             </div>
           </div>
         </section>
@@ -446,7 +446,7 @@ export default function CourseIjazah() {
                 <button type="button" className="btn btn--gold btn--block" onClick={() => navigate(withLanguage('/enroll?course=ijazah', lang))}>
                   {ui.bookTrial}
                 </button>
-                <Link to={withLanguage('/teachers', lang)} className="cl__enroll-link">{ui.browseTeachers}</Link>
+                <Link to={withLanguage('/academy/teachers', lang)} className="cl__enroll-link">{ui.browseTeachers}</Link>
               </div>
             </div>
           </div>

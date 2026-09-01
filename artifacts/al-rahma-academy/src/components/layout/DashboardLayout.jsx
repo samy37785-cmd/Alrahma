@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
-import { homeHref } from '../../utils/localePath';
+import { Link, NavLink, useLocation } from 'react-router-dom';
+import { homeHref, goHome } from '../../utils/localePath';
 import { useQuery } from '@tanstack/react-query';
 import { getUnreadCount } from '../../api/messageApi';
 import { getUnreadNotifs } from '../../api/notificationApi';
@@ -41,7 +41,6 @@ export default function DashboardLayout({ children }) {
   const dashboardCopy = getExperienceText(lang).dashboard;
   const { shell, sections, items: itemLabels, roles } = dashboardCopy;
   const { dark, toggle } = useTheme();
-  const navigate  = useNavigate();
   const location  = useLocation();
 
   const [collapsed,  setCollapsed]  = useState(() => {
@@ -151,7 +150,9 @@ export default function DashboardLayout({ children }) {
   const handleLogout = () => {
     setUserMenu(false);
     logout();
-    navigate('/');
+    // Not navigate('/') - see localePath.js's goHome() comment: under a
+    // non-English basename that produces "/fr" with no trailing slash.
+    goHome();
   };
 
   const initials = user?.name ? getNameInitials(user.name) : '?';

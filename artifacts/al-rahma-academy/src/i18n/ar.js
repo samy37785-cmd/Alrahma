@@ -674,7 +674,6 @@
       "fullName": "الاسم الكامل",
       "email": "البريد الإلكتروني",
       "accountType": "نوع الحساب",
-      "roleAdmin": "مدير",
       "roleUser": "مستخدم",
       "saveChanges": "حفظ التغييرات",
       "saving": "جاري الحفظ…",

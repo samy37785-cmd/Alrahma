@@ -1,8 +1,24 @@
 import { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { loginUser, registerUser, logoutUser, updateMe, getMe } from '../api/authApi';
+import { normalizeAccountRole } from '../utils/accountRoles';
 
 const AuthContext = createContext(null);
+
+// Applies the account-role contract (see src/utils/accountRoles.js) to
+// whatever a server response's `role` field says, at every single boundary
+// where a profile enters this context's state - cached-profile restoration,
+// login, registration, getMe/ensureSession, and updateProfile. No matter
+// what a legacy response claims (admin/student/teacher/parent/null/
+// undefined/garbage), the object this app ever holds as `user` always has
+// role: 'user'. This is what actually enforces the contract Stage 2A/2B/2C
+// documented but never applied at the data boundary itself - previously
+// `user.role` could still literally be a raw legacy string, and any code
+// reading it directly (e.g. Profile.jsx's old role label) could leak it.
+function normalizeProfile(profile) {
+  if (!profile) return profile;
+  return { ...profile, role: normalizeAccountRole(profile.role) };
+}
 
 // The auth TOKEN now lives in an httpOnly cookie the browser sends automatically
 // — JS never sees it (so XSS can't steal it). We only cache the public PROFILE
@@ -14,7 +30,7 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
     try {
       const saved = localStorage.getItem('user');
-      return saved ? JSON.parse(saved) : null;
+      return saved ? normalizeProfile(JSON.parse(saved)) : null;
     } catch {
       return null;
     }
@@ -39,10 +55,15 @@ export function AuthProvider({ children }) {
   const sessionCheckPromise = useRef(null);
 
   // Cache (or clear) the public profile for instant render on next load.
+  // This is the SINGLE funnel every public path (login, register, getMe/
+  // ensureSession, updateProfile, and setUser itself) goes through, so
+  // normalizing here is what makes the contract actually apply everywhere
+  // at once, not just wherever a call site remembered to.
   const persist = useCallback((profile) => {
-    if (profile) localStorage.setItem('user', JSON.stringify(profile));
+    const normalized = normalizeProfile(profile);
+    if (normalized) localStorage.setItem('user', JSON.stringify(normalized));
     else localStorage.removeItem('user');
-    setUser(profile);
+    setUser(normalized);
   }, []);
 
   // Asks the server who we are (if we don't already know) and updates state

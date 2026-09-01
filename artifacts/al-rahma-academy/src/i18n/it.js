@@ -674,7 +674,6 @@
       "fullName": "Nome completo",
       "email": "Indirizzo email",
       "accountType": "Tipo di account",
-      "roleAdmin": "Amministratore",
       "roleUser": "Utente",
       "saveChanges": "Salva modifiche",
       "saving": "Salvataggio…",

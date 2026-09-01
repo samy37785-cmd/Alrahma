@@ -9,7 +9,12 @@ import { useAdminAuth } from '../../context/AdminAuthContext';
 //    a regular account's `role` field (see src/utils/accountRoles.js). A
 //    regular user does NOT need to be logged in at all to reach an admin
 //    page; they need a real admin login instead, so this branch never
-//    touches `user`/`ensureSession`.
+//    touches `user`/`ensureSession`. While a cached admin profile is still
+//    being verified (isChecking - see AdminAuthContext's fail-closed
+//    design), render nothing rather than redirecting either way: bouncing
+//    to /admin/login before verification finishes would be a false
+//    negative, and rendering children would be exactly the fail-open bug
+//    this design closes.
 //  - otherwise: not logged in -> redirect to /login.
 //
 // This guard is a frontend UX convenience only. It is not, and must not be
@@ -24,7 +29,7 @@ import { useAdminAuth } from '../../context/AdminAuthContext';
 // render nothing rather than bouncing to /login and back.
 export default function ProtectedRoute({ children, adminOnly = false }) {
   const { user, sessionChecked, ensureSession } = useAuth();
-  const { isAdmin } = useAdminAuth();
+  const { isAdmin, isChecking } = useAdminAuth();
   const location = useLocation();
   const redirect = (pathname) => ({
     pathname,
@@ -36,6 +41,7 @@ export default function ProtectedRoute({ children, adminOnly = false }) {
   }, [adminOnly, user, sessionChecked, ensureSession]);
 
   if (adminOnly) {
+    if (isChecking) return null;
     if (isAdmin) return children;
     return <Navigate to={redirect('/admin/login')} state={{ from: location }} replace />;
   }

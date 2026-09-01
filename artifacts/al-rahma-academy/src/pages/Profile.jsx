@@ -129,11 +129,16 @@ export default function Profile() {
   };
 
   const initials = getNameInitials(user?.name) || '?';
-  // Stage 2C (see docs/legacy-role-orphan-cleanup.md): the product has no
-  // teacher/parent/student account types any more - every regular account
-  // is 'user'. This label only ever distinguishes admin vs. everyone else;
-  // it is cosmetic, not a security boundary (see accountRoles.js).
-  const roleLabel = user?.role === 'admin' ? pg.roleAdmin : pg.roleUser;
+  // Stage 2C Final Corrective (see docs/user-admin-auth-contract.md): this
+  // page is the REGULAR account's own profile, reached via the regular
+  // ProtectedRoute, backed entirely by AuthContext. A regular account's
+  // `role` field is never proof of admin status (AuthContext now
+  // normalizes it to 'user' unconditionally at every data boundary - see
+  // AuthContext.jsx's normalizeProfile()), so there is no admin branch
+  // here at all any more: this label is always the generic account type.
+  // Real admin identity belongs exclusively to the separate
+  // AdminAuthContext/AdminDashboard, never to this page.
+  const roleLabel = pg.roleUser;
 
   return (
     <DashboardLayout>

@@ -53,19 +53,39 @@ export function isRegularUser(rawRole) {
 }
 
 /**
+ * The set of states AdminAuthContext's own session-verification state
+ * machine can be in. 'checking' and 'unauthenticated' both mean "not
+ * proven yet" - only 'verified' does.
+ */
+export const ADMIN_SESSION_STATUS = Object.freeze({
+  CHECKING: 'checking',
+  VERIFIED: 'verified',
+  UNAUTHENTICATED: 'unauthenticated',
+});
+
+/**
  * The ONLY function in the app allowed to answer "is this an admin?".
- * Admin is proven exclusively by a real AdminUser + MFA session (the
- * `adminUser` object from AdminAuthContext / useAdminAuth()) — never by
- * a regular account's `role` field, never by localStorage, never by a
- * query parameter, and never by public registration/user_metadata.
  *
- * @param {{ email?: string } | null | undefined} adminUser - the cached
- *   AdminUser profile from useAdminAuth(). A non-null object means a
- *   session was established through the real admin login + MFA flow;
- *   AdminSessionGate/adminHttp are responsible for keeping this in sync
- *   with the actual httpOnly admin_at/admin_rt cookies server-side.
+ * Stage 2C Final Corrective (see docs/user-admin-auth-contract.md): this
+ * function's contract changed. It used to take the cached `adminUser`
+ * object and return `Boolean(adminUser)` - which meant a forged or merely
+ * stale `localStorage.adminUser` value was, by itself, sufficient "proof".
+ * That was fail-OPEN: presence of a client-controlled object was treated
+ * as verification.
+ *
+ * It now takes AdminAuthContext's own `sessionStatus` state - which is
+ * ONLY ever set to 'verified' after a real server round trip (a fresh
+ * login+MFA response, or a real `adminRefresh()` call succeeding against
+ * the httpOnly admin_rt cookie the browser controls, not JS). A cached
+ * `adminUser` object is presentation data only (which email to show while
+ * checking) and can no longer make this return true by itself. This is
+ * fail-CLOSED: anything short of a proven server round trip is treated as
+ * not-admin, including the entire 'checking' window.
+ *
+ * @param {'checking'|'verified'|'unauthenticated'} sessionStatus -
+ *   AdminAuthContext's own session-verification state.
  * @returns {boolean}
  */
-export function isVerifiedAdminSession(adminUser) {
-  return Boolean(adminUser);
+export function isVerifiedAdminSession(sessionStatus) {
+  return sessionStatus === ADMIN_SESSION_STATUS.VERIFIED;
 }

@@ -9,15 +9,19 @@ import { safeInternalDestination } from '../utils/safeRedirect';
 // required by /api/v1/admin/* (see AdminAuthContext / AdminSessionGate).
 // Deliberately reachable by an UNAUTHENTICATED visitor - it IS the admin
 // login page, so App.jsx does not wrap this route in ProtectedRoute, and
-// this component never depends on the regular user session. If a valid
-// admin session already exists we redirect straight to /admin instead of
-// showing the form again (see the `if (adminUser)` check below).
+// this component never depends on the regular user session. If a real,
+// server-VERIFIED admin session already exists we redirect straight to
+// /admin instead of showing the form again (see the `if (isAdmin)` check
+// below - deliberately not `if (adminUser)`: a merely cached, unverified
+// profile must not bounce this page away before AdminAuthContext's
+// verifySession() has actually confirmed it, which would risk a redirect
+// loop with AdminSessionGate bouncing straight back here on failure).
 export default function AdminLogin() {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useLang();
   const lg = t.authPg.adminLogin;
-  const { adminUser, login, confirmMfaSetup, verifyMfa, pendingStage, mfaSetupInfo } = useAdminAuth();
+  const { isAdmin, isChecking, login, confirmMfaSetup, verifyMfa, pendingStage, mfaSetupInfo } = useAdminAuth();
 
   const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
@@ -71,10 +75,16 @@ export default function AdminLogin() {
     }
   };
 
-  // Already have a real, MFA-verified admin session - no need to log in
+  // While a cached profile is still being verified, render nothing rather
+  // than showing the form (which might immediately be replaced by a
+  // redirect) or redirecting early (which might have to bounce right back
+  // here if verification fails).
+  if (isChecking) return null;
+
+  // Already have a real, server-verified admin session - no need to log in
   // again. This is the ONLY early exit; an unauthenticated visitor always
   // reaches the form below, never a redirect to the regular /login page.
-  if (adminUser) {
+  if (isAdmin) {
     const destination = safeInternalDestination(location.state?.from, '/admin');
     return <Navigate to={destination.startsWith('/admin') && destination !== '/admin/login' ? destination : '/admin'} replace />;
   }

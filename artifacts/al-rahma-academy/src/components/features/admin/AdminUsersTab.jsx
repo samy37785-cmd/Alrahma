@@ -1,36 +1,20 @@
 import { useState } from 'react';
-import { updateUserSubscription, setFamilyName } from '../../../api/adminApi';
+import { updateUserSubscription } from '../../../api/adminApi';
 
-// Stage 2A (see docs/user-admin-auth-contract.md, Section 9): the role
-// column used to be an interactive <select> that called updateUserRole()
-// (PATCH /v1/admin/users/:id/role) directly - a real, unaudited admin-
-// elevation path that reverse-proxies to the external, untracked Upstream
-// (see docs/legacy-roles-dashboard-reachability-audit.md). This task does
-// not wire it to any new, locally-proven RPC (admin_set_role() exists in
-// lib/db but is NOT connected here or anywhere in this app), so the
-// mutation is disabled rather than left pointed at an unverified backend.
-// Full read/write role management against a proven Supabase-backed RPC is
-// deferred to Batch 2E.
-//
-// Stage 2C (see docs/legacy-role-orphan-cleanup.md): the "assign a
-// teacher" control that used to sit in the Teacher column was removed -
-// it attached a student to a legacy teacher *account*, a relationship the
-// product no longer has (there is no teacher account type any more, only
-// user/admin). The `teachers` prop this component used to take is gone
-// with it.
+// Stage 2C Final Corrective (see docs/user-admin-auth-contract.md): this
+// table used to show a "Role" column (the raw, untrusted backend `role`
+// field - could still literally read "student"/"teacher"/"parent" for an
+// old account) and a "Family" column (a free-text field gated on
+// `u.role === 'student'`, with zero documentation anywhere and zero other
+// consumer that ever read it back - an orphan of the deleted parent/
+// student account model, not a real general-purpose product field). Both
+// are removed entirely, along with setFamilyName (now zero-consumer,
+// deleted from api/adminApi.js). Every row in this table is, by
+// definition, a regular user account - GET /v1/admin/users never returns
+// an AdminUser, which is an entirely separate system (AdminAuthContext) -
+// so there is nothing left for a role-ish column to meaningfully show.
 export default function AdminUsersTab({ users, usersTotal, onOpenReport, onUsersChange, onError }) {
   const [userSearch, setUserSearch] = useState('');
-
-  const handleFamilyInput = (studentId, value) =>
-    onUsersChange((prev) => prev.map((u) => (u._id === studentId ? { ...u, familyName: value } : u)));
-
-  const handleFamilySave = async (studentId, value) => {
-    try {
-      await setFamilyName(studentId, value);
-    } catch (err) {
-      onError(err.response?.data?.message || 'Could not save family name');
-    }
-  };
 
   const handleSubscription = async (userId, action, plan) => {
     try {
@@ -59,13 +43,10 @@ export default function AdminUsersTab({ users, usersTotal, onOpenReport, onUsers
           onChange={(e) => setUserSearch(e.target.value)}
         />
       </div>
-      <p className="admin__hint" style={{ margin: '0 0 12px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-        Role changes are disabled — this column is read-only pending a proven backend role-management RPC (deferred to Batch 2E).
-      </p>
       <div className="admin__table-wrap">
         <table className="admin__table">
           <thead>
-            <tr><th>#</th><th>Name</th><th>Email</th><th>Role</th><th>Family</th><th>Plan</th><th>Status</th><th>Valid Until</th><th>Action</th></tr>
+            <tr><th>#</th><th>Name</th><th>Email</th><th>Plan</th><th>Status</th><th>Valid Until</th><th>Action</th></tr>
           </thead>
           <tbody>
             {filtered.map((u, i) => (
@@ -73,26 +54,6 @@ export default function AdminUsersTab({ users, usersTotal, onOpenReport, onUsers
                 <td>{i + 1}</td>
                 <td>{u.name}</td>
                 <td>{u.email}</td>
-                <td>
-                  {/* Read-only: role changes are disabled here, not wired to
-                      an unproven backend mutation. See the file-level
-                      comment above and docs/user-admin-auth-contract.md. */}
-                  <span className="admin__badge" title="Role changes are disabled pending a proven backend RPC (deferred to Batch 2E)">
-                    {u.role}
-                  </span>
-                </td>
-                <td>
-                  {u.role === 'student' ? (
-                    <input
-                      className="admin__inline-select"
-                      style={{ width: 90 }}
-                      value={u.familyName || ''}
-                      placeholder="—"
-                      onChange={(e) => handleFamilyInput(u._id, e.target.value)}
-                      onBlur={(e) => handleFamilySave(u._id, e.target.value)}
-                    />
-                  ) : '—'}
-                </td>
                 <td>{u.subscription?.plan || '—'}</td>
                 <td>
                   <span className={`admin__badge admin__badge--${u.subscription?.status === 'active' ? 'approved' : 'rejected'}`}>
@@ -113,7 +74,7 @@ export default function AdminUsersTab({ users, usersTotal, onOpenReport, onUsers
               </tr>
             ))}
             {users.length === 0 && (
-              <tr><td colSpan="9" className="admin__empty">No users yet.</td></tr>
+              <tr><td colSpan="7" className="admin__empty">No users yet.</td></tr>
             )}
           </tbody>
         </table>

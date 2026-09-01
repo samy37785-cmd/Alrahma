@@ -17,13 +17,21 @@ const statusBadge = (status) => {
   return 'ds-badge ds-badge--blue';
 };
 
+// Stage 2C Final Corrective (see docs/user-admin-auth-contract.md): this
+// used to filter `users` down to `u.role === 'student'` for the class-
+// scheduling picker - a legacy account-role concept the product no longer
+// has. Every regular account is a plain 'user' now, so the full `users`
+// list is the eligible-participant pool; no eligibility narrower than
+// "is a regular account" is documented or provable from current data, so
+// none is invented here. Copy changed from "Student" to "Participant"
+// throughout this file - the underlying `student`/`c.student` field names
+// (form state, API payload shape) are unchanged, since renaming those is
+// a backend-contract change outside this task's scope.
 export default function AdminClassesTab({ users = [], onError }) {
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(EMPTY);
   const [filter, setFilter] = useState('upcoming');
-
-  const students = users.filter((u) => u.role === 'student');
 
   const { data: classes = [], isLoading } = useQuery({
     queryKey: ['admin', 'classes', filter],
@@ -52,7 +60,7 @@ export default function AdminClassesTab({ users = [], onError }) {
   const submit = (e) => {
     e.preventDefault();
     if (!form.student || !form.title.trim() || !form.startsAt) {
-      onError('Please fill in student, title and date.');
+      onError('Please fill in participant, title and date.');
       return;
     }
     createMut.mutate({
@@ -111,10 +119,10 @@ export default function AdminClassesTab({ users = [], onError }) {
           <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
               <div className="field" style={{ margin: 0 }}>
-                <label>Student</label>
+                <label>Participant</label>
                 <select value={form.student} onChange={set('student')}>
-                  <option value="">— Select student —</option>
-                  {students.map((s) => (
+                  <option value="">— Select participant —</option>
+                  {users.map((s) => (
                     <option key={s._id} value={s._id}>{s.name} ({s.email})</option>
                   ))}
                 </select>
@@ -169,7 +177,7 @@ export default function AdminClassesTab({ users = [], onError }) {
           <thead>
             <tr>
               <th>Title</th>
-              <th>Student</th>
+              <th>Participant</th>
               <th>Teacher</th>
               <th>Date &amp; time</th>
               <th>Duration</th>

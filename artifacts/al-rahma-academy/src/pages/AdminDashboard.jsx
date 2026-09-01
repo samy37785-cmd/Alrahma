@@ -2,14 +2,14 @@ import { useState, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import {
-  LayoutDashboard, Users, BookOpen, CreditCard, Target, UserCog,
+  LayoutDashboard, Users, BookOpen, CreditCard, Target,
   Mail, Settings, TrendingUp, BarChart3, Activity, CheckCircle,
   RefreshCw, Download, CalendarDays, Star, Users2,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getCourses } from '../api/courseApi';
 import { getManualPayments } from '../api/paymentApi';
-import { getUsers, listTeachers } from '../api/adminApi';
+import { getUsers } from '../api/adminApi';
 import { getTrials, getSubscribers } from '../api/contentApi';
 import { getAdminReviews } from '../api/reviewApi';
 import { getAdminPosts, getAdminComments } from '../api/communityApi';
@@ -24,7 +24,6 @@ import AdminCommunityTab from '../components/features/admin/AdminCommunityTab';
 import AdminProgressModal from '../components/features/admin/AdminProgressModal';
 import DashboardLayout    from '../components/layout/DashboardLayout';
 import { DsBarChart, DsAreaChart, DsChartEmpty } from '../components/ui/DsChart';
-import { getNameInitials } from '../utils/nameInitials';
 
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
@@ -178,7 +177,6 @@ export default function AdminDashboard() {
   const { data: paysRes, isLoading: l3, isError: e3 }          = useQuery({ queryKey: ['admin', 'payments'],    queryFn: getManualPayments,                   staleTime: 30000  });
   const { data: subscribers = [], isLoading: l4, isError: e4 } = useQuery({ queryKey: ['admin', 'newsletter'],  queryFn: getSubscribers,                      staleTime: 300000 });
   const { data: usersRes, isLoading: l5, isError: e5 }         = useQuery({ queryKey: ['admin', 'users'],       queryFn: getUsers,                            staleTime: 60000  });
-  const { data: teachers = [], isLoading: l6 }     = useQuery({ queryKey: ['admin', 'teachers'],    queryFn: () => listTeachers().catch(() => []), staleTime: 120000 });
   const { data: reviewsRes, isLoading: l7, isError: e6 }       = useQuery({ queryKey: ['admin', 'reviews'],     queryFn: getAdminReviews,                     staleTime: 60000  });
   const { data: communityPostsRes, isLoading: l8, isError: e7 }    = useQuery({ queryKey: ['admin', 'community-posts'],    queryFn: getAdminPosts,    staleTime: 60000  });
   const { data: communityCommentsRes, isLoading: l9, isError: e8 } = useQuery({ queryKey: ['admin', 'community-comments'], queryFn: getAdminComments, staleTime: 60000  });
@@ -207,7 +205,7 @@ export default function AdminDashboard() {
   const communityComments      = communityCommentsRes?.comments ?? [];
   const communityCommentsTotal = communityCommentsRes?.total ?? communityComments.length;
 
-  const loading = l1 || l2 || l3 || l4 || l5 || l6 || l7 || l8 || l9;
+  const loading = l1 || l2 || l3 || l4 || l5 || l7 || l8 || l9;
 
   const setCourses  = (updater) => queryClient.setQueryData(['admin', 'courses'],    updater);
   const setManualPays = (updater) => queryClient.setQueryData(['admin', 'payments'], (old) => {
@@ -241,12 +239,14 @@ export default function AdminDashboard() {
     setError('');
   };
 
-  /* KPIs */
-  const students         = users.filter((u) => u.role === 'student');
-  const activeStudents   = students.filter((u) => u.subscription?.status === 'active');
-  const pendingPayments  = manualPays.filter((p) => p.status === 'pending');
-  const conversionRate   = trials.length
-    ? Math.round((activeStudents.length / Math.max(trials.length, 1)) * 100)
+  /* KPIs - Stage 2C Final Corrective (see docs/user-admin-auth-contract.md):
+     no account-role concept exists any more, so these are derived from
+     real product fields every user account actually has (subscription
+     status), not from a legacy `role` field that could say anything. */
+  const activeSubscribers = users.filter((u) => u.subscription?.status === 'active');
+  const pendingPayments   = manualPays.filter((p) => p.status === 'pending');
+  const conversionRate    = trials.length
+    ? Math.round((activeSubscribers.length / Math.max(trials.length, 1)) * 100)
     : 0;
 
   /* Tab badge counts */
@@ -287,7 +287,7 @@ export default function AdminDashboard() {
           <div className="ds-page-hd__eyebrow"><Settings size={12} aria-hidden="true" /> Admin Console</div>
           <h1 className="ds-page-hd__title">Platform Overview</h1>
           <p className="ds-page-hd__sub">
-            {usersTotal} total users · {activeStudents.length} active students · {teachers.length} teachers
+            {usersTotal} total users · {activeSubscribers.length} active subscribers · {pendingPayments.length} pending payments
           </p>
         </div>
         <div className="ds-page-hd__actions">
@@ -380,7 +380,7 @@ export default function AdminDashboard() {
               </div>
               <div className="ds-stat__value">{usersTotal}</div>
               <div className="ds-stat__label">Total Users</div>
-              <div className="ds-stat__sub">{teachers.length} teachers · {students.length} students</div>
+              <div className="ds-stat__sub">{activeSubscribers.length} active subscribers</div>
             </div>
 
             <div className="ds-stat">
@@ -390,10 +390,10 @@ export default function AdminDashboard() {
                 </div>
                 <span className="ds-stat__trend ds-stat__trend--up">Active</span>
               </div>
-              <div className="ds-stat__value">{activeStudents.length}</div>
-              <div className="ds-stat__label">Active Students</div>
+              <div className="ds-stat__value">{activeSubscribers.length}</div>
+              <div className="ds-stat__label">Active Subscribers</div>
               <div className="ds-stat__sub">
-                {students.length > 0 ? Math.round((activeStudents.length / students.length) * 100) : 0}% of all students
+                {usersTotal > 0 ? Math.round((activeSubscribers.length / usersTotal) * 100) : 0}% of all users
               </div>
             </div>
 
@@ -551,39 +551,6 @@ export default function AdminDashboard() {
                       </button>
                     ))}
                   </div>
-                </div>
-              </div>
-
-              {/* Teachers list */}
-              <div className="ds-card">
-                <div className="ds-card__hd">
-                  <span className="ds-card__title">
-                    <span className="ds-card__title-icon"><UserCog size={14} aria-hidden="true" /></span> Teachers ({teachers.length})
-                  </span>
-                </div>
-                <div className="ds-card__body">
-                  {teachers.length === 0 ? (
-                    <div style={{ color: 'var(--text-secondary)', fontSize: '0.82rem', textAlign: 'center', padding: '8px 0' }}>No teachers yet</div>
-                  ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      {teachers.slice(0, 5).map((t) => (
-                        <div key={t._id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                          <div style={{
-                            width: 30, height: 30, borderRadius: '50%', background: 'var(--grad-green)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            color: '#fff', fontWeight: 700, fontSize: '0.72rem', flexShrink: 0,
-                          }}>
-                            {getNameInitials(t.name)}
-                          </div>
-                          <div style={{ flex: 1 }}>
-                            <div style={{ fontWeight: 600, fontSize: '0.82rem', color: 'var(--text-primary)' }}>{t.name}</div>
-                            <div style={{ fontSize: '0.68rem', color: 'var(--text-secondary)' }}>{t.studentCount || 0} students</div>
-                          </div>
-                          <span className="ds-badge ds-badge--green">{t.studentCount || 0}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
                 </div>
               </div>
             </div>

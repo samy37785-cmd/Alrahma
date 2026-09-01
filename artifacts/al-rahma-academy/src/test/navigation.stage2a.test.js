@@ -59,8 +59,9 @@ describe('isAdmin is sourced from AdminAuthContext, never from the regular accou
     expect(source).not.toMatch(/isParent:/);
   });
 
-  it('AdminAuthContext.jsx is the single source of a real isAdmin, derived from isVerifiedAdminSession(adminUser)', () => {
+  it('AdminAuthContext.jsx is the single source of a real isAdmin, derived from isVerifiedAdminSession(sessionStatus) - a real server-verified state, not the merely-cached adminUser object (Stage 2C Final Corrective, see docs/user-admin-auth-contract.md)', () => {
     const source = read('context/AdminAuthContext.jsx');
-    expect(source).toMatch(/isAdmin:\s*isVerifiedAdminSession\(adminUser\)/);
+    expect(source).toMatch(/isAdmin:\s*isVerifiedAdminSession\(sessionStatus\)/);
+    expect(source).not.toMatch(/isAdmin:\s*isVerifiedAdminSession\(adminUser\)/);
   });
 });

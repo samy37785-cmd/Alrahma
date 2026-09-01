@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   ACCOUNT_ROLES,
+  ADMIN_SESSION_STATUS,
   normalizeAccountRole,
   isRegularUser,
   isVerifiedAdminSession,
@@ -51,25 +52,48 @@ describe('isRegularUser', () => {
 });
 
 describe('isVerifiedAdminSession', () => {
-  it('is false when there is no AdminUser session', () => {
+  // Stage 2C Final Corrective (see docs/user-admin-auth-contract.md): this
+  // function's contract changed from Boolean(adminUser) to
+  // sessionStatus === 'verified'. The old contract was fail-OPEN - any
+  // truthy object (forged, stale, or a completely unrelated shape) made
+  // this return true, as the old version of this describe block used to
+  // document and assert. The new contract is fail-CLOSED: only the
+  // 'verified' string - reachable exclusively via a real server round trip
+  // in AdminAuthContext - returns true. Presence of ANY object, including
+  // a perfectly real-looking cached adminUser, is irrelevant to this
+  // function now; it doesn't even take one as an argument any more.
+
+  it('is false for "checking" - an unverified cached profile is NOT proof', () => {
+    expect(isVerifiedAdminSession(ADMIN_SESSION_STATUS.CHECKING)).toBe(false);
+  });
+
+  it('is false for "unauthenticated"', () => {
+    expect(isVerifiedAdminSession(ADMIN_SESSION_STATUS.UNAUTHENTICATED)).toBe(false);
+  });
+
+  it('is false for null/undefined/garbage input - fails closed on anything unrecognized', () => {
     expect(isVerifiedAdminSession(null)).toBe(false);
     expect(isVerifiedAdminSession(undefined)).toBe(false);
+    expect(isVerifiedAdminSession('forged-adminUser-object')).toBe(false);
+    expect(isVerifiedAdminSession(true)).toBe(false);
   });
 
-  it('is true only when a real AdminUser profile object is present', () => {
-    expect(isVerifiedAdminSession({ email: 'admin@example.com' })).toBe(true);
+  it('is true ONLY for the exact "verified" status', () => {
+    expect(isVerifiedAdminSession(ADMIN_SESSION_STATUS.VERIFIED)).toBe(true);
+  });
+});
+
+describe('ADMIN_SESSION_STATUS', () => {
+  it('exposes exactly the three session states', () => {
+    expect(ADMIN_SESSION_STATUS).toEqual({
+      CHECKING: 'checking',
+      VERIFIED: 'verified',
+      UNAUTHENTICATED: 'unauthenticated',
+    });
   });
 
-  it('does not itself validate object shape - it trusts its caller to pass AdminAuthContext.adminUser only', () => {
-    // This function only checks truthiness; it cannot know whether an
-    // object came from a real admin login+MFA session or was fabricated
-    // elsewhere. The actual security property is architectural: every
-    // real call site in this app passes ONLY AdminAuthContext's
-    // `adminUser` (populated exclusively by adminLogin/adminMfaVerify),
-    // never a regular-user profile. This test documents that boundary
-    // explicitly rather than silently assuming it.
-    const notAnAdminSessionObject = { role: 'admin', name: 'Not Really Admin' };
-    expect(isVerifiedAdminSession(notAnAdminSessionObject)).toBe(true);
+  it('is frozen', () => {
+    expect(Object.isFrozen(ADMIN_SESSION_STATUS)).toBe(true);
   });
 });
 

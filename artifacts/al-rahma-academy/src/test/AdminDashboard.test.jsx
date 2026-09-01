@@ -17,7 +17,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 vi.mock('../api/courseApi', () => ({ getCourses: vi.fn() }));
 vi.mock('../api/paymentApi', () => ({ getManualPayments: vi.fn() }));
-vi.mock('../api/adminApi', () => ({ getUsers: vi.fn(), listTeachers: vi.fn() }));
+vi.mock('../api/adminApi', () => ({ getUsers: vi.fn() }));
 vi.mock('../api/contentApi', () => ({ getTrials: vi.fn(), getSubscribers: vi.fn() }));
 vi.mock('../api/reviewApi', () => ({ getAdminReviews: vi.fn() }));
 vi.mock('../api/communityApi', () => ({ getAdminPosts: vi.fn(), getAdminComments: vi.fn() }));
@@ -38,7 +38,7 @@ vi.mock('../components/features/admin/AdminCommunityTab', () => ({ default: () =
 
 import { getCourses } from '../api/courseApi';
 import { getManualPayments } from '../api/paymentApi';
-import { getUsers, listTeachers } from '../api/adminApi';
+import { getUsers } from '../api/adminApi';
 import { getTrials, getSubscribers } from '../api/contentApi';
 import { getAdminReviews } from '../api/reviewApi';
 import { getAdminPosts, getAdminComments } from '../api/communityApi';
@@ -59,7 +59,6 @@ function mockAllSucceed() {
   getUsers.mockResolvedValue({ data: [], total: 0 });
   getTrials.mockResolvedValue([]);
   getSubscribers.mockResolvedValue([]);
-  listTeachers.mockResolvedValue([]);
   getAdminReviews.mockResolvedValue({ reviews: [], total: 0 });
   getAdminPosts.mockResolvedValue({ posts: [], total: 0 });
   getAdminComments.mockResolvedValue({ comments: [], total: 0 });
@@ -101,13 +100,51 @@ describe('AdminDashboard — RBAC-aware load-error banner', () => {
 
     await waitFor(() => expect(screen.getByText(/Failed to load: courses, payments/)).toBeInTheDocument());
   });
+});
 
-  it('a failed listTeachers call does not trigger the banner (it self-recovers via .catch(() => []), unlike the five isError-tracked queries)', async () => {
+// Stage 2C Final Corrective (see docs/user-admin-auth-contract.md): the
+// KPIs used to be computed from `users.filter(u => u.role === 'student')`
+// and a separate `listTeachers()` call - both deleted. This proves the
+// replacement KPIs are computed from real product fields (subscription
+// status) regardless of whatever a legacy `role` value says, and that the
+// old "Active Students"/"Teachers" labels and the "Teachers list" card are
+// gone for good.
+describe('AdminDashboard KPIs no longer depend on account roles', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('"Active Subscribers" counts by subscription.status, ignoring whatever the legacy role field says', async () => {
+    getCourses.mockResolvedValue([]);
+    getManualPayments.mockResolvedValue({ data: [], total: 0 });
+    getUsers.mockResolvedValue({
+      data: [
+        { _id: '1', name: 'A', role: 'teacher', subscription: { status: 'active' } },
+        { _id: '2', name: 'B', role: 'student', subscription: { status: 'active' } },
+        { _id: '3', name: 'C', role: 'admin', subscription: { status: 'inactive' } },
+        { _id: '4', name: 'D', role: undefined, subscription: null },
+      ],
+      total: 4,
+    });
+    getTrials.mockResolvedValue([]);
+    getSubscribers.mockResolvedValue([]);
+    getAdminReviews.mockResolvedValue({ reviews: [], total: 0 });
+    getAdminPosts.mockResolvedValue({ posts: [], total: 0 });
+    getAdminComments.mockResolvedValue({ comments: [], total: 0 });
+    renderDashboard();
+
+    await waitFor(() => expect(screen.getByText('Active Subscribers')).toBeInTheDocument());
+    // 2 of the 4 users have subscription.status === 'active' - independent
+    // of the fact that one is 'teacher' and one is 'student'.
+    const kpiValues = screen.getAllByText('2');
+    expect(kpiValues.length).toBeGreaterThan(0);
+  });
+
+  it('never renders the old "Active Students"/"Teachers" labels or a "Teachers list" card', async () => {
     mockAllSucceed();
-    listTeachers.mockRejectedValue(new Error('Network Error'));
     renderDashboard();
 
     await waitFor(() => expect(screen.getByRole('tablist')).toBeInTheDocument());
-    expect(screen.queryByText(/Failed to load/)).not.toBeInTheDocument();
+    expect(screen.queryByText('Active Students')).not.toBeInTheDocument();
+    expect(screen.queryByText(/^Teachers/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/teachers yet/)).not.toBeInTheDocument();
   });
 });

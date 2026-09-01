@@ -16,6 +16,11 @@ import ProtectedRoute from '../components/ui/ProtectedRoute';
 //     `role: 'admin'` does not grant admin).
 //   - otherwise: gated by the regular user session, with the
 //     still-confirming / confirmed-absent distinction preserved.
+//
+// Stage 2C Final Corrective: the adminOnly block is rewritten - a cached
+// AdminUser session alone used to render the protected content
+// immediately (fail-open). It now renders nothing while verification
+// (mocked adminRefresh) is in flight, and only renders once verified.
 
 vi.mock('../api/authApi.js', () => ({
   loginUser:  vi.fn(),
@@ -30,9 +35,11 @@ vi.mock('../api/adminAuthApi.js', () => ({
   adminMfaConfirm: vi.fn(),
   adminMfaVerify:  vi.fn(),
   adminLogout:     vi.fn(),
+  adminRefresh:    vi.fn(),
 }));
 
 import * as authApi from '../api/authApi.js';
+import * as adminAuthApi from '../api/adminAuthApi.js';
 
 function renderProtected({ adminOnly = false } = {}) {
   return render(
@@ -70,12 +77,30 @@ describe('ProtectedRoute', () => {
     expect(screen.queryByText('Protected Content')).not.toBeInTheDocument();
   });
 
-  it('adminOnly: a cached AdminUser session -> renders the protected content, with no regular-login step needed', () => {
+  it('adminOnly: a cached AdminUser session alone renders NOTHING yet - neither the protected content nor a redirect - while verification is in flight', () => {
     localStorage.setItem('adminUser', JSON.stringify({ email: 'admin@example.com' }));
+    adminAuthApi.adminRefresh.mockImplementation(() => new Promise(() => {}));
     renderProtected({ adminOnly: true });
-    expect(screen.getByText('Protected Content')).toBeInTheDocument();
+    expect(screen.queryByText('Protected Content')).not.toBeInTheDocument();
+    expect(screen.queryByText('Admin Login Page')).not.toBeInTheDocument();
     // Never touched the regular-session API at all for an adminOnly route.
     expect(authApi.getMe).not.toHaveBeenCalled();
+  });
+
+  it('adminOnly: a cached AdminUser session that IS server-verified -> renders the protected content, with no regular-login step needed', async () => {
+    localStorage.setItem('adminUser', JSON.stringify({ email: 'admin@example.com' }));
+    adminAuthApi.adminRefresh.mockResolvedValue({});
+    renderProtected({ adminOnly: true });
+    await waitFor(() => expect(screen.getByText('Protected Content')).toBeInTheDocument());
+    expect(authApi.getMe).not.toHaveBeenCalled();
+  });
+
+  it('adminOnly: a cached AdminUser session that FAILS verification (401) -> redirected to /admin/login, never rendering protected content', async () => {
+    localStorage.setItem('adminUser', JSON.stringify({ email: 'attacker@example.com' }));
+    adminAuthApi.adminRefresh.mockRejectedValue({ response: { status: 401 } });
+    renderProtected({ adminOnly: true });
+    await waitFor(() => expect(screen.getByText('Admin Login Page')).toBeInTheDocument());
+    expect(screen.queryByText('Protected Content')).not.toBeInTheDocument();
   });
 
   it('adminOnly: a regular user logged in but with NO AdminUser session -> still denied, redirected to /admin/login', async () => {

@@ -8,16 +8,27 @@ import { QueryProvider } from '../context/QueryProvider';
 import Profile from '../pages/Profile';
 
 // Stage 2C (see docs/legacy-role-orphan-cleanup.md): Profile.jsx had ZERO
-// dedicated test coverage before this stage. This file proves the parent-
+// dedicated test coverage before that stage. This file proves the parent-
 // child link-code removal behaviorally, not just by source-grep:
 //   - Profile still renders and still exposes its generic account features
 //     (personal info, password change, subscription) with no link-code
 //     section left in the DOM;
 //   - getMyLinkCode is not merely unused - it no longer exists as an
 //     authApi export at all, so a real (not mocked-away) import of it would
-//     have failed at module-collection time, which it did not;
-//   - the account-type label reads a generic, translated "User"/"Admin"
-//     value, never a legacy teacher/parent/student string.
+//     have failed at module-collection time, which it did not.
+//
+// Stage 2C Final Corrective (see docs/user-admin-auth-contract.md) fixes a
+// real bug the Stage 2C version of THIS FILE itself documented as correct
+// behavior: this page used to read `user?.role === 'admin' ? roleAdmin :
+// roleUser` directly off the regular AuthContext profile - since that
+// `role` field was never normalized at the data boundary, an account whose
+// raw legacy field still said "admin" would see "Administrator" on its own
+// Profile page, even though this page has nothing to do with real admin
+// identity (a separate system entirely - AdminAuthContext). AuthContext now
+// normalizes `role` to 'user' unconditionally at every data boundary, and
+// this page always shows the generic account-type label, full stop - the
+// test below that used to assert "Administrator" appears is corrected to
+// assert the opposite.
 
 vi.mock('../api/authApi', () => ({
   getMe: vi.fn().mockResolvedValue({ id: 'u1', name: 'Amina Test', email: 'amina@example.com', role: 'user' }),
@@ -77,15 +88,32 @@ describe('Profile (Stage 2C: parent-child link code removed)', () => {
     expect(screen.queryByDisplayValue('Student')).not.toBeInTheDocument();
   });
 
-  it('shows "Administrator" for an account whose raw legacy role field still says admin (cosmetic label only, not a security grant)', async () => {
-    const adminProfile = { id: 'a1', name: 'Root Admin', email: 'admin@example.com', role: 'admin' };
-    // AuthContext's mount-time ensureSession() re-fetches getMe() and would
-    // otherwise overwrite this test's seeded admin role with whatever the
-    // shared beforeEach mock returns - match it here so the async refresh
-    // doesn't race the assertion below.
-    authApi.getMe.mockResolvedValue(adminProfile);
-    renderProfile(adminProfile);
+  it('NEVER shows "Administrator", even for a cached/server profile whose raw legacy role field says admin - real admin identity is a separate system this page has nothing to do with', async () => {
+    const spoofedProfile = { id: 'a1', name: 'Root Admin', email: 'admin@example.com', role: 'admin' };
+    authApi.getMe.mockResolvedValue(spoofedProfile);
+    renderProfile(spoofedProfile);
     await screen.findByText('My Account');
-    expect(await screen.findByDisplayValue('Administrator')).toBeInTheDocument();
+    expect(await screen.findByDisplayValue('User')).toBeInTheDocument();
+    expect(screen.queryByDisplayValue('Administrator')).not.toBeInTheDocument();
+  });
+
+  it('a spoofed role in localStorage before mount is normalized to User by AuthContext itself, not just hidden by this page', async () => {
+    localStorage.setItem('user', JSON.stringify({ id: 'x1', name: 'Spoofer', email: 'spoof@example.com', role: 'admin' }));
+    authApi.getMe.mockResolvedValue({ id: 'x1', name: 'Spoofer', email: 'spoof@example.com', role: 'admin' });
+    render(
+      <LangProvider>
+        <QueryProvider>
+          <AuthProvider>
+            <AdminAuthProvider>
+              <MemoryRouter initialEntries={['/profile']}>
+                <Profile />
+              </MemoryRouter>
+            </AdminAuthProvider>
+          </AuthProvider>
+        </QueryProvider>
+      </LangProvider>,
+    );
+    await screen.findByText('My Account');
+    expect(JSON.parse(localStorage.getItem('user')).role).toBe('user');
   });
 });

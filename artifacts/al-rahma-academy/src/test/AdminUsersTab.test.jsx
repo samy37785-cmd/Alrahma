@@ -3,29 +3,21 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import AdminUsersTab from '../components/features/admin/AdminUsersTab';
 
-// Stage 2B Part A, Section 3 (see docs/user-admin-auth-contract.md): closes
-// a real Stage 2A evidence gap - AdminUsersTab's Stage 2A read-only-role
-// change had ZERO dedicated test coverage (AdminDashboard.test.jsx mocks
-// this component out entirely). This file proves, against the real
-// component (mocked only at the api/adminApi.js network boundary):
-//   - no role <select> (or any other role-mutating control) exists at all;
-//   - the role column renders the user's role as plain, non-interactive text;
-//   - updateUserRole is never imported/called from anywhere reachable here;
-//   - the disabled-role-changes message is visible in the rendered output,
-//     not hidden behind a hover-only tooltip;
-//   - the still-live per-student actions (family name, subscription
-//     actions) keep working - Stage 2A only disabled the role mutation,
-//     nothing else.
+// Stage 2B Part A, Section 3 (see docs/user-admin-auth-contract.md): closed
+// a Stage 2A evidence gap - AdminUsersTab had zero dedicated test coverage.
 //
-// Stage 2C (see docs/legacy-role-orphan-cleanup.md): the teacher-assignment
-// <select> and its `teachers` prop were removed from AdminUsersTab entirely
-// - it attached a student to a legacy teacher *account*, a relationship the
-// product no longer has. That coverage is gone with it; a static guard in
-// legacyRoleOrphanCleanup.test.js instead locks in that it can't come back.
+// Stage 2C Final Corrective (see docs/user-admin-auth-contract.md) removed
+// the Role column and the Family column entirely (see AdminUsersTab.jsx's
+// own header comment): the Role column showed the raw, untrusted backend
+// `role` field as if it were product truth, and the Family column was an
+// undocumented orphan of the deleted parent/student account model gated on
+// `u.role === 'student'`. This file is rewritten to prove both are
+// actually gone from the rendered output - not just that their old
+// controls are non-interactive - and that the still-live subscription
+// actions are unaffected.
 
 vi.mock('../api/adminApi', () => ({
   updateUserSubscription: vi.fn(),
-  setFamilyName: vi.fn(),
 }));
 
 import * as adminApi from '../api/adminApi';
@@ -45,42 +37,45 @@ function renderTab(users = [STUDENT, ADMIN_ROW], overrides = {}) {
   return { ...render(<AdminUsersTab {...props} />), props };
 }
 
-describe('AdminUsersTab (Stage 2A read-only role column)', () => {
+describe('AdminUsersTab (Stage 2C Final Corrective: no Role or Family columns)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('renders the role as plain read-only text, not an interactive control', () => {
+  it('renders no Role column at all - no raw role text, no role-change control, no role header cell', () => {
     renderTab();
-    // No <select> anywhere in this component maps to a role-change control
-    // (the former teacher-assignment <select> was removed in Stage 2C).
     expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
-    expect(screen.getByText('student')).toBeInTheDocument();
-    expect(screen.getByText('admin')).toBeInTheDocument();
+    expect(screen.queryByText('student')).not.toBeInTheDocument();
+    expect(screen.queryByText('admin')).not.toBeInTheDocument();
+    expect(screen.queryByText('Role')).not.toBeInTheDocument();
+    expect(screen.queryByText(/Role changes are disabled/i)).not.toBeInTheDocument();
   });
 
-  it('shows an always-visible message that role changes are disabled (not hover-only)', () => {
+  it('renders no Family column at all - the field was an undocumented orphan of the deleted account-role model', () => {
     renderTab();
-    expect(screen.getByText(/Role changes are disabled/i)).toBeVisible();
+    expect(screen.queryByText('Family')).not.toBeInTheDocument();
+    expect(screen.queryByPlaceholderText('—')).not.toBeInTheDocument();
   });
 
-  it('updateUserRole is never called - there is no control left that could call it', async () => {
-    const user = userEvent.setup();
+  it('every row still shows name, email, plan, status, and valid-until - the deleted columns did not take other data down with them', () => {
     renderTab();
-    // Clicking directly on the role badge text does nothing mutating.
-    await user.click(screen.getByText('student'));
-    expect(adminApi.updateUserSubscription).not.toHaveBeenCalled();
-    // updateUserRole is not even imported by this component any more -
-    // asserted at the module level via the mock factory above having no
-    // updateUserRole export at all (a real import would throw at
-    // collection time if the component still referenced it).
+    expect(screen.getByText('Amina')).toBeInTheDocument();
+    expect(screen.getByText('amina@example.com')).toBeInTheDocument();
+    expect(screen.getByText('Noorani')).toBeInTheDocument();
+    expect(screen.getByText('Root Admin')).toBeInTheDocument();
   });
 
-  it('subscription renew/deactivate actions still work, unaffected by the role-mutation disable', async () => {
+  it('subscription renew/deactivate actions still work, unaffected by the removed columns', async () => {
     const user = userEvent.setup();
     adminApi.updateUserSubscription.mockResolvedValue({ subscription: { status: 'active', plan: 'Noorani', validUntil: '2027-01-01' } });
     renderTab([STUDENT]);
     await user.click(screen.getByTitle('Renew 30 days'));
     expect(adminApi.updateUserSubscription).toHaveBeenCalledWith('s1', { action: 'renew', plan: 'Noorani' });
+  });
+
+  it('the empty-state row spans exactly 7 columns (# Name Email Plan Status Valid-Until Action), matching the 2 columns removed', () => {
+    renderTab([]);
+    const emptyCell = screen.getByText('No users yet.');
+    expect(emptyCell).toHaveAttribute('colSpan', '7');
   });
 });

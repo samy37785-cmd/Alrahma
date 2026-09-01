@@ -20,6 +20,7 @@ vi.mock('../api/adminAuthApi.js', () => ({
   adminMfaConfirm: vi.fn(),
   adminMfaVerify:  vi.fn(),
   adminLogout:     vi.fn(),
+  adminRefresh:    vi.fn(),
 }));
 
 import * as adminAuthApi from '../api/adminAuthApi.js';
@@ -54,6 +55,32 @@ describe('AdminLogin', () => {
     expect(screen.getByLabelText('Password')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Continue' })).toBeInTheDocument();
     expect(screen.getByText('Admin Sign In')).toBeInTheDocument();
+  });
+
+  // -------------------------------------------------------------------
+  // Fail-closed: a cached-but-unverified session must not redirect early
+  // -------------------------------------------------------------------
+  it('a cached AdminUser session that is not yet verified does not redirect to /admin - renders nothing while checking, matching AdminSessionGate', () => {
+    localStorage.setItem('adminUser', JSON.stringify({ email: 'jane@example.com' }));
+    adminAuthApi.adminRefresh.mockImplementation(() => new Promise(() => {}));
+    renderAdminLogin();
+    expect(screen.queryByText('Admin Sign In')).not.toBeInTheDocument();
+    expect(screen.queryByText('Admin Dashboard Placeholder')).not.toBeInTheDocument();
+  });
+
+  it('a cached AdminUser session that IS verified redirects straight to /admin without showing the form', async () => {
+    localStorage.setItem('adminUser', JSON.stringify({ email: 'jane@example.com' }));
+    adminAuthApi.adminRefresh.mockResolvedValue({});
+    renderAdminLogin();
+    await waitFor(() => expect(screen.getByText('Admin Dashboard Placeholder')).toBeInTheDocument());
+  });
+
+  it('a cached AdminUser session that FAILS verification (401) shows the sign-in form, not a redirect loop back to /admin', async () => {
+    localStorage.setItem('adminUser', JSON.stringify({ email: 'attacker@example.com' }));
+    adminAuthApi.adminRefresh.mockRejectedValue({ response: { status: 401 } });
+    renderAdminLogin();
+    await waitFor(() => expect(screen.getByText('Admin Sign In')).toBeInTheDocument());
+    expect(screen.queryByText('Admin Dashboard Placeholder')).not.toBeInTheDocument();
   });
 
   // -------------------------------------------------------------------

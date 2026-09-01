@@ -56,8 +56,17 @@ export default function RoutePrefetcher() {
   useEffect(() => {
     let observer;
     let cancelled = false;
-    const idleId = ('requestIdleCallback' in window ? requestIdleCallback : (cb) => setTimeout(cb, 1500))(() => {
+    // The scheduler and its canceller must be the same API pair — mixing a
+    // requestIdleCallback id with clearTimeout (or vice versa) cancels the
+    // wrong thing and leaks a timer that fires after unmount/route change.
+    const usesIdleCallback = 'requestIdleCallback' in window;
+
+    const runScan = () => {
       if (cancelled) return;
+      // jsdom (and some older browsers) has no IntersectionObserver at all —
+      // skip visibility-based prefetch rather than throwing. Pointer/touch
+      // intent prefetch above is unaffected either way.
+      if (typeof IntersectionObserver === 'undefined') return;
       observer = new IntersectionObserver((entries) => {
         for (const entry of entries) {
           if (!entry.isIntersecting) continue;
@@ -68,12 +77,17 @@ export default function RoutePrefetcher() {
       }, { rootMargin: '200px' });
 
       document.querySelectorAll('a[href^="/"]').forEach((a) => observer.observe(a));
-    }, { timeout: 3000 });
+    };
+
+    const schedulerId = usesIdleCallback
+      ? requestIdleCallback(runScan, { timeout: 3000 })
+      : setTimeout(runScan, 1500);
 
     return () => {
       cancelled = true;
       observer?.disconnect();
-      if ('cancelIdleCallback' in window) cancelIdleCallback(idleId);
+      if (usesIdleCallback) cancelIdleCallback(schedulerId);
+      else clearTimeout(schedulerId);
     };
   }, [pathname]);
 

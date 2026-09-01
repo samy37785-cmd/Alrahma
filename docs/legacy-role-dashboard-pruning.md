@@ -126,3 +126,7 @@ No `.env` file was read. No file under `backend/` (the old untracked directory) 
 ## Full verification
 
 See the final report for exact before/after test counts, typecheck/build/lint results, and the `published-migrations`/orchestrator-self-test guard results (both unaffected, re-run against the unmodified `lib/db`).
+
+## Status note (Stage 2C Final Corrective, 2026-09-01)
+
+This stage's `AdminUsersTab.jsx` Role column (Part A above: "read-only pending a proven backend role-management RPC") is now **deleted entirely**, not merely read-only — a follow-up task ("Stage 2C Final Corrective") determined that every row `AdminUsersTab.jsx` displays is, by construction, a regular `User` (never an `AdminUser`, a separate system), so a "Role" column had nothing truthful left to show once `updateUserRole` was confirmed permanently orphaned. That task also closed a fail-open gap in the Admin-session design this document's Part A appendix (`docs/user-admin-auth-contract.md`) had only documented as a limitation: a cached `localStorage.adminUser` object could, by itself, render the Admin shell. See `docs/user-admin-auth-contract.md`, Appendix B, for full detail. This document's own findings are unchanged and not rewritten.

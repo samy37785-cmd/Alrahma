@@ -148,3 +148,52 @@ describe('AdminDashboard KPIs no longer depend on account roles', () => {
     expect(screen.queryByText(/teachers yet/)).not.toBeInTheDocument();
   });
 });
+
+// Stage 2C Final Corrective Round 2 (see docs/user-admin-auth-contract.md):
+// the "Conversion Rate" KPI computed `activeSubscribers.length /
+// trials.length` - two unrelated groups from unrelated time periods, with
+// no cohort/linkage proving a given subscriber actually came from a given
+// trial. The ratio could exceed 100% and was materially misleading. It is
+// deleted outright (no invented linkage) and replaced with a direct,
+// unambiguous single-group count already proven honest elsewhere on this
+// page: pending manual payments awaiting admin review.
+describe('AdminDashboard: the unproven conversion-rate metric is gone', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('never renders a "Conversion Rate" KPI or a Trials→Active ratio', async () => {
+    mockAllSucceed();
+    renderDashboard();
+
+    await waitFor(() => expect(screen.getByRole('tablist')).toBeInTheDocument());
+    expect(screen.queryByText('Conversion Rate')).not.toBeInTheDocument();
+    expect(screen.queryByText(/Trials\s*→\s*Active/)).not.toBeInTheDocument();
+  });
+
+  it('renders "Pending Payments" as a direct count of payments with status "pending", not a derived percentage', async () => {
+    getCourses.mockResolvedValue([]);
+    getManualPayments.mockResolvedValue({
+      data: [
+        { _id: 'p1', status: 'pending' },
+        { _id: 'p2', status: 'pending' },
+        { _id: 'p3', status: 'approved' },
+      ],
+      total: 3,
+    });
+    getUsers.mockResolvedValue({ data: [], total: 0 });
+    getTrials.mockResolvedValue([{ _id: 't1' }, { _id: 't2' }, { _id: 't3' }, { _id: 't4' }]);
+    getSubscribers.mockResolvedValue([]);
+    getAdminReviews.mockResolvedValue({ reviews: [], total: 0 });
+    getAdminPosts.mockResolvedValue({ posts: [], total: 0 });
+    getAdminComments.mockResolvedValue({ comments: [], total: 0 });
+    renderDashboard();
+
+    await waitFor(() => expect(screen.getByText('Pending Payments')).toBeInTheDocument());
+    // 2 pending payments - a plain count, unrelated to the 4 trials mocked
+    // above (which, under the old formula, would have produced a 50% ratio
+    // that no longer exists anywhere on the page).
+    expect(screen.getByText('Awaiting admin review')).toBeInTheDocument();
+    const label = screen.getByText('Pending Payments');
+    const card = label.closest('.ds-stat');
+    expect(card.querySelector('.ds-stat__value').textContent).toBe('2');
+  });
+});

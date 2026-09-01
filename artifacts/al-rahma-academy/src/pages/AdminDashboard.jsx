@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import {
   LayoutDashboard, Users, BookOpen, CreditCard, Target,
   Mail, Settings, TrendingUp, BarChart3, Activity, CheckCircle,
-  RefreshCw, Download, CalendarDays, Star, Users2,
+  RefreshCw, Download, CalendarDays, Star, Users2, AlertCircle,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getCourses } from '../api/courseApi';
@@ -245,9 +245,6 @@ export default function AdminDashboard() {
      status), not from a legacy `role` field that could say anything. */
   const activeSubscribers = users.filter((u) => u.subscription?.status === 'active');
   const pendingPayments   = manualPays.filter((p) => p.status === 'pending');
-  const conversionRate    = trials.length
-    ? Math.round((activeSubscribers.length / Math.max(trials.length, 1)) * 100)
-    : 0;
 
   /* Tab badge counts */
   const tabBadge = (key) => {
@@ -424,13 +421,13 @@ export default function AdminDashboard() {
 
             <div className="ds-stat">
               <div className="ds-stat__top">
-                <div className="ds-stat__icon ds-stat__icon--teal">
-                  <TrendingUp size={18} aria-hidden="true" />
+                <div className="ds-stat__icon ds-stat__icon--red">
+                  <AlertCircle size={18} aria-hidden="true" />
                 </div>
               </div>
-              <div className="ds-stat__value">{conversionRate}<span style={{ fontSize: '1rem' }}>%</span></div>
-              <div className="ds-stat__label">Conversion Rate</div>
-              <div className="ds-stat__sub">Trials → Active</div>
+              <div className="ds-stat__value">{pendingPayments.length}</div>
+              <div className="ds-stat__label">Pending Payments</div>
+              <div className="ds-stat__sub">Awaiting admin review</div>
             </div>
 
             <div className="ds-stat">

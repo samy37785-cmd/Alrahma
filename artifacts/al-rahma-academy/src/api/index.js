@@ -12,8 +12,9 @@ export * from './classApi';
 export * from './messageApi';
 export * from './notificationApi';
 export * from './wishlistApi';
-export * from './teacherApi';
-export * from './parentApi';
+// teacherApi.js and parentApi.js were removed in Stage 2C (see
+// docs/legacy-role-orphan-cleanup.md) - the legacy teacher/parent account
+// APIs they backed have no product concept left to serve.
 export * from './blogApi';
 export * from './searchApi';
 export * from './contentApi';

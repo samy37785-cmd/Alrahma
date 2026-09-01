@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { updateUserSubscription, assignTeacher, setFamilyName } from '../../../api/adminApi';
+import { updateUserSubscription, setFamilyName } from '../../../api/adminApi';
 
 // Stage 2A (see docs/user-admin-auth-contract.md, Section 9): the role
 // column used to be an interactive <select> that called updateUserRole()
@@ -11,17 +11,15 @@ import { updateUserSubscription, assignTeacher, setFamilyName } from '../../../a
 // mutation is disabled rather than left pointed at an unverified backend.
 // Full read/write role management against a proven Supabase-backed RPC is
 // deferred to Batch 2E.
-export default function AdminUsersTab({ users, usersTotal, teachers, onOpenReport, onUsersChange, onError }) {
+//
+// Stage 2C (see docs/legacy-role-orphan-cleanup.md): the "assign a
+// teacher" control that used to sit in the Teacher column was removed -
+// it attached a student to a legacy teacher *account*, a relationship the
+// product no longer has (there is no teacher account type any more, only
+// user/admin). The `teachers` prop this component used to take is gone
+// with it.
+export default function AdminUsersTab({ users, usersTotal, onOpenReport, onUsersChange, onError }) {
   const [userSearch, setUserSearch] = useState('');
-
-  const handleAssignTeacher = async (studentId, teacherId) => {
-    try {
-      const res = await assignTeacher(studentId, teacherId);
-      onUsersChange((prev) => prev.map((u) => (u._id === studentId ? { ...u, teacher: res.teacher } : u)));
-    } catch (err) {
-      onError(err.response?.data?.message || 'Could not assign teacher');
-    }
-  };
 
   const handleFamilyInput = (studentId, value) =>
     onUsersChange((prev) => prev.map((u) => (u._id === studentId ? { ...u, familyName: value } : u)));
@@ -67,7 +65,7 @@ export default function AdminUsersTab({ users, usersTotal, teachers, onOpenRepor
       <div className="admin__table-wrap">
         <table className="admin__table">
           <thead>
-            <tr><th>#</th><th>Name</th><th>Email</th><th>Role</th><th>Teacher</th><th>Family</th><th>Plan</th><th>Status</th><th>Valid Until</th><th>Action</th></tr>
+            <tr><th>#</th><th>Name</th><th>Email</th><th>Role</th><th>Family</th><th>Plan</th><th>Status</th><th>Valid Until</th><th>Action</th></tr>
           </thead>
           <tbody>
             {filtered.map((u, i) => (
@@ -82,14 +80,6 @@ export default function AdminUsersTab({ users, usersTotal, teachers, onOpenRepor
                   <span className="admin__badge" title="Role changes are disabled pending a proven backend RPC (deferred to Batch 2E)">
                     {u.role}
                   </span>
-                </td>
-                <td>
-                  {u.role === 'student' ? (
-                    <select className="admin__inline-select" value={u.teacher?._id || ''} onChange={(e) => handleAssignTeacher(u._id, e.target.value)}>
-                      <option value="">— none —</option>
-                      {teachers.map((te) => <option key={te._id} value={te._id}>{te.name}</option>)}
-                    </select>
-                  ) : '—'}
                 </td>
                 <td>
                   {u.role === 'student' ? (
@@ -123,7 +113,7 @@ export default function AdminUsersTab({ users, usersTotal, teachers, onOpenRepor
               </tr>
             ))}
             {users.length === 0 && (
-              <tr><td colSpan="10" className="admin__empty">No users yet.</td></tr>
+              <tr><td colSpan="9" className="admin__empty">No users yet.</td></tr>
             )}
           </tbody>
         </table>

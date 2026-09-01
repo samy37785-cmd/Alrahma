@@ -602,7 +602,6 @@ export default function AdminDashboard() {
           <AdminUsersTab
             users={users}
             usersTotal={usersTotal}
-            teachers={teachers}
             onOpenReport={setReportUser}
             onUsersChange={setUsers}
             onError={setError}

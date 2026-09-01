@@ -8,6 +8,8 @@ Date: 2026-08-31
 
 Part A's full findings (registration payload re-verification, Admin session behavior, AdminUsersTab, the CalendarPage/DashboardLayout/TeacherDashboard/ParentDashboard diff re-examination, test classification, worktree cleanup) live in `docs/user-admin-auth-contract.md`'s new appendix, not duplicated here — this document covers Part B (the deletions) plus a summary pointer to Part A.
 
+> **Status note (Stage 2C, 2026-09-01):** `ParentDashboard.jsx` and `ChildModal.jsx` — left **BLOCKED** below (Part B, "Files in the manifest NOT deleted") pending an explicit product decision on parent-child linking — were deleted in Stage 2C once that decision was made: the product has no teacher/parent/student account types, only `user`/`admin`, and parent-child linking is out of scope. This document's own historical findings and evidence below are **not rewritten** — they accurately describe why deletion was correctly withheld *at the time this document was written*. See `docs/legacy-role-orphan-cleanup.md` for Stage 2C's full dependency map, the `Profile.jsx`/`getMyLinkCode()` resolution, and everything else Stage 2C deleted/edited on top of this stage's work.
+
 ---
 
 ## Part A summary (full detail: `docs/user-admin-auth-contract.md` appendix)

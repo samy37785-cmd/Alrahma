@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { stripLangPrefix } from '../utils/localePath';
+import { stripLangPrefix, langFromPath, pathFor } from '../utils/localePath';
 
 /**
  * Central SEO engine. Every public page calls this hook to drive its
@@ -52,22 +52,30 @@ function setJsonLd(id, obj) {
   document.head.appendChild(s);
 }
 
-// Build a BreadcrumbList from the URL path. /course/ijazah →
-// Home › Course › Ijazah. Returns null on the home page (no breadcrumb).
-// Strips a leading language segment first (e.g. "/fr/course/ijazah") — the
-// hardcoded "Home" item above already stands in for the language root, so
-// the raw prefix must not surface as its own spurious breadcrumb entry.
+// Build a BreadcrumbList from the URL path. /courses/ijazah →
+// Home › Courses › Ijazah. Returns null on the home page (no breadcrumb).
+// Strips a leading language segment first (e.g. "/fr/courses/ijazah") so
+// it never surfaces as its own spurious "Fr" breadcrumb NAME - the
+// hardcoded "Home" item already stands in for the language root. The
+// stripped language must still come back in every breadcrumb's URL,
+// though (a French page's "Courses" crumb must link to
+// "https://…/fr/courses", not the English "/courses") - built via the same
+// pathFor() used everywhere else in the app as the single source of truth
+// for what a canonical locale-prefixed path looks like, so this can never
+// drift from the redirect/canonical policy in utils/urlCanonicalize.js.
 function buildBreadcrumb(pathname) {
+  const { lang } = langFromPath(pathname);
+  const effectiveLang = lang || 'en';
   const parts = stripLangPrefix(pathname).split('/').filter(Boolean);
   if (parts.length === 0) return null;
-  const items = [{ name: 'Home', url: `${ORIGIN}/` }];
+  const items = [{ name: 'Home', url: ORIGIN + pathFor('/', effectiveLang) }];
   let acc = '';
   for (const p of parts) {
     acc += `/${p}`;
     const name = decodeURIComponent(p)
       .replace(/[-_]/g, ' ')
       .replace(/\b\w/g, (c) => c.toUpperCase());
-    items.push({ name, url: ORIGIN + acc });
+    items.push({ name, url: ORIGIN + pathFor(acc, effectiveLang) });
   }
   return {
     '@context': 'https://schema.org',

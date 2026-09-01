@@ -111,3 +111,68 @@ describe('useSEO — structured data is scoped per route, not left over from a p
     expect(blocks).toHaveLength(1);
   });
 });
+
+// Stage 1 URL Closure (see docs/localization-audit.md): buildBreadcrumb()
+// correctly stripped the locale prefix from each crumb's NAME (so a French
+// page never showed a spurious "Fr" breadcrumb) but then built every
+// crumb's URL from that same locale-stripped path — silently dropping the
+// prefix from the URL too, so a French page's BreadcrumbList pointed
+// entirely at the English URLs. Fixed by rebuilding each URL via
+// pathFor(), the same canonical-path builder used everywhere else in the
+// app, so this can never drift from the redirect policy again.
+describe('useSEO — BreadcrumbList URLs keep the locale prefix; names never show it', () => {
+  afterEach(() => {
+    document.head.querySelectorAll('script[data-seo]').forEach((el) => el.remove());
+    document.title = '';
+    window.history.pushState({}, '', '/');
+  });
+
+  function CoursePageLike() {
+    useSEO({ title: 'Ijazah', description: 'Course page' });
+    return null;
+  }
+
+  function breadcrumbItems() {
+    const block = jsonLdBlocks().find((b) => b.json['@type'] === 'BreadcrumbList');
+    return block.json.itemListElement;
+  }
+
+  it('English: /courses/ijazah -> /, /courses, /courses/ijazah', () => {
+    window.history.pushState({}, '', '/courses/ijazah');
+    render(<CoursePageLike />);
+    const items = breadcrumbItems();
+    expect(items.map((i) => i.item)).toEqual([
+      'https://al-rahmaacademy.com/',
+      'https://al-rahmaacademy.com/courses',
+      'https://al-rahmaacademy.com/courses/ijazah',
+    ]);
+    expect(items.map((i) => i.name)).toEqual(['Home', 'Courses', 'Ijazah']);
+  });
+
+  it('French: /fr/courses/ijazah -> /fr/, /fr/courses, /fr/courses/ijazah - prefix kept in every URL', () => {
+    window.history.pushState({}, '', '/fr/courses/ijazah');
+    render(<CoursePageLike />);
+    const items = breadcrumbItems();
+    expect(items.map((i) => i.item)).toEqual([
+      'https://al-rahmaacademy.com/fr/',
+      'https://al-rahmaacademy.com/fr/courses',
+      'https://al-rahmaacademy.com/fr/courses/ijazah',
+    ]);
+    // Names never show the locale segment as its own crumb.
+    expect(items.map((i) => i.name)).toEqual(['Home', 'Courses', 'Ijazah']);
+    expect(items.map((i) => i.name)).not.toContain('Fr');
+  });
+
+  it('Arabic: /ar/courses/ijazah -> /ar/, /ar/courses, /ar/courses/ijazah - prefix kept in every URL', () => {
+    window.history.pushState({}, '', '/ar/courses/ijazah');
+    render(<CoursePageLike />);
+    const items = breadcrumbItems();
+    expect(items.map((i) => i.item)).toEqual([
+      'https://al-rahmaacademy.com/ar/',
+      'https://al-rahmaacademy.com/ar/courses',
+      'https://al-rahmaacademy.com/ar/courses/ijazah',
+    ]);
+    expect(items.map((i) => i.name)).toEqual(['Home', 'Courses', 'Ijazah']);
+    expect(items.map((i) => i.name)).not.toContain('Ar');
+  });
+});

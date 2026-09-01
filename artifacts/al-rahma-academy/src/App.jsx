@@ -50,10 +50,11 @@ const HadithLibrary      = lazy(() => import('./pages/HadithLibrary'));
 // TeacherDashboard/ParentDashboard are intentionally NOT imported here.
 // Stage 2A (see docs/user-admin-auth-contract.md): no route selects them
 // any more - /teacher and /parent redirect to the generic Dashboard. Stage
-// 2B (see docs/legacy-role-dashboard-pruning.md) deleted TeacherDashboard.jsx
-// entirely; ParentDashboard.jsx still exists on disk (BLOCKED, not deleted -
-// its parent-child link-code feature is a still-undecided product question,
-// see that doc's Part B §9) but remains unreachable via routing either way.
+// 2B (see docs/legacy-role-dashboard-pruning.md) deleted TeacherDashboard.jsx.
+// Stage 2C (see docs/legacy-role-orphan-cleanup.md) deleted ParentDashboard.jsx
+// and its parent-child link-code feature too, once the product decision
+// resolved that undecided question: there are no teacher/parent/student
+// account types, only user/admin, and parent-child linking is out of scope.
 const Messages           = lazy(() => import('./pages/Messages'));
 const CalendarPage       = lazy(() => import('./pages/CalendarPage'));
 const NotFound           = lazy(() => import('./pages/NotFound'));
@@ -185,16 +186,23 @@ export default function App({ basename = '' }) {
               AdminUser + MFA session already exists. */}
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin" element={<ProtectedRoute adminOnly><AdminSessionGate><AdminDashboard /></AdminSessionGate></ProtectedRoute>} />
-          {/* Every public account is a plain 'user' now - a legacy teacher/
-              parent role value no longer selects a dedicated dashboard; both
-              old paths simply land on the generic Dashboard as legacy
-              compatibility redirects. TeacherDashboard.jsx was deleted in
-              Stage 2B (proven unreachable, no companion feature depended on
-              it). ParentDashboard.jsx still exists on disk but is BLOCKED
-              from deletion - its parent-child link-code feature overlaps
-              with Profile.jsx's still-live getMyLinkCode() UI, an
-              undecided product question per the Stage 2 Batch 2 audit §12.
-              See docs/legacy-role-dashboard-pruning.md. */}
+          {/* Every public account is a plain 'user' now - there is no
+              teacher/parent/student account type left to select a
+              dedicated dashboard, so both old paths are permanent-feeling
+              but explicitly temporary compatibility redirects to the
+              generic Dashboard, not role dashboards. TeacherDashboard.jsx
+              was deleted in Stage 2B. ParentDashboard.jsx (and its
+              parent-child link-code feature, including Profile.jsx's
+              former getMyLinkCode() UI) was deleted in Stage 2C once the
+              product decision resolved that question: parent-child
+              linking is out of scope, every account is 'user'. These two
+              routes themselves are unconditional Navigate elements (no
+              auth check of their own) - an unauthenticated visitor still
+              ends up at /login because /dashboard, their target, is
+              wrapped in ProtectedRoute and enforces that itself; there is
+              no redirect loop. They can be removed entirely in a future
+              release cleanup once nothing external still links to them.
+              See docs/legacy-role-orphan-cleanup.md. */}
           <Route path="/teacher" element={<Navigate to="/dashboard" replace />} />
           <Route path="/parent" element={<Navigate to="/dashboard" replace />} />
           <Route path="/calendar" element={<ProtectedRoute><CalendarPage /></ProtectedRoute>} />

@@ -75,19 +75,12 @@ img, video, svg, canvas { max-width: 100%; }
   .mcar__arrow--next { right: -2px; }
 }
 
-/* ── 3) Stats banner — make it fit instead of overflowing ─────── */
-@media (max-width: 600px) {
-  .stats-banner__grid { grid-template-columns: repeat(2, 1fr); gap: 18px 10px; }
-  .stats-item__num { font-size: clamp(1.7rem, 8vw, 2.3rem); }
-  .stats-item__label { font-size: 0.82rem; }
-}
-
 /* ── 4) Less endless scrolling on phones ──────────────────────
    Tighter section padding + a compact 2-up grid for the feature
    ("why families…") and value cards so they aren't a tall column. */
 @media (max-width: 760px) {
   .features, .courses, .pricing, .tutors2, .steps,
-  .about, .testimonials, .join-cta { padding-top: 58px; padding-bottom: 58px; }
+  .about, .join-cta { padding-top: 58px; padding-bottom: 58px; }
   .section-head { margin-bottom: 28px; }
 }
 
@@ -127,18 +120,6 @@ img, video, svg, canvas { max-width: 100%; }
    across 320–768px on every public route. Each rule below targets a
    specific element that pushed the document wider than the viewport.
    ══════════════════════════════════════════════════════════════════ */
-
-/* ── 6a) Grid tracks that refuse to shrink ────────────────────────
-   A grid item defaults to `min-width: auto`, so a `1fr` track grows to
-   the item's min-content and overflows narrow phones. `minmax(0, 1fr)`
-   + `min-width: 0` lets the track shrink to the container instead. */
-@media (max-width: 760px) {
-  .tst__layout { grid-template-columns: minmax(0, 1fr); }
-  .tst__featured { min-width: 0; padding: 26px 22px 22px; }
-  .tst__quote-mark { left: 18px; font-size: 5rem; }
-  .tst__meta { flex-wrap: wrap; }
-  .tst__stars { flex-wrap: wrap; }
-}
 
 /* ── 6b) About hero/page — force the two-column layout to stack.
    A later non-media base rule re-asserted `1fr 1fr`, defeating the
@@ -479,9 +460,6 @@ img, video, svg, canvas { max-width: 100%; }
 
   /* Pricing plan price number is very large; scale down slightly */
   .plan__price-amount { font-size: 2rem; }
-
-  /* Stat numbers in the banner would overflow at 2.8rem on 320px */
-  .stats-item__num { font-size: clamp(1.5rem, 7vw, 2rem); }
 
   /* Dashboard stat value */
   .dash__stat-value { font-size: 1.1rem; }

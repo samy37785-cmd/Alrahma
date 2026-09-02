@@ -85,11 +85,6 @@
   .timeline-step__line { display: none; }
   .footer__grid { grid-template-columns: 1fr 1fr; }
   .plan--featured { transform: none; }
-  .stats-banner__grid { grid-template-columns: repeat(2, 1fr); gap: 24px; }
-  .stats-item { border-right: 0; border-bottom: 1px solid rgba(255,255,255,.12); padding-bottom: 24px; }
-  .stats-item:nth-child(2n) { border-bottom: 0; }
-  .tcar__track { grid-template-columns: 1fr; }
-  .tcar__track .quote:not(.quote--center) { display: none; }
   .values__grid { grid-template-columns: repeat(2, 1fr); }
   .join-cta__stats { gap: 20px; }
 }
@@ -110,6 +105,5 @@
   .features__grid, .pricing__grid, .footer__grid, .about__stats, .values__grid { grid-template-columns: 1fr; }
   .features { margin-top: -30px; }
   .topbar__inner { justify-content: center; text-align: center; }
-  .stats-banner__grid { grid-template-columns: repeat(2, 1fr); }
   .join-cta__stats { flex-direction: column; align-items: center; gap: 14px; }
 }

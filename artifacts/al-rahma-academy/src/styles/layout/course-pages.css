@@ -140,8 +140,6 @@
 
 /* ── Responsive ─── */
 @media (max-width: 900px) {
-  .tst__layout { grid-template-columns: 1fr; }
-  .tst__side { display: none; }
   .tp__hero-inner { grid-template-columns: 1fr; text-align: center; }
   .tp__hero-avatar { margin: 0 auto; }
   .tp__hero-actions { justify-content: center; }

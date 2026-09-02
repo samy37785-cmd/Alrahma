@@ -16,7 +16,9 @@ const stripLeadingCheck = (str) => (str || '').replace(/^✓\s*/, '');
 //   1. A hardcoded stats bar (['9,000+ lessons', '4.9★ rating',
 //      '40+ countries', '32 tutors']) with no real source in this repo,
 //      the exact same unsupported figures already removed from
-//      StatsBanner.jsx/socialProof.js.
+//      socialProof.js (StatsBanner.jsx itself was later deleted too - an
+//      integration review found it had been left as a dormant
+//      null-returning placeholder).
 //   2. A "live activity ticker" (LIVE_ACTIVITY) that cycled through eight
 //      fabricated named people ("Ahmad from Frankfurt just booked a free
 //      trial") on a 3.8s setInterval — a fake real-time social-proof

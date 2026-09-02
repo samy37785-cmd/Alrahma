@@ -9,7 +9,6 @@ import Header from '../components/layout/Header';
 import Hero from '../components/features/marketing/Hero';
 import TrustBar from '../components/features/marketing/TrustBar';
 import LevelQuiz from '../components/features/marketing/LevelQuiz';
-import StatsBanner from '../components/features/marketing/StatsBanner';
 import Features from '../components/features/marketing/Features';
 import Steps from '../components/features/marketing/Steps';
 import Tutors from '../components/features/marketing/Tutors';
@@ -50,7 +49,6 @@ export default function Home() {
         <Hero onTrialClick={() => setTrialOpen(true)} />
         <TrustBar />
         <LevelQuiz />
-        <StatsBanner />
         {/* Below-the-fold: deferred until they're about to scroll into view
             (see DeferredSection) so first render doesn't pay to mount all
             ~16 sections of the landing page at once. */}

@@ -95,8 +95,6 @@ html.dark .steps__card,
 html.dark .timeline-step__card,
 html.dark .tc3__card,
 html.dark .tc3__spotlight,
-html.dark .tst__featured,
-html.dark .tst__mini,
 html.dark .plan,
 html.dark .blog-card,
 html.dark .faq__item,
@@ -353,15 +351,6 @@ html.dark .about__stat-num { color: var(--color-accent); }
 html.dark .value-card__title { color: var(--text-primary); }
 html.dark .value-card__desc { color: var(--text-secondary); }
 
-/* ── Testimonials ───────────────────────────────────────────────────── */
-html.dark .tst__name,
-html.dark .tst__mini-top strong { color: var(--text-primary); }
-html.dark .tst__text,
-html.dark .tst__mini-text,
-html.dark .tst__loc,
-html.dark .tst__mini-top span { color: var(--text-secondary); }
-html.dark .tst__quote-mark { color: var(--border-strong); }
-
 /* ── Teachers (home) ────────────────────────────────────────────────── */
 html.dark .tc3__name-ar { color: var(--text-primary); }
 html.dark .tc3__name-en,
@@ -502,13 +491,6 @@ html.dark ::selection {
 
 /* Section heading underline (gold accent) — no change needed, var(--gold) adapts */
 
-/* Testimonials verified badge */
-html.dark .tst__verified {
-  color: var(--text-brand);
-  background: rgba(11,110,79,.25);
-  border-color: rgba(11,110,79,.35);
-}
-
 /* Pricing trust row */
 html.dark .pricing__trust { border-top-color: var(--border-default); }
 html.dark .pricing__trust-item { color: var(--text-secondary); }
@@ -521,9 +503,6 @@ html.dark .pricing__trust-svg {
   border-color: rgba(11,110,79,.25);
   color: var(--color-primary);
 }
-
-/* Stats banner numbers — gradient text still works in dark; label color fix */
-html.dark .stats-item__label { color: rgba(207,224,216,.75); }
 
 /* Feature top-accent line — colors don't need dark override (uses opaque gradients) */
 

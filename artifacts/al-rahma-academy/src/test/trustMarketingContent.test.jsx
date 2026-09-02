@@ -6,8 +6,6 @@ import { BrowserRouter } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
 import { LangProvider } from '../context/LangContext';
 import { langFromPath } from '../utils/localePath';
-import Testimonials from '../components/features/marketing/Testimonials';
-import StatsBanner from '../components/features/marketing/StatsBanner';
 import TrustBar from '../components/features/marketing/TrustBar';
 import * as socialProof from '../data/marketing/socialProof';
 import * as content from '../i18n/content';
@@ -45,21 +43,27 @@ const KNOWN_PLACEHOLDER_STRINGS = [
 ];
 
 describe('fabricated testimonials no longer render (spec §2)', () => {
-  it('Testimonials renders nothing in the default source snapshot', () => {
-    const { container } = renderWithLang(<Testimonials />);
-    expect(container).toBeEmptyDOMElement();
+  it('Testimonials.jsx has been deleted, not left as a dormant null-returning placeholder', () => {
+    const p = path.resolve(
+      __dirname,
+      '../components/features/marketing/Testimonials.jsx',
+    );
+    expect(fs.existsSync(p)).toBe(false);
   });
 
-  it('none of the known placeholder names/labels appear anywhere in a full Home-adjacent render', () => {
-    const { container } = renderWithLang(
-      <div>
-        <Testimonials />
-        <StatsBanner />
-      </div>,
-    );
-    const text = container.textContent;
-    for (const needle of KNOWN_PLACEHOLDER_STRINGS) {
-      expect(text).not.toContain(needle);
+  it('none of the known placeholder names/labels appear anywhere in tracked marketing source', () => {
+    const dirs = [
+      path.resolve(__dirname, '../components/features/marketing'),
+      path.resolve(__dirname, '../i18n'),
+    ];
+    for (const dir of dirs) {
+      for (const file of fs.readdirSync(dir)) {
+        if (!/\.(jsx?|css)$/.test(file)) continue;
+        const text = fs.readFileSync(path.join(dir, file), 'utf8');
+        for (const needle of KNOWN_PLACEHOLDER_STRINGS) {
+          expect(text, `${file} should not contain "${needle}"`).not.toContain(needle);
+        }
+      }
     }
   });
 
@@ -81,9 +85,12 @@ describe('fabricated testimonials no longer render (spec §2)', () => {
 });
 
 describe('unsupported statistics no longer render (spec §3)', () => {
-  it('StatsBanner renders nothing (32 tutors / 4.9★ / 9,000+ / 40+ countries had no real source)', () => {
-    const { container } = renderWithLang(<StatsBanner />);
-    expect(container).toBeEmptyDOMElement();
+  it('StatsBanner.jsx has been deleted (32 tutors / 4.9★ / 9,000+ / 40+ countries had no real source, and it must not remain as a dormant place to re-add them)', () => {
+    const p = path.resolve(
+      __dirname,
+      '../components/features/marketing/StatsBanner.jsx',
+    );
+    expect(fs.existsSync(p)).toBe(false);
   });
 
   it('TrustBar no longer shows the unsupported "40+ countries" / "1,200+ active students" figures', () => {
@@ -124,12 +131,7 @@ describe('synthetic live counter no longer renders (spec §4)', () => {
   });
 
   it('nothing in the rendered trust surface claims students are "learning right now" or reports synthetic "lessons this month"', () => {
-    const { container } = renderWithLang(
-      <div>
-        <TrustBar />
-        <StatsBanner />
-      </div>,
-    );
+    const { container } = renderWithLang(<TrustBar />);
     const text = container.textContent;
     expect(text).not.toContain('learning right now');
     expect(text).not.toContain('lessons this month');
@@ -148,12 +150,14 @@ describe('Home metadata no longer repeats removed unsupported numbers (spec §3)
     expect(descMatch[1]).not.toContain('1200+');
   });
 
-  it('Home.jsx no longer imports or renders the disabled Testimonials component', () => {
+  it('Home.jsx no longer imports or renders the deleted Testimonials/StatsBanner components', () => {
     const homeSrc = fs.readFileSync(
       path.resolve(__dirname, '../pages/Home.jsx'),
       'utf8',
     );
     expect(homeSrc).not.toMatch(/import Testimonials/);
     expect(homeSrc).not.toMatch(/<Testimonials\s*\/>/);
+    expect(homeSrc).not.toMatch(/import StatsBanner/);
+    expect(homeSrc).not.toMatch(/<StatsBanner\s*\/>/);
   });
 });

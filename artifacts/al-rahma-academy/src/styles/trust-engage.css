@@ -1,9 +1,12 @@
 /* ════════════════════════════════════════════════════════════════════
    TRUST & ENGAGEMENT STYLES
    Covers: QuranAudioPlayer, TrustBar's GDPR tag, pricing refund banner,
-   video testimonials, ShareAchievement, ReferralCard
+   ShareAchievement, ReferralCard
    (TrustBadges' own .trust__* rules live in layout/home.css — this file
    used to duplicate them with slightly different values; consolidated.)
+   The video-testimonials block that used to live here was removed along
+   with Testimonials.jsx (integration review: dormant null-returning
+   component with no real consumer - see socialProof.js's header comment).
    ════════════════════════════════════════════════════════════════════ */
 
 /* ── Quran Audio Player (Hero floating widget) ─────────────────────── */
@@ -123,85 +126,6 @@
 }
 
 .pricing__trust-item--gdpr { display: flex; align-items: center; gap: 8px; }
-
-/* ── Video testimonials ────────────────────────────────────────────── */
-.tst__video-row {
-  margin-top: 40px; margin-bottom: 32px;
-}
-
-.tst__video-title {
-  font-size: 1rem; font-weight: 700; color: var(--text-primary);
-  margin-bottom: 18px;
-  display: flex; align-items: center;
-}
-.tst__video-title svg { color: var(--color-primary, #0b6e4f); }
-
-.tst__video-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-  margin-bottom: 14px;
-}
-
-.tst__video-card {
-  background: var(--bg-surface);
-  border: 1px solid var(--border-default);
-  border-radius: 14px;
-  overflow: hidden;
-  cursor: pointer;
-  transition: box-shadow 0.2s, transform 0.15s;
-}
-.tst__video-card:hover { box-shadow: 0 8px 24px rgba(11,110,79,.12); transform: translateY(-2px); }
-.tst__video-card:focus-visible { outline: 3px solid var(--color-primary, #0b6e4f); outline-offset: 2px; }
-
-.tst__video-thumb {
-  position: relative;
-  height: 130px;
-  display: flex; align-items: center; justify-content: center;
-}
-
-.tst__video-initials {
-  font-family: var(--serif);
-  font-size: 3rem;
-  font-weight: 700;
-  color: rgba(255,255,255,.9);
-  text-shadow: 0 2px 8px rgba(0,0,0,.15);
-}
-
-.tst__video-play {
-  position: absolute;
-  top: 50%; left: 50%;
-  transform: translate(-50%, -50%);
-  width: 44px; height: 44px; border-radius: 50%;
-  background: rgba(255,255,255,.85);
-  display: flex; align-items: center; justify-content: center;
-  transition: background 0.2s, transform 0.15s;
-}
-.tst__video-card:hover .tst__video-play { background: #fff; transform: translate(-50%, -50%) scale(1.1); }
-.tst__video-play svg { margin-left: 3px; color: #0b6e4f; }
-
-.tst__video-dur {
-  position: absolute; bottom: 8px; right: 8px;
-  background: rgba(0,0,0,.65); color: #fff;
-  font-size: 0.7rem; padding: 2px 6px; border-radius: 4px;
-}
-
-.tst__video-label {
-  padding: 10px 12px 4px;
-  font-size: 0.82rem; font-weight: 600;
-  color: var(--text-primary); line-height: 1.4;
-  margin: 0;
-}
-.tst__video-cta {
-  display: block; padding: 2px 12px 12px;
-  font-size: 0.75rem; color: var(--color-primary, #0b6e4f);
-  font-weight: 600;
-}
-
-.tst__video-note {
-  font-size: 0.78rem; color: var(--text-secondary);
-  font-style: italic; margin: 0; text-align: center;
-}
 
 /* ── ShareAchievement modal ────────────────────────────────────────── */
 .share-achievement {
@@ -605,8 +529,6 @@ html.dark .trust { background: var(--bg-page); }
 html.dark .trust__card,
 html.dark .trust__badge { background: var(--bg-surface-raised); border-color: var(--border-default); }
 
-html.dark .tst__video-card { background: var(--bg-surface-raised); border-color: var(--border-default); }
-
 html.dark .referral-card {
   background: rgba(21,128,61,.1);
   border-color: rgba(134,239,172,.2);
@@ -653,7 +575,6 @@ html.dark .cancel-survey__danger:hover { background: rgba(239,68,68,.1); }
 /* ── Responsive ────────────────────────────────────────────────────── */
 @media (max-width: 900px) {
   .trust__grid { grid-template-columns: repeat(2, 1fr); }
-  .tst__video-grid { grid-template-columns: repeat(2, 1fr); }
   .founder { flex-direction: column; gap: 24px; padding: 32px 24px; }
   .refund-contacts { flex-direction: column; }
 }
@@ -661,7 +582,6 @@ html.dark .cancel-survey__danger:hover { background: rgba(239,68,68,.1); }
 @media (max-width: 600px) {
   .trust__grid { grid-template-columns: 1fr 1fr; gap: 12px; }
   .trust__badges-row { flex-direction: column; }
-  .tst__video-grid { grid-template-columns: 1fr; }
   .qap { bottom: 90px; right: 12px; }
   .qap__label { display: none; }
   .referral-card { flex-direction: column; }

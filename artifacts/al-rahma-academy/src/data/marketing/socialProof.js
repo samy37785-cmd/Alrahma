@@ -28,9 +28,11 @@
  * would need to exist (a real reviews pipeline, a real analytics/roster
  * source) before this file gets real exports again.
  *
- * StatsBanner.jsx and Testimonials.jsx now render `null` unconditionally —
- * see the comments in those files. src/test/trustMarketingContent.test.jsx
- * guards against this file (or those components) growing new hardcoded
- * numbers/testimonials without evidence.
+ * StatsBanner.jsx and Testimonials.jsx have been deleted outright (an
+ * integration review found they'd been left as dormant null-returning
+ * components - dead code is not a safe feature-flag system). Rebuilding
+ * either one means starting fresh from a real data source, not restoring
+ * these files. src/test/trustMarketingContent.test.jsx guards against this
+ * file growing new hardcoded numbers/testimonials without evidence.
  */
 export {};

@@ -53,10 +53,10 @@ describe('Trial no longer shows artificial scarcity (spec §6)', () => {
     expect(src).not.toMatch(/function\s+spotsToday/);
   });
 
-  it('keeps the 2-hour response commitment and 30-minute session, both documented in TermsOfService.jsx', () => {
+  it('keeps the owner-confirmed 24-hour response commitment and 60-minute session, both documented in TermsOfService.jsx', () => {
     renderWithLang(<Trial />);
-    expect(screen.getByText(/within 2 hours/i)).toBeInTheDocument();
-    expect(screen.getByText(/30-minute session/i)).toBeInTheDocument();
+    expect(screen.getByText(/within 24 hours/i)).toBeInTheDocument();
+    expect(screen.getByText(/60-minute session/i)).toBeInTheDocument();
   });
 
   it('does not make a bare, unqualified "Secure" claim', () => {
@@ -130,8 +130,8 @@ describe('Trial renders correctly in all six languages (spec §8)', () => {
     (locale) => {
       const { container } = renderWithLang(<Trial />, LOCALE_PATH[locale]);
       const text = container.querySelector('.trial__trust-row').textContent;
-      expect(text).not.toContain('Private & GDPR-compliant');
-      expect(text).not.toContain('30-minute session');
+      expect(text).not.toContain('See our Privacy Policy');
+      expect(text).not.toContain('60-minute session');
       expect(text).not.toContain('No commitment');
     },
   );

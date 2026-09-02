@@ -88,19 +88,18 @@ describe('Footer.jsx trust badges no longer show unsupported numbers', () => {
     expect(badgeText).not.toMatch(/4[.,]9★/);
   });
 
-  it('keeps the evidenced 14-day guarantee and 2-hour reply badges', () => {
+  it('keeps the owner-confirmed 24-day refund window and 24-hour reply badges', () => {
     const { container } = renderWithLang(<Footer />);
     const badgeText = container.querySelector('.footer__trust')?.textContent || '';
-    expect(badgeText).toContain('14-Day Money-Back Guarantee');
-    expect(badgeText).toContain('Reply within 2 hours');
+    expect(badgeText).toContain('24-Day Refund Window');
+    expect(badgeText).toContain('Reply within 24 hours');
   });
 });
 
-describe('About.jsx no longer shows unsupported stats or an inflated founder-story figure', () => {
-  it('the about-page stats data no longer contains unsupported figures', () => {
-    for (const s of aboutStats) {
-      expect(s.value).not.toMatch(/\d/);
-    }
+describe('About.jsx shows the owner-confirmed academy figures, not the old unsupported ones', () => {
+  it('the about-page stats now carry the owner-confirmed figures from siteFacts.js, not the old unsupported ones', () => {
+    const values = aboutStats.map((s) => s.value);
+    expect(values).toEqual(['15,000+', '30', '1,500+', '4.9/5']);
   });
 
   it('renders the de-numbered stats block without leaving a visual gap (still 4 cards)', () => {

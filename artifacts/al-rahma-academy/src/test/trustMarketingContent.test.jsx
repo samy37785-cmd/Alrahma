@@ -102,10 +102,11 @@ describe('unsupported statistics no longer render (spec §3)', () => {
     expect(text).not.toContain('1200+');
   });
 
-  it('TrustBar keeps the evidenced 14-day guarantee and de-numbers the Al-Azhar tutor count', () => {
+  it('TrustBar shows the owner-confirmed 24-day refund guarantee and de-numbers the Al-Azhar tutor count', () => {
     const { container } = renderWithLang(<TrustBar />);
     const text = container.textContent;
-    expect(text).toContain('14-day');
+    expect(text).toContain('24-day');
+    expect(text).not.toContain('14-day');
     // "32" must not appear as a standalone tutor-count figure anymore.
     expect(container.querySelector('.trust-bar__stat-num')?.textContent).not.toBe('32');
   });
@@ -195,7 +196,7 @@ describe('Home metadata no longer repeats removed unsupported numbers (spec §3)
       path.resolve(__dirname, '../pages/Home.jsx'),
       'utf8',
     );
-    const descMatch = homeSrc.match(/description:\s*'([^']*)'/);
+    const descMatch = homeSrc.match(/description:\s*[`']([^`']*)[`']/);
     expect(descMatch).not.toBeNull();
     expect(descMatch[1]).not.toContain('1,200+');
     expect(descMatch[1]).not.toContain('1200+');

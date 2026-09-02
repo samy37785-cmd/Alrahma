@@ -90,9 +90,9 @@ describe('Pricing plans/prices/CTA still work (spec §5 regression guard)', () =
     expect(ctaButtons.length).toBeGreaterThanOrEqual(plans.length);
   });
 
-  it('keeps the evidenced 14-day money-back guarantee copy', () => {
+  it('keeps the owner-confirmed 24-day refund window copy', () => {
     renderWithLang(<Pricing />);
-    expect(screen.getAllByText(/14-Day Money-Back Guarantee/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/24-Day Refund Window/i).length).toBeGreaterThan(0);
   });
 
   it('keeps the currency selector functional', () => {

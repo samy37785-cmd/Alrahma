@@ -48,7 +48,7 @@
     "cta1": "Kostenlose Probestunde buchen",
     "cta2": "📚 Kurse entdecken",
     "cta3": "Kurse entdecken",
-    "badge1": "✓ 2 kostenlose Probestunden — keine Karte erforderlich",
+    "badge1": "✓ Eine kostenlose Probestunde — keine Karte erforderlich",
     "badge2": "✓ Ijazah-zertifizierte Lehrkräfte mit geprüfter Überlieferungskette",
     "badge3": "✓ Lehrerinnen verfügbar · Terminplanung rund um die Uhr",
     "verseQuote": "\"Lies im Namen deines Herrn, der erschaffen hat.\"",
@@ -58,7 +58,7 @@
     "watchDemo": "Live-Stunde ansehen",
     "liveSessions": "Live-Einzelunterricht",
     "scroll": "Scrollen",
-    "microcopy": ["Keine Kreditkarte", "30-Min. Gratisstunde", "Jederzeit kündbar"]
+    "microcopy": ["Keine Kreditkarte", "60-Min. Gratisstunde", "Jederzeit kündbar"]
   },
   "features": {
     "eyebrow": "Darum wir",
@@ -66,7 +66,7 @@
     "items": [
       {
         "title": "Kostenlose Probestunden",
-        "text": "Beginne mit zwei kostenlosen Probestunden — unverbindlich und ohne Zahlung."
+        "text": "Beginne mit einer kostenlosen Probestunde — unverbindlich und ohne Zahlung."
       },
       {
         "title": "Al-Azhar-zertifizierte Lehrkräfte",
@@ -100,7 +100,7 @@
       },
       {
         "title": "Lerne deine Lehrkraft kennen",
-        "text": "Wir wählen sorgfältig eine zertifizierte Lehrkraft passend zum Alter und den Zielen deines Kindes aus. Eine kostenlose 30-Minuten-Stunde — ohne Karte und unverbindlich."
+        "text": "Wir wählen sorgfältig eine zertifizierte Lehrkraft passend zum Alter und den Zielen deines Kindes aus. Eine kostenlose 60-Minuten-Stunde — ohne Karte und unverbindlich."
       },
       {
         "title": "Beginne eine lebenslange Reise",
@@ -203,10 +203,10 @@
     "vision": "Eine anerkannte Führungsrolle in der Online-Koran- und Islamausbildung auf europäischer Ebene zu erreichen und die vertrauenswürdige erste Wahl für muslimische Familien zu werden.",
     "description": "Al-Rahma Academy ist eine engagierte Online-Plattform, die Lernende weltweit mit dem Heiligen Koran und der arabischen Sprache verbindet. Unsere qualifizierten, ägyptischen Muttersprachlerinnen und Muttersprachler bieten persönliche Live-Einzelstunden an — für Kinder und Erwachsene, überall auf der Welt.",
     "statsLabel": [
-      "Jahre Erfahrung",
-      "Qualifizierte Lehrer",
-      "Zufriedene Schüler",
-      "Unterrichtsstunden"
+      "Erteilte Unterrichtsstunden",
+      "Lehrkräfte",
+      "Schüler",
+      "Akademie-Bewertung"
     ],
     "objectivesHeading": "Unsere Ziele",
     "valuesHeading": "Unsere Werte",
@@ -224,20 +224,20 @@
     "youSave": "Du sparst",
     "perHour": "/ Stunde (entspricht)",
     "cancelNote": "Jederzeit kündbar — keine Verträge",
-    "refundInline": "14 Tage volle Geld-zurück-Garantie bei Unzufriedenheit",
-    "refundTitle": "14-Tage-Geld-zurück-Garantie",
-    "refundSub": "Nicht zufrieden? Wir erstatten jeden Cent innerhalb von 14 Tagen — ohne Fragen.",
-    "securePayment": "Sichere Zahlung",
+    "refundInline": "Erstattung auf Anfrage innerhalb von 24 Tagen möglich",
+    "refundTitle": "24-Tage-Erstattungsfenster",
+    "refundSub": "Nicht vollständig zufrieden? Du kannst innerhalb von 24 Tagen nach der Zahlung eine Erstattung beantragen.",
+    "securePayment": "Zahlungsmethoden werden beim Checkout angezeigt",
     "cancelAnytime": "Jederzeit kündbar",
     "azharCertified": "Al-Azhar-zertifizierte Lehrer",
     "familiesServed": "Stunden weltweit gegeben",
     "countries": "Schüler aus aller Welt",
-    "gdprNote": "DSGVO-konform — deine Daten sind sicher",
+    "gdprNote": "Siehe unsere Datenschutzerklärung für den Umgang mit deinen Daten",
     "showPricesIn": "Preise anzeigen in:"
   },
   "trial": {
     "eyebrow": "Kostenlose Probestunde",
-    "heading": "Buche 2 kostenlose Probestunden",
+    "heading": "Buche deine kostenlose Probestunde",
     "sub": "Fülle das Formular aus; unser Team kontaktiert dich, um deine erste Stunde zu vereinbaren. Keine Zahlung erforderlich.",
     "bullets": [
       "Keine Verpflichtung",
@@ -245,13 +245,13 @@
       "Unterricht über Zoom oder Skype"
     ],
     "trustRow": {
-      "privacy": "Privat & DSGVO-konform",
-      "duration": "30-minütige Einheit",
+      "privacy": "Siehe unsere Datenschutzerklärung",
+      "duration": "60-minütige Einheit",
       "commitment": "Keine Verpflichtung"
     },
     "formTitle": "Buche deine kostenlose Stunde",
-    "formSub": "Wir kontaktieren dich innerhalb von 2 Stunden zur Terminvereinbarung.",
-    "privacyNote": "Wir verkaufen deine Daten niemals. Kein Spam, nie.",
+    "formSub": "Wir kontaktieren dich innerhalb von 24 Stunden zur Terminvereinbarung.",
+    "privacyNote": "Siehe unsere Datenschutzerklärung für den Umgang mit deinen Daten.",
     "waLabel": "Bevorzugst du WhatsApp?",
     "waLink": "Schreib uns",
     "fields": {
@@ -336,12 +336,12 @@
     "teachersLink": "Unsere Lehrer",
     "terms": "Nutzungsbedingungen",
     "refundPolicy": "Rückerstattungsrichtlinie",
-    "trustBadges": ["14-Tage-Geld-zurück-Garantie", "Al-Azhar-zertifizierte Lehrer", "Schüler aus aller Welt", "Engagiert für qualitativ hochwertigen Unterricht", "Antwort innerhalb von 2 Stunden"],
+    "trustBadges": ["24-Tage-Erstattungsfenster", "Al-Azhar-zertifizierte Lehrer", "Schüler aus aller Welt", "Engagiert für qualitativ hochwertigen Unterricht", "Antwort innerhalb von 24 Stunden"],
     "supportHours": "Support: Sa–Do · 08:00–23:00 (Kairo)",
     "replyBadge": "Antwort ≤ 2h"
   },
   "teachersPg": {
-    "eyebrow": "Lerne unser Team kennen",
+    "eyebrow": "Lerne einige unserer Lehrkräfte kennen",
     "title": "Unsere qualifizierten Lehrkräfte",
     "sub": "Jede Lehrkraft an der Al-Rahma Academy ist eine geprüfte Absolventin oder ein geprüfter Absolvent der Al-Azhar-Universität und besitzt eine authentische Ijazah mit lückenloser Überlieferungskette (Sanad).",
     "badges": [
@@ -416,7 +416,7 @@
     "readBio": "Bio lesen ↓",
     "enrollWith": "Anmelden bei",
     "ctaTitle": "Bereit, deine Koranreise zu beginnen?",
-    "ctaSub": "Buche zwei kostenlose Probestunden — keine Zahlung erforderlich.",
+    "ctaSub": "Buche deine kostenlose Probestunde — keine Zahlung erforderlich.",
     "ctaBtn": "Jetzt anmelden →"
   },
   "tp": {
@@ -433,10 +433,10 @@
     "specialties": "Fachgebiete",
     "about": "Über mich",
     "credentials": "Qualifikationen",
-    "studentRating": "Schülerbewertung",
+    "studentRating": "Schülerbewertungen (Anzahl)",
     "rateThis": "Lehrkraft bewerten:",
     "thanks": "✓ Danke!",
-    "trialDesc": "Beginne mit 2 kostenlosen Probestunden — keine Zahlung erforderlich.",
+    "trialDesc": "Beginne mit deiner kostenlosen Probestunde — keine Zahlung erforderlich.",
     "perks": [
       "✓ Einzelunterricht",
       "✓ Flexibler Zeitplan",
@@ -464,7 +464,7 @@
     "yourRating": "Deine Bewertung:",
     "rate": "Bewerten:",
     "introVideo": "Einführungsvideo",
-    "teachingHrs": "Unterrichtsstunden"
+    "lessonsTaught": "erteilte Unterrichtsstunden"
   },
   "faq": {
     "eyebrow": "FAQ",
@@ -477,7 +477,7 @@
       },
       {
         "q": "Wie funktioniert die kostenlose Probestunde?",
-        "a": "Du füllst das Formular für die Probestunde aus und wir vermitteln dir innerhalb von 24 Stunden eine passende Lehrkraft. Du erhältst zwei vollständige Einzelstunden kostenlos — ohne Zahlung und unverbindlich. Danach entscheidest du, ob du weitermachen möchtest."
+        "a": "Du füllst das Formular für die Probestunde aus und wir vermitteln dir innerhalb von 24 Stunden eine passende Lehrkraft. Du erhältst eine vollständige Einzelstunde kostenlos — ohne Zahlung und unverbindlich. Danach entscheidest du, ob du weitermachen möchtest."
       },
       {
         "q": "Welche Plattform nutzt ihr für den Unterricht?",
@@ -500,17 +500,17 @@
   "joinCta": {
     "eyebrow": "Schenke deinem Kind den Koran",
     "heading": "Hilf deinem Kind, Al-Fatiha mit Zuversicht zu rezitieren.",
-    "sub": "Familien in ganz Europa haben diese Wahl bereits getroffen. Zwei kostenlose Probestunden — keine Karte, keine Verpflichtung. Jederzeit kündbar.",
+    "sub": "Familien in ganz Europa haben diese Wahl bereits getroffen. Eine kostenlose Probestunde — keine Karte, keine Verpflichtung. Jederzeit kündbar.",
     "promise": "🕌 Verbunden mit einer 1.400 Jahre alten, ununterbrochenen Kette der Koran-Überlieferung",
     "stats": [
       "Schüler weltweit",
       "Vertrauen der Familien",
       "Ijazah-zertifiziert",
-      "2 Gratis-Stunden"
+      "Eine Gratis-Stunde"
     ],
     "cta": "Kostenlos starten — ohne Karte →",
     "browseCourses": "Erst Kurse ansehen →",
-    "guarantee": "14-tägige Geld-zurück-Garantie · Keine Kreditkarte erforderlich · Jederzeit kündbar"
+    "guarantee": "24-Tage-Erstattungsfenster · Keine Kreditkarte erforderlich · Jederzeit kündbar"
   },
   "trust": {
     "eyebrow": "Warum Familien uns vertrauen",
@@ -518,18 +518,18 @@
     "sub": "Wir sind überzeugt: Vertrauen wird durch Belege gewonnen, nicht durch Versprechen.",
     "items": [
       { "stat": "✓", "label": "Al-Azhar-zertifizierte Lehrer", "desc": "Jeder Lehrer besitzt ein verifiziertes Ijazah mit einer lückenlosen Wissenskette zum Propheten ﷺ." },
-      { "stat": "< 2h", "label": "Support-Reaktionszeit", "desc": "Wir sind bestrebt, an Werktagen innerhalb von 2 Stunden auf jede Nachricht zu antworten — deine Lernreise soll nicht lange warten müssen." },
+      { "stat": "< 24h", "label": "Support-Reaktionszeit", "desc": "Wir sind bestrebt, innerhalb von 24 Stunden zu antworten — deine Lernreise soll nicht lange warten müssen." },
       { "stat": "Global", "label": "Reichweite", "desc": "Familien aus aller Welt vertrauen Al-Rahma Academy für authentische Koran-Bildung." },
-      { "stat": "14", "label": "Tage Geld-zurück-Garantie", "desc": "Nicht zufrieden? Wir erstatten dir innerhalb von 14 Tagen 100 % — ohne Fragen, ohne Papierkram, ohne Risiko." }
+      { "stat": "24", "label": "Tage Erstattungsfenster", "desc": "Nicht zufrieden? Du kannst innerhalb von 24 Tagen nach der Zahlung eine Erstattung beantragen." }
     ],
-    "gdprTitle": "DSGVO-konform",
-    "gdprDesc": "Deine Daten sind nach EU-Recht geschützt. Wir verkaufen niemals Daten.",
-    "sslTitle": "SSL-verschlüsselt",
-    "sslDesc": "Alle Zahlungen und persönlichen Daten sind Ende-zu-Ende verschlüsselt.",
-    "supportTitle": "2-Stunden-Support",
-    "supportDesc": "Echte Menschen statt Bots. Wir sind bestrebt, innerhalb von zwei Stunden während der Geschäftszeiten zu antworten.",
-    "azharTitle": "Al-Azhar-verifiziert",
-    "azharDesc": "Offizielle Partnerschaft mit Lehrkräften, die von der Al-Azhar-Universität in Kairo zertifiziert sind.",
+    "gdprTitle": "Deine Privatsphäre",
+    "gdprDesc": "Siehe unsere Datenschutzerklärung für den Umgang mit deinen Daten.",
+    "sslTitle": "Sichere Verbindung",
+    "sslDesc": "Deine Verbindung zu dieser Website ist verschlüsselt.",
+    "supportTitle": "24-Stunden-Support",
+    "supportDesc": "Echte Menschen statt Bots. Wir sind bestrebt, innerhalb von 24 Stunden zu antworten.",
+    "azharTitle": "Al-Azhar-Absolventen",
+    "azharDesc": "Unsere Lehrkräfte sind Absolventen der Al-Azhar, einer der ältesten Bildungsstätten der islamischen Welt.",
     "countriesLabel": "Schüler aus aller Welt vertrauen Al-Rahma Academy"
   },
   "trustBar": {
@@ -540,7 +540,7 @@
     "repliesMinutes": "Antwortet normalerweise in Minuten",
     "repliesHours": "Wir antworten innerhalb weniger Stunden",
     "whatsappStatusAriaLabel": "WhatsApp-Support-Status",
-    "badges": ["Kein langfristiger Vertrag", "Jederzeit kündbar", "Ijazah-zertifizierte Überlieferungskette", "Lehrerinnen verfügbar", "Terminplanung rund um die Uhr", "DSGVO-konform", "Antwort innerhalb von 2 Stunden"]
+    "badges": ["Kein langfristiger Vertrag", "Jederzeit kündbar", "Ijazah-zertifizierte Überlieferungskette", "Lehrerinnen verfügbar", "Terminplanung rund um die Uhr", "Datenschutzerklärung", "Antwort innerhalb von 24 Stunden"]
   },
   "blog": {
     "eyebrow": "Unser Blog",

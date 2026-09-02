@@ -48,7 +48,7 @@
     "cta1": "Book a Free Trial",
     "cta2": "📚 Explore Courses",
     "cta3": "Browse Courses",
-    "badge1": "✓ 2 free trial lessons — no card needed",
+    "badge1": "✓ One free trial lesson — no card needed",
     "badge2": "✓ Ijazah-certified tutors with verified chain",
     "badge3": "✓ Female tutors available · 24/7 scheduling",
     "verseQuote": "\"Read in the name of your Lord who created.\"",
@@ -58,7 +58,7 @@
     "watchDemo": "Watch a live lesson",
     "liveSessions": "Live one-to-one lessons",
     "scroll": "Scroll",
-    "microcopy": ["No credit card", "30-min free session", "Cancel anytime"]
+    "microcopy": ["No credit card", "60-min free session", "Cancel anytime"]
   },
   "features": {
     "eyebrow": "Why choose us",
@@ -66,7 +66,7 @@
     "items": [
       {
         "title": "Free Trial Lessons",
-        "text": "Start with two complimentary trial lessons — no commitment, no payment required."
+        "text": "Start with one complimentary trial lesson — no commitment, no payment required."
       },
       {
         "title": "Al-Azhar Certified Tutors",
@@ -100,7 +100,7 @@
       },
       {
         "title": "Meet your tutor",
-        "text": "We handpick a certified tutor for your child's age and goals. A free 30-minute session — no card, no commitment."
+        "text": "We handpick a certified tutor for your child's age and goals. A free 60-minute session — no card, no commitment."
       },
       {
         "title": "Begin a lifelong journey",
@@ -203,10 +203,10 @@
     "vision": "To achieve recognised leadership in online Quranic and Islamic education at the European level, becoming the trusted first choice for Muslim families.",
     "description": "Al-Rahma Academy is a dedicated online platform connecting students around the world with the Holy Quran and the Arabic language. Our qualified native Egyptian tutors deliver personalised, one-to-one live lessons — for children and adults, from anywhere in the world.",
     "statsLabel": [
-      "Years of experience",
-      "Qualified tutors",
-      "Happy students",
-      "Teaching hours"
+      "Lessons taught",
+      "Teachers",
+      "Students",
+      "Academy rating"
     ],
     "objectivesHeading": "Our Objectives",
     "valuesHeading": "Our Values",
@@ -224,20 +224,20 @@
     "youSave": "You save",
     "perHour": "/ hour equivalent",
     "cancelNote": "Cancel anytime — no contracts",
-    "refundInline": "14-day full refund if unsatisfied",
-    "refundTitle": "14-Day Money-Back Guarantee",
-    "refundSub": "Not happy with your subscription? We'll refund every penny within 14 days — no questions asked.",
-    "securePayment": "Secure payment",
+    "refundInline": "Refund available within 24 days if unsatisfied",
+    "refundTitle": "24-Day Refund Window",
+    "refundSub": "Not fully satisfied? You may request a refund within 24 days of your payment.",
+    "securePayment": "Payment methods shown at checkout",
     "cancelAnytime": "Cancel anytime",
     "azharCertified": "Al-Azhar certified tutors",
     "familiesServed": "Lessons delivered worldwide",
     "countries": "Students from around the world",
-    "gdprNote": "GDPR compliant — your data is safe",
+    "gdprNote": "See our Privacy Policy for how your details are handled",
     "showPricesIn": "Show prices in:"
   },
   "trial": {
     "eyebrow": "Free trial",
-    "heading": "Book Your 2 Free Trial Lessons",
+    "heading": "Book Your Free Trial Lesson",
     "sub": "Fill in the form and our team will contact you to schedule your first lesson. No payment required.",
     "bullets": [
       "No commitment",
@@ -245,13 +245,13 @@
       "Lessons over Zoom or Skype"
     ],
     "trustRow": {
-      "privacy": "Private & GDPR-compliant",
-      "duration": "30-minute session",
+      "privacy": "See our Privacy Policy",
+      "duration": "60-minute session",
       "commitment": "No commitment"
     },
     "formTitle": "Book your free lesson",
-    "formSub": "We'll contact you within 2 hours to schedule.",
-    "privacyNote": "We never sell your data. No spam, ever.",
+    "formSub": "We'll contact you within 24 hours to schedule.",
+    "privacyNote": "See our Privacy Policy for how your details are handled.",
     "waLabel": "Prefer WhatsApp?",
     "waLink": "Message us",
     "fields": {
@@ -336,12 +336,12 @@
     "teachersLink": "Our Teachers",
     "terms": "Terms of Service",
     "refundPolicy": "Refund Policy",
-    "trustBadges": ["14-Day Money-Back Guarantee", "Al-Azhar Certified Tutors", "Students From Around the World", "Committed to Quality Teaching", "Reply within 2 hours"],
+    "trustBadges": ["24-Day Refund Window", "Al-Azhar Certified Tutors", "Students From Around the World", "Committed to Quality Teaching", "Reply within 24 hours"],
     "supportHours": "Support: Sat–Thu · 08:00–23:00 (Cairo)",
     "replyBadge": "Reply ≤ 2h"
   },
   "teachersPg": {
-    "eyebrow": "Meet the team",
+    "eyebrow": "Meet some of our instructors",
     "title": "Our Qualified Tutors",
     "sub": "Every tutor at Al-Rahma Academy is a verified graduate of Al-Azhar University, holding an authentic Ijazah with an unbroken chain of narration (Sanad).",
     "badges": [
@@ -416,7 +416,7 @@
     "readBio": "Read bio ↓",
     "enrollWith": "Enroll with",
     "ctaTitle": "Ready to start your Quran journey?",
-    "ctaSub": "Book two free trial lessons — no payment required.",
+    "ctaSub": "Book your free trial lesson — no payment required.",
     "ctaBtn": "Start Enrollment →"
   },
   "tp": {
@@ -433,10 +433,10 @@
     "specialties": "Specialties",
     "about": "About",
     "credentials": "Credentials",
-    "studentRating": "Student Rating",
+    "studentRating": "Student Reviews",
     "rateThis": "Rate this tutor:",
     "thanks": "✓ Thank you!",
-    "trialDesc": "Start with 2 free trial lessons — no payment required.",
+    "trialDesc": "Start with your free trial lesson — no payment required.",
     "perks": [
       "✓ One-to-one lesson",
       "✓ Flexible schedule",
@@ -464,7 +464,7 @@
     "yourRating": "Your rating:",
     "rate": "Rate:",
     "introVideo": "Intro video",
-    "teachingHrs": "teaching hrs"
+    "lessonsTaught": "lessons taught"
   },
   "faq": {
     "eyebrow": "FAQ",
@@ -477,7 +477,7 @@
       },
       {
         "q": "How does the free trial work?",
-        "a": "You fill in the trial form and we match you with a suitable tutor within 24 hours. You get 2 full one-to-one sessions completely free — no payment, no commitment. After the trial you decide if you want to continue."
+        "a": "You fill in the trial form and we match you with a suitable tutor within 24 hours. You get 1 full one-to-one session completely free — no payment, no commitment. After the trial you decide if you want to continue."
       },
       {
         "q": "What platform do you use for lessons?",
@@ -500,17 +500,17 @@
   "joinCta": {
     "eyebrow": "Give Your Child the Gift of the Quran",
     "heading": "Help your child learn to recite Al-Fatiha with confidence.",
-    "sub": "Families across Europe have already made this choice. Two free trial lessons — no card, no commitment. Cancel anytime.",
+    "sub": "Families across Europe have already made this choice. One free trial lesson — no card, no commitment. Cancel anytime.",
     "promise": "🕌 Connected to a 1,400-year unbroken chain of Quran transmission",
     "stats": [
       "Students Worldwide",
       "Trusted by Families",
       "Ijazah Certified",
-      "2 Free Lessons"
+      "One Free Lesson"
     ],
     "cta": "Start Free — No Card Needed →",
     "browseCourses": "Browse courses first →",
-    "guarantee": "14-day money-back guarantee · No credit card required · Cancel anytime"
+    "guarantee": "24-day refund window · No credit card required · Cancel anytime"
   },
   "trust": {
     "eyebrow": "Why families trust us",
@@ -518,18 +518,18 @@
     "sub": "We believe trust is earned through evidence, not promises.",
     "items": [
       { "stat": "✓", "label": "Al-Azhar Certified Tutors", "desc": "Every tutor holds a verified Ijazah with an unbroken chain of knowledge traced back to the Prophet ﷺ." },
-      { "stat": "< 2h", "label": "Support Response Time", "desc": "We aim to answer every message within 2 hours during business days — because your learning journey shouldn't wait long." },
+      { "stat": "< 24h", "label": "Support Response Time", "desc": "We aim to respond within 24 hours — because your learning journey shouldn't wait long." },
       { "stat": "Global", "label": "Reach", "desc": "Families from around the world trust Al-Rahma Academy for authentic Quran education." },
-      { "stat": "14", "label": "Day Refund Guarantee", "desc": "Not satisfied? We refund 100% within 14 days — no questions, no paperwork, no risk." }
+      { "stat": "24", "label": "Day Refund Window", "desc": "Not satisfied? You may request a refund within 24 days of payment." }
     ],
-    "gdprTitle": "GDPR Compliant",
-    "gdprDesc": "Your data is protected under EU regulation. No data sold. Ever.",
-    "sslTitle": "SSL Encrypted",
-    "sslDesc": "All payments and personal data are encrypted end-to-end.",
-    "supportTitle": "2-Hour Support",
-    "supportDesc": "Real humans, not bots. We aim to respond within 2 hours during business hours.",
-    "azharTitle": "Al-Azhar Verified",
-    "azharDesc": "Official partnership with tutors certified by Al-Azhar University, Cairo.",
+    "gdprTitle": "Your Privacy",
+    "gdprDesc": "See our Privacy Policy for information about how your details are handled.",
+    "sslTitle": "Secure Connection",
+    "sslDesc": "Your connection to this site is encrypted.",
+    "supportTitle": "24-Hour Support",
+    "supportDesc": "Real humans, not bots. We aim to respond within 24 hours.",
+    "azharTitle": "Al-Azhar Graduates",
+    "azharDesc": "Our instructors are graduates of Al-Azhar, one of the world's oldest centers of Islamic learning.",
     "countriesLabel": "Students from around the world trust Al-Rahma Academy"
   },
   "trustBar": {
@@ -540,7 +540,7 @@
     "repliesMinutes": "Typically replies in minutes",
     "repliesHours": "We reply within a few hours",
     "whatsappStatusAriaLabel": "WhatsApp support status",
-    "badges": ["No long-term contract", "Cancel anytime", "Ijazah-certified chain", "Female tutors available", "24 / 7 scheduling", "Compliant", "Reply within 2 hours"]
+    "badges": ["No long-term contract", "Cancel anytime", "Ijazah-certified chain", "Female tutors available", "24 / 7 scheduling", "Privacy Policy", "Reply within 24 hours"]
   },
   "blog": {
     "eyebrow": "Our Blog",

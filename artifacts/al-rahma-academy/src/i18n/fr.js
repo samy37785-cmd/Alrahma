@@ -48,7 +48,7 @@
     "cta1": "Réserver un essai gratuit",
     "cta2": "📚 Découvrir les cours",
     "cta3": "Parcourir les cours",
-    "badge1": "✓ 2 leçons d’essai gratuites — sans carte bancaire",
+    "badge1": "✓ Une leçon d’essai gratuite — sans carte bancaire",
     "badge2": "✓ Enseignants titulaires d’une ijaza avec chaîne vérifiée",
     "badge3": "✓ Enseignantes disponibles · horaires 24 h/24, 7 j/7",
     "verseQuote": "\"Lis au nom de ton Seigneur qui a créé.\"",
@@ -58,7 +58,7 @@
     "watchDemo": "Voir un cours en direct",
     "liveSessions": "Cours individuels en direct",
     "scroll": "Faire défiler",
-    "microcopy": ["Sans carte bancaire", "Séance gratuite de 30 min", "Annulez à tout moment"]
+    "microcopy": ["Sans carte bancaire", "Séance gratuite de 60 min", "Annulez à tout moment"]
   },
   "features": {
     "eyebrow": "Pourquoi nous choisir",
@@ -66,7 +66,7 @@
     "items": [
       {
         "title": "Cours d'essai gratuits",
-        "text": "Commencez avec deux cours d'essai gratuits — sans engagement, sans paiement."
+        "text": "Commencez avec un cours d'essai gratuit — sans engagement, sans paiement."
       },
       {
         "title": "Enseignants certifiés par Al-Azhar",
@@ -100,7 +100,7 @@
       },
       {
         "title": "Rencontrez votre enseignant",
-        "text": "Nous sélectionnons un enseignant certifié adapté à l’âge et aux objectifs de votre enfant. Une séance gratuite de 30 minutes — sans carte bancaire ni engagement."
+        "text": "Nous sélectionnons un enseignant certifié adapté à l’âge et aux objectifs de votre enfant. Une séance gratuite de 60 minutes — sans carte bancaire ni engagement."
       },
       {
         "title": "Entamez un parcours pour la vie",
@@ -203,10 +203,10 @@
     "vision": "Devenir une référence reconnue de l’enseignement coranique et islamique en ligne en Europe, et le choix de confiance des familles musulmanes.",
     "description": "Al-Rahma Academy est une plateforme en ligne dédiée qui relie des étudiants du monde entier au Saint Coran et à la langue arabe. Nos enseignants égyptiens, natifs et qualifiés, dispensent des cours particuliers en direct — pour les enfants comme pour les adultes, partout dans le monde.",
     "statsLabel": [
-      "Années d'expérience",
-      "Enseignants qualifiés",
-      "Étudiants satisfaits",
-      "Heures d'enseignement"
+      "Cours dispensés",
+      "Enseignants",
+      "Élèves",
+      "Note de l'Académie"
     ],
     "objectivesHeading": "Nos objectifs",
     "valuesHeading": "Nos valeurs",
@@ -224,20 +224,20 @@
     "youSave": "Vous économisez",
     "perHour": "/ heure (équivalent)",
     "cancelNote": "Annulez à tout moment — sans contrat",
-    "refundInline": "Remboursement intégral sous 14 jours en cas d’insatisfaction",
-    "refundTitle": "Garantie de remboursement de 14 jours",
-    "refundSub": "Vous n’êtes pas satisfait ? Nous vous remboursons intégralement sous 14 jours, sans aucune question.",
-    "securePayment": "Paiement sécurisé",
+    "refundInline": "Remboursement possible sur demande dans les 24 jours",
+    "refundTitle": "Fenêtre de remboursement de 24 jours",
+    "refundSub": "Pas entièrement satisfait ? Vous pouvez demander un remboursement dans les 24 jours suivant le paiement.",
+    "securePayment": "Les modes de paiement sont affichés au moment du paiement",
     "cancelAnytime": "Annulez à tout moment",
     "azharCertified": "Enseignants certifiés Al-Azhar",
     "familiesServed": "Leçons dispensées dans le monde entier",
     "countries": "Élèves du monde entier",
-    "gdprNote": "Conforme RGPD — vos données sont en sécurité",
+    "gdprNote": "Consultez notre Politique de confidentialité pour savoir comment vos données sont traitées",
     "showPricesIn": "Afficher les prix en :"
   },
   "trial": {
     "eyebrow": "Essai gratuit",
-    "heading": "Réservez vos 2 leçons d’essai gratuites",
+    "heading": "Réservez votre leçon d’essai gratuite",
     "sub": "Remplissez le formulaire et notre équipe vous contactera pour planifier votre premier cours. Aucun paiement requis.",
     "bullets": [
       "Sans engagement",
@@ -245,13 +245,13 @@
       "Cours via Zoom ou Skype"
     ],
     "trustRow": {
-      "privacy": "Privé et conforme RGPD",
-      "duration": "Séance de 30 minutes",
+      "privacy": "Consultez notre Politique de confidentialité",
+      "duration": "Séance de 60 minutes",
       "commitment": "Sans engagement"
     },
     "formTitle": "Réservez votre cours gratuit",
-    "formSub": "Nous vous contacterons sous 2 heures pour planifier.",
-    "privacyNote": "Nous ne vendons jamais vos données. Aucun spam, jamais.",
+    "formSub": "Nous vous contacterons dans les 24 heures pour planifier.",
+    "privacyNote": "Consultez notre Politique de confidentialité pour savoir comment vos données sont traitées.",
     "waLabel": "Vous préférez WhatsApp ?",
     "waLink": "Écrivez-nous",
     "fields": {
@@ -336,12 +336,12 @@
     "teachersLink": "Nos enseignants",
     "terms": "Conditions d'utilisation",
     "refundPolicy": "Politique de remboursement",
-    "trustBadges": ["Garantie de remboursement sous 14 jours", "Enseignants certifiés par Al-Azhar", "Élèves du monde entier", "Engagés pour un enseignement de qualité", "Réponse sous 2 heures"],
+    "trustBadges": ["Fenêtre de remboursement de 24 jours", "Enseignants certifiés par Al-Azhar", "Élèves du monde entier", "Engagés pour un enseignement de qualité", "Réponse sous 24 heures"],
     "supportHours": "Assistance : sam.–jeu. · 08 h 00–23 h 00 (Le Caire)",
     "replyBadge": "Réponse ≤ 2h"
   },
   "teachersPg": {
-    "eyebrow": "Rencontrez l'équipe",
+    "eyebrow": "Découvrez certains de nos enseignants",
     "title": "Nos enseignants qualifiés",
     "sub": "Chaque enseignant d'Al-Rahma Academy est un diplômé vérifié de l'Université Al-Azhar, titulaire d'un Ijazah authentique avec une chaîne de transmission ininterrompue.",
     "badges": [
@@ -416,7 +416,7 @@
     "readBio": "Lire la biographie ↓",
     "enrollWith": "S'inscrire avec",
     "ctaTitle": "Prêt à commencer votre parcours avec le Coran ?",
-    "ctaSub": "Réservez deux cours d'essai gratuits — aucun paiement requis.",
+    "ctaSub": "Réservez votre cours d'essai gratuit — aucun paiement requis.",
     "ctaBtn": "Commencer l’inscription →"
   },
   "tp": {
@@ -433,10 +433,10 @@
     "specialties": "Spécialités",
     "about": "À propos de",
     "credentials": "Qualifications",
-    "studentRating": "Note attribuée par les élèves",
+    "studentRating": "Avis des élèves",
     "rateThis": "Noter cet enseignant :",
     "thanks": "✓ Merci !",
-    "trialDesc": "Commencez avec 2 cours d'essai gratuits — aucun paiement requis.",
+    "trialDesc": "Commencez avec votre cours d'essai gratuit — aucun paiement requis.",
     "perks": [
       "✓ Cours particulier",
       "✓ Horaire flexible",
@@ -464,7 +464,7 @@
     "yourRating": "Votre note :",
     "rate": "Noter :",
     "introVideo": "Vidéo de présentation",
-    "teachingHrs": "heures d'enseignement"
+    "lessonsTaught": "cours dispensés"
   },
   "faq": {
     "eyebrow": "FAQ",
@@ -477,7 +477,7 @@
       },
       {
         "q": "Comment fonctionne l'essai gratuit ?",
-        "a": "Vous remplissez le formulaire d'essai et nous vous trouvons un enseignant adapté sous 24 heures. Vous bénéficiez de 2 cours particuliers complets, entièrement gratuits — sans paiement et sans engagement."
+        "a": "Vous remplissez le formulaire d'essai et nous vous trouvons un enseignant adapté sous 24 heures. Vous bénéficiez d'un cours particulier complet, entièrement gratuit — sans paiement et sans engagement."
       },
       {
         "q": "Quelle plateforme utilisez-vous pour les cours ?",
@@ -500,17 +500,17 @@
   "joinCta": {
     "eyebrow": "Offrez le Coran à votre enfant",
     "heading": "Aidez votre enfant à réciter Al-Fatiha avec confiance.",
-    "sub": "Des familles à travers l'Europe ont déjà fait ce choix. Deux cours d'essai gratuits — sans carte, sans engagement. Annulez à tout moment.",
+    "sub": "Des familles à travers l'Europe ont déjà fait ce choix. Un cours d'essai gratuit — sans carte, sans engagement. Annulez à tout moment.",
     "promise": "🕌 Reliés à une chaîne ininterrompue de transmission du Coran vieille de 1 400 ans",
     "stats": [
       "Élèves dans le monde entier",
       "Confiance des familles",
       "Certifiés Ijazah",
-      "2 Cours Gratuits"
+      "Un Cours Gratuit"
     ],
     "cta": "Commencez gratuitement — sans carte →",
     "browseCourses": "Parcourir les cours d'abord →",
-    "guarantee": "Garantie de remboursement de 14 jours · Aucune carte bancaire requise · Annulez à tout moment"
+    "guarantee": "Fenêtre de remboursement de 24 jours · Aucune carte bancaire requise · Annulez à tout moment"
   },
   "trust": {
     "eyebrow": "Pourquoi les familles nous font confiance",
@@ -518,18 +518,18 @@
     "sub": "La confiance se gagne par des preuves, non par des promesses.",
     "items": [
       { "stat": "✓", "label": "Enseignants certifiés par Al-Azhar", "desc": "Chaque enseignant détient une ijaza vérifiée et une chaîne de transmission ininterrompue remontant au Prophète ﷺ." },
-      { "stat": "< 2h", "label": "Délai de réponse de l’assistance", "desc": "Nous visons à répondre à chaque message sous deux heures les jours ouvrés, car votre apprentissage ne devrait pas trop attendre." },
+      { "stat": "< 24h", "label": "Délai de réponse de l’assistance", "desc": "Nous visons à répondre dans les 24 heures, car votre apprentissage ne devrait pas trop attendre." },
       { "stat": "Mondial", "label": "Portée", "desc": "Des familles du monde entier font confiance à Al-Rahma Academy pour une éducation coranique authentique." },
-      { "stat": "14", "label": "Jours de garantie de remboursement", "desc": "Pas satisfait ? Nous vous remboursons intégralement sous 14 jours, sans questions ni formalités." }
+      { "stat": "24", "label": "Jours de fenêtre de remboursement", "desc": "Pas satisfait ? Vous pouvez demander un remboursement dans les 24 jours suivant le paiement." }
     ],
-    "gdprTitle": "Conforme au RGPD",
-    "gdprDesc": "Vos données sont protégées par la réglementation européenne. Elles ne sont jamais vendues.",
-    "sslTitle": "Chiffrement SSL",
-    "sslDesc": "Tous les paiements et données personnelles sont chiffrés de bout en bout.",
-    "supportTitle": "Support en 2 heures",
-    "supportDesc": "Des personnes, pas des robots. Nous visons à répondre sous deux heures pendant les heures ouvrées.",
-    "azharTitle": "Vérifié par Al-Azhar",
-    "azharDesc": "Partenariat officiel avec des enseignants certifiés par l'Université Al-Azhar, Le Caire.",
+    "gdprTitle": "Votre confidentialité",
+    "gdprDesc": "Consultez notre Politique de confidentialité pour savoir comment vos données sont traitées.",
+    "sslTitle": "Connexion sécurisée",
+    "sslDesc": "Votre connexion à ce site est chiffrée.",
+    "supportTitle": "Support en 24 heures",
+    "supportDesc": "Des personnes, pas des robots. Nous visons à répondre dans les 24 heures.",
+    "azharTitle": "Diplômés d'Al-Azhar",
+    "azharDesc": "Nos enseignants sont diplômés d'Al-Azhar, l'un des plus anciens centres d'études islamiques au monde.",
     "countriesLabel": "Des étudiants du monde entier font confiance à Al-Rahma Academy"
   },
   "trustBar": {
@@ -540,7 +540,7 @@
     "repliesMinutes": "Répond généralement en quelques minutes",
     "repliesHours": "Nous répondons en quelques heures",
     "whatsappStatusAriaLabel": "Statut du support WhatsApp",
-    "badges": ["Sans engagement de longue durée", "Annulez à tout moment", "Chaîne de transmission certifiée", "Enseignantes disponibles", "Horaires 24 h/24, 7 j/7", "Conforme au RGPD", "Réponse sous 2 heures"]
+    "badges": ["Sans engagement de longue durée", "Annulez à tout moment", "Chaîne de transmission certifiée", "Enseignantes disponibles", "Horaires 24 h/24, 7 j/7", "Politique de confidentialité", "Réponse sous 24 heures"]
   },
   "blog": {
     "eyebrow": "Notre Blog",

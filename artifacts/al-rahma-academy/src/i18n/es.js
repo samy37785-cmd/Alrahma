@@ -48,7 +48,7 @@
     "cta1": "Reserva una prueba gratuita",
     "cta2": "📚 Explorar cursos",
     "cta3": "Explorar cursos",
-    "badge1": "✓ 2 clases de prueba gratuitas — sin tarjeta",
+    "badge1": "✓ Una clase de prueba gratuita — sin tarjeta",
     "badge2": "✓ Tutores certificados en iyaza con cadena verificada",
     "badge3": "✓ Profesoras disponibles · horarios 24/7",
     "verseQuote": "\"Lee en el nombre de tu Señor que creó.\"",
@@ -58,7 +58,7 @@
     "watchDemo": "Ver una clase en vivo",
     "liveSessions": "Clases individuales en vivo",
     "scroll": "Desplázate",
-    "microcopy": ["Sin tarjeta", "Sesión gratuita 30 min", "Cancela cuando quieras"]
+    "microcopy": ["Sin tarjeta", "Sesión gratuita 60 min", "Cancela cuando quieras"]
   },
   "features": {
     "eyebrow": "Por qué elegirnos",
@@ -66,7 +66,7 @@
     "items": [
       {
         "title": "Clases de prueba gratuitas",
-        "text": "Comienza con dos clases de prueba gratuitas — sin compromiso ni pago."
+        "text": "Comienza con una clase de prueba gratuita — sin compromiso ni pago."
       },
       {
         "title": "Tutores certificados por Al-Azhar",
@@ -100,7 +100,7 @@
       },
       {
         "title": "Conoce a tu profesor",
-        "text": "Seleccionamos cuidadosamente un tutor certificado para la edad y los objetivos de tu hijo. Una sesión gratuita de 30 minutos, sin tarjeta ni compromiso."
+        "text": "Seleccionamos cuidadosamente un tutor certificado para la edad y los objetivos de tu hijo. Una sesión gratuita de 60 minutos, sin tarjeta ni compromiso."
       },
       {
         "title": "Comienza un camino para toda la vida",
@@ -203,10 +203,10 @@
     "vision": "Lograr un liderazgo reconocido en la educación coránica e islámica en línea a nivel europeo, convirtiéndonos en la primera opción de confianza para las familias musulmanas.",
     "description": "Al-Rahma Academy es una plataforma online dedicada a conectar a estudiantes de todo el mundo con el Sagrado Corán y la lengua árabe. Nuestros profesores egipcios nativos y cualificados imparten clases individuales en directo — para niños y adultos, desde cualquier parte del mundo.",
     "statsLabel": [
-      "Años de experiencia",
-      "Profesores cualificados",
-      "Estudiantes felices",
-      "Horas de enseñanza"
+      "Clases impartidas",
+      "Profesores",
+      "Estudiantes",
+      "Valoración de la Academia"
     ],
     "objectivesHeading": "Nuestros objetivos",
     "valuesHeading": "Nuestros valores",
@@ -224,20 +224,20 @@
     "youSave": "Ahorras",
     "perHour": "/ hora equivalente",
     "cancelNote": "Cancela cuando quieras — sin contratos",
-    "refundInline": "Reembolso completo en 14 días si no estás satisfecho",
-    "refundTitle": "Garantía de devolución de 14 días",
-    "refundSub": "¿No estás satisfecho? Te devolvemos cada céntimo en 14 días — sin preguntas.",
-    "securePayment": "Pago seguro",
+    "refundInline": "Reembolso disponible si lo solicitas dentro de 24 días",
+    "refundTitle": "Ventana de reembolso de 24 días",
+    "refundSub": "¿No estás totalmente satisfecho? Puedes solicitar un reembolso dentro de los 24 días posteriores al pago.",
+    "securePayment": "Los métodos de pago se muestran al finalizar la compra",
     "cancelAnytime": "Cancela cuando quieras",
     "azharCertified": "Profesores certificados por Al-Azhar",
     "familiesServed": "Clases impartidas en todo el mundo",
     "countries": "Estudiantes de todo el mundo",
-    "gdprNote": "Cumplimiento RGPD — tus datos están seguros",
+    "gdprNote": "Consulta nuestra Política de Privacidad para saber cómo tratamos tus datos",
     "showPricesIn": "Mostrar precios en:"
   },
   "trial": {
     "eyebrow": "Prueba gratuita",
-    "heading": "Reserva tus 2 clases de prueba gratuitas",
+    "heading": "Reserva tu clase de prueba gratuita",
     "sub": "Rellena el formulario y nuestro equipo se pondrá en contacto contigo para programar tu primera clase. No se requiere pago.",
     "bullets": [
       "Sin compromiso",
@@ -245,13 +245,13 @@
       "Clases por Zoom o Skype"
     ],
     "trustRow": {
-      "privacy": "Privado y conforme al RGPD",
-      "duration": "Sesión de 30 minutos",
+      "privacy": "Consulta nuestra Política de Privacidad",
+      "duration": "Sesión de 60 minutos",
       "commitment": "Sin compromiso"
     },
     "formTitle": "Reserva tu clase gratuita",
-    "formSub": "Te contactaremos en un plazo de 2 horas para programarla.",
-    "privacyNote": "Nunca vendemos tus datos. Sin spam, nunca.",
+    "formSub": "Te contactaremos en un plazo de 24 horas para programarla.",
+    "privacyNote": "Consulta nuestra Política de Privacidad para saber cómo tratamos tus datos.",
     "waLabel": "¿Prefieres WhatsApp?",
     "waLink": "Escríbenos",
     "fields": {
@@ -336,12 +336,12 @@
     "teachersLink": "Nuestros profesores",
     "terms": "Términos de servicio",
     "refundPolicy": "Política de reembolso",
-    "trustBadges": ["Garantía de devolución de 14 días", "Tutores certificados por Al-Azhar", "Estudiantes de todo el mundo", "Comprometidos con una enseñanza de calidad", "Respuesta en menos de 2 horas"],
+    "trustBadges": ["Ventana de reembolso de 24 días", "Tutores certificados por Al-Azhar", "Estudiantes de todo el mundo", "Comprometidos con una enseñanza de calidad", "Respuesta en 24 horas"],
     "supportHours": "Soporte: Sáb–Jue · 08:00–23:00 (El Cairo)",
     "replyBadge": "Respuesta ≤ 2h"
   },
   "teachersPg": {
-    "eyebrow": "Conoce al equipo",
+    "eyebrow": "Conoce a algunos de nuestros tutores",
     "title": "Nuestros tutores cualificados",
     "sub": "Todos los tutores de Al-Rahma Academy son graduados verificados de la Universidad de Al-Azhar y poseen una iyaza auténtica con una cadena de transmisión ininterrumpida (sanad).",
     "badges": [
@@ -416,7 +416,7 @@
     "readBio": "Leer biografía ↓",
     "enrollWith": "Inscríbete con",
     "ctaTitle": "¿Listo para comenzar tu camino con el Corán?",
-    "ctaSub": "Reserva dos clases de prueba gratuitas; no se requiere pago.",
+    "ctaSub": "Reserva tu clase de prueba gratuita; no se requiere pago.",
     "ctaBtn": "Comenzar la inscripción →"
   },
   "tp": {
@@ -433,10 +433,10 @@
     "specialties": "Especialidades",
     "about": "Acerca de",
     "credentials": "Credenciales",
-    "studentRating": "Valoración de los estudiantes",
+    "studentRating": "Reseñas de estudiantes",
     "rateThis": "Valora a este profesor:",
     "thanks": "✓ ¡Gracias!",
-    "trialDesc": "Comienza con 2 clases de prueba gratuitas; no se requiere pago.",
+    "trialDesc": "Comienza con tu clase de prueba gratuita; no se requiere pago.",
     "perks": [
       "✓ Clase individual",
       "✓ Horario flexible",
@@ -464,7 +464,7 @@
     "yourRating": "Tu valoración:",
     "rate": "Valorar:",
     "introVideo": "Vídeo de presentación",
-    "teachingHrs": "horas de clase"
+    "lessonsTaught": "clases impartidas"
   },
   "faq": {
     "eyebrow": "Preguntas frecuentes",
@@ -477,7 +477,7 @@
       },
       {
         "q": "¿Cómo funciona la prueba gratuita?",
-        "a": "Rellenas el formulario de prueba y te asignamos un profesor adecuado en 24 horas. Recibes 2 sesiones individuales completas totalmente gratuitas — sin pago y sin compromiso. Tras la prueba, decides si quieres continuar."
+        "a": "Rellenas el formulario de prueba y te asignamos un profesor adecuado en 24 horas. Recibes 1 sesión individual completa totalmente gratuita — sin pago y sin compromiso. Tras la prueba, decides si quieres continuar."
       },
       {
         "q": "¿Qué plataforma usan para las clases?",
@@ -500,17 +500,17 @@
   "joinCta": {
     "eyebrow": "Regala a tu hijo el Corán",
     "heading": "Ayuda a tu hijo a recitar Al-Fátiha con confianza.",
-    "sub": "Familias en toda Europa ya han tomado esta decisión. Dos clases de prueba gratuitas — sin tarjeta, sin compromiso. Cancela cuando quieras.",
+    "sub": "Familias en toda Europa ya han tomado esta decisión. Una clase de prueba gratuita — sin tarjeta, sin compromiso. Cancela cuando quieras.",
     "promise": "🕌 Conectados a una cadena ininterrumpida de transmisión del Corán de 1.400 años",
     "stats": [
       "Estudiantes en todo el mundo",
       "Confianza de las familias",
       "Certificación Ijazah",
-      "2 Clases Gratis"
+      "Una Clase Gratis"
     ],
     "cta": "Empieza gratis — sin tarjeta →",
     "browseCourses": "Explorar cursos primero →",
-    "guarantee": "Garantía de devolución de 14 días · No se requiere tarjeta de crédito · Cancela cuando quieras"
+    "guarantee": "Ventana de reembolso de 24 días · No se requiere tarjeta de crédito · Cancela cuando quieras"
   },
   "trust": {
     "eyebrow": "Por qué las familias confían en nosotros",
@@ -518,18 +518,18 @@
     "sub": "Creemos que la confianza se gana con pruebas, no con promesas.",
     "items": [
       { "stat": "✓", "label": "Tutores certificados por Al-Azhar", "desc": "Cada tutor posee una iyaza verificada con una cadena ininterrumpida de conocimiento que llega hasta el Profeta ﷺ." },
-      { "stat": "< 2h", "label": "Tiempo de respuesta de soporte", "desc": "Buscamos responder cada mensaje en menos de 2 horas en días laborables, porque tu camino de aprendizaje no debería esperar demasiado." },
+      { "stat": "< 24h", "label": "Tiempo de respuesta de soporte", "desc": "Buscamos responder dentro de 24 horas, porque tu camino de aprendizaje no debería esperar demasiado." },
       { "stat": "Global", "label": "Alcance", "desc": "Familias de todo el mundo confían en Al-Rahma Academy para una educación coránica auténtica." },
-      { "stat": "14", "label": "Días de garantía de reembolso", "desc": "¿No estás satisfecho? Te reembolsamos el 100 % en 14 días, sin preguntas ni papeleo." }
+      { "stat": "24", "label": "Días de ventana de reembolso", "desc": "¿No estás satisfecho? Puedes solicitar un reembolso dentro de los 24 días posteriores al pago." }
     ],
-    "gdprTitle": "Cumplimiento RGPD",
-    "gdprDesc": "Tus datos están protegidos bajo la normativa de la UE. No se venden datos. Nunca.",
-    "sslTitle": "Cifrado SSL",
-    "sslDesc": "Todos los pagos y datos personales están cifrados de extremo a extremo.",
-    "supportTitle": "Soporte en 2 horas",
-    "supportDesc": "Personas reales, no bots. Buscamos responder en menos de 2 horas en horario laboral.",
-    "azharTitle": "Verificado por Al-Azhar",
-    "azharDesc": "Asociación oficial con profesores certificados por la Universidad Al-Azhar, El Cairo.",
+    "gdprTitle": "Tu privacidad",
+    "gdprDesc": "Consulta nuestra Política de Privacidad para saber cómo tratamos tus datos.",
+    "sslTitle": "Conexión segura",
+    "sslDesc": "Tu conexión a este sitio está cifrada.",
+    "supportTitle": "Soporte en 24 horas",
+    "supportDesc": "Personas reales, no bots. Buscamos responder dentro de 24 horas.",
+    "azharTitle": "Titulados de Al-Azhar",
+    "azharDesc": "Nuestros profesores son titulados de Al-Azhar, uno de los centros de estudios islámicos más antiguos del mundo.",
     "countriesLabel": "Estudiantes de todo el mundo confían en Al-Rahma Academy"
   },
   "trustBar": {
@@ -540,7 +540,7 @@
     "repliesMinutes": "Normalmente responde en minutos",
     "repliesHours": "Respondemos en pocas horas",
     "whatsappStatusAriaLabel": "Estado del soporte de WhatsApp",
-    "badges": ["Sin contratos a largo plazo", "Cancela cuando quieras", "Cadena de iyaza certificada", "Profesoras disponibles", "Horarios 24/7", "Cumple la normativa", "Respuesta en menos de 2 horas"]
+    "badges": ["Sin contratos a largo plazo", "Cancela cuando quieras", "Cadena de iyaza certificada", "Profesoras disponibles", "Horarios 24/7", "Política de Privacidad", "Respuesta en 24 horas"]
   },
   "blog": {
     "eyebrow": "Nuestro Blog",

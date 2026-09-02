@@ -830,3 +830,103 @@ round's new tests target components by their full path, not by name alone.
   translation table (reproduced above), the teacher order before/after,
   and verification-gate results for this round are in that round's own
   final report.
+
+## Update 2026-09-03 — Canonical Origin and Share-Link Safety — Final Corrective Before Stage 2D
+
+- **Wrong domain variants in production share surfaces, fixed.** Two wrong
+  forms of the academy's own domain had drifted into live share
+  surfaces: a wrong top-level-domain form (in
+  `components/ui/MilestoneCelebration.jsx` and `pages/Dashboard.jsx`) and
+  the correct domain missing its hyphen (in `components/ui/ReferralCard.jsx`
+  and `components/ui/ShareAchievement.jsx`). The only real domain is
+  `https://al-rahmaacademy.com`.
+
+  | File | Domain literal before | Domain literal after |
+  |---|---|---|
+  | `components/ui/MilestoneCelebration.jsx` (LinkedIn share URL) | wrong TLD form | `site.origin` |
+  | `components/ui/MilestoneCelebration.jsx` (copy-to-clipboard text, ×2) | wrong TLD form (bare, no `https://`) | `site.origin` (full clickable URL) |
+  | `pages/Dashboard.jsx` (streak share text) | wrong TLD form (bare) | `site.origin` (full clickable URL) |
+  | `components/ui/ReferralCard.jsx` (referral link) | missing-hyphen form | `site.origin` |
+  | `components/ui/ShareAchievement.jsx` (3 share-message templates, bare) | missing-hyphen form (bare) | `site.origin` (full clickable URL) |
+  | `components/ui/ShareAchievement.jsx` (native Web Share `url`, Facebook share `u=`) | missing-hyphen form | `site.origin` |
+
+  Total: 9 literal occurrences across 4 files corrected, all now reading
+  from one field, `site.origin`, added to `src/data/site.js`. Bare domain
+  mentions in share text (no `https://` prefix) were also upgraded to the
+  full URL, so the link is clickable in the destination app rather than
+  plain text — the wa.me/social/phone links this document already covers
+  were unaffected; only these 4 files' own domain literals changed.
+
+- **Single canonical-origin contract.** `src/data/site.js` now exports
+  `site.origin = 'https://al-rahmaacademy.com'`. `src/utils/localePath.js`'s
+  `ORIGIN` export (already consumed by `useSEO.js`, the hreflang/breadcrumb
+  builders, and — via a separately-maintained literal — the sitemap
+  generator) now reads `site.origin` instead of redeclaring the string;
+  `useSEO.js`'s own separate `ORIGIN` literal was removed in favor of
+  importing it from `localePath.js`. No third domain constant was
+  introduced, and no import cycle was created — `data/site.js` has no
+  imports of its own, so `localePath.js` and the four share components
+  importing from it is one-directional.
+
+- **Share-window safety (`window.open` targets).** Every `window.open`
+  call across the four share files that navigates to an external URL now
+  carries `noopener,noreferrer` in its features string:
+  `MilestoneCelebration.jsx`'s LinkedIn share was missing it entirely
+  (fixed, width/height dimensions preserved:
+  `'width=600,height=500,noopener,noreferrer'`); its WhatsApp share was
+  missing it (fixed: `'noopener,noreferrer'`). `ReferralCard.jsx`'s and
+  `ShareAchievement.jsx`'s `window.open` calls already carried it and were
+  left unchanged. Three other `window.open` calls elsewhere in the app
+  (`CertificateCard.jsx`, `VerseCardModal.jsx`, `pages/Profile.jsx`) open a
+  same-origin blank window the app itself writes into — they do not
+  navigate to an external URL, so `noopener`/`noreferrer` is not a
+  meaningful requirement there, and they were left unchanged.
+  `pages/tools/VerseOfTheDayPage.jsx`'s WhatsApp share is a plain
+  `<a target="_blank" rel="noopener noreferrer">`, already safe, and its
+  domain is built from `window.location.origin` at runtime rather than a
+  literal, so it needed no change either.
+
+- **Misleading test comment corrected (Part E).** The comment above
+  `PRODUCTION_SOURCE_EXTS` in `src/test/officialContactSocial.test.js`
+  previously claimed the R1 WhatsApp sweep undercounted *because* it only
+  walked `.js`/`.jsx` files and therefore missed `dashboardNav.js`. That
+  claim is false: `dashboardNav.js` is itself a `.js` file, so an
+  `.js`/`.jsx`-only walk already covered it — extension coverage was never
+  the gap. The comment now states the real reason (already documented
+  correctly elsewhere in this same test file and in this document's own
+  R2 update above): R1's predecessor of the wa.me/ inventory block was a
+  single spot-check proving *a* pattern existed somewhere, not a
+  per-file/per-occurrence inventory. This document's own R2 addendum above
+  did not repeat the false extension-coverage claim, so no correction was
+  needed here beyond this note recording that it was checked.
+
+- **New regression tests
+  (`src/test/canonicalOriginShareSafety.test.js`).** Guards, across every
+  `.js`/`.jsx`/`.ts`/`.tsx`/`.mjs`/`.mts` production file plus `index.html`,
+  `public/sitemap.xml`, `public/robots.txt`, and `public/llms.txt`
+  (excluding `src/test/`, matching the same exclusion this document's
+  WhatsApp inventory guard already uses, so a test fixture's intentional
+  negative-literal never counts as a production finding): zero occurrences
+  of either wrong domain variant; `site.origin` is the exact approved
+  string; `localePath.js`/`useSEO.js` source the domain through the single
+  re-export chain rather than a redeclared literal; the four share files
+  reference `site.origin` in source; every external `window.open` call in
+  production source carries `noopener`. The existing WhatsApp inventory
+  (15 files / 17 occurrences / 13 academy-direct / 4 user-choice-share) is
+  unaffected — this round did not touch any `wa.me/` link, only the plain
+  domain literals sitting alongside some of them in the same 4 share
+  files. Phone numbers, social account URLs, teacher data, and FAQ text
+  were not touched.
+
+  One existing test,
+  `src/test/contentTruthCorrectiveRound3.test.jsx`'s
+  `referralLinkContains()` helper, hardcoded the same wrong (missing-hyphen)
+  domain as an expected value for `ReferralCard.jsx`'s WhatsApp share text
+  — a direct consequence of the production bug this round fixes. It was
+  corrected to the real domain in the same commit as the test additions
+  above, not left for a later round.
+
+- Full commit list and verification-gate results for this round (targeted
+  tests, two independent full-suite runs, both typecheck parts, the
+  production build, the DB guard scripts, `git diff --check`, the secrets
+  scan) are in that round's own final report.

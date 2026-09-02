@@ -338,7 +338,7 @@
     "refundPolicy": "Refund Policy",
     "trustBadges": ["24-Day Refund Window", "Al-Azhar Certified Tutors", "Students From Around the World", "Committed to Quality Teaching", "Reply within 24 hours"],
     "supportHours": "Support: Sat–Thu · 08:00–23:00 (Cairo)",
-    "replyBadge": "Reply ≤ 2h"
+    "replyBadge": "Reply ≤ 24h"
   },
   "teachersPg": {
     "eyebrow": "Meet some of our instructors",

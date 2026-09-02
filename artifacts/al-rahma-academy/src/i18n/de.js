@@ -338,7 +338,7 @@
     "refundPolicy": "Rückerstattungsrichtlinie",
     "trustBadges": ["24-Tage-Erstattungsfenster", "Al-Azhar-zertifizierte Lehrer", "Schüler aus aller Welt", "Engagiert für qualitativ hochwertigen Unterricht", "Antwort innerhalb von 24 Stunden"],
     "supportHours": "Support: Sa–Do · 08:00–23:00 (Kairo)",
-    "replyBadge": "Antwort ≤ 2h"
+    "replyBadge": "Antwort ≤ 24h"
   },
   "teachersPg": {
     "eyebrow": "Lerne einige unserer Lehrkräfte kennen",

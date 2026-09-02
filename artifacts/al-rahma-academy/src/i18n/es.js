@@ -338,7 +338,7 @@
     "refundPolicy": "Política de reembolso",
     "trustBadges": ["Ventana de reembolso de 24 días", "Tutores certificados por Al-Azhar", "Estudiantes de todo el mundo", "Comprometidos con una enseñanza de calidad", "Respuesta en 24 horas"],
     "supportHours": "Soporte: Sáb–Jue · 08:00–23:00 (El Cairo)",
-    "replyBadge": "Respuesta ≤ 2h"
+    "replyBadge": "Respuesta ≤ 24h"
   },
   "teachersPg": {
     "eyebrow": "Conoce a algunos de nuestros tutores",

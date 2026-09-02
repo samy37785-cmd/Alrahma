@@ -338,7 +338,7 @@
     "refundPolicy": "Politique de remboursement",
     "trustBadges": ["Fenêtre de remboursement de 24 jours", "Enseignants certifiés par Al-Azhar", "Élèves du monde entier", "Engagés pour un enseignement de qualité", "Réponse sous 24 heures"],
     "supportHours": "Assistance : sam.–jeu. · 08 h 00–23 h 00 (Le Caire)",
-    "replyBadge": "Réponse ≤ 2h"
+    "replyBadge": "Réponse ≤ 24h"
   },
   "teachersPg": {
     "eyebrow": "Découvrez certains de nos enseignants",

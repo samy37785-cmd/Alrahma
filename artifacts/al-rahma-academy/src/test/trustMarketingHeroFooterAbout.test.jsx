@@ -108,10 +108,16 @@ describe('About.jsx shows the owner-confirmed academy figures, not the old unsup
     expect(cards.length).toBe(4);
   });
 
-  it('the founder story no longer claims "1,200+ families across 40+ countries"', () => {
+  it('the founder story shows the owner-confirmed "1,200+ families across 10 countries" figure, never the old unsupported "40+ countries"', () => {
+    // Content Truth Contract corrective round (2026-09-02): the original
+    // remediation de-numbered this sentence for lack of a source; the
+    // owner has since confirmed 1,200+ families and 10 countries (not the
+    // originally-claimed, unsupported 40+), so the founder story now shows
+    // those real, sourced numbers again.
     const { container } = renderWithLang(<About />);
     const text = container.textContent;
-    expect(text).not.toMatch(/1,?200\+?\s*families/i);
+    expect(text).toMatch(/1,?200\+?\s*families/i);
+    expect(text).toMatch(/10\s*countries/i);
     expect(text).not.toMatch(/40\+?\s*countries/i);
   });
 });

@@ -99,57 +99,18 @@ export const VALUES_TEXT = {
   ],
 };
 
-/* ── Testimonials: quote + course (6 items, in data order). Names/locations stay. ── */
-export const TESTIMONIAL_TEXT = {
-  en: [
-    { quote: "My children love their lessons. The tutors are patient, kind and truly knowledgeable. We've seen amazing progress in just a few months.", course: 'Quran Reading & Tajweed' },
-    { quote: 'Flexible timing made it possible for me to study around work. My Tajweed has improved more than I imagined. Highly recommended.', course: 'Tajweed (Hafs)' },
-    { quote: 'Professional, organized and very welcoming. The free trial convinced our whole family to join. May Allah reward the tutors.', course: 'Islamic Studies' },
-    { quote: "Our daughter memorised her first Juz in 3 months. The tutor's patience is incredible — she never gets frustrated and always finds a new way to explain.", course: 'Hifz (Quran Memorization)' },
-    { quote: 'I converted 2 years ago and wanted to learn how to read the Quran properly. Starting from zero, I can now read independently. Alhamdulillah.', course: 'Noorani Qaida for Adults' },
-    { quote: 'The tutor is extremely patient and very skilled. My son learned the Arabic letters in just a few weeks. Highly recommended!', course: 'Arabic Alphabet for Children' },
-  ],
-  ar: [
-    { quote: 'أطفالي يحبون حصصهم. المعلمون صبورون ولطفاء وذوو علم حقيقي. لمسنا تقدماً مذهلاً في أشهر قليلة فقط.', course: 'تعليم القرآن والتجويد' },
-    { quote: 'المواعيد المرنة مكّنتني من الدراسة إلى جانب العمل. تحسّن تجويدي أكثر مما تخيّلت. أنصح به بشدة.', course: 'التجويد (حفص)' },
-    { quote: 'احترافية ومنظَّمة ومرحِّبة جداً. التجربة المجانية أقنعت عائلتنا كلها بالانضمام. جزى الله المعلمين خيراً.', course: 'الدراسات الإسلامية' },
-    { quote: 'حفظت ابنتنا أول جزء في 3 أشهر. صبر المعلمة لا يُصدَّق — لا تنزعج أبداً وتجد دائماً طريقة جديدة للشرح.', course: 'الحفظ (حفظ القرآن)' },
-    { quote: 'أسلمت قبل سنتين وأردت تعلّم قراءة القرآن بشكل صحيح. بدأت من الصفر، والآن أقرأ بمفردي. الحمد لله.', course: 'القاعدة النورانية للكبار' },
-    { quote: 'المعلمة صبورة للغاية وماهرة جداً. تعلّم ابني الحروف العربية في أسابيع قليلة. أنصح به بشدة!', course: 'الحروف العربية للأطفال' },
-  ],
-  it: [
-    { quote: 'I miei figli adorano le loro lezioni. Gli insegnanti sono pazienti, gentili e davvero competenti. Abbiamo visto progressi incredibili in pochi mesi.', course: 'Lettura del Corano e Tajweed' },
-    { quote: 'Gli orari flessibili mi hanno permesso di studiare conciliando lo studio con il lavoro. Il mio Tajweed è migliorato più di quanto immaginassi. Lo consiglio vivamente.', course: 'Tajweed (Hafs)' },
-    { quote: 'Professionali, organizzati e molto accoglienti. La prova gratuita ha convinto tutta la nostra famiglia a iscriversi. Che Allah ricompensi gli insegnanti.', course: 'Studi Islamici' },
-    { quote: 'Nostra figlia ha memorizzato il suo primo Juz in tre mesi. La pazienza dell\'insegnante è incredibile: non perde mai la calma e trova sempre un nuovo modo di spiegare.', course: 'Hifz (Memorizzazione del Corano)' },
-    { quote: 'Mi sono convertito due anni fa e volevo imparare a leggere correttamente il Corano. Sono partito da zero e ora riesco a leggerlo in autonomia. Alhamdulillah.', course: 'Noorani Qaida per adulti' },
-    { quote: 'L\'insegnante è pazientissima e molto brava. Mio figlio ha imparato le lettere arabe in poche settimane. Consiglio vivamente!', course: 'Alfabeto Arabo per Bambini' },
-  ],
-  es: [
-    { quote: 'A mis hijos les encantan sus clases. Los profesores son pacientes, amables y muy competentes. Hemos visto un progreso increíble en pocos meses.', course: 'Lectura del Corán y Tajweed' },
-    { quote: 'El horario flexible me permitió estudiar junto con el trabajo. Mi Tajweed ha mejorado más de lo que imaginaba. Muy recomendable.', course: 'Tajweed (Hafs)' },
-    { quote: 'Profesionales, organizados y muy acogedores. La prueba gratuita convenció a toda nuestra familia de inscribirse. Que Allah recompense a los profesores.', course: 'Estudios Islámicos' },
-    { quote: 'Nuestra hija memorizó su primer Juz en 3 meses. La paciencia de la profesora es increíble — nunca se frustra y siempre encuentra una nueva forma de explicar.', course: 'Hifz (Memorización del Corán)' },
-    { quote: 'Me convertí hace dos años y quería aprender a leer correctamente el Corán. Empecé desde cero y ahora puedo leerlo por mi cuenta. Alhamdulillah.', course: 'Noorani Qaida para adultos' },
-    { quote: 'La profesora es muy paciente y muy hábil. Mi hijo aprendió las letras árabes en pocas semanas. ¡Muy recomendable!', course: 'Alfabeto Árabe para Niños' },
-  ],
-  de: [
-    { quote: 'Meine Kinder lieben ihren Unterricht. Die Lehrer sind geduldig, freundlich und wirklich kompetent. Wir haben in nur wenigen Monaten erstaunliche Fortschritte gesehen.', course: 'Koran-Lesen & Tajweed' },
-    { quote: 'Die flexiblen Zeiten ermöglichten es mir, neben der Arbeit zu lernen. Mein Tajweed hat sich mehr verbessert, als ich dachte. Sehr empfehlenswert.', course: 'Tajweed (Hafs)' },
-    { quote: 'Professionell, organisiert und sehr einladend. Die kostenlose Probestunde hat unsere ganze Familie überzeugt. Möge Allah die Lehrer belohnen.', course: 'Islamische Studien' },
-    { quote: 'Unsere Tochter hat ihren ersten Dschuz in 3 Monaten auswendig gelernt. Die Geduld der Lehrerin ist unglaublich — sie wird nie ungeduldig und findet stets einen neuen Weg zu erklären.', course: 'Hifz (Koran-Memorierung)' },
-    { quote: 'Ich bin vor zwei Jahren zum Islam konvertiert und wollte lernen, den Koran richtig zu lesen. Ich habe bei null angefangen und kann ihn jetzt selbstständig lesen. Alhamdulillah.', course: 'Noorani-Qaida für Erwachsene' },
-    { quote: 'Die Lehrerin ist äußerst geduldig und sehr fähig. Mein Sohn hat die arabischen Buchstaben in wenigen Wochen gelernt. Sehr empfehlenswert!', course: 'Arabisches Alphabet für Kinder' },
-  ],
-  fr: [
-    { quote: 'Mes enfants adorent leurs cours. Les enseignants sont patients, gentils et vraiment compétents. Nous avons constaté des progrès incroyables en quelques mois seulement.', course: 'Lecture du Coran et Tajweed' },
-    { quote: 'Les horaires flexibles m\'ont permis d\'étudier en parallèle de mon travail. Mon Tajweed s\'est amélioré bien plus que je ne l\'imaginais. Je recommande vivement.', course: 'Tajweed (Hafs)' },
-    { quote: 'Professionnels, organisés et très accueillants. L\'essai gratuit a convaincu toute notre famille de s\'inscrire. Qu\'Allah récompense les enseignants.', course: 'Études Islamiques' },
-    { quote: 'Notre fille a mémorisé son premier Juz en trois mois. La patience de l\'enseignante est incroyable : elle ne perd jamais patience et trouve toujours une nouvelle façon d\'expliquer.', course: 'Hifz (Mémorisation du Coran)' },
-    { quote: 'Je me suis converti il y a deux ans et je voulais apprendre à lire correctement le Coran. J’ai commencé de zéro et je peux maintenant le lire de manière autonome. Alhamdulillah.', course: 'Noorani Qaida pour adultes' },
-    { quote: 'L\'enseignante est extrêmement patiente et très compétente. Mon fils a appris les lettres arabes en quelques semaines. Vivement recommandé !', course: 'Alphabet Arabe pour Enfants' },
-  ],
-};
+/* ── Testimonials placeholder data REMOVED (trust-marketing remediation) ──
+   The previous TESTIMONIAL_TEXT export held fabricated quotes attributed to
+   fictional students, paired with the fabricated TESTIMONIALS array that
+   used to live in src/data/marketing/socialProof.js. Neither had a real
+   data source (no CMS, no review API) and both were clearly marked as
+   placeholder in the surrounding code comments. Publishing invented
+   reviews is a trust/compliance risk (see
+   docs/trust-marketing-remediation.md), so the fabricated quotes were
+   deleted from source rather than merely hidden behind a flag — there is
+   nothing left here to flip back on. Testimonials.jsx now renders nothing
+   until real, permission-cleared student reviews are collected and wired
+   to a genuine data source. ── */
 
 /* ── Printable invoice modal labels ── */
 export const INVOICE_TEXT = {

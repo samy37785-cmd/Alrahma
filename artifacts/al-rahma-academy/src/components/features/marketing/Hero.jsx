@@ -11,51 +11,26 @@ const DEMO_VIDEO_ID = import.meta.env.VITE_DEMO_VIDEO_ID || 'dQw4w9WgXcQ';
 // showing two of them.
 const stripLeadingCheck = (str) => (str || '').replace(/^✓\s*/, '');
 
-/* Inline SVG icons for the stats bar — matches the site-wide Lucide-style
-   icon language used everywhere else on the homepage. */
-const STAT_ICONS = [
-  <svg key="book" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-       strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <path d="M2 4h7a4 4 0 0 1 4 4v12a3 3 0 0 0-3-3H2Z" />
-    <path d="M22 4h-7a4 4 0 0 0-4 4v12a3 3 0 0 1 3-3h8Z" />
-  </svg>,
-  <svg key="star" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-    <path d="m12 2 2.9 6.6 7.1.6-5.4 4.7 1.6 7-6.2-3.8L5.8 21l1.6-7-5.4-4.7 7.1-.6L12 2z" />
-  </svg>,
-  <svg key="globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-       strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <circle cx="12" cy="12" r="10" />
-    <line x1="2" y1="12" x2="22" y2="12" />
-    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-  </svg>,
-  <svg key="grad" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-       strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <path d="M22 10 12 5 2 10l10 5 10-5Z" />
-    <path d="M6 12v5c3 3 9 3 12 0v-5" />
-  </svg>,
-];
-
-const LIVE_ACTIVITY = [
-  { name: 'Ahmad', location: 'Frankfurt', action: 'just booked a free trial' },
-  { name: 'Fatima', location: 'Rome', action: 'enrolled in Tajweed' },
-  { name: 'Yusuf', location: 'Amsterdam', action: 'started Hifz programme' },
-  { name: 'Mariam', location: 'London', action: 'completed her first lesson' },
-  { name: 'Hassan', location: 'Paris', action: 'just booked a free trial' },
-  { name: 'Sara', location: 'Madrid', action: 'enrolled in Arabic course' },
-  { name: 'Tariq', location: 'Berlin', action: 'started Quran Reading' },
-  { name: 'Nour', location: 'Lyon', action: 'just booked a free trial' },
-];
+// Trust/marketing remediation (see docs/trust-marketing-remediation.md):
+// this file used to render two fabricated blocks that are now removed —
+//   1. A hardcoded stats bar (['9,000+ lessons', '4.9★ rating',
+//      '40+ countries', '32 tutors']) with no real source in this repo,
+//      the exact same unsupported figures already removed from
+//      StatsBanner.jsx/socialProof.js.
+//   2. A "live activity ticker" (LIVE_ACTIVITY) that cycled through eight
+//      fabricated named people ("Ahmad from Frankfurt just booked a free
+//      trial") on a 3.8s setInterval — a fake real-time social-proof
+//      signal, the same category of problem as the deleted LiveCounter.
+// A hardcoded "4.9 / 5" rating pill paired with an unsupported "1,200+
+// students" figure was removed for the same reason (§3). The Al-Azhar
+// certification pill and verse card are untouched — no code in this repo
+// marks the Al-Azhar claim itself as placeholder/fabricated (see the
+// Unknown Evidence Register).
 
 export default function Hero({ onTrialClick }) {
   const { t } = useLang();
   const h = t.hero;
-  const [activityIdx, setActivityIdx] = useState(0);
   const [videoOpen, setVideoOpen] = useState(false);
-
-  useEffect(() => {
-    const id = setInterval(() => setActivityIdx((i) => (i + 1) % LIVE_ACTIVITY.length), 3800);
-    return () => clearInterval(id);
-  }, []);
 
   const closeVideo = useCallback((e) => {
     if (e.target === e.currentTarget || e.key === 'Escape') setVideoOpen(false);
@@ -133,47 +108,12 @@ export default function Hero({ onTrialClick }) {
             <li><span className="hero__badge-check">✓</span>{stripLeadingCheck(h.badge3)}</li>
           </ul>
 
-          {/* Stats bar */}
-          <div className="hero__stats-bar" aria-label="Al-Rahma Academy statistics">
-            {['9,000+', '4.9★', '40+', '32'].map((value, i) => (
-              <div key={value} className="hero__stat">
-                <span className="hero__stat-icon" aria-hidden="true">{STAT_ICONS[i]}</span>
-                <span className="hero__stat-text">
-                  <strong>{value}</strong>
-                  <span>{h.statsLabels[i]}</span>
-                </span>
-              </div>
-            ))}
-          </div>
-
-          {/* Live activity ticker — social proof that updates every ~4 seconds */}
-          <div className="hero__activity" key={activityIdx} aria-live="polite" aria-atomic="true">
-            <span className="hero__activity-dot" aria-hidden="true" />
-            <span className="hero__activity-text">
-              <strong>{LIVE_ACTIVITY[activityIdx].name}</strong>
-              {' '}{h.activityFrom}{' '}{LIVE_ACTIVITY[activityIdx].location}{' '}
-              {h.activityActions[activityIdx]}
-            </span>
-          </div>
         </div>
 
         {/* ── Right: Brand lockup ── */}
         <div className="hero__visual hero__visual--medallion">
 
           <BrandLockup orientation="vertical" className="hero__lockup" />
-
-          {/* Floating pill — rating */}
-          <div className="hero__pill hero__pill--top">
-            <span className="hero__pill-icon">
-              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                <path d="m12 2 2.9 6.6 7.1.6-5.4 4.7 1.6 7-6.2-3.8L5.8 21l1.6-7-5.4-4.7 7.1-.6L12 2z"/>
-              </svg>
-            </span>
-            <div>
-              <strong>4.9 / 5</strong>
-              <span>{h.studentsCount}</span>
-            </div>
-          </div>
 
           {/* Floating pill — Al-Azhar certification */}
           <div className="hero__pill hero__pill--bottom">

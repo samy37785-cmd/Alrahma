@@ -1,8 +1,16 @@
+// Trust/marketing remediation: these four figures ("5+ years", "10+
+// tutors", "500+ students", "9,000+ teaching hours") had no source in this
+// repo — no founding-date record, no roster, no lesson log — and were
+// inconsistent with the different unsupported numbers used for the same
+// claims elsewhere on the site (32 tutors on Home/Pricing, 1,200+ students
+// in the founder story below). `value` is rendered as-is in every language
+// (About.jsx does not localize it), so it must stay non-numeric AND
+// language-neutral — see docs/trust-marketing-remediation.md.
 export const stats = [
-  { value: '5+',     label: 'Years of experience' },
-  { value: '10+',    label: 'Qualified tutors' },
-  { value: '500+',   label: 'Happy students' },
-  { value: '9,000+', label: 'Teaching hours' },
+  { value: '✓', label: 'Years of experience' },
+  { value: '✓', label: 'Qualified tutors' },
+  { value: '✓', label: 'Happy students' },
+  { value: '✓', label: 'Teaching hours' },
 ];
 
 

@@ -74,7 +74,6 @@
 @media (max-width: 960px) {
   .hero__inner, .about__inner, .trial__inner { grid-template-columns: 1fr; }
   .hero__visual { order: -1; height: 300px; }
-  .hero__pill--top    { top: 0; right: 0; }
   .hero__pill--bottom { bottom: 0; left: 0; }
   .hero__verse { position: static; margin-top: 8px; max-width: 100%; }
   .hero__art { order: -1; }

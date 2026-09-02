@@ -632,3 +632,148 @@ Starting checkpoint: `checkpoint/content-truth-contract-full-site-corrective`
 - Full commit list, the teacher before/after table, the phone/social
   file list, and verification-gate results for this round are in that
   round's own final report.
+
+## Update 2026-09-02 — Teacher/Contact Truth Final Corrective
+
+Starting checkpoint: `checkpoint/teacher-contact-social-truth-final`
+(`7dc09b4`). Same branch, same repository, no new branch/worktree.
+
+**Why the previous round's closure was incomplete**: the prior round fixed
+`src/pages/FAQ.jsx` (the standalone `/resources/faq` page) and
+`TrustBar.jsx`'s WhatsApp link, and its own tests scoped their file checks
+to those two files. It missed `src/components/features/marketing/FAQ.jsx`
+— a **second, differently-located component that happens to share the same
+filename** — which `Home.jsx` actually imports and renders on the live
+homepage inside a `DeferredSection`. Because the old round's grep-based
+tests matched by filename/keyword rather than walking the full `src/` tree
+by full path, an unapproved `wa.me/message/ALRAHMA` deep-link and three
+hardcoded English-only strings in this second file passed every one of the
+2488 tests that existed at the time. This is exactly the "same filename,
+different directory" gap the task brief warned about, and is why this
+round's new tests target components by their full path, not by name alone.
+
+- **Homepage FAQ WhatsApp link unified with the official contact
+  contract**: `components/features/marketing/FAQ.jsx` now imports `site`
+  from `src/data/site.js` and builds its button `href` as
+  `` `https://wa.me/${site.whatsapp}` `` (resolves to
+  `https://wa.me/201039553264`). The old literal
+  `href="https://wa.me/message/ALRAHMA"` — a WhatsApp deep-link that had
+  never been part of any prior round's approved contract — is gone. No
+  design, class, icon, layout, or accordion behavior was touched.
+- **Homepage FAQ aside translated into all six languages**: the three
+  strings that were previously hardcoded English in every locale —
+  `"Still have questions?"`, `"Our team typically replies within a couple
+  of hours — ask us anything before you commit."`, `"Chat with us on
+  WhatsApp"` — are now `faq.asideTitle` / `faq.asideText` /
+  `faq.asideButton` in `src/i18n/{en,ar,it,es,de,fr}.js`, each natural
+  (not literal machine) translation. `asideText` interpolates
+  `siteFacts.supportResponseHours` (already imported by all six files from
+  the prior round's work) rather than a new hardcoded literal — so it now
+  correctly says "24 hours," matching the approved 24-hour support
+  contract, instead of the previous, inaccurate "a couple of hours."
+
+  | Lang | Title | Text | Button |
+  |---|---|---|---|
+  | en | Still have questions? | Our team aims to reply within 24 hours. Ask us anything before you commit. | Chat with us on WhatsApp |
+  | ar | هل لا تزال لديك أسئلة؟ | نسعى للرد خلال 24 ساعة. اسألنا عن أي شيء قبل اتخاذ قرارك. | تحدث معنا عبر واتساب |
+  | it | Hai ancora domande? | Il nostro team punta a rispondere entro 24 ore. Chiedici tutto prima di impegnarti. | Scrivici su WhatsApp |
+  | es | ¿Sigues teniendo preguntas? | Nuestro equipo procura responder en un plazo de 24 horas. Pregúntanos lo que necesites antes de decidirte. | Chatea con nosotros por WhatsApp |
+  | de | Hast du noch Fragen? | Unser Team antwortet in der Regel innerhalb von 24 Stunden. Frag uns alles, bevor du dich entscheidest. | Chatte mit uns auf WhatsApp |
+  | fr | Vous avez encore des questions ? | Notre équipe s'efforce de répondre sous 24 heures. Posez-nous toutes vos questions avant de vous engager. | Discutez avec nous sur WhatsApp |
+
+  No other duration text (bank-transfer verification, registration
+  confirmation, rescheduling, tutor replacement) was touched — these are
+  independent durations, unrelated to `supportResponseHours`.
+- **Owner-approved final teacher display order applied**: `TEACHERS` in
+  `src/data/marketing/teachers.js` was reordered (no ID renumbered, no
+  field changed) to
+  `[1, 5, 10, 3, 11, 2, 6, 7, 4, 9, 8]` — Sami Mahmoud Abd Al-Aal, Abd
+  Allah Ayman, Islam Muhammad, Khairiyya Al-Muhammadi, Gouda Al-Shobaki,
+  Muhammad Abd Al-Maqsoud, Mahmoud Sami, Aya, Omnia Abd Allah, Alaa Ragib,
+  Fatima Al-Rashidi. `Teachers.jsx` renders `TEACHERS` in array order with
+  no `.sort()`, so this reorder is the entire display-order mechanism — no
+  second "display order" list was introduced, avoiding any risk of the two
+  drifting apart. `TeacherProfile.jsx` resolves a teacher via
+  `TEACHERS.find((tc) => tc.id === Number(id))`, which is array-order
+  independent, so no profile URL, name, language, lesson count, rating, or
+  review count changed for any teacher.
+- **`public/sitemap.xml` regenerated** as a direct, harmless consequence
+  (`scripts/seoRoutes.mjs` maps teacher URLs over `TEACHERS` in array
+  order): the 11 teacher URL entries now appear in the sequence
+  `1, 5, 10, 3, 11, 2, 6, 7, 4, 9, 8` instead of ascending order. All 11
+  URLs (`/academy/teachers/1` through `/academy/teachers/11`) are still
+  present exactly once each — verified by extracting and de-duplicating
+  every `academy/teachers/N` match in the regenerated file.
+- **WhatsApp regression tests strengthened**
+  (`src/test/officialContactSocial.test.js`,
+  `src/test/homeFaqAside.test.jsx`): a new describe block walks the full
+  `src/` tree (excluding `test/`) asserting **no file contains
+  `wa.me/message/`** at all — not just the old literal string — plus a
+  dedicated assertion that `components/features/marketing/FAQ.jsx`
+  specifically no longer contains `wa.me/message/ALRAHMA`. A new render
+  test (`homeFaqAside.test.jsx`) mounts the real, live
+  `components/features/marketing/FAQ.jsx` component (not `pages/FAQ.jsx`)
+  and asserts its WhatsApp link's `href` equals exactly
+  `https://wa.me/201039553264`, carries `target="_blank"` and
+  `rel="noopener noreferrer"`, and that clicking a question still toggles
+  `aria-expanded` (accordion behavior unchanged). The pre-existing
+  `wa.me/?text=` user-choice share link (`ReferralCard.jsx`) was confirmed
+  still present and untouched — a distinct, legitimate pattern this round
+  did not convert to the academy's own number.
+- **Translation regression tests added**: `homeFaqAside.test.jsx` renders
+  the component in all six locales, asserting no `undefined` literal, no
+  leaked English aside text in the five non-English locales, non-empty
+  title/text in every locale, and Arabic renders with `dir="rtl"` and the
+  exact confirmed Arabic strings. Because the locale objects are built
+  once at module-import time and do not react to a later runtime mutation
+  of `siteFacts.supportResponseHours` within the same test process, no
+  test mutates the constant and re-checks a locale value (that would only
+  prove an already-computed string didn't change, not that the wiring is
+  real). Instead, a dedicated source-inspection test confirms each locale
+  file's `asideText` line references `siteFacts.supportResponseHours` in
+  source (not a hardcoded new `24` literal), paired with the render tests
+  above proving the currently-computed value is correct.
+- **Teacher Source of Truth tests strengthened**
+  (`src/test/contentTruthCorrective.test.js`): the existing per-teacher
+  fact table was extended with exact English `title`/`specialties` for all
+  11 teachers (previously only name/langs/lessons/rating/reviews were
+  checked), plus new tests proving: every teacher has non-empty
+  title/bio/specialties in all six languages (no silently missing
+  translation); IDs are exactly `{1..11}`, once each (no silently missing
+  or duplicated teacher); the visible order equals exactly
+  `[1, 5, 10, 3, 11, 2, 6, 7, 4, 9, 8]`; `Teachers.jsx` contains no
+  `.sort()` call on `TEACHERS`; `TeacherProfile.jsx` still resolves by
+  `id` via `.find()`, unaffected by array order. Individual teacher
+  `rating`/`lessons`/`reviews` figures remain independent of
+  `siteFacts.academyRating`/`siteFacts.totalLessons` — this round did not
+  introduce any new place where they could be summed into an academy-wide
+  total.
+- **Full-application `wa.me`/social/phone sweep**: re-run across the
+  entire live `src/` tree (excluding `node_modules`, `dist`, `coverage`,
+  `.git`, `.migration-backup`, and test files' own intentional negative-
+  assertion literals). Every `wa.me` occurrence classified as either
+  Academy direct contact (built from `site.whatsapp` — `TrustBar.jsx`,
+  `pages/FAQ.jsx`, `components/features/marketing/FAQ.jsx`) or User-choice
+  share (`ReferralCard.jsx`'s bare `wa.me/?text=`, no recipient). No third,
+  unexplained form was found. No occurrence of the old phone number, the
+  removed Twitter/X account, "couple of hours," the old English FAQ aside
+  strings, old teacher names, or stale "+N hrs" data remains outside
+  `.migration-backup/` (left untouched, as required) and test files' own
+  negative-assertion fixtures.
+- Test suite grew from 70 files / 2488 tests (end of the prior round) to
+  71 files / 2764 tests over this round — the growth is one new dedicated
+  render/behavior test file (`homeFaqAside.test.jsx`) plus expanded
+  assertions in `officialContactSocial.test.js` and
+  `contentTruthCorrective.test.js`. Two independent full-suite runs both
+  reported 71 files / 2764 tests passed with exit code 0.
+- This document does not claim the application has reached a single,
+  final "source of truth" state in any absolute sense — this round's own
+  starting point is proof that a prior round's closure can still miss a
+  live consumer sharing a filename with an already-fixed one. What this
+  round adds is a same-named-file-blind-spot class of regression test
+  (full-path directory walks rather than filename-keyword matching) that
+  the previous rounds' tests did not have.
+- Full commit list, the WhatsApp-link before/after, the six-language aside
+  translation table (reproduced above), the teacher order before/after,
+  and verification-gate results for this round are in that round's own
+  final report.

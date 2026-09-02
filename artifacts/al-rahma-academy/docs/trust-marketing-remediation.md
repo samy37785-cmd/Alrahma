@@ -541,3 +541,94 @@ this correction is recorded here and in this round's own final report.
 - Full commit list, the six-language translation table, the plan-name
   changed/deferred table, and verification-gate results for this round are
   in that round's own final report.
+
+## Update 2026-09-02 — Teacher Source of Truth + Official Contact and Social Identity — Final Integration
+
+Starting checkpoint: `checkpoint/content-truth-contract-full-site-corrective`
+(`a658ad6`). Same branch, same repository, no new branch/worktree.
+
+- **Teacher Source of Truth (11 profiles, stable IDs)**: replaced every
+  teacher's title, specialties, languages, and bio, and added `lessons`,
+  `rating` and `reviews` to all 11 profiles (previously only Sami carried
+  `lessons`, and no teacher carried an individual `rating`). This
+  explicitly reverses the prior "hide individual ratings" and "only Sami
+  has lessons" decisions — the owner has since supplied real per-teacher
+  figures for all 11. Two names were corrected: "Gouda El-Shoubaky" →
+  "Gouda Al-Shobaki" (with his title/specialties re-centered on Seerah and
+  Islamic Studies, dropping the old Fiqh-and-Arabic framing), and
+  "Alaa Rajab" → "Alaa Ragib". Stale `"N+ hrs"` figures were removed from
+  every bio (they had already been superseded by `lessons` for Sami and
+  were never assigned to the other ten). Bios stay short and neutral,
+  derived only from each teacher's title/specialties and the shared
+  credentials already confirmed for the whole team (Al-Azhar graduate,
+  Ijazah with connected sanad) — no invented years of experience, student
+  counts, results, or outcomes.
+- **Individual ratings now shown**: `Teachers.jsx` and `TeacherProfile.jsx`
+  render a real `teacher.rating` (formatted with `toFixed(1)`, so `5.0`
+  never renders as bare `5`) alongside the existing `reviews` count,
+  reusing the listing page's `.tpg__stars`/`.tpg__avg` CSS classes that
+  already existed in `teachers-page.css` from an earlier design — no new
+  CSS was needed. Individual ratings/lessons/reviews remain independent of
+  `siteFacts.academyRating` (4.9/5) and `siteFacts.totalLessons`
+  (15,000+); none are summed or blended into an academy-wide figure.
+- **Two remaining Round 3 corrections closed**:
+  - `siteFacts.supportResponseHours` previously had zero real production
+    consumers (every locale hardcoded `"24"` independently in
+    `footer.replyBadge`/`footer.trustBadges`). Wired both to the constant
+    in all six locale files — `Footer.jsx` renders both, so the property
+    is now a genuine single source, not a dead value. It is not used for
+    trial-confirmation, tutor-assignment, or payment-verification timing,
+    and `TermsOfService.jsx`'s legal text was not touched.
+  - `trialLessonWord(lang)` returned a bare number word that callers
+    spliced into a fixed-singular template, which produced ungrammatical
+    Arabic at count=2 (`"حصة تجريبية حصتان مجانية"` — a duplicated noun).
+    Replaced with `trialLessonPhrase(lang, count)`, which returns the
+    whole agreement-correct noun phrase (noun + "free" adjective inflect
+    together) for six languages, tested at count 1 and 2 in each. Updated
+    every consumer: `home.js`, `faqItems.js`, and the `referral.waMessage`
+    in all six locale files.
+- **Official phone number replaced**: `01039553264` local /
+  `+20 103 955 3264` international / `+201039553264` E.164. Made
+  `src/data/site.js` the single source (`phoneLocalDisplay`,
+  `phoneInternationalDisplay`, `phoneE164`, `phoneHref` — a ready-to-use
+  `tel:` URI — `whatsapp`, `whatsappDisplay`); removed the duplicate
+  `phoneDisplay` that used to live in `siteFacts.js`. Fixed two components
+  (`TrustBar.jsx`, `FAQ.jsx`) that had hardcoded the old WhatsApp number
+  as a literal `wa.me/...` URL instead of importing `site.whatsapp` — that
+  duplication was the actual root cause of the number being wrong in two
+  places at once. Updated `index.html`'s Organization JSON-LD `telephone`
+  and `public/llms.txt`. `TopBar.jsx` and `Privacy.jsx` (the only two
+  consumers of the old `site.phoneDisplay`/`site.phoneHref` field names)
+  were updated to the new contract.
+- **Social accounts replaced**: Facebook/Instagram/YouTube URLs updated to
+  the confirmed `@alrahmaacademyonline` handle, Twitter/X removed (no
+  official account), TikTok and Snapchat added with inline SVG icons
+  (24×24 viewBox, `fill="currentColor"`, matching the existing icon
+  style — path data sourced from Simple Icons). `Footer.jsx` and
+  `TopBar.jsx` needed no changes: both already map generically over the
+  `socials` array from `site.js`, so all five accounts render through the
+  existing code with the existing `target="_blank" rel="noopener
+  noreferrer"`/`aria-label` contract automatically. `index.html`'s
+  `sameAs` updated to the same five URLs; `twitter:site`/`twitter:creator`
+  meta tags removed (the account handles), while `twitter:card` (protocol
+  metadata, not an account) was left in place.
+- **Not blindly replaced**: YouTube/course video URLs, the Facebook
+  `sharer.php` and `wa.me/?text=...` user-choice share endpoints (guarded
+  by a dedicated test), and `.migration-backup/` (a frozen historical
+  snapshot — intentionally still carries every old value; it is not part
+  of the live application and is excluded from every "old value" sweep in
+  this round's tests by scoping them to `src/`).
+- **Regenerated `public/sitemap.xml`**: an unplanned but harmless
+  side-effect — `scripts/seoRoutes.mjs` builds teacher URLs by mapping
+  over `TEACHERS` in array order, and rewriting `teachers.js` in clean
+  ascending-ID order (the original file had teachers 9/10/8 out of
+  sequence) reordered the sitemap's `/academy/teachers/8`–`/10` entries.
+  All 11 teacher URLs are still present exactly once; only their order in
+  the file changed, which has no SEO effect.
+- Test suite grew from 70 files / 2488 tests over this round (from Round
+  3's close of 69 files / 2211 tests) — the growth includes a new
+  dedicated `officialContactSocial.test.js` file plus expanded assertions
+  in the two existing content-truth test files.
+- Full commit list, the teacher before/after table, the phone/social
+  file list, and verification-gate results for this round are in that
+  round's own final report.

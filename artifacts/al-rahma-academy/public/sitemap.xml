@@ -131,7 +131,12 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://al-rahmaacademy.com/academy/teachers/2</loc>
+    <loc>https://al-rahmaacademy.com/academy/teachers/5</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://al-rahmaacademy.com/academy/teachers/10</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -141,12 +146,12 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://al-rahmaacademy.com/academy/teachers/4</loc>
+    <loc>https://al-rahmaacademy.com/academy/teachers/11</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://al-rahmaacademy.com/academy/teachers/5</loc>
+    <loc>https://al-rahmaacademy.com/academy/teachers/2</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -161,7 +166,7 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://al-rahmaacademy.com/academy/teachers/8</loc>
+    <loc>https://al-rahmaacademy.com/academy/teachers/4</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -171,12 +176,7 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://al-rahmaacademy.com/academy/teachers/10</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://al-rahmaacademy.com/academy/teachers/11</loc>
+    <loc>https://al-rahmaacademy.com/academy/teachers/8</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>

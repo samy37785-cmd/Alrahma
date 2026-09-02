@@ -492,6 +492,9 @@ const fr = {
     "eyebrow": "FAQ",
     "heading": "Questions Fréquentes",
     "sub": "Tout ce que vous devez savoir avant de commencer.",
+    "asideTitle": "Vous avez encore des questions ?",
+    "asideText": `Notre équipe s'efforce de répondre sous ${siteFacts.supportResponseHours} heures. Posez-nous toutes vos questions avant de vous engager.`,
+    "asideButton": "Discutez avec nous sur WhatsApp",
     "items": [
       {
         "q": "Ai-je besoin de connaissances préalables pour commencer ?",

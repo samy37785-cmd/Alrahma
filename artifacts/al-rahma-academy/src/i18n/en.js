@@ -492,6 +492,9 @@ const en = {
     "eyebrow": "FAQ",
     "heading": "Frequently Asked Questions",
     "sub": "Everything you need to know before getting started.",
+    "asideTitle": "Still have questions?",
+    "asideText": `Our team aims to reply within ${siteFacts.supportResponseHours} hours. Ask us anything before you commit.`,
+    "asideButton": "Chat with us on WhatsApp",
     "items": [
       {
         "q": "Do I need any prior knowledge to start?",

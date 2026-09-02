@@ -492,6 +492,9 @@ const it = {
     "eyebrow": "FAQ",
     "heading": "Domande Frequenti",
     "sub": "Tutto quello che devi sapere prima di iniziare.",
+    "asideTitle": "Hai ancora domande?",
+    "asideText": `Il nostro team punta a rispondere entro ${siteFacts.supportResponseHours} ore. Chiedici tutto prima di impegnarti.`,
+    "asideButton": "Scrivici su WhatsApp",
     "items": [
       {
         "q": "Ho bisogno di conoscenze precedenti per iniziare?",

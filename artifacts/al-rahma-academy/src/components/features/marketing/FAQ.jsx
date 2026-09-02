@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Reveal from '../../ui/Reveal';
 import { useLang } from '../../../context/LangContext';
+import { site } from '../../../data/site';
 
 const PLUS_ICON = (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
@@ -61,15 +62,15 @@ export default function FAQ() {
 
           <Reveal className="faq__aside">
             <div className="faq__aside-icon">{CHAT_ICON}</div>
-            <h3>Still have questions?</h3>
-            <p>Our team typically replies within a couple of hours — ask us anything before you commit.</p>
+            <h3>{faq.asideTitle}</h3>
+            <p>{faq.asideText}</p>
             <a
-              href="https://wa.me/message/ALRAHMA"
+              href={`https://wa.me/${site.whatsapp}`}
               target="_blank"
               rel="noopener noreferrer"
               className="faq__aside-btn"
             >
-              Chat with us on WhatsApp
+              {faq.asideButton}
             </a>
           </Reveal>
         </div>

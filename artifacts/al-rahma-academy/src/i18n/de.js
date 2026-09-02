@@ -492,6 +492,9 @@ const de = {
     "eyebrow": "FAQ",
     "heading": "Häufig gestellte Fragen",
     "sub": "Alles, was du vor dem Start wissen musst.",
+    "asideTitle": "Hast du noch Fragen?",
+    "asideText": `Unser Team antwortet in der Regel innerhalb von ${siteFacts.supportResponseHours} Stunden. Frag uns alles, bevor du dich entscheidest.`,
+    "asideButton": "Chatte mit uns auf WhatsApp",
     "items": [
       {
         "q": "Brauche ich Vorkenntnisse?",

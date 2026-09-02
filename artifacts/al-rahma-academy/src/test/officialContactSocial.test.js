@@ -22,6 +22,13 @@ const OLD_PHONE_PATTERNS = [
   '01016054663',
 ];
 
+// Extension-complete: the R1 sweep only walked .js/.jsx, which is why its
+// own inventory undercounted (it never looked at the handful of .js files
+// like dashboardNav.js). This list covers everything Vite/TS actually
+// compiles in this project.
+const PRODUCTION_SOURCE_EXTS = ['.js', '.jsx', '.ts', '.tsx', '.mjs', '.mts'];
+const WALK_EXCLUDE_DIRS = ['test', 'node_modules', 'coverage', 'dist', 'generated'];
+
 function walk(dir, exts, exclude) {
   const out = [];
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -51,7 +58,7 @@ describe('site.js is the single phone/WhatsApp source', () => {
 
 describe('no old phone number remains in live application source (Part 11)', () => {
   const srcDir = path.resolve(__dirname, '..');
-  const files = walk(srcDir, ['.js', '.jsx'], ['test']).filter(
+  const files = walk(srcDir, PRODUCTION_SOURCE_EXTS, WALK_EXCLUDE_DIRS).filter(
     (f) => !f.includes(`${path.sep}test${path.sep}`),
   );
 
@@ -109,7 +116,7 @@ describe('no old phone number remains in live application source (Part 11)', () 
 // form and the live-rendered component, not just the page.
 describe('no unapproved wa.me/message/ deep-link remains anywhere in live application source', () => {
   const srcDir = path.resolve(__dirname, '..');
-  const files = walk(srcDir, ['.js', '.jsx'], ['test']).filter(
+  const files = walk(srcDir, PRODUCTION_SOURCE_EXTS, WALK_EXCLUDE_DIRS).filter(
     (f) => !f.includes(`${path.sep}test${path.sep}`),
   );
 
@@ -217,11 +224,152 @@ describe('Footer.jsx and TopBar.jsx render all five socials with a safe target/r
   });
 });
 
-describe('legitimate non-account links are untouched (Part 9 — no blind replacement)', () => {
-  it('a real WhatsApp share-with-a-chosen-recipient link (wa.me/?text=) still exists somewhere in the app', () => {
-    const srcDir = path.resolve(__dirname, '..');
-    const files = walk(srcDir, ['.js', '.jsx'], ['test']);
-    const combined = files.map((f) => fs.readFileSync(f, 'utf8')).join('\n');
-    expect(combined).toMatch(/wa\.me\/\?text=/);
+// Teacher/Contact Final Corrective R2 (2026-09-02): the prior round's own
+// "Full-application wa.me/social/phone sweep" undercounted the real
+// inventory — it reported roughly 4 direct-contact files and 1 share file
+// (this block's own predecessor above, "Part 9," only ever spot-checked
+// that *a* share link existed "somewhere," never classifying or counting
+// anything). A full extension-complete re-scan of src/ (js/jsx/ts/tsx/
+// mjs/mts, excluding src/test/) found the true count: 15 unique production
+// files, 17 total wa.me/ occurrences — 13 built from site.whatsapp (academy
+// direct contact, including query-string variants like Trial's pre-filled
+// message and RefundPolicy's refund-request text, which still carry the
+// academy's own number and are therefore direct contact, not a share), and
+// 4 using the bare, recipient-less wa.me/?text= share pattern. This block
+// replaces the old spot-check with an exhaustive, per-occurrence classified
+// inventory that fails on any new/missing/reclassified/hardcoded/third-form
+// occurrence, not just the presence of one keyword.
+const EXPECTED_WA_ME_INVENTORY = {
+  'components/features/marketing/FAQ.jsx': { count: 1, classification: 'academy-direct' },
+  'components/features/marketing/Trial.jsx': { count: 2, classification: 'academy-direct' },
+  'components/features/marketing/TrustBar.jsx': { count: 1, classification: 'academy-direct' },
+  'components/layout/dashboardNav.js': { count: 1, classification: 'academy-direct' },
+  'components/layout/Footer.jsx': { count: 1, classification: 'academy-direct' },
+  'components/ui/CancelSurvey.jsx': { count: 1, classification: 'academy-direct' },
+  'components/ui/WhatsappFab.jsx': { count: 1, classification: 'academy-direct' },
+  'pages/Dashboard.jsx': { count: 1, classification: 'academy-direct' },
+  'pages/FAQ.jsx': { count: 1, classification: 'academy-direct' },
+  'pages/RefundPolicy.jsx': { count: 1, classification: 'academy-direct' },
+  'pages/TermsOfService.jsx': { count: 2, classification: 'academy-direct' },
+  'components/ui/MilestoneCelebration.jsx': { count: 1, classification: 'user-choice-share' },
+  'components/ui/ReferralCard.jsx': { count: 1, classification: 'user-choice-share' },
+  'components/ui/ShareAchievement.jsx': { count: 1, classification: 'user-choice-share' },
+  'pages/tools/VerseOfTheDayPage.jsx': { count: 1, classification: 'user-choice-share' },
+};
+
+const EXPECTED_TOTAL_FILES = 15;
+const EXPECTED_TOTAL_OCCURRENCES = 17;
+const EXPECTED_DIRECT_OCCURRENCES = 13;
+const EXPECTED_SHARE_OCCURRENCES = 4;
+
+// Classifies by index math on the raw file text (never a single-line
+// regex), so a reformatted/wrapped href would still classify correctly:
+// the wa.me/ deep-link format is either wa.me/?text=... (bare share, no
+// recipient) or wa.me/<something-that-must-resolve-to-site.whatsapp>. The
+// character immediately after "wa.me/" alone is enough to tell them apart;
+// a short trailing window catches the site.whatsapp reference regardless
+// of whether it's a template-literal interpolation or string concatenation.
+function classifyWaMeOccurrence(content, matchIndex) {
+  const afterMarker = matchIndex + 'wa.me/'.length;
+  const immediateSuffix = content.slice(afterMarker, afterMarker + 30);
+  if (immediateSuffix.startsWith('message/')) return 'legacy-message-deep-link';
+  if (immediateSuffix.startsWith('?')) {
+    return immediateSuffix.startsWith('?text=') ? 'user-choice-share' : 'unknown-query-form';
+  }
+  const nearbyWindow = content.slice(afterMarker, afterMarker + 60);
+  return /site\.whatsapp/.test(nearbyWindow) ? 'academy-direct' : 'unknown';
+}
+
+function findWaMeOccurrences(filePath) {
+  const content = fs.readFileSync(filePath, 'utf8');
+  const occurrences = [];
+  const re = /wa\.me\//g;
+  let m;
+  while ((m = re.exec(content)) !== null) {
+    occurrences.push(classifyWaMeOccurrence(content, m.index));
+  }
+  return occurrences;
+}
+
+describe('complete wa.me/ inventory across production source, every occurrence classified (Part 9 / R2)', () => {
+  const srcDir = path.resolve(__dirname, '..');
+  const files = walk(srcDir, PRODUCTION_SOURCE_EXTS, WALK_EXCLUDE_DIRS).filter(
+    (f) => !f.includes(`${path.sep}test${path.sep}`),
+  );
+
+  const inventory = {};
+  for (const file of files) {
+    const occurrences = findWaMeOccurrences(file);
+    if (occurrences.length === 0) continue;
+    const rel = path.relative(srcDir, file).split(path.sep).join('/');
+    inventory[rel] = occurrences;
+  }
+
+  it('finds exactly the expected set of files containing wa.me/ — no new or missing file', () => {
+    const actualFiles = Object.keys(inventory).sort();
+    const expectedFiles = Object.keys(EXPECTED_WA_ME_INVENTORY).sort();
+    expect(actualFiles).toEqual(expectedFiles);
+  });
+
+  it(`totals exactly ${EXPECTED_TOTAL_FILES} files and ${EXPECTED_TOTAL_OCCURRENCES} occurrences`, () => {
+    const fileCount = Object.keys(inventory).length;
+    const totalOccurrences = Object.values(inventory).reduce((sum, arr) => sum + arr.length, 0);
+    expect(fileCount).toBe(EXPECTED_TOTAL_FILES);
+    expect(totalOccurrences).toBe(EXPECTED_TOTAL_OCCURRENCES);
+  });
+
+  it.each(Object.entries(EXPECTED_WA_ME_INVENTORY))(
+    '%s has the expected occurrence count and classification',
+    (rel, expected) => {
+      const occurrences = inventory[rel];
+      expect(occurrences, rel).toBeTruthy();
+      expect(occurrences.length, `${rel} occurrence count`).toBe(expected.count);
+      for (const classification of occurrences) {
+        expect(classification, rel).toBe(expected.classification);
+      }
+    },
+  );
+
+  it(`classifies exactly ${EXPECTED_DIRECT_OCCURRENCES} occurrences as academy-direct and ${EXPECTED_SHARE_OCCURRENCES} as user-choice-share, zero of any other form`, () => {
+    const all = Object.values(inventory).flat();
+    const direct = all.filter((c) => c === 'academy-direct');
+    const share = all.filter((c) => c === 'user-choice-share');
+    const other = all.filter((c) => c !== 'academy-direct' && c !== 'user-choice-share');
+    expect(direct.length).toBe(EXPECTED_DIRECT_OCCURRENCES);
+    expect(share.length).toBe(EXPECTED_SHARE_OCCURRENCES);
+    expect(other, `unclassified/unknown wa.me forms found: ${JSON.stringify(other)}`).toEqual([]);
+  });
+
+  it('no file references the api.whatsapp.com domain form', () => {
+    for (const file of files) {
+      const content = fs.readFileSync(file, 'utf8');
+      expect(content, path.relative(srcDir, file)).not.toMatch(/api\.whatsapp\.com/);
+    }
+  });
+
+  it('the academy WhatsApp number never appears as a hardcoded literal in production source outside src/data/site.js', () => {
+    for (const file of files) {
+      const rel = path.relative(srcDir, file).split(path.sep).join('/');
+      if (rel === 'data/site.js') continue;
+      const content = fs.readFileSync(file, 'utf8');
+      expect(content, rel).not.toMatch(/201039553264/);
+    }
+  });
+
+  it('every academy-direct occurrence resolves through site.whatsapp — none is a bare/hardcoded number', () => {
+    for (const [rel, expected] of Object.entries(EXPECTED_WA_ME_INVENTORY)) {
+      if (expected.classification !== 'academy-direct') continue;
+      const content = fs.readFileSync(path.join(srcDir, rel), 'utf8');
+      expect(content, rel).toMatch(/site\.whatsapp/);
+    }
+  });
+
+  it('every user-choice-share occurrence uses the bare, recipient-less wa.me/?text= form — none embeds the academy number', () => {
+    for (const [rel, expected] of Object.entries(EXPECTED_WA_ME_INVENTORY)) {
+      if (expected.classification !== 'user-choice-share') continue;
+      const content = fs.readFileSync(path.join(srcDir, rel), 'utf8');
+      expect(content, rel).toMatch(/wa\.me\/\?text=/);
+      expect(content, `${rel} should not embed site.whatsapp — that would make it a direct-contact link, not a user-choice share`).not.toMatch(/wa\.me\/\$\{?site\.whatsapp/);
+    }
   });
 });

@@ -1,4 +1,6 @@
-﻿const fr = {
+﻿import { siteFacts } from '../data/siteFacts';
+
+const fr = {
   "lang": "fr",
   "dir": "ltr",
   "tagline": "Apprenez le Coran en ligne",
@@ -344,6 +346,7 @@
     "eyebrow": "Découvrez certains de nos enseignants",
     "title": "Nos enseignants qualifiés",
     "sub": "Chaque enseignant d'Al-Rahma Academy est un diplômé vérifié de l'Université Al-Azhar, titulaire d'un Ijazah authentique avec une chaîne de transmission ininterrompue.",
+    "rosterNote": `Al-Rahma Academy compte une équipe de ${siteFacts.totalTeachers} enseignants. Cette page présente ${siteFacts.featuredTeacherCount} de nos tuteurs — d'autres enseignants font également partie de notre équipe.`,
     "badges": [
       "🎓 Certifié Al-Azhar",
       "📜 Titulaires d’une ijaza",

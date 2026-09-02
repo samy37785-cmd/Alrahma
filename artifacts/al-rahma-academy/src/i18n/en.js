@@ -1,4 +1,6 @@
-﻿const en = {
+﻿import { siteFacts } from '../data/siteFacts';
+
+const en = {
   "lang": "en",
   "dir": "ltr",
   "tagline": "Learn the Holy Quran Online",
@@ -344,6 +346,7 @@
     "eyebrow": "Meet some of our instructors",
     "title": "Our Qualified Tutors",
     "sub": "Every tutor at Al-Rahma Academy is a verified graduate of Al-Azhar University, holding an authentic Ijazah with an unbroken chain of narration (Sanad).",
+    "rosterNote": `Al-Rahma Academy has a team of ${siteFacts.totalTeachers} teachers. This page features ${siteFacts.featuredTeacherCount} of our tutors — other teachers are also part of our team.`,
     "badges": [
       "🎓 Al-Azhar Certified",
       "📜 Ijazah Holders",

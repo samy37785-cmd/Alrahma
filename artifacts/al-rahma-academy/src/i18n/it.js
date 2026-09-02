@@ -1,4 +1,6 @@
-﻿const it = {
+﻿import { siteFacts } from '../data/siteFacts';
+
+const it = {
   "lang": "it",
   "dir": "ltr",
   "tagline": "Impara il Sacro Corano online",
@@ -344,6 +346,7 @@
     "eyebrow": "Conosci alcuni dei nostri insegnanti",
     "title": "I nostri insegnanti qualificati",
     "sub": "Ogni insegnante di Al-Rahma Academy è un laureato verificato dell'Università di Al-Azhar e possiede un'autentica Ijazah con una catena di trasmissione (Sanad) ininterrotta.",
+    "rosterNote": `Al-Rahma Academy conta un team di ${siteFacts.totalTeachers} insegnanti. Questa pagina presenta ${siteFacts.featuredTeacherCount} dei nostri tutor — altri insegnanti fanno parte del nostro team.`,
     "badges": [
       "🎓 Certificato Al-Azhar",
       "📜 Titolari di Ijazah",

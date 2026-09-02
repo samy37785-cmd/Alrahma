@@ -1,4 +1,6 @@
-﻿const de = {
+﻿import { siteFacts } from '../data/siteFacts';
+
+const de = {
   "lang": "de",
   "dir": "ltr",
   "tagline": "Lerne den Koran online",
@@ -344,6 +346,7 @@
     "eyebrow": "Lerne einige unserer Lehrkräfte kennen",
     "title": "Unsere qualifizierten Lehrkräfte",
     "sub": "Jede Lehrkraft an der Al-Rahma Academy ist eine geprüfte Absolventin oder ein geprüfter Absolvent der Al-Azhar-Universität und besitzt eine authentische Ijazah mit lückenloser Überlieferungskette (Sanad).",
+    "rosterNote": `Al-Rahma Academy hat ein Team von ${siteFacts.totalTeachers} Lehrern. Diese Seite stellt ${siteFacts.featuredTeacherCount} unserer Lehrer vor — weitere Lehrer sind ebenfalls Teil unseres Teams.`,
     "badges": [
       "🎓 Al-Azhar-zertifiziert",
       "📜 Ijazah-Inhaberinnen und -Inhaber",

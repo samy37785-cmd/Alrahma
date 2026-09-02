@@ -15,6 +15,7 @@ import useCountUp from '../hooks/useCountUp';
 import { getCourseProgress, getMyCertificates } from '../api/courseApi';
 import { getClasses } from '../api/classApi';
 import { site } from '../data/site';
+import { siteFacts } from '../data/siteFacts';
 import { TOOLS_TEXT } from '../i18n/content';
 import { PRAYERS_ORDER, PRAYER_META } from '../utils/islamicToolsUtils';
 import DashboardLayout from '../components/layout/DashboardLayout';
@@ -837,7 +838,7 @@ export default function Dashboard() {
                   <div className="ds-empty__icon" style={{ width: 40, height: 40, fontSize: '1.1rem' }}>👨‍🏫</div>
                   <div className="ds-empty__title" style={{ fontSize: '0.82rem' }}>Your tutor is being matched</div>
                   <div className="ds-empty__desc" style={{ fontSize: '0.72rem' }}>
-                    Al-Azhar certified, identity-verified, background-checked. Safe for children. Assigned within 24 h.
+                    Al-Azhar certified, identity verified, with credentials held on file. Assigned within {siteFacts.supportResponseHours} h.
                   </div>
                   {!enrollment && (
                     <Link to="/enroll" className="btn btn--green btn--sm" style={{ marginTop: 10, borderRadius: 8, fontSize: '0.78rem' }}>

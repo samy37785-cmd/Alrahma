@@ -123,6 +123,7 @@ export default function TeacherProfile() {
 
             <div className="tp__section">
               <h2>{tp.credentials}</h2>
+              <p className="tp__creds-note">Held by every Al-Rahma Academy tutor:</p>
               <ul className="tp__creds">
                 {TEACHER_CREDENTIALS.map((c) => (
                   <li key={c.label.en} className="tp__cred">
@@ -164,10 +165,10 @@ export default function TeacherProfile() {
                     <span className="tp__proof-check" aria-label="Verified">✓</span>
                   </div>
                   <div className="tp__proof-badge">
-                    <span className="tp__proof-badge-icon">🧒</span>
+                    <span className="tp__proof-badge-icon">📁</span>
                     <div>
-                      <strong>Child Safety Cleared</strong>
-                      <span>Background check completed — safe to teach minors</span>
+                      <strong>Credentials on File</strong>
+                      <span>Diplomas, Ijazah and ID documents held securely by the academy</span>
                     </div>
                     <span className="tp__proof-check" aria-label="Verified">✓</span>
                   </div>

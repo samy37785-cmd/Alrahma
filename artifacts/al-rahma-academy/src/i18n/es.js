@@ -1,4 +1,6 @@
-﻿const es = {
+﻿import { siteFacts } from '../data/siteFacts';
+
+const es = {
   "lang": "es",
   "dir": "ltr",
   "tagline": "Aprende el Sagrado Corán en línea",
@@ -344,6 +346,7 @@
     "eyebrow": "Conoce a algunos de nuestros tutores",
     "title": "Nuestros tutores cualificados",
     "sub": "Todos los tutores de Al-Rahma Academy son graduados verificados de la Universidad de Al-Azhar y poseen una iyaza auténtica con una cadena de transmisión ininterrumpida (sanad).",
+    "rosterNote": `Al-Rahma Academy cuenta con un equipo de ${siteFacts.totalTeachers} profesores. Esta página presenta a ${siteFacts.featuredTeacherCount} de nuestros tutores — otros profesores también forman parte de nuestro equipo.`,
     "badges": [
       "🎓 Certificado Al-Azhar",
       "📜 Titulares de una iyaza",

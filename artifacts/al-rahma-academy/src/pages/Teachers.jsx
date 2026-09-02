@@ -5,7 +5,7 @@ import Footer from '../components/layout/Footer';
 import useSEO from '../hooks/useSEO';
 import Breadcrumbs from '../components/ui/Breadcrumbs';
 import { useLang, withLanguage } from '../context/LangContext';
-import { TEACHERS, TEACHER_CREDENTIALS as CREDENTIALS } from '../data';
+import { TEACHERS, TEACHER_CREDENTIALS as CREDENTIALS, siteFacts } from '../data';
 import { loadArabicFontsNow } from '../utils/loadArabicFonts';
 
 // Every card renders an Arabic name (dir="rtl"); trigger the Amiri swap
@@ -112,8 +112,8 @@ export default function Teachers() {
   useSEO({
     title: isAr ? 'معلمونا المعتمدون من الأزهر' : 'Al-Azhar Certified Quran Tutors',
     description: isAr
-      ? 'تعرف على معلمينا المعتمدين من الأزهر، وكل منهم يحمل إجازة بسند متصل. يُدرّسون القرآن والتجويد والدراسات الإسلامية لأطفالك بالإنجليزية والإيطالية والفرنسية والألمانية والإسبانية.'
-      : 'Meet our Al-Azhar certified tutors — every one holds a verified Ijazah with a continuous sanad. Available 24/7 in English, Italian, French, German and Spanish. Identity-verified and safe for children.',
+      ? `تضم أكاديمية الرحمة ${siteFacts.totalTeachers} معلمًا، ${siteFacts.featuredTeacherCount} منهم معروضون هنا. كل معلم خريج الأزهر ويحمل إجازة بسند متصل، وهويته موثقة لدى الأكاديمية.`
+      : `Al-Rahma Academy has ${siteFacts.totalTeachers} teachers on our team — ${siteFacts.featuredTeacherCount} of them are featured here. Every teacher is an Al-Azhar graduate holding a verified Ijazah with a continuous sanad, with identity verified by the academy.`,
     keywords: 'al-azhar certified quran tutor, online quran teacher, ijazah tutor, female quran teacher, quran teacher for children',
   });
 
@@ -149,6 +149,7 @@ export default function Teachers() {
             <p className="eyebrow" style={{ color: 'var(--gold)' }}>{ui.eyebrow}</p>
             <h1>{ui.title}</h1>
             <p className="tpg__hero-sub">{ui.sub}</p>
+            <p className="tpg__hero-roster">{ui.rosterNote}</p>
             <div className="tpg__hero-badges">
               {ui.badges.map((b) => <span key={b}>{b}</span>)}
             </div>

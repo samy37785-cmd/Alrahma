@@ -76,6 +76,7 @@ export const TEACHERS = [
     },
     subjects: ['hifz', 'tajweed', 'seerah', 'quran'],
     langs: ['en', 'ar'],
+    reviews: 85,
     color: '#c07020',
   },
   {
@@ -198,11 +199,44 @@ export const TEACHERS = [
     reviews: 75,
     color: '#2a7a8a',
   },
+  {
+    // Content Truth Contract — Corrective Closure Round 2 (2026-09-02):
+    // eleventh verified profile, owner-provided review count (90). No years
+    // of experience, student count, or outcome was supplied for this
+    // teacher, so none is invented here — bio/specialties are limited to
+    // the credentials confirmed for every tutor (Al-Azhar graduate, Ijazah
+    // with connected sanad, Arabic Language & Translation B.A., Islamic
+    // jurisprudence experience). "Gouda El-Shoubaky" is a normalized
+    // transliteration of the Arabic name, not an English name supplied by
+    // the owner.
+    id: 11,
+    nameAr: 'جودة الشوبكي',
+    nameEn: 'Gouda El-Shoubaky',
+    gender: 'm',
+    title: { en: 'Islamic Jurisprudence & Arabic Language Instructor', ar: 'مدرس الفقه الإسلامي واللغة العربية', it: 'Istruttore di Giurisprudenza Islamica e Lingua Araba', es: 'Instructor de Jurisprudencia Islámica y Lengua Árabe', de: 'Lehrer für islamische Rechtslehre und arabische Sprache', fr: 'Instructeur en jurisprudence islamique et langue arabe' },
+    bio: { en: 'Al-Azhar University graduate holding an Ijazah with a connected sanad and a B.A. in Arabic Language & Translation. Brings experience in Islamic jurisprudence (Fiqh) to his teaching.', ar: 'خريج جامعة الأزهر الشريف، حامل إجازة بسند متصل وبكالوريوس اللغة العربية والترجمة. لديه خبرة في الفقه الإسلامي.', it: 'Laureato all’Università di Al-Azhar, titolare di un’Ijazah con sanad connesso e di una laurea in Lingua Araba e Traduzione. Porta con sé esperienza in giurisprudenza islamica (Fiqh).', es: 'Graduado de la Universidad de Al-Azhar, titular de una Ijazah con sanad conectado y una licenciatura en Lengua Árabe y Traducción. Aporta experiencia en jurisprudencia islámica (Fiqh).', de: 'Absolvent der Al-Azhar-Universität mit einer Ijazah mit durchgehendem Sanad und einem Bachelor in Arabischer Sprache und Übersetzung. Er bringt Erfahrung in islamischer Rechtslehre (Fiqh) mit.', fr: 'Diplômé de l’Université d’Al-Azhar, titulaire d’une Ijazah à sanad ininterrompu et d’une licence en langue arabe et traduction. Il apporte une expérience en jurisprudence islamique (Fiqh).' },
+    specialties: {
+      en: ['Islamic Jurisprudence (Fiqh)', 'Arabic Language & Translation', 'Ijazah Programme'],
+      ar: ['الفقه الإسلامي', 'اللغة العربية والترجمة', 'برنامج الإجازة'],
+      it: ['Giurisprudenza islamica (Fiqh)', 'Lingua araba e traduzione', 'Programma Ijazah'],
+      es: ['Jurisprudencia islámica (Fiqh)', 'Lengua árabe y traducción', 'Programa de Ijazah'],
+      de: ['Islamische Rechtslehre (Fiqh)', 'Arabische Sprache und Übersetzung', 'Ijazah-Programm'],
+      fr: ['Jurisprudence islamique (Fiqh)', 'Langue arabe et traduction', 'Programme d’Ijazah'],
+    },
+    subjects: ['fiqh', 'arabic', 'ijazah'],
+    langs: ['en', 'fr'],
+    reviews: 90,
+    color: '#8a4a3a',
+  },
 ];
 
+// Shared credentials confirmed for every tutor on the team (not an
+// individual teacher's personal specialty or biography — see
+// TeacherProfile.jsx, which renders this list under its own "Credentials"
+// heading, separately from each teacher's individual `specialties`/`bio`).
 export const TEACHER_CREDENTIALS = [
   { icon: '🎓', label: { en: 'Al-Azhar University Graduate', ar: 'خريج جامعة الأزهر الشريف' } },
   { icon: '📜', label: { en: 'Ijazah with Connected Sanad', ar: 'إجازة بسند متصل' } },
   { icon: '📖', label: { en: 'Arabic Language & Translation (B.A.)', ar: 'بكالوريوس اللغة العربية والترجمة' } },
-  { icon: '⚖️', label: { en: 'Expert in Islamic Jurisprudence', ar: 'خبير في الفقه الإسلامي' } },
+  { icon: '⚖️', label: { en: 'Islamic Jurisprudence Experience', ar: 'خبرة في الفقه الإسلامي' } },
 ];

@@ -64,20 +64,20 @@ export default function TrustBar() {
     <Reveal as="section" className="trust-bar" aria-label="Trusted worldwide">
       <div className="container">
 
-        {/* Top row: headline trust stats */}
+        {/* Top row: headline trust stats.
+            Trust/marketing remediation: "40+ countries" and "1,200+ active
+            students" were deleted outright — no roster/analytics source in
+            this repo backs either figure (see
+            docs/trust-marketing-remediation.md). "32" Al-Azhar tutors is
+            de-numbered to a non-numeric checkmark for the same reason,
+            while keeping the (evidenced) qualitative claim. "14-day"
+            money-back and the WhatsApp business-hours status are kept —
+            both are documented in TermsOfService.jsx (§3 refund policy;
+            §13 response-time / business-hours policy, which this
+            component's useIsBusinessHours() mirrors exactly). */}
         <div className="trust-bar__stats">
           <div className="trust-bar__stat">
-            <span className="trust-bar__stat-num">40+</span>
-            <span className="trust-bar__stat-label">{tb.countries}</span>
-          </div>
-          <div className="trust-bar__divider" aria-hidden="true" />
-          <div className="trust-bar__stat">
-            <span className="trust-bar__stat-num">1,200+</span>
-            <span className="trust-bar__stat-label">{tb.activeStudents}</span>
-          </div>
-          <div className="trust-bar__divider" aria-hidden="true" />
-          <div className="trust-bar__stat">
-            <span className="trust-bar__stat-num">32</span>
+            <span className="trust-bar__stat-num" aria-hidden="true">✓</span>
             <span className="trust-bar__stat-label">{tb.azharTutors}</span>
           </div>
           <div className="trust-bar__divider" aria-hidden="true" />
@@ -92,7 +92,7 @@ export default function TrustBar() {
               target="_blank"
               rel="noopener noreferrer"
               className="trust-bar__wa"
-              aria-label="WhatsApp support status"
+              aria-label={tb.whatsappStatusAriaLabel}
             >
               <span
                 className={`trust-bar__wa-dot${waStatus === 'online' ? ' trust-bar__wa-dot--on' : ''}`}

@@ -94,12 +94,7 @@
 /* ── Hero eyebrow: strip letter-spacing that breaks Arabic joins ─── */
 [dir="rtl"] .hero__eyebrow { letter-spacing: 0; text-transform: none; }
 
-/* ── Hero stat dividers: flip the border side ───────────────────── */
-[dir="rtl"] .hero__stat { border-right: none; border-left: 1px solid rgba(255,255,255,.1); }
-[dir="rtl"] .hero__stat:first-child { border-left: none; }
-
 /* ── Hero pills desktop: mirror the negative offsets ────────────── */
 /* In RTL, the visual column is on the LEFT side, so physical
    left/right positions must mirror to avoid viewport overflow. */
-[dir="rtl"] .hero__pill--top    { right: auto; left: -10px; }
 [dir="rtl"] .hero__pill--bottom { left: auto;  right: -20px; }

@@ -597,13 +597,6 @@ html.dark .votd-enroll-cta {
   border-color: var(--border-default);
 }
 
-/* Trial urgency badge — uses amber tones that need to stay visible in dark */
-html.dark .trial__urgency {
-  background: rgba(212,175,55,.12);
-  border-color: rgba(212,175,55,.25);
-  color: #c9a035;
-}
-
 /* Join CTA secondary link and guarantee strip — section is dark green so
    inherits white text from the section background; no change needed.
    Guard just in case page context is light. */

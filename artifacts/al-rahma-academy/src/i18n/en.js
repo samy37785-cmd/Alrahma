@@ -54,24 +54,11 @@
     "verseQuote": "\"Read in the name of your Lord who created.\"",
     "verseRef": "Surah Al-'Alaq · 96:1",
     "iqraRead": "Read",
-    "studentsCount": "1,200+ students",
     "certifiedTutors": "Certified tutors",
     "watchDemo": "Watch a live lesson",
     "liveSessions": "Live one-to-one lessons",
     "scroll": "Scroll",
-    "microcopy": ["No credit card", "30-min free session", "Cancel anytime"],
-    "statsLabels": ["Lessons", "Rating", "Countries", "Tutors"],
-    "activityFrom": "from",
-    "activityActions": [
-      "just booked a free trial",
-      "enrolled in Tajweed",
-      "started Hifz programme",
-      "completed her first lesson",
-      "just booked a free trial",
-      "enrolled in Arabic course",
-      "started Quran Reading",
-      "just booked a free trial"
-    ]
+    "microcopy": ["No credit card", "30-min free session", "Cancel anytime"]
   },
   "features": {
     "eyebrow": "Why choose us",
@@ -234,8 +221,6 @@
     "getStarted": "Get Started",
     "mostPopular": "Most popular",
     "sub": "Affordable monthly plans billed per student. Cancel anytime.",
-    "banner": "🎓 Founding Rate",
-    "bannerText": "Founding-member pricing locked for life — rate increases as we grow",
     "youSave": "You save",
     "perHour": "/ hour equivalent",
     "cancelNote": "Cancel anytime — no contracts",
@@ -244,20 +229,11 @@
     "refundSub": "Not happy with your subscription? We'll refund every penny within 14 days — no questions asked.",
     "securePayment": "Secure payment",
     "cancelAnytime": "Cancel anytime",
-    "azharCertified": "32 Al-Azhar certified tutors",
-    "familiesServed": "9,000+ lessons delivered",
-    "countries": "Students from 40+ countries",
+    "azharCertified": "Al-Azhar certified tutors",
+    "familiesServed": "Lessons delivered worldwide",
+    "countries": "Students from around the world",
     "gdprNote": "GDPR compliant — your data is safe",
-    "offerEnds": "Offer ends Sunday",
-    "spotsLeft": "Only {n} discounted spots remaining this week",
     "showPricesIn": "Show prices in:"
-  },
-  "testimonials": {
-    "eyebrow": "Testimonials",
-    "heading": "What Our Students Say",
-    "sub": "Real experiences from real students — in their own words.",
-    "happyStudents": "lessons delivered worldwide",
-    "joinToday": "Join them today →"
   },
   "trial": {
     "eyebrow": "Free trial",
@@ -268,12 +244,21 @@
       "Choose your preferred time",
       "Lessons over Zoom or Skype"
     ],
+    "trustRow": {
+      "privacy": "Private & GDPR-compliant",
+      "duration": "30-minute session",
+      "commitment": "No commitment"
+    },
+    "formTitle": "Book your free lesson",
+    "formSub": "We'll contact you within 2 hours to schedule.",
+    "privacyNote": "We never sell your data. No spam, ever.",
     "waLabel": "Prefer WhatsApp?",
     "waLink": "Message us",
     "fields": {
       "name": "Full name",
       "email": "Email",
       "phone": "Phone / WhatsApp",
+      "phoneHint": " (WhatsApp preferred)",
       "course": "Course of interest",
       "message": "Message (optional)"
     },
@@ -295,15 +280,21 @@
     "planMessage": "I'm interested in the {plan} plan."
   },
   "newsletter": {
-    "badge": "FREE DOWNLOAD",
-    "heading": "Free Tajweed Starter Guide",
-    "sub": "Learn the 5 most important Tajweed rules before your child's first lesson — in plain language, no Arabic background required.",
+    "badge": "Newsletter",
+    "heading": "Tajweed Tips for Beginners",
+    "sub": "Practical Quran and Tajweed guidance for beginners, sent to your inbox — in plain language, no Arabic background required.",
+    "benefits": [
+      "Practical Tajweed guidance for beginners",
+      "Pronunciation tips explained simply",
+      "A simple plan to build a daily habit"
+    ],
     "placeholder": "Your email address",
-    "btn": "Send Me the Free Guide →",
+    "emailAriaLabel": "Email",
+    "btn": "Subscribe →",
     "subscribing": "Sending…",
     "subscribed": "Sent ✓",
     "successHeading": "Check your inbox!",
-    "successSub": "Your free Tajweed Starter Guide is on its way. It may take a minute or two.",
+    "successSub": "Your subscription is confirmed — check your inbox for updates.",
     "error": "Something went wrong. Please try again.",
     "privacy": "No spam. Unsubscribe any time."
   },
@@ -345,7 +336,7 @@
     "teachersLink": "Our Teachers",
     "terms": "Terms of Service",
     "refundPolicy": "Refund Policy",
-    "trustBadges": ["14-Day Money-Back Guarantee", "32 Al-Azhar Certified Tutors", "Students from 40+ Countries", "4.9★ Average Rating", "Reply within 2 hours"],
+    "trustBadges": ["14-Day Money-Back Guarantee", "Al-Azhar Certified Tutors", "Students From Around the World", "Committed to Quality Teaching", "Reply within 2 hours"],
     "supportHours": "Support: Sat–Thu · 08:00–23:00 (Cairo)",
     "replyBadge": "Reply ≤ 2h"
   },
@@ -358,24 +349,6 @@
       "📜 Ijazah Holders",
       "👩‍🏫 Female Tutors Available",
       "♿ Special Needs Support"
-    ],
-    "stats": [
-      {
-        "n": "10+",
-        "l": "Expert Tutors"
-      },
-      {
-        "n": "500+",
-        "l": "Students Taught"
-      },
-      {
-        "n": "4.9★",
-        "l": "Average Rating"
-      },
-      {
-        "n": "9,000+",
-        "l": "Teaching Hours"
-      }
     ],
     "filterSubject": "Subject:",
     "filterGender": "Gender:",
@@ -526,33 +499,27 @@
   },
   "joinCta": {
     "eyebrow": "Give Your Child the Gift of the Quran",
-    "heading": "In 6 months, your child will recite Al-Fatiha perfectly.",
-    "sub": "1,200+ families across Europe already made this choice. Two free trial lessons — no card, no commitment. Cancel anytime.",
+    "heading": "Help your child learn to recite Al-Fatiha with confidence.",
+    "sub": "Families across Europe have already made this choice. Two free trial lessons — no card, no commitment. Cancel anytime.",
     "promise": "🕌 Connected to a 1,400-year unbroken chain of Quran transmission",
     "stats": [
-      "40+ Countries",
-      "4.9★ Rating",
+      "Students Worldwide",
+      "Trusted by Families",
       "Ijazah Certified",
       "2 Free Lessons"
     ],
-    "cta": "Start Free — No Card Needed →"
-  },
-  "stats": {
-    "labels": [
-      "Al-Azhar Certified Tutors",
-      "Average Rating",
-      "Lessons Delivered",
-      "Countries Worldwide"
-    ]
+    "cta": "Start Free — No Card Needed →",
+    "browseCourses": "Browse courses first →",
+    "guarantee": "14-day money-back guarantee · No credit card required · Cancel anytime"
   },
   "trust": {
     "eyebrow": "Why families trust us",
     "heading": "Built on Transparency & Authenticity",
-    "sub": "Every claim on this page is verifiable. We believe trust is earned through evidence, not promises.",
+    "sub": "We believe trust is earned through evidence, not promises.",
     "items": [
-      { "stat": "32", "label": "Al-Azhar Certified Tutors", "desc": "Every tutor holds a verified Ijazah with an unbroken chain of knowledge traced back to the Prophet ﷺ." },
-      { "stat": "< 2h", "label": "Support Response Time", "desc": "We answer every message within 2 hours — because your learning journey cannot wait." },
-      { "stat": "40+", "label": "Countries", "desc": "Families from over 40 countries trust Al-Rahma Academy for authentic Quran education." },
+      { "stat": "✓", "label": "Al-Azhar Certified Tutors", "desc": "Every tutor holds a verified Ijazah with an unbroken chain of knowledge traced back to the Prophet ﷺ." },
+      { "stat": "< 2h", "label": "Support Response Time", "desc": "We aim to answer every message within 2 hours during business days — because your learning journey shouldn't wait long." },
+      { "stat": "Global", "label": "Reach", "desc": "Families from around the world trust Al-Rahma Academy for authentic Quran education." },
       { "stat": "14", "label": "Day Refund Guarantee", "desc": "Not satisfied? We refund 100% within 14 days — no questions, no paperwork, no risk." }
     ],
     "gdprTitle": "GDPR Compliant",
@@ -560,20 +527,19 @@
     "sslTitle": "SSL Encrypted",
     "sslDesc": "All payments and personal data are encrypted end-to-end.",
     "supportTitle": "2-Hour Support",
-    "supportDesc": "Real humans, not bots. We respond within 2 hours, 7 days a week.",
+    "supportDesc": "Real humans, not bots. We aim to respond within 2 hours during business hours.",
     "azharTitle": "Al-Azhar Verified",
     "azharDesc": "Official partnership with tutors certified by Al-Azhar University, Cairo.",
-    "countriesLabel": "Students from 40+ countries trust Al-Rahma Academy"
+    "countriesLabel": "Students from around the world trust Al-Rahma Academy"
   },
   "trustBar": {
-    "countries": "Countries",
-    "activeStudents": "Active students",
     "azharTutors": "Al-Azhar certified tutors",
     "moneyBack": "Money-back guarantee",
     "supportOnline": "Support online",
     "leaveMessage": "Leave a message",
     "repliesMinutes": "Typically replies in minutes",
     "repliesHours": "We reply within a few hours",
+    "whatsappStatusAriaLabel": "WhatsApp support status",
     "badges": ["No long-term contract", "Cancel anytime", "Ijazah-certified chain", "Female tutors available", "24 / 7 scheduling", "Compliant", "Reply within 2 hours"]
   },
   "blog": {

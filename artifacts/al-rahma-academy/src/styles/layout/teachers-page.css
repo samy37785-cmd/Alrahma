@@ -28,23 +28,12 @@
   backdrop-filter: blur(4px);
 }
 
-.tpg__stats-bar { background: var(--green-deep); padding: 24px 0; }
-.tpg__stats-inner { display: flex; justify-content: center; gap: 0; }
-.tpg__stat { text-align: center; padding: 0 40px; border-right: 1px solid rgba(255,255,255,.12); }
-.tpg__stat:last-child { border-right: 0; }
-/* font-weight:700 (not 800): 700 is already used by the nav's active-link
-   state, which renders on every page, so its Poppins file is warm by the
-   time an anonymous visitor reaches Teachers. 800 was used nowhere else
-   visible to a logged-out visitor, so it was always an uncached, page-
-   exclusive fetch — reliably landing late and triggering a visible font
-   swap right as these numbers render. Measured via CDP layout-shift source
-   attribution as ~90% of this page's total CLS on mobile, and confirmed
-   deterministic (identical value across 4 repeated full-suite runs) once
-   traced to this specific font file never having been requested by any
-   earlier page in an anonymous session. line-height/min-height are still
-   pinned in em units as a defensive reserve against any residual swap. */
-.tpg__stat strong { display: block; font-size: 1.8rem; font-weight: 700; color: var(--gold); line-height: 1.2; min-height: 1.2em; }
-.tpg__stat span { display: block; color: #cfe0d8; font-size: .85rem; line-height: 1.3; min-height: 1.3em; }
+/* Trust/marketing remediation: .tpg__stats-bar/.tpg__stats-inner/.tpg__stat*
+   removed along with the JSX block that rendered "10+ Expert Tutors /
+   500+ Students Taught / 4.9★ Average Rating / 9,000+ Teaching Hours" —
+   four more unsupported figures with no source in this repo, inconsistent
+   with the different numbers used elsewhere on the site for the same
+   claims. See docs/trust-marketing-remediation.md. */
 
 /* Filters */
 .tpg__filters { background: #fff; border-bottom: 1px solid var(--line); padding: 16px 0; position: sticky; top: 64px; z-index: 40; }

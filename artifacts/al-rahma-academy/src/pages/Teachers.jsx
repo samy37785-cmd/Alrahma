@@ -111,11 +111,16 @@ export default function Teachers() {
   const ui = t.teachersPg;
   const isAr = lang === 'ar';
 
+  // Trust/marketing remediation: dropped the "32 tutors" figure from both
+  // descriptions — no roster/headcount source in this repo backs it (the
+  // local TEACHERS dataset has 10 sample records, which is not evidence of
+  // the real commercial count either way; see
+  // docs/trust-marketing-remediation.md).
   useSEO({
     title: isAr ? 'معلمونا المعتمدون من الأزهر' : 'Al-Azhar Certified Quran Tutors',
     description: isAr
-      ? 'تعرف على معلمينا المعتمدين من الأزهر — 32 معلماً ومعلمة، كل منهم يحمل إجازة بسند متصل. يُدرّسون القرآن والتجويد والدراسات الإسلامية لأطفالك بالإنجليزية والإيطالية والفرنسية والألمانية والإسبانية.'
-      : 'Meet our 32 Al-Azhar certified tutors — every one holds a verified Ijazah with a continuous sanad. Available 24/7 in English, Italian, French, German and Spanish. Identity-verified and safe for children.',
+      ? 'تعرف على معلمينا المعتمدين من الأزهر، وكل منهم يحمل إجازة بسند متصل. يُدرّسون القرآن والتجويد والدراسات الإسلامية لأطفالك بالإنجليزية والإيطالية والفرنسية والألمانية والإسبانية.'
+      : 'Meet our Al-Azhar certified tutors — every one holds a verified Ijazah with a continuous sanad. Available 24/7 in English, Italian, French, German and Spanish. Identity-verified and safe for children.',
     keywords: 'al-azhar certified quran tutor, online quran teacher, ijazah tutor, female quran teacher, quran teacher for children',
   });
 
@@ -156,18 +161,6 @@ export default function Teachers() {
             </div>
           </div>
         </section>
-
-        {/* Stats bar */}
-        <div className="tpg__stats-bar">
-          <div className="container tpg__stats-inner">
-            {ui.stats.map((s) => (
-              <div key={s.l} className="tpg__stat">
-                <strong>{s.n}</strong>
-                <span>{s.l}</span>
-              </div>
-            ))}
-          </div>
-        </div>
 
         {/* Filters */}
         <div className="tpg__filters">

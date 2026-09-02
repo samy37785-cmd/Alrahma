@@ -73,8 +73,16 @@ export default function About() {
               Al-Azhar graduates and one clear rule: <strong>every tutor must be someone I would
               trust to teach my own children.</strong>
             </p>
+            {/* Trust/marketing remediation: dropped "over 1,200 families
+                across 40+ countries" — no roster/headcount source in this
+                repo backs those figures (see
+                docs/trust-marketing-remediation.md). The founder narrative
+                itself is left untouched — nothing in this file marks it as
+                placeholder/fabricated, so it is treated as an institutional
+                claim pending product-owner confirmation (see the Unknown
+                Evidence Register). */}
             <p className="founder__body">
-              Today, over 1,200 families across 40+ countries trust us with the most important
+              Today, families across many countries trust us with the most important
               thing they own — the Quran education of their children. Every tutor holds a verified
               Ijazah. Every lesson is one-to-one. Every family can change their tutor, pause their
               subscription, or request a refund — without any friction.

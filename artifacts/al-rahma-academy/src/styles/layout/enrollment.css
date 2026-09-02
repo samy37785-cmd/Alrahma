@@ -329,8 +329,6 @@
   .tpg__card { flex-direction: column; }
   .tpg__avatar-col { width: 100%; flex-direction: row; justify-content: flex-start; padding: 20px; gap: 16px; }
   .tpg__filters-inner { flex-direction: column; }
-  .tpg__stats-inner { flex-wrap: wrap; justify-content: center; }
-  .tpg__stat { padding: 12px 20px; border-inline-end: 0; border-bottom: 1px solid rgba(255,255,255,.12); }
   .enroll__card { padding: 24px 20px; }
   .enroll__row { grid-template-columns: 1fr; }
   .enroll__subject-grid { grid-template-columns: repeat(2, 1fr); }

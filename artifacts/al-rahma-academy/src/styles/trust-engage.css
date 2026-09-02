@@ -495,14 +495,6 @@
   text-align: center; margin: 6px 0 0;
   font-weight: 600;
 }
-.plan__anchor-note {
-  font-size: 0.78rem; color: var(--text-secondary);
-  background: var(--color-gold-surface, #fef9ee);
-  border: 1px solid var(--color-gold-border, #f0d98a);
-  border-radius: 8px; padding: 8px 12px;
-  margin: 0 0 10px; line-height: 1.5;
-}
-
 /* Footer support hours */
 .footer__support-hours {
   display: flex; align-items: center; gap: 8px;
@@ -657,8 +649,6 @@ html.dark .cancel-survey__other { background: var(--bg-surface); border-color: v
 html.dark .cancel-survey__offer-text { background: rgba(255,255,255,.05); }
 html.dark .cancel-survey__danger { border-color: #f87171; color: #f87171; }
 html.dark .cancel-survey__danger:hover { background: rgba(239,68,68,.1); }
-
-html.dark .plan__anchor-note { background: rgba(251,191,36,.08); border-color: rgba(251,191,36,.25); }
 
 /* ── Responsive ────────────────────────────────────────────────────── */
 @media (max-width: 900px) {

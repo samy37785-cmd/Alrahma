@@ -1435,19 +1435,10 @@
    TRIAL SECTION — urgency + trust additions
    ══════════════════════════════════════════════════════════════════════ */
 
-.trial__urgency {
-  display: inline-flex; align-items: center; gap: 8px;
-  background: rgba(212,175,55,.1); border: 1px solid rgba(212,175,55,.3);
-  border-radius: 999px; padding: 6px 14px;
-  font-size: .8rem; color: #6b4e00;
-  margin-bottom: 18px;
-}
-.trial__urgency-dot {
-  width: 8px; height: 8px; border-radius: 50%;
-  background: #d4af37;
-  animation: pulse-ring 1.4s ease-out infinite;
-  flex-shrink: 0;
-}
+/* Trust/marketing remediation: .trial__urgency / .trial__urgency-dot
+   ("Only N free trial spots left this week", N from a day-seeded
+   function) removed along with the JSX and helper that used them — see
+   docs/trust-marketing-remediation.md. */
 .trial__trust-row {
   display: flex; flex-wrap: wrap; gap: 14px;
   font-size: .8rem; color: var(--text-secondary);

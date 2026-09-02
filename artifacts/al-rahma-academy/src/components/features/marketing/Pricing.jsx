@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Reveal from '../../ui/Reveal';
 import MobileCarousel from '../../ui/MobileCarousel';
 import CheckoutModal from '../../ui/CheckoutModal';
@@ -51,39 +51,15 @@ const PLAN_ICONS = [
   </svg>,
 ];
 
-/* Returns the next Sunday 23:59:59 local time */
-function getNextSundayDeadline() {
-  const now = new Date();
-  const day = now.getDay(); // 0=Sun
-  const daysUntilSunday = day === 0 ? 7 : 7 - day;
-  const next = new Date(now);
-  next.setDate(now.getDate() + daysUntilSunday);
-  next.setHours(23, 59, 59, 0);
-  return next;
-}
-
-function useCountdown() {
-  const [deadline] = useState(getNextSundayDeadline);
-  const [left, setLeft] = useState(() => Math.max(0, deadline - Date.now()));
-
-  useEffect(() => {
-    const t = setInterval(() => setLeft(Math.max(0, deadline - Date.now())), 1000);
-    return () => clearInterval(t);
-  }, [deadline]);
-
-  const totalSec = Math.floor(left / 1000);
-  const h = Math.floor(totalSec / 3600);
-  const m = Math.floor((totalSec % 3600) / 60);
-  const s = totalSec % 60;
-  const pad = (n) => String(n).padStart(2, '0');
-  return { h: pad(h), m: pad(m), s: pad(s), expired: left === 0 };
-}
-
-/* Deterministic "spots remaining" seeded to the current week number */
-function spotsLeft() {
-  const weekNum = Math.floor(Date.now() / (7 * 24 * 3600 * 1000));
-  return 3 + (weekNum % 4); // cycles 3-6
-}
+/* Trust/marketing remediation: this file used to compute a countdown to
+   "next Sunday" (getNextSundayDeadline/useCountdown) and a deterministic
+   "spots remaining" number seeded to the ISO week number (spotsLeft) —
+   neither tied to any real campaign record with a genuine deadline or
+   capacity. The countdown reset every week forever, so the "founding-rate
+   offer ends Sunday" framing it supported was never true. Both were
+   deleted along with the urgency banner and spots-scarcity UI that used
+   them (see docs/trust-marketing-remediation.md). Pricing, plans and
+   checkout are unaffected — only the fabricated urgency layer is gone. */
 
 export default function Pricing() {
   const [selectedPlan, setSelectedPlan] = useState(null);
@@ -91,8 +67,6 @@ export default function Pricing() {
   const { t, lang } = useLang();
   const p = t.pricing;
   const planText = pick(PLAN_TEXT, lang);
-  const { h, m, s } = useCountdown();
-  const spots = spotsLeft();
   const curr = CURRENCIES.find((c) => c.code === currencyCode) || CURRENCIES[0];
 
   return (
@@ -120,32 +94,6 @@ export default function Pricing() {
               </button>
             ))}
           </div>
-        </Reveal>
-
-        {/* ── Urgency banner with live countdown ── */}
-        <Reveal className="pricing__banner pricing__banner--urgent">
-          <span className="pricing__banner-badge">{p.banner}</span>
-          <span className="pricing__banner-text">
-            {p.bannerText}&ensp;—&ensp;
-            <strong style={{ color: '#fff' }}>
-              {p.offerEnds}:
-            </strong>
-          </span>
-          <div className="pricing__countdown" aria-live="polite" aria-label="Time remaining">
-            <span className="pricing__countdown-block"><b>{h}</b><small>h</small></span>
-            <span className="pricing__countdown-sep">:</span>
-            <span className="pricing__countdown-block"><b>{m}</b><small>m</small></span>
-            <span className="pricing__countdown-sep">:</span>
-            <span className="pricing__countdown-block"><b>{s}</b><small>s</small></span>
-          </div>
-        </Reveal>
-
-        {/* Spots scarcity */}
-        <Reveal style={{ textAlign: 'center', marginBottom: 8 }}>
-          <p className="pricing__spots">
-            <span className="pricing__spots-dot" aria-hidden="true" />
-            {p.spotsLeft.replace('{n}', spots)}
-          </p>
         </Reveal>
 
         <MobileCarousel trackClassName="pricing__grid" ariaLabel={p.heading}>
@@ -203,12 +151,6 @@ export default function Pricing() {
                     <li key={feat}>{feat}</li>
                   ))}
                 </ul>
-                {/* Premium anchoring statement */}
-                {i === 2 && (
-                  <p className="plan__anchor-note">
-                    👑 Premium students complete their first Juz <strong>2× faster</strong> on average.
-                  </p>
-                )}
                 <button
                   type="button"
                   className={`btn btn--block ${plan.featured ? 'btn--gold' : 'btn--green'}`}
@@ -248,15 +190,15 @@ export default function Pricing() {
         </div>
         <div className="pricing__trust-item">
           <svg className="pricing__trust-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
-          <span>{p.azharCertified || '32 Al-Azhar certified tutors'}</span>
+          <span>{p.azharCertified || 'Al-Azhar certified tutors'}</span>
         </div>
         <div className="pricing__trust-item">
           <svg className="pricing__trust-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-          <span>{p.familiesServed || '9,000+ lessons delivered'}</span>
+          <span>{p.familiesServed || 'Lessons delivered worldwide'}</span>
         </div>
         <div className="pricing__trust-item">
           <svg className="pricing__trust-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-          <span>{p.countries || 'Students from 40+ countries'}</span>
+          <span>{p.countries || 'Students from around the world'}</span>
         </div>
         <div className="pricing__trust-item pricing__trust-item--gdpr">
           <span className="pricing__gdpr-badge" aria-label="GDPR Compliant">GDPR</span>

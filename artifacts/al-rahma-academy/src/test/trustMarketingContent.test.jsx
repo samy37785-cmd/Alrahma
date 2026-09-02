@@ -1,0 +1,159 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { render } from '@testing-library/react';
+import { BrowserRouter } from 'react-router-dom';
+import { describe, expect, it } from 'vitest';
+import { LangProvider } from '../context/LangContext';
+import { langFromPath } from '../utils/localePath';
+import Testimonials from '../components/features/marketing/Testimonials';
+import StatsBanner from '../components/features/marketing/StatsBanner';
+import TrustBar from '../components/features/marketing/TrustBar';
+import * as socialProof from '../data/marketing/socialProof';
+import * as content from '../i18n/content';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// Trust/marketing remediation (see docs/trust-marketing-remediation.md):
+// this file guards against fabricated testimonials, unsupported stats and
+// a synthetic live-activity counter ever coming back into the marketing
+// surface. Section references below are to that task's spec.
+
+function renderWithLang(children, pathname = '/') {
+  window.history.replaceState({}, '', pathname);
+  const { basename } = langFromPath(window.location.pathname);
+  return render(
+    <BrowserRouter basename={basename}>
+      <LangProvider>{children}</LangProvider>
+    </BrowserRouter>,
+  );
+}
+
+// Names/labels that only ever existed in the deleted fabricated
+// TESTIMONIALS array / TESTIMONIAL_TEXT quotes / fake video-story cards.
+const KNOWN_PLACEHOLDER_STRINGS = [
+  'Aisha R.',
+  'Yusuf K.',
+  'Sarah M.',
+  'Mariam O.',
+  'Thomas B.',
+  'Fatima C.',
+  'Ahmed, 9',
+  'Johnson Family',
+  'Watch Real Student Stories',
+  '✓ Verified',
+];
+
+describe('fabricated testimonials no longer render (spec §2)', () => {
+  it('Testimonials renders nothing in the default source snapshot', () => {
+    const { container } = renderWithLang(<Testimonials />);
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  it('none of the known placeholder names/labels appear anywhere in a full Home-adjacent render', () => {
+    const { container } = renderWithLang(
+      <div>
+        <Testimonials />
+        <StatsBanner />
+      </div>,
+    );
+    const text = container.textContent;
+    for (const needle of KNOWN_PLACEHOLDER_STRINGS) {
+      expect(text).not.toContain(needle);
+    }
+  });
+
+  it('there is no production toggle left that can silently re-enable the fabricated data', () => {
+    // socialProof.js used to export SHOW_TESTIMONIALS / TESTIMONIALS /
+    // SHOW_STATS / STATS / HAPPY_STUDENTS. They must be gone from the
+    // module's exports entirely — not merely defaulted to false — so
+    // there is nothing to flip back to `true` and republish.
+    expect(socialProof.SHOW_TESTIMONIALS).toBeUndefined();
+    expect(socialProof.TESTIMONIALS).toBeUndefined();
+    expect(socialProof.SHOW_STATS).toBeUndefined();
+    expect(socialProof.STATS).toBeUndefined();
+    expect(socialProof.HAPPY_STUDENTS).toBeUndefined();
+  });
+
+  it('the fabricated per-language testimonial quotes are gone from i18n/content.js', () => {
+    expect(content.TESTIMONIAL_TEXT).toBeUndefined();
+  });
+});
+
+describe('unsupported statistics no longer render (spec §3)', () => {
+  it('StatsBanner renders nothing (32 tutors / 4.9★ / 9,000+ / 40+ countries had no real source)', () => {
+    const { container } = renderWithLang(<StatsBanner />);
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  it('TrustBar no longer shows the unsupported "40+ countries" / "1,200+ active students" figures', () => {
+    const { container } = renderWithLang(<TrustBar />);
+    const text = container.textContent;
+    expect(text).not.toContain('40+');
+    expect(text).not.toContain('1,200+');
+    expect(text).not.toContain('1200+');
+  });
+
+  it('TrustBar keeps the evidenced 14-day guarantee and de-numbers the Al-Azhar tutor count', () => {
+    const { container } = renderWithLang(<TrustBar />);
+    const text = container.textContent;
+    expect(text).toContain('14-day');
+    // "32" must not appear as a standalone tutor-count figure anymore.
+    expect(container.querySelector('.trust-bar__stat-num')?.textContent).not.toBe('32');
+  });
+});
+
+describe('synthetic live counter no longer renders (spec §4)', () => {
+  it('LiveCounter.jsx has been deleted from the marketing components directory', () => {
+    const p = path.resolve(
+      __dirname,
+      '../components/features/marketing/LiveCounter.jsx',
+    );
+    expect(fs.existsSync(p)).toBe(false);
+  });
+
+  it('no marketing/trust component computes a fake live headcount via Math.random or date-derived formulas for that purpose', () => {
+    const dir = path.resolve(__dirname, '../components/features/marketing');
+    const offenders = [];
+    for (const file of fs.readdirSync(dir)) {
+      if (!file.endsWith('.jsx')) continue;
+      const text = fs.readFileSync(path.join(dir, file), 'utf8');
+      if (/Math\.random/.test(text)) offenders.push(file);
+    }
+    expect(offenders).toEqual([]);
+  });
+
+  it('nothing in the rendered trust surface claims students are "learning right now" or reports synthetic "lessons this month"', () => {
+    const { container } = renderWithLang(
+      <div>
+        <TrustBar />
+        <StatsBanner />
+      </div>,
+    );
+    const text = container.textContent;
+    expect(text).not.toContain('learning right now');
+    expect(text).not.toContain('lessons this month');
+  });
+});
+
+describe('Home metadata no longer repeats removed unsupported numbers (spec §3)', () => {
+  it('Home.jsx SEO description does not contain the removed "1,200+ families" claim', () => {
+    const homeSrc = fs.readFileSync(
+      path.resolve(__dirname, '../pages/Home.jsx'),
+      'utf8',
+    );
+    const descMatch = homeSrc.match(/description:\s*'([^']*)'/);
+    expect(descMatch).not.toBeNull();
+    expect(descMatch[1]).not.toContain('1,200+');
+    expect(descMatch[1]).not.toContain('1200+');
+  });
+
+  it('Home.jsx no longer imports or renders the disabled Testimonials component', () => {
+    const homeSrc = fs.readFileSync(
+      path.resolve(__dirname, '../pages/Home.jsx'),
+      'utf8',
+    );
+    expect(homeSrc).not.toMatch(/import Testimonials/);
+    expect(homeSrc).not.toMatch(/<Testimonials\s*\/>/);
+  });
+});

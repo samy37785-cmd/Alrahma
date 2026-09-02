@@ -1,55 +1,16 @@
-import { useEffect, useRef, useState } from 'react';
-import useScrollReveal from '../../../hooks/useScrollReveal';
-import useCountUp from '../../../hooks/useCountUp';
-import { useLang } from '../../../context/LangContext';
-import { STATS as STATS_DATA, SHOW_STATS } from '../../../data/marketing/socialProof';
-
-function StatItem({ value, suffix, label, active, decimals = 0 }) {
-  const count = useCountUp(value, 1600, active, decimals);
-  return (
-    <div className="stats-item">
-      <strong className="stats-item__num">{count}{suffix}</strong>
-      <span className="stats-item__label">{label}</span>
-    </div>
-  );
-}
-
+/*
+ * Trust/marketing remediation: this banner used to animate four numbers —
+ * "32 Al-Azhar tutors", "4.9★", "9,000+ lessons", "40+ countries" — pulled
+ * from src/data/marketing/socialProof.js. None of those figures had a real
+ * data source in this repository (see that file's header comment and
+ * docs/trust-marketing-remediation.md), so the numbers were deleted rather
+ * than kept behind a togglable flag.
+ *
+ * This component is kept (instead of deleted outright) as the documented
+ * place to re-enable a real stats banner once genuine, sourced figures
+ * exist — at which point it should read them from an actual data source,
+ * not typed-in constants. Until then it renders nothing.
+ */
 export default function StatsBanner() {
-  const { t } = useLang();
-  const labels = t.stats.labels;
-  const countRef  = useRef(null);
-  const revealRef = useScrollReveal();
-  const [active, setActive] = useState(false);
-
-  useEffect(() => {
-    // Fallback for browsers without IntersectionObserver: count up immediately.
-    if (typeof IntersectionObserver === 'undefined') { setActive(true); return; }
-    const obs = new IntersectionObserver(
-      ([e]) => { if (e.isIntersecting) { setActive(true); obs.disconnect(); } },
-      { threshold: 0.3 }
-    );
-    if (countRef.current) obs.observe(countRef.current);
-    return () => obs.disconnect();
-  }, []);
-
-  // These figures are placeholder marketing numbers — hide the banner unless
-  // they're explicitly enabled (or replaced with real stats in socialProof.js).
-  if (!SHOW_STATS) return null;
-
-  // Two independent IntersectionObservers share this one node: countRef drives
-  // the count-up (React state), revealRef (useScrollReveal) toggles the
-  // .reveal/.visible classes directly via classList — neither interferes with
-  // the other, so both refs are attached to the same element.
-  return (
-    <section
-      className="stats-banner"
-      ref={(el) => { countRef.current = el; revealRef.current = el; }}
-    >
-      <div className="container stats-banner__grid">
-        {STATS_DATA.map((s, i) => (
-          <StatItem key={i} {...s} label={labels[i]} active={active} decimals={s.decimals || 0} />
-        ))}
-      </div>
-    </section>
-  );
+  return null;
 }

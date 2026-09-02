@@ -17,7 +17,6 @@ import IsnadChain from '../components/features/marketing/IsnadChain';
 import Courses from '../components/features/marketing/Courses';
 import JoinCTA from '../components/features/marketing/JoinCTA';
 import Pricing from '../components/features/marketing/Pricing';
-import Testimonials from '../components/features/marketing/Testimonials';
 import FAQ from '../components/features/marketing/FAQ';
 import Trial from '../components/features/marketing/Trial';
 import Newsletter from '../components/features/marketing/Newsletter';
@@ -33,7 +32,11 @@ export default function Home() {
   const { t } = useLang();
   useSEO({
     title: 'Learn the Quran Online — Al-Rahma Academy',
-    description: 'One-to-one online Quran, Tajweed and Arabic lessons with Al-Azhar certified tutors. Available 24/7 in English, Italian, French, German and Spanish. 2 free trial lessons — no payment needed. Trusted by 1,200+ families across Europe.',
+    // Trust/marketing remediation: dropped the "1,200+ families" figure —
+    // no real headcount source exists in this repo (see
+    // docs/trust-marketing-remediation.md). Describe the service without
+    // an unverifiable number instead of inventing a different one.
+    description: 'One-to-one online Quran, Tajweed and Arabic lessons with Al-Azhar certified tutors. Available 24/7 in English, Italian, French, German and Spanish. 2 free trial lessons — no payment needed.',
     keywords: 'learn quran online, online quran classes, quran tutor, tajweed lessons, al-azhar tutor, online islamic studies, quran for children, hifz online',
     // Built from the same t.faq.items array <FAQ /> renders below, so this
     // can never drift from the actual visible questions/answers again.
@@ -56,7 +59,6 @@ export default function Home() {
         <DeferredSection><Steps /></DeferredSection>
         <DeferredSection><Tutors /></DeferredSection>
         <DeferredSection><IsnadChain /></DeferredSection>
-        <DeferredSection><Testimonials /></DeferredSection>
         <DeferredSection><TrustBadges /></DeferredSection>
         <DeferredSection><Pricing /></DeferredSection>
         <DeferredSection><JoinCTA onTrialClick={() => setTrialOpen(true)} /></DeferredSection>

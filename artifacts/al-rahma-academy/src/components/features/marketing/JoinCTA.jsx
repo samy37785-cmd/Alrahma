@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom';
 import Reveal from '../../ui/Reveal';
 import { useLang } from '../../../context/LangContext';
-import LiveCounter from './LiveCounter';
 
 /* Inline SVG icons — same Lucide-style used across the homepage, replacing
    raw emoji so the stats row matches the rest of the icon language. */
@@ -87,15 +86,12 @@ export default function JoinCTA({ onTrialClick }) {
 
         {/* Secondary CTA */}
         <Link to="/courses" className="join-cta__secondary">
-          Browse courses first →
+          {jc.browseCourses}
         </Link>
 
-        {/* Live activity */}
-        <div className="join-cta__live">
-          <LiveCounter />
-        </div>
-
-        {/* Risk reversal */}
+        {/* Risk reversal — 14-day guarantee is documented in
+            TermsOfService.jsx §3; "no credit card"/"cancel anytime" match
+            the free-trial and cancellation terms in §4–5. */}
         <div className="join-cta__guarantee">
           <span aria-hidden="true">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
@@ -104,7 +100,7 @@ export default function JoinCTA({ onTrialClick }) {
               <polyline points="9 12 11 14 15 10"/>
             </svg>
           </span>
-          <span>14-day money-back guarantee · No credit card required · Cancel anytime</span>
+          <span>{jc.guarantee}</span>
         </div>
       </div>
     </Reveal>

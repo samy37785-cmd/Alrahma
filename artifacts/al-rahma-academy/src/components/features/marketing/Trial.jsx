@@ -7,10 +7,12 @@ import { useLang } from '../../../context/LangContext';
 
 const EMPTY = { name: '', email: '', phone: '', course: '', message: '' };
 
-/* Deterministic spots seeded to the current day — cycles 3-7 */
-function spotsToday() {
-  return 3 + (new Date().getDate() % 5);
-}
+// Trust/marketing remediation: this component used to show
+// "Only N free trial spots left this week", where N came from
+// spotsToday() — a deterministic function seeded to the day of month
+// (3 + date % 5), not a real capacity/booking record. That function and
+// the urgency badge that rendered it have been deleted; see
+// docs/trust-marketing-remediation.md.
 
 export default function Trial() {
   const { selectedCourse, selectedPlan } = useTrial();
@@ -20,7 +22,6 @@ export default function Trial() {
   const [submitted, setSubmitted] = useState(false);
   const [error, setError]         = useState('');
   const [sending, setSending]     = useState(false);
-  const spots = spotsToday();
 
   useEffect(() => {
     if (selectedCourse) setForm((prev) => ({ ...prev, course: selectedCourse }));
@@ -72,12 +73,6 @@ export default function Trial() {
 
         {/* ── Left: value copy ── */}
         <div className="trial__text">
-          {/* Urgency badge */}
-          <div className="trial__urgency">
-            <span className="trial__urgency-dot" aria-hidden="true" />
-            Only <strong>{spots} free trial spots</strong> left this week
-          </div>
-
           <p className="eyebrow">{tr.eyebrow}</p>
           <h2>{tr.heading}</h2>
           <p>{tr.sub}</p>
@@ -88,11 +83,14 @@ export default function Trial() {
             ))}
           </ul>
 
-          {/* Trust mini-row */}
+          {/* Trust mini-row — duration matches the 30-minute free trial
+              lesson described throughout the site (Steps/Hero microcopy,
+              QuickTrialModal); the privacy line matches
+              TermsOfService.jsx §10 (we never sell data to third parties). */}
           <div className="trial__trust-row">
-            <span>🔒 Secure</span>
-            <span>⏱️ 30-min session</span>
-            <span>✓ No commitment</span>
+            <span>🔒 {tr.trustRow.privacy}</span>
+            <span>⏱️ {tr.trustRow.duration}</span>
+            <span>✓ {tr.trustRow.commitment}</span>
           </div>
 
           <p className="trial__whats">
@@ -106,10 +104,11 @@ export default function Trial() {
         {/* ── Right: form ── */}
         <form className="trial__form" onSubmit={handleSubmit} noValidate>
 
-          {/* Form header with guarantee */}
+          {/* Form header — response time matches TermsOfService.jsx §13
+              (within 2 hours during business days, Sat–Thu). */}
           <div className="trial__form-head">
-            <h3 className="trial__form-title">Book your free lesson</h3>
-            <p className="trial__form-sub">We&apos;ll contact you within 2 hours to schedule.</p>
+            <h3 className="trial__form-title">{tr.formTitle}</h3>
+            <p className="trial__form-sub">{tr.formSub}</p>
           </div>
 
           <div className="field">
@@ -139,7 +138,7 @@ export default function Trial() {
           <div className="field">
             <label htmlFor="phone">
               {tr.fields.phone}
-              <span style={{ fontWeight: 400, color: 'var(--text-secondary)', marginLeft: 4 }}>(WhatsApp preferred)</span>
+              <span style={{ fontWeight: 400, color: 'var(--text-secondary)', marginLeft: 4 }}>{tr.fields.phoneHint}</span>
             </label>
             <input
               type="tel"
@@ -175,9 +174,10 @@ export default function Trial() {
             {sending ? tr.sending : tr.submit}
           </button>
 
-          {/* Privacy micro-copy */}
+          {/* Privacy micro-copy — matches TermsOfService.jsx §10 (we never
+              sell your data to third parties). */}
           <p className="trial__privacy">
-            🔒 We never share your data. No spam, ever.
+            🔒 {tr.privacyNote}
           </p>
 
           {submitted && (

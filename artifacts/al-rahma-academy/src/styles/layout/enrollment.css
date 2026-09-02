@@ -8,27 +8,6 @@
 .enroll__header h1 { font-size: clamp(1.8rem,4vw,2.6rem); color: var(--green-deep); margin-bottom: 8px; }
 .enroll__tagline { color: var(--muted); font-size: 1rem; }
 
-/* Trust strip */
-.enroll__trust-strip {
-  display: flex; align-items: center; gap: 24px; flex-wrap: wrap;
-  background: linear-gradient(135deg,#f0faf5,#edf9f3);
-  border: 1px solid rgba(11,110,79,.15); border-radius: 14px;
-  padding: 18px 24px; margin-bottom: 28px;
-}
-.enroll__trust-quote {
-  flex: 1; min-width: 200px; position: relative; padding-inline-start: 12px;
-  border-inline-start: 3px solid var(--green);
-}
-.enroll__trust-quote p { font-size: .9rem; color: var(--ink); font-style: italic; margin-bottom: 4px; line-height: 1.5; }
-.enroll__trust-quote footer { font-size: .78rem; color: var(--muted); font-weight: 600; }
-.enroll__trust-quote-mark { display: none; }
-.enroll__trust-stats {
-  display: flex; gap: 20px; flex-shrink: 0;
-}
-.enroll__trust-stat { text-align: center; }
-.enroll__trust-stat strong { display: block; font-size: 1.3rem; font-weight: 800; color: var(--green); line-height: 1; }
-.enroll__trust-stat span { font-size: .72rem; color: var(--muted); font-weight: 600; white-space: nowrap; }
-
 /* Progress bar */
 .enroll__progress {
   display: flex; align-items: flex-start; justify-content: center;

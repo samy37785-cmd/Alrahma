@@ -140,6 +140,27 @@ describe('ToolsHub no longer shows unsupported usage stats or a fake social-proo
   });
 });
 
+describe('Enroll.jsx no longer shows a fabricated testimonial or unsupported stats', () => {
+  // Integration review finding: Enroll.jsx (the actual enrollment/checkout
+  // page) was outside the trust-marketing branch's diff entirely and still
+  // hardcoded a fabricated named quote ("Fatima K., Manchester") plus three
+  // unsourced statistics (500+ families, 40+ countries, 4.9★) directly in
+  // JSX - the same category of fabricated content already removed from
+  // Testimonials.jsx/TrustBar/Hero elsewhere, just missed on this page.
+  it('no fabricated quote, name, or unsupported stat remains in source', () => {
+    const src = fs.readFileSync(
+      path.resolve(__dirname, '../pages/Enroll.jsx'),
+      'utf8',
+    );
+    expect(src).not.toMatch(/Fatima K/);
+    expect(src).not.toMatch(/completed her first Surah/);
+    expect(src).not.toMatch(/enroll__trust-strip/);
+    expect(src).not.toMatch(/500\+/);
+    expect(src).not.toMatch(/40\+/);
+    expect(src).not.toMatch(/4\.9/);
+  });
+});
+
 describe('synthetic live counter no longer renders (spec §4)', () => {
   it('LiveCounter.jsx has been deleted from the marketing components directory', () => {
     const p = path.resolve(

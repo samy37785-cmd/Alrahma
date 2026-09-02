@@ -108,20 +108,6 @@ export default function Enroll() {
                 <p className="enroll__tagline">{e.tagline}</p>
               </div>
 
-              {/* ── Social proof quote strip ── */}
-              <div className="enroll__trust-strip">
-                <div className="enroll__trust-quote">
-                  <span className="enroll__trust-quote-mark">&quot;</span>
-                  <p>My daughter completed her first Surah in just 3 weeks. I&apos;ve never seen her so proud of herself.</p>
-                  <footer>— Fatima K., Manchester</footer>
-                </div>
-                <div className="enroll__trust-stats">
-                  <div className="enroll__trust-stat"><strong>500+</strong><span>Families enrolled</span></div>
-                  <div className="enroll__trust-stat"><strong>40+</strong><span>Countries</span></div>
-                  <div className="enroll__trust-stat"><strong>4.9★</strong><span>Avg. rating</span></div>
-                </div>
-              </div>
-
               <Progress step={step} />
 
               <div className="enroll__card">

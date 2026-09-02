@@ -9,6 +9,7 @@ import { langFromPath } from '../utils/localePath';
 import TrustBar from '../components/features/marketing/TrustBar';
 import * as socialProof from '../data/marketing/socialProof';
 import * as content from '../i18n/content';
+import { LANGS } from '../i18n/index.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -107,6 +108,35 @@ describe('unsupported statistics no longer render (spec §3)', () => {
     expect(text).toContain('14-day');
     // "32" must not appear as a standalone tutor-count figure anymore.
     expect(container.querySelector('.trust-bar__stat-num')?.textContent).not.toBe('32');
+  });
+});
+
+describe('ToolsHub no longer shows unsupported usage stats or a fake social-proof avatar row', () => {
+  // Integration review finding (docs/stage1-trust-integration-review.md):
+  // this was the one known-deferred item from the trust-marketing spec -
+  // TOOLS_HUB_TEXT in i18n/content.js was never touched by the original
+  // remediation pass, despite carrying the exact same category of
+  // unsupported figures (six per-tool "X+ users/read/checked/counted"
+  // claims, plus a "Join 1,200+ students" line) already removed everywhere
+  // else (TrustBar, StatsBanner, Hero, Footer, About, Teachers).
+  it.each(LANGS)('%s: no per-tool stat line remains (none had a real data source)', (lang) => {
+    const hubText = content.pick(content.TOOLS_HUB_TEXT, lang);
+    expect(hubText.stats).toEqual([]);
+  });
+
+  it.each(LANGS)('%s: the cta object no longer carries a socialProof headcount claim', (lang) => {
+    const hubText = content.pick(content.TOOLS_HUB_TEXT, lang);
+    expect(hubText.cta.socialProof).toBeUndefined();
+  });
+
+  it('ToolsHub.jsx no longer renders the fake avatar-initials social-proof row', () => {
+    const src = fs.readFileSync(
+      path.resolve(__dirname, '../pages/hubs/ToolsHub.jsx'),
+      'utf8',
+    );
+    expect(src).not.toMatch(/tools-enroll-cta__social-proof/);
+    expect(src).not.toMatch(/tools-enroll-cta__avatar/);
+    expect(src).not.toMatch(/socialProof/);
   });
 });
 

@@ -594,4 +594,3 @@ html.dark .hub-card__stat   { color: var(--text-tertiary); }
    Only text sub-colors need a slight boost. */
 html.dark .tools-enroll-cta p { color: rgba(255,255,255,.75); }
 html.dark .tools-enroll-cta__note { color: rgba(255,255,255,.55); }
-html.dark .tools-enroll-cta__social-proof { color: rgba(255,255,255,.6); }

@@ -1415,20 +1415,6 @@
 .tools-enroll-cta__note {
   font-size: .78rem; color: rgba(255,255,255,.65); text-align: center; margin: 0;
 }
-.tools-enroll-cta__social-proof {
-  display: flex; align-items: center; gap: 10px;
-  font-size: .8rem; color: rgba(255,255,255,.7);
-}
-.tools-enroll-cta__avatars { display: flex; }
-.tools-enroll-cta__avatar {
-  width: 28px; height: 28px; border-radius: 50%;
-  background: linear-gradient(135deg, var(--gold, #d4af37), #9a7a10);
-  color: #0b2e1e; font-size: .7rem; font-weight: 700;
-  display: flex; align-items: center; justify-content: center;
-  border: 2px solid rgba(255,255,255,.2);
-  margin-left: -8px;
-}
-.tools-enroll-cta__avatars span:first-child { margin-left: 0; }
 
 
 /* ══════════════════════════════════════════════════════════════════════

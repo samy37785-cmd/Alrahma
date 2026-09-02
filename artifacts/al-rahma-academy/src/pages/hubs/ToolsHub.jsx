@@ -90,14 +90,6 @@ export default function ToolsHub() {
               <p className="tools-enroll-cta__note">
                 🛡️ {hubText.cta.note}
               </p>
-              <div className="tools-enroll-cta__social-proof">
-                <div className="tools-enroll-cta__avatars" aria-hidden="true">
-                  {'ABCDE'.split('').map((l) => (
-                    <span key={l} className="tools-enroll-cta__avatar">{l}</span>
-                  ))}
-                </div>
-                <span>{hubText.cta.socialProof}</span>
-              </div>
             </div>
           </div>
         </section>

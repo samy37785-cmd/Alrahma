@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { siteFacts } from '../../data/siteFacts';
 
 export default function ReferralCard() {
   const { user } = useAuth();
@@ -16,7 +17,7 @@ export default function ReferralCard() {
   }, [referralLink]);
 
   const handleWhatsApp = useCallback(() => {
-    const text = `🌙 I've been learning Quran at Al-Rahma Academy and I love it! You can start with 2 FREE trial lessons here: ${referralLink}`;
+    const text = `🌙 I've been learning Quran at Al-Rahma Academy and I love it! You can start with a FREE ${siteFacts.trialLessonMinutes}-minute trial lesson here: ${referralLink}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
   }, [referralLink]);
 

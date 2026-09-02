@@ -1,11 +1,18 @@
+import { siteFacts } from './siteFacts';
+import { plans } from './home';
+
+const noorani = plans.find((p) => p.name === 'Noorani');
+const huffaz = plans.find((p) => p.name === 'Huffaz');
+const ijazah = plans.find((p) => p.name === 'Ijazah');
+
 const items = [
   {
-    en: { q: 'Do you offer free trial Quran lessons?', a: 'Yes. Al-Rahma Academy offers 2 completely free trial classes with no payment or commitment required. Book directly from our website by filling in the free trial form on the home page.' },
-    ar: { q: 'هل تقدمون حصصاً تجريبية مجانية؟', a: 'نعم. تقدم أكاديمية الرحمة ٢ حصتين تجريبيتين مجانيتين بالكامل دون أي دفع أو التزام. احجز مباشرة من موقعنا بملء نموذج التجربة المجانية في الصفحة الرئيسية.' },
-    it: { q: 'Offrite lezioni di prova gratuite?', a: "Sì. Al-Rahma Academy offre 2 lezioni di prova completamente gratuite, senza pagamento o impegno. Prenota direttamente dal nostro sito compilando il modulo di prova nella home page." },
-    es: { q: '¿Ofrecen clases de prueba gratuitas?', a: 'Sí. Al-Rahma Academy ofrece 2 clases de prueba completamente gratuitas sin pago ni compromiso. Reserva directamente desde nuestro sitio rellenando el formulario de prueba en la página de inicio.' },
-    de: { q: 'Bietet ihr kostenlose Probestunden an?', a: 'Ja. Al-Rahma Academy bietet 2 völlig kostenlose Probestunden ohne Zahlung oder Verpflichtung an. Buche direkt auf unserer Website über das Probeformular auf der Startseite.' },
-    fr: { q: "Proposez-vous des cours d'essai gratuits ?", a: "Oui. Al-Rahma Academy propose 2 cours d'essai entièrement gratuits, sans paiement ni engagement. Réservez directement sur notre site en remplissant le formulaire d'essai sur la page d'accueil." },
+    en: { q: 'Do you offer a free trial Quran lesson?', a: `Yes. Al-Rahma Academy offers one completely free trial lesson (${siteFacts.trialLessonMinutes} minutes) with no payment or commitment required. Book directly from our website by filling in the free trial form on the home page.` },
+    ar: { q: 'هل تقدمون حصة تجريبية مجانية؟', a: `نعم. تقدم أكاديمية الرحمة حصة تجريبية واحدة مجانية بالكامل (${siteFacts.trialLessonMinutes} دقيقة) دون أي دفع أو التزام. احجز مباشرة من موقعنا بملء نموذج التجربة المجانية في الصفحة الرئيسية.` },
+    it: { q: 'Offrite una lezione di prova gratuita?', a: `Sì. Al-Rahma Academy offre una lezione di prova completamente gratuita (${siteFacts.trialLessonMinutes} minuti), senza pagamento o impegno. Prenota direttamente dal nostro sito compilando il modulo di prova nella home page.` },
+    es: { q: '¿Ofrecen una clase de prueba gratuita?', a: `Sí. Al-Rahma Academy ofrece una clase de prueba completamente gratuita (${siteFacts.trialLessonMinutes} minutos) sin pago ni compromiso. Reserva directamente desde nuestro sitio rellenando el formulario de prueba en la página de inicio.` },
+    de: { q: 'Bietet ihr eine kostenlose Probestunde an?', a: `Ja. Al-Rahma Academy bietet eine völlig kostenlose Probestunde (${siteFacts.trialLessonMinutes} Minuten) ohne Zahlung oder Verpflichtung an. Buche direkt auf unserer Website über das Probeformular auf der Startseite.` },
+    fr: { q: "Proposez-vous un cours d'essai gratuit ?", a: `Oui. Al-Rahma Academy propose un cours d'essai entièrement gratuit (${siteFacts.trialLessonMinutes} minutes), sans paiement ni engagement. Réservez directement sur notre site en remplissant le formulaire d'essai sur la page d'accueil.` },
   },
   {
     en: { q: 'Are female Quran tutors available?', a: 'Yes. We have a dedicated team of certified female tutors available for sisters and children. Simply indicate your preference when filling in the booking form and we will match you accordingly.' },
@@ -48,12 +55,12 @@ const items = [
     fr: { q: 'Les cours peuvent-ils être donnés en français ou en italien ?', a: "Oui. Nos tuteurs peuvent dispenser des cours en anglais, en italien ou en français pour assurer une compréhension maximale aux étudiants européens. Mentionnez simplement votre langue préférée lors de la réservation." },
   },
   {
-    en: { q: 'How much do the monthly plans cost?', a: 'Plans start from €56 per month for 2 classes per week (Starter). The Standard plan offers 3 classes per week for €84/month, and the Premium plan offers 4 classes per week for €112/month. All plans include one-to-one tutoring.' },
-    ar: { q: 'كم تكلف الخطط الشهرية؟', a: 'تبدأ الخطط من ٥٦ يورو شهرياً لحصتين أسبوعياً (المبتدئ). تقدم الخطة القياسية ٣ حصص أسبوعياً بـ ٨٤ يورو/شهر، وتقدم الخطة المميزة ٤ حصص أسبوعياً بـ ١١٢ يورو/شهر. جميع الخطط تشمل التدريس الفردي.' },
-    it: { q: 'Quanto costano i piani mensili?', a: 'I piani partono da €56 al mese per 2 lezioni a settimana (Starter). Il piano Standard offre 3 lezioni a settimana per €84/mese, e il piano Premium offre 4 lezioni a settimana per €112/mese.' },
-    es: { q: '¿Cuánto cuestan los planes mensuales?', a: 'Los planes comienzan desde €56 al mes por 2 clases a la semana (Principiante). El plan Estándar ofrece 3 clases semanales por €84/mes, y el plan Premium ofrece 4 clases por €112/mes.' },
-    de: { q: 'Wie viel kosten die Monatspläne?', a: 'Pläne beginnen ab €56 pro Monat für 2 Stunden pro Woche (Starter). Der Standard-Plan bietet 3 Stunden pro Woche für €84/Monat, und der Premium-Plan bietet 4 Stunden für €112/Monat.' },
-    fr: { q: 'Combien coûtent les plans mensuels ?', a: 'Les plans commencent à €56 par mois pour 2 cours par semaine (Débutant). Le plan Standard offre 3 cours par semaine pour €84/mois, et le plan Premium offre 4 cours pour €112/mois.' },
+    en: { q: 'How much do the monthly plans cost?', a: `Plans start from ${noorani.price} per month for ${noorani.sessionsPerWeek} classes per week (Noorani). The Huffaz plan offers ${huffaz.sessionsPerWeek} classes per week for ${huffaz.price}/month, and the Ijazah plan offers ${ijazah.sessionsPerWeek} classes per week for ${ijazah.price}/month. All plans include one-to-one tutoring.` },
+    ar: { q: 'كم تكلف الخطط الشهرية؟', a: `تبدأ الخطط من ${noorani.price} شهرياً لـ${noorani.sessionsPerWeek} حصص أسبوعياً (نوراني). تقدم خطة حُفّاظ ${huffaz.sessionsPerWeek} حصص أسبوعياً بـ${huffaz.price}/شهر، وتقدم خطة إجازة ${ijazah.sessionsPerWeek} حصص أسبوعياً بـ${ijazah.price}/شهر. جميع الخطط تشمل التدريس الفردي.` },
+    it: { q: 'Quanto costano i piani mensili?', a: `I piani partono da ${noorani.price} al mese per ${noorani.sessionsPerWeek} lezioni a settimana (Noorani). Il piano Huffaz offre ${huffaz.sessionsPerWeek} lezioni a settimana per ${huffaz.price}/mese, e il piano Ijazah offre ${ijazah.sessionsPerWeek} lezioni a settimana per ${ijazah.price}/mese.` },
+    es: { q: '¿Cuánto cuestan los planes mensuales?', a: `Los planes comienzan desde ${noorani.price} al mes por ${noorani.sessionsPerWeek} clases a la semana (Noorani). El plan Huffaz ofrece ${huffaz.sessionsPerWeek} clases semanales por ${huffaz.price}/mes, y el plan Ijazah ofrece ${ijazah.sessionsPerWeek} clases por ${ijazah.price}/mes.` },
+    de: { q: 'Wie viel kosten die Monatspläne?', a: `Pläne beginnen ab ${noorani.price} pro Monat für ${noorani.sessionsPerWeek} Stunden pro Woche (Noorani). Der Huffaz-Plan bietet ${huffaz.sessionsPerWeek} Stunden pro Woche für ${huffaz.price}/Monat, und der Ijazah-Plan bietet ${ijazah.sessionsPerWeek} Stunden für ${ijazah.price}/Monat.` },
+    fr: { q: 'Combien coûtent les plans mensuels ?', a: `Les plans commencent à ${noorani.price} par mois pour ${noorani.sessionsPerWeek} cours par semaine (Noorani). Le plan Huffaz offre ${huffaz.sessionsPerWeek} cours par semaine pour ${huffaz.price}/mois, et le plan Ijazah offre ${ijazah.sessionsPerWeek} cours pour ${ijazah.price}/mois.` },
   },
   {
     en: { q: 'Do you teach students across Europe?', a: 'Yes. Al-Rahma Academy serves Muslim communities across Europe including Italy, France, the UK, Germany, Belgium and beyond. All lessons are online so there are no geographical restrictions.' },

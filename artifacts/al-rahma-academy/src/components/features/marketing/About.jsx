@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import Reveal from '../../ui/Reveal';
 import { useLang } from '../../../context/LangContext';
-import { stats, values } from '../../../data';
+import { stats, values, siteFacts } from '../../../data';
 import { VALUES_TEXT, pick } from '../../../i18n/content';
 
 export default function About() {
@@ -73,16 +73,16 @@ export default function About() {
               Al-Azhar graduates and one clear rule: <strong>every tutor must be someone I would
               trust to teach my own children.</strong>
             </p>
-            {/* Trust/marketing remediation: dropped "over 1,200 families
-                across 40+ countries" — no roster/headcount source in this
-                repo backs those figures (see
-                docs/trust-marketing-remediation.md). The founder narrative
-                itself is left untouched — nothing in this file marks it as
-                placeholder/fabricated, so it is treated as an institutional
-                claim pending product-owner confirmation (see the Unknown
-                Evidence Register). */}
+            {/* Trust/marketing remediation originally dropped "over 1,200
+                families across 40+ countries" for lack of a source (see
+                docs/trust-marketing-remediation.md). The Content Truth
+                Contract corrective round (2026-09-02) restores the families
+                and countries figures using the owner-confirmed numbers in
+                siteFacts.js — not the original, unsupported "40+ countries"
+                claim. The founder narrative itself remains otherwise
+                untouched. */}
             <p className="founder__body">
-              Today, families across many countries trust us with the most important
+              Today, {siteFacts.totalFamilies} families across {siteFacts.countriesServed} countries trust us with the most important
               thing they own — the Quran education of their children. Every tutor holds a verified
               Ijazah. Every lesson is one-to-one. Every family can change their tutor, pause their
               subscription, or request a refund — without any friction.

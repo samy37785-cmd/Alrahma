@@ -1,5 +1,7 @@
+import { siteFacts } from './siteFacts';
+
 export const features = [
-  { icon: '🎓', title: 'Free Trial Lessons',       text: 'Start with two complimentary trial lessons — no commitment, no payment required.' },
+  { icon: '🎓', title: 'Free Trial Lesson',       text: `Start with your free ${siteFacts.trialLessonMinutes}-minute trial lesson — no commitment, no payment required.` },
   { icon: '🕌', title: 'Al-Azhar Certified Tutors', text: 'All tutors are graduates of Al-Azhar University and hold a verified Ijazah with an authentic chain of knowledge.' },
   { icon: '🕒', title: 'Flexible Schedule',          text: 'Classes available 24 hours a day, 7 days a week to fit any time zone.' },
   { icon: '👩‍🏫', title: 'Female Tutors Available',  text: 'Professional, qualified female instructors for sisters and children.' },

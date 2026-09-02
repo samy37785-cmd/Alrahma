@@ -188,11 +188,22 @@ not a decision this task made unilaterally.
 Found via the required broad search, but not touched because they live in
 components this task was not authorized to edit, or because fixing them
 fully is a larger effort than a numeric-claims pass:
-- **`src/pages/hubs/ToolsHub.jsx`** (via `i18n/content.js`'s
-  `TOOLS_HUB_TEXT`) — the same category of unsupported figures ("2M+
-  verses read," "Reply within 2 hours" duplicated, "Join 1,200+ students
-  already learning"). `content.js` was deliberately left carrying this
-  block; only `TESTIMONIAL_TEXT` was removed from that file.
+- ~~**`src/pages/hubs/ToolsHub.jsx`**~~ — **CLOSED** by the integration
+  review (`docs/stage1-trust-integration-review.md`): the six per-tool
+  usage figures and the "Join 1,200+ students" line were removed from
+  `TOOLS_HUB_TEXT` in all six languages, following the same
+  delete-outright precedent already used for `TrustBar`'s "40+
+  countries"/"1,200+ active students." The duplicated "Reply within 2
+  hours" line was left in place — it matches the evidenced 2-hour claim
+  documented above (`TermsOfService.jsx` §13 / `TrustBar`'s WhatsApp
+  business-hours mechanism), not a new unsupported figure.
+- **`src/pages/Enroll.jsx`** — found and **CLOSED** by the same
+  integration review: a hardcoded (English-only, not run through i18n),
+  fabricated named testimonial ("Fatima K., Manchester") plus three
+  unsupported statistics (500+ families, 40+ countries, 4.9★) in a
+  "trust strip" on the actual enrollment/checkout page. This page was
+  outside this branch's diff entirely, so the remediation pass never saw
+  it. Removed outright, same as the equivalent content everywhere else.
 - **Full translation of `About.jsx`'s founder-story paragraphs** — the
   narrative is hardcoded English only (not run through `i18n`). Only the
   one fabricated-number sentence inside it was fixed; translating a
@@ -224,12 +235,17 @@ fully is a larger effort than a numeric-claims pass:
 - **Deleted**: `LiveCounter.jsx` — zero consumers remained after `JoinCTA.jsx`
   was edited, and there is no future use for a component whose only job was
   to fabricate a number.
-- **Hidden (kept as a file, returns `null`)**: `StatsBanner.jsx`,
-  `Testimonials.jsx` — kept as the documented, obvious place to wire up
-  real data later, with a comment explaining exactly what that would
-  require, rather than deleting a component whose *shape* (a stats grid, a
-  testimonial carousel) is still a reasonable product to have once real
-  data exists.
+- **Update (integration review, see `docs/stage1-trust-integration-review.md`)**:
+  `StatsBanner.jsx` and `Testimonials.jsx` were originally kept as
+  null-returning files "as the documented, obvious place to wire up real
+  data later." A later integration review found this was the same
+  dead-code-as-feature-flag pattern being guarded against elsewhere:
+  `Testimonials.jsx` already had zero real consumers (already decoupled
+  from `Home.jsx`), and `StatsBanner.jsx` was still actively imported and
+  rendered from `Home.jsx` despite doing nothing. Both files have since
+  been deleted outright; `StatsBanner`'s import/render was removed from
+  `Home.jsx` first. Rebuilding either one means starting fresh from a real
+  data source, not restoring these files.
 
 ## Translation matrix
 

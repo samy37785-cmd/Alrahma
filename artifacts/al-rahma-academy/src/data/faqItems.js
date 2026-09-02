@@ -1,4 +1,4 @@
-import { siteFacts } from './siteFacts';
+import { siteFacts, trialLessonWord } from './siteFacts';
 import { plans } from './home';
 
 const noorani = plans.find((p) => p.name === 'Noorani');
@@ -7,12 +7,12 @@ const ijazah = plans.find((p) => p.name === 'Ijazah');
 
 const items = [
   {
-    en: { q: 'Do you offer a free trial Quran lesson?', a: `Yes. Al-Rahma Academy offers one completely free trial lesson (${siteFacts.trialLessonMinutes} minutes) with no payment or commitment required. Book directly from our website by filling in the free trial form on the home page.` },
-    ar: { q: 'هل تقدمون حصة تجريبية مجانية؟', a: `نعم. تقدم أكاديمية الرحمة حصة تجريبية واحدة مجانية بالكامل (${siteFacts.trialLessonMinutes} دقيقة) دون أي دفع أو التزام. احجز مباشرة من موقعنا بملء نموذج التجربة المجانية في الصفحة الرئيسية.` },
-    it: { q: 'Offrite una lezione di prova gratuita?', a: `Sì. Al-Rahma Academy offre una lezione di prova completamente gratuita (${siteFacts.trialLessonMinutes} minuti), senza pagamento o impegno. Prenota direttamente dal nostro sito compilando il modulo di prova nella home page.` },
-    es: { q: '¿Ofrecen una clase de prueba gratuita?', a: `Sí. Al-Rahma Academy ofrece una clase de prueba completamente gratuita (${siteFacts.trialLessonMinutes} minutos) sin pago ni compromiso. Reserva directamente desde nuestro sitio rellenando el formulario de prueba en la página de inicio.` },
-    de: { q: 'Bietet ihr eine kostenlose Probestunde an?', a: `Ja. Al-Rahma Academy bietet eine völlig kostenlose Probestunde (${siteFacts.trialLessonMinutes} Minuten) ohne Zahlung oder Verpflichtung an. Buche direkt auf unserer Website über das Probeformular auf der Startseite.` },
-    fr: { q: "Proposez-vous un cours d'essai gratuit ?", a: `Oui. Al-Rahma Academy propose un cours d'essai entièrement gratuit (${siteFacts.trialLessonMinutes} minutes), sans paiement ni engagement. Réservez directement sur notre site en remplissant le formulaire d'essai sur la page d'accueil.` },
+    en: { q: 'Do you offer a free trial Quran lesson?', a: `Yes. Al-Rahma Academy offers ${trialLessonWord('en')} completely free trial lesson (${siteFacts.trialLessonMinutes} minutes) with no payment or commitment required. Book directly from our website by filling in the free trial form on the home page.` },
+    ar: { q: 'هل تقدمون حصة تجريبية مجانية؟', a: `نعم. تقدم أكاديمية الرحمة حصة تجريبية ${trialLessonWord('ar')} مجانية بالكامل (${siteFacts.trialLessonMinutes} دقيقة) دون أي دفع أو التزام. احجز مباشرة من موقعنا بملء نموذج التجربة المجانية في الصفحة الرئيسية.` },
+    it: { q: 'Offrite una lezione di prova gratuita?', a: `Sì. Al-Rahma Academy offre ${trialLessonWord('it')} lezione di prova completamente gratuita (${siteFacts.trialLessonMinutes} minuti), senza pagamento o impegno. Prenota direttamente dal nostro sito compilando il modulo di prova nella home page.` },
+    es: { q: '¿Ofrecen una clase de prueba gratuita?', a: `Sí. Al-Rahma Academy ofrece ${trialLessonWord('es')} clase de prueba completamente gratuita (${siteFacts.trialLessonMinutes} minutos) sin pago ni compromiso. Reserva directamente desde nuestro sitio rellenando el formulario de prueba en la página de inicio.` },
+    de: { q: 'Bietet ihr eine kostenlose Probestunde an?', a: `Ja. Al-Rahma Academy bietet ${trialLessonWord('de')} völlig kostenlose Probestunde (${siteFacts.trialLessonMinutes} Minuten) ohne Zahlung oder Verpflichtung an. Buche direkt auf unserer Website über das Probeformular auf der Startseite.` },
+    fr: { q: "Proposez-vous un cours d'essai gratuit ?", a: `Oui. Al-Rahma Academy propose ${trialLessonWord('fr')} cours d'essai entièrement gratuit (${siteFacts.trialLessonMinutes} minutes), sans paiement ni engagement. Réservez directement sur notre site en remplissant le formulaire d'essai sur la page d'accueil.` },
   },
   {
     en: { q: 'Are female Quran tutors available?', a: 'Yes. We have a dedicated team of certified female tutors available for sisters and children. Simply indicate your preference when filling in the booking form and we will match you accordingly.' },
@@ -87,12 +87,12 @@ const items = [
     fr: { q: 'Quels cours proposez-vous ?', a: "Nous proposons : Lecture du Coran (Noorani Qaida), Récitation avec Tajweed, Mémorisation du Coran (Hifz), Certification Ijazah, Études Islamiques et Langue Arabe. Tous les cours sont individuels pour tous les âges." },
   },
   {
-    en: { q: 'How do I book a free trial?', a: 'Simply go to the home page and fill in the free trial form. Tell us about the student, the preferred course, and your available times. We will match you with a tutor and confirm your session within 24 hours.' },
-    ar: { q: 'كيف أحجز تجربة مجانية؟', a: 'ما عليك سوى الذهاب إلى الصفحة الرئيسية وملء نموذج التجربة المجانية. أخبرنا عن الطالب والدورة المفضلة وأوقاتك المتاحة. سنطابقك مع معلم ونؤكد جلستك خلال 24 ساعة.' },
-    it: { q: 'Come prenoto una prova gratuita?', a: "Vai semplicemente alla home page e compila il modulo di prova gratuita. Dicci dello studente, del corso preferito e degli orari disponibili. Ti abbineremo a un tutore e confermeremo la sessione entro 24 ore." },
-    es: { q: '¿Cómo reservo una prueba gratuita?', a: 'Simplemente ve a la página de inicio y rellena el formulario de prueba gratuita. Cuéntanos sobre el estudiante, el curso preferido y tus horarios disponibles. Te asignaremos un tutor y confirmaremos tu sesión en 24 horas.' },
-    de: { q: 'Wie buche ich eine kostenlose Probestunde?', a: 'Gehe einfach auf die Startseite und fülle das Probeformular aus. Erzähl uns vom Schüler, dem gewünschten Kurs und deinen verfügbaren Zeiten. Wir vermitteln dir einen Lehrer und bestätigen deine Stunde innerhalb von 24 Stunden.' },
-    fr: { q: 'Comment réserver un essai gratuit ?', a: "Rendez-vous simplement sur la page d'accueil et remplissez le formulaire d'essai gratuit. Parlez-nous de l'étudiant, du cours préféré et de vos disponibilités. Nous vous mettrons en relation avec un tuteur et confirmerons votre session dans les 24 heures." },
+    en: { q: 'How do I book a free trial?', a: "Simply go to the home page and fill in the free trial form. Tell us about the student, the preferred course, and your available times. We'll contact you to confirm your tutor and schedule." },
+    ar: { q: 'كيف أحجز تجربة مجانية؟', a: 'ما عليك سوى الذهاب إلى الصفحة الرئيسية وملء نموذج التجربة المجانية. أخبرنا عن الطالب والدورة المفضلة وأوقاتك المتاحة. سنتواصل معك لتأكيد المعلم والموعد.' },
+    it: { q: 'Come prenoto una prova gratuita?', a: 'Vai semplicemente alla home page e compila il modulo di prova gratuita. Dicci dello studente, del corso preferito e degli orari disponibili. Ti contatteremo per confermare il tutore e l’orario.' },
+    es: { q: '¿Cómo reservo una prueba gratuita?', a: 'Simplemente ve a la página de inicio y rellena el formulario de prueba gratuita. Cuéntanos sobre el estudiante, el curso preferido y tus horarios disponibles. Te contactaremos para confirmar el tutor y el horario.' },
+    de: { q: 'Wie buche ich eine kostenlose Probestunde?', a: 'Gehe einfach auf die Startseite und fülle das Probeformular aus. Erzähl uns vom Schüler, dem gewünschten Kurs und deinen verfügbaren Zeiten. Wir melden uns bei dir, um Lehrer und Termin zu bestätigen.' },
+    fr: { q: 'Comment réserver un essai gratuit ?', a: "Rendez-vous simplement sur la page d'accueil et remplissez le formulaire d'essai gratuit. Parlez-nous de l'étudiant, du cours préféré et de vos disponibilités. Nous vous contacterons pour confirmer le tuteur et l'horaire." },
   },
   {
     en: { q: 'Is there a long-term contract?', a: 'No. There is no long-term contract. You can cancel or change your plan at any time. We believe in earning your commitment through the quality of our teaching, not through lock-in clauses.' },

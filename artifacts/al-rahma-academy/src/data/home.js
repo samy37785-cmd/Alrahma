@@ -1,7 +1,7 @@
-import { siteFacts } from './siteFacts';
+import { siteFacts, trialLessonWord } from './siteFacts';
 
 export const features = [
-  { icon: '🎓', title: 'Free Trial Lesson',       text: `Start with your free ${siteFacts.trialLessonMinutes}-minute trial lesson — no commitment, no payment required.` },
+  { icon: '🎓', title: 'Free Trial Lesson',       text: `Start with your ${trialLessonWord('en')} free ${siteFacts.trialLessonMinutes}-minute trial lesson — no commitment, no payment required.` },
   { icon: '🕌', title: 'Al-Azhar Certified Tutors', text: 'All tutors are graduates of Al-Azhar University and hold a verified Ijazah with an authentic chain of knowledge.' },
   { icon: '🕒', title: 'Flexible Schedule',          text: 'Classes available 24 hours a day, 7 days a week to fit any time zone.' },
   { icon: '👩‍🏫', title: 'Female Tutors Available',  text: 'Professional, qualified female instructors for sisters and children.' },
@@ -58,3 +58,14 @@ export const plans = [
     features: ['4 classes / week', '16 sessions / month', '1 hour per class', 'One-to-one tutoring', 'Ijazah pathway support'],
   },
 ];
+
+// Content Truth Contract Part 8 (2026-09-02): a direct, quantity-based
+// comparison between the lightest and heaviest real plans — never an
+// outcome/results claim like "learn faster." Derived from `plans` itself
+// so the multiplier can never drift from the real sessionsPerWeek values;
+// no separate "2" or "4" literal is kept anywhere else.
+export function planComparison() {
+  const base = plans[0];
+  const top = plans[plans.length - 1];
+  return { base, top, multiplier: top.sessionsPerWeek / base.sessionsPerWeek };
+}

@@ -4,6 +4,7 @@ import { site, courseOptions } from '../../../data';
 import { submitTrial } from '../../../api/contentApi';
 import { useTrial } from '../../../context/TrialContext';
 import { useLang } from '../../../context/LangContext';
+import { limitedTrialSpotsText } from '../../../data/siteFacts';
 
 const EMPTY = { name: '', email: '', phone: '', course: '', message: '' };
 
@@ -13,10 +14,18 @@ const EMPTY = { name: '', email: '', phone: '', course: '', message: '' };
 // (3 + date % 5), not a real capacity/booking record. That function and
 // the urgency badge that rendered it have been deleted; see
 // docs/trust-marketing-remediation.md.
+//
+// Content Truth Contract Part 9 (2026-09-02): the owner separately
+// confirmed a real, manually-updated "limited spots" figure — see
+// siteFacts.limitedTrialSpots and limitedTrialSpotsText() in
+// src/data/siteFacts.js. Unlike the deleted function above, this number
+// is never seeded, decremented, or paired with a countdown/deadline; it
+// renders nothing at all when the value is null/0, per that function's own
+// documented contract.
 
 export default function Trial() {
   const { selectedCourse, selectedPlan } = useTrial();
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const tr = t.trial;
   const [form, setForm]           = useState(EMPTY);
   const [submitted, setSubmitted] = useState(false);
@@ -92,6 +101,10 @@ export default function Trial() {
             <span>⏱️ {tr.trustRow.duration}</span>
             <span>✓ {tr.trustRow.commitment}</span>
           </div>
+
+          {limitedTrialSpotsText(lang) && (
+            <p className="trial__limited-spots">🎟️ {limitedTrialSpotsText(lang)}</p>
+          )}
 
           <p className="trial__whats">
             {tr.waLabel}{' '}

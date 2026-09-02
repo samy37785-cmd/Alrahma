@@ -91,7 +91,7 @@ export default function About() {
               We didn&apos;t build a platform. We built the academy we needed and couldn&apos;t find.
             </p>
             <div className="founder__sig">
-              <span className="founder__sig-name" dir="rtl">— Mahmoud Samy, Founder</span>
+              <span className="founder__sig-name" dir="rtl">— {siteFacts.founder}, Founder</span>
               <span className="founder__sig-sub">Al-Rahma Academy</span>
             </div>
           </div>

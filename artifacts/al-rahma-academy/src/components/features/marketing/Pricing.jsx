@@ -32,7 +32,7 @@ const PLAN_GRADS = [
 /* Inline SVG icons — same Lucide-style language used across the homepage,
    replacing the raw 🌱⭐👑 emoji. */
 const PLAN_ICONS = [
-  /* Seedling — Starter */
+  /* Seedling — Noorani */
   <svg key="seedling" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2"
        strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
     <path d="M12 22v-9" />
@@ -43,7 +43,7 @@ const PLAN_ICONS = [
   <svg key="star" viewBox="0 0 24 24" fill="#fff" aria-hidden="true">
     <path d="m12 2 2.9 6.6 7.1.6-5.4 4.7 1.6 7-6.2-3.8L5.8 21l1.6-7-5.4-4.7 7.1-.6L12 2z" />
   </svg>,
-  /* Crown — Premium */
+  /* Crown — Ijazah */
   <svg key="crown" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2"
        strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
     <path d="m2 18 2-11 5 4 3-6 3 6 5-4 2 11Z" />
@@ -168,6 +168,15 @@ export default function Pricing() {
           })}
         </MobileCarousel>
       </div>
+
+      {/* Direct, quantity-based plan comparison — never an outcome/results
+          claim; derived from `plans` itself, see planComparison() in
+          src/data/home.js. */}
+      {p.comparisonNote && (
+        <Reveal className="pricing__comparison-note">
+          <span>📈 {p.comparisonNote}</span>
+        </Reveal>
+      )}
 
       {/* 24-day refund window banner (owner-confirmed policy) */}
       <Reveal className="pricing__refund-banner">

@@ -450,3 +450,94 @@ Content gaps closed in this round:
   and about-page tests updated for the new, now-accurate figures).
 - Full commit list, the eleven-teacher review matrix, and verification-gate
   results for this round are in that round's own final report.
+
+## Update 2026-09-02 — Full-Site Corrective Round 3
+
+A third corrective round, on the same branch, starting from Round 2's
+closing commit `6632b98` (tag `checkpoint/content-truth-contract-corrective-final`).
+This round's own explicit instruction required correcting a count from the
+prior round's chat-delivered final report: Round 2 actually changed **18
+files and added 1 new file (19 total)**, not "16+1" as that report stated;
+this correction is recorded here and in this round's own final report.
+
+- **Flaky routing test fixed at its root cause, not by raising a timeout**:
+  `src/test/appRouting.behavioral.stage2c.test.jsx` could intermittently
+  time out waiting for `/academy/teachers` content inside the full suite
+  (never reproduced in isolation on this machine, 2/2 full-suite attempts
+  after the fix were green). Root-caused to React.lazy() first-touch
+  module-transform cost under full-suite CPU contention, colliding with a
+  generic `waitFor(() => document.querySelector('h1'))` check that could
+  resolve on the Suspense fallback's absence of any `h1` rather than the
+  real content. Fixed with a `beforeAll` that prewarms the lazy
+  `Teachers`/`TeacherProfile` chunks outside the timed assertion window,
+  plus a specific `findByRole('heading', { name: /our qualified tutors/i })`
+  wait target instead of a generic existence check.
+- **Round 2's own known, deliberately-unfixed gap closed**: `TeacherProfile.jsx`'s
+  stats strip now renders `teacher.lessons` when present, so Sami's
+  confirmed 2,500-lesson figure appears on his own profile page, not only
+  the Teachers.jsx directory card.
+- **Teacher-page translations completed across all six languages**:
+  `TEACHER_CREDENTIALS` (previously en/ar only) now has real en/ar/it/es/de/fr
+  translations; `Teachers.jsx`'s hardcoded `{teacher.lessons} lessons taught`
+  and `TeacherProfile.jsx`'s entire hardcoded English proof/credentials block
+  (Verified Credentials, Al-Azhar University, Ijazah Certificate, Identity
+  Verified, Credentials on File, the certificate-custody note) now render
+  from new `teachersPg.lessonsTaught` / `tp.*` i18n keys, translated (not
+  English-fallback) in it/es/de/fr. The stale "10 sample records" comment in
+  `Teachers.jsx` was corrected to reflect the current 11-profile roster.
+- **`siteFacts.freeTrialLessons` wired to a real, locale-aware consumer**:
+  previously a dead value. A new `trialLessonWord(lang)` lookup (en/ar/it/es/de/fr,
+  ranges 1–3) returns each language's natural phrase fragment — e.g. Arabic
+  gets "حصة تجريبية مجانية واحدة" (trailing-adjective numeral), not a forced
+  digit substitution — used in `home.js`'s features list and every
+  trial-confirmation string touched below. `standardWeeklyHours` /
+  `premiumWeeklyHours` were removed from `siteFacts.js`: both were unused
+  and named a non-existent "Standard/Premium" 2-tier plan structure that
+  conflicts with the real Noorani/Huffaz/Ijazah 3-tier plans.
+- **The 24-hour meaning conflation corrected**: `supportResponseHours` (a
+  general, owner-confirmed support-response commitment — also documented in
+  `TermsOfService.jsx`'s "Response time: within 24 hours") had been reused
+  to imply an unconfirmed trial-confirmation / initial-tutor-assignment SLA
+  in several places: `Dashboard.jsx`'s "Assigned within {24}h" placeholder,
+  `faqItems.js`'s "How do I book a free trial?" answer, and — found only
+  during this round's Chrome DevTools visual walkthrough, not by static
+  grep — the `trial.formSub` / `faq.items[1].a` ("How does the free trial
+  work?") / `enroll.success.thankYouPost` keys in all six `src/i18n/*.js`
+  files, plus the `quickTrial`/`exitIntent` popup modal's `successBody` and
+  `perks` in `src/i18n/experience.js` (all six languages). All now use
+  neutral phrasing ("we'll contact you to confirm your tutor and schedule" /
+  "we'll confirm by WhatsApp") with no invented number. `TermsOfService.jsx`
+  separately documents "tutor changes... within 48 hours" for an
+  already-enrolled student requesting a tutor swap — a different, legal-text
+  commitment this round did not touch (Terms' business/legal rules were out
+  of scope).
+- **"2×" wording made honest and derivable**: a new `planComparison()` in
+  `home.js` reads `plans` directly (`multiplier = top.sessionsPerWeek /
+  base.sessionsPerWeek`) instead of hardcoding "2" and "4" as separate
+  literals; `pricing.comparisonNote` (all six languages) renders "The
+  Ijazah plan gives you 2× the weekly lesson time of Noorani — 4 classes a
+  week instead of 2," using the real plan names.
+- **Honest "6 limited trial spots"**: `siteFacts.limitedTrialSpots: 6` plus
+  a `limitedTrialSpotsConfirmed` date, with `limitedTrialSpotsText(lang)`
+  returning `null` (renders nothing) when the count is falsy — replacing
+  the historically-already-removed fake countdown/day-seeded scarcity
+  pattern this round's tests guard against reintroducing.
+- **`ReferralCard.jsx` rebuilt**: removed all unsourced reward promises
+  ("Get 1 Month Free," "you both receive one free month," "No limit on
+  referrals"); now shares only the real one 60-minute trial lesson from
+  `siteFacts`, fully translated (title/description/copy/WhatsApp message)
+  in all six languages via a new `referral.*` i18n section, RTL-safe.
+- **Plan names (Noorani/Huffaz/Ijazah) unified where safe**: display-only
+  copy updated in `billing.js` (`sampleInvoices`, confirmed never submitted
+  to any API — only rendered as a badge), `Pricing.jsx`'s code comments,
+  `experience.js`'s cancellation-survey retention offer, and
+  `RefundPolicy.jsx`'s covered-plans list (all six languages).
+  `AdminUsersTab.jsx`'s `u.subscription?.plan || 'Starter'` default was
+  deliberately left unchanged — it is an internal admin-API default
+  parameter, and this round could not verify the backend's expected
+  plan-key string without touching `lib/db`/backend, which is forbidden.
+- Test suite grew from 68 files / 2170 tests (end of Round 2) to 69 files /
+  2211 tests over this round.
+- Full commit list, the six-language translation table, the plan-name
+  changed/deferred table, and verification-gate results for this round are
+  in that round's own final report.

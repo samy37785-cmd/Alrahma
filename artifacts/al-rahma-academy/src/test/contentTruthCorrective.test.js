@@ -42,11 +42,20 @@ describe('siteFacts — owner-confirmed values (Part 1)', () => {
     expect(siteFacts.freeTrialLessons).toBe(1);
     expect(siteFacts.trialLessonMinutes).toBe(60);
     expect(siteFacts.refundWindowDays).toBe(24);
-    expect(siteFacts.standardWeeklyHours).toBe(2);
-    expect(siteFacts.premiumWeeklyHours).toBe(4);
     expect(siteFacts.founder).toBe('Mahmoud Samy');
     expect(siteFacts.foundingYear).toBe('2020');
     expect(siteFacts.phoneDisplay).toBe('+20 101 605 4663');
+  });
+
+  it('no longer carries standardWeeklyHours/premiumWeeklyHours (Round 3)', () => {
+    // Content Truth Contract Round 3 removed these: they modeled a
+    // non-existent "Standard/Premium" 2-tier plan structure that conflicts
+    // with the real Noorani/Huffaz/Ijazah 3-tier plans, and had zero real
+    // consumers. The 2x weekly-lesson-time comparison is now derived live
+    // from `plans` via planComparison() — see the dedicated describe block
+    // below.
+    expect(siteFacts).not.toHaveProperty('standardWeeklyHours');
+    expect(siteFacts).not.toHaveProperty('premiumWeeklyHours');
   });
 
   it('never carries a ratingCount/reviewCount for the academy itself', () => {
@@ -202,9 +211,16 @@ describe('no Background Check / Child Safety Cleared / accreditation-partnership
   });
 
   it('TeacherProfile.jsx keeps the allowed identity/credentials-on-file claims', () => {
+    // Content Truth Contract Round 3 moved this block's text from hardcoded
+    // English literals into tp.identityVerifiedTitle/tp.credentialsOnFileTitle
+    // (translated into all six languages) — assert the JSX still renders
+    // those keys, and that the keys themselves resolve to the expected
+    // English copy in en.js, rather than grepping for the old literals.
     const src = fs.readFileSync(path.resolve(__dirname, '../pages/TeacherProfile.jsx'), 'utf8');
-    expect(src).toMatch(/Identity Verified/);
-    expect(src).toMatch(/Credentials on File/);
+    expect(src).toMatch(/tp\.identityVerifiedTitle/);
+    expect(src).toMatch(/tp\.credentialsOnFileTitle/);
+    expect(en.tp.identityVerifiedTitle).toBe('Identity Verified');
+    expect(en.tp.credentialsOnFileTitle).toBe('Credentials on File');
   });
 });
 
@@ -259,9 +275,15 @@ describe('free-trial wording is consistent everywhere: one lesson, 60 minutes (P
   });
 
   it('ReferralCard.jsx WhatsApp share text offers one free trial lesson, not two', () => {
+    // Content Truth Contract Round 3 rewrote ReferralCard.jsx to build its
+    // WhatsApp text from t.referral.waMessage instead of a hardcoded literal
+    // in the component itself — assert the component no longer hardcodes the
+    // old "2 FREE" claim, and that the real i18n message (en.js) it now reads
+    // from resolves to the correct one-lesson, siteFacts-derived wording.
     const src = fs.readFileSync(path.resolve(__dirname, '../components/ui/ReferralCard.jsx'), 'utf8');
     expect(src).not.toMatch(/2\s*FREE trial lessons?/i);
-    expect(src).toMatch(/siteFacts\.trialLessonMinutes/);
+    expect(en.referral.waMessage).not.toMatch(/2\s*FREE/i);
+    expect(en.referral.waMessage).toMatch(new RegExp(`${siteFacts.trialLessonMinutes}-minute`));
   });
 
   it('public/llms.txt offers one free trial lesson, not two', () => {

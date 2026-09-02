@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, beforeAll } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import App from '../App';
 
@@ -36,6 +36,22 @@ function goTo(path) {
 }
 
 describe('App.jsx real routing behavior (Stage 2C, behavioral)', () => {
+  // App.jsx route-splits every page behind React.lazy(). The first time a
+  // given chunk is imported in this worker, Vitest/vite-node has to
+  // transform and evaluate the module graph (Teachers.jsx alone pulls in
+  // the 11-profile TEACHERS dataset, Header, Footer, Breadcrumbs and
+  // useSEO). That one-time cost is normally invisible, but when this file
+  // runs as part of the full suite — competing with dozens of other
+  // concurrently-running test files for CPU — it can occasionally exceed a
+  // single waitFor's timeout, even though the same test is fast in
+  // isolation. Paying that cost here, outside any timed assertion, removes
+  // the flake at its source instead of papering over it with a bigger
+  // number (see docs/legacy-role-orphan-cleanup.md's Stage 2C section for
+  // why this file exists at all).
+  beforeAll(async () => {
+    await Promise.all([import('../pages/Teachers'), import('../pages/TeacherProfile')]);
+  });
+
   beforeEach(() => {
     localStorage.clear();
   });
@@ -60,7 +76,10 @@ describe('App.jsx real routing behavior (Stage 2C, behavioral)', () => {
   it('the public teacher directory (/academy/teachers) is reachable without authentication', async () => {
     goTo('/academy/teachers');
     render(<App />);
-    await waitFor(() => expect(document.querySelector('h1')).toBeTruthy(), { timeout: 5000 });
+    // Wait for the actual Teachers page heading, not just "some <h1>
+    // exists somewhere" — the Suspense fallback has no heading, so this
+    // still specifically proves the lazy chunk resolved and rendered.
+    await screen.findByRole('heading', { level: 1, name: /our qualified tutors/i }, { timeout: 8000 });
     expect(window.location.pathname).toBe('/academy/teachers');
     expect(screen.queryByText('Admin Sign In')).not.toBeInTheDocument();
   });
@@ -68,7 +87,7 @@ describe('App.jsx real routing behavior (Stage 2C, behavioral)', () => {
   it('an individual teacher profile (/academy/teachers/:id) is reachable without authentication', async () => {
     goTo('/academy/teachers/1');
     render(<App />);
-    await waitFor(() => expect(screen.getByText('سامي محمود عبد العال')).toBeInTheDocument(), { timeout: 5000 });
+    await waitFor(() => expect(screen.getByText('سامي محمود عبد العال')).toBeInTheDocument(), { timeout: 8000 });
     expect(window.location.pathname).toBe('/academy/teachers/1');
   });
 });

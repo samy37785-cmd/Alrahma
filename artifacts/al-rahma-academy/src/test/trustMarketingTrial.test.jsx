@@ -53,10 +53,17 @@ describe('Trial no longer shows artificial scarcity (spec §6)', () => {
     expect(src).not.toMatch(/function\s+spotsToday/);
   });
 
-  it('keeps the owner-confirmed 24-hour response commitment and 60-minute session, both documented in TermsOfService.jsx', () => {
+  it('keeps the 60-minute trial session and no longer claims an unconfirmed 24-hour tutor-assignment SLA (Content Truth Contract Round 3, Part 7)', () => {
+    // TermsOfService.jsx documents a general "Response time: within 24 hours"
+    // (support inquiries) and a separate "tutor changes... within 48 hours"
+    // (mid-subscription tutor swap) — neither is a promise that a NEW
+    // trial's tutor is confirmed/assigned within 24 hours, which is what
+    // this component previously implied. It now uses neutral phrasing
+    // instead of borrowing the unrelated support-response number.
     renderWithLang(<Trial />);
-    expect(screen.getByText(/within 24 hours/i)).toBeInTheDocument();
     expect(screen.getByText(/60-minute session/i)).toBeInTheDocument();
+    expect(screen.getByText(/we'll contact you to confirm your tutor and schedule/i)).toBeInTheDocument();
+    expect(screen.queryByText(/within 24 hours/i)).toBeNull();
   });
 
   it('does not make a bare, unqualified "Secure" claim', () => {

@@ -113,14 +113,18 @@ function TutorAvatar({ teacher, tp, initials, lang, size = 'md', onPlay }) {
   );
 }
 
-function RatingPill({ teacher, size = 'md' }) {
+// No individual star rating is shown — see docs/trust-marketing-remediation.md.
+// Real per-teacher review counts are shown where the owner has confirmed a
+// value; teachers without a confirmed count render no pill at all.
+function ReviewsPill({ teacher, size = 'md' }) {
+  if (!teacher.reviews) return null;
   return (
     <span
       className={`tc3__rating-pill tc3__rating-pill--${size}`}
-      aria-label={`Rated ${teacher.rating.toFixed(1)} out of 5 from ${teacher.reviews} reviews`}
+      aria-label={`${teacher.reviews} reviews`}
     >
-      <span className="tc3__rating-star" aria-hidden="true">{STAR_ICON}</span>
-      {teacher.rating.toFixed(1)}
+      <span className="tc3__rating-star" aria-hidden="true">{REVIEWS_ICON}</span>
+      {teacher.reviews}
     </span>
   );
 }
@@ -150,7 +154,7 @@ function TutorCard({ t: teacher }) {
             <h3 className="tc3__name-ar" dir="rtl">{teacher.nameAr}</h3>
             <p className="tc3__name-en">{teacher.nameEn}</p>
           </Link>
-          <RatingPill teacher={teacher} />
+          <ReviewsPill teacher={teacher} />
         </div>
 
         <p className="tc3__role">{title}</p>
@@ -165,9 +169,9 @@ function TutorCard({ t: teacher }) {
           <span className="tc3__meta-item" aria-label={`${teacher.reviews} reviews`}>
             <span aria-hidden="true">{REVIEWS_ICON}</span>({teacher.reviews})
           </span>
-          {teacher.hours && (
+          {teacher.lessons && (
             <span className="tc3__meta-item">
-              <span aria-hidden="true">{CLOCK_ICON}</span>{teacher.hours} {ut.teachingHrs}
+              <span aria-hidden="true">{CLOCK_ICON}</span>{teacher.lessons} {ut.lessonsTaught}
             </span>
           )}
           <span className="tc3__meta-item tc3__meta-item--muted">{genderLabel}</span>
@@ -190,9 +194,11 @@ function TutorCard({ t: teacher }) {
   );
 }
 
+// Spotlight pick is based only on real, owner-provided review counts — no
+// star rating is used since none was provided per teacher.
 function useSpotlightTeacher(teachers) {
   return useMemo(
-    () => [...teachers].sort((a, b) => (b.rating - a.rating) || (b.reviews - a.reviews))[0],
+    () => [...teachers].sort((a, b) => (b.reviews || 0) - (a.reviews || 0))[0],
     [teachers],
   );
 }
@@ -216,7 +222,7 @@ function SpotlightCard({ teacher }) {
 
       <span className="tc3__spotlight-tag">
         <span aria-hidden="true">{STAR_ICON}</span>
-        Top Rated Tutor
+        Featured Tutor
       </span>
 
       <div className="tc3__spotlight-inner">
@@ -228,7 +234,7 @@ function SpotlightCard({ teacher }) {
               <h3 className="tc3__name-ar" dir="rtl">{teacher.nameAr}</h3>
               <p className="tc3__name-en">{teacher.nameEn}</p>
             </Link>
-            <RatingPill teacher={teacher} size="lg" />
+            <ReviewsPill teacher={teacher} size="lg" />
           </div>
 
           <p className="tc3__role">{title}</p>

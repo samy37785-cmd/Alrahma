@@ -15,24 +15,17 @@ loadArabicFontsNow();
 
 const FLAG = { en:'🇬🇧', ar:'🇪🇬', it:'🇮🇹', fr:'🇫🇷', de:'🇩🇪', es:'🇪🇸' };
 
-// Static, honest star rating — this used to let any visitor "rate" the
-// teacher via a button that only wrote to their own browser's localStorage
-// and recomputed a fake average never seen by anyone else (mirrors the same
-// fix already applied to TeacherProfile.jsx's TeacherRating). TEACHERS is a
-// fictional marketing directory with no real backend account behind it, so
-// this shows only the static editorial rating/reviews figures.
-function StarRow({ teacher, ui }) {
-  const filled = Math.round(teacher.rating);
-
+// Review counts are real, owner-provided per-teacher figures (see
+// docs/trust-marketing-remediation.md). No individual star rating is shown —
+// the owner has real teachers with real reviews but has not provided
+// individual star scores, so none is invented, randomised, or copied from
+// the academy-wide rating. Teachers with no confirmed review count render
+// nothing here rather than a fabricated placeholder.
+function ReviewCount({ teacher, ui }) {
+  if (!teacher.reviews) return null;
   return (
     <div className="tpg__rating">
-      <div className="tpg__stars">
-        {[1,2,3,4,5].map((s) => (
-          <span key={s} className={`tpg__star${s <= filled ? ' on' : ''}`}>★</span>
-        ))}
-      </div>
-      <span className="tpg__avg">{teacher.rating.toFixed(1)}</span>
-      <span className="tpg__cnt">({teacher.reviews} {ui.reviews})</span>
+      <span className="tpg__cnt">{teacher.reviews} {ui.reviews}</span>
     </div>
   );
 }
@@ -64,15 +57,15 @@ function TeacherCard({ teacher, onEnroll, ui, lang }) {
           <p className="tpg__role">{title}</p>
         </div>
 
-        <StarRow teacher={teacher} ui={ui} />
+        <ReviewCount teacher={teacher} ui={ui} />
 
-        {/* Languages + hours */}
+        {/* Languages + lessons taught */}
         <div className="tpg__langs">
           {teacher.langs.map((l) => (
             <span key={l} className="tpg__lang">{FLAG[l]} {l.toUpperCase()}</span>
           ))}
-          {teacher.hours && (
-            <span className="tpg__lang tpg__lang--hours">⏱ {teacher.hours} hrs</span>
+          {teacher.lessons && (
+            <span className="tpg__lang tpg__lang--hours">📚 {teacher.lessons} lessons taught</span>
           )}
         </div>
 

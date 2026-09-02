@@ -9,29 +9,19 @@ import { useLang } from '../context/LangContext';
 const FLAG = { en:'🇬🇧', ar:'🇪🇬', it:'🇮🇹', fr:'🇫🇷', de:'🇩🇪', es:'🇪🇸' };
 const LANG_LABEL = { en:'English', ar:'Arabic', it:'Italian', fr:'French', de:'German', es:'Spanish' };
 
-// This page's teacher directory (data/teachers.js) is static marketing
-// content — editorial bios, credentials and rating/review-count numbers with
-// no corresponding real account in the database (unlike the real Review
-// system, which operates on actual User/Course documents — see
-// Dashboard.jsx's TutorReviewWidget for the real, backend-connected
-// equivalent). This static rating display used to also let any visitor
-// "rate" the teacher via a button that only wrote to their own browser's
-// localStorage and recomputed a fake average never seen by anyone else —
-// removed as misleading; this now shows only the honest editorial figures.
+// Review counts are real, owner-provided per-teacher figures (see
+// docs/trust-marketing-remediation.md). No individual star rating is shown:
+// the owner confirmed individual ratings should exist but has not supplied
+// real values, so none is invented, randomised, or copied from the
+// academy-wide rating shown elsewhere on the site.
 function TeacherRating({ teacher }) {
   const { t } = useLang();
   const tp = t.tp;
-  const filled = Math.round(teacher.rating);
+  if (!teacher.reviews) return null;
 
   return (
     <div className="tp__rating">
-      <div className="tp__stars">
-        {[1,2,3,4,5].map((s) => (
-          <span key={s} className={`tp__star${s <= filled ? ' on' : ''}`}>★</span>
-        ))}
-      </div>
-      <span className="tp__avg">{teacher.rating.toFixed(1)}</span>
-      <span className="tp__cnt">({teacher.reviews} {tp.reviews})</span>
+      <span className="tp__cnt">{teacher.reviews} {tp.reviews}</span>
     </div>
   );
 }
@@ -102,10 +92,12 @@ export default function TeacherProfile() {
         {/* Stats strip */}
         <div className="tp__strip">
           <div className="container tp__strip-inner">
-            <div className="tp__strip-stat">
-              <strong>★ {teacher.rating.toFixed(1)}</strong>
-              <span>{teacher.reviews} {tp.reviews}</span>
-            </div>
+            {teacher.reviews && (
+              <div className="tp__strip-stat">
+                <strong>{teacher.reviews}</strong>
+                <span>{tp.reviews}</span>
+              </div>
+            )}
             <div className="tp__strip-stat">
               <strong>{teacher.gender === 'f' ? tp.female : tp.male}</strong>
               <span>{tp.instructor}</span>
@@ -208,10 +200,12 @@ export default function TeacherProfile() {
               </div>
             </div>
 
-            <div className="tp__section">
-              <h2>{tp.studentRating}</h2>
-              <TeacherRating teacher={teacher} />
-            </div>
+            {teacher.reviews && (
+              <div className="tp__section">
+                <h2>{tp.studentRating}</h2>
+                <TeacherRating teacher={teacher} />
+              </div>
+            )}
           </div>
 
           {/* Right: sticky enroll card */}

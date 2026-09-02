@@ -264,7 +264,7 @@ export function Step3({ form, set }) {
                 <p>{t.title[lang] || t.title.en}</p>
               </div>
               <div className="enroll__tcard-meta">
-                <span className="enroll__tcard-rating">★ {t.rating.toFixed(1)}</span>
+                {t.reviews && <span className="enroll__tcard-rating">{t.reviews} reviews</span>}
                 {t.gender === 'f' && <span className="enroll__tcard-f">{s.female}</span>}
               </div>
               <div className="enroll__tcard-tags">

@@ -16,7 +16,7 @@ export const TEACHERS = [
     },
     subjects: ['quran', 'tajweed', 'hifz', 'ijazah', 'tafsir'],
     langs: ['en', 'ar', 'it'],
-    rating: 4.9, reviews: 84, hours: '1,200+',
+    reviews: 120, lessons: '2,500',
     color: '#0b6e4f',
   },
   {
@@ -36,7 +36,7 @@ export const TEACHERS = [
     },
     subjects: ['fiqh', 'seerah', 'arabic', 'tafsir', 'islamic'],
     langs: ['en', 'ar'],
-    rating: 4.8, reviews: 62, hours: '900+',
+    reviews: 105,
     color: '#1a5fa0',
   },
   {
@@ -56,7 +56,7 @@ export const TEACHERS = [
     },
     subjects: ['quran', 'tajweed', 'arabic'],
     langs: ['en', 'ar', 'it', 'fr'],
-    rating: 5.0, reviews: 73, hours: '1,800+',
+    reviews: 95,
     color: '#7a3a8a',
   },
   {
@@ -76,7 +76,6 @@ export const TEACHERS = [
     },
     subjects: ['hifz', 'tajweed', 'seerah', 'quran'],
     langs: ['en', 'ar'],
-    rating: 4.9, reviews: 57, hours: '1,500+',
     color: '#c07020',
   },
   {
@@ -96,7 +95,7 @@ export const TEACHERS = [
     },
     subjects: ['arabic', 'islamic', 'quran'],
     langs: ['en', 'ar', 'de'],
-    rating: 4.8, reviews: 49, hours: '800+',
+    reviews: 109,
     color: '#2a7a50',
   },
   {
@@ -116,7 +115,7 @@ export const TEACHERS = [
     },
     subjects: ['tafsir', 'aqeedah', 'tajweed', 'fiqh', 'islamic'],
     langs: ['en', 'ar'],
-    rating: 4.9, reviews: 66, hours: '1,100+',
+    reviews: 100,
     color: '#a03030',
   },
   {
@@ -136,7 +135,7 @@ export const TEACHERS = [
     },
     subjects: ['ijazah', 'tajweed', 'hifz', 'arabic', 'quran'],
     langs: ['en', 'ar', 'it', 'fr', 'es'],
-    rating: 4.9, reviews: 38, hours: '600+',
+    reviews: 79,
     color: '#5a6a9a',
   },
   {
@@ -156,7 +155,7 @@ export const TEACHERS = [
     },
     subjects: ['quran', 'tajweed', 'hifz', 'islamic'],
     langs: ['ar'],
-    rating: 4.8, reviews: 34, hours: '500+',
+    reviews: 70,
     color: '#1a6a3a',
   },
   {
@@ -176,7 +175,7 @@ export const TEACHERS = [
     },
     subjects: ['hifz', 'tajweed', 'quran'],
     langs: ['ar'],
-    rating: 4.9, reviews: 22, hours: '350+',
+    reviews: 80,
     color: '#3a5a9a',
   },
   {
@@ -196,7 +195,7 @@ export const TEACHERS = [
     },
     subjects: ['quran', 'tajweed', 'arabic'],
     langs: ['en', 'ar', 'fr'],
-    rating: 4.9, reviews: 28, hours: '400+',
+    reviews: 75,
     color: '#2a7a8a',
   },
 ];

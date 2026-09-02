@@ -54,24 +54,11 @@
     "verseQuote": "\"Lee en el nombre de tu Señor que creó.\"",
     "verseRef": "Sura Al-'Alaq · 96:1",
     "iqraRead": "Lee",
-    "studentsCount": "1.200+ estudiantes",
     "certifiedTutors": "Tutores certificados",
     "watchDemo": "Ver una clase en vivo",
     "liveSessions": "Clases individuales en vivo",
     "scroll": "Desplázate",
-    "microcopy": ["Sin tarjeta", "Sesión gratuita 30 min", "Cancela cuando quieras"],
-    "statsLabels": ["Clases", "Valoración", "Países", "Tutores"],
-    "activityFrom": "de",
-    "activityActions": [
-      "acaba de reservar una clase de prueba",
-      "se inscribió en Tajweed",
-      "comenzó el programa de Hifz",
-      "completó su primera lección",
-      "acaba de reservar una clase de prueba",
-      "se inscribió en el curso de árabe",
-      "comenzó la lectura del Corán",
-      "acaba de reservar una clase de prueba"
-    ]
+    "microcopy": ["Sin tarjeta", "Sesión gratuita 30 min", "Cancela cuando quieras"]
   },
   "features": {
     "eyebrow": "Por qué elegirnos",
@@ -234,8 +221,6 @@
     "getStarted": "Empezar",
     "mostPopular": "Más popular",
     "sub": "Planes mensuales asequibles por estudiante. Cancela en cualquier momento.",
-    "banner": "🎓 Tarifa para miembros fundadores",
-    "bannerText": "La tarifa de miembro fundador queda fijada de por vida; aumentará a medida que crezcamos.",
     "youSave": "Ahorras",
     "perHour": "/ hora equivalente",
     "cancelNote": "Cancela cuando quieras — sin contratos",
@@ -244,20 +229,11 @@
     "refundSub": "¿No estás satisfecho? Te devolvemos cada céntimo en 14 días — sin preguntas.",
     "securePayment": "Pago seguro",
     "cancelAnytime": "Cancela cuando quieras",
-    "azharCertified": "32 profesores certificados por Al-Azhar",
-    "familiesServed": "Más de 9.000 clases impartidas",
-    "countries": "Estudiantes de más de 40 países",
+    "azharCertified": "Profesores certificados por Al-Azhar",
+    "familiesServed": "Clases impartidas en todo el mundo",
+    "countries": "Estudiantes de todo el mundo",
     "gdprNote": "Cumplimiento RGPD — tus datos están seguros",
-    "offerEnds": "La oferta termina el domingo",
-    "spotsLeft": "Solo quedan {n} plazas con descuento esta semana",
     "showPricesIn": "Mostrar precios en:"
-  },
-  "testimonials": {
-    "eyebrow": "Testimonios",
-    "heading": "Lo que dicen nuestros estudiantes",
-    "sub": "Experiencias reales de estudiantes reales — con sus propias palabras.",
-    "happyStudents": "lecciones impartidas en todo el mundo",
-    "joinToday": "Únete a ellos hoy →"
   },
   "trial": {
     "eyebrow": "Prueba gratuita",
@@ -268,12 +244,21 @@
       "Elige tu horario preferido",
       "Clases por Zoom o Skype"
     ],
+    "trustRow": {
+      "privacy": "Privado y conforme al RGPD",
+      "duration": "Sesión de 30 minutos",
+      "commitment": "Sin compromiso"
+    },
+    "formTitle": "Reserva tu clase gratuita",
+    "formSub": "Te contactaremos en un plazo de 2 horas para programarla.",
+    "privacyNote": "Nunca vendemos tus datos. Sin spam, nunca.",
     "waLabel": "¿Prefieres WhatsApp?",
     "waLink": "Escríbenos",
     "fields": {
       "name": "Nombre completo",
       "email": "Correo electrónico",
       "phone": "Teléfono / WhatsApp",
+      "phoneHint": " (preferible WhatsApp)",
       "course": "Curso de interés",
       "message": "Mensaje (opcional)"
     },
@@ -295,15 +280,21 @@
     "planMessage": "Estoy interesado en el plan {plan}."
   },
   "newsletter": {
-    "badge": "DESCARGA GRATUITA",
-    "heading": "Guía gratuita de iniciación al Tajweed",
-    "sub": "Aprende las 5 reglas más importantes del Tajweed antes de la primera clase de tu hijo — en lenguaje sencillo, sin necesidad de saber árabe.",
+    "badge": "Boletín",
+    "heading": "Consejos de Tajweed para principiantes",
+    "sub": "Guía práctica de Corán y Tajweed para principiantes, directamente en tu correo — en lenguaje sencillo, sin necesidad de saber árabe.",
+    "benefits": [
+      "Guía práctica de Tajweed para principiantes",
+      "Consejos de pronunciación explicados con sencillez",
+      "Un plan sencillo para crear un hábito diario"
+    ],
     "placeholder": "Tu correo electrónico",
-    "btn": "Envíame la guía gratuita →",
+    "emailAriaLabel": "Correo electrónico",
+    "btn": "Suscribirme →",
     "subscribing": "Enviando…",
     "subscribed": "Enviado ✓",
     "successHeading": "¡Revisa tu bandeja de entrada!",
-    "successSub": "Tu guía gratuita de Tajweed está en camino. Puede tardar uno o dos minutos.",
+    "successSub": "Tu suscripción está confirmada — revisa tu correo para ver las novedades.",
     "error": "Algo salió mal. Inténtalo de nuevo.",
     "privacy": "Sin spam. Cancela tu suscripción cuando quieras."
   },
@@ -345,7 +336,7 @@
     "teachersLink": "Nuestros profesores",
     "terms": "Términos de servicio",
     "refundPolicy": "Política de reembolso",
-    "trustBadges": ["Garantía de devolución de 14 días", "32 tutores certificados por Al-Azhar", "Estudiantes de más de 40 países", "Valoración media de 4,9★", "Respuesta en menos de 2 horas"],
+    "trustBadges": ["Garantía de devolución de 14 días", "Tutores certificados por Al-Azhar", "Estudiantes de todo el mundo", "Comprometidos con una enseñanza de calidad", "Respuesta en menos de 2 horas"],
     "supportHours": "Soporte: Sáb–Jue · 08:00–23:00 (El Cairo)",
     "replyBadge": "Respuesta ≤ 2h"
   },
@@ -358,24 +349,6 @@
       "📜 Titulares de una iyaza",
       "👩‍🏫 Profesoras disponibles",
       "♿ Apoyo para necesidades especiales"
-    ],
-    "stats": [
-      {
-        "n": "10+",
-        "l": "Tutores expertos"
-      },
-      {
-        "n": "500+",
-        "l": "Estudiantes"
-      },
-      {
-        "n": "4,9★",
-        "l": "Valoración media"
-      },
-      {
-        "n": "9.000+",
-        "l": "Horas de enseñanza"
-      }
     ],
     "filterSubject": "Materia:",
     "filterGender": "Género:",
@@ -526,33 +499,27 @@
   },
   "joinCta": {
     "eyebrow": "Regala a tu hijo el Corán",
-    "heading": "En 6 meses, tu hijo recitará Al-Fátiha a la perfección.",
-    "sub": "Más de 1.200 familias en toda Europa ya tomaron esta decisión. Dos clases de prueba gratuitas — sin tarjeta, sin compromiso. Cancela cuando quieras.",
+    "heading": "Ayuda a tu hijo a recitar Al-Fátiha con confianza.",
+    "sub": "Familias en toda Europa ya han tomado esta decisión. Dos clases de prueba gratuitas — sin tarjeta, sin compromiso. Cancela cuando quieras.",
     "promise": "🕌 Conectados a una cadena ininterrumpida de transmisión del Corán de 1.400 años",
     "stats": [
-      "40+ Países",
-      "Valoración 4,9★",
+      "Estudiantes en todo el mundo",
+      "Confianza de las familias",
       "Certificación Ijazah",
       "2 Clases Gratis"
     ],
-    "cta": "Empieza gratis — sin tarjeta →"
-  },
-  "stats": {
-    "labels": [
-      "Profesores Expertos",
-      "Valoración Media",
-      "Lecciones Impartidas",
-      "Países Atendidos"
-    ]
+    "cta": "Empieza gratis — sin tarjeta →",
+    "browseCourses": "Explorar cursos primero →",
+    "guarantee": "Garantía de devolución de 14 días · No se requiere tarjeta de crédito · Cancela cuando quieras"
   },
   "trust": {
     "eyebrow": "Por qué las familias confían en nosotros",
     "heading": "Basado en la transparencia y la autenticidad",
-    "sub": "Cada afirmación de esta página se puede verificar. Creemos que la confianza se gana con pruebas, no con promesas.",
+    "sub": "Creemos que la confianza se gana con pruebas, no con promesas.",
     "items": [
-      { "stat": "32", "label": "Tutores certificados por Al-Azhar", "desc": "Cada tutor posee una iyaza verificada con una cadena ininterrumpida de conocimiento que llega hasta el Profeta ﷺ." },
-      { "stat": "< 2h", "label": "Tiempo de respuesta de soporte", "desc": "Respondemos cada mensaje en menos de 2 horas, porque tu camino de aprendizaje no puede esperar." },
-      { "stat": "40+", "label": "Países", "desc": "Familias de más de 40 países confían en Al-Rahma Academy para una educación coránica auténtica." },
+      { "stat": "✓", "label": "Tutores certificados por Al-Azhar", "desc": "Cada tutor posee una iyaza verificada con una cadena ininterrumpida de conocimiento que llega hasta el Profeta ﷺ." },
+      { "stat": "< 2h", "label": "Tiempo de respuesta de soporte", "desc": "Buscamos responder cada mensaje en menos de 2 horas en días laborables, porque tu camino de aprendizaje no debería esperar demasiado." },
+      { "stat": "Global", "label": "Alcance", "desc": "Familias de todo el mundo confían en Al-Rahma Academy para una educación coránica auténtica." },
       { "stat": "14", "label": "Días de garantía de reembolso", "desc": "¿No estás satisfecho? Te reembolsamos el 100 % en 14 días, sin preguntas ni papeleo." }
     ],
     "gdprTitle": "Cumplimiento RGPD",
@@ -560,20 +527,19 @@
     "sslTitle": "Cifrado SSL",
     "sslDesc": "Todos los pagos y datos personales están cifrados de extremo a extremo.",
     "supportTitle": "Soporte en 2 horas",
-    "supportDesc": "Personas reales, no bots. Respondemos en menos de 2 horas, los 7 días de la semana.",
+    "supportDesc": "Personas reales, no bots. Buscamos responder en menos de 2 horas en horario laboral.",
     "azharTitle": "Verificado por Al-Azhar",
     "azharDesc": "Asociación oficial con profesores certificados por la Universidad Al-Azhar, El Cairo.",
-    "countriesLabel": "Estudiantes de 40+ países confían en Al-Rahma Academy"
+    "countriesLabel": "Estudiantes de todo el mundo confían en Al-Rahma Academy"
   },
   "trustBar": {
-    "countries": "Países",
-    "activeStudents": "Estudiantes activos",
     "azharTutors": "Tutores certificados por Al-Azhar",
     "moneyBack": "Garantía de devolución",
     "supportOnline": "Soporte en línea",
     "leaveMessage": "Deja un mensaje",
     "repliesMinutes": "Normalmente responde en minutos",
     "repliesHours": "Respondemos en pocas horas",
+    "whatsappStatusAriaLabel": "Estado del soporte de WhatsApp",
     "badges": ["Sin contratos a largo plazo", "Cancela cuando quieras", "Cadena de iyaza certificada", "Profesoras disponibles", "Horarios 24/7", "Cumple la normativa", "Respuesta en menos de 2 horas"]
   },
   "blog": {

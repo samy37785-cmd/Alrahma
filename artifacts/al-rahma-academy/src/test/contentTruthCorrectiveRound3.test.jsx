@@ -12,7 +12,8 @@ import itLocale from '../i18n/it';
 import es from '../i18n/es';
 import de from '../i18n/de';
 import fr from '../i18n/fr';
-import { siteFacts, trialLessonWord, limitedTrialSpotsText } from '../data/siteFacts';
+import { siteFacts, trialLessonPhrase, limitedTrialSpotsText } from '../data/siteFacts';
+import { site } from '../data/site';
 import { plans, planComparison } from '../data/home';
 import { TEACHER_CREDENTIALS } from '../data/marketing/teachers';
 import ReferralCard from '../components/ui/ReferralCard';
@@ -72,34 +73,66 @@ afterEach(() => {
   cleanup();
 });
 
-describe('freeTrialLessons is a real, wired value (Part 6)', () => {
-  it('trialLessonWord(lang) reflects siteFacts.freeTrialLessons for all six languages', () => {
+describe('freeTrialLessons is a real, wired value with correct grammar (Round 4, Part 6)', () => {
+  // trialLessonPhrase() replaced trialLessonWord(): the old function
+  // returned a bare number word that callers spliced into a fixed-singular
+  // template, which produced ungrammatical Arabic at count=2 (a duplicated
+  // noun: "حصة تجريبية حصتان مجانية"). The new function returns the whole
+  // agreement-correct phrase, so these assertions check that the NOUN and
+  // "free" ADJECTIVE inflect together with the count — not just that the
+  // numeral substring changed (a test that only checked the numeral would
+  // pass even if the surrounding words stayed wrongly singular).
+  it('returns a non-empty phrase for every language at count 1', () => {
     for (const lang of Object.keys(LOCALES)) {
-      expect(typeof trialLessonWord(lang)).toBe('string');
-      expect(trialLessonWord(lang).length).toBeGreaterThan(0);
+      expect(typeof trialLessonPhrase(lang, 1)).toBe('string');
+      expect(trialLessonPhrase(lang, 1).length).toBeGreaterThan(0);
     }
-    expect(trialLessonWord('en')).toBe('one');
-    expect(trialLessonWord('ar')).toBe('واحدة');
   });
 
-  it('changing siteFacts.freeTrialLessons changes trialLessonWord()\'s output — proves it is not a dead value', () => {
-    expect(trialLessonWord('en')).toBe('one');
+  it('count=1 uses singular noun forms', () => {
+    expect(trialLessonPhrase('en', 1)).toBe('one free trial lesson');
+    expect(trialLessonPhrase('ar', 1)).toBe('حصة تجريبية مجانية واحدة');
+    expect(trialLessonPhrase('it', 1)).toBe('una lezione di prova gratuita');
+    expect(trialLessonPhrase('es', 1)).toBe('una clase de prueba gratuita');
+    expect(trialLessonPhrase('de', 1)).toBe('eine kostenlose Probestunde');
+    expect(trialLessonPhrase('fr', 1)).toBe("un cours d'essai gratuit");
+  });
+
+  it('count=2 inflects the noun AND the "free" adjective together — not just the numeral', () => {
+    // English: noun pluralizes ("lesson" -> "lessons").
+    expect(trialLessonPhrase('en', 2)).toBe('two free trial lessons');
+    expect(trialLessonPhrase('en', 2)).toMatch(/lessons\b/);
+    // Arabic: dual noun ("حصتان") AND dual adjective ("تجريبيتان"/"مجانيتان")
+    // both change — proves the whole phrase is atomic, not a single spliced
+    // word inside a fixed-singular template (the Round 3 bug this fixes).
+    expect(trialLessonPhrase('ar', 2)).toBe('حصتان تجريبيتان مجانيتان');
+    expect(trialLessonPhrase('ar', 2)).not.toMatch(/حصة تجريبية/);
+    // Italian/Spanish/French: noun AND "gratuit(a/e)/gratuit(o/s)" adjective
+    // both pluralize.
+    expect(trialLessonPhrase('it', 2)).toBe('due lezioni di prova gratuite');
+    expect(trialLessonPhrase('es', 2)).toBe('dos clases de prueba gratuitas');
+    expect(trialLessonPhrase('fr', 2)).toBe("deux cours d'essai gratuits");
+    // German: noun pluralizes ("Probestunde" -> "Probestunden").
+    expect(trialLessonPhrase('de', 2)).toBe('zwei kostenlose Probestunden');
+  });
+
+  it('reading siteFacts.freeTrialLessons as the default count is not a dead value', () => {
+    expect(trialLessonPhrase('en')).toBe('one free trial lesson');
     siteFacts.freeTrialLessons = 2;
-    expect(trialLessonWord('en')).toBe('two');
-    expect(trialLessonWord('ar')).toBe('حصتان');
-    expect(trialLessonWord('fr')).toBe('deux');
+    expect(trialLessonPhrase('en')).toBe('two free trial lessons');
+    siteFacts.freeTrialLessons = 1;
   });
 
-  it('falls back to the raw numeral for an uncovered count rather than throwing', () => {
-    siteFacts.freeTrialLessons = 9;
-    expect(trialLessonWord('en')).toBe('9');
+  it('falls back to a grammatical plural phrase for an uncovered count rather than throwing', () => {
+    expect(trialLessonPhrase('en', 9)).toBe('9 free trial lessons');
+    expect(trialLessonPhrase('ar', 9)).toBe('9 حصة تجريبية مجانية');
   });
 
-  it('src/data/home.js and src/data/faqItems.js import trialLessonWord rather than hardcoding "one"', () => {
+  it('src/data/home.js and src/data/faqItems.js import trialLessonPhrase rather than hardcoding "one"', () => {
     const homeSrc = fs.readFileSync(path.resolve(__dirname, '../data/home.js'), 'utf8');
     const faqSrc = fs.readFileSync(path.resolve(__dirname, '../data/faqItems.js'), 'utf8');
-    expect(homeSrc).toMatch(/trialLessonWord/);
-    expect(faqSrc).toMatch(/trialLessonWord/);
+    expect(homeSrc).toMatch(/trialLessonPhrase/);
+    expect(faqSrc).toMatch(/trialLessonPhrase/);
   });
 });
 
@@ -119,9 +152,9 @@ describe('Teachers.jsx listing shows Sami\'s lessons-taught line, translated (Pa
 });
 
 describe('TeacherProfile.jsx credentials/proof block is fully translated (Part 4)', () => {
-  it('Sami\'s profile shows "2,500" lessons on the profile page itself, not only the listing card', () => {
+  it('Sami\'s profile shows "2,500+" lessons on the profile page itself, not only the listing card', () => {
     renderTeacherProfile('', 1);
-    expect(screen.getByText('2,500')).toBeInTheDocument();
+    expect(screen.getByText('2,500+')).toBeInTheDocument();
   });
 
   it.each(NON_EN)('no hardcoded English proof-block literal leaks into %s', (lang) => {
@@ -328,12 +361,11 @@ describe('llms.txt and index.html stay in sync with siteFacts (static files, Par
     expect(txt).not.toMatch(/two free trial classes/i);
   });
 
-  it('index.html\'s Organization JSON-LD foundingDate/telephone match siteFacts', () => {
+  it('index.html\'s Organization JSON-LD foundingDate matches siteFacts and telephone matches site.js (Round 4: the single phone source)', () => {
     const html = fs.readFileSync(path.join(REPO_ROOT, 'index.html'), 'utf8');
     expect(html).toContain(`"foundingDate": "${siteFacts.foundingYear}"`);
     const normalizedHtmlPhone = html.match(/"telephone":\s*"([^"]+)"/)[1].replace(/\s/g, '');
-    const normalizedFactsPhone = siteFacts.phoneDisplay.replace(/\s/g, '');
-    expect(normalizedHtmlPhone).toBe(normalizedFactsPhone);
+    expect(normalizedHtmlPhone).toBe(site.phoneE164);
   });
 
   it('About.jsx\'s founder signature imports siteFacts.founder rather than a hardcoded literal', () => {
@@ -363,5 +395,24 @@ describe('siteFacts property audit — no dead/misleading properties (Part 6)', 
     ]) {
       expect(combined, `siteFacts.${prop}`).toMatch(new RegExp(`siteFacts\\.${prop}\\b`));
     }
+  });
+
+  // Round 4 fix: an independent audit found supportResponseHours had zero
+  // real production consumers — every locale file hardcoded "24" in
+  // footer.replyBadge/trustBadges instead of importing the constant. Wired
+  // both to siteFacts.supportResponseHours (Footer.jsx renders both), so
+  // this now has genuine, checkable consumers — never used for tutor
+  // assignment/trial confirmation/payment-verification timing, and the
+  // legal text in TermsOfService.jsx is untouched (out of scope).
+  it('supportResponseHours is wired into footer.replyBadge/trustBadges in every locale, not a dead value', () => {
+    for (const locale of [en, ar, itLocale, es, de, fr]) {
+      expect(locale.footer.replyBadge).toMatch(new RegExp(String(siteFacts.supportResponseHours)));
+      expect(locale.footer.trustBadges.some((b) => b.includes(String(siteFacts.supportResponseHours)))).toBe(true);
+    }
+  });
+
+  it('supportResponseHours is not used for trial-confirmation or tutor-assignment timing', () => {
+    const trialSrc = fs.readFileSync(path.resolve(__dirname, '../components/features/marketing/Trial.jsx'), 'utf8');
+    expect(trialSrc).not.toMatch(/supportResponseHours/);
   });
 });

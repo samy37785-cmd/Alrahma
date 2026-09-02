@@ -44,7 +44,10 @@ describe('siteFacts — owner-confirmed values (Part 1)', () => {
     expect(siteFacts.refundWindowDays).toBe(24);
     expect(siteFacts.founder).toBe('Mahmoud Samy');
     expect(siteFacts.foundingYear).toBe('2020');
-    expect(siteFacts.phoneDisplay).toBe('+20 101 605 4663');
+  });
+
+  it('no longer carries a duplicate phoneDisplay — src/data/site.js is the single phone source (Round 4)', () => {
+    expect(siteFacts).not.toHaveProperty('phoneDisplay');
   });
 
   it('no longer carries standardWeeklyHours/premiumWeeklyHours (Round 3)', () => {
@@ -108,39 +111,86 @@ describe('TEACHERS — eleven-profile verified roster (Part 2)', () => {
     // Guard against 1008 leaking into siteFacts or any JSON-LD/schema field.
     expect(JSON.stringify(siteFacts)).not.toMatch(/\b1008\b/);
   });
+});
 
-  it('no teacher carries an individual `rating` field', () => {
-    for (const t of TEACHERS) {
-      expect(t, `teacher id=${t.id}`).not.toHaveProperty('rating');
+// Teacher Source of Truth — Final Integration (2026-09-02). This
+// owner-approved dataset explicitly reverses the prior "no individual
+// rating" and "only Sami has lessons" decisions asserted above — do not
+// reintroduce those old assumptions. IDs stay stable; do not renumber.
+describe('Teacher Source of Truth — Final Integration (Round 4)', () => {
+  const expected = {
+    1: { nameEn: 'Sami Mahmoud Abd Al-Aal', langs: ['ar', 'en', 'es'], lessons: '2,500+', rating: 4.9, reviews: 120 },
+    2: { nameEn: 'Muhammad Abd Al-Maqsoud', langs: ['ar', 'en', 'it'], lessons: '2,300+', rating: 4.8, reviews: 105 },
+    3: { nameEn: 'Khairiyya Al-Muhammadi', langs: ['ar', 'en', 'it'], lessons: '2,400+', rating: 5.0, reviews: 95 },
+    4: { nameEn: 'Omnia Abd Allah', langs: ['ar', 'en', 'es'], lessons: '1,900+', rating: 4.9, reviews: 85 },
+    5: { nameEn: 'Abd Allah Ayman', langs: ['ar', 'en', 'it'], lessons: '2,400+', rating: 4.8, reviews: 109 },
+    6: { nameEn: 'Mahmoud Sami', langs: ['ar', 'fr', 'it'], lessons: '2,200+', rating: 4.9, reviews: 100 },
+    7: { nameEn: 'Aya', langs: ['ar', 'es'], lessons: '2,000+', rating: 4.9, reviews: 79 },
+    8: { nameEn: 'Fatima Al-Rashidi', langs: ['ar', 'de'], lessons: '1,900+', rating: 4.9, reviews: 75 },
+    9: { nameEn: 'Alaa Ragib', langs: ['ar', 'fr'], lessons: '1,900+', rating: 4.8, reviews: 70 },
+    10: { nameEn: 'Islam Muhammad', langs: ['ar', 'en', 'de'], lessons: '2,400+', rating: 4.9, reviews: 80 },
+    11: { nameEn: 'Gouda Al-Shobaki', langs: ['ar', 'en', 'fr'], lessons: '2,400+', rating: 4.8, reviews: 90 },
+  };
+
+  it('every teacher matches the exact owner-confirmed name/languages/lessons/rating/reviews, by stable id', () => {
+    expect(TEACHERS.length).toBe(11);
+    for (const [id, facts] of Object.entries(expected)) {
+      const teacher = TEACHERS.find((t) => t.id === Number(id));
+      expect(teacher, `teacher id=${id} not found`).toBeTruthy();
+      expect(teacher.nameEn, `id=${id} nameEn`).toBe(facts.nameEn);
+      expect(teacher.langs.slice().sort(), `id=${id} langs`).toEqual(facts.langs.slice().sort());
+      expect(teacher.lessons, `id=${id} lessons`).toBe(facts.lessons);
+      expect(teacher.rating, `id=${id} rating`).toBe(facts.rating);
+      expect(teacher.reviews, `id=${id} reviews`).toBe(facts.reviews);
     }
   });
 
-  it('only Sami (id=1) has a `lessons` field, and it is exactly "2,500"', () => {
-    const withLessons = TEACHERS.filter((t) => 'lessons' in t);
-    expect(withLessons.map((t) => t.id)).toEqual([1]);
-    expect(withLessons[0].lessons).toBe('2,500');
+  it('5.0 always renders with one decimal place, never bare "5" (Khairiyya, id=3)', () => {
+    const khairiyya = TEACHERS.find((t) => t.id === 3);
+    expect(khairiyya.rating).toBe(5.0);
+    // JS has no distinct float type (5.0 === 5), so the guard that matters
+    // is the display format used by Teachers.jsx/TeacherProfile.jsx:
+    // toFixed(1) must always be called, so "5" never renders bare.
+    expect(khairiyya.rating.toFixed(1)).toBe('5.0');
+    const listingSrc = fs.readFileSync(path.resolve(__dirname, '../pages/Teachers.jsx'), 'utf8');
+    const profileSrc = fs.readFileSync(path.resolve(__dirname, '../pages/TeacherProfile.jsx'), 'utf8');
+    expect(listingSrc).toMatch(/teacher\.rating\.toFixed\(1\)/);
+    expect(profileSrc).toMatch(/teacher\.rating\.toFixed\(1\)/);
   });
 
-  it('the ambiguous "2,400" lessons figure is not assigned to any teacher', () => {
-    for (const t of TEACHERS) {
-      expect(String(t.lessons ?? ''), `teacher id=${t.id}`).not.toMatch(/2,?400/);
-    }
+  it('no teacher lessons figure is summed into siteFacts.totalLessons or any academy-wide total', () => {
+    const teacherLessonSum = TEACHERS.reduce((acc, t) => acc + parseInt(t.lessons.replace(/\D/g, ''), 10), 0);
+    expect(siteFacts.totalLessons).toBe('15,000+');
+    expect(JSON.stringify(siteFacts.totalLessons)).not.toMatch(new RegExp(String(teacherLessonSum)));
   });
 
-  describe('Gouda El-Shoubaky profile (new eleventh teacher)', () => {
+  it('individual teacher ratings are independent of siteFacts.academyRating (4.9/5)', () => {
+    expect(siteFacts.academyRating).toBe(4.9);
+    expect(siteFacts.academyRatingOutOf).toBe(5);
+    // Several teachers legitimately also carry 4.9 — that is not blending,
+    // just coincidence; the real guard is that academyRating is never
+    // derived from TEACHERS.
+    const avgTeacherRating = TEACHERS.reduce((acc, t) => acc + t.rating, 0) / TEACHERS.length;
+    expect(siteFacts.academyRating).not.toBe(Number(avgTeacherRating.toFixed(2)));
+  });
+
+  describe('Gouda Al-Shobaki profile (renamed from "Gouda El-Shoubaky")', () => {
     const gouda = TEACHERS.find((t) => t.nameAr === 'جودة الشوبكي');
 
-    it('exists with the expected identity and confirmed facts only', () => {
+    it('exists with the corrected name, gender, languages, lessons, rating and reviews', () => {
       expect(gouda).toBeTruthy();
-      expect(gouda.nameEn).toBe('Gouda El-Shoubaky');
+      expect(gouda.nameEn).toBe('Gouda Al-Shobaki');
       expect(gouda.gender).toBe('m');
+      expect(gouda.langs.slice().sort()).toEqual(['ar', 'en', 'fr']);
+      expect(gouda.lessons).toBe('2,400+');
+      expect(gouda.rating).toBe(4.8);
       expect(gouda.reviews).toBe(90);
-      expect(gouda.langs.slice().sort()).toEqual(['en', 'fr']);
     });
 
-    it('has no lessons field and no rating field', () => {
-      expect(gouda).not.toHaveProperty('lessons');
-      expect(gouda).not.toHaveProperty('rating');
+    it('title/specialties no longer center him as a Fiqh & Arabic instructor', () => {
+      expect(gouda.title.en).toBe('Seerah & Islamic Studies Instructor');
+      expect(gouda.title.en).not.toMatch(/fiqh/i);
+      expect(gouda.specialties.en).toEqual(['Prophetic Seerah', 'Islamic Studies', 'Quran Studies', 'Arabic Language']);
     });
 
     it('has title/bio/specialties present for all six languages, like every other profile', () => {
@@ -156,19 +206,52 @@ describe('TEACHERS — eleven-profile verified roster (Part 2)', () => {
         ...Object.values(gouda.bio),
         ...Object.values(gouda.specialties).flat(),
       ].join(' ');
-      // No "N years", no student/result counts, no "helped N students" style claims.
       expect(allText).not.toMatch(/\d+\s*(years?|ans|anni|años|Jahre)/i);
       expect(allText).not.toMatch(/\d+\+?\s*(students?|élèves|studenti|estudiantes|Schüler|طلاب)/i);
-      expect(allText).not.toMatch(/\d+\s*(lessons?|hours?)/i);
     });
   });
 
-  it('Omnia Abd Allah (id=4) has reviews = 85', () => {
-    const omnia = TEACHERS.find((t) => t.id === 4);
-    expect(omnia.nameAr).toBe('أمنية عبد الله');
-    expect(omnia.reviews).toBe(85);
+  it('Alaa Ragib (id=9) and Gouda Al-Shobaki (id=11) are renamed everywhere in live app source', () => {
+    const alaa = TEACHERS.find((t) => t.id === 9);
+    expect(alaa.nameEn).toBe('Alaa Ragib');
+    const srcDir = path.resolve(__dirname, '..');
+    const files = walkSrc(srcDir, ['.js', '.jsx'], ['test']);
+    for (const file of files) {
+      const content = fs.readFileSync(file, 'utf8');
+      expect(content, path.basename(file)).not.toMatch(/Alaa Rajab/);
+      expect(content, path.basename(file)).not.toMatch(/Gouda El-Shoubaky/);
+    }
+  });
+
+  it('no teacher carries a stale "+N hrs" figure (all replaced by lessons)', () => {
+    const allBioAndSpecialtyText = TEACHERS
+      .map((t) => [...Object.values(t.bio), ...Object.values(t.specialties).flat()].join(' '))
+      .join(' ');
+    expect(allBioAndSpecialtyText).not.toMatch(/\d[\d,]*\+?\s*hrs\b/i);
+  });
+
+  it('Listing (Teachers.jsx) and Profile (TeacherProfile.jsx) both render lessons, rating and reviews', () => {
+    const listingSrc = fs.readFileSync(path.resolve(__dirname, '../pages/Teachers.jsx'), 'utf8');
+    const profileSrc = fs.readFileSync(path.resolve(__dirname, '../pages/TeacherProfile.jsx'), 'utf8');
+    expect(listingSrc).toMatch(/teacher\.rating/);
+    expect(listingSrc).toMatch(/teacher\.lessons/);
+    expect(listingSrc).toMatch(/teacher\.reviews|ui\.reviews/);
+    expect(profileSrc).toMatch(/teacher\.rating/);
+    expect(profileSrc).toMatch(/teacher\.lessons/);
+    expect(profileSrc).toMatch(/teacher\.reviews/);
   });
 });
+
+function walkSrc(dir, exts, exclude) {
+  const out = [];
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    if (exclude.some((x) => entry.name === x)) continue;
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) out.push(...walkSrc(full, exts, exclude));
+    else if (exts.some((e) => entry.name.endsWith(e))) out.push(full);
+  }
+  return out;
+}
 
 describe('TEACHER_CREDENTIALS — shared, not individual (Part 3)', () => {
   it('does not overclaim expertise beyond confirmed "experience"', () => {
@@ -283,7 +366,8 @@ describe('free-trial wording is consistent everywhere: one lesson, 60 minutes (P
     const src = fs.readFileSync(path.resolve(__dirname, '../components/ui/ReferralCard.jsx'), 'utf8');
     expect(src).not.toMatch(/2\s*FREE trial lessons?/i);
     expect(en.referral.waMessage).not.toMatch(/2\s*FREE/i);
-    expect(en.referral.waMessage).toMatch(new RegExp(`${siteFacts.trialLessonMinutes}-minute`));
+    expect(en.referral.waMessage).toMatch(/one free trial lesson/i);
+    expect(en.referral.waMessage).toMatch(new RegExp(String(siteFacts.trialLessonMinutes)));
   });
 
   it('public/llms.txt offers one free trial lesson, not two', () => {

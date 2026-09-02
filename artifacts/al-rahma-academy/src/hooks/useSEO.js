@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { stripLangPrefix, langFromPath, pathFor } from '../utils/localePath';
+import { stripLangPrefix, langFromPath, pathFor, ORIGIN } from '../utils/localePath';
 
 /**
  * Central SEO engine. Every public page calls this hook to drive its
@@ -13,7 +13,6 @@ import { stripLangPrefix, langFromPath, pathFor } from '../utils/localePath';
  */
 
 const SITE = 'AL-Rahma Academy';
-const ORIGIN = 'https://al-rahmaacademy.com';
 const DEFAULT_IMAGE = `${ORIGIN}/og-cover.svg`;
 
 function setMeta(attr, key, value) {

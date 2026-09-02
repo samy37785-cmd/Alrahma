@@ -1,13 +1,14 @@
 import { useState, useCallback } from 'react';
+import { site } from '../../data/site';
 
 const SHARE_MESSAGES = {
-  surah: (name) => `🎉 I just completed ${name} at Al-Rahma Academy! Alhamdulillah. Learn Quran online: alrahmaacademy.com`,
-  juz: (n) => `🌙 I memorized Juz ${n} of the Holy Quran at Al-Rahma Academy! Join me: alrahmaacademy.com`,
-  percent: (pct) => `📖 I reached ${pct}% progress in my Quran course at Al-Rahma Academy! alrahmaacademy.com`,
+  surah: (name) => `🎉 I just completed ${name} at Al-Rahma Academy! Alhamdulillah. Learn Quran online: ${site.origin}`,
+  juz: (n) => `🌙 I memorized Juz ${n} of the Holy Quran at Al-Rahma Academy! Join me: ${site.origin}`,
+  percent: (pct) => `📖 I reached ${pct}% progress in my Quran course at Al-Rahma Academy! ${site.origin}`,
 };
 
 function getShareText(type, value) {
-  return SHARE_MESSAGES[type]?.(value) ?? `I'm learning Quran at Al-Rahma Academy! alrahmaacademy.com`;
+  return SHARE_MESSAGES[type]?.(value) ?? `I'm learning Quran at Al-Rahma Academy! ${site.origin}`;
 }
 
 function canNativeShare() {
@@ -20,7 +21,7 @@ export default function ShareAchievement({ type = 'percent', value, label, onDis
 
   const handleNativeShare = useCallback(async () => {
     try {
-      await navigator.share({ title: 'My Al-Rahma Achievement', text, url: 'https://alrahmaacademy.com' });
+      await navigator.share({ title: 'My Al-Rahma Achievement', text, url: site.origin });
     } catch {
       /* user cancelled */
     }
@@ -40,7 +41,7 @@ export default function ShareAchievement({ type = 'percent', value, label, onDis
   }, [text]);
 
   const handleFacebook = useCallback(() => {
-    const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent('https://alrahmaacademy.com')}&quote=${encodeURIComponent(text)}`;
+    const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(site.origin)}&quote=${encodeURIComponent(text)}`;
     window.open(url, '_blank', 'noopener,noreferrer');
   }, [text]);
 

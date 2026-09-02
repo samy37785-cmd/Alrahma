@@ -716,7 +716,7 @@ export default function Dashboard() {
                 <button
                   className="ds-streak__share-btn"
                   onClick={() => {
-                    const txt = `🔥 I'm on a ${streak}-day Quran learning streak at Al-Rahma Academy! Alhamdulillah. Join me: al-rahma.academy`;
+                    const txt = `🔥 I'm on a ${streak}-day Quran learning streak at Al-Rahma Academy! Alhamdulillah. Join me: ${site.origin}`;
                     if (navigator.share) navigator.share({ title: `${streak}-day streak!`, text: txt }).catch(() => {});
                     else navigator.clipboard?.writeText(txt);
                   }}

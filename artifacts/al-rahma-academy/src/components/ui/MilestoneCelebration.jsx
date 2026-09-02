@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { site } from '../../data/site';
 
 const MILESTONES = [25, 50, 75, 100];
 
@@ -49,8 +50,8 @@ export default function MilestoneCelebration({ courseId, courseTitle, pct }) {
     if (!milestone) return;
     const meta = MILESTONE_META[milestone];
     const text = courseTitle ? `${meta.linkedin} — "${courseTitle}"` : meta.linkedin;
-    const url = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent('https://al-rahma.academy')}&summary=${encodeURIComponent(text)}`;
-    window.open(url, '_blank', 'width=600,height=500');
+    const url = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(site.origin)}&summary=${encodeURIComponent(text)}`;
+    window.open(url, '_blank', 'width=600,height=500,noopener,noreferrer');
   }, [milestone, courseTitle]);
 
   const shareWhatsApp = useCallback(() => {
@@ -59,15 +60,15 @@ export default function MilestoneCelebration({ courseId, courseTitle, pct }) {
     const text = courseTitle
       ? `${meta.linkedin} — "${courseTitle}" 🕌 Al-Rahma Academy`
       : `${meta.linkedin} 🕌 Al-Rahma Academy`;
-    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
   }, [milestone, courseTitle]);
 
   const copyAchievement = useCallback(() => {
     if (!milestone) return;
     const meta = MILESTONE_META[milestone];
     const text = courseTitle
-      ? `${meta.linkedin} — "${courseTitle}" 🕌 al-rahma.academy`
-      : `${meta.linkedin} 🕌 al-rahma.academy`;
+      ? `${meta.linkedin} — "${courseTitle}" 🕌 ${site.origin}`
+      : `${meta.linkedin} 🕌 ${site.origin}`;
     navigator.clipboard?.writeText(text).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);

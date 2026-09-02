@@ -1,4 +1,4 @@
-﻿import { siteFacts, trialLessonWord } from '../data/siteFacts';
+﻿import { siteFacts, trialLessonPhrase } from '../data/siteFacts';
 import { planComparison } from '../data/home';
 
 const cmp = planComparison();
@@ -342,9 +342,9 @@ const ar = {
     "teachersLink": "معلمونا",
     "terms": "شروط الخدمة",
     "refundPolicy": "سياسة الاسترداد",
-    "trustBadges": ["نافذة استرداد 24 يومًا", "معلمون معتمدون من الأزهر", "طلاب من مختلف أنحاء العالم", "التزام بجودة التدريس", "الرد خلال 24 ساعة"],
+    "trustBadges": ["نافذة استرداد 24 يومًا", "معلمون معتمدون من الأزهر", "طلاب من مختلف أنحاء العالم", "التزام بجودة التدريس", `الرد خلال ${siteFacts.supportResponseHours} ساعة`],
     "supportHours": "الدعم: السبت–الخميس · ٠٨:٠٠–٢٣:٠٠ (القاهرة)",
-    "replyBadge": "ردّ ≤ 24 س"
+    "replyBadge": `ردّ ≤ ${siteFacts.supportResponseHours} س`
   },
   "teachersPg": {
     "eyebrow": "تعرف على بعض معلمينا",
@@ -435,6 +435,7 @@ const ar = {
     "allTeachers": "← جميع المعلمين",
     "reviews": "تقييم",
     "lessonsTaught": "حصة مُقدَّمة",
+    "rating": "التقييم",
     "female": "أنثى",
     "male": "ذكر",
     "instructor": "معلم",
@@ -1276,7 +1277,7 @@ const ar = {
     "linkAria": "رابط الدعوة الخاص بك",
     "shareVia": "مشاركة عبر:",
     "waAria": "مشاركة عبر واتساب",
-    "waMessage": `🌙 أتعلم القرآن الكريم في أكاديمية الرحمة. يمكنك تجربة حصة تجريبية مجانية ${trialLessonWord('ar')} مدتها ${siteFacts.trialLessonMinutes} دقيقة من هنا: `
+    "waMessage": `🌙 أتعلم القرآن الكريم في أكاديمية الرحمة. يمكنك تجربة ${trialLessonPhrase('ar')} مدتها ${siteFacts.trialLessonMinutes} دقيقة من هنا: `
   }
 };
 export default ar;

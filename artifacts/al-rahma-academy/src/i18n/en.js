@@ -1,4 +1,4 @@
-﻿import { siteFacts, trialLessonWord } from '../data/siteFacts';
+﻿import { siteFacts, trialLessonPhrase } from '../data/siteFacts';
 import { planComparison } from '../data/home';
 
 const cmp = planComparison();
@@ -342,9 +342,9 @@ const en = {
     "teachersLink": "Our Teachers",
     "terms": "Terms of Service",
     "refundPolicy": "Refund Policy",
-    "trustBadges": ["24-Day Refund Window", "Al-Azhar Certified Tutors", "Students From Around the World", "Committed to Quality Teaching", "Reply within 24 hours"],
+    "trustBadges": ["24-Day Refund Window", "Al-Azhar Certified Tutors", "Students From Around the World", "Committed to Quality Teaching", `Reply within ${siteFacts.supportResponseHours} hours`],
     "supportHours": "Support: Sat–Thu · 08:00–23:00 (Cairo)",
-    "replyBadge": "Reply ≤ 24h"
+    "replyBadge": `Reply ≤ ${siteFacts.supportResponseHours}h`
   },
   "teachersPg": {
     "eyebrow": "Meet some of our instructors",
@@ -435,6 +435,7 @@ const en = {
     "allTeachers": "← All Tutors",
     "reviews": "reviews",
     "lessonsTaught": "lessons taught",
+    "rating": "Rating",
     "female": "Female",
     "male": "Male",
     "instructor": "Tutor",
@@ -1276,7 +1277,7 @@ const en = {
     "linkAria": "Your referral link",
     "shareVia": "Share via:",
     "waAria": "Share on WhatsApp",
-    "waMessage": `🌙 I've been learning Quran at Al-Rahma Academy. You can try a free ${trialLessonWord('en')} ${siteFacts.trialLessonMinutes}-minute trial lesson here: `
+    "waMessage": `🌙 I've been learning Quran at Al-Rahma Academy. You can try ${trialLessonPhrase('en')} here (${siteFacts.trialLessonMinutes} minutes): `
   }
 };
 export default en;

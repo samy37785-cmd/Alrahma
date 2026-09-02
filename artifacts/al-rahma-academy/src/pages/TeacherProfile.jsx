@@ -9,11 +9,12 @@ import { useLang } from '../context/LangContext';
 const FLAG = { en:'🇬🇧', ar:'🇪🇬', it:'🇮🇹', fr:'🇫🇷', de:'🇩🇪', es:'🇪🇸' };
 const LANG_LABEL = { en:'English', ar:'Arabic', it:'Italian', fr:'French', de:'German', es:'Spanish' };
 
-// Review counts are real, owner-provided per-teacher figures (see
-// docs/trust-marketing-remediation.md). No individual star rating is shown:
-// the owner confirmed individual ratings should exist but has not supplied
-// real values, so none is invented, randomised, or copied from the
-// academy-wide rating shown elsewhere on the site.
+// Rating, lessons and review counts are real, owner-provided per-teacher
+// figures confirmed 2026-09-02 (Teacher Source of Truth — Final
+// Integration; see docs/trust-marketing-remediation.md). This replaces the
+// earlier "no individual rating" decision: the owner has since supplied a
+// real per-teacher rating for all 11 profiles, so it is now shown — never
+// copied from or blended with the academy-wide rating shown elsewhere.
 function TeacherRating({ teacher }) {
   const { t } = useLang();
   const tp = t.tp;
@@ -21,6 +22,7 @@ function TeacherRating({ teacher }) {
 
   return (
     <div className="tp__rating">
+      <strong>{teacher.rating.toFixed(1)} ★</strong>{' '}
       <span className="tp__cnt">{teacher.reviews} {tp.reviews}</span>
     </div>
   );
@@ -92,6 +94,12 @@ export default function TeacherProfile() {
         {/* Stats strip */}
         <div className="tp__strip">
           <div className="container tp__strip-inner">
+            {teacher.rating && (
+              <div className="tp__strip-stat">
+                <strong>{teacher.rating.toFixed(1)} ★</strong>
+                <span>{tp.rating}</span>
+              </div>
+            )}
             {teacher.reviews && (
               <div className="tp__strip-stat">
                 <strong>{teacher.reviews}</strong>

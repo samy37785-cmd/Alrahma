@@ -9,18 +9,20 @@
  * Do not add secrets, operational data, or a street/postal address here —
  * the owner confirmed the address must not be displayed publicly.
  *
- * Round 3 property audit — do not assume every property below is wired
+ * Round 3/4 property audit — do not assume every property below is wired
  * into a live consumer just because it lives in this "single source" file;
  * that claim is only true for the ones actually listed as such:
  *   - Imported by production code: totalLessons, totalStudents,
  *     totalFamilies, totalTeachers, featuredTeacherCount, countriesServed,
- *     academyRating, academyRatingOutOf, supportResponseHours,
- *     freeTrialLessons (via trialLessonWord()), trialLessonMinutes,
- *     refundWindowDays, limitedTrialSpots.
+ *     academyRating, academyRatingOutOf, supportResponseHours (via
+ *     footer.trustBadges/footer.replyBadge in every locale file — Footer.jsx
+ *     renders both), freeTrialLessons (via trialLessonPhrase()),
+ *     trialLessonMinutes, refundWindowDays, limitedTrialSpots.
  *   - NOT importable at runtime (static files) — guarded by an exact
  *     synchronization test instead: public/llms.txt (trialLessonMinutes),
- *     index.html's Organization JSON-LD (founder, foundingYear,
- *     phoneDisplay). See src/test/contentTruthCorrective.test.js.
+ *     index.html's Organization JSON-LD (founder, foundingYear, telephone —
+ *     see src/data/site.js for the phone/social contract).
+ *     See src/test/contentTruthCorrective.test.js.
  *   - Removed in this round: `standardWeeklyHours`/`premiumWeeklyHours`.
  *     They described a "Standard vs Premium" 2-tier plan structure that
  *     does not exist on the live site (the real plans are Noorani/Huffaz/
@@ -47,7 +49,6 @@ export const siteFacts = {
   refundWindowDays: 24,
   founder: 'Mahmoud Samy',
   foundingYear: '2020',
-  phoneDisplay: '+20 101 605 4663',
   // Owner-confirmed marketing figure, not a live/derived inventory count.
   // Update `limitedTrialSpotsConfirmed` (an ISO date, "YYYY-MM-DD") whenever
   // the owner re-confirms this number by hand — this is a deliberately
@@ -60,27 +61,44 @@ export const siteFacts = {
   limitedTrialSpotsConfirmed: '2026-09-02',
 };
 
-// Small, natural-language number words for the free-trial-lesson count.
-// Deliberately NOT a generic 1..N number formatter: this only covers the
-// small range a trial-lesson count could plausibly be, and each language's
-// entry is a real, grammatically-correct phrase (not a literal digit
-// substitution) — e.g. Arabic's "واحدة" trails the noun as an adjective per
-// Arabic numeral grammar, unlike English's leading "one". If
-// siteFacts.freeTrialLessons is ever set to a value not covered here, the
-// numeral itself is used as a safe (if less natural) fallback rather than
-// throwing.
-const TRIAL_LESSON_WORDS = {
-  en: { 1: 'one', 2: 'two', 3: 'three' },
-  ar: { 1: 'واحدة', 2: 'حصتان', 3: 'ثلاث' },
-  it: { 1: 'una', 2: 'due', 3: 'tre' },
-  es: { 1: 'una', 2: 'dos', 3: 'tres' },
-  de: { 1: 'eine', 2: 'zwei', 3: 'drei' },
-  fr: { 1: 'une', 2: 'deux', 3: 'trois' },
+// Full, grammatically-correct noun phrases for "<count> free trial
+// lesson(s)" — Content Truth Contract Round 4 fix. The earlier
+// `trialLessonWord()` returned a bare number word (e.g. Arabic 'حصتان')
+// that callers spliced into their own fixed-singular template
+// ("حصة تجريبية {word} مجانية"), which breaks for count=2 because Arabic
+// numeral/noun/adjective agreement (singular vs dual vs plural) cannot be
+// decomposed into a single interpolated word — every word in the phrase
+// must inflect together. `trialLessonPhrase()` instead returns the entire
+// atomic phrase (count + noun + "free", already agreement-correct) so
+// callers never reconstruct grammar around it. This applies to every
+// language here, not just Arabic: Italian/Spanish/French/German "free"
+// also agrees with singular/plural.
+const TRIAL_LESSON_PHRASES = {
+  en: { 1: 'one free trial lesson', 2: 'two free trial lessons', 3: 'three free trial lessons' },
+  ar: { 1: 'حصة تجريبية مجانية واحدة', 2: 'حصتان تجريبيتان مجانيتان', 3: 'ثلاث حصص تجريبية مجانية' },
+  it: { 1: 'una lezione di prova gratuita', 2: 'due lezioni di prova gratuite', 3: 'tre lezioni di prova gratuite' },
+  es: { 1: 'una clase de prueba gratuita', 2: 'dos clases de prueba gratuitas', 3: 'tres clases de prueba gratuitas' },
+  de: { 1: 'eine kostenlose Probestunde', 2: 'zwei kostenlose Probestunden', 3: 'drei kostenlose Probestunden' },
+  fr: { 1: "un cours d'essai gratuit", 2: "deux cours d'essai gratuits", 3: "trois cours d'essai gratuits" },
 };
 
-export function trialLessonWord(lang) {
-  const table = TRIAL_LESSON_WORDS[lang] || TRIAL_LESSON_WORDS.en;
-  return table[siteFacts.freeTrialLessons] ?? String(siteFacts.freeTrialLessons);
+// Fallback for a count outside 1–3 (never expected in production — the
+// published fact is a fixed one free 60-minute trial — but the formatter
+// must not throw if siteFacts.freeTrialLessons is ever changed).
+const TRIAL_LESSON_PHRASE_FALLBACK = {
+  en: (n) => `${n} free trial lessons`,
+  ar: (n) => `${n} حصة تجريبية مجانية`,
+  it: (n) => `${n} lezioni di prova gratuite`,
+  es: (n) => `${n} clases de prueba gratuitas`,
+  de: (n) => `${n} kostenlose Probestunden`,
+  fr: (n) => `${n} cours d'essai gratuits`,
+};
+
+export function trialLessonPhrase(lang, count = siteFacts.freeTrialLessons) {
+  const table = TRIAL_LESSON_PHRASES[lang] || TRIAL_LESSON_PHRASES.en;
+  if (table[count]) return table[count];
+  const fallback = TRIAL_LESSON_PHRASE_FALLBACK[lang] || TRIAL_LESSON_PHRASE_FALLBACK.en;
+  return fallback(count);
 }
 
 // "المتاح حاليًا" / "Currently available" line for the limited-trial-spots

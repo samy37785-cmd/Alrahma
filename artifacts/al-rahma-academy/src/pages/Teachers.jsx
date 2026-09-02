@@ -15,16 +15,23 @@ loadArabicFontsNow();
 
 const FLAG = { en:'🇬🇧', ar:'🇪🇬', it:'🇮🇹', fr:'🇫🇷', de:'🇩🇪', es:'🇪🇸' };
 
-// Review counts are real, owner-provided per-teacher figures (see
-// docs/trust-marketing-remediation.md). No individual star rating is shown —
-// the owner has real teachers with real reviews but has not provided
-// individual star scores, so none is invented, randomised, or copied from
-// the academy-wide rating. Teachers with no confirmed review count render
-// nothing here rather than a fabricated placeholder.
-function ReviewCount({ teacher, ui }) {
+// Rating, lessons and review counts are real, owner-provided per-teacher
+// figures confirmed 2026-09-02 (Teacher Source of Truth — Final
+// Integration; see docs/trust-marketing-remediation.md). This replaces the
+// earlier "no individual rating" decision: the owner has since supplied a
+// real per-teacher rating for all 11 profiles, so it is now shown — never
+// copied from or blended with the academy-wide rating shown elsewhere.
+function TeacherRating({ teacher, ui }) {
   if (!teacher.reviews) return null;
+  const rounded = Math.round(teacher.rating);
   return (
     <div className="tpg__rating">
+      <span className="tpg__stars" aria-hidden="true">
+        {[1, 2, 3, 4, 5].map((n) => (
+          <span key={n} className={`tpg__star${n <= rounded ? ' on' : ''}`}>★</span>
+        ))}
+      </span>
+      <span className="tpg__avg">{teacher.rating.toFixed(1)}</span>
       <span className="tpg__cnt">{teacher.reviews} {ui.reviews}</span>
     </div>
   );
@@ -57,7 +64,7 @@ function TeacherCard({ teacher, onEnroll, ui, lang }) {
           <p className="tpg__role">{title}</p>
         </div>
 
-        <ReviewCount teacher={teacher} ui={ui} />
+        <TeacherRating teacher={teacher} ui={ui} />
 
         {/* Languages + lessons taught */}
         <div className="tpg__langs">

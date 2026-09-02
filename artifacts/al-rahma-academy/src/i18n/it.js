@@ -1,4 +1,4 @@
-﻿import { siteFacts, trialLessonWord } from '../data/siteFacts';
+﻿import { siteFacts, trialLessonPhrase } from '../data/siteFacts';
 import { planComparison } from '../data/home';
 
 const cmp = planComparison();
@@ -342,9 +342,9 @@ const it = {
     "teachersLink": "I nostri insegnanti",
     "terms": "Termini di servizio",
     "refundPolicy": "Politica di rimborso",
-    "trustBadges": ["Finestra di rimborso di 24 giorni", "Insegnanti certificati di Al-Azhar", "Studenti da tutto il mondo", "Impegnati per una didattica di qualità", "Risposta entro 24 ore"],
+    "trustBadges": ["Finestra di rimborso di 24 giorni", "Insegnanti certificati di Al-Azhar", "Studenti da tutto il mondo", "Impegnati per una didattica di qualità", `Risposta entro ${siteFacts.supportResponseHours} ore`],
     "supportHours": "Supporto: Sab–Gio · 08:00–23:00 (Il Cairo)",
-    "replyBadge": "Risposta ≤ 24h"
+    "replyBadge": `Risposta ≤ ${siteFacts.supportResponseHours}h`
   },
   "teachersPg": {
     "eyebrow": "Conosci alcuni dei nostri insegnanti",
@@ -435,6 +435,7 @@ const it = {
     "allTeachers": "← Tutti gli insegnanti",
     "reviews": "valutazioni",
     "lessonsTaught": "lezioni tenute",
+    "rating": "Valutazione",
     "female": "Donna",
     "male": "Uomo",
     "instructor": "Insegnante",
@@ -1276,7 +1277,7 @@ const it = {
     "linkAria": "Il tuo link di invito",
     "shareVia": "Condividi tramite:",
     "waAria": "Condividi su WhatsApp",
-    "waMessage": `🌙 Sto imparando il Corano con Al-Rahma Academy. Puoi provare ${trialLessonWord('it')} lezione di prova gratuita di ${siteFacts.trialLessonMinutes} minuti qui: `
+    "waMessage": `🌙 Sto imparando il Corano con Al-Rahma Academy. Puoi provare ${trialLessonPhrase('it')} qui (${siteFacts.trialLessonMinutes} minuti): `
   }
 };
 export default it;

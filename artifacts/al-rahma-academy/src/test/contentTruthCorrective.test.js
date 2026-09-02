@@ -119,21 +119,47 @@ describe('TEACHERS — eleven-profile verified roster (Part 2)', () => {
 // reintroduce those old assumptions. IDs stay stable; do not renumber.
 describe('Teacher Source of Truth — Final Integration (Round 4)', () => {
   const expected = {
-    1: { nameEn: 'Sami Mahmoud Abd Al-Aal', langs: ['ar', 'en', 'es'], lessons: '2,500+', rating: 4.9, reviews: 120 },
-    2: { nameEn: 'Muhammad Abd Al-Maqsoud', langs: ['ar', 'en', 'it'], lessons: '2,300+', rating: 4.8, reviews: 105 },
-    3: { nameEn: 'Khairiyya Al-Muhammadi', langs: ['ar', 'en', 'it'], lessons: '2,400+', rating: 5.0, reviews: 95 },
-    4: { nameEn: 'Omnia Abd Allah', langs: ['ar', 'en', 'es'], lessons: '1,900+', rating: 4.9, reviews: 85 },
-    5: { nameEn: 'Abd Allah Ayman', langs: ['ar', 'en', 'it'], lessons: '2,400+', rating: 4.8, reviews: 109 },
-    6: { nameEn: 'Mahmoud Sami', langs: ['ar', 'fr', 'it'], lessons: '2,200+', rating: 4.9, reviews: 100 },
-    7: { nameEn: 'Aya', langs: ['ar', 'es'], lessons: '2,000+', rating: 4.9, reviews: 79 },
-    8: { nameEn: 'Fatima Al-Rashidi', langs: ['ar', 'de'], lessons: '1,900+', rating: 4.9, reviews: 75 },
-    9: { nameEn: 'Alaa Ragib', langs: ['ar', 'fr'], lessons: '1,900+', rating: 4.8, reviews: 70 },
-    10: { nameEn: 'Islam Muhammad', langs: ['ar', 'en', 'de'], lessons: '2,400+', rating: 4.9, reviews: 80 },
-    11: { nameEn: 'Gouda Al-Shobaki', langs: ['ar', 'en', 'fr'], lessons: '2,400+', rating: 4.8, reviews: 90 },
+    1: { nameEn: 'Sami Mahmoud Abd Al-Aal', langs: ['ar', 'en', 'es'], lessons: '2,500+', rating: 4.9, reviews: 120,
+      titleEn: 'Quran & Advanced Tajweed Specialist',
+      specialtiesEn: ['Advanced Tajweed — Hafs & Warsh', 'Quran Memorization', 'Ijazah Programme', 'Quranic Tafsir'] },
+    2: { nameEn: 'Muhammad Abd Al-Maqsoud', langs: ['ar', 'en', 'it'], lessons: '2,300+', rating: 4.8, reviews: 105,
+      titleEn: 'Fiqh & Islamic Studies Instructor',
+      specialtiesEn: ['Islamic Jurisprudence — Fiqh', 'Prophetic Seerah', 'Arabic Language', 'Quranic Tafsir'] },
+    3: { nameEn: 'Khairiyya Al-Muhammadi', langs: ['ar', 'en', 'it'], lessons: '2,400+', rating: 5.0, reviews: 95,
+      titleEn: 'Quran Instructor for Children',
+      specialtiesEn: ['Quran for Children', 'Noorani Qaida / Noor Al-Bayan', 'Tajweed', 'Arabic Alphabet'] },
+    4: { nameEn: 'Omnia Abd Allah', langs: ['ar', 'en', 'es'], lessons: '1,900+', rating: 4.9, reviews: 85,
+      titleEn: 'Hifz & Quran Revision Coach',
+      specialtiesEn: ['Quran Memorization — Hifz', "Quran Revision — Muraja'ah", 'Tajweed', 'Prophetic Seerah'] },
+    5: { nameEn: 'Abd Allah Ayman', langs: ['ar', 'en', 'it'], lessons: '2,400+', rating: 4.8, reviews: 109,
+      titleEn: 'Arabic Language & Quranic Arabic Specialist',
+      specialtiesEn: ['Classical Arabic', 'Arabic Grammar — Nahw', 'Quranic Arabic', 'Islamic Studies'] },
+    6: { nameEn: 'Mahmoud Sami', langs: ['ar', 'fr', 'it'], lessons: '2,200+', rating: 4.9, reviews: 100,
+      titleEn: 'Tafsir & Aqeedah Instructor',
+      specialtiesEn: ['Quranic Tafsir', 'Aqeedah', 'Tajweed', 'Islamic Jurisprudence'] },
+    7: { nameEn: 'Aya', langs: ['ar', 'es'], lessons: '2,000+', rating: 4.9, reviews: 79,
+      titleEn: 'Quran & Ijazah Instructor',
+      specialtiesEn: ['Ijazah Programme', 'Tajweed', 'Quran Memorization', 'Arabic Language'] },
+    8: { nameEn: 'Fatima Al-Rashidi', langs: ['ar', 'de'], lessons: '1,900+', rating: 4.9, reviews: 75,
+      titleEn: 'Special Needs & Beginner Quran Instructor',
+      specialtiesEn: ['Quran for Special Needs', 'Beginner Quran', 'Noorani Qaida', 'Tajweed', 'Arabic Basics'] },
+    9: { nameEn: 'Alaa Ragib', langs: ['ar', 'fr'], lessons: '1,900+', rating: 4.8, reviews: 70,
+      titleEn: 'Quran Reading & Tajweed Instructor',
+      specialtiesEn: ['Quran Reading', 'Noorani Qaida', 'Tajweed', 'Islamic Studies'] },
+    10: { nameEn: 'Islam Muhammad', langs: ['ar', 'en', 'de'], lessons: '2,400+', rating: 4.9, reviews: 80,
+      titleEn: 'Quran Memorization & Recitation Instructor',
+      specialtiesEn: ['Quran Memorization — Hifz', 'Quran Recitation', 'Tajweed', "Quran Revision — Muraja'ah"] },
+    11: { nameEn: 'Gouda Al-Shobaki', langs: ['ar', 'en', 'fr'], lessons: '2,400+', rating: 4.8, reviews: 90,
+      titleEn: 'Seerah & Islamic Studies Instructor',
+      specialtiesEn: ['Prophetic Seerah', 'Islamic Studies', 'Quran Studies', 'Arabic Language'] },
   };
 
-  it('every teacher matches the exact owner-confirmed name/languages/lessons/rating/reviews, by stable id', () => {
+  const DISPLAY_ORDER = [1, 5, 10, 3, 11, 2, 6, 7, 4, 9, 8];
+  const LANGS_6 = ['en', 'ar', 'it', 'es', 'de', 'fr'];
+
+  it('every teacher matches the exact owner-confirmed name/languages/lessons/rating/reviews/title/specialties, by stable id', () => {
     expect(TEACHERS.length).toBe(11);
+    expect(Object.keys(expected).length).toBe(11);
     for (const [id, facts] of Object.entries(expected)) {
       const teacher = TEACHERS.find((t) => t.id === Number(id));
       expect(teacher, `teacher id=${id} not found`).toBeTruthy();
@@ -142,7 +168,45 @@ describe('Teacher Source of Truth — Final Integration (Round 4)', () => {
       expect(teacher.lessons, `id=${id} lessons`).toBe(facts.lessons);
       expect(teacher.rating, `id=${id} rating`).toBe(facts.rating);
       expect(teacher.reviews, `id=${id} reviews`).toBe(facts.reviews);
+      expect(teacher.title.en, `id=${id} title.en`).toBe(facts.titleEn);
+      expect(teacher.specialties.en, `id=${id} specialties.en`).toEqual(facts.specialtiesEn);
     }
+  });
+
+  it('every teacher has non-empty title/bio/specialties in all six languages — no silently missing translation', () => {
+    for (const teacher of TEACHERS) {
+      for (const lang of LANGS_6) {
+        expect(teacher.title[lang], `id=${teacher.id} title.${lang}`).toBeTruthy();
+        expect(teacher.bio[lang], `id=${teacher.id} bio.${lang}`).toBeTruthy();
+        expect(teacher.specialties[lang], `id=${teacher.id} specialties.${lang}`).toBeTruthy();
+        expect(teacher.specialties[lang].length, `id=${teacher.id} specialties.${lang} length`).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it('IDs are exactly {1..11}, once each — no silently missing or duplicated teacher', () => {
+    const ids = TEACHERS.map((t) => t.id);
+    expect(ids.length).toBe(11);
+    expect(new Set(ids).size).toBe(11);
+    expect(new Set(ids)).toEqual(new Set([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]));
+  });
+
+  it('the visible display order is exactly [1, 5, 10, 3, 11, 2, 6, 7, 4, 9, 8] (owner-approved order), IDs unchanged', () => {
+    const ids = TEACHERS.map((t) => t.id);
+    expect(ids).toEqual(DISPLAY_ORDER);
+  });
+
+  it('Teachers.jsx renders TEACHERS in array order without re-sorting by id (display order would otherwise collapse back to 1..11)', () => {
+    const src = fs.readFileSync(path.resolve(__dirname, '../pages/Teachers.jsx'), 'utf8');
+    expect(src).not.toMatch(/TEACHERS\s*\.\s*(slice\(\)\s*\.\s*)?sort\(/);
+    // filtered.map(...) below preserves TEACHERS' own array order — filter()
+    // never reorders, only removes.
+    expect(src).toMatch(/filtered\.map\(\(teacher\)/);
+  });
+
+  it('TeacherProfile.jsx still resolves a teacher by id via .find(), unaffected by display order', () => {
+    const src = fs.readFileSync(path.resolve(__dirname, '../pages/TeacherProfile.jsx'), 'utf8');
+    expect(src).toMatch(/TEACHERS\.find\(\(tc\)\s*=>\s*tc\.id\s*===\s*Number\(id\)\)/);
   });
 
   it('5.0 always renders with one decimal place, never bare "5" (Khairiyya, id=3)', () => {

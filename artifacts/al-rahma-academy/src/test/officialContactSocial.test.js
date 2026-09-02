@@ -78,13 +78,62 @@ describe('no old phone number remains in live application source (Part 11)', () 
     expect(txt).toContain('+20 103 955 3264');
   });
 
-  it('TrustBar.jsx and FAQ.jsx build their WhatsApp link from site.whatsapp, not a hardcoded literal', () => {
+  it('TrustBar.jsx, pages/FAQ.jsx and the live homepage marketing FAQ.jsx build their WhatsApp link from site.whatsapp, not a hardcoded literal', () => {
     const trustBarSrc = fs.readFileSync(
       path.resolve(__dirname, '../components/features/marketing/TrustBar.jsx'), 'utf8',
     );
-    const faqSrc = fs.readFileSync(path.resolve(__dirname, '../pages/FAQ.jsx'), 'utf8');
+    const pagesFaqSrc = fs.readFileSync(path.resolve(__dirname, '../pages/FAQ.jsx'), 'utf8');
+    const homeFaqSrc = fs.readFileSync(
+      path.resolve(__dirname, '../components/features/marketing/FAQ.jsx'), 'utf8',
+    );
     expect(trustBarSrc).toMatch(/site\.whatsapp/);
-    expect(faqSrc).toMatch(/site\.whatsapp/);
+    expect(pagesFaqSrc).toMatch(/site\.whatsapp/);
+    expect(homeFaqSrc).toMatch(/site\.whatsapp/);
+    expect(homeFaqSrc).toMatch(/import\s*\{\s*site\s*\}\s*from/);
+  });
+
+  it('resolves to the exact confirmed WhatsApp direct-contact URL', () => {
+    expect(`https://wa.me/${site.whatsapp}`).toBe('https://wa.me/201039553264');
+  });
+});
+
+// Content Truth Contract corrective (2026-09-02): an independent review
+// found the LIVE homepage marketing FAQ component
+// (components/features/marketing/FAQ.jsx, imported by pages/Home.jsx and
+// actually rendered on "/") had its own separate, unapproved WhatsApp
+// deep-link (wa.me/message/ALRAHMA) that the earlier round's tests never
+// caught because they only checked pages/FAQ.jsx (the standalone
+// /resources/faq page) and TrustBar.jsx — a different component sharing a
+// similar name is exactly the kind of gap a plain grep across "FAQ.jsx"
+// filenames misses. These tests specifically target every wa.me/message/*
+// form and the live-rendered component, not just the page.
+describe('no unapproved wa.me/message/ deep-link remains anywhere in live application source', () => {
+  const srcDir = path.resolve(__dirname, '..');
+  const files = walk(srcDir, ['.js', '.jsx'], ['test']).filter(
+    (f) => !f.includes(`${path.sep}test${path.sep}`),
+  );
+
+  it.each(files)('%s does not contain wa.me/message/', (file) => {
+    const src = fs.readFileSync(file, 'utf8');
+    expect(src, path.basename(file)).not.toMatch(/wa\.me\/message\//);
+  });
+
+  it('index.html does not contain wa.me/message/', () => {
+    const html = fs.readFileSync(path.join(REPO_ROOT, 'index.html'), 'utf8');
+    expect(html).not.toMatch(/wa\.me\/message\//);
+  });
+
+  it('public/llms.txt does not contain wa.me/message/', () => {
+    const txt = fs.readFileSync(path.join(REPO_ROOT, 'public', 'llms.txt'), 'utf8');
+    expect(txt).not.toMatch(/wa\.me\/message\//);
+  });
+
+  it('the specific old literal wa.me/message/ALRAHMA is gone from the live homepage FAQ component', () => {
+    const src = fs.readFileSync(
+      path.resolve(__dirname, '../components/features/marketing/FAQ.jsx'), 'utf8',
+    );
+    expect(src).not.toMatch(/wa\.me\/message\/ALRAHMA/);
+    expect(src).not.toMatch(/wa\.me\/message\//);
   });
 });
 

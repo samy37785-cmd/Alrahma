@@ -720,19 +720,25 @@ round's new tests target components by their full path, not by name alone.
   `wa.me/?text=` user-choice share link (`ReferralCard.jsx`) was confirmed
   still present and untouched — a distinct, legitimate pattern this round
   did not convert to the academy's own number.
-- **Translation regression tests added**: `homeFaqAside.test.jsx` renders
-  the component in all six locales, asserting no `undefined` literal, no
-  leaked English aside text in the five non-English locales, non-empty
-  title/text in every locale, and Arabic renders with `dir="rtl"` and the
-  exact confirmed Arabic strings. Because the locale objects are built
-  once at module-import time and do not react to a later runtime mutation
-  of `siteFacts.supportResponseHours` within the same test process, no
-  test mutates the constant and re-checks a locale value (that would only
-  prove an already-computed string didn't change, not that the wiring is
-  real). Instead, a dedicated source-inspection test confirms each locale
-  file's `asideText` line references `siteFacts.supportResponseHours` in
-  source (not a hardcoded new `24` literal), paired with the render tests
-  above proving the currently-computed value is correct.
+- **Translation regression tests added, strengthened to exact values in R2**:
+  `homeFaqAside.test.jsx` renders the component in all six locales,
+  asserting no `undefined` literal. The original version of this file (as
+  first written) only asserted non-empty title/text and the absence of a
+  few known English literals in non-English locales — an R2 pass replaced
+  that with an exact-value map (`asideTitle`/`asideText`/`asideButton` for
+  all six languages, matching the table earlier in this document
+  byte-for-byte) asserted against the real, rendered component in every
+  locale, plus href/`target`/`rel` on the WhatsApp link and Arabic
+  `dir="rtl"`. Because the locale objects are built once at module-import
+  time and do not react to a later runtime mutation of
+  `siteFacts.supportResponseHours` within the same test process, no test
+  mutates the constant and re-checks a locale value (that would only prove
+  an already-computed string didn't change, not that the wiring is real).
+  Instead, a dedicated source-inspection test confirms each locale file's
+  `asideText` line references `siteFacts.supportResponseHours` in source
+  (not a hardcoded new `24` literal), paired with the exact-value render
+  tests proving the currently-computed value is correct in every language,
+  not just English and Arabic.
 - **Teacher Source of Truth tests strengthened**
   (`src/test/contentTruthCorrective.test.js`): the existing per-teacher
   fact table was extended with exact English `title`/`specialties` for all
@@ -748,18 +754,65 @@ round's new tests target components by their full path, not by name alone.
   `siteFacts.academyRating`/`siteFacts.totalLessons` — this round did not
   introduce any new place where they could be summed into an academy-wide
   total.
-- **Full-application `wa.me`/social/phone sweep**: re-run across the
-  entire live `src/` tree (excluding `node_modules`, `dist`, `coverage`,
-  `.git`, `.migration-backup`, and test files' own intentional negative-
-  assertion literals). Every `wa.me` occurrence classified as either
-  Academy direct contact (built from `site.whatsapp` — `TrustBar.jsx`,
-  `pages/FAQ.jsx`, `components/features/marketing/FAQ.jsx`) or User-choice
-  share (`ReferralCard.jsx`'s bare `wa.me/?text=`, no recipient). No third,
-  unexplained form was found. No occurrence of the old phone number, the
-  removed Twitter/X account, "couple of hours," the old English FAQ aside
-  strings, old teacher names, or stale "+N hrs" data remains outside
+- **Full-application `wa.me`/social/phone sweep — corrected 2026-09-02
+  (R2)**: this round's original sweep (immediately below, as first
+  written) undercounted the real inventory, naming only three
+  direct-contact files and one share file. The prior round's production
+  fix itself was real and correct — the homepage FAQ's `wa.me/message/`
+  link genuinely was replaced with `site.whatsapp` — but the sweep's own
+  *reporting* was incomplete, which left the regression guard (the old
+  `officialContactSocial.test.js`) checking only a handful of the real
+  consumers. An R2 corrective pass re-ran the sweep across every
+  `.js`/`.jsx`/`.ts`/`.tsx`/`.mjs`/`.mts` file in `src/` (excluding
+  `src/test/`, `node_modules`, `coverage`, `dist`, `generated`) and found
+  the true, complete inventory: **15 unique production files, 17 total
+  `wa.me/` occurrences** — 13 classified as Academy direct contact
+  (built from `site.whatsapp`, including query-string variants that carry
+  a pre-filled message alongside the academy's own number — these are
+  still direct contact, not a share) and 4 as User-choice share (bare
+  `wa.me/?text=`, no recipient). `ReferralCard.jsx` was never the only
+  share occurrence — it is one of four. Zero third/unknown forms found.
+  `src/test/officialContactSocial.test.js` now encodes this exact,
+  per-file inventory as a regression gate: any new/missing/reclassified
+  occurrence, any hardcoded number outside `src/data/site.js`, or any
+  `wa.me/<form>` other than the two approved patterns fails the suite.
+
+  | # | File | Occurrences | Classification |
+  |---|---|---|---|
+  | 1 | `components/features/marketing/FAQ.jsx` | 1 | Academy direct |
+  | 2 | `components/features/marketing/Trial.jsx` | 2 | Academy direct |
+  | 3 | `components/features/marketing/TrustBar.jsx` | 1 | Academy direct |
+  | 4 | `components/layout/dashboardNav.js` | 1 | Academy direct |
+  | 5 | `components/layout/Footer.jsx` | 1 | Academy direct |
+  | 6 | `components/ui/CancelSurvey.jsx` | 1 | Academy direct |
+  | 7 | `components/ui/WhatsappFab.jsx` | 1 | Academy direct |
+  | 8 | `pages/Dashboard.jsx` | 1 | Academy direct |
+  | 9 | `pages/FAQ.jsx` | 1 | Academy direct |
+  | 10 | `pages/RefundPolicy.jsx` | 1 | Academy direct |
+  | 11 | `pages/TermsOfService.jsx` | 2 | Academy direct |
+  | 12 | `components/ui/MilestoneCelebration.jsx` | 1 | User-choice share |
+  | 13 | `components/ui/ReferralCard.jsx` | 1 | User-choice share |
+  | 14 | `components/ui/ShareAchievement.jsx` | 1 | User-choice share |
+  | 15 | `pages/tools/VerseOfTheDayPage.jsx` | 1 | User-choice share |
+
+  (Original, as-first-written sweep claim, kept for history rather than
+  deleted: "re-run across the entire live `src/` tree ... Every `wa.me`
+  occurrence classified as either Academy direct contact (built from
+  `site.whatsapp` — `TrustBar.jsx`, `pages/FAQ.jsx`,
+  `components/features/marketing/FAQ.jsx`) or User-choice share
+  (`ReferralCard.jsx`'s bare `wa.me/?text=`, no recipient). No third,
+  unexplained form was found." — the "no third form" conclusion was
+  correct; the file/occurrence count was not.)
+
+  Separately, and unaffected by this correction: no occurrence of the old
+  phone number, the removed Twitter/X account, "couple of hours," or old
+  teacher names remains anywhere in live production source outside
   `.migration-backup/` (left untouched, as required) and test files' own
-  negative-assertion fixtures.
+  intentional negative-assertion fixtures. No hardcoded English FAQ-aside
+  string remains inside the FAQ component's JSX in any locale — the
+  correct English text lives, as expected, in `src/i18n/en.js`; the point
+  being guarded is that it does not leak into the five non-English
+  locales, not that English text was removed from the app.
 - Test suite grew from 70 files / 2488 tests (end of the prior round) to
   71 files / 2764 tests over this round — the growth is one new dedicated
   render/behavior test file (`homeFaqAside.test.jsx`) plus expanded

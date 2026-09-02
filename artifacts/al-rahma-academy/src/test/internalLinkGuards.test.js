@@ -90,8 +90,12 @@ function leadingStaticString(valueNode) {
 }
 
 // A single leading '/' (not '//', which is protocol-relative-external).
+// The bare string "/" itself must also count - a hardcoded <a href="/">
+// (instead of the documented href={homeHref()} exception) is exactly the
+// anti-pattern this guard exists to catch, and a plain /^\/[^/]/ regex
+// would miss it (no character follows the leading slash to satisfy [^/]).
 function isRootRelative(value) {
-  return typeof value === 'string' && /^\/[^/]/.test(value);
+  return typeof value === 'string' && /^\/(?!\/)/.test(value);
 }
 
 async function collectFindings() {
@@ -156,6 +160,20 @@ let findings;
 beforeAll(async () => {
   findings = await collectFindings();
 }, 30000);
+
+describe('isRootRelative: the bare "/" itself must count as root-relative', () => {
+  it('flags "/" (a hardcoded home anchor, not the homeHref() exception)', () => {
+    expect(isRootRelative('/')).toBe(true);
+  });
+
+  it('flags an ordinary internal path', () => {
+    expect(isRootRelative('/foo')).toBe(true);
+  });
+
+  it('never flags a protocol-relative external target', () => {
+    expect(isRootRelative('//evil.com')).toBe(false);
+  });
+});
 
 describe('Guard: no raw internal <a href="/...">  anywhere in src (excluding src/test)', () => {
   it('finds zero raw internal anchors outside the documented exceptions', () => {

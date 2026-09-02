@@ -1,4 +1,7 @@
-﻿import { siteFacts } from '../data/siteFacts';
+﻿import { siteFacts, trialLessonWord } from '../data/siteFacts';
+import { planComparison } from '../data/home';
+
+const cmp = planComparison();
 
 const en = {
   "lang": "en",
@@ -229,6 +232,7 @@ const en = {
     "refundInline": "Refund available within 24 days if unsatisfied",
     "refundTitle": "24-Day Refund Window",
     "refundSub": "Not fully satisfied? You may request a refund within 24 days of your payment.",
+    "comparisonNote": `The ${cmp.top.name} plan gives you ${cmp.multiplier}× the weekly lesson time of ${cmp.base.name} — ${cmp.top.sessionsPerWeek} classes a week instead of ${cmp.base.sessionsPerWeek}.`,
     "securePayment": "Payment methods shown at checkout",
     "cancelAnytime": "Cancel anytime",
     "azharCertified": "Al-Azhar certified tutors",
@@ -252,7 +256,7 @@ const en = {
       "commitment": "No commitment"
     },
     "formTitle": "Book your free lesson",
-    "formSub": "We'll contact you within 24 hours to schedule.",
+    "formSub": "We'll contact you to confirm your tutor and schedule.",
     "privacyNote": "See our Privacy Policy for how your details are handled.",
     "waLabel": "Prefer WhatsApp?",
     "waLink": "Message us",
@@ -415,6 +419,7 @@ const en = {
     "alazhar": "🏅 Al-Azhar",
     "rate": "Rate:",
     "reviews": "reviews",
+    "lessonsTaught": "lessons taught",
     "showLess": "Show less ↑",
     "readBio": "Read bio ↓",
     "enrollWith": "Enroll with",
@@ -429,6 +434,7 @@ const en = {
     "enrollWith": "Enroll with",
     "allTeachers": "← All Tutors",
     "reviews": "reviews",
+    "lessonsTaught": "lessons taught",
     "female": "Female",
     "male": "Male",
     "instructor": "Tutor",
@@ -436,6 +442,18 @@ const en = {
     "specialties": "Specialties",
     "about": "About",
     "credentials": "Credentials",
+    "credentialsNote": "Held by every Al-Rahma Academy tutor:",
+    "proofHeader": "Verified Credentials",
+    "azharTitle": "Al-Azhar University",
+    "azharDesc": "Cairo, Egypt — verified graduate",
+    "ijazahCertTitle": "Ijazah Certificate",
+    "ijazahCertDesc": "Continuous sanad to the Prophet ﷺ — on file with academy",
+    "identityVerifiedTitle": "Identity Verified",
+    "identityVerifiedDesc": "Government ID verified by Al-Rahma Academy",
+    "credentialsOnFileTitle": "Credentials on File",
+    "credentialsOnFileDesc": "Diplomas, Ijazah and ID documents held securely by the academy",
+    "proofNote": "Copies of all certificates are held securely by Al-Rahma Academy. Parents may request verification by contacting support.",
+    "verified": "Verified",
     "studentRating": "Student Reviews",
     "rateThis": "Rate this tutor:",
     "thanks": "✓ Thank you!",
@@ -480,7 +498,7 @@ const en = {
       },
       {
         "q": "How does the free trial work?",
-        "a": "You fill in the trial form and we match you with a suitable tutor within 24 hours. You get 1 full one-to-one session completely free — no payment, no commitment. After the trial you decide if you want to continue."
+        "a": "You fill in the trial form and we'll contact you to confirm your tutor and schedule. You get 1 full one-to-one session completely free — no payment, no commitment. After the trial you decide if you want to continue."
       },
       {
         "q": "What platform do you use for lessons?",
@@ -809,7 +827,7 @@ const en = {
       "blessing": "بارك الله فيك",
       "blessingSub": "May Allah bless your learning journey",
       "thankYouPre": "Your enrollment has been received, ",
-      "thankYouPost": ". Our team will contact you within 24 hours to confirm your schedule.",
+      "thankYouPost": ". Our team will contact you to confirm your schedule.",
       "emailNote": "A confirmation has been sent to your email.",
       "backHome": "Back to Home",
       "goToDashboard": "Go to Dashboard",
@@ -1248,6 +1266,17 @@ const en = {
     "send": "Send",
     "placeholder": "Write a message…",
     "empty": "No messages yet — say salam 👋"
+  },
+  "referral": {
+    "title": "Invite a Friend",
+    "sub": "Share your personal link so a friend can try a free trial lesson.",
+    "copy": "Copy",
+    "copied": "✓ Copied!",
+    "copyAria": "Copy referral link",
+    "linkAria": "Your referral link",
+    "shareVia": "Share via:",
+    "waAria": "Share on WhatsApp",
+    "waMessage": `🌙 I've been learning Quran at Al-Rahma Academy. You can try a free ${trialLessonWord('en')} ${siteFacts.trialLessonMinutes}-minute trial lesson here: `
   }
 };
 export default en;

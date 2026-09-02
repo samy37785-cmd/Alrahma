@@ -65,7 +65,7 @@ function TeacherCard({ teacher, onEnroll, ui, lang }) {
             <span key={l} className="tpg__lang">{FLAG[l]} {l.toUpperCase()}</span>
           ))}
           {teacher.lessons && (
-            <span className="tpg__lang tpg__lang--hours">📚 {teacher.lessons} lessons taught</span>
+            <span className="tpg__lang tpg__lang--hours">📚 {teacher.lessons} {ui.lessonsTaught}</span>
           )}
         </div>
 
@@ -104,11 +104,13 @@ export default function Teachers() {
   const ui = t.teachersPg;
   const isAr = lang === 'ar';
 
-  // Trust/marketing remediation: dropped the "32 tutors" figure from both
-  // descriptions — no roster/headcount source in this repo backs it (the
-  // local TEACHERS dataset has 10 sample records, which is not evidence of
-  // the real commercial count either way; see
-  // docs/trust-marketing-remediation.md).
+  // Trust/marketing remediation originally dropped an unsourced "32
+  // tutors" figure from both descriptions (see
+  // docs/trust-marketing-remediation.md). The Content Truth Contract
+  // corrective rounds later replaced it with the owner-confirmed
+  // siteFacts.totalTeachers (30 real, siteFacts.featuredTeacherCount = 11
+  // displayed — the local TEACHERS dataset below has grown to 11 profiles,
+  // not the 10 this comment used to say).
   useSEO({
     title: isAr ? 'معلمونا المعتمدون من الأزهر' : 'Al-Azhar Certified Quran Tutors',
     description: isAr

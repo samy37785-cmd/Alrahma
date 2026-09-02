@@ -1,4 +1,7 @@
-﻿import { siteFacts } from '../data/siteFacts';
+﻿import { siteFacts, trialLessonWord } from '../data/siteFacts';
+import { planComparison } from '../data/home';
+
+const cmp = planComparison();
 
 const ar = {
   "lang": "ar",
@@ -229,6 +232,7 @@ const ar = {
     "refundInline": "يمكن طلب استرداد المبلغ خلال 24 يومًا إذا لم تكن راضياً",
     "refundTitle": "نافذة استرداد 24 يومًا",
     "refundSub": "غير راضٍ عن اشتراكك؟ يمكنك طلب استرداد المبلغ خلال 24 يومًا من تاريخ الدفع.",
+    "comparisonNote": `تمنحك خطة ${cmp.top.arabicName || cmp.top.name} ${cmp.multiplier} أضعاف وقت الحصص الأسبوعي مقارنةً بخطة ${cmp.base.arabicName || cmp.base.name} — ${cmp.top.sessionsPerWeek} حصص أسبوعيًا بدلاً من ${cmp.base.sessionsPerWeek}.`,
     "securePayment": "طرق الدفع تظهر عند إتمام الطلب",
     "cancelAnytime": "إلغاء في أي وقت",
     "azharCertified": "معلمون معتمدون من الأزهر",
@@ -252,7 +256,7 @@ const ar = {
       "commitment": "بدون أي التزام"
     },
     "formTitle": "احجز حصتك المجانية",
-    "formSub": "سنتواصل معك خلال 24 ساعة لتحديد الموعد.",
+    "formSub": "سنتواصل معك لتأكيد المعلم والموعد.",
     "privacyNote": "راجع سياسة الخصوصية لمعرفة كيفية التعامل مع بياناتك.",
     "waLabel": "تفضل واتساب؟",
     "waLink": "راسلنا",
@@ -415,6 +419,7 @@ const ar = {
     "alazhar": "🏅 الأزهر",
     "rate": "تقييم:",
     "reviews": "تقييم",
+    "lessonsTaught": "حصة مُقدَّمة",
     "showLess": "أقل ↑",
     "readBio": "السيرة الذاتية ↓",
     "enrollWith": "سجّل مع",
@@ -429,6 +434,7 @@ const ar = {
     "enrollWith": "سجّل مع",
     "allTeachers": "← جميع المعلمين",
     "reviews": "تقييم",
+    "lessonsTaught": "حصة مُقدَّمة",
     "female": "أنثى",
     "male": "ذكر",
     "instructor": "معلم",
@@ -436,6 +442,18 @@ const ar = {
     "specialties": "التخصصات",
     "about": "نبذة عن",
     "credentials": "المؤهلات",
+    "credentialsNote": "يحملها كل معلم في أكاديمية الرحمة:",
+    "proofHeader": "مؤهلات موثقة",
+    "azharTitle": "جامعة الأزهر الشريف",
+    "azharDesc": "القاهرة، مصر — خريج موثّق",
+    "ijazahCertTitle": "شهادة الإجازة",
+    "ijazahCertDesc": "سند متصل إلى النبي ﷺ — محفوظ لدى الأكاديمية",
+    "identityVerifiedTitle": "الهوية موثقة",
+    "identityVerifiedDesc": "الهوية الحكومية موثقة من قِبل أكاديمية الرحمة",
+    "credentialsOnFileTitle": "المؤهلات محفوظة لدى الأكاديمية",
+    "credentialsOnFileDesc": "الشهادات والإجازة ووثائق الهوية محفوظة بأمان لدى الأكاديمية",
+    "proofNote": "نسخ من جميع الشهادات محفوظة بأمان لدى أكاديمية الرحمة. يمكن لأولياء الأمور طلب التحقق بالتواصل مع الدعم.",
+    "verified": "موثّق",
     "studentRating": "مراجعات الطلاب",
     "rateThis": "قيّم هذا المعلم:",
     "thanks": "✓ شكراً لك!",
@@ -480,7 +498,7 @@ const ar = {
       },
       {
         "q": "كيف تعمل التجربة المجانية؟",
-        "a": "تملأ نموذج التجربة ونطابقك مع معلم مناسب خلال 24 ساعة. تحصل على حصة فردية كاملة واحدة مجاناً — بدون أي دفع أو التزام. بعد التجربة تقرر إذا أردت الاستمرار."
+        "a": "تملأ نموذج التجربة وسنتواصل معك لتأكيد المعلم والموعد. تحصل على حصة فردية كاملة واحدة مجاناً — بدون أي دفع أو التزام. بعد التجربة تقرر إذا أردت الاستمرار."
       },
       {
         "q": "ما المنصة التي تستخدمونها للحصص؟",
@@ -809,7 +827,7 @@ const ar = {
       "blessing": "بارك الله فيك",
       "blessingSub": "بارك الله في رحلتك التعليمية",
       "thankYouPre": "تم استلام تسجيلك، ",
-      "thankYouPost": ". سيتواصل معك فريقنا خلال ٢٤ ساعة لتأكيد جدولك.",
+      "thankYouPost": ". سيتواصل معك فريقنا لتأكيد جدولك.",
       "emailNote": "تم إرسال رسالة تأكيد إلى بريدك الإلكتروني.",
       "backHome": "العودة إلى الرئيسية",
       "goToDashboard": "الذهاب إلى لوحة التحكم",
@@ -1248,6 +1266,17 @@ const ar = {
     "send": "إرسال",
     "placeholder": "اكتب رسالة…",
     "empty": "لا توجد رسائل بعد — سلّم 👋"
+  },
+  "referral": {
+    "title": "ادعُ صديقًا",
+    "sub": "شارك رابطك الشخصي حتى يتمكن صديقك من تجربة حصة تجريبية مجانية.",
+    "copy": "نسخ",
+    "copied": "✓ تم النسخ!",
+    "copyAria": "نسخ رابط الدعوة",
+    "linkAria": "رابط الدعوة الخاص بك",
+    "shareVia": "مشاركة عبر:",
+    "waAria": "مشاركة عبر واتساب",
+    "waMessage": `🌙 أتعلم القرآن الكريم في أكاديمية الرحمة. يمكنك تجربة حصة تجريبية مجانية ${trialLessonWord('ar')} مدتها ${siteFacts.trialLessonMinutes} دقيقة من هنا: `
   }
 };
 export default ar;

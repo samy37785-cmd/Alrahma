@@ -1,4 +1,7 @@
-﻿import { siteFacts } from '../data/siteFacts';
+﻿import { siteFacts, trialLessonWord } from '../data/siteFacts';
+import { planComparison } from '../data/home';
+
+const cmp = planComparison();
 
 const es = {
   "lang": "es",
@@ -229,6 +232,7 @@ const es = {
     "refundInline": "Reembolso disponible si lo solicitas dentro de 24 días",
     "refundTitle": "Ventana de reembolso de 24 días",
     "refundSub": "¿No estás totalmente satisfecho? Puedes solicitar un reembolso dentro de los 24 días posteriores al pago.",
+    "comparisonNote": `El plan ${cmp.top.name} te ofrece ${cmp.multiplier}× el tiempo de clase semanal de ${cmp.base.name} — ${cmp.top.sessionsPerWeek} clases por semana en lugar de ${cmp.base.sessionsPerWeek}.`,
     "securePayment": "Los métodos de pago se muestran al finalizar la compra",
     "cancelAnytime": "Cancela cuando quieras",
     "azharCertified": "Profesores certificados por Al-Azhar",
@@ -252,7 +256,7 @@ const es = {
       "commitment": "Sin compromiso"
     },
     "formTitle": "Reserva tu clase gratuita",
-    "formSub": "Te contactaremos en un plazo de 24 horas para programarla.",
+    "formSub": "Te contactaremos para confirmar el profesor y el horario.",
     "privacyNote": "Consulta nuestra Política de Privacidad para saber cómo tratamos tus datos.",
     "waLabel": "¿Prefieres WhatsApp?",
     "waLink": "Escríbenos",
@@ -415,6 +419,7 @@ const es = {
     "alazhar": "🏅 Al-Azhar",
     "rate": "Valorar:",
     "reviews": "reseñas",
+    "lessonsTaught": "lecciones impartidas",
     "showLess": "Mostrar menos ↑",
     "readBio": "Leer biografía ↓",
     "enrollWith": "Inscríbete con",
@@ -429,6 +434,7 @@ const es = {
     "enrollWith": "Inscríbete con",
     "allTeachers": "← Todos los tutores",
     "reviews": "reseñas",
+    "lessonsTaught": "lecciones impartidas",
     "female": "Mujer",
     "male": "Hombre",
     "instructor": "Tutor",
@@ -436,6 +442,18 @@ const es = {
     "specialties": "Especialidades",
     "about": "Acerca de",
     "credentials": "Credenciales",
+    "credentialsNote": "En posesión de todos los tutores de Al-Rahma Academy:",
+    "proofHeader": "Credenciales verificadas",
+    "azharTitle": "Universidad de Al-Azhar",
+    "azharDesc": "El Cairo, Egipto — graduado verificado",
+    "ijazahCertTitle": "Certificado de Ijazah",
+    "ijazahCertDesc": "Sanad ininterrumpido hasta el Profeta ﷺ — archivado por la academia",
+    "identityVerifiedTitle": "Identidad verificada",
+    "identityVerifiedDesc": "Documento de identidad verificado por Al-Rahma Academy",
+    "credentialsOnFileTitle": "Credenciales archivadas",
+    "credentialsOnFileDesc": "Diplomas, Ijazah y documentos de identidad conservados de forma segura por la academia",
+    "proofNote": "Las copias de todos los certificados se conservan de forma segura en Al-Rahma Academy. Los padres pueden solicitar verificación contactando con soporte.",
+    "verified": "Verificado",
     "studentRating": "Reseñas de estudiantes",
     "rateThis": "Valora a este profesor:",
     "thanks": "✓ ¡Gracias!",
@@ -480,7 +498,7 @@ const es = {
       },
       {
         "q": "¿Cómo funciona la prueba gratuita?",
-        "a": "Rellenas el formulario de prueba y te asignamos un profesor adecuado en 24 horas. Recibes 1 sesión individual completa totalmente gratuita — sin pago y sin compromiso. Tras la prueba, decides si quieres continuar."
+        "a": "Rellenas el formulario de prueba y te contactaremos para confirmar el profesor y el horario. Recibes 1 sesión individual completa totalmente gratuita — sin pago y sin compromiso. Tras la prueba, decides si quieres continuar."
       },
       {
         "q": "¿Qué plataforma usan para las clases?",
@@ -809,7 +827,7 @@ const es = {
       "blessing": "بارك الله فيك",
       "blessingSub": "Que Allah bendiga tu camino de aprendizaje",
       "thankYouPre": "Tu inscripción ha sido recibida, ",
-      "thankYouPost": ". Nuestro equipo se pondrá en contacto contigo en 24 horas para confirmar tu horario.",
+      "thankYouPost": ". Nuestro equipo se pondrá en contacto contigo para confirmar tu horario.",
       "emailNote": "Se ha enviado una confirmación a tu correo electrónico.",
       "backHome": "Volver al Inicio",
       "goToDashboard": "Ir al Panel",
@@ -1248,6 +1266,17 @@ const es = {
     "send": "Enviar",
     "placeholder": "Escribe un mensaje…",
     "empty": "Aún no hay mensajes — saluda con salam 👋"
+  },
+  "referral": {
+    "title": "Invita a un amigo",
+    "sub": "Comparte tu enlace personal para que un amigo pueda probar una clase de prueba gratuita.",
+    "copy": "Copiar",
+    "copied": "✓ ¡Copiado!",
+    "copyAria": "Copiar enlace de invitación",
+    "linkAria": "Tu enlace de invitación",
+    "shareVia": "Compartir vía:",
+    "waAria": "Compartir en WhatsApp",
+    "waMessage": `🌙 Estoy aprendiendo el Corán con Al-Rahma Academy. Puedes probar ${trialLessonWord('es')} clase de prueba gratuita de ${siteFacts.trialLessonMinutes} minutos aquí: `
   }
 };
 export default es;

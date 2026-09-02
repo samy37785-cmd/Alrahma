@@ -1,4 +1,7 @@
-﻿import { siteFacts } from '../data/siteFacts';
+﻿import { siteFacts, trialLessonWord } from '../data/siteFacts';
+import { planComparison } from '../data/home';
+
+const cmp = planComparison();
 
 const de = {
   "lang": "de",
@@ -229,6 +232,7 @@ const de = {
     "refundInline": "Erstattung auf Anfrage innerhalb von 24 Tagen möglich",
     "refundTitle": "24-Tage-Erstattungsfenster",
     "refundSub": "Nicht vollständig zufrieden? Du kannst innerhalb von 24 Tagen nach der Zahlung eine Erstattung beantragen.",
+    "comparisonNote": `Der ${cmp.top.name}-Plan bietet dir die ${cmp.multiplier}-fache wöchentliche Unterrichtszeit von ${cmp.base.name} — ${cmp.top.sessionsPerWeek} Stunden pro Woche statt ${cmp.base.sessionsPerWeek}.`,
     "securePayment": "Zahlungsmethoden werden beim Checkout angezeigt",
     "cancelAnytime": "Jederzeit kündbar",
     "azharCertified": "Al-Azhar-zertifizierte Lehrer",
@@ -252,7 +256,7 @@ const de = {
       "commitment": "Keine Verpflichtung"
     },
     "formTitle": "Buche deine kostenlose Stunde",
-    "formSub": "Wir kontaktieren dich innerhalb von 24 Stunden zur Terminvereinbarung.",
+    "formSub": "Wir kontaktieren dich, um Lehrkraft und Termin zu bestätigen.",
     "privacyNote": "Siehe unsere Datenschutzerklärung für den Umgang mit deinen Daten.",
     "waLabel": "Bevorzugst du WhatsApp?",
     "waLink": "Schreib uns",
@@ -415,6 +419,7 @@ const de = {
     "alazhar": "🏅 Al-Azhar",
     "rate": "Bewerten:",
     "reviews": "Bewertungen",
+    "lessonsTaught": "unterrichtete Stunden",
     "showLess": "Weniger ↑",
     "readBio": "Bio lesen ↓",
     "enrollWith": "Anmelden bei",
@@ -429,6 +434,7 @@ const de = {
     "enrollWith": "Anmelden bei",
     "allTeachers": "← Alle Lehrkräfte",
     "reviews": "Bewertungen",
+    "lessonsTaught": "unterrichtete Stunden",
     "female": "Weiblich",
     "male": "Männlich",
     "instructor": "Lehrer",
@@ -436,6 +442,18 @@ const de = {
     "specialties": "Fachgebiete",
     "about": "Über mich",
     "credentials": "Qualifikationen",
+    "credentialsNote": "Von jeder Lehrkraft der Al-Rahma Academy erfüllt:",
+    "proofHeader": "Geprüfte Qualifikationen",
+    "azharTitle": "Al-Azhar-Universität",
+    "azharDesc": "Kairo, Ägypten — geprüfter Absolvent",
+    "ijazahCertTitle": "Ijazah-Zertifikat",
+    "ijazahCertDesc": "Lückenlose Überlieferungskette (Sanad) bis zum Propheten ﷺ — bei der Akademie hinterlegt",
+    "identityVerifiedTitle": "Identität verifiziert",
+    "identityVerifiedDesc": "Amtlicher Ausweis geprüft von Al-Rahma Academy",
+    "credentialsOnFileTitle": "Nachweise hinterlegt",
+    "credentialsOnFileDesc": "Diplome, Ijazah und Ausweisdokumente werden von der Akademie sicher aufbewahrt",
+    "proofNote": "Kopien aller Zertifikate werden von Al-Rahma Academy sicher aufbewahrt. Eltern können eine Verifizierung anfordern, indem sie den Support kontaktieren.",
+    "verified": "Verifiziert",
     "studentRating": "Schülerbewertungen (Anzahl)",
     "rateThis": "Lehrkraft bewerten:",
     "thanks": "✓ Danke!",
@@ -480,7 +498,7 @@ const de = {
       },
       {
         "q": "Wie funktioniert die kostenlose Probestunde?",
-        "a": "Du füllst das Formular für die Probestunde aus und wir vermitteln dir innerhalb von 24 Stunden eine passende Lehrkraft. Du erhältst eine vollständige Einzelstunde kostenlos — ohne Zahlung und unverbindlich. Danach entscheidest du, ob du weitermachen möchtest."
+        "a": "Du füllst das Formular für die Probestunde aus und wir kontaktieren dich, um Lehrkraft und Termin zu bestätigen. Du erhältst eine vollständige Einzelstunde kostenlos — ohne Zahlung und unverbindlich. Danach entscheidest du, ob du weitermachen möchtest."
       },
       {
         "q": "Welche Plattform nutzt ihr für den Unterricht?",
@@ -809,7 +827,7 @@ const de = {
       "blessing": "بارك الله فيك",
       "blessingSub": "Möge Allah deinen Lernweg segnen",
       "thankYouPre": "Deine Anmeldung ist eingegangen, ",
-      "thankYouPost": ". Unser Team wird dich innerhalb von 24 Stunden kontaktieren, um deinen Zeitplan zu bestätigen.",
+      "thankYouPost": ". Unser Team wird dich kontaktieren, um deinen Zeitplan zu bestätigen.",
       "emailNote": "Eine Bestätigung wurde an deine E-Mail gesendet.",
       "backHome": "Zurück zur Startseite",
       "goToDashboard": "Zum Dashboard",
@@ -1248,6 +1266,17 @@ const de = {
     "send": "Senden",
     "placeholder": "Nachricht schreiben…",
     "empty": "Noch keine Nachrichten — sag Salam 👋"
+  },
+  "referral": {
+    "title": "Freund einladen",
+    "sub": "Teile deinen persönlichen Link, damit ein Freund eine kostenlose Probestunde ausprobieren kann.",
+    "copy": "Kopieren",
+    "copied": "✓ Kopiert!",
+    "copyAria": "Empfehlungslink kopieren",
+    "linkAria": "Dein Empfehlungslink",
+    "shareVia": "Teilen über:",
+    "waAria": "Auf WhatsApp teilen",
+    "waMessage": `🌙 Ich lerne den Koran bei Al-Rahma Academy. Du kannst hier ${trialLessonWord('de')} kostenlose ${siteFacts.trialLessonMinutes}-minütige Probestunde ausprobieren: `
   }
 };
 export default de;

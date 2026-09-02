@@ -98,6 +98,12 @@ export default function TeacherProfile() {
                 <span>{tp.reviews}</span>
               </div>
             )}
+            {teacher.lessons && (
+              <div className="tp__strip-stat">
+                <strong>{teacher.lessons}</strong>
+                <span>{tp.lessonsTaught}</span>
+              </div>
+            )}
             <div className="tp__strip-stat">
               <strong>{teacher.gender === 'f' ? tp.female : tp.male}</strong>
               <span>{tp.instructor}</span>
@@ -123,7 +129,7 @@ export default function TeacherProfile() {
 
             <div className="tp__section">
               <h2>{tp.credentials}</h2>
-              <p className="tp__creds-note">Held by every Al-Rahma Academy tutor:</p>
+              <p className="tp__creds-note">{tp.credentialsNote}</p>
               <ul className="tp__creds">
                 {TEACHER_CREDENTIALS.map((c) => (
                   <li key={c.label.en} className="tp__cred">
@@ -137,46 +143,43 @@ export default function TeacherProfile() {
               <div className="tp__proof">
                 <div className="tp__proof-header">
                   <span className="tp__proof-icon">🔍</span>
-                  <strong>Verified Credentials</strong>
+                  <strong>{tp.proofHeader}</strong>
                 </div>
                 <div className="tp__proof-badges">
                   <div className="tp__proof-badge tp__proof-badge--azhar">
                     <span className="tp__proof-badge-seal">الأزهر</span>
                     <div>
-                      <strong>Al-Azhar University</strong>
-                      <span>Cairo, Egypt — verified graduate</span>
+                      <strong>{tp.azharTitle}</strong>
+                      <span>{tp.azharDesc}</span>
                     </div>
-                    <span className="tp__proof-check" aria-label="Verified">✓</span>
+                    <span className="tp__proof-check" aria-label={tp.verified}>✓</span>
                   </div>
                   <div className="tp__proof-badge">
                     <span className="tp__proof-badge-icon">📜</span>
                     <div>
-                      <strong>Ijazah Certificate</strong>
-                      <span>Continuous sanad to the Prophet ﷺ — on file with academy</span>
+                      <strong>{tp.ijazahCertTitle}</strong>
+                      <span>{tp.ijazahCertDesc}</span>
                     </div>
-                    <span className="tp__proof-check" aria-label="Verified">✓</span>
+                    <span className="tp__proof-check" aria-label={tp.verified}>✓</span>
                   </div>
                   <div className="tp__proof-badge">
                     <span className="tp__proof-badge-icon">🆔</span>
                     <div>
-                      <strong>Identity Verified</strong>
-                      <span>Government ID verified by Al-Rahma Academy</span>
+                      <strong>{tp.identityVerifiedTitle}</strong>
+                      <span>{tp.identityVerifiedDesc}</span>
                     </div>
-                    <span className="tp__proof-check" aria-label="Verified">✓</span>
+                    <span className="tp__proof-check" aria-label={tp.verified}>✓</span>
                   </div>
                   <div className="tp__proof-badge">
                     <span className="tp__proof-badge-icon">📁</span>
                     <div>
-                      <strong>Credentials on File</strong>
-                      <span>Diplomas, Ijazah and ID documents held securely by the academy</span>
+                      <strong>{tp.credentialsOnFileTitle}</strong>
+                      <span>{tp.credentialsOnFileDesc}</span>
                     </div>
-                    <span className="tp__proof-check" aria-label="Verified">✓</span>
+                    <span className="tp__proof-check" aria-label={tp.verified}>✓</span>
                   </div>
                 </div>
-                <p className="tp__proof-note">
-                  Copies of all certificates are held securely by Al-Rahma Academy.
-                  Parents may request verification by contacting support.
-                </p>
+                <p className="tp__proof-note">{tp.proofNote}</p>
               </div>
             </div>
 

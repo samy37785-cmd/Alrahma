@@ -235,8 +235,24 @@ export const TEACHERS = [
 // TeacherProfile.jsx, which renders this list under its own "Credentials"
 // heading, separately from each teacher's individual `specialties`/`bio`).
 export const TEACHER_CREDENTIALS = [
-  { icon: '🎓', label: { en: 'Al-Azhar University Graduate', ar: 'خريج جامعة الأزهر الشريف' } },
-  { icon: '📜', label: { en: 'Ijazah with Connected Sanad', ar: 'إجازة بسند متصل' } },
-  { icon: '📖', label: { en: 'Arabic Language & Translation (B.A.)', ar: 'بكالوريوس اللغة العربية والترجمة' } },
-  { icon: '⚖️', label: { en: 'Islamic Jurisprudence Experience', ar: 'خبرة في الفقه الإسلامي' } },
+  { icon: '🎓', label: {
+    en: 'Al-Azhar University Graduate', ar: 'خريج جامعة الأزهر الشريف',
+    it: "Laureato dell'Università di Al-Azhar", es: 'Graduado de la Universidad de Al-Azhar',
+    de: 'Absolvent der Al-Azhar-Universität', fr: "Diplômé de l'Université Al-Azhar",
+  } },
+  { icon: '📜', label: {
+    en: 'Ijazah with Connected Sanad', ar: 'إجازة بسند متصل',
+    it: 'Ijazah con sanad connesso', es: 'Ijazah con sanad conectado',
+    de: 'Ijazah mit durchgehendem Sanad', fr: 'Ijazah à sanad ininterrompu',
+  } },
+  { icon: '📖', label: {
+    en: 'Arabic Language & Translation (B.A.)', ar: 'بكالوريوس اللغة العربية والترجمة',
+    it: 'Lingua araba e traduzione (laurea)', es: 'Lengua árabe y traducción (licenciatura)',
+    de: 'Arabische Sprache und Übersetzung (Bachelor)', fr: 'Langue arabe et traduction (licence)',
+  } },
+  { icon: '⚖️', label: {
+    en: 'Islamic Jurisprudence Experience', ar: 'خبرة في الفقه الإسلامي',
+    it: 'Esperienza in giurisprudenza islamica', es: 'Experiencia en jurisprudencia islámica',
+    de: 'Erfahrung in islamischer Rechtslehre', fr: 'Expérience en jurisprudence islamique',
+  } },
 ];

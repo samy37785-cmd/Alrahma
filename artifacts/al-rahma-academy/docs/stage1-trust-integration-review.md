@@ -237,3 +237,34 @@ qualitative claim was lost by removing them) and have been closed.
   final HEAD.
 - No push, no remote merge, no PR, no deploy, no Supabase/SQL/migration
   access at any point in this integration.
+
+## Update 2026-09-02 — status of open items from a later pass
+
+A later, separate task ("Authoritative Content Truth Contract") continued on
+this same branch from this review's checkpoint (`checkpoint/stage1-trust-integrated`).
+It did not touch URL/routing/deployment code, so the two items this review
+left open in that area are unchanged and are restated here for accuracy
+rather than left to go stale silently:
+
+- **Production 308 — still UNKNOWN.** Not addressed by the later pass (it
+  was frontend content/i18n/data only; no `.replit`, deployment config, or
+  routing code was touched). The "Not proven" status and reasoning recorded
+  above under "Production 308 — real status" still holds exactly as
+  written. Do not read the later pass's clean local `vite preview` results
+  as new evidence about the real production deployment.
+- **Browser walkthrough — no longer fully deferred.** This review's own
+  attempt failed to connect twice (see above). The later pass successfully
+  connected Chrome DevTools MCP and completed a walkthrough covering the
+  Home page, Teachers listing, a teacher profile, RefundPolicy,
+  TermsOfService, and the `/ar/` locale — including catching one real bug
+  (`footer.replyBadge` still showing stale copy) that no static grep sweep
+  had found. That walkthrough did not cover every route (`/fr/` variants,
+  Pricing's scripted-scroll mount, Trial, About, ToolsHub, Newsletter were
+  not exercised live) — see that task's own final report for the full
+  coverage/gap breakdown. Treat this as a partial, not complete, live audit.
+- Content-level items this review's own "Unknown Evidence Register" pointed
+  at (Al-Azhar wording, founding year, address/phone, the `TEACHERS`
+  dataset) were substantially resolved with owner-supplied facts in the
+  later pass — see `trust-marketing-remediation.md`'s own "Update
+  2026-09-02" section for the detail; not duplicated here since this
+  document's scope is Stage 1 URL integration, not content truthfulness.

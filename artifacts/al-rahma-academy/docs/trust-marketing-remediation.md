@@ -275,3 +275,99 @@ and the render tests in the other `trustMarketing*.test.jsx` files):
   file's existing tone and terminology, but no separate native-speaker
   review was performed. This applies to the newly-added keys only; it does
   not re-certify translations already present in the codebase.
+
+## Update 2026-09-02 — Content Truth Contract pass
+
+A later, separate task ("Authoritative Content Truth Contract") on the same
+branch (`fix/stage-02c-final-user-admin-closure`, starting from HEAD
+`35d6cc69dda165c9fb82c45f5c518508da871172`, tag
+`checkpoint/stage1-trust-integrated`) closed several items that this
+document's "Unknown — not silently changed" register above had left open.
+This section records what changed; the register above is left as originally
+written since it is an accurate account of that earlier pass's own findings.
+Every fact below was **owner-supplied**, not independently re-verified by
+either agent session — the standing rule throughout was never to invent or
+guess a number.
+
+- **Student/family/lesson/teacher/country counts**: owner confirmed
+  15,000+ lessons, 1,500+ students, 1,200+ families, 30 teachers, 10
+  countries, 4.9/5 academy rating. Centralized in a new
+  `src/data/siteFacts.js` module (re-exported from `src/data/index.js`) so
+  these numbers are set in exactly one place; applied to `About.jsx`
+  (`data/about.js` stats), `Home.jsx`'s SEO description, and the footer/
+  trust-bar copy that previously carried de-numbered placeholders.
+- **Real commercial tutor headcount**: owner confirmed 30 teachers total.
+  The local `TEACHERS` dataset still holds only 10 profile records — this
+  gap was **not** closed (fabricating 20 more profiles is outside a
+  content-correction task's scope) and remains an open item for whoever
+  owns the teacher roster next.
+- **Trial offer**: corrected from the "two free trial lessons"/"30-minute
+  session" claim (kept in the original pass on the belief it was
+  corroborated site-wide) to the owner-confirmed **one free 60-minute
+  trial lesson**, across all six languages and every page that referenced
+  it (Hero, Trial, ToolsHub, QuickTrialModal, ExitIntentPopup, FAQ, Steps,
+  course pages, Dashboard onboarding).
+- **Refund policy**: the "14-Day Money-Back Guarantee...full refund...
+  automatic" framing (preserved in the original pass under "Preserved with
+  evidence," sourced from `TermsOfService.jsx` §3) was itself an
+  overstatement the owner corrected: refunds are a **24-day window** a
+  customer **may request**, never automatic or unconditional. Updated in
+  `RefundPolicy.jsx` and `TermsOfService.jsx` (both `lastUpdated` bumped),
+  `TrustBar.jsx`, `Billing.jsx`, `JoinCTA.jsx`, and `footer.trustBadges`
+  across all six languages.
+- **Support response time**: "within 2 hours during business days" (also
+  listed under "Preserved with evidence") corrected to the owner-confirmed
+  **within 24 hours**. The adjacent Sat–Thu business-hours schedule
+  (`TrustBar.jsx`'s `useIsBusinessHours()`, `footer.supportHours`) is a
+  distinct, still-accurate concept and was deliberately left unchanged —
+  a maximum-response-time commitment and a staffed-hours schedule are not
+  the same claim.
+- **Teacher-level rating/reviews/hours** (`src/data/marketing/teachers.js`):
+  every fabricated per-teacher `rating` value was deleted outright, never
+  replaced with any invented number. `reviews` counts were reconciled
+  against 11 owner-supplied per-teacher figures using strict name-matching
+  (no guessing on ambiguous matches — see this task's own final report for
+  the full mapping table and the two names left unresolved). The
+  `hours`-labelled placeholder (rendered literally as "⏱ N hrs," itself a
+  unit the placeholder didn't actually represent) was removed for every
+  teacher except one (Sami), for whom the owner confirmed 2,500 lessons —
+  added as a new `lessons` field rather than reusing `hours`, since reusing
+  a UI-labelled field for a different unit would itself have been a factual
+  misstatement. Two names were deliberately left unresolved per explicit
+  instruction never to guess: teacher id=6 "Mahmoud Sami" against founder
+  "Mahmoud Samy" (a name collision, not assumed to be the same or different
+  person), and an owner-reported "2,400 lessons" figure against an
+  approximately-named teacher (not assigned to any profile).
+- **Al-Azhar / accreditation**: instructor wording confirmed as "graduates
+  of Al-Azhar" — the owner did **not** confirm any official
+  academy-to-Al-Azhar accreditation or partnership, so no institutional
+  partnership claim was added; this stays an individual-credential
+  statement, matching what the original pass's Unknown Register already
+  cautioned against overstating.
+- **Founder / founding year / phone / address**: founder name confirmed as
+  Mahmoud Samy (unrelated to the teacher-name-collision question above);
+  founding year preserved as-is (owner did not request a change); phone
+  number confirmed publicly displayable; **street/postal address confirmed
+  NOT public** — the `PostalAddress` block was removed from the
+  Organization JSON-LD in `index.html`, `foundingDate`/`telephone` kept.
+- **Marketing badges**: the unconditional "GDPR" seal/badge removed from
+  `TrustBadges.jsx` and `Pricing.jsx` (the legitimate GDPR clause and
+  section heading in `TermsOfService.jsx` — actual legal boilerplate, not a
+  marketing badge — were deliberately left unchanged). Bare "100%"/"no
+  questions asked" refund language removed from `RefundPolicy.jsx` and
+  `TermsOfService.jsx` alongside the refund-window correction above.
+- **Standard vs. Premium plan wording**: the owner described a 2-tier
+  Standard (2h/week) vs. Premium (4h/week, "twice the weekly lesson time")
+  structure. The live site's `Pricing.jsx` uses a different 3-tier
+  Noorani/Huffaz/Ijazah structure, and the "2× faster" performance claim
+  this document's §3 already flagged and removed does not correspond to
+  any currently-live text. No mapping between the owner's description and
+  the live plan names was invented; this is flagged as an open question for
+  the product owner rather than guessed at.
+- Test suite grew from 66 files / 1866 tests (recorded above) to 67 files /
+  1890 tests over the course of this pass (new middleware-wiring test file
+  plus updated content-truth assertions), full run green.
+- The full commit list, per-language before/after values, teacher-mapping
+  table, and verification-gate results for this pass are in that task's own
+  final report (delivered in the same session, not persisted as a separate
+  document here).

@@ -371,3 +371,82 @@ guess a number.
   table, and verification-gate results for this pass are in that task's own
   final report (delivered in the same session, not persisted as a separate
   document here).
+
+## Update 2026-09-02 — Corrective Closure Round 2
+
+A second corrective round, on the same branch, closed gaps the first Content
+Truth Contract pass's own final report had left open or gotten wrong. This
+section records what changed and, per this round's explicit instruction,
+corrects two claims that report made:
+
+- **The prior round's "8 commits, all local" framing was incomplete.** A
+  push updated the remote-tracking branch through commit `63604f0` (git
+  reflog confirms `2026-09-02 16:37:35 +0300`). The three commits after
+  that point were local-only at the start of this round. No push was
+  performed during this corrective round either.
+- **The prior round's final report incorrectly stated the `lib/db` DB
+  guard scripts "do not exist anywhere in this repository."** They do:
+  `lib/db/package.json` defines `check:published-migrations` and
+  `test:db:orchestrator-selftest`. Both were run in this round
+  (4/4 and 26/26 passed respectively) — see this round's own final report.
+
+Content gaps closed in this round:
+
+- **Eleventh teacher profile added**: Gouda El-Shoubaky (جودة الشوبكي),
+  owner-confirmed reviews = 90, id assigned without renumbering any
+  existing profile. Bio/specialties limited strictly to the credentials
+  confirmed for every tutor (Al-Azhar graduate, Ijazah with connected
+  sanad, Arabic Language & Translation B.A., Islamic jurisprudence
+  experience) — no invented years of experience, student counts, or
+  outcomes. "Gouda El-Shoubaky" is a normalized transliteration of the
+  Arabic name, not an English name supplied by the owner.
+- **Omnia Abd Allah (id=4)** — the one teacher with zero owner data in the
+  prior round — now has the owner-confirmed `reviews: 85`.
+- **Background-check / child-safety overclaims removed**: `TeacherProfile.jsx`'s
+  "Child Safety Cleared / Background check completed — safe to teach
+  minors" badge (no independent background check was ever confirmed) was
+  replaced with an honest "Credentials on File" badge, matching what the
+  owner did confirm (identity/qualification documents held by the
+  academy). The same "background-checked. Safe for children." phrase was
+  removed from `Dashboard.jsx`'s tutor-matching placeholder, and "safe for
+  children" was removed from `Teachers.jsx`'s English SEO description.
+  `TEACHER_CREDENTIALS`'s "Expert in Islamic Jurisprudence" was softened to
+  "Islamic Jurisprudence Experience" to match what was actually confirmed,
+  and a note ("Held by every Al-Rahma Academy tutor") now makes explicit
+  that this list is shared across the team, not one teacher's individual
+  claim.
+- **Remaining "two free trial lessons" contradictions closed**: this exact
+  gap — missed by the prior round despite its own broad sweeps — was still
+  live in `src/data/faqItems.js` (all six languages),
+  `src/components/ui/ReferralCard.jsx`'s WhatsApp share text,
+  `public/llms.txt` (twice), and `src/data/home.js`'s features list. All
+  four now read "one free trial lesson"/"one free 60-minute trial lesson,"
+  sourced from `siteFacts.trialLessonMinutes` wherever the file can import
+  at runtime (`llms.txt` cannot; it is guarded by a direct synchronization
+  test instead — see `src/test/contentTruthCorrective.test.js`).
+- **FAQ plan names desynced from the live plans**: `faqItems.js`'s pricing
+  answer still said "Starter/Standard/Premium," which do not exist in
+  `src/data/home.js`'s actual `plans` (Noorani/Huffaz/Ijazah). The answer
+  now interpolates `plans` directly (name, price, sessions-per-week) in
+  all six languages, so it cannot drift from the real pricing data again.
+- **`siteFacts.js` wired to more real consumers**: `totalFamilies` and
+  `countriesServed` now back the founder-story paragraph in `About.jsx`
+  (previously de-numbered for lack of a source; the owner has since
+  confirmed 1,200+ families across 10 countries — not the original,
+  unsupported "40+ countries" claim). `totalTeachers` and
+  `featuredTeacherCount` back a new "30 teachers, 11 featured, others on
+  the team" sentence in `teachersPg.rosterNote` (all six languages) and in
+  Teachers.jsx's SEO description. `supportResponseHours` backs
+  `Dashboard.jsx`'s tutor-assignment placeholder.
+- **Known, deliberately unfixed gap**: `TeacherProfile.jsx`'s own "Stats
+  strip" does not render a teacher's `lessons` field at all (only the
+  Teachers.jsx listing card does) — Sami's confirmed 2,500-lesson figure
+  is therefore visible on the directory card but not on his own profile
+  page. This is pre-existing display behavior, not something this round
+  changed; left as-is since adding it was not part of this round's
+  authorized scope.
+- Test suite grew from 67 files / 1890 tests to 68 files / 2170 tests over
+  this round (one new guard-test file, plus the pre-existing sitemap route
+  and about-page tests updated for the new, now-accurate figures).
+- Full commit list, the eleven-teacher review matrix, and verification-gate
+  results for this round are in that round's own final report.

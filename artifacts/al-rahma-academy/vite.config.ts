@@ -4,7 +4,7 @@ import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'vite';
 
 import runtimeErrorOverlay from '@replit/vite-plugin-runtime-error-modal';
-import { computeCanonicalRedirect } from './src/utils/canonicalRedirectDecision.js';
+import { canonicalRedirectMiddleware } from './src/utils/canonicalRedirectMiddleware.js';
 
 const rawPort = process.env.PORT ?? '19795';
 
@@ -28,29 +28,20 @@ const basePath = process.env.BASE_PATH ?? '/';
 // must never fire for a non-idempotent request, even though /api/* is
 // already excluded and no non-GET route should ever reach this SPA-serving
 // layer in practice; the guard is explicit rather than assumed.
-const canonicalUrlRedirect = () => {
-  const middleware = (req, res, next) => {
-    if (!req.url) return next();
-    const url = new URL(req.url, 'http://localhost');
-
-    const canonical = computeCanonicalRedirect({ method: req.method, pathname: url.pathname, search: url.search });
-    if (!canonical) return next();
-
-    res.statusCode = 308;
-    res.setHeader('Location', canonical.pathname + canonical.search);
-    res.end();
-  };
-
-  return {
-    name: 'canonical-url-redirect',
-    configureServer(server) {
-      server.middlewares.use(middleware);
-    },
-    configurePreviewServer(server) {
-      server.middlewares.use(middleware);
-    },
-  };
-};
+//
+// The actual req/res wiring (statusCode/Location/end()/next()) lives in
+// canonicalRedirectMiddleware.js so it can be unit-tested directly rather
+// than only through computeCanonicalRedirect()'s pure decision logic — see
+// src/test/canonicalRedirectMiddleware.test.js.
+const canonicalUrlRedirect = () => ({
+  name: 'canonical-url-redirect',
+  configureServer(server) {
+    server.middlewares.use(canonicalRedirectMiddleware);
+  },
+  configurePreviewServer(server) {
+    server.middlewares.use(canonicalRedirectMiddleware);
+  },
+});
 
 export default defineConfig({
   base: basePath,

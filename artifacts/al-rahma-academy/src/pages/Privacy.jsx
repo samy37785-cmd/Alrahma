@@ -120,7 +120,7 @@ export default function Privacy() {
           {content.contactStart}{' '}
           <a href={`mailto:${site.email}`}>{site.email}</a>{' '}
           {content.or}{' '}
-          <a href={`tel:${site.phoneHref}`}>{site.phoneDisplay}</a>.
+          <a href={site.phoneHref}>{site.phoneInternationalDisplay}</a>.
         </p>
       </main>
     </div>

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Reveal from '../../ui/Reveal';
 import { useLang } from '../../../context/LangContext';
+import { site } from '../../../data/site';
 
 const COUNTRIES = [
   { flag: '🇬🇧', name: 'UK' },
@@ -89,7 +90,7 @@ export default function TrustBar() {
           <div className="trust-bar__divider" aria-hidden="true" />
           <div className="trust-bar__stat">
             <a
-              href="https://wa.me/201016054663"
+              href={`https://wa.me/${site.whatsapp}`}
               target="_blank"
               rel="noopener noreferrer"
               className="trust-bar__wa"

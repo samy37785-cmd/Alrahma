@@ -6,7 +6,7 @@ export default function TopBar() {
       <div className="container topbar__inner">
         <div className="topbar__contact">
           <a href={`mailto:${site.email}`}>✉ {site.email}</a>
-          <a href={`tel:${site.phoneHref}`}>☎ {site.phoneDisplay}</a>
+          <a href={site.phoneHref}>☎ {site.phoneInternationalDisplay}</a>
         </div>
         <div className="topbar__social">
           {socials.map((s) => (

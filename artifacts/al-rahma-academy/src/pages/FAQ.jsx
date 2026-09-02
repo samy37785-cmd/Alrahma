@@ -5,6 +5,7 @@ import Breadcrumbs from '../components/ui/Breadcrumbs';
 import { useLang } from '../context/LangContext';
 import faqItems from '../data/faqItems';
 import { homeHref } from '../utils/localePath';
+import { site } from '../data/site';
 
 export default function FAQ() {
   const { t, lang } = useLang();
@@ -76,7 +77,7 @@ export default function FAQ() {
           <p>{pg.stillQuestion}</p>
           <a href={homeHref('trial')} className="btn btn--green">{pg.bookTrial}</a>
           <a
-            href="https://wa.me/201016054663"
+            href={`https://wa.me/${site.whatsapp}`}
             className="btn btn--ghost"
             target="_blank"
             rel="noopener noreferrer"

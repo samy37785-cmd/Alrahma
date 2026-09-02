@@ -4,8 +4,7 @@ import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'vite';
 
 import runtimeErrorOverlay from '@replit/vite-plugin-runtime-error-modal';
-import { computeCanonicalUrl } from './src/utils/urlCanonicalize.js';
-import { isAssetOrApiPath } from './src/utils/assetOrApiPath.js';
+import { computeCanonicalRedirect } from './src/utils/canonicalRedirectDecision.js';
 
 const rawPort = process.env.PORT ?? '19795';
 
@@ -24,13 +23,17 @@ const basePath = process.env.BASE_PATH ?? '/';
 // request never carries a hash fragment, so this only ever sees/redirects
 // on pathname + query; hash preservation is proven at the runtime-utility
 // level instead (see src/utils/urlCanonicalize.js's docs).
+//
+// computeCanonicalRedirect() also gates on method (GET/HEAD only) - a 308
+// must never fire for a non-idempotent request, even though /api/* is
+// already excluded and no non-GET route should ever reach this SPA-serving
+// layer in practice; the guard is explicit rather than assumed.
 const canonicalUrlRedirect = () => {
   const middleware = (req, res, next) => {
     if (!req.url) return next();
     const url = new URL(req.url, 'http://localhost');
-    if (isAssetOrApiPath(url.pathname)) return next();
 
-    const canonical = computeCanonicalUrl({ pathname: url.pathname, search: url.search });
+    const canonical = computeCanonicalRedirect({ method: req.method, pathname: url.pathname, search: url.search });
     if (!canonical) return next();
 
     res.statusCode = 308;

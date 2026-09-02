@@ -25,17 +25,17 @@ import DeferredSection from '../components/ui/DeferredSection';
 import WhatsappFab from '../components/ui/WhatsappFab';
 import QuickTrialModal from '../components/ui/QuickTrialModal';
 import ExitIntentPopup from '../components/ui/ExitIntentPopup';
+import { siteFacts } from '../data/siteFacts';
 
 export default function Home() {
   const [trialOpen, setTrialOpen] = useState(false);
   const { t } = useLang();
   useSEO({
     title: 'Learn the Quran Online — Al-Rahma Academy',
-    // Trust/marketing remediation: dropped the "1,200+ families" figure —
-    // no real headcount source exists in this repo (see
-    // docs/trust-marketing-remediation.md). Describe the service without
-    // an unverifiable number instead of inventing a different one.
-    description: 'One-to-one online Quran, Tajweed and Arabic lessons with Al-Azhar certified tutors. Available 24/7 in English, Italian, French, German and Spanish. 2 free trial lessons — no payment needed.',
+    // Content Truth Contract (2026-09-02): the "1,200+ families" figure
+    // dropped during trust-marketing remediation is now owner-confirmed —
+    // sourced from siteFacts.js rather than duplicated as a literal here.
+    description: `One-to-one online Quran, Tajweed and Arabic lessons with Al-Azhar certified tutors, trusted by ${siteFacts.totalStudents} students in ${siteFacts.countriesServed} countries. One free trial lesson — no payment needed.`,
     keywords: 'learn quran online, online quran classes, quran tutor, tajweed lessons, al-azhar tutor, online islamic studies, quran for children, hifz online',
     // Built from the same t.faq.items array <FAQ /> renders below, so this
     // can never drift from the actual visible questions/answers again.

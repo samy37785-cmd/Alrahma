@@ -160,7 +160,7 @@ export default function Pricing() {
                 </button>
                 <p className="plan__cancel-note">✓ {p.cancelNote}</p>
                 <p className="plan__refund-inline">
-                  🛡️ {p.refundInline || '14-day full refund if unsatisfied'}
+                  🛡️ {p.refundInline || 'Refund available within 24 days if unsatisfied'}
                 </p>
               </div>
             </Reveal>
@@ -169,12 +169,12 @@ export default function Pricing() {
         </MobileCarousel>
       </div>
 
-      {/* 14-day money-back guarantee banner */}
+      {/* 24-day refund window banner (owner-confirmed policy) */}
       <Reveal className="pricing__refund-banner">
         <div className="pricing__refund-icon" aria-hidden="true">🛡️</div>
         <div className="pricing__refund-text">
-          <strong>{p.refundTitle || '14-Day Money-Back Guarantee'}</strong>
-          <span>{p.refundSub || "Not happy with your subscription? We'll refund every penny within 14 days — no questions asked."}</span>
+          <strong>{p.refundTitle || '24-Day Refund Window'}</strong>
+          <span>{p.refundSub || "Not fully satisfied? You may request a refund within 24 days of your payment."}</span>
         </div>
       </Reveal>
 
@@ -182,7 +182,7 @@ export default function Pricing() {
       <Reveal className="pricing__trust">
         <div className="pricing__trust-item">
           <svg className="pricing__trust-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-          <span>{p.securePayment || 'Secure payment'}</span>
+          <span>{p.securePayment || 'Payment methods shown at checkout'}</span>
         </div>
         <div className="pricing__trust-item">
           <svg className="pricing__trust-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 8 8 12 12 16"/><line x1="16" y1="12" x2="8" y2="12"/></svg>
@@ -201,8 +201,7 @@ export default function Pricing() {
           <span>{p.countries || 'Students from around the world'}</span>
         </div>
         <div className="pricing__trust-item pricing__trust-item--gdpr">
-          <span className="pricing__gdpr-badge" aria-label="GDPR Compliant">GDPR</span>
-          <span>{p.gdprNote || 'GDPR compliant — your data is safe'}</span>
+          <span>{p.gdprNote || 'See our Privacy Policy for how your details are handled'}</span>
         </div>
       </Reveal>
 

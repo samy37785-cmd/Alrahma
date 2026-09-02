@@ -30,7 +30,7 @@ const COUNTRIES = [
   { flag: '🇿🇦', name: 'South Africa' },
 ];
 
-const BADGE_ICONS = ['🔒', '💳', '🎓', '👩‍🏫', '🕐', 'GDPR', '⚡'];
+const BADGE_ICONS = ['🔒', '💳', '🎓', '👩‍🏫', '🕐', '📄', '⚡'];
 
 function useIsBusinessHours() {
   const [status, setStatus] = useState('checking');
@@ -70,11 +70,12 @@ export default function TrustBar() {
             this repo backs either figure (see
             docs/trust-marketing-remediation.md). "32" Al-Azhar tutors is
             de-numbered to a non-numeric checkmark for the same reason,
-            while keeping the (evidenced) qualitative claim. "14-day"
-            money-back and the WhatsApp business-hours status are kept —
-            both are documented in TermsOfService.jsx (§3 refund policy;
-            §13 response-time / business-hours policy, which this
-            component's useIsBusinessHours() mirrors exactly). */}
+            while keeping the (evidenced) qualitative claim. "24-day"
+            money-back (owner-confirmed refund window) and the WhatsApp
+            business-hours status are kept — both are documented in
+            TermsOfService.jsx (§3 refund policy; §13 response-time /
+            business-hours policy, which this component's
+            useIsBusinessHours() mirrors exactly). */}
         <div className="trust-bar__stats">
           <div className="trust-bar__stat">
             <span className="trust-bar__stat-num" aria-hidden="true">✓</span>
@@ -82,7 +83,7 @@ export default function TrustBar() {
           </div>
           <div className="trust-bar__divider" aria-hidden="true" />
           <div className="trust-bar__stat">
-            <span className="trust-bar__stat-num">14-day</span>
+            <span className="trust-bar__stat-num">24-day</span>
             <span className="trust-bar__stat-label">{tb.moneyBack}</span>
           </div>
           <div className="trust-bar__divider" aria-hidden="true" />
@@ -124,11 +125,7 @@ export default function TrustBar() {
         <div className="trust-bar__badges">
           {tb.badges.map((label, i) => (
             <div className="trust-bar__badge" key={i}>
-              {BADGE_ICONS[i] === 'GDPR' ? (
-                <span className="trust-bar__badge trust-bar__badge--gdpr-tag" aria-label="GDPR Compliant">GDPR</span>
-              ) : (
-                <span className="trust-bar__badge-icon">{BADGE_ICONS[i]}</span>
-              )}
+              <span className="trust-bar__badge-icon">{BADGE_ICONS[i]}</span>
               <span>{label}</span>
             </div>
           ))}

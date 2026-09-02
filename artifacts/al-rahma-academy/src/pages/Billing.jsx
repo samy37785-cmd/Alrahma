@@ -166,7 +166,7 @@ export default function Billing() {
         <div>
           <div style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: 2 }}>Cancel subscription</div>
           <div style={{ color: 'var(--text-secondary)', fontSize: '0.78rem' }}>
-            You keep access until end of billing period. 14-day refund available if in first period.{' '}
+            You keep access until end of billing period. A refund may be requested within 24 days of payment.{' '}
             <Link to="/academy/refund-policy" style={{ color: 'var(--color-primary)' }}>Refund policy →</Link>
           </div>
         </div>

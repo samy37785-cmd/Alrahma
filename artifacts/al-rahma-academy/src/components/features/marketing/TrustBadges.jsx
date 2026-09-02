@@ -74,10 +74,12 @@ export default function TrustBadges() {
           ))}
         </div>
 
-        {/* GDPR + Response time row */}
+        {/* Privacy + Response time row */}
         <Reveal className="trust__badges-row">
           <div className="trust__badge trust__badge--gdpr">
-            <span className="trust__gdpr-seal" aria-hidden="true">GDPR</span>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+              <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
             <div>
               <strong>{tr.gdprTitle}</strong>
               <span>{tr.gdprDesc}</span>

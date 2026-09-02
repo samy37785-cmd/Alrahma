@@ -22,7 +22,7 @@ const BLANK = {
 export default function Enroll() {
   useSEO({
     title: 'Book Free Trial Lessons — Enroll at Al-Rahma Academy',
-    description: '2 free one-to-one Quran lessons — no payment, no commitment. Choose your subjects, pick an Al-Azhar certified tutor, and start learning today. 14-day money-back guarantee on all plans.',
+    description: 'One free one-to-one Quran trial lesson — no payment, no commitment. Choose your subjects, pick an Al-Azhar certified tutor, and start learning today. 24-day refund window on all plans.',
     keywords: 'free quran trial lesson, online quran enrollment, book quran lesson, quran class booking',
   });
 

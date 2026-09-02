@@ -89,7 +89,7 @@ export default function JoinCTA({ onTrialClick }) {
           {jc.browseCourses}
         </Link>
 
-        {/* Risk reversal — 14-day guarantee is documented in
+        {/* Risk reversal — 24-day refund guarantee is documented in
             TermsOfService.jsx §3; "no credit card"/"cancel anytime" match
             the free-trial and cancellation terms in §4–5. */}
         <div className="join-cta__guarantee">

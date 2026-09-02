@@ -83,10 +83,10 @@ export default function Trial() {
             ))}
           </ul>
 
-          {/* Trust mini-row — duration matches the 30-minute free trial
-              lesson described throughout the site (Steps/Hero microcopy,
-              QuickTrialModal); the privacy line matches
-              TermsOfService.jsx §10 (we never sell data to third parties). */}
+          {/* Trust mini-row — duration matches the owner-confirmed 60-minute
+              free trial lesson described throughout the site (Steps/Hero
+              microcopy, QuickTrialModal); the privacy line links to the
+              Privacy Policy rather than asserting a compliance claim. */}
           <div className="trial__trust-row">
             <span>🔒 {tr.trustRow.privacy}</span>
             <span>⏱️ {tr.trustRow.duration}</span>
@@ -104,8 +104,8 @@ export default function Trial() {
         {/* ── Right: form ── */}
         <form className="trial__form" onSubmit={handleSubmit} noValidate>
 
-          {/* Form header — response time matches TermsOfService.jsx §13
-              (within 2 hours during business days, Sat–Thu). */}
+          {/* Form header — response time matches the owner-confirmed
+              24-hour support response policy in TermsOfService.jsx §13. */}
           <div className="trial__form-head">
             <h3 className="trial__form-title">{tr.formTitle}</h3>
             <p className="trial__form-sub">{tr.formSub}</p>

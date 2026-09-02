@@ -495,7 +495,7 @@ export default function Dashboard() {
                 done: false,
                 icon: '📅',
                 title: 'Book your free trial',
-                sub: '2 free lessons with your assigned tutor — no commitment.',
+                sub: 'One free lesson with your assigned tutor — no commitment.',
                 action: null,
               },
               {

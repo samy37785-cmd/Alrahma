@@ -833,40 +833,51 @@ round's new tests target components by their full path, not by name alone.
 
 ## Update 2026-09-03 — Canonical Origin and Share-Link Safety — Final Corrective Before Stage 2D
 
-- **Wrong domain variants in production share surfaces, fixed.** Two wrong
-  forms of the academy's own domain had drifted into live share
-  surfaces: a wrong top-level-domain form (in
-  `components/ui/MilestoneCelebration.jsx` and `pages/Dashboard.jsx`) and
-  the correct domain missing its hyphen (in `components/ui/ReferralCard.jsx`
-  and `components/ui/ShareAchievement.jsx`). The only real domain is
-  `https://al-rahmaacademy.com`.
+- **Wrong domain variants in production share surfaces, fixed — corrected
+  count 2026-09-03.** This entry originally undercounted the occurrences
+  as 9; the real count, re-verified by grepping every `site.origin`
+  reference now present in the four files below, is **11**. Do not
+  conflate the two numbers: there are exactly **2 wrong domain variant
+  forms** (a wrong top-level-domain form, and the correct domain missing
+  its hyphen), but they appeared across **11 occurrences** in 4 files. The
+  only real domain is `https://al-rahmaacademy.com`.
 
-  | File | Domain literal before | Domain literal after |
-  |---|---|---|
-  | `components/ui/MilestoneCelebration.jsx` (LinkedIn share URL) | wrong TLD form | `site.origin` |
-  | `components/ui/MilestoneCelebration.jsx` (copy-to-clipboard text, ×2) | wrong TLD form (bare, no `https://`) | `site.origin` (full clickable URL) |
-  | `pages/Dashboard.jsx` (streak share text) | wrong TLD form (bare) | `site.origin` (full clickable URL) |
-  | `components/ui/ReferralCard.jsx` (referral link) | missing-hyphen form | `site.origin` |
-  | `components/ui/ShareAchievement.jsx` (3 share-message templates, bare) | missing-hyphen form (bare) | `site.origin` (full clickable URL) |
-  | `components/ui/ShareAchievement.jsx` (native Web Share `url`, Facebook share `u=`) | missing-hyphen form | `site.origin` |
+  | File | Occurrence | Domain literal before | Domain literal after |
+  |---|---|---|---|
+  | `components/ui/MilestoneCelebration.jsx` | LinkedIn share URL | wrong TLD form | `site.origin` |
+  | `components/ui/MilestoneCelebration.jsx` | copy-to-clipboard text, ×2 | wrong TLD form (bare, no `https://`) | `site.origin` (full clickable URL) |
+  | `pages/Dashboard.jsx` | streak share text | wrong TLD form (bare) | `site.origin` (full clickable URL) |
+  | `components/ui/ReferralCard.jsx` | referral link | missing-hyphen form | `site.origin` |
+  | `components/ui/ShareAchievement.jsx` | 3 share-message templates (`SHARE_MESSAGES`), bare | missing-hyphen form (bare) | `site.origin` (full clickable URL) |
+  | `components/ui/ShareAchievement.jsx` | `getShareText`'s fallback default message, bare | missing-hyphen form (bare) | `site.origin` (full clickable URL) |
+  | `components/ui/ShareAchievement.jsx` | native Web Share `url` | missing-hyphen form | `site.origin` |
+  | `components/ui/ShareAchievement.jsx` | Facebook share `u=` | missing-hyphen form | `site.origin` |
 
-  Total: 9 literal occurrences across 4 files corrected, all now reading
-  from one field, `site.origin`, added to `src/data/site.js`. Bare domain
-  mentions in share text (no `https://` prefix) were also upgraded to the
-  full URL, so the link is clickable in the destination app rather than
-  plain text — the wa.me/social/phone links this document already covers
-  were unaffected; only these 4 files' own domain literals changed.
+  Per-file subtotal: `MilestoneCelebration.jsx` 3, `Dashboard.jsx` 1,
+  `ReferralCard.jsx` 1, `ShareAchievement.jsx` 6 (3 templates + 1 fallback
+  + Web Share + Facebook) = **11**. All 11 were already fixed in the
+  production code in the prior round's commit — the undercount was in
+  this document's own tally and in `canonicalOriginShareSafety.test.js`'s
+  explanatory comment, not in the code itself. All 11 now read from one
+  field, `site.origin`, added to `src/data/site.js`. Bare domain mentions
+  in share text (no `https://` prefix) were also upgraded to the full
+  URL, so the link is clickable in the destination app rather than plain
+  text — the wa.me/social/phone links this document already covers were
+  unaffected; only these 4 files' own domain literals changed.
 
-- **Single canonical-origin contract.** `src/data/site.js` now exports
-  `site.origin = 'https://al-rahmaacademy.com'`. `src/utils/localePath.js`'s
-  `ORIGIN` export (already consumed by `useSEO.js`, the hreflang/breadcrumb
-  builders, and — via a separately-maintained literal — the sitemap
-  generator) now reads `site.origin` instead of redeclaring the string;
+- **Single canonical-origin contract.** `site.origin` is the single
+  production JavaScript source of truth. `src/data/site.js` exports
+  `site.origin = 'https://al-rahmaacademy.com'`; `src/utils/localePath.js`'s
+  `ORIGIN` export (consumed by `useSEO.js` and the hreflang/breadcrumb
+  builders) now reads `site.origin` instead of redeclaring the string;
   `useSEO.js`'s own separate `ORIGIN` literal was removed in favor of
   importing it from `localePath.js`. No third domain constant was
   introduced, and no import cycle was created — `data/site.js` has no
-  imports of its own, so `localePath.js` and the four share components
-  importing from it is one-directional.
+  imports of its own, so every consumer importing from it is
+  one-directional. (`scripts/gen-sitemap.mjs`'s own separately-maintained
+  literal was still open after this bullet was first written — see the
+  2026-09-03 follow-up entry below for that and three page-level JSON-LD
+  literals that were still hardcoded.)
 
 - **Share-window safety (`window.open` targets).** Every `window.open`
   call across the four share files that navigates to an external URL now
@@ -925,6 +936,92 @@ round's new tests target components by their full path, not by name alone.
   — a direct consequence of the production bug this round fixes. It was
   corrected to the real domain in the same commit as the test additions
   above, not left for a later round.
+
+## Update 2026-09-03 — Canonical Origin Evidence + Windows Migration Gate + GitHub Integration — Final Closure
+
+- **Occurrence-count correction: 9 → 11.** The entry above originally
+  reported "9 literal occurrences across 4 files corrected." The real
+  count, re-verified by counting every `site.origin` reference now
+  present in the four files, is **11** — `MilestoneCelebration.jsx` 3,
+  `Dashboard.jsx` 1, `ReferralCard.jsx` 1, `ShareAchievement.jsx` 6 (the
+  earlier tally missed `ShareAchievement.jsx`'s `getShareText` fallback
+  default message). The **production code fix itself was already
+  complete and correct at 11/11** in the prior commit — this was purely
+  an undercount in the report, the doc's before/after table, and
+  `canonicalOriginShareSafety.test.js`'s explanatory comment (which also
+  said "three wrong domain variants" — also wrong: there are **2** wrong
+  variant forms, appearing across **11** occurrences; variant-form count
+  and occurrence count must not be conflated). Both are now corrected in
+  place above and in the test file. `canonicalOriginShareSafety.test.js`
+  now encodes the exact 11-occurrence, per-file inventory as an
+  executable regression gate (mirroring the WhatsApp inventory's own
+  pattern), not just a soft "site.origin appears somewhere" check — so a
+  future undercount is a test failure, not a report typo.
+
+- **Canonical origin contract completed for all remaining production JS.**
+  Three page-level JSON-LD blocks (`BlogPost.jsx`, `CourseIjazah.jsx`,
+  `CourseIslamicStudies.jsx`) and `scripts/gen-sitemap.mjs` still
+  hardcoded the correct domain as an independent literal after the prior
+  entry — correct, but not wired to `site.origin`, and each one a place
+  the domain could silently drift from the real one in the future. All
+  four now read `site.origin` (`gen-sitemap.mjs` via
+  `import { site } from '../src/data/site.js'`, verified to produce
+  byte-identical `public/sitemap.xml` output before and after the
+  change). No import cycle: `data/site.js` has zero imports, so this
+  remains one-directional for every consumer, JS or Node script alike.
+  `site.origin` is now the single production JavaScript source of truth,
+  full stop. **The correct, precise contract is**: `site.origin` is the
+  single production JavaScript source of truth; static HTML/public SEO
+  artifacts (`index.html`, `public/robots.txt`, `public/llms.txt`,
+  `public/sitemap.xml`) contain validated or generated mirrors of the
+  approved origin — they are not independent sources, and they cannot
+  `import` a JS module, so they are a documented, narrow, separately-
+  guarded exception rather than a violation of the single-source rule.
+  This document does **not** claim `site.js` is the only literal domain
+  string in the entire repository — it is the only one in production JS
+  source; the static mirrors are expected to (and, per
+  `canonicalOriginShareSafety.test.js`'s new "static SEO mirrors" guard,
+  do) carry the same approved domain as their own static content.
+
+- **Windows migration-checksum gate fixed, not just explained.** The
+  prior round's final report recorded `check:published-migrations`
+  reading 0/4 on this Windows checkout and proved (via `git show
+  HEAD:<path> | sha256sum`) that the committed content was untouched —
+  but left the gate itself red, attributing the 0/4 to
+  `core.autocrlf=true` converting these `.sql` files to CRLF on disk
+  while the script hashed raw `fs.readFileSync` bytes. That explanation
+  was correct but incomplete as a fix: a red gate that requires reading
+  a report to know it's "actually fine" is not a real gate. It is fixed
+  now: `lib/db/test/published-migrations-lib.mjs` adds two pure,
+  independently unit-tested classifiers (the same
+  dependency-injectable-result pattern `orchestrator-lib.mjs`'s
+  `interpretDockerPsResult` already uses) — one hashes the Git blob at
+  `HEAD` (`git show HEAD:<path>`, git's own line-ending-normalized
+  object, immune to working-tree checkout settings on any platform), the
+  other confirms via `git diff --quiet HEAD -- <path>` that the working
+  tree carries no tracked modification (staged or unstaged) relative to
+  `HEAD` — catching a real edit sitting uncommitted, which the blob check
+  alone cannot. Both fail closed: a git command that cannot run, or
+  exits unexpectedly, is a FAIL, never a silently-assumed PASS.
+  `published-migrations-checksum.test.mjs` now uses both.
+  `published-migrations-checksum-selftest.test.mjs` (new; wired as
+  `check:published-migrations:selftest` in `lib/db/package.json`) proves
+  the classifiers against constructed fixtures for all 6 required
+  scenarios (correct blob → pass; mismatched checksum → fail; `git show`
+  itself failing → fail; a path missing at `HEAD` → fail; a CRLF
+  working-tree checkout of an LF-committed blob → pass; a real tracked
+  modification → fail), plus two extra fail-closed cases for the diff
+  check. End-to-end verification against the real repo (recorded in this
+  round's final report): the official gate now reads **4/4 passed, exit
+  0**, and — checked directly, not just asserted — appending an
+  uncommitted line to a real published migration and re-running the gate
+  correctly turns it red (3/4, exit 1) before the change was reverted.
+  No migration SQL content was edited, no SQL was executed, no Supabase
+  connection was made — this is filesystem/Git introspection only.
+
+- Full commit list, verification-gate results, GitHub PR details, and
+  the final `main` merge SHA for this round are in that round's own
+  final report.
 
 - Full commit list and verification-gate results for this round (targeted
   tests, two independent full-suite runs, both typecheck parts, the

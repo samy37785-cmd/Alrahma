@@ -11,6 +11,7 @@
     "push": "drizzle-kit push --config ./drizzle.config.ts",
     "push-force": "drizzle-kit push --force --config ./drizzle.config.ts",
     "check:published-migrations": "node test/published-migrations-checksum.test.mjs",
+    "check:published-migrations:selftest": "node test/published-migrations-checksum-selftest.test.mjs",
     "test:db": "node test/orchestrate-db-tests.mjs",
     "test:db:write-evidence": "node test/orchestrate-db-tests.mjs --write-evidence",
     "test:db:orchestrator-selftest": "node test/orchestrator-failure-propagation.test.mjs"

@@ -273,12 +273,12 @@ img, video, svg, canvas { max-width: 100%; }
   .ls__code { display: none; }             /* language: flag only */
   .ls__trigger { padding: 6px 8px; }
   .header__lockup { gap: 0.5rem; }
-  .header__lockup .brand-lockup__icon { width: 32px; height: 32px; }
+  .header__lockup .brand-lockup__icon { width: 32px; height: auto; }
   .header__lockup .brand-lockup__en-main { font-size: 1.05rem; }
   .header__right .btn--sm { padding: 8px 12px; font-size: .82rem; }
   .brand__text strong { font-size: 1rem; }
   .brand { gap: 8px; }
-  .brand__mark { width: 28px; height: 28px; }
+  .brand__mark { width: 28px; height: auto; }
 }
 
 /* ── 6d) Quran reader — control-bar selects (≈505px) overflowed once

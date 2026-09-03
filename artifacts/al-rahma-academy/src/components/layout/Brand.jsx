@@ -2,6 +2,7 @@ import { useLocation } from 'react-router-dom';
 import { site } from '../../data';
 import { useLang } from '../../context/LangContext';
 import { homeHref } from '../../utils/localePath';
+import BrandIcon from '../ui/BrandIcon';
 
 export default function Brand({ light = false }) {
   const { t } = useLang();
@@ -21,6 +22,7 @@ export default function Brand({ light = false }) {
 
   return (
     <a href={homeHref()} onClick={handleClick} className={`brand${light ? ' brand--light' : ''}`}>
+      <BrandIcon size={36} tile={false} className="brand__mark" />
       <span className="brand__text">
         <strong>{site.name}</strong>
         <small>{t.tagline}</small>

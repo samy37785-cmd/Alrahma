@@ -118,7 +118,7 @@ export default function BlogPost() {
       publisher: {
         '@type': 'Organization',
         name: 'Al-Rahma Academy',
-        logo: { '@type': 'ImageObject', url: `${site.origin}/favicon.svg` },
+        logo: { '@type': 'ImageObject', url: `${site.origin}/brand/icon-tile-512.png` },
       },
       mainEntityOfPage: `${site.origin}/resources/blog/${post.slug}`,
     } : null,

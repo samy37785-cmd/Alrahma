@@ -8,9 +8,21 @@
 // `phoneInternationalDisplay`. `phoneLocalDisplay` (no country code) is
 // only for a clearly Egyptian/local context — none currently exists on the
 // site, so it is exported for completeness but not yet consumed.
+// Canonical Origin and Share-Link Safety — Final Corrective (2026-09-03):
+// the single source for the academy's own domain. `src/utils/localePath.js`
+// re-exports this as ORIGIN (used by useSEO.js and the sitemap/hreflang
+// pipeline) rather than duplicating the literal — see that file's comment.
+// Any component that builds a share link/message (WhatsApp, LinkedIn,
+// Facebook, native Web Share, copy-to-clipboard) must read this field
+// instead of hardcoding a domain literal — two wrong variants (a wrong
+// top-level domain, and the correct domain missing its hyphen) had drifted
+// into production share surfaces before this correction. See
+// src/test/canonicalOriginShareSafety.test.js for the exact wrong forms
+// this guards against.
 const PHONE_E164 = '+201039553264';
 export const site = {
   name: 'AL-Rahma',
+  origin: 'https://al-rahmaacademy.com',
   tagline: 'Learn the Holy Quran Online',
   email: 'alrahmaacademy038@gmail.com',
   phoneLocalDisplay: '01039553264',

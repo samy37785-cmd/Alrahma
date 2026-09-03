@@ -1,5 +1,6 @@
 import { useParams, Link, Navigate } from 'react-router-dom';
 import { homeHref } from '../utils/localePath';
+import { site } from '../data/site';
 import PageBar from '../components/layout/PageBar';
 import { CATEGORY_COLORS } from '../data/marketing/blogPosts';
 import { useBlogPost, useBlogPosts } from '../hooks/useBlog';
@@ -112,14 +113,14 @@ export default function BlogPost() {
       datePublished: post.date,
       articleSection: post.category,
       inLanguage: 'en',
-      image: 'https://al-rahmaacademy.com/og-cover.svg',
-      author: { '@type': 'Organization', name: 'Al-Rahma Academy', url: 'https://al-rahmaacademy.com' },
+      image: `${site.origin}/og-cover.svg`,
+      author: { '@type': 'Organization', name: 'Al-Rahma Academy', url: site.origin },
       publisher: {
         '@type': 'Organization',
         name: 'Al-Rahma Academy',
-        logo: { '@type': 'ImageObject', url: 'https://al-rahmaacademy.com/favicon.svg' },
+        logo: { '@type': 'ImageObject', url: `${site.origin}/favicon.svg` },
       },
-      mainEntityOfPage: `https://al-rahmaacademy.com/resources/blog/${post.slug}`,
+      mainEntityOfPage: `${site.origin}/resources/blog/${post.slug}`,
     } : null,
   });
 

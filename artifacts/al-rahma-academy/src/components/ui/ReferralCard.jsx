@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useLang } from '../../context/LangContext';
+import { site } from '../../data/site';
 
 // Content Truth Contract corrective round 3: the previous "Get 1 Month
 // Free" / "you both receive one free month" / "No limit on referrals"
@@ -17,7 +18,7 @@ export default function ReferralCard() {
   const r = t.referral;
   const [copied, setCopied] = useState(false);
 
-  const referralLink = `https://alrahmaacademy.com/enroll?ref=${user?._id?.slice(-8) || 'friend'}`;
+  const referralLink = `${site.origin}/enroll?ref=${user?._id?.slice(-8) || 'friend'}`;
 
   const handleCopy = useCallback(async () => {
     try {

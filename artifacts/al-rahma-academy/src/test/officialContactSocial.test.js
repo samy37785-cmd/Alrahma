@@ -22,10 +22,15 @@ const OLD_PHONE_PATTERNS = [
   '01016054663',
 ];
 
-// Extension-complete: the R1 sweep only walked .js/.jsx, which is why its
-// own inventory undercounted (it never looked at the handful of .js files
-// like dashboardNav.js). This list covers everything Vite/TS actually
-// compiles in this project.
+// Extension-complete: covers every extension Vite/TS actually compiles in
+// this project. Note this is NOT why the R1 sweep undercounted —
+// dashboardNav.js is a .js file, and R1's walk already covered .js/.jsx, so
+// extension coverage was never the gap. The real gap (see the R2 block
+// below) is that R1's own predecessor of that block was a single spot-check
+// proving *a* wa.me/ pattern existed somewhere, not a per-file/
+// per-occurrence inventory — it never counted or classified anything. This
+// wider list (.ts/.tsx/.mjs/.mts added) is kept because it is still more
+// correct, just not the actual fix for the undercount.
 const PRODUCTION_SOURCE_EXTS = ['.js', '.jsx', '.ts', '.tsx', '.mjs', '.mts'];
 const WALK_EXCLUDE_DIRS = ['test', 'node_modules', 'coverage', 'dist', 'generated'];
 

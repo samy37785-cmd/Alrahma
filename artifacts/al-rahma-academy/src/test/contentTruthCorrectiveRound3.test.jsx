@@ -242,10 +242,14 @@ describe('ReferralCard — no unproven reward promises, full i18n (Part 10)', ()
 });
 
 // Helper: every language's WhatsApp message ends with the referral link
-// itself, so any language's text containing "alrahmaacademy.com/enroll"
-// proves the link was appended correctly.
+// itself, so any language's text containing "al-rahmaacademy.com/enroll"
+// proves the link was appended correctly. Canonical Origin and Share-Link
+// Safety corrective (2026-09-03): this literal previously read
+// "alrahmaacademy.com" (missing the hyphen) — the wrong domain that
+// ReferralCard.jsx itself hardcoded at the time. Both are now fixed to the
+// real domain, al-rahmaacademy.com.
 function referralLinkContains() {
-  return 'alrahmaacademy.com/enroll';
+  return 'al-rahmaacademy.com/enroll';
 }
 
 describe('2× weekly-lesson-time comparison, derived from `plans` (Part 8)', () => {

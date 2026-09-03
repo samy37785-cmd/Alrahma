@@ -1,0 +1,8 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "pnpm --filter @workspace/al-rahma-academy run build",
+  "outputDirectory": "artifacts/al-rahma-academy/dist/public",
+  "rewrites": [
+    { "source": "/((?!api/|.*\\..*).*)", "destination": "/index.html" }
+  ]
+}

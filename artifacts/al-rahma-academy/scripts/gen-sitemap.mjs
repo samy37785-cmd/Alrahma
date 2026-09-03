@@ -2,10 +2,11 @@ import { writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { seoRoutes as routes } from "./seoRoutes.mjs";
+import { site } from "../src/data/site.js";
 
 const directory = dirname(fileURLToPath(import.meta.url));
 const root = join(directory, "..");
-const origin = "https://al-rahmaacademy.com";
+const origin = site.origin;
 const paths = [...new Set([...routes, "/it/", "/fr/"])];
 
 const priorityFor = (route) => {

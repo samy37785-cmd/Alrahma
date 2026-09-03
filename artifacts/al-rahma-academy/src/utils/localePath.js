@@ -17,10 +17,15 @@
 // plain Node ESM prerender/sitemap scripts, which require the extension and
 // can't resolve a bare directory import.
 import { LANGS } from '../i18n/index.js';
+import { site } from '../data/site.js';
 
 const PREFIXED_LANGS = LANGS.filter((l) => l !== 'en');
 
-export const ORIGIN = 'https://al-rahmaacademy.com';
+// Re-exported from src/data/site.js, the single source of the domain
+// (Canonical Origin and Share-Link Safety, 2026-09-03) — not redeclared
+// here, so useSEO.js and every other consumer of this ORIGIN export stay
+// wired to the one place the domain is ever written as a literal.
+export const ORIGIN = site.origin;
 
 // Open Graph locale codes per language — not yet consumed anywhere in this
 // app (useSEO.js here doesn't set og:locale per-language yet, that's Stage

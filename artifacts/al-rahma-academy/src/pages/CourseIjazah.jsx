@@ -7,6 +7,7 @@ import useSEO from '../hooks/useSEO';
 import Breadcrumbs from '../components/ui/Breadcrumbs';
 import { useLang, withLanguage } from '../context/LangContext';
 import { COURSE_UI } from '../i18n/coursePages';
+import { site } from '../data/site';
 
 /* ─── Static data (bilingual) ─── */
 const LEARN = {
@@ -303,7 +304,7 @@ export default function CourseIjazah() {
       '@type': 'Course',
       name: 'Quran Ijazah Certification Course',
       description: "Earn a formal Quran Ijazah with a continuous Sanad to the Prophet ﷺ. Study Matn Al-Jazariyyah, Al-Shatibiyyah and the Seven Qira'at with certified Al-Azhar scholars.",
-      provider: { '@type': 'EducationalOrganization', name: 'Al-Rahma Academy', sameAs: 'https://al-rahmaacademy.com' },
+      provider: { '@type': 'EducationalOrganization', name: 'Al-Rahma Academy', sameAs: site.origin },
       educationalLevel: 'Advanced',
       inLanguage: ['en', 'ar'],
       teaches: 'Quran Ijazah, Tajweed, Matn Al-Jazariyyah, Al-Shatibiyyah, Seven Qira\'at',

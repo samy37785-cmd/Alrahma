@@ -5,13 +5,18 @@ import path from "path";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 import { mockupPreviewPlugin } from "./mockupPreviewPlugin";
 
-const rawPort = process.env.PORT;
-
-if (!rawPort) {
-  throw new Error(
-    "PORT environment variable is required but was not provided.",
-  );
-}
+// PORT/BASE_PATH default to the values Replit's own artifact service uses
+// (.replit-artifact/artifact.toml: PORT=8081, BASE_PATH=/__mockup) rather
+// than throwing when unset. This app is a Replit-internal preview tool,
+// never meant to be its own deployment target, but the monorepo root
+// `build` script (`pnpm -r --if-present run build`) builds every
+// workspace package — including this one — so any CI/Vercel project that
+// invokes the root build without Replit's env vars set was hard-crashing
+// here, unrelated to whatever it actually deploys. A real Replit run
+// still gets its explicit values from artifact.toml and behaves exactly
+// as before; only a generic build without those vars set now succeeds
+// instead of throwing.
+const rawPort = process.env.PORT ?? "8081";
 
 const port = Number(rawPort);
 
@@ -19,13 +24,7 @@ if (Number.isNaN(port) || port <= 0) {
   throw new Error(`Invalid PORT value: "${rawPort}"`);
 }
 
-const basePath = process.env.BASE_PATH;
-
-if (!basePath) {
-  throw new Error(
-    "BASE_PATH environment variable is required but was not provided.",
-  );
-}
+const basePath = process.env.BASE_PATH ?? "/__mockup";
 
 export default defineConfig({
   base: basePath,

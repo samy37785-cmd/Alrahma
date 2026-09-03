@@ -33,7 +33,7 @@ export default function InvoiceModal({ invoice, onClose }) {
         {/* Academy header */}
         <div className="inv__header">
           <div className="inv__academy">
-            <BrandIcon size={40} className="inv__logo" />
+            <BrandIcon size={40} alt="" className="inv__logo" />
             <div>
               <strong>AL-Rahma Academy</strong>
               <small>alrahmaacademy038@gmail.com</small>

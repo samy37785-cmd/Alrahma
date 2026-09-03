@@ -9,6 +9,7 @@ import { useLang, withLanguage } from '../context/LangContext';
 import { COURSE_UI } from '../i18n/coursePages';
 import { HADITHS, MODULES, BOOKS, LEARN, FOR, PERKS } from '../data/islamicStudiesData';
 import IslamicStudiesBookCard from '../components/features/courses/IslamicStudiesBookCard';
+import { site } from '../data/site';
 
 export default function CourseIslamicStudies() {
   const navigate = useNavigate();
@@ -34,7 +35,7 @@ export default function CourseIslamicStudies() {
       '@type': 'Course',
       name: 'Islamic Studies Course',
       description: 'A comprehensive, source-based curriculum covering Aqeedah, Fiqh, Seerah, Hadith and Tafsir — 5 structured modules taught by certified scholars in your own language.',
-      provider: { '@type': 'EducationalOrganization', name: 'Al-Rahma Academy', sameAs: 'https://al-rahmaacademy.com' },
+      provider: { '@type': 'EducationalOrganization', name: 'Al-Rahma Academy', sameAs: site.origin },
       educationalLevel: 'All levels',
       inLanguage: ['en', 'ar'],
       teaches: 'Aqeedah, Fiqh, Seerah, Hadith, Tafsir, Islamic Studies',

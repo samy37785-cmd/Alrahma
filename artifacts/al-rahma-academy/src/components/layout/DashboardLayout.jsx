@@ -179,7 +179,7 @@ export default function DashboardLayout({ children }) {
       >
         {/* Brand */}
         <a href={homeHref()} className="ds-brand">
-          <BrandIcon size={34} className="ds-brand__logo" />
+          <BrandIcon size={34} alt="" className="ds-brand__logo" />
           <div className="ds-brand__text">
             <span className="ds-brand__name">Al-Rahma</span>
             <span className="ds-brand__sub">{shell.academy}</span>

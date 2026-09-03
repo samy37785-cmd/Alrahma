@@ -22,7 +22,7 @@ export default function Brand({ light = false }) {
 
   return (
     <a href={homeHref()} onClick={handleClick} className={`brand${light ? ' brand--light' : ''}`}>
-      <BrandIcon size={36} tile={false} className="brand__mark" />
+      <BrandIcon size={36} tile={false} alt="" className="brand__mark" />
       <span className="brand__text">
         <strong>{site.name}</strong>
         <small>{t.tagline}</small>

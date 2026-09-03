@@ -2,13 +2,19 @@ import BrandIcon from './BrandIcon';
 import '../../styles/brand-lockup.css';
 
 /**
- * BrandLockup — the official full logo lockup (icon + English/Arabic
- * wordmark + Bismillah), redrawn from the brand guideline sheet as a
- * self-contained card so it drops cleanly onto any page background
- * (Hero's light section, a dark footer, etc.) without needing per-page
- * text-color overrides — the guideline's lockup panels are themselves
- * self-contained dark-green plates, not transparent artwork meant to sit
- * directly on arbitrary backgrounds.
+ * BrandLockup — the icon (the real official artwork, via BrandIcon) plus a
+ * live CSS wordmark (English/Arabic + Bismillah) approximating the layout
+ * of the official lockup renders in the brand's own fonts. This is a
+ * composition of the two, not a pixel reproduction of any single source
+ * image — the source renders bake their wordmark as fixed-resolution raster
+ * text with custom typography/lighting effects that don't stay legible at
+ * small sizes (the header uses this at ~40px icon height); live text stays
+ * crisp at any size/DPI instead. See docs/official-logo-integration.md
+ * ("why the icon, not raster lockup text") for the full reasoning.
+ *
+ * The card's own background/padding/shadow give it a self-contained plate
+ * so it drops cleanly onto any page background (Hero's light section, a
+ * dark footer, etc.) without needing per-page text-color overrides.
  *
  * Props:
  *   orientation    – 'horizontal' (icon, a tall gold divider, then a
@@ -37,7 +43,7 @@ export default function BrandLockup({ orientation = 'horizontal', tone = 'brand'
   const iconSize = size ?? (orientation === 'horizontal' ? 64 : 76);
   return (
     <div className={`brand-lockup brand-lockup--${orientation}${plain ? ' brand-lockup--plain' : ''}${className ? ' ' + className : ''}`}>
-      <BrandIcon size={iconSize} tile={false} tone={tone} className="brand-lockup__icon" />
+      <BrandIcon size={iconSize} tile={false} tone={tone} alt="" className="brand-lockup__icon" />
       {orientation === 'horizontal' && <span className="brand-lockup__spine" aria-hidden="true" />}
       <div className="brand-lockup__text">
         <div className="brand-lockup__en">

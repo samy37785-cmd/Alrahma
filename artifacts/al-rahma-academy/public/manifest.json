@@ -14,7 +14,9 @@
   "categories": ["education", "religion", "lifestyle"],
   "scope": "/",
   "icons": [
-    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+    { "src": "/brand/icon-tile-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/brand/icon-tile-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/brand/icon-tile-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ],
   "shortcuts": [
     {
@@ -22,21 +24,21 @@
       "short_name": "Quran",
       "description": "Open the Quran reader",
       "url": "/tools/quran-reader",
-      "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+      "icons": [{ "src": "/brand/icon-tile-192.png", "sizes": "192x192", "type": "image/png" }]
     },
     {
       "name": "My Dashboard",
       "short_name": "Dashboard",
       "description": "Go to your learning dashboard",
       "url": "/dashboard",
-      "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+      "icons": [{ "src": "/brand/icon-tile-192.png", "sizes": "192x192", "type": "image/png" }]
     },
     {
       "name": "Prayer Times",
       "short_name": "Prayer",
       "description": "Check prayer times",
       "url": "/tools/prayer-times",
-      "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+      "icons": [{ "src": "/brand/icon-tile-192.png", "sizes": "192x192", "type": "image/png" }]
     }
   ],
   "screenshots": [],

@@ -86,7 +86,10 @@ async function main() {
   await client.connect();
   await resetToCleanSlate(client);
   console.log("--- loading the OLD 34-table fixture");
-  await client.query(fs.readFileSync(path.join(opsDir, "fixtures", "old_public_schema.sql"), "utf8"));
+  // CRLF -> LF: see the identical fix in test/gate.test.mjs for why —
+  // a Windows checkout otherwise contaminates this fixture's function
+  // body hashes with literal \r.
+  await client.query(fs.readFileSync(path.join(opsDir, "fixtures", "old_public_schema.sql"), "utf8").replace(/\r\n/g, "\n"));
   const { rows: tableCountRows } = await client.query(`select count(*) as c from pg_tables where schemaname='public';`);
   assert.equal(Number(tableCountRows[0].c), 34, "fixture load: expected exactly 34 old tables");
   await client.end();

@@ -52,7 +52,10 @@ async function loadOldFixture(client) {
   await client.query(`alter table auth.users add column if not exists role text;`);
   await client.query(`alter table auth.users add column if not exists created_at timestamptz not null default now();`);
   await createLocalAuthRolesAndFunctions(client);
-  await client.query(fs.readFileSync(fixturePath, "utf8"));
+  // CRLF -> LF: see the identical fix in test/gate.test.mjs for why —
+  // a Windows checkout otherwise contaminates this fixture's function
+  // body hashes with literal \r.
+  await client.query(fs.readFileSync(fixturePath, "utf8").replace(/\r\n/g, "\n"));
 }
 
 function runResetScript(url) {

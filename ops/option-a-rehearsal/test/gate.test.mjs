@@ -140,7 +140,15 @@ async function loadOldFixtureWithSupabaseShapedAcl(client) {
     grant usage, create on schema public to postgres;
     grant usage on schema public to anon, authenticated, service_role;
   `);
-  await client.query(fs.readFileSync(fixturePath, "utf8"));
+  // .replace normalizes CRLF -> LF: on a Windows checkout with
+  // core.autocrlf=true, this file's own dollar-quoted function bodies
+  // would otherwise embed a literal \r in every line, which
+  // pg_get_functiondef() then reproduces verbatim — silently changing
+  // the live body-hash fingerprint checks below to fail against
+  // production-preflight-gate.mjs's LF-computed EXPECTED_FUNCTIONS
+  // constants. Found by actually running this suite on Windows, not by
+  // inspection.
+  await client.query(fs.readFileSync(fixturePath, "utf8").replace(/\r\n/g, "\n"));
   // The fixture seeds a handful of synthetic rows (blogs/subscribers/
   // the trigger-derived profiles row, plus its own auth.users row) —
   // the gate's live checks require every old table AND auth.users to

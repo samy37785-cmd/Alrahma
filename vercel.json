@@ -3,6 +3,7 @@
   "buildCommand": "pnpm --filter @workspace/al-rahma-academy run build",
   "outputDirectory": "artifacts/al-rahma-academy/dist/public",
   "rewrites": [
+    { "source": "/api/:path*", "destination": "https://academy-backend-cxso.onrender.com/api/:path*" },
     { "source": "/((?!api/|.*\\..*).*)", "destination": "/index.html" }
   ]
 }

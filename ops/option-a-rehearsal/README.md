@@ -95,8 +95,16 @@ node scripts/production-preflight-gate.mjs \
   --confirm-token "I-UNDERSTAND-THIS-WILL-DROP-PRODUCTION-difzynyphojgisrfvrkd" \
   --approval-manifest fixtures/approval-manifest.example.json \
   --dump-file out/old-schema-bundle/public_schema.dump \
-  --checksum-file out/old-schema-bundle/manifest.json
+  --checksum-file out/old-schema-bundle/manifest.json \
+  --ca-cert-file out/prod-ca-2021.crt
 ```
+
+`--ca-cert-file` is required only in `--mode production` (Supabase's pooler/
+direct hosts use a project-specific CA, not a publicly-trusted one — see
+the v4 comment at the top of `production-preflight-gate.mjs`). Download it
+from the project's own dashboard: Project Settings > Database > SSL
+Configuration > Download certificate. It is a public certificate, safe to
+keep in `out/` (gitignored) or paste anywhere — never a secret.
 
 `fixtures/approval-manifest.example.json` is a **LOCAL FIXTURE ONLY** —
 its `approvedBy` field is a literal the gate itself refuses under

@@ -55,11 +55,27 @@
 //     --project-ref difzynyphojgisrfvrkd \
 //     --confirm-token "I-UNDERSTAND-THIS-WILL-DROP-PRODUCTION-difzynyphojgisrfvrkd" \
 //     --approval-manifest <path to a signed-off JSON file> \
-//     --dump-file <path> --checksum-file <path> --max-dump-age-hours 24
+//     --dump-file <path> --checksum-file <path> --max-dump-age-hours 24 \
+//     --ca-cert-file <path to Supabase's Project Settings > Database >
+//       SSL Configuration certificate> (required in --mode production;
+//       see v4 changes below for why)
 //
 // Exit code 0 only if every check below passes. Exit code 1 on the
 // first failure, or if any required flag/env-var is missing (missing
 // is itself a failure, never a default-through).
+//
+// v4 change (Stage 2D Production Cutover Tooling Hardening task): added
+// a required --ca-cert-file flag for --mode production. Found by
+// actually running --mode production's live-check connection against
+// the real project for the first time (as part of a separate, explicitly
+// authorized read-only audit): rejectUnauthorized:true with no `ca`
+// fails EVERY connection to Supabase's pooler/direct host with
+// "self-signed certificate in certificate chain" — Supabase's own CA is
+// not in Node's default trust store. Before this change, --mode
+// production could never have passed its own live checks at all. The
+// fix supplies the real CA (downloaded from the project's own dashboard,
+// a public, non-secret artifact) so verification stays strict
+// (rejectUnauthorized stays true) instead of being weakened.
 //
 // v3 changes (Round 2 remediation, closing a real code-review's
 // findings — see the plan section this commit implements):
@@ -314,9 +330,23 @@ function runStaticChecks(args) {
   const dumpFile = require_("dump-file");
   const checksumFile = require_("checksum-file");
   const maxDumpAgeHours = Number(args["max-dump-age-hours"] || 24);
+  const caCertFile = mode === "production" ? require_("ca-cert-file") : args["ca-cert-file"];
 
   if (!mode || !databaseUrl || !projectRef || !confirmToken || !approvalManifestPath || !dumpFile || !checksumFile) {
     return null;
+  }
+  if (mode === "production") {
+    if (!caCertFile) return null; // require_ already recorded the failure
+    if (!fs.existsSync(caCertFile)) {
+      fail(`--ca-cert-file "${caCertFile}" does not exist`);
+      return null;
+    }
+    const caCertContent = fs.readFileSync(caCertFile, "utf8");
+    if (!caCertContent.includes("-----BEGIN CERTIFICATE-----")) {
+      fail(`--ca-cert-file "${caCertFile}" does not look like a PEM certificate`);
+      return null;
+    }
+    pass(`--ca-cert-file "${caCertFile}" exists and looks like a PEM certificate`);
   }
 
   // 1. Project ref must match the hardcoded expectation.
@@ -627,17 +657,27 @@ function runStaticChecks(args) {
     }
   }
 
-  return { mode, databaseUrl, projectRef };
+  return { mode, databaseUrl, projectRef, caCertFile };
 }
 
 // ---------------------------------------------------------------------
 // Live-database checks — single connection, one READ ONLY transaction,
 // always rolled back.
 // ---------------------------------------------------------------------
-async function runLiveChecks(mode, databaseUrl) {
+async function runLiveChecks(mode, databaseUrl, caCertFile) {
   const clientConfig = { connectionString: databaseUrl, statement_timeout: 15_000 };
   if (mode === "production") {
-    clientConfig.ssl = { rejectUnauthorized: true };
+    // Supabase's pooler/direct hosts present a certificate chain rooted
+    // at Supabase's own CA (Project Settings > Database > SSL
+    // Configuration), not a publicly-trusted one — rejectUnauthorized:
+    // true with no `ca` fails every real connection with "self-signed
+    // certificate in certificate chain" (found by actually running this
+    // against the real pooler, not by inspection). --ca-cert-file is
+    // required in production mode specifically so this can never
+    // silently degrade to rejectUnauthorized:false — the flag is
+    // required, checked to exist and parse as a real certificate, and
+    // verification stays strict throughout.
+    clientConfig.ssl = { rejectUnauthorized: true, ca: fs.readFileSync(caCertFile, "utf8") };
   }
   const client = new pg.Client(clientConfig);
 
@@ -931,7 +971,7 @@ async function main() {
     process.exit(1);
   }
 
-  await runLiveChecks(staticResult.mode, staticResult.databaseUrl);
+  await runLiveChecks(staticResult.mode, staticResult.databaseUrl, staticResult.caCertFile);
 
   console.log("");
   if (failures === 0) {

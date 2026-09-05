@@ -108,6 +108,17 @@ if (mode === "local") {
   const isPooler = hostname.endsWith(".pooler.supabase.com");
   if (!directMatch && !isPooler) fail(`BACKUP_MODE=production requires a real Supabase hostname, got "${hostname}".`);
   clientConfig.ssl = { rejectUnauthorized: true };
+  // Supabase's pooler/direct hosts present a certificate chain rooted at
+  // Supabase's own CA (downloaded from Project Settings > Database > SSL
+  // Configuration), not a publicly-trusted CA — Node's default trust
+  // store correctly rejects it as "self-signed certificate in
+  // certificate chain" without this. Providing the real CA (still with
+  // rejectUnauthorized: true) verifies against the true issuer instead
+  // of disabling verification.
+  const caCertPath = process.env.BACKUP_CA_CERT_PATH;
+  if (caCertPath) {
+    clientConfig.ssl.ca = fs.readFileSync(caCertPath, "utf8");
+  }
 }
 
 fs.mkdirSync(outDir, { recursive: true });

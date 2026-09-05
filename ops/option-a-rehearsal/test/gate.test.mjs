@@ -29,6 +29,11 @@ const repoRoot = path.resolve(opsDir, "..", "..");
 const fixturePath = path.join(opsDir, "fixtures", "old_public_schema.sql");
 const gateScript = path.join(opsDir, "scripts", "production-preflight-gate.mjs");
 const scratchDir = path.join(opsDir, "out", "gate-test-automated");
+// A real, public (non-secret) Supabase root CA — --ca-cert-file is
+// required in --mode production as of this task's v4 hardening; every
+// production-mode invocation below needs a real-looking PEM file to get
+// past that check before reaching the specific static check it targets.
+const testCaCertPath = path.join(opsDir, "fixtures", "test-ca.crt");
 
 const baseConnectionString = process.env.TEST_DATABASE_URL;
 if (!baseConnectionString) {
@@ -223,7 +228,7 @@ async function main() {
   console.log("--- T2: --mode production refuses the legacy single-file checksum format");
   const t2 = runGate(
     { GATE_DATABASE_URL: "postgresql://postgres:x@db.difzynyphojgisrfvrkd.supabase.co:5432/postgres?sslmode=require" },
-    ["--mode", "production", "--approval-manifest", goodManifest, "--dump-file", path.join(scratchDir, "dump.bin"), "--checksum-file", path.join(scratchDir, "checksum-legacy.sha256")]
+    ["--mode", "production", "--approval-manifest", goodManifest, "--dump-file", path.join(scratchDir, "dump.bin"), "--checksum-file", path.join(scratchDir, "checksum-legacy.sha256"), "--ca-cert-file", testCaCertPath]
   );
   assert.notEqual(t2.code, 0);
   assert.match(t2.out, /refuses the legacy single-file checksum format/);
@@ -234,7 +239,7 @@ async function main() {
   console.log("--- T3: --mode production refuses a local-sourced backup bundle");
   const t3 = runGate(
     { GATE_DATABASE_URL: "postgresql://postgres:x@db.difzynyphojgisrfvrkd.supabase.co:5432/postgres?sslmode=require" },
-    ["--mode", "production", "--approval-manifest", goodManifest, "--dump-file", path.join(scratchDir, "dump.bin"), "--checksum-file", path.join(scratchDir, "manifest-local.json")]
+    ["--mode", "production", "--approval-manifest", goodManifest, "--dump-file", path.join(scratchDir, "dump.bin"), "--checksum-file", path.join(scratchDir, "manifest-local.json"), "--ca-cert-file", testCaCertPath]
   );
   assert.notEqual(t3.code, 0);
   assert.match(t3.out, /requires the backup bundle's own sourceMode to be "production"/);
@@ -245,7 +250,7 @@ async function main() {
   console.log("--- T4: --mode production refuses a backup bundle stamped with the wrong projectRef");
   const t4 = runGate(
     { GATE_DATABASE_URL: "postgresql://postgres:x@db.difzynyphojgisrfvrkd.supabase.co:5432/postgres?sslmode=require" },
-    ["--mode", "production", "--approval-manifest", goodManifest, "--dump-file", path.join(scratchDir, "dump.bin"), "--checksum-file", path.join(scratchDir, "manifest-wrongref.json")]
+    ["--mode", "production", "--approval-manifest", goodManifest, "--dump-file", path.join(scratchDir, "dump.bin"), "--checksum-file", path.join(scratchDir, "manifest-wrongref.json"), "--ca-cert-file", testCaCertPath]
   );
   assert.notEqual(t4.code, 0);
   assert.match(t4.out, /requires the backup bundle's own projectRef \("someotherref"\) to equal --project-ref/);
@@ -257,7 +262,7 @@ async function main() {
   const localFixtureManifest = path.join(scratchDir, "approval-manifest-local-fixture-approver.json");
   const t5 = runGate(
     { GATE_DATABASE_URL: "postgresql://postgres:x@db.difzynyphojgisrfvrkd.supabase.co:5432/postgres?sslmode=require" },
-    ["--mode", "production", "--approval-manifest", localFixtureManifest, "--dump-file", path.join(scratchDir, "dump.bin"), "--checksum-file", path.join(scratchDir, "manifest-production.json")]
+    ["--mode", "production", "--approval-manifest", localFixtureManifest, "--dump-file", path.join(scratchDir, "dump.bin"), "--checksum-file", path.join(scratchDir, "manifest-production.json"), "--ca-cert-file", testCaCertPath]
   );
   assert.notEqual(t5.code, 0);
   assert.match(t5.out, /refuses an approval manifest whose approvedBy is the known LOCAL-FIXTURE literal/);

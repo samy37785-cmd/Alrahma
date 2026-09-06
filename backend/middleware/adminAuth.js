@@ -3,6 +3,7 @@ import AdminUser from '../models/AdminUser.js';
 import { isSupabaseBackend } from '../config/dataBackend.js';
 import { loadAdminById, hasVerifiedMfaFactor, getAdminPermissions } from '../data/supabase/loadAdmin.js';
 import { SUPABASE_AT_COOKIE, isVerifiedAal2 } from '../data/supabase/supabaseSessionCookie.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
 import {
   ACCESS_TOKEN_COOKIE,
   REFRESH_TOKEN_COOKIE,
@@ -54,8 +55,19 @@ async function loadAdminForBackend(id) {
  * truth for that backend. data/supabase adapter functions must forward
  * req.adminAal into withUserContext(..., { aal }) for AAL2-gated RLS/RPCs —
  * see data/supabase/client.js's module-level SECURITY RULE.
+ *
+ * Wrapped in asyncHandler: this is async Express 4 middleware, and Express
+ * 4 does NOT forward a rejected promise from middleware to the error
+ * handler on its own — an uncaught throw here (e.g. a database error from
+ * loadAdminForBackend) would otherwise hang the request forever (neither
+ * next() nor a response ever called) instead of failing with a real error
+ * status. Found by actually running an admin-router HTTP request against
+ * the local rehearsal harness for the first time (Al-Rahma Final
+ * Corrections Part A) — a real permission gap in that harness (see
+ * lib/db/test/local-harness.mjs) made loadAdminById() throw, and the
+ * request hung silently rather than surfacing the error.
  */
-export async function verifyAccessToken(req, res, next) {
+export const verifyAccessToken = asyncHandler(async function verifyAccessToken(req, res, next) {
   const token = req.cookies?.[ACCESS_TOKEN_COOKIE];
   if (!token) return res.status(401).json({ message: 'Access token missing' });
 
@@ -108,4 +120,4 @@ export async function verifyAccessToken(req, res, next) {
     req.adminPermissions = await getAdminPermissions(loaded.admin.id, loaded.admin.role);
   }
   next();
-}
+});

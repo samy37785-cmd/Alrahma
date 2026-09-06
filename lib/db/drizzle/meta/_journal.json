@@ -113,6 +113,20 @@
       "when": 1788800003000,
       "tag": "0015_new_domains_rls",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1788800004000,
+      "tag": "0016_parent_linking_and_review_safe_view",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1788800005000,
+      "tag": "0017_paypal_subscription_grant",
+      "breakpoints": true
     }
   ]
 }

@@ -62,20 +62,32 @@ export function getPool() {
 }
 
 // Runs `fn(client)` as the given end user: RLS policies see
-// auth.uid() = userId and auth.jwt()->>'aal' is absent (AAL1). Sufficient for
-// every owner-scoped policy in the matched-domain schema (quran_*,
-// notifications, notification_preferences, manual_payments insert,
-// subscriptions/payments/invoices select) — none of those require AAL2.
-export async function withUserContext(userId, fn) {
+// auth.uid() = userId and auth.jwt()->>'aal' is absent (AAL1) unless `aal`
+// is passed explicitly. Sufficient for every owner-scoped policy in the
+// matched-domain schema (quran_*, notifications, notification_preferences,
+// manual_payments insert, subscriptions/payments/invoices select) — none of
+// those require AAL2.
+//
+// The `aal` option exists for exactly one legitimate caller: data/supabase/
+// adminAuth.js's verifyAccessToken(), AFTER it has decoded our own signed
+// admin_at JWT and found `mfaVerified: true` — a claim this backend only
+// ever sets (see adminAuthController.js) once Supabase Auth's own GoTrue
+// service has genuinely verified a TOTP challenge for that admin's real
+// session. That is a trustworthy, narrowly-scoped signal, categorically
+// different from a route handler self-asserting "trust me, this admin did
+// MFA" — which is exactly what withAdminAal2Context() below refuses to do
+// for every OTHER caller, since no such signed, GoTrue-verified claim
+// exists anywhere else in this codebase. Never pass `aal:'aal2'` here from
+// any code path that hasn't gone through that real verification.
+export async function withUserContext(userId, fn, { aal } = {}) {
   if (!userId) throw new Error('withUserContext requires a userId');
   const client = await getPool().connect();
   try {
     await client.query('BEGIN');
     await client.query('SET LOCAL ROLE authenticated');
-    await client.query('SELECT set_config($1, $2, true)', [
-      'request.jwt.claims',
-      JSON.stringify({ sub: userId, role: 'authenticated' }),
-    ]);
+    const claims = { sub: userId, role: 'authenticated' };
+    if (aal) claims.aal = aal;
+    await client.query('SELECT set_config($1, $2, true)', ['request.jwt.claims', JSON.stringify(claims)]);
     const result = await fn(client);
     await client.query('COMMIT');
     return result;

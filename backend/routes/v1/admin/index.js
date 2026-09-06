@@ -6,8 +6,10 @@ import { ipWhitelist }       from '../../../middleware/ipWhitelist.js';
 import { sanitizeMongo }     from '../../../middleware/sanitizeMongo.js';
 import { verifyAccessToken } from '../../../middleware/adminAuth.js';
 import { maintenanceGuard }  from '../../../middleware/maintenanceGuard.js';
+import { isSupabaseBackend } from '../../../config/dataBackend.js';
 
 import authRoutes         from './authRoutes.js';
+import supabaseAuthRoutes from '../../../data/supabase/routes/adminAuthRoutes.js';
 import usersRoutes        from './usersRoutes.js';
 import coursesRoutes      from './coursesRoutes.js';
 import enrollmentsRoutes  from './enrollmentsRoutes.js';
@@ -58,7 +60,10 @@ router.use(adminApiLimiter);
 router.use(sanitizeMongo);
 
 // ── Auth routes (public within admin — no verifyAccessToken) ─────────────────
-router.use('/auth', authRoutes);
+// DATA_BACKEND=supabase swaps in the GoTrue-backed admin auth controller
+// (see data/supabase/adminAuthController.js) — same cookie contract, same
+// route shapes, different mechanism underneath.
+router.use('/auth', isSupabaseBackend() ? supabaseAuthRoutes : authRoutes);
 
 // ── Protected routes — require valid access token + MFA ──────────────────────
 router.use(verifyAccessToken);

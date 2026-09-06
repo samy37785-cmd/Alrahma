@@ -6,9 +6,11 @@
 // reshaped from Postgres's snapshot columns into the same field names the
 // Mongo controller returns.
 //
-// getAdminInvoices requires is_admin_aal2() at the RLS level (see
-// client.js's module comment on why this backend can't safely assert that) —
-// it calls withAdminAal2Context() and lets it throw.
+// getAdminInvoices requires is_admin_aal2() at the RLS level, but runs under
+// GET /api/invoices/admin — a customer-session route (protect+adminOnly),
+// which has no AAL2 concept at all (see client.js's module comment on
+// withAdminAal2Context for the full explanation). It calls
+// withAdminAal2Context() and lets it throw, rather than fabricating AAL2.
 import { asyncHandler } from '../../utils/asyncHandler.js';
 import { withUserContext, withAdminAal2Context } from './client.js';
 

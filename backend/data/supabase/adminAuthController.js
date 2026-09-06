@@ -39,6 +39,7 @@ import { getAnonClient } from './authClients.js';
 import { createAdminSessionClient } from './adminSessionClient.js';
 import { loadAdminById, hasVerifiedMfaFactor, getAdminPermissions } from './loadAdmin.js';
 import { auditAdminAuthEvent } from './adminAuditLog.js';
+import { SUPABASE_AT_COOKIE, supabaseAtCookieOptions } from './supabaseSessionCookie.js';
 
 // Same validation chains the Mongo controller uses — pure express-validator,
 // no backend dependency.
@@ -170,7 +171,8 @@ export async function confirmMfaSetup(req, res) {
   const accessToken = signAccessToken(decoded.id, decoded.role, true);
   res
     .cookie(ACCESS_TOKEN_COOKIE, accessToken, accessCookieOptions())
-    .cookie(REFRESH_TOKEN_COOKIE, vData.session.refresh_token, refreshCookieOptions());
+    .cookie(REFRESH_TOKEN_COOKIE, vData.session.refresh_token, refreshCookieOptions())
+    .cookie(SUPABASE_AT_COOKIE, vData.session.access_token, supabaseAtCookieOptions());
 
   await auditAdminAuthEvent({ adminId: decoded.id, action: 'auth.mfa_activated' });
 
@@ -210,7 +212,8 @@ export async function verifyMfaLogin(req, res) {
   const accessToken = signAccessToken(admin.id, admin.role, true);
   res
     .cookie(ACCESS_TOKEN_COOKIE, accessToken, accessCookieOptions())
-    .cookie(REFRESH_TOKEN_COOKIE, vData.session.refresh_token, refreshCookieOptions());
+    .cookie(REFRESH_TOKEN_COOKIE, vData.session.refresh_token, refreshCookieOptions())
+    .cookie(SUPABASE_AT_COOKIE, vData.session.access_token, supabaseAtCookieOptions());
 
   await auditAdminAuthEvent({ adminId: admin.id, action: 'auth.login_success' });
 
@@ -232,6 +235,7 @@ export async function refreshTokens(req, res) {
   if (error || !data?.session) {
     res.clearCookie(ACCESS_TOKEN_COOKIE, { path: '/api/v1/admin' });
     res.clearCookie(REFRESH_TOKEN_COOKIE, { path: '/api/v1/admin/auth/refresh' });
+    res.clearCookie(SUPABASE_AT_COOKIE, { path: '/api/v1/admin' });
     // GoTrue itself detects refresh-token reuse (rotation is enabled project-
     // wide) and returns an error on the reused token — we cannot cleanly
     // distinguish "expired" from "reuse" from its generic error shape, so
@@ -243,12 +247,17 @@ export async function refreshTokens(req, res) {
   const admin = await loadAdminById(data.session.user.id);
   if (!admin) return res.status(401).json({ message: 'Account not found or deactivated' });
 
+  // `mfaVerified` here is informational only (mirrors the claim shape the
+  // Mongo-mode token carries) — it is never trusted as AAL2 proof under this
+  // backend. The real, per-request AAL2 check re-verifies admin_sat's own
+  // signature and `aal` claim in middleware/adminAuth.js, every request.
   const claims = jwt.decode(data.session.access_token) ?? {};
   const accessToken = signAccessToken(admin.id, admin.role, claims.aal === 'aal2');
 
   res
     .cookie(ACCESS_TOKEN_COOKIE, accessToken, accessCookieOptions())
-    .cookie(REFRESH_TOKEN_COOKIE, data.session.refresh_token, refreshCookieOptions());
+    .cookie(REFRESH_TOKEN_COOKIE, data.session.refresh_token, refreshCookieOptions())
+    .cookie(SUPABASE_AT_COOKIE, data.session.access_token, supabaseAtCookieOptions());
 
   return res.json({ message: 'Tokens refreshed' });
 }
@@ -273,6 +282,7 @@ export async function logout(req, res) {
 
   res.clearCookie(ACCESS_TOKEN_COOKIE, { path: '/api/v1/admin' });
   res.clearCookie(REFRESH_TOKEN_COOKIE, { path: '/api/v1/admin/auth/refresh' });
+  res.clearCookie(SUPABASE_AT_COOKIE, { path: '/api/v1/admin' });
 
   return res.json({ message: 'Logged out successfully' });
 }

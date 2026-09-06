@@ -21,6 +21,13 @@ import certificatesRoutes from './certificatesRoutes.js';
 import referralsRoutes    from './referralsRoutes.js';
 import reviewsRoutes      from './reviewsRoutes.js';
 import systemRoutes       from './systemRoutes.js';
+import {
+  coursesRouter as supabaseCoursesRoutes,
+  liveClassesRouter as supabaseLiveClassesRoutes,
+  certificatesRouter as supabaseCertificatesRoutes,
+  reviewsRouter as supabaseReviewsRoutes,
+} from '../../../data/supabase/admin/adminRoutes.js';
+import supabasePaymentsAdminRoutes from '../../../data/supabase/admin/paymentsAdminRoutes.js';
 
 const router = Router();
 
@@ -71,16 +78,25 @@ router.use(verifyAccessToken);
 // Maintenance guard: blocks non-super-admins when maintenance mode is on
 router.use(maintenanceGuard);
 
+// Stage 2F: courses/live-classes/certificates/reviews have a genuine
+// DATA_BACKEND=supabase admin implementation (see data/supabase/admin/) —
+// branched exactly like the customer-facing app.js router branches each
+// domain. The remaining sub-routers below (users/enrollments/payments/blog/
+// coupons/contact/referrals/system) are still Mongo-only: they import
+// Mongoose models directly and will error under supabase mode (Mongo is
+// never connected there) — a real, acknowledged, NOT-closed gap, tracked
+// separately from the 4 domains this closure targeted.
 router.use('/users',        usersRoutes);
-router.use('/courses',      coursesRoutes);
+router.use('/courses',      isSupabaseBackend() ? supabaseCoursesRoutes : coursesRoutes);
+router.use('/live-classes', isSupabaseBackend() ? supabaseLiveClassesRoutes : (_req, res) => res.status(404).json({ message: 'Not found' }));
 router.use('/enrollments',  enrollmentsRoutes);
-router.use('/payments',     paymentsRoutes);
+router.use('/payments',     isSupabaseBackend() ? supabasePaymentsAdminRoutes : paymentsRoutes);
 router.use('/blog',         blogRoutes);
 router.use('/coupons',      couponsRoutes);
 router.use('/contact',      contactRoutes);
-router.use('/certificates', certificatesRoutes);
+router.use('/certificates', isSupabaseBackend() ? supabaseCertificatesRoutes : certificatesRoutes);
 router.use('/referrals',    referralsRoutes);
-router.use('/reviews',      reviewsRoutes);
+router.use('/reviews',      isSupabaseBackend() ? supabaseReviewsRoutes : reviewsRoutes);
 router.use('/system',       systemRoutes);
 
 export default router;

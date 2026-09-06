@@ -20,6 +20,16 @@
 //     used to leave one applied and one not, silently, with no
 //     transactional undo.
 //
+// Stage 2D "Rollback Privilege + Strict TLS Final Corrective": the
+// read-only production audit proved the real connecting role (postgres)
+// is not a member of supabase_admin and cannot SET ROLE into it, so a
+// real rollback would have aborted mid-restore on the bundle's
+// supabase_admin-owned DEFAULT ACL entries. pg-restore-runner.mjs's
+// filterRestoreToc now excludes those entries from every restore;
+// verifyDefaultAclUnchanged (below) is the live proof that skipping
+// them left pg_default_acl exactly as it was, not merely that
+// pg_restore stopped erroring.
+//
 // Full-operation atomicity (one Postgres transaction spanning inverse-
 // reset + pg_restore + trigger-restore) is NOT implemented here, and
 // item 3's "if atomic execution is impossible, stop and explain"
@@ -84,6 +94,32 @@ export function verifyBundleChecksumsAndFreshness(bundleDir, { expectedProjectRe
   const inventoryPath = path.join(bundleDir, "inventory.json");
   if (!fs.existsSync(inventoryPath)) throw new Error(`bundle inventory.json not found — cannot post-verify a restore without it`);
   return { manifest, inventory: JSON.parse(fs.readFileSync(inventoryPath, "utf8")) };
+}
+
+// Confirms the rollback never touched pg_default_acl. The default-
+// privilege registrations for FUTURE objects are cluster/role state,
+// not backup content — a correct rollback restores objects without
+// ever re-registering (or de-registering) them. This is the independent,
+// live-evidence check that filterRestoreToc's exclusion of the
+// supabase_admin-owned DEFAULT ACL TOC entries (pg-restore-runner.mjs)
+// actually worked, not merely that pg_restore didn't error.
+export async function snapshotDefaultAcl(client) {
+  const { rows } = await client.query(`
+    select defaclrole::regrole::text as role, defaclnamespace::regnamespace::text as schema, defaclobjtype, defaclacl::text as acl
+    from pg_default_acl order by role, schema, defaclobjtype;
+  `);
+  return rows;
+}
+
+export async function verifyDefaultAclUnchanged(client, before) {
+  const after = await snapshotDefaultAcl(client);
+  if (JSON.stringify(after) !== JSON.stringify(before)) {
+    throw new Error(
+      `pg_default_acl changed during rollback — a restore must never alter default-privilege registrations.\n` +
+      `  before: ${JSON.stringify(before)}\n` +
+      `  after:  ${JSON.stringify(after)}`
+    );
+  }
 }
 
 // Target must be EXACTLY the expected new (post-cutover) schema — no
@@ -209,6 +245,10 @@ export async function runRollbackOnClient(client, {
   injectFailureAt,
   log = () => {},
 }) {
+  log("=== snapshotting pg_default_acl (must be byte-for-byte unchanged by this rollback) ===");
+  const defaultAclBefore = await snapshotDefaultAcl(client);
+  log(`OK    ${defaultAclBefore.length} pg_default_acl row(s) captured as the baseline`);
+
   log("=== target verification: must be exactly the expected NEW (post-cutover) schema ===");
   await verifyTargetIsExpectedNewSchema(client);
   log("OK    target schema matches exactly — safe to remove and restore over");
@@ -251,4 +291,8 @@ export async function runRollbackOnClient(client, {
   log("=== post-restore verification against the bundle's inventory.json ===");
   await verifyRestoredInventory(client, inventory);
   log("OK    post-restore verification passed — structure, data, RLS, policies, functions, triggers, enums all match the bundle.");
+
+  log("=== verifying pg_default_acl was not touched by this rollback ===");
+  await verifyDefaultAclUnchanged(client, defaultAclBefore);
+  log("OK    pg_default_acl unchanged — the filtered restore never touched default-privilege registrations.");
 }

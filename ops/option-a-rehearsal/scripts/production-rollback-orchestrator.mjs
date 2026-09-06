@@ -240,7 +240,14 @@ async function main() {
     await runRollbackOnClient(client, {
       inverseResetSql: fs.readFileSync(INVERSE_RESET_SQL_FILE, "utf8"),
       inventory,
-      restoreFn: () => restorePublicSchemaDump(ctx.databaseUrl, ctx.bundleDir),
+      // caCertFile forces pg_restore's OWN libpq connection to
+      // sslmode=verify-full against Supabase's real CA (see
+      // withStrictTls in pg-restore-runner.mjs) — previously this
+      // native-binary connection used the URL's sslmode=require
+      // unmodified, which libpq treats as encrypt-only (no certificate
+      // verification at all), an asymmetry the Stage 2D read-only audit
+      // disclosed but left unfixed.
+      restoreFn: () => restorePublicSchemaDump(ctx.databaseUrl, ctx.bundleDir, { caCertFile: ctx.caCertFile }),
       runTriggerStatements: async (txClient) => {
         const statementsPath = path.join(ctx.bundleDir, "functions_and_triggers.statements.json");
         const statements = fs.existsSync(statementsPath) ? JSON.parse(fs.readFileSync(statementsPath, "utf8")) : [];

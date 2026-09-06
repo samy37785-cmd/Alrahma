@@ -70,22 +70,24 @@ export const getChildren = asyncHandler(async (req, res) => {
       [req.user._id]
     );
 
-    return Promise.all(
-      childrenRes.rows.map(async (c) => {
-        const [recordCountRes, hifzRes] = await Promise.all([
-          client.query(`SELECT count(*)::int AS n FROM student_records WHERE student_id = $1`, [c.id]),
-          client.query(`SELECT memorized_verses FROM hifz_progress WHERE user_id = $1`, [c.id]),
-        ]);
-        const memorized = hifzRes.rows.reduce((sum, h) => sum + (h.memorized_verses?.length || 0), 0);
-        return {
-          _id: c.id,
-          name: c.name,
-          email: c.email,
-          recordCount: recordCountRes.rows[0].n,
-          memorizedVerses: memorized,
-        };
-      })
-    );
+    // Sequential, not Promise.all: these all share one pg client (inside a
+    // single withUserContext transaction) — a pg Client/PoolClient can only
+    // run one query at a time, so firing several concurrently on the same
+    // client is undefined/deprecated behavior, not real parallelism.
+    const summaries = [];
+    for (const c of childrenRes.rows) {
+      const recordCountRes = await client.query(`SELECT count(*)::int AS n FROM student_records WHERE student_id = $1`, [c.id]);
+      const hifzRes = await client.query(`SELECT memorized_verses FROM hifz_progress WHERE user_id = $1`, [c.id]);
+      const memorized = hifzRes.rows.reduce((sum, h) => sum + (h.memorized_verses?.length || 0), 0);
+      summaries.push({
+        _id: c.id,
+        name: c.name,
+        email: c.email,
+        recordCount: recordCountRes.rows[0].n,
+        memorizedVerses: memorized,
+      });
+    }
+    return summaries;
   });
 
   res.json(summaries);
@@ -105,19 +107,19 @@ export const getChildDetail = asyncHandler(async (req, res) => {
     const child = childRes.rows[0];
     if (!child) return null;
 
-    const [recordsRes, hifzRes, courses] = await Promise.all([
-      client.query(
-        `SELECT sr.*, c.title AS course_title, c.icon AS course_icon, t.name AS teacher_name
-           FROM student_records sr
-           LEFT JOIN courses c ON c.id = sr.course_id
-           LEFT JOIN profiles t ON t.id = sr.teacher_id
-          WHERE sr.student_id = $1
-          ORDER BY sr.record_date DESC`,
-        [child.id]
-      ),
-      client.query(`SELECT * FROM hifz_progress WHERE user_id = $1 ORDER BY chapter_id`, [child.id]),
-      courseReport(client, child.id),
-    ]);
+    // Sequential, not Promise.all — see getChildren's comment above on why
+    // concurrent queries against one shared pg client are unsafe.
+    const recordsRes = await client.query(
+      `SELECT sr.*, c.title AS course_title, c.icon AS course_icon, t.name AS teacher_name
+         FROM student_records sr
+         LEFT JOIN courses c ON c.id = sr.course_id
+         LEFT JOIN profiles t ON t.id = sr.teacher_id
+        WHERE sr.student_id = $1
+        ORDER BY sr.record_date DESC`,
+      [child.id]
+    );
+    const hifzRes = await client.query(`SELECT * FROM hifz_progress WHERE user_id = $1 ORDER BY chapter_id`, [child.id]);
+    const courses = await courseReport(client, child.id);
 
     return { student: child, records: recordsRes.rows, hifz: hifzRes.rows, courses };
   });

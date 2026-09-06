@@ -71,7 +71,7 @@ export const create = asyncHandler(async (req, res) => {
     row = await withUserContext(req.adminUser.id, async (client) => {
       const r = await client.query(
         `INSERT INTO courses (title, description, icon, level, price_minor, tags, resources, modules, published)
-         VALUES ($1, $2, COALESCE($3, '📘'), COALESCE($4, 'All levels'), $5, $6, $7, $8, $9)
+         VALUES ($1, $2, COALESCE($3, '📘'), COALESCE($4::course_level, 'All levels'), $5, $6, $7, $8, $9)
          RETURNING *`,
         [
           title, description, icon, level, Math.round((price ?? 0) * 100),
@@ -109,7 +109,7 @@ export const update = asyncHandler(async (req, res) => {
            title = COALESCE($2, title),
            description = COALESCE($3, description),
            icon = COALESCE($4, icon),
-           level = COALESCE($5, level),
+           level = COALESCE($5::course_level, level),
            price_minor = COALESCE($6, price_minor),
            tags = COALESCE($7, tags),
            resources = COALESCE($8, resources),

@@ -10,14 +10,15 @@ import { withUserContext, withAnonContext } from './client.js';
 
 export { reviewValidation } from '../../controllers/reviewController.js';
 
-// GAP, found by the Stage 2F rehearsal: getTeacherReviews/getCourseReviews
-// are PUBLIC routes and run under withAnonContext — `anon` has no grant on
-// `profiles` at all (not just an RLS-filtered view, a hard permission
-// error), so the reviewer's name cannot be joined in for an anonymous
-// visitor the way the Mongo controller's .populate('student','name') did.
-// Returned as `name: null` on the public listings; createReview (which runs
-// authenticated, under the caller's own identity) still returns the real
-// name for the immediate response.
+// Public listings (getTeacherReviews/getCourseReviews) query the
+// reviews_public VIEW (lib/db/drizzle/0016_parent_linking_and_review_safe_
+// view.sql), not the `reviews` table directly — `anon` has no GRANT on
+// `profiles` at all (a hard permission error, not just an RLS filter), so
+// a real reviewer name can only reach an anonymous visitor through that
+// view's own (view-owner-privilege) exposure of exactly (id, name), never
+// email/phone/PII, never a blanket profiles GRANT. createReview (which
+// runs authenticated, under the caller's own identity) still returns the
+// real name directly from req.user for its own immediate response.
 function toJson(row) {
   return {
     _id: row.id,
@@ -77,22 +78,25 @@ export const getTeacherReviews = asyncHandler(async (req, res) => {
   const { page, limit, skip } = parsePagination(req.query, { defaultLimit: 10, maxLimit: 20 });
 
   const { rows, total, stats } = await withAnonContext(async (client) => {
-    const [listRes, countRes, statsRes] = await Promise.all([
-      client.query(
-        `SELECT * FROM reviews
-          WHERE teacher_id = $1 AND status = 'approved'
-          ORDER BY created_at DESC LIMIT $2 OFFSET $3`,
-        [req.params.teacherId, limit, skip]
-      ),
-      client.query(`SELECT count(*)::int AS n FROM reviews WHERE teacher_id = $1 AND status = 'approved'`, [
-        req.params.teacherId,
-      ]),
-      client.query(
-        `SELECT avg(rating)::float AS avg, count(*)::int AS count FROM reviews
-          WHERE teacher_id = $1 AND status = 'approved'`,
-        [req.params.teacherId]
-      ),
+    // Sequential, not Promise.all — a single pg client can only run one
+    // query at a time; firing several concurrently on it is deprecated,
+    // undefined behavior, not real parallelism (found via the Al-Rahma
+    // Final Corrections Part A rehearsal, same bug class fixed in
+    // parentController.js).
+    const listRes = await client.query(
+      `SELECT * FROM reviews_public
+        WHERE teacher_id = $1
+        ORDER BY created_at DESC LIMIT $2 OFFSET $3`,
+      [req.params.teacherId, limit, skip]
+    );
+    const countRes = await client.query(`SELECT count(*)::int AS n FROM reviews_public WHERE teacher_id = $1`, [
+      req.params.teacherId,
     ]);
+    const statsRes = await client.query(
+      `SELECT avg(rating)::float AS avg, count(*)::int AS count FROM reviews_public
+        WHERE teacher_id = $1`,
+      [req.params.teacherId]
+    );
     return { rows: listRes.rows, total: countRes.rows[0].n, stats: statsRes.rows[0] };
   });
 
@@ -112,16 +116,14 @@ export const getCourseReviews = asyncHandler(async (req, res) => {
   const { page, limit, skip } = parsePagination(req.query, { defaultLimit: 10, maxLimit: 20 });
 
   const { rows, total } = await withAnonContext(async (client) => {
-    const [listRes, countRes] = await Promise.all([
-      client.query(
-        `SELECT * FROM reviews
-          WHERE course_id = $1 AND status = 'approved'
-          ORDER BY created_at DESC LIMIT $2 OFFSET $3`,
-        [req.params.courseId, limit, skip]
-      ),
-      client.query(`SELECT count(*)::int AS n FROM reviews WHERE course_id = $1 AND status = 'approved'`, [
-        req.params.courseId,
-      ]),
+    const listRes = await client.query(
+      `SELECT * FROM reviews_public
+        WHERE course_id = $1
+        ORDER BY created_at DESC LIMIT $2 OFFSET $3`,
+      [req.params.courseId, limit, skip]
+    );
+    const countRes = await client.query(`SELECT count(*)::int AS n FROM reviews_public WHERE course_id = $1`, [
+      req.params.courseId,
     ]);
     return { rows: listRes.rows, total: countRes.rows[0].n };
   });

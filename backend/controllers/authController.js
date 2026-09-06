@@ -1,4 +1,3 @@
-import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import { body } from 'express-validator';
 import User from '../models/User.js';
@@ -8,6 +7,7 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 import { handleValidationErrors } from '../utils/validationHelper.js';
 import { hashToken } from '../utils/hashToken.js';
 import { siteOrigin } from '../config/site.js';
+import { AUTH_COOKIE, authCookieOptions, sendAuth } from '../utils/authCookie.js';
 
 // Normalise a user-supplied email for storage AND lookups. Coercing to a String
 // also neutralises NoSQL operator injection (e.g. { $gt: '' }) at the boundary —
@@ -36,54 +36,6 @@ export const loginValidation = [
   body('email').trim().notEmpty().withMessage('Email is required').isEmail().withMessage('A valid email is required'),
   body('password').isString().withMessage('Password is required').notEmpty().withMessage('Password is required'),
 ];
-
-// Helper: create a signed JWT for a user id.
-// `v` (tokenVersion) is embedded so protect() can reject tokens issued before
-// a password change without a DB call per-request — the version mismatch is caught
-// only when the user hits a protected route, not immediately on all connections.
-function signToken(id, role, v = 0) {
-  return jwt.sign({ id, role, v }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRES_IN || '7d',
-  });
-}
-
-const AUTH_COOKIE = 'token';
-
-// Cookie lifetime must always match the JWT's real expiry. Rather than
-// re-parsing JWT_EXPIRES_IN ourselves (a second implementation that could
-// drift from jsonwebtoken's own parsing), decode the token's own `exp`/`iat`
-// claims — jsonwebtoken already resolved whatever format expiresIn was
-// (seconds, "15m", "2h", "7d", ...) into those, so reading them back keeps
-// the cookie exactly in sync with no extra parsing logic to maintain.
-function cookieMaxAgeFor(token) {
-  const { exp, iat } = jwt.decode(token);
-  return (exp - iat) * 1000;
-}
-
-// Sets the auth token as an httpOnly cookie. httpOnly = JS can't read it (XSS
-// can't steal it); sameSite=lax = the browser won't send it on cross-site POSTs
-// (CSRF protection); secure = HTTPS-only in production.
-function authCookieOptions(maxAge) {
-  return {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    maxAge,
-    path: '/',
-  };
-}
-
-// Issues the auth cookie and returns the public user profile (no token in the body).
-function sendAuth(res, user, status = 200) {
-  const token = signToken(user._id, user.role, user.tokenVersion ?? 0);
-  res.cookie(AUTH_COOKIE, token, authCookieOptions(cookieMaxAgeFor(token)));
-  return res.status(status).json({
-    _id: user._id,
-    name: user.name,
-    email: user.email,
-    role: user.role,
-  });
-}
 
 // @desc   Register a new account
 // @route  POST /api/auth/register

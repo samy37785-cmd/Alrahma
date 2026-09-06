@@ -1,4 +1,5 @@
 import logger from './logger.js';
+import { getDataBackend } from './dataBackend.js';
 
 /**
  * Validates environment variables at process startup.
@@ -46,11 +47,33 @@ const RECOMMENDED = [
   'CLIENT_URL',
 ];
 
+// Stage 2E: only required when DATA_BACKEND=supabase (the default,
+// mongodb, never touches these). Distinct names from MONGO_URI/JWT_SECRET —
+// see data/supabase/client.js and data/supabase/authClients.js for how each
+// is used.
+const SUPABASE_REQUIRED = [
+  'SUPABASE_URL',
+  'SUPABASE_ANON_KEY',
+  'SUPABASE_SERVICE_ROLE_KEY',
+  'SUPABASE_DB_URL',
+];
+
 export function validateEnv() {
   const missing = REQUIRED.filter((k) => !process.env[k]);
   if (missing.length) {
     logger.error('Server startup aborted — required environment variables are not set', { missing });
     process.exit(1);
+  }
+
+  if (getDataBackend() === 'supabase') {
+    const supabaseMissing = SUPABASE_REQUIRED.filter((k) => !process.env[k]);
+    if (supabaseMissing.length) {
+      logger.error(
+        'Server startup aborted — DATA_BACKEND=supabase but required Supabase environment variables are not set',
+        { missing: supabaseMissing },
+      );
+      process.exit(1);
+    }
   }
 
   const adminMissing = ADMIN_CRITICAL.filter((k) => !process.env[k]);

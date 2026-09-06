@@ -244,3 +244,78 @@ These 12 domains need their own schema-design stage (new Drizzle migrations + RL
 RPCs, reviewed with the same rigor as `0000`–`0011`, including the local
 `test:db` suite) before a Supabase adapter can be attempted for them. Estimated scope
 is comparable to or larger than the existing 20-table schema.
+
+---
+
+## Findings from the actual adapter implementation (`backend/data/supabase/`)
+
+Building the adapter for the matched domains surfaced additional real gaps not
+visible from reading the schema alone — these only showed up once real INSERT/
+SELECT statements were run against the RLS/GRANT model:
+
+- **`INSERT ... RETURNING` requires a SELECT-equivalent grant, which several
+  guest-insert tables don't have.** `anon`/`authenticated` hold only a
+  column-restricted INSERT grant on `trial_requests`, `subscribers`, and
+  `enrollments` (see each domain's grant list above) — no SELECT grant at
+  all. Postgres enforces privilege checks on `RETURNING` the same way it does
+  on `SELECT`, so `INSERT ... RETURNING id` fails outright for a guest
+  submission on all three tables, and the insert-column grant list also
+  excludes `id`, so a client-generated UUID isn't an option either. Net
+  effect: `POST /api/trials` and `POST /api/enrollments` cannot return the
+  new row's `id`/`createdAt` the way the Mongo response does (the adapter
+  responds with the submitted fields instead, `id: null` for enrollments);
+  `POST /api/newsletter`'s idempotent upsert can't be verified as
+  new-vs-duplicate from the response either (works around this by always
+  reporting success, matching the Mongo contract's own already-idempotent
+  200-either-way behavior).
+- **`enrollments` has no owner/email-match SELECT policy at all** — only
+  `enrollments_select_admin` (`is_admin()`). This means `GET /api/enrollments/
+  mine` (a regular authenticated caller querying their own submission by
+  email) returns zero rows under RLS even for their own data — this is a
+  real, additional missing-policy gap beyond what the schema-reading pass
+  found, and needs a new RLS policy (e.g. `email = auth.jwt()->>'email'`) to
+  fix, not an adapter-side workaround.
+- **`quran_reading_progress`/`quran_memorization_stats` `goal` is a bare
+  integer column, not `{type, target}`** — Mongo's `dailyGoal.type` (verses/
+  minutes/pages) has nowhere to live in Postgres; the adapter persists only
+  the numeric target and drops the unit. `quran_memorization_stats` also has
+  no history/date column at all (unlike `quran_reading_progress`, which at
+  least has `history jsonb`), so there is no persisted signal to compute a
+  real calendar-day streak — the adapter's practice-log streak under this
+  backend is an explicit, documented approximation (increments per call, no
+  gap-reset), not the real streak logic Mongo implements.
+- **`notifications` has no bulk "mark all read" RPC** — only
+  `mark_notification_read(p_id)` (one row at a time). The adapter implements
+  mark-all as N sequential RPC calls in one transaction; documented as an
+  O(n) round-trip cost, not a correctness gap.
+- **`blogs`' view-increment on `GET /:slug` cannot run under `DATA_BACKEND=
+  supabase`** — `anon`'s only grant on `blogs` is SELECT, no UPDATE grant
+  exists for the view-count column, confirming the schema-reading pass's
+  earlier suspicion.
+- **`profiles.role` is a 2-value enum (`user`/`admin`)** — Mongo's
+  student/teacher/parent/admin distinction collapses to `user` for everyone
+  except admins under this backend (see `data/supabase/loadUser.js`). Any
+  frontend logic branching on `role === 'teacher'`/`'parent'` would not
+  behave correctly against a supabase-mode session — a real, structural gap,
+  not just a missing field.
+- **Manual payment admin review, coupon admin write, plan versioning, refund
+  issuance, and reading `admin_audit_log` are all `is_admin_aal2()`-gated at
+  the RLS/RPC level** — implemented as explicit `withAdminAal2Context()`
+  calls that throw (see `client.js`'s module comment for why this backend
+  cannot safely assert AAL2 on behalf of an admin). Confirmed additionally:
+  `manual_payments`' INSERT policy requires `user_id = auth.uid()` with no
+  anon-insert path — unlike Mongo's `softProtect`-based guest submission,
+  `DATA_BACKEND=supabase` requires the caller to be signed in to submit a
+  manual payment at all.
+- **Stripe/PayPal checkout-session creation and webhook handling are
+  explicitly out of scope for this pass** (`data/supabase/routes/
+  paymentRoutes.js` returns 501 for all of them) — correctly reimplementing
+  gateway signature verification, idempotency, and the transactional
+  payments/subscriptions/invoices writes against this RLS/RPC model is
+  substantial, high-risk work better done as its own dedicated, reviewed
+  follow-up rather than rushed alongside everything else in Stage 2E.
+- **`plans` has no `originalAmount`/`discountPct` columns** — `amount_minor`
+  is a flat price; per-transaction discounts live on `payments` as a
+  snapshot, not on the plan. The adapter's `getPlan()` returns `amount`
+  (converted from minor units, seeded to match what customers currently pay)
+  and `null` for the two marketing-display-only fields.

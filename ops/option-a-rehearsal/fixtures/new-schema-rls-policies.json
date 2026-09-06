@@ -1,0 +1,378 @@
+[
+  {
+    "tablename": "admin_audit_log",
+    "policyname": "admin_audit_log_select_admin_aal2",
+    "cmd": "SELECT",
+    "roles": "{authenticated}",
+    "qual": "is_admin_aal2()",
+    "with_check": null
+  },
+  {
+    "tablename": "blogs",
+    "policyname": "blogs_delete_admin_aal2",
+    "cmd": "DELETE",
+    "roles": "{authenticated}",
+    "qual": "is_admin_aal2()",
+    "with_check": null
+  },
+  {
+    "tablename": "blogs",
+    "policyname": "blogs_insert_admin_aal2",
+    "cmd": "INSERT",
+    "roles": "{authenticated}",
+    "qual": null,
+    "with_check": "is_admin_aal2()"
+  },
+  {
+    "tablename": "blogs",
+    "policyname": "blogs_select_published_or_admin",
+    "cmd": "SELECT",
+    "roles": "{anon,authenticated}",
+    "qual": "((published = true) OR is_admin())",
+    "with_check": null
+  },
+  {
+    "tablename": "blogs",
+    "policyname": "blogs_update_admin_aal2",
+    "cmd": "UPDATE",
+    "roles": "{authenticated}",
+    "qual": "is_admin_aal2()",
+    "with_check": "is_admin_aal2()"
+  },
+  {
+    "tablename": "coupon_redemptions",
+    "policyname": "coupon_redemptions_select_own_or_admin",
+    "cmd": "SELECT",
+    "roles": "{authenticated}",
+    "qual": "((user_id = auth.uid()) OR is_admin())",
+    "with_check": null
+  },
+  {
+    "tablename": "coupons",
+    "policyname": "coupons_delete_admin_aal2",
+    "cmd": "DELETE",
+    "roles": "{authenticated}",
+    "qual": "is_admin_aal2()",
+    "with_check": null
+  },
+  {
+    "tablename": "coupons",
+    "policyname": "coupons_insert_admin_aal2",
+    "cmd": "INSERT",
+    "roles": "{authenticated}",
+    "qual": null,
+    "with_check": "is_admin_aal2()"
+  },
+  {
+    "tablename": "coupons",
+    "policyname": "coupons_select_admin",
+    "cmd": "SELECT",
+    "roles": "{authenticated}",
+    "qual": "is_admin()",
+    "with_check": null
+  },
+  {
+    "tablename": "coupons",
+    "policyname": "coupons_update_admin_aal2",
+    "cmd": "UPDATE",
+    "roles": "{authenticated}",
+    "qual": "is_admin_aal2()",
+    "with_check": "is_admin_aal2()"
+  },
+  {
+    "tablename": "enrollments",
+    "policyname": "enrollments_delete_admin_aal2",
+    "cmd": "DELETE",
+    "roles": "{authenticated}",
+    "qual": "is_admin_aal2()",
+    "with_check": null
+  },
+  {
+    "tablename": "enrollments",
+    "policyname": "enrollments_insert_public",
+    "cmd": "INSERT",
+    "roles": "{anon,authenticated}",
+    "qual": null,
+    "with_check": "(status = 'new'::text)"
+  },
+  {
+    "tablename": "enrollments",
+    "policyname": "enrollments_select_admin",
+    "cmd": "SELECT",
+    "roles": "{authenticated}",
+    "qual": "is_admin()",
+    "with_check": null
+  },
+  {
+    "tablename": "enrollments",
+    "policyname": "enrollments_update_admin_aal2",
+    "cmd": "UPDATE",
+    "roles": "{authenticated}",
+    "qual": "is_admin_aal2()",
+    "with_check": "is_admin_aal2()"
+  },
+  {
+    "tablename": "invoices",
+    "policyname": "invoices_select_own_or_admin_aal2",
+    "cmd": "SELECT",
+    "roles": "{authenticated}",
+    "qual": "((user_id = auth.uid()) OR is_admin_aal2())",
+    "with_check": null
+  },
+  {
+    "tablename": "manual_payments",
+    "policyname": "manual_payments_insert_own",
+    "cmd": "INSERT",
+    "roles": "{authenticated}",
+    "qual": null,
+    "with_check": "((user_id = auth.uid()) AND (status = 'pending'::manual_payment_status) AND (reviewer_admin_id IS NULL) AND (reviewed_at IS NULL) AND (admin_note IS NULL))"
+  },
+  {
+    "tablename": "manual_payments",
+    "policyname": "manual_payments_select_own_or_admin_aal2",
+    "cmd": "SELECT",
+    "roles": "{authenticated}",
+    "qual": "((user_id = auth.uid()) OR is_admin_aal2())",
+    "with_check": null
+  },
+  {
+    "tablename": "notification_preferences",
+    "policyname": "notification_preferences_insert_own",
+    "cmd": "INSERT",
+    "roles": "{authenticated}",
+    "qual": null,
+    "with_check": "(user_id = auth.uid())"
+  },
+  {
+    "tablename": "notification_preferences",
+    "policyname": "notification_preferences_select_own_or_admin",
+    "cmd": "SELECT",
+    "roles": "{authenticated}",
+    "qual": "((user_id = auth.uid()) OR is_admin())",
+    "with_check": null
+  },
+  {
+    "tablename": "notification_preferences",
+    "policyname": "notification_preferences_update_own",
+    "cmd": "UPDATE",
+    "roles": "{authenticated}",
+    "qual": "(user_id = auth.uid())",
+    "with_check": "(user_id = auth.uid())"
+  },
+  {
+    "tablename": "notifications",
+    "policyname": "notifications_delete_own",
+    "cmd": "DELETE",
+    "roles": "{authenticated}",
+    "qual": "(user_id = auth.uid())",
+    "with_check": null
+  },
+  {
+    "tablename": "notifications",
+    "policyname": "notifications_insert_admin_aal2",
+    "cmd": "INSERT",
+    "roles": "{authenticated}",
+    "qual": null,
+    "with_check": "is_admin_aal2()"
+  },
+  {
+    "tablename": "notifications",
+    "policyname": "notifications_select_admin_aal2",
+    "cmd": "SELECT",
+    "roles": "{authenticated}",
+    "qual": "is_admin_aal2()",
+    "with_check": null
+  },
+  {
+    "tablename": "notifications",
+    "policyname": "notifications_select_own",
+    "cmd": "SELECT",
+    "roles": "{authenticated}",
+    "qual": "(user_id = auth.uid())",
+    "with_check": null
+  },
+  {
+    "tablename": "payments",
+    "policyname": "payments_select_own_or_admin_aal2",
+    "cmd": "SELECT",
+    "roles": "{authenticated}",
+    "qual": "((user_id = auth.uid()) OR is_admin_aal2())",
+    "with_check": null
+  },
+  {
+    "tablename": "plans",
+    "policyname": "plans_select_active_or_admin",
+    "cmd": "SELECT",
+    "roles": "{anon,authenticated}",
+    "qual": "((active = true) OR is_admin())",
+    "with_check": null
+  },
+  {
+    "tablename": "profiles",
+    "policyname": "profiles_select_own_or_admin",
+    "cmd": "SELECT",
+    "roles": "{authenticated}",
+    "qual": "((id = auth.uid()) OR is_admin())",
+    "with_check": null
+  },
+  {
+    "tablename": "provider_events",
+    "policyname": "provider_events_select_admin_aal2",
+    "cmd": "SELECT",
+    "roles": "{authenticated}",
+    "qual": "is_admin_aal2()",
+    "with_check": null
+  },
+  {
+    "tablename": "quran_bookmarks",
+    "policyname": "quran_bookmarks_owner_all",
+    "cmd": "ALL",
+    "roles": "{authenticated}",
+    "qual": "(user_id = auth.uid())",
+    "with_check": "(user_id = auth.uid())"
+  },
+  {
+    "tablename": "quran_bookmarks",
+    "policyname": "quran_bookmarks_select_admin",
+    "cmd": "SELECT",
+    "roles": "{authenticated}",
+    "qual": "is_admin()",
+    "with_check": null
+  },
+  {
+    "tablename": "quran_memorization_stats",
+    "policyname": "quran_memorization_stats_owner_all",
+    "cmd": "ALL",
+    "roles": "{authenticated}",
+    "qual": "(user_id = auth.uid())",
+    "with_check": "(user_id = auth.uid())"
+  },
+  {
+    "tablename": "quran_memorization_stats",
+    "policyname": "quran_memorization_stats_select_admin",
+    "cmd": "SELECT",
+    "roles": "{authenticated}",
+    "qual": "is_admin()",
+    "with_check": null
+  },
+  {
+    "tablename": "quran_reading_progress",
+    "policyname": "quran_reading_progress_owner_all",
+    "cmd": "ALL",
+    "roles": "{authenticated}",
+    "qual": "(user_id = auth.uid())",
+    "with_check": "(user_id = auth.uid())"
+  },
+  {
+    "tablename": "quran_reading_progress",
+    "policyname": "quran_reading_progress_select_admin",
+    "cmd": "SELECT",
+    "roles": "{authenticated}",
+    "qual": "is_admin()",
+    "with_check": null
+  },
+  {
+    "tablename": "subscribers",
+    "policyname": "subscribers_delete_admin_aal2",
+    "cmd": "DELETE",
+    "roles": "{authenticated}",
+    "qual": "is_admin_aal2()",
+    "with_check": null
+  },
+  {
+    "tablename": "subscribers",
+    "policyname": "subscribers_insert_public",
+    "cmd": "INSERT",
+    "roles": "{anon,authenticated}",
+    "qual": null,
+    "with_check": "(status = 'subscribed'::text)"
+  },
+  {
+    "tablename": "subscribers",
+    "policyname": "subscribers_select_admin",
+    "cmd": "SELECT",
+    "roles": "{authenticated}",
+    "qual": "is_admin()",
+    "with_check": null
+  },
+  {
+    "tablename": "subscribers",
+    "policyname": "subscribers_update_admin_aal2",
+    "cmd": "UPDATE",
+    "roles": "{authenticated}",
+    "qual": "is_admin_aal2()",
+    "with_check": "is_admin_aal2()"
+  },
+  {
+    "tablename": "subscriptions",
+    "policyname": "subscriptions_select_own_or_admin_aal2",
+    "cmd": "SELECT",
+    "roles": "{authenticated}",
+    "qual": "((user_id = auth.uid()) OR is_admin_aal2())",
+    "with_check": null
+  },
+  {
+    "tablename": "testimonials",
+    "policyname": "testimonials_delete_admin_aal2",
+    "cmd": "DELETE",
+    "roles": "{authenticated}",
+    "qual": "is_admin_aal2()",
+    "with_check": null
+  },
+  {
+    "tablename": "testimonials",
+    "policyname": "testimonials_insert_admin_aal2",
+    "cmd": "INSERT",
+    "roles": "{authenticated}",
+    "qual": null,
+    "with_check": "is_admin_aal2()"
+  },
+  {
+    "tablename": "testimonials",
+    "policyname": "testimonials_select_published_or_admin",
+    "cmd": "SELECT",
+    "roles": "{anon,authenticated}",
+    "qual": "((published = true) OR is_admin())",
+    "with_check": null
+  },
+  {
+    "tablename": "testimonials",
+    "policyname": "testimonials_update_admin_aal2",
+    "cmd": "UPDATE",
+    "roles": "{authenticated}",
+    "qual": "is_admin_aal2()",
+    "with_check": "is_admin_aal2()"
+  },
+  {
+    "tablename": "trial_requests",
+    "policyname": "trial_requests_delete_admin_aal2",
+    "cmd": "DELETE",
+    "roles": "{authenticated}",
+    "qual": "is_admin_aal2()",
+    "with_check": null
+  },
+  {
+    "tablename": "trial_requests",
+    "policyname": "trial_requests_insert_public",
+    "cmd": "INSERT",
+    "roles": "{anon,authenticated}",
+    "qual": null,
+    "with_check": "(status = 'new'::text)"
+  },
+  {
+    "tablename": "trial_requests",
+    "policyname": "trial_requests_select_admin",
+    "cmd": "SELECT",
+    "roles": "{authenticated}",
+    "qual": "is_admin()",
+    "with_check": null
+  },
+  {
+    "tablename": "trial_requests",
+    "policyname": "trial_requests_update_admin_aal2",
+    "cmd": "UPDATE",
+    "roles": "{authenticated}",
+    "qual": "is_admin_aal2()",
+    "with_check": "is_admin_aal2()"
+  }
+]

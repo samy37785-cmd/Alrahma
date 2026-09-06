@@ -2,9 +2,10 @@
 // Stage 2D Production Rollback Orchestrator — THE ONLY tool in this repo
 // authorized to restore a backup bundle onto the real Alrahma project.
 // It has never been run against production, and is NOT run against
-// production by the task that built it — see
-// "Stage 2D Production Cutover Tooling Hardening — No Production
-// Execution." Building and rehearsing it does not authorize running it.
+// production by the task that built it or the corrective-review task
+// that hardened it — see "Stage 2D Production Cutover Tooling
+// Hardening — No Production Execution." Building and rehearsing it
+// does not authorize running it.
 //
 // ============================================================================
 // THIS SCRIPT MUST NOT BE RUN WITHOUT A SEPARATE, EXPLICIT, HUMAN
@@ -25,24 +26,43 @@ const ORG_NAME = "alrahmaacademy038@gmail.com's Org";
 //      field, separate expiry, checked the same rigorous way the
 //      cutover approval manifest is checked. Never the cutover
 //      approval — a different schema/required key is enforced.
-//   3. bundle checksum verification (manifest.json + every file's
-//      sha256) — refuses a tampered or incomplete bundle.
-//   4. advisory lock (a DIFFERENT key than the cutover tool's, so a
-//      concurrent cutover and rollback can never race silently past
-//      each other — each is unaware of the other's key today, which is
-//      a known, disclosed limitation, not a hidden gap; see the bottom
-//      of this file).
-//   5. live identity/shape check of the CURRENT target state — refuses
-//      an unrelated or unexpectedly non-empty database before restoring
-//      onto it (an accidental restore onto a database with real,
-//      unrelated rows in it is exactly the failure mode this exists to
-//      prevent).
-//   6. pg_restore of the bundle's public_schema.dump, then the bundle's
-//      functions_and_triggers.sql, mirroring restore-bundle.mjs exactly
-//      (same filtering of the platform-owned CREATE SCHEMA/rls_auto_enable
-//      entries) — but production-only, gated by everything above.
-//   7. post-restore verification against the bundle's own inventory.json
-//      (same check restore-bundle.mjs already performs).
+//   3. bundle checksum + freshness + provenance verification
+//      (manifest.json's own sha256 per file, sourceMode=="production",
+//      projectRef match, generatedAt age <= 1h) — previously only
+//      checksums were checked here; freshness/provenance were a gap
+//      this file alone had, closed by scripts/lib/rollback-core.mjs's
+//      verifyBundleChecksumsAndFreshness().
+//   4. advisory lock — THE SAME shared key the cutover orchestrator
+//      uses (scripts/lib/shared-lock.mjs), fixing the corrective
+//      review's item 1/2: previously this file used a DIFFERENT key
+//      than the cutover tool, so a cutover and a rollback could race
+//      each other undetected. Held on ONE connection for the entire
+//      critical section below (target check through post-restore
+//      verification) — never released early.
+//   5. target verification: the live public schema must be EXACTLY the
+//      expected NEW (post-cutover) 20-table schema — not "no table
+//      outside the bundle's inventory" (which --allow-nonempty used to
+//      let a caller bypass entirely). --allow-nonempty has been REMOVED
+//      — there is no flag anywhere in this file that widens this check.
+//   6. sql/inverse-reset-new-schema.sql — removes the 20 named new
+//      tables/enums/functions AND the drizzle migration journal,
+//      verified gone — BEFORE pg_restore ever runs, restoring the
+//      documented "inverse reset happens first" order.
+//   7. pg_restore of the bundle's public_schema.dump, mirroring
+//      restore-bundle.mjs exactly (same filtering of the platform-owned
+//      CREATE SCHEMA/rls_auto_enable entries; its own
+//      --single-transaction is its atomicity boundary — see
+//      rollback-core.mjs's module doc for why this can't share one
+//      Postgres transaction with the rest of this run).
+//   8. auth.users trigger + event triggers — now applied inside their
+//      OWN explicit transaction (fixes a real bug: the previous version
+//      ran these as a bare loop of auto-committing statements, so a
+//      failure between the two could leave one applied and one not,
+//      silently).
+//   9. post-restore verification against the bundle's own inventory.json
+//      (tables, row counts, RLS, full policy definitions, functions,
+//      enums, auth trigger, event triggers — exact, not count-only).
+//  10. advisory lock released.
 //
 // This file duplicates restore-bundle.mjs's pg_restore-invocation logic
 // rather than importing it, because restore-bundle.mjs's own top-level
@@ -63,26 +83,25 @@ const ORG_NAME = "alrahmaacademy038@gmail.com's Org";
 //   --ca-cert-file <path>
 //   --confirm-token <literal>   must equal exactly
 //     I-UNDERSTAND-THIS-WILL-ROLLBACK-PRODUCTION-<PROJECT_REF>-<current-git-SHA>
-//   --allow-nonempty   optional, default refuses a target whose public
-//                      schema already has ANY table not in the bundle's
-//                      own inventory.
+// There is no --allow-nonempty flag. A target that is not exactly the
+// expected new schema must be investigated and resolved by a human —
+// this tool will not restore over it under any flag combination.
 
 import fs from "node:fs";
 import path from "node:path";
-import crypto from "node:crypto";
-import { execFile, execFileSync } from "node:child_process";
-import { promisify } from "node:util";
+import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import pg from "pg";
+import { sharedAdvisoryLockKey } from "./lib/shared-lock.mjs";
+import { runRollbackOnClient, verifyBundleChecksumsAndFreshness } from "./lib/rollback-core.mjs";
+import { restorePublicSchemaDump } from "./lib/pg-restore-runner.mjs";
 
-const execFileAsync = promisify(execFile);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const OPS_DIR = path.join(__dirname, "..");
 const REPO_ROOT = path.join(OPS_DIR, "..", "..");
+const INVERSE_RESET_SQL_FILE = path.join(OPS_DIR, "sql", "inverse-reset-new-schema.sql");
 
-const ADVISORY_LOCK_KEY = BigInt(
-  "0x" + crypto.createHash("sha256").update(`option-a-rollback:${PROJECT_REF}`).digest("hex").slice(0, 15)
-);
+const SHARED_ADVISORY_LOCK_KEY = sharedAdvisoryLockKey(PROJECT_REF);
 
 function fail(msg) {
   console.error(`ERROR ${msg}`);
@@ -93,9 +112,6 @@ function step(msg) {
 }
 function ok(msg) {
   console.log(`OK    ${msg}`);
-}
-function sha256File(filePath) {
-  return crypto.createHash("sha256").update(fs.readFileSync(filePath)).digest("hex");
 }
 
 function parseArgs(argv) {
@@ -112,34 +128,6 @@ function parseArgs(argv) {
 
 function currentGitSha() {
   return execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8", cwd: REPO_ROOT }).trim();
-}
-
-// pg_restore resolution + invocation — mirrors restore-bundle.mjs
-// exactly (same PATH-first/Docker-fallback discipline). No
-// dockerRewriteUrl here: unlike restore-bundle.mjs (local-only, so its
-// Docker fallback must rewrite 127.0.0.1 to host.docker.internal), this
-// tool refuses every local host at Phase 0 — a real Supabase hostname is
-// reachable unchanged from inside a container, nothing to rewrite.
-async function resolveClientTool(bin) {
-  try {
-    await execFileAsync(bin, ["--version"]);
-    return { kind: "path", bin };
-  } catch {
-    console.log(`INFO  "${bin}" not found on PATH — falling back to a disposable Docker container for the binary only.`);
-    return { kind: "docker", bin };
-  }
-}
-async function runClientTool(tool, args, bindMountDir) {
-  if (tool.kind === "path") {
-    return execFileAsync(tool.bin, args, { maxBuffer: 1024 * 1024 * 256 });
-  }
-  const dockerArgs = [
-    "run", "--rm",
-    "-v", `${path.resolve(bindMountDir)}:/data`,
-    "postgres:17", tool.bin,
-    ...args.map((a) => (path.resolve(a).startsWith(path.resolve(bindMountDir)) ? `/data/${path.basename(a)}` : a)),
-  ];
-  return execFileAsync("docker", dockerArgs, { maxBuffer: 1024 * 1024 * 256 });
 }
 
 function phase0_validateArgsAndIdentity(args) {
@@ -173,7 +161,9 @@ function phase0_validateArgsAndIdentity(args) {
   const rollbackApprovalPath = args["rollback-approval-manifest"];
   const bundleDir = args["bundle-dir"];
   const caCertFile = args["ca-cert-file"];
-  const allowNonempty = Boolean(args["allow-nonempty"]);
+  if (args["allow-nonempty"]) {
+    fail("--allow-nonempty does not exist on this tool (removed by corrective review — a target that is not exactly the expected new schema must be resolved manually, never bypassed).");
+  }
   for (const [name, value] of Object.entries({ "rollback-approval-manifest": rollbackApprovalPath, "bundle-dir": bundleDir, "ca-cert-file": caCertFile })) {
     if (!value) fail(`missing required --${name}`);
   }
@@ -188,7 +178,7 @@ function phase0_validateArgsAndIdentity(args) {
   }
   ok("confirm-token matches");
 
-  return { databaseUrl, rollbackApprovalPath, bundleDir, caCertFile, caCert, allowNonempty, sha };
+  return { databaseUrl, rollbackApprovalPath, bundleDir, caCertFile, caCert, sha };
 }
 
 function phase1_verifyRollbackApproval(ctx) {
@@ -221,131 +211,44 @@ function phase1_verifyRollbackApproval(ctx) {
   ok(`rollback approval manifest is real, unexpired, and matches branch/SHA (approved by "${manifest.approvedBy}": ${manifest.reasonForRollback})`);
 }
 
-function phase2_verifyBundleChecksums(ctx) {
-  step("Phase 2 — bundle checksum verification");
-  const manifestPath = path.join(ctx.bundleDir, "manifest.json");
-  if (!fs.existsSync(manifestPath)) fail(`bundle manifest.json not found in "${ctx.bundleDir}"`);
-  const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
-  if (!Array.isArray(manifest.files) || manifest.files.length === 0) fail(`bundle manifest.json has no files[]`);
-  for (const f of manifest.files) {
-    const p = path.join(ctx.bundleDir, f.name);
-    if (!fs.existsSync(p)) fail(`bundle names "${f.name}" which does not exist`);
-    const actual = sha256File(p);
-    if (actual !== f.sha256) fail(`bundle file "${f.name}" sha256 mismatch: manifest says ${f.sha256}, actual ${actual}`);
-  }
-  ok(`all ${manifest.files.length} bundle file(s) match their recorded sha256`);
-  const inventoryPath = path.join(ctx.bundleDir, "inventory.json");
-  if (!fs.existsSync(inventoryPath)) fail(`bundle inventory.json not found — cannot post-verify a restore without it`);
-  return { manifest, inventory: JSON.parse(fs.readFileSync(inventoryPath, "utf8")) };
-}
-
-async function phase3_advisoryLockAndTargetCheck(ctx, inventory) {
-  step("Phase 3 — advisory lock + refusal of an unrelated/non-empty target");
-  const client = new pg.Client({ connectionString: ctx.databaseUrl, statement_timeout: 30_000, ssl: { rejectUnauthorized: true, ca: ctx.caCert } });
-  await client.connect();
-  try {
-    const { rows: lockRows } = await client.query("select pg_try_advisory_lock($1::bigint) as acquired;", [ADVISORY_LOCK_KEY.toString()]);
-    if (!lockRows[0].acquired) fail(`could not acquire rollback advisory lock ${ADVISORY_LOCK_KEY} — another run holds it.`);
-    ok(`advisory lock ${ADVISORY_LOCK_KEY} acquired`);
-
-    const { rows: tableRows } = await client.query(`select tablename from pg_tables where schemaname='public' order by tablename;`);
-    const actualTables = tableRows.map((r) => r.tablename);
-    const unexpected = actualTables.filter((t) => !inventory.tables.includes(t));
-    if (unexpected.length > 0 && !ctx.allowNonempty) {
-      fail(`target public schema has table(s) not accounted for by the bundle being restored: ${unexpected.join(", ")} — refusing (pass --allow-nonempty only if this is a deliberately reviewed exception).`);
-    }
-    ok(`target schema shape is accounted for by the bundle (or --allow-nonempty was explicitly passed)`);
-  } finally {
-    await client.end();
-  }
-}
-
-async function phase4_restore(ctx) {
-  step("Phase 4 — pg_restore (mirrors restore-bundle.mjs's proven TOC-filtering exactly, production-target only)");
-  const pgRestore = await resolveClientTool("pg_restore");
-  const dumpPath = path.join(ctx.bundleDir, "public_schema.dump");
-
-  // Same two exclusions restore-bundle.mjs proved necessary by actually
-  // running this restore: pg_dump -n public's own `CREATE SCHEMA public`
-  // entry (Surgical Reset never drops `public` itself, so it always
-  // already exists) and `rls_auto_enable()` (Supabase's own
-  // pre-existing infrastructure, never touched by Surgical Reset either
-  // — restoring pg_dump's plain, non-`OR REPLACE` CREATE FUNCTION for it
-  // would collide with the live one).
-  const { stdout: tocText } = await runClientTool(pgRestore, ["--list", dumpPath], ctx.bundleDir);
-  const filteredToc = tocText
-    .split("\n")
-    .filter((line) => !/\bSCHEMA\s*-?\s*public\b/.test(line))
-    .filter((line) => !/\bFUNCTION\s+public\s+rls_auto_enable\(/.test(line))
-    .join("\n");
-  const tocPath = path.join(ctx.bundleDir, ".rollback-toc.filtered.txt");
-  fs.writeFileSync(tocPath, filteredToc);
-  await runClientTool(pgRestore, ["--dbname", ctx.databaseUrl, "--exit-on-error", "--single-transaction", "--use-list", tocPath, dumpPath], ctx.bundleDir);
-  fs.rmSync(tocPath, { force: true });
-  ok("public_schema.dump restored (schema + data + GRANTs + RLS + POLICIES + owners, minus the public-schema-creation entry)");
-
-  step("Phase 4b — restoring auth.users trigger + event triggers");
-  const statementsPath = path.join(ctx.bundleDir, "functions_and_triggers.statements.json");
-  const statements = fs.existsSync(statementsPath) ? JSON.parse(fs.readFileSync(statementsPath, "utf8")) : [];
-  if (statements.length > 0) {
-    const client = new pg.Client({ connectionString: ctx.databaseUrl, statement_timeout: 30_000, ssl: { rejectUnauthorized: true, ca: ctx.caCert } });
-    await client.connect();
-    try {
-      for (const stmt of statements) await client.query(stmt);
-      ok(`${statements.length} statement(s) applied`);
-    } finally {
-      await client.end();
-    }
-  }
-}
-
-async function phase5_postRestoreVerification(ctx, inventory) {
-  step("Phase 5 — post-restore verification against the bundle's own inventory.json");
-  const client = new pg.Client({ connectionString: ctx.databaseUrl, statement_timeout: 30_000, ssl: { rejectUnauthorized: true, ca: ctx.caCert } });
-  await client.connect();
-  try {
-    const { rows: tableRows } = await client.query(`select tablename from pg_tables where schemaname='public' order by tablename;`);
-    const actualTables = tableRows.map((r) => r.tablename).sort();
-    const expectedTables = [...inventory.tables].sort();
-    if (JSON.stringify(actualTables) !== JSON.stringify(expectedTables)) {
-      fail(`post-restore check failed: tables do not match inventory.json exactly.\n  expected: ${expectedTables.join(", ")}\n  actual:   ${actualTables.join(", ")}`);
-    }
-    ok(`all ${expectedTables.length} table(s) from inventory.json present, no extras`);
-
-    for (const table of expectedTables) {
-      const { rows } = await client.query(`select count(*) as c from public."${table.replace(/"/g, '""')}";`);
-      const expectedCount = inventory.rowCounts[table];
-      if (Number(rows[0].c) !== expectedCount) fail(`post-restore check failed: ${table} has ${rows[0].c} row(s), expected ${expectedCount}`);
-    }
-    ok("every table's row count matches inventory.json");
-  } finally {
-    await client.end();
-  }
-}
-
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   console.log(`Stage 2D Production Rollback Orchestrator — target: ${PROJECT_NAME} (${PROJECT_REF}), org "${ORG_NAME}"`);
   const ctx = phase0_validateArgsAndIdentity(args);
   phase1_verifyRollbackApproval(ctx);
-  const { inventory } = phase2_verifyBundleChecksums(ctx);
-  await phase3_advisoryLockAndTargetCheck(ctx, inventory);
-  await phase4_restore(ctx);
-  await phase5_postRestoreVerification(ctx, inventory);
+
+  step("Phase 2 — bundle checksum + freshness + provenance verification");
+  const { inventory } = verifyBundleChecksumsAndFreshness(ctx.bundleDir, {
+    expectedProjectRef: PROJECT_REF,
+    expectedSourceMode: "production",
+    maxAgeHours: 1,
+  });
+  ok("bundle checksums match, sourceMode=production, projectRef matches, generatedAt is within 1h");
+
+  step("Phase 3 — advisory lock (shared with the cutover tool) + critical section");
+  const client = new pg.Client({ connectionString: ctx.databaseUrl, statement_timeout: 0, ssl: { rejectUnauthorized: true, ca: ctx.caCert } });
+  await client.connect();
+  try {
+    const { rows: lockRows } = await client.query("select pg_try_advisory_lock($1::bigint) as acquired;", [SHARED_ADVISORY_LOCK_KEY]);
+    if (!lockRows[0].acquired) fail(`could not acquire the shared advisory lock ${SHARED_ADVISORY_LOCK_KEY} — another cutover or rollback run holds it.`);
+    ok(`shared advisory lock ${SHARED_ADVISORY_LOCK_KEY} acquired — held for the rest of this run`);
+
+    await runRollbackOnClient(client, {
+      inverseResetSql: fs.readFileSync(INVERSE_RESET_SQL_FILE, "utf8"),
+      inventory,
+      restoreFn: () => restorePublicSchemaDump(ctx.databaseUrl, ctx.bundleDir),
+      runTriggerStatements: async (txClient) => {
+        const statementsPath = path.join(ctx.bundleDir, "functions_and_triggers.statements.json");
+        const statements = fs.existsSync(statementsPath) ? JSON.parse(fs.readFileSync(statementsPath, "utf8")) : [];
+        for (const stmt of statements) await txClient.query(stmt);
+      },
+      log: (msg) => console.log(msg),
+    });
+  } finally {
+    await client.end();
+  }
+
   console.log("\nROLLBACK COMPLETE AND VERIFIED.");
 }
 
 main().catch((e) => fail(e.stack || e.message));
-
-// ---------------------------------------------------------------------
-// Disclosed limitation, not fixed here (out of this task's scope, which
-// explicitly does not run this tool against production at all): the
-// cutover orchestrator's advisory lock key and this file's are DIFFERENT
-// (derived from "option-a-cutover:<ref>" vs "option-a-rollback:<ref>"),
-// so a cutover run and a rollback run could theoretically both proceed
-// concurrently without either seeing the other's lock. Neither this
-// task nor any prior one runs either tool against production, so this
-// has never been exercised for real. A future hardening pass should
-// consider a single shared lock key for both tools before either is
-// ever run against production.
-// ---------------------------------------------------------------------

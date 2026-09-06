@@ -4,7 +4,9 @@
 // Alrahma project. It has never been run against production. Building
 // and rehearsing it does not authorize running it — see the task this
 // file was built under: "Stage 2D Production Cutover Tooling Hardening
-// — No Production Execution."
+// — No Production Execution," and the corrective-review task that
+// followed it ("no merge, no production execution — fix these defects
+// in place first").
 //
 // ============================================================================
 // THIS SCRIPT MUST NOT BE RUN WITHOUT A SEPARATE, EXPLICIT, HUMAN
@@ -21,24 +23,30 @@ const ORG_NAME = "alrahmaacademy038@gmail.com's Org";
 // Fixed, non-skippable sequence, one process, one invocation:
 //   1. backup verification + live preflight — runs
 //      production-preflight-gate.mjs --mode production as a child
-//      process of THIS run (not "please run the gate first and trust
-//      the operator did" — this script runs it itself, every time, and
-//      refuses to proceed past a nonzero exit code).
+//      process of THIS run, TWICE: once before the advisory lock is
+//      even requested (fail fast, cheap), and once again immediately
+//      AFTER the lock is acquired, right before BEGIN — closing the gap
+//      between "the gate checked a moment ago" and "the lock is held
+//      and we're about to touch anything." This does not replace the
+//      SQL-level final recheck in step 3 below; it is an additional,
+//      earlier layer that re-verifies EVERYTHING the gate checks
+//      (project ref/host, HEAD vs approval manifest, backup bundle
+//      freshness/hash/provenance, exact table fingerprint, all public
+//      row counts, auth.users, storage.buckets/objects) rather than
+//      only the DB-side subset.
 //   2. advisory lock acquired (fails loudly, does not block, if another
-//      run already holds it) — held for the rest of this process.
-//   3. final recheck, on the SAME connection that is about to run
-//      Surgical Reset, inside the SAME transaction — closes the gap
-//      between "the gate checked five minutes ago" and "the DROP
-//      statement about to run."
-//   4. Surgical Reset (sql/surgical-reset.sql, the same file
-//      03-surgical-reset.mjs uses for local rehearsal — read fresh off
-//      disk, never duplicated/hand-copied here) — commits only if every
-//      post-condition passes, same discipline as 03-surgical-reset.mjs.
-//   5. migrate() — lib/db/drizzle/0000-0011 via drizzle-orm, the same
-//      migrator run-migrate.mjs uses for local rehearsal.
-//   6. post-migration verification — the 20 new tables exist, core RPCs
-//      exist, RLS policies exist.
-//   7. advisory lock released.
+//      cutover OR rollback run already holds it — SAME key as the
+//      rollback orchestrator, see scripts/lib/shared-lock.mjs) — held
+//      on ONE connection for the rest of this process, through commit
+//      or rollback, never released early.
+//   3. final recheck + Surgical Reset + all migrations + the migration
+//      journal + full post-migration verification, as PLAIN SQL on
+//      THAT SAME connection, inside ONE transaction — COMMIT only after
+//      verification passes; ANY error at any point ROLLBACKs the whole
+//      thing automatically. See scripts/lib/cutover-core.mjs's module
+//      doc for exactly why this is possible and how it differs from
+//      calling drizzle-orm's migrate() directly.
+//   4. advisory lock released (connection closed).
 //
 // There is no CLI flag to run any single phase alone. main() always runs
 // the full sequence in order; a phase's function is not reachable any
@@ -63,6 +71,13 @@ const ORG_NAME = "alrahmaacademy038@gmail.com's Org";
 //                           verification stays strict throughout — no
 //                           code path in this file ever sets
 //                           rejectUnauthorized:false.
+//   --policy-fixture <path>   optional. A captured {tablename,
+//                             policyname, cmd, roles, qual, with_check}[]
+//                             fixture (see fixtures/new-schema-rls-
+//                             policies.json) — when present, the
+//                             post-migration verification compares the
+//                             FULL restored policy set against it
+//                             exactly, not just a nonzero count.
 //   --confirm-token <literal>   must equal exactly
 //     I-UNDERSTAND-THIS-WILL-CUTOVER-PRODUCTION-<PROJECT_REF>-<current-git-SHA>
 //     — recomputed fresh from the actual repo state every run, so a
@@ -70,12 +85,11 @@ const ORG_NAME = "alrahmaacademy038@gmail.com's Org";
 
 import fs from "node:fs";
 import path from "node:path";
-import crypto from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import pg from "pg";
-import { drizzle } from "drizzle-orm/node-postgres";
-import { migrate } from "drizzle-orm/node-postgres/migrator";
+import { sharedAdvisoryLockKey } from "./lib/shared-lock.mjs";
+import { runAtomicCutoverOnClient } from "./lib/cutover-core.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const OPS_DIR = path.join(__dirname, "..");
@@ -96,13 +110,7 @@ const EXPECTED_OLD_TABLES = [
 ];
 const EXPECTED_OLD_ENUMS = ["role", "subscription_provider", "subscription_status"];
 
-// A fixed 63-bit advisory-lock key, derived deterministically from the
-// project ref so it can never collide with an unrelated lock used
-// elsewhere in this codebase or a future one. Not a secret — advisory
-// lock keys are visible to anyone with SELECT on pg_locks anyway.
-const ADVISORY_LOCK_KEY = BigInt(
-  "0x" + crypto.createHash("sha256").update(`option-a-cutover:${PROJECT_REF}`).digest("hex").slice(0, 15)
-);
+const SHARED_ADVISORY_LOCK_KEY = sharedAdvisoryLockKey(PROJECT_REF);
 
 function fail(msg) {
   console.error(`ERROR ${msg}`);
@@ -173,12 +181,22 @@ function phase0_validateArgsAndIdentity(args) {
   const dumpFile = args["dump-file"];
   const checksumFile = args["checksum-file"];
   const caCertFile = args["ca-cert-file"];
+  const policyFixturePath = args["policy-fixture"];
   for (const [name, value] of Object.entries({ "approval-manifest": approvalManifestPath, "dump-file": dumpFile, "checksum-file": checksumFile, "ca-cert-file": caCertFile })) {
     if (!value) fail(`missing required --${name}`);
   }
   if (!fs.existsSync(caCertFile)) fail(`--ca-cert-file "${caCertFile}" does not exist`);
   const caCert = fs.readFileSync(caCertFile, "utf8");
   if (!caCert.includes("-----BEGIN CERTIFICATE-----")) fail(`--ca-cert-file "${caCertFile}" does not look like a PEM certificate`);
+
+  let policyFixture;
+  if (policyFixturePath) {
+    if (!fs.existsSync(policyFixturePath)) fail(`--policy-fixture "${policyFixturePath}" does not exist`);
+    policyFixture = JSON.parse(fs.readFileSync(policyFixturePath, "utf8"));
+    ok(`--policy-fixture loaded (${policyFixture.length} policy definition(s)) — post-migration verification will match the FULL policy set exactly`);
+  } else {
+    console.log("INFO  no --policy-fixture given — post-migration verification will only check that RLS policies exist (count > 0), not match an exact set");
+  }
 
   const sha = currentGitSha();
   const expectedToken = `I-UNDERSTAND-THIS-WILL-CUTOVER-PRODUCTION-${PROJECT_REF}-${sha}`;
@@ -187,16 +205,20 @@ function phase0_validateArgsAndIdentity(args) {
   }
   ok("confirm-token matches the exact literal for the current HEAD SHA");
 
-  return { databaseUrl, approvalManifestPath, dumpFile, checksumFile, caCertFile, caCert, sha };
+  return { databaseUrl, approvalManifestPath, dumpFile, checksumFile, caCertFile, caCert, policyFixture, sha };
 }
 
 // ---------------------------------------------------------------------
-// Phase 1 — backup verification + live preflight, run as a REAL child
-// process of this run (not "trust it was run earlier"). Any nonzero
-// exit code halts the orchestrator before anything is touched.
+// Runs the full production-preflight-gate.mjs as a real child process.
+// Called TWICE by main(): once before the lock (fail fast), once again
+// immediately after the lock is acquired (closes the TOCTOU gap — see
+// this file's header). Both calls run the IDENTICAL check, not a
+// reduced subset — "don't rely on a separate preflight alone" is
+// satisfied by re-running the whole thing under the lock, not by
+// duplicating its ~900 lines of logic into this file a second time.
 // ---------------------------------------------------------------------
-function phase1_runPreflightGate(ctx) {
-  step("Phase 1 — backup verification + live preflight (production-preflight-gate.mjs, run fresh, right now)");
+function runPreflightGate(ctx, label) {
+  step(`${label} — production-preflight-gate.mjs, run fresh, right now`);
   const gateArgs = [
     GATE_SCRIPT,
     "--mode", "production",
@@ -211,133 +233,62 @@ function phase1_runPreflightGate(ctx) {
   try {
     const out = execFileSync("node", gateArgs, { encoding: "utf8", cwd: REPO_ROOT, env: { ...process.env, GATE_DATABASE_URL: ctx.databaseUrl } });
     console.log(out);
-    ok("preflight gate exited 0 — ALL CHECKS PASSED");
+    ok(`${label}: preflight gate exited 0 — ALL CHECKS PASSED`);
   } catch (e) {
     console.log(e.stdout || "");
     console.error(e.stderr || "");
-    fail("preflight gate exited nonzero — refusing to proceed to Surgical Reset. Nothing was touched.");
+    fail(`${label}: preflight gate exited nonzero — refusing to proceed. Nothing was touched.`);
   }
 }
 
 // ---------------------------------------------------------------------
-// Phase 2 — advisory lock, final recheck, Surgical Reset. One
-// connection, one transaction, from lock acquisition through commit.
+// Phase 2 — advisory lock (SHARED key) + re-run preflight under the lock
+// + final recheck + Surgical Reset + migrations + verification. ONE
+// connection, held from lock acquisition through COMMIT/ROLLBACK,
+// released only when this function returns (success or failure).
 // ---------------------------------------------------------------------
-async function phase2_lockRecheckReset(ctx) {
-  step("Phase 2 — advisory lock + final recheck + Surgical Reset");
+async function phase2_atomicCriticalSection(ctx) {
+  step("Phase 2 — advisory lock (shared with the rollback tool) + atomic critical section");
   const client = new pg.Client({
     connectionString: ctx.databaseUrl,
-    statement_timeout: 60_000,
+    statement_timeout: 0, // migrations can legitimately run longer than a short fixed timeout; the advisory lock, not a timeout, is what bounds this
     ssl: { rejectUnauthorized: true, ca: ctx.caCert },
   });
   await client.connect();
 
   try {
-    // pg_try_advisory_lock, not pg_advisory_lock: a concurrent run
-    // holding this lock is a signal to fail loudly and immediately, not
-    // to queue up and fire later once the state that was just verified
-    // may have changed again.
-    const { rows: lockRows } = await client.query("select pg_try_advisory_lock($1::bigint) as acquired;", [ctx.advisoryLockKey]);
+    // pg_try_advisory_lock, not pg_advisory_lock: a concurrent cutover
+    // OR rollback run holding this lock is a signal to fail loudly and
+    // immediately, not to queue up and fire later once the state that
+    // was just verified may have changed again. SAME key the rollback
+    // orchestrator uses (scripts/lib/shared-lock.mjs) — this is the
+    // fix for the corrective review's item 1/2: previously each tool
+    // had its own key, so a cutover and a rollback could both proceed
+    // concurrently without either seeing the other.
+    const { rows: lockRows } = await client.query("select pg_try_advisory_lock($1::bigint) as acquired;", [SHARED_ADVISORY_LOCK_KEY]);
     if (!lockRows[0].acquired) {
-      fail(`could not acquire advisory lock ${ctx.advisoryLockKey} — another cutover/rollback run holds it. Refusing to proceed concurrently.`);
+      fail(`could not acquire the shared advisory lock ${SHARED_ADVISORY_LOCK_KEY} — another cutover or rollback run holds it. Refusing to proceed concurrently.`);
     }
-    ok(`advisory lock ${ctx.advisoryLockKey} acquired`);
+    ok(`shared advisory lock ${SHARED_ADVISORY_LOCK_KEY} acquired — held for the rest of this run`);
 
-    await client.query("BEGIN;");
+    runPreflightGate(ctx, "Phase 2a — re-verify under the lock");
 
-    step("Phase 2a — final recheck (same connection, same transaction, immediately before the first DROP)");
-    const { rows: tableRows } = await client.query(`select tablename from pg_tables where schemaname='public' order by tablename;`);
-    const actualTables = tableRows.map((r) => r.tablename).sort();
-    const expectedSorted = [...EXPECTED_OLD_TABLES].sort();
-    if (JSON.stringify(actualTables) !== JSON.stringify(expectedSorted)) {
-      await client.query("ROLLBACK;");
-      fail(`final recheck failed: public tables do not exactly match the expected 34 — state changed since the preflight gate ran. Rolled back, nothing dropped.`);
-    }
-    for (const table of EXPECTED_OLD_TABLES) {
-      const { rows } = await client.query(`select count(*) as c from public."${table.replace(/"/g, '""')}";`);
-      if (Number(rows[0].c) !== 0) {
-        await client.query("ROLLBACK;");
-        fail(`final recheck failed: public.${table} now has ${rows[0].c} row(s) — state changed since the preflight gate ran. Rolled back, nothing dropped.`);
-      }
-    }
-    const { rows: authRows } = await client.query(`select count(*) as c from auth.users;`);
-    if (Number(authRows[0].c) !== 0) {
-      await client.query("ROLLBACK;");
-      fail(`final recheck failed: auth.users now has ${authRows[0].c} row(s). Rolled back, nothing dropped.`);
-    }
-    ok("final recheck: all 34 expected tables present and empty, auth.users empty — state is unchanged since the preflight gate ran");
-
-    step("Phase 2b — running sql/surgical-reset.sql (same connection, same open transaction)");
-    const sql = fs.readFileSync(SURGICAL_RESET_SQL_FILE, "utf8");
-    await client.query(sql);
-
-    const { rows: remaining } = await client.query(
-      `select tablename from pg_tables where schemaname='public' and tablename = any($1::text[]);`,
-      [EXPECTED_OLD_TABLES]
-    );
-    const { rows: remainingEnums } = await client.query(
-      `select typname from pg_type t join pg_namespace n on n.oid=t.typnamespace where n.nspname='public' and t.typname = any($1::text[]);`,
-      [EXPECTED_OLD_ENUMS]
-    );
-    if (remaining.length > 0 || remainingEnums.length > 0) {
-      await client.query("ROLLBACK;");
-      fail(`post-reset check failed: ${remaining.length} old table(s) / ${remainingEnums.length} old enum(s) still present. Rolled back, nothing committed.`);
-    }
-    await client.query("COMMIT;");
-    ok("Surgical Reset applied and committed — all 34 old tables and 3 old enums are gone.");
+    step("Phase 2b — final recheck + Surgical Reset + migrations + verification (one connection, one transaction)");
+    const { appliedCount } = await runAtomicCutoverOnClient(client, {
+      expectedOldTables: EXPECTED_OLD_TABLES,
+      expectedOldEnums: EXPECTED_OLD_ENUMS,
+      surgicalResetSql: fs.readFileSync(SURGICAL_RESET_SQL_FILE, "utf8"),
+      drizzleDir: DRIZZLE_DIR,
+      policyFixture: ctx.policyFixture,
+      log: (msg) => console.log(msg),
+    });
+    ok(`atomic cutover committed — ${appliedCount} migration file(s) applied, full post-migration fingerprint verified, all in one transaction`);
   } finally {
     // Advisory locks are session-scoped — ending the connection releases
-    // it. Held explicitly through this whole phase (that is the point);
-    // released here rather than with an explicit pg_advisory_unlock so a
-    // crash mid-phase can't leave the lock held by a dead session past
-    // Postgres's own cleanup.
-    await client.end();
-  }
-}
-
-// ---------------------------------------------------------------------
-// Phase 3 — migrate() via drizzle-orm, same migrator run-migrate.mjs
-// uses for local rehearsal, pointed at the same production URL.
-// ---------------------------------------------------------------------
-async function phase3_migrate(ctx) {
-  step("Phase 3 — migrate() (lib/db/drizzle/0000-0011)");
-  const pool = new pg.Pool({ connectionString: ctx.databaseUrl, ssl: { rejectUnauthorized: true, ca: ctx.caCert } });
-  const db = drizzle(pool);
-  try {
-    await migrate(db, { migrationsFolder: DRIZZLE_DIR });
-    ok("migrate() completed — 0000 through 0011 applied.");
-  } finally {
-    await pool.end();
-  }
-}
-
-// ---------------------------------------------------------------------
-// Phase 4 — post-migration verification: the new 20-table schema exists,
-// core RPCs exist, RLS policies exist. Not a full re-audit (the local
-// rehearsal + existing test suites already prove the migration chain's
-// correctness in the abstract) — this only proves THIS run actually
-// landed on THIS database.
-// ---------------------------------------------------------------------
-async function phase4_postMigrationVerification(ctx) {
-  step("Phase 4 — post-migration verification");
-  const client = new pg.Client({ connectionString: ctx.databaseUrl, statement_timeout: 30_000, ssl: { rejectUnauthorized: true, ca: ctx.caCert } });
-  await client.connect();
-  try {
-    const { rows: migRows } = await client.query(`select count(*) as c from drizzle.__drizzle_migrations;`);
-    if (Number(migRows[0].c) < 12) fail(`post-migration check failed: drizzle.__drizzle_migrations has only ${migRows[0].c} row(s), expected >= 12 (0000-0011).`);
-    ok(`drizzle.__drizzle_migrations has ${migRows[0].c} row(s)`);
-
-    const { rows: funcRows } = await client.query(`select proname from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and proname in ('is_admin','is_admin_aal2','admin_set_role','handle_new_user');`);
-    const foundFuncs = funcRows.map((r) => r.proname).sort();
-    const requiredFuncs = ["admin_set_role", "handle_new_user", "is_admin", "is_admin_aal2"];
-    const missingFuncs = requiredFuncs.filter((f) => !foundFuncs.includes(f));
-    if (missingFuncs.length > 0) fail(`post-migration check failed: missing function(s): ${missingFuncs.join(", ")}`);
-    ok(`all ${requiredFuncs.length} core RPC(s) present`);
-
-    const { rows: policyRows } = await client.query(`select count(*) as c from pg_policies where schemaname='public';`);
-    if (Number(policyRows[0].c) === 0) fail(`post-migration check failed: public has 0 RLS policies after migration — expected > 0.`);
-    ok(`public has ${policyRows[0].c} RLS policy(ies)`);
-  } finally {
+    // it. Held explicitly through the ENTIRE critical section above
+    // (that is the point of item 2's fix); released here rather than
+    // with an explicit pg_advisory_unlock so a crash mid-phase can't
+    // leave the lock held by a dead session past Postgres's own cleanup.
     await client.end();
   }
 }
@@ -346,14 +297,11 @@ async function main() {
   const args = parseArgs(process.argv.slice(2));
   console.log(`Stage 2D Production Cutover Orchestrator — target: ${PROJECT_NAME} (${PROJECT_REF}), org "${ORG_NAME}"`);
   const ctx = phase0_validateArgsAndIdentity(args);
-  ctx.advisoryLockKey = ADVISORY_LOCK_KEY.toString();
 
-  phase1_runPreflightGate(ctx);
-  await phase2_lockRecheckReset(ctx);
-  await phase3_migrate(ctx);
-  await phase4_postMigrationVerification(ctx);
+  runPreflightGate(ctx, "Phase 1 — pre-lock preflight (fail fast)");
+  await phase2_atomicCriticalSection(ctx);
 
-  console.log("\nCUTOVER COMPLETE — preflight, reset, migrate, and post-migration verification all passed, in this order, in this one run.");
+  console.log("\nCUTOVER COMPLETE — preflight (twice), lock, reset, migrate, and post-migration verification all passed, atomically, in this one run.");
 }
 
 main().catch((e) => fail(e.stack || e.message));

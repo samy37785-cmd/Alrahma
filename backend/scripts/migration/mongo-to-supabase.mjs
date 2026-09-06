@@ -18,8 +18,12 @@
 // script must never be reachable from an HTTP route.
 //
 // Usage:
-//   node mongo-to-supabase.mjs --domain=trial_requests|subscribers|blogs|all
-//                               [--dry-run] [--reset-checkpoint]
+//   node mongo-to-supabase.mjs --domain=<name>|all [--dry-run] [--reset-checkpoint]
+//   node mongo-to-supabase.mjs --domain=<name>|all --rollback
+//
+// --rollback deletes exactly the Postgres rows this tool's own checkpoint
+// says it created/touched for that domain (Mongo is never contacted), then
+// clears the checkpoint so a later forward run starts clean.
 //
 // Safety properties:
 //   - Idempotent: re-running is always safe. A local checkpoint file
@@ -63,6 +67,59 @@ function loadCheckpoint(domain) {
 function saveCheckpoint(file, data) {
   fs.mkdirSync(path.dirname(file), { recursive: true });
   fs.writeFileSync(file, JSON.stringify(data, null, 2));
+}
+
+// --- Cross-domain FK resolution (Stage 2F: the 12 new domains, unlike
+// Stage 2E's 3, reference users/courses by id) ---
+//
+// courses: this tool migrates courses itself, so a dependent domain's
+// Mongo course _id resolves to a Postgres uuid via the courses domain's OWN
+// checkpoint file (mongoId -> pgId), loaded on demand.
+//
+// users: there is no "users" migration domain at all — Mongo User accounts
+// become Supabase Auth accounts through real sign-up (or a separate,
+// harder, not-yet-built admin.createUser-based migration), never through a
+// direct table insert here. The only reliable bridge between "this Mongo
+// ObjectId" and "that profiles.id" for an ALREADY-migrated account is a
+// matching email — loaded once into memory (never logged) and used to
+// resolve every user reference below. A referenced user with no matching
+// profiles row (not yet migrated/signed-up under Supabase) is a genuine,
+// expected skip, not a bug — reported via the normal `failed` counter with
+// a clear reason string, same as any other unresolvable row.
+const courseIdCache = new Map(); // domainName -> {mongoId: pgId}
+function resolveCoursePgId(mongoCourseId) {
+  if (!mongoCourseId) return null;
+  if (!courseIdCache.has('courses')) {
+    const { data } = loadCheckpoint('courses');
+    courseIdCache.set('courses', Object.fromEntries(Object.entries(data).map(([k, v]) => [k, v.pgId])));
+  }
+  const map = courseIdCache.get('courses');
+  const pgId = map[String(mongoCourseId)];
+  if (!pgId) throw new Error(`course ${mongoCourseId} has not been migrated yet — run --domain=courses first`);
+  return pgId;
+}
+
+let userEmailMapPromise;
+async function loadUserEmailMap() {
+  if (!userEmailMapPromise) {
+    userEmailMapPromise = (async () => {
+      const User = mongoose.connection.collection('users');
+      const users = await User.find({}, { projection: { email: 1 } }).toArray();
+      return new Map(users.map((u) => [String(u._id), String(u.email).toLowerCase()]));
+    })();
+  }
+  return userEmailMapPromise;
+}
+
+async function resolveProfileId(pgClient, userEmailMap, mongoUserId) {
+  if (!mongoUserId) return null;
+  const email = userEmailMap.get(String(mongoUserId));
+  if (!email) throw new Error(`Mongo user ${mongoUserId} not found in the users collection`);
+  const r = await pgClient.query('SELECT id FROM profiles WHERE email = $1', [email]);
+  if (!r.rows[0]) {
+    throw new Error(`user ${mongoUserId} (${email}) has no migrated Supabase account yet — sign-up/user migration must run first`);
+  }
+  return r.rows[0].id;
 }
 
 // --- Domain definitions: export shape (Mongo) -> transform -> import shape (Postgres) ---
@@ -182,7 +239,553 @@ const DOMAINS = {
       return Number((await client.query('SELECT count(*) FROM blogs')).rows[0].count);
     },
   },
+
+  // ---------------------------------------------------------------------
+  // Stage 2F — the 12 new domains. Ordered so `--domain=all` migrates
+  // courses before anything that references courses (wishlists,
+  // certificates, reviews, course_progress, student_records) — see
+  // resolveCoursePgId()'s own comment for why order matters here.
+  // ---------------------------------------------------------------------
+
+  courses: {
+    async export() {
+      return mongoose.connection.collection('courses').find({}).toArray();
+    },
+    transform(doc) {
+      const level = ['Beginner', 'Intermediate', 'Advanced', 'All levels'].includes(doc.level) ? doc.level : 'All levels';
+      return {
+        title: doc.title,
+        description: doc.description,
+        icon: doc.icon || '📘',
+        level,
+        price_minor: Math.round((doc.price ?? 0) * 100),
+        tags: JSON.stringify(doc.tags ?? []),
+        resources: JSON.stringify(doc.resources ?? []),
+        modules: JSON.stringify(
+          (doc.modules ?? []).map((m) => ({
+            title: m.title, summary: m.summary ?? '', order: m.order ?? 0,
+            lessons: (m.lessons ?? []).map((l) => ({
+              title: l.title, type: l.type, url: l.url ?? '', content: l.content ?? '',
+              duration: l.duration ?? '', resources: l.resources ?? [], order: l.order ?? 0,
+            })),
+          }))
+        ),
+        published: !!doc.published,
+      };
+    },
+    validate(row) {
+      if (!row.title || !row.description) throw new Error('courses row missing title/description');
+    },
+    async upsert(client, sourceId, row, checkpoint) {
+      const existingPgId = checkpoint[sourceId]?.pgId;
+      if (existingPgId) {
+        await client.query(
+          `UPDATE courses SET title=$1, description=$2, icon=$3, level=$4, price_minor=$5,
+             tags=$6::jsonb, resources=$7::jsonb, modules=$8::jsonb, published=$9 WHERE id=$10`,
+          [row.title, row.description, row.icon, row.level, row.price_minor, row.tags, row.resources, row.modules, row.published, existingPgId]
+        );
+        return existingPgId;
+      }
+      const r = await client.query(
+        `INSERT INTO courses (title, description, icon, level, price_minor, tags, resources, modules, published)
+         VALUES ($1,$2,$3,$4,$5,$6::jsonb,$7::jsonb,$8::jsonb,$9) RETURNING id`,
+        [row.title, row.description, row.icon, row.level, row.price_minor, row.tags, row.resources, row.modules, row.published]
+      );
+      return r.rows[0].id;
+    },
+    async countPg(client) {
+      return Number((await client.query('SELECT count(*) FROM courses')).rows[0].count);
+    },
+  },
+
+  contact_messages: {
+    async export() {
+      return mongoose.connection.collection('contactmessages').find({}).toArray();
+    },
+    transform(doc) {
+      return {
+        name: doc.name,
+        email: doc.email,
+        phone: doc.phone ?? null,
+        subject: doc.subject,
+        message: doc.message,
+        // Never carry a raw IP into a column named ip_anon — no anonymized
+        // value exists in the Mongo source (it stored the raw ipAddress),
+        // so this is left null rather than migrating unanonymized data.
+        status: ['new', 'in_progress', 'resolved', 'spam'].includes(doc.status) ? doc.status : 'new',
+      };
+    },
+    validate(row) {
+      if (!row.name || !row.email || !row.subject || !row.message) throw new Error('contact_messages row missing a required field');
+    },
+    async upsert(client, sourceId, row, checkpoint) {
+      const existingPgId = checkpoint[sourceId]?.pgId;
+      if (existingPgId) {
+        await client.query(
+          `UPDATE contact_messages SET name=$1, email=$2, phone=$3, subject=$4, message=$5, status=$6 WHERE id=$7`,
+          [row.name, row.email, row.phone, row.subject, row.message, row.status, existingPgId]
+        );
+        return existingPgId;
+      }
+      const r = await client.query(
+        `INSERT INTO contact_messages (name, email, phone, subject, message, status)
+         VALUES ($1,$2,$3,$4,$5,$6) RETURNING id`,
+        [row.name, row.email, row.phone, row.subject, row.message, row.status]
+      );
+      return r.rows[0].id;
+    },
+    async countPg(client) {
+      return Number((await client.query('SELECT count(*) FROM contact_messages')).rows[0].count);
+    },
+  },
+
+  system_config: {
+    async export() {
+      return mongoose.connection.collection('systemconfigs').find({}).toArray();
+    },
+    transform(doc) {
+      return { key: doc.key, value: doc.encrypted ? null : doc._value, description: doc.description ?? null, encrypted: !!doc.encrypted };
+    },
+    validate(row) {
+      if (!row.key) throw new Error('system_config row missing key');
+      if (row.encrypted) {
+        // system_config (0012_new_domains_baseline.sql) deliberately has no
+        // encryption support (only plain boolean flags are ever actually
+        // set) — an encrypted Mongo value has nowhere safe to go and is
+        // never decrypted by this tool. Surfaces as a normal `failed` row
+        // with a clear, actionable reason rather than migrating a secret in
+        // plaintext or silently dropping it.
+        throw new Error(`system_config key "${row.key}" is encrypted in Mongo — re-set it manually post-cutover, not migrated`);
+      }
+    },
+    async upsert(client, sourceId, row) {
+      await client.query(
+        `INSERT INTO system_config (key, value, description) VALUES ($1,$2,$3)
+         ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, description = EXCLUDED.description`,
+        [row.key, row.value, row.description]
+      );
+      return row.key;
+    },
+    async countPg(client) {
+      return Number((await client.query('SELECT count(*) FROM system_config')).rows[0].count);
+    },
+  },
+
+  wishlists: {
+    needsUserMap: true,
+    async export() {
+      const docs = await mongoose.connection.collection('wishlists').find({}).toArray();
+      const flat = [];
+      // One Mongo doc holds an embedded array of {course, addedAt} per user;
+      // Postgres normalizes this into one row per (user_id, course_id)
+      // (lib/db/drizzle/0012) — flattened here into synthetic per-item
+      // "documents" so the rest of this tool's 1-Mongo-doc-to-1-Postgres-row
+      // framework (checkpointing, hashing, idempotency) applies unchanged.
+      for (const w of docs) {
+        for (const item of w.courses || []) {
+          flat.push({ _id: `${w._id}:${item.course}`, user: w.user, course: item.course, addedAt: item.addedAt });
+        }
+      }
+      return flat;
+    },
+    async transform(doc, ctx) {
+      return {
+        user_id: await resolveProfileId(ctx.pgClient, ctx.userEmailMap, doc.user),
+        course_id: resolveCoursePgId(doc.course),
+        added_at: doc.addedAt ?? new Date(),
+      };
+    },
+    validate() {},
+    async upsert(client, sourceId, row) {
+      await client.query(
+        `INSERT INTO wishlists (user_id, course_id, added_at) VALUES ($1,$2,$3)
+         ON CONFLICT (user_id, course_id) DO UPDATE SET added_at = EXCLUDED.added_at`,
+        [row.user_id, row.course_id, row.added_at]
+      );
+      return `${row.user_id}:${row.course_id}`;
+    },
+    async countPg(client) {
+      return Number((await client.query('SELECT count(*) FROM wishlists')).rows[0].count);
+    },
+  },
+
+  hifz_progress: {
+    needsUserMap: true,
+    async export() {
+      return mongoose.connection.collection('hifzprogresses').find({}).toArray();
+    },
+    async transform(doc, ctx) {
+      return {
+        user_id: await resolveProfileId(ctx.pgClient, ctx.userEmailMap, doc.user),
+        chapter_id: doc.chapterId,
+        chapter_name: doc.chapterName || null,
+        total_verses: doc.totalVerses ?? 0,
+        memorized_verses: JSON.stringify(doc.memorizedVerses ?? []),
+        last_revised: doc.lastRevised ?? new Date(),
+      };
+    },
+    validate(row) {
+      if (!(row.chapter_id >= 1 && row.chapter_id <= 114)) throw new Error(`invalid chapter_id ${row.chapter_id}`);
+    },
+    async upsert(client, sourceId, row) {
+      await client.query(
+        `INSERT INTO hifz_progress (user_id, chapter_id, chapter_name, total_verses, memorized_verses, last_revised)
+         VALUES ($1,$2,$3,$4,$5::jsonb,$6)
+         ON CONFLICT (user_id, chapter_id) DO UPDATE SET
+           chapter_name = EXCLUDED.chapter_name, total_verses = EXCLUDED.total_verses,
+           memorized_verses = EXCLUDED.memorized_verses, last_revised = EXCLUDED.last_revised`,
+        [row.user_id, row.chapter_id, row.chapter_name, row.total_verses, row.memorized_verses, row.last_revised]
+      );
+      return `${row.user_id}:${row.chapter_id}`;
+    },
+    async countPg(client) {
+      return Number((await client.query('SELECT count(*) FROM hifz_progress')).rows[0].count);
+    },
+  },
+
+  certificates: {
+    needsUserMap: true,
+    async export() {
+      return mongoose.connection.collection('certificates').find({}).toArray();
+    },
+    async transform(doc, ctx) {
+      return {
+        certificate_number: doc.certificateNumber,
+        user_id: await resolveProfileId(ctx.pgClient, ctx.userEmailMap, doc.user),
+        student_name: doc.studentName,
+        type: ['ijazah', 'completion', 'hifz', 'attendance'].includes(doc.type) ? doc.type : 'completion',
+        title: doc.title,
+        course_id: doc.course ? resolveCoursePgId(doc.course) : null,
+        issued_by: doc.issuedBy || null,
+        grade: doc.grade || null,
+        notes: doc.notes || null,
+        issued_at: doc.issuedAt ?? new Date(),
+        revoked: !!doc.revoked,
+      };
+    },
+    validate(row) {
+      if (!row.certificate_number || !row.user_id || !row.student_name || !row.title) {
+        throw new Error('certificates row missing a required field');
+      }
+    },
+    async upsert(client, sourceId, row) {
+      const r = await client.query(
+        `INSERT INTO certificates (certificate_number, user_id, student_name, type, title, course_id, issued_by, grade, notes, issued_at, revoked)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+         ON CONFLICT (certificate_number) DO UPDATE SET
+           student_name = EXCLUDED.student_name, title = EXCLUDED.title, grade = EXCLUDED.grade,
+           notes = EXCLUDED.notes, revoked = EXCLUDED.revoked
+         RETURNING id`,
+        [row.certificate_number, row.user_id, row.student_name, row.type, row.title, row.course_id, row.issued_by, row.grade, row.notes, row.issued_at, row.revoked]
+      );
+      return r.rows[0].id;
+    },
+    async countPg(client) {
+      return Number((await client.query('SELECT count(*) FROM certificates')).rows[0].count);
+    },
+  },
+
+  reviews: {
+    needsUserMap: true,
+    async export() {
+      return mongoose.connection.collection('reviews').find({}).toArray();
+    },
+    async transform(doc, ctx) {
+      return {
+        student_id: await resolveProfileId(ctx.pgClient, ctx.userEmailMap, doc.student),
+        teacher_id: doc.teacher ? await resolveProfileId(ctx.pgClient, ctx.userEmailMap, doc.teacher) : null,
+        course_id: doc.course ? resolveCoursePgId(doc.course) : null,
+        rating: doc.rating,
+        title: doc.title || null,
+        body: doc.body,
+        status: ['pending', 'approved', 'rejected'].includes(doc.status) ? doc.status : 'pending',
+        helpful: doc.helpful ?? 0,
+      };
+    },
+    validate(row) {
+      if (!row.body || !(row.rating >= 1 && row.rating <= 5)) throw new Error('reviews row missing body/valid rating');
+      if (!row.teacher_id && !row.course_id) throw new Error('reviews row has neither teacher_id nor course_id');
+    },
+    async upsert(client, sourceId, row, checkpoint) {
+      const existingPgId = checkpoint[sourceId]?.pgId;
+      if (existingPgId) {
+        await client.query(
+          `UPDATE reviews SET rating=$1, title=$2, body=$3, status=$4, helpful=$5 WHERE id=$6`,
+          [row.rating, row.title, row.body, row.status, row.helpful, existingPgId]
+        );
+        return existingPgId;
+      }
+      const r = await client.query(
+        `INSERT INTO reviews (student_id, teacher_id, course_id, rating, title, body, status, helpful)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id`,
+        [row.student_id, row.teacher_id, row.course_id, row.rating, row.title, row.body, row.status, row.helpful]
+      );
+      return r.rows[0].id;
+    },
+    async countPg(client) {
+      return Number((await client.query('SELECT count(*) FROM reviews')).rows[0].count);
+    },
+  },
+
+  referrals: {
+    needsUserMap: true,
+    async export() {
+      return mongoose.connection.collection('referrals').find({}).toArray();
+    },
+    async transform(doc, ctx) {
+      return {
+        referrer_id: await resolveProfileId(ctx.pgClient, ctx.userEmailMap, doc.referrer),
+        referee_id: doc.referee ? await resolveProfileId(ctx.pgClient, ctx.userEmailMap, doc.referee) : null,
+        code: doc.code,
+        status: ['pending', 'converted', 'rewarded', 'expired'].includes(doc.status) ? doc.status : 'pending',
+        converted_at: doc.convertedAt ?? null,
+        rewarded_at: doc.rewardedAt ?? null,
+      };
+    },
+    validate(row) {
+      if (!row.referrer_id || !row.code) throw new Error('referrals row missing referrer_id/code');
+    },
+    async upsert(client, sourceId, row, checkpoint) {
+      const existingPgId = checkpoint[sourceId]?.pgId;
+      if (existingPgId) {
+        await client.query(
+          `UPDATE referrals SET status=$1, converted_at=$2, rewarded_at=$3 WHERE id=$4`,
+          [row.status, row.converted_at, row.rewarded_at, existingPgId]
+        );
+        return existingPgId;
+      }
+      const r = await client.query(
+        `INSERT INTO referrals (referrer_id, referee_id, code, status, converted_at, rewarded_at)
+         VALUES ($1,$2,$3,$4,$5,$6) RETURNING id`,
+        [row.referrer_id, row.referee_id, row.code, row.status, row.converted_at, row.rewarded_at]
+      );
+      return r.rows[0].id;
+    },
+    async countPg(client) {
+      return Number((await client.query('SELECT count(*) FROM referrals')).rows[0].count);
+    },
+  },
+
+  course_progress: {
+    needsUserMap: true,
+    async export() {
+      return mongoose.connection.collection('courseprogresses').find({}).toArray();
+    },
+    async transform(doc, ctx) {
+      return {
+        user_id: await resolveProfileId(ctx.pgClient, ctx.userEmailMap, doc.user),
+        course_id: resolveCoursePgId(doc.course),
+        completed: JSON.stringify(doc.completed ?? []),
+        last_activity: doc.lastActivity ?? new Date(),
+      };
+    },
+    validate() {},
+    async upsert(client, sourceId, row) {
+      await client.query(
+        `INSERT INTO course_progress (user_id, course_id, completed, last_activity) VALUES ($1,$2,$3::jsonb,$4)
+         ON CONFLICT (user_id, course_id) DO UPDATE SET completed = EXCLUDED.completed, last_activity = EXCLUDED.last_activity`,
+        [row.user_id, row.course_id, row.completed, row.last_activity]
+      );
+      return `${row.user_id}:${row.course_id}`;
+    },
+    async countPg(client) {
+      return Number((await client.query('SELECT count(*) FROM course_progress')).rows[0].count);
+    },
+  },
+
+  live_classes: {
+    needsUserMap: true,
+    async export() {
+      return mongoose.connection.collection('liveclasses').find({}).toArray();
+    },
+    async transform(doc, ctx) {
+      return {
+        teacher_id: await resolveProfileId(ctx.pgClient, ctx.userEmailMap, doc.teacher),
+        student_id: await resolveProfileId(ctx.pgClient, ctx.userEmailMap, doc.student),
+        title: doc.title,
+        starts_at: doc.startsAt,
+        duration_min: doc.durationMin ?? 30,
+        meeting_url: doc.meetingUrl || null,
+        notes: doc.notes || null,
+        status: ['scheduled', 'cancelled', 'completed'].includes(doc.status) ? doc.status : 'scheduled',
+      };
+    },
+    validate(row) {
+      if (!row.title || !row.starts_at) throw new Error('live_classes row missing title/starts_at');
+    },
+    async upsert(client, sourceId, row, checkpoint) {
+      const existingPgId = checkpoint[sourceId]?.pgId;
+      if (existingPgId) {
+        await client.query(
+          `UPDATE live_classes SET title=$1, starts_at=$2, duration_min=$3, meeting_url=$4, notes=$5, status=$6 WHERE id=$7`,
+          [row.title, row.starts_at, row.duration_min, row.meeting_url, row.notes, row.status, existingPgId]
+        );
+        return existingPgId;
+      }
+      const r = await client.query(
+        `INSERT INTO live_classes (teacher_id, student_id, title, starts_at, duration_min, meeting_url, notes, status)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id`,
+        [row.teacher_id, row.student_id, row.title, row.starts_at, row.duration_min, row.meeting_url, row.notes, row.status]
+      );
+      return r.rows[0].id;
+    },
+    async countPg(client) {
+      return Number((await client.query('SELECT count(*) FROM live_classes')).rows[0].count);
+    },
+  },
+
+  messages: {
+    needsUserMap: true,
+    async export() {
+      return mongoose.connection.collection('messages').find({}).toArray();
+    },
+    async transform(doc, ctx) {
+      return {
+        from_user_id: await resolveProfileId(ctx.pgClient, ctx.userEmailMap, doc.from),
+        to_user_id: await resolveProfileId(ctx.pgClient, ctx.userEmailMap, doc.to),
+        body: doc.body,
+        read_at: doc.readAt ?? null,
+        created_at: doc.createdAt ?? new Date(),
+      };
+    },
+    validate(row) {
+      if (!row.body) throw new Error('messages row missing body');
+    },
+    async upsert(client, sourceId, row, checkpoint) {
+      const existingPgId = checkpoint[sourceId]?.pgId;
+      if (existingPgId) {
+        await client.query(`UPDATE messages SET read_at=$1 WHERE id=$2`, [row.read_at, existingPgId]);
+        return existingPgId;
+      }
+      const r = await client.query(
+        `INSERT INTO messages (from_user_id, to_user_id, body, read_at, created_at) VALUES ($1,$2,$3,$4,$5) RETURNING id`,
+        [row.from_user_id, row.to_user_id, row.body, row.read_at, row.created_at]
+      );
+      return r.rows[0].id;
+    },
+    async countPg(client) {
+      return Number((await client.query('SELECT count(*) FROM messages')).rows[0].count);
+    },
+  },
+
+  student_records: {
+    needsUserMap: true,
+    async export() {
+      return mongoose.connection.collection('studentrecords').find({}).toArray();
+    },
+    async transform(doc, ctx) {
+      return {
+        student_id: await resolveProfileId(ctx.pgClient, ctx.userEmailMap, doc.student),
+        teacher_id: await resolveProfileId(ctx.pgClient, ctx.userEmailMap, doc.teacher),
+        course_id: doc.course ? resolveCoursePgId(doc.course) : null,
+        record_date: doc.date ?? new Date(),
+        grade: doc.grade ?? null,
+        grade_label: doc.gradeLabel || null,
+        attendance: ['present', 'absent', 'late', 'excused'].includes(doc.attendance) ? doc.attendance : 'unmarked',
+        memo_from: doc.memoFrom || null,
+        memo_to: doc.memoTo || null,
+        review: doc.review || null,
+        tajweed: doc.tajweed || null,
+        homework: doc.homework || null,
+        note: doc.note || null,
+      };
+    },
+    validate(row) {
+      if (row.grade != null && !(row.grade >= 0 && row.grade <= 100)) throw new Error(`invalid grade ${row.grade}`);
+    },
+    async upsert(client, sourceId, row, checkpoint) {
+      const existingPgId = checkpoint[sourceId]?.pgId;
+      if (existingPgId) {
+        await client.query(
+          `UPDATE student_records SET grade=$1, grade_label=$2, attendance=$3, memo_from=$4, memo_to=$5, review=$6, tajweed=$7, homework=$8, note=$9 WHERE id=$10`,
+          [row.grade, row.grade_label, row.attendance, row.memo_from, row.memo_to, row.review, row.tajweed, row.homework, row.note, existingPgId]
+        );
+        return existingPgId;
+      }
+      const r = await client.query(
+        `INSERT INTO student_records
+           (student_id, teacher_id, course_id, record_date, grade, grade_label, attendance, memo_from, memo_to, review, tajweed, homework, note)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING id`,
+        [row.student_id, row.teacher_id, row.course_id, row.record_date, row.grade, row.grade_label, row.attendance, row.memo_from, row.memo_to, row.review, row.tajweed, row.homework, row.note]
+      );
+      return r.rows[0].id;
+    },
+    async countPg(client) {
+      return Number((await client.query('SELECT count(*) FROM student_records')).rows[0].count);
+    },
+  },
 };
+
+// --- Rollback ---
+//
+// Every upsert() above returns the exact pgId (a uuid, a text PK, or a
+// "a:b" composite-key string) recorded in that domain's checkpoint file —
+// rollback uses that same record to delete precisely, and only, the rows
+// THIS tool created or touched, nothing else. table/pk describe how to turn
+// a recorded pgId back into a DELETE statement; composite keys (":"-joined)
+// need their own delete shape since there's no single `id` column to match.
+const ROLLBACK_SPEC = {
+  trial_requests:  { table: 'trial_requests' },
+  subscribers:     { table: 'subscribers' },
+  blogs:           { table: 'blogs' },
+  courses:         { table: 'courses' },
+  contact_messages:{ table: 'contact_messages' },
+  system_config:   { table: 'system_config', pkColumn: 'key' },
+  wishlists:       { table: 'wishlists', composite: ['user_id', 'course_id'] },
+  hifz_progress:   { table: 'hifz_progress', composite: ['user_id', 'chapter_id'] },
+  certificates:    { table: 'certificates' },
+  reviews:         { table: 'reviews' },
+  referrals:       { table: 'referrals' },
+  course_progress: { table: 'course_progress', composite: ['user_id', 'course_id'] },
+  live_classes:    { table: 'live_classes' },
+  messages:        { table: 'messages' },
+  student_records: { table: 'student_records' },
+};
+
+async function rollbackDomain(domainName, { pgClient }) {
+  const spec = ROLLBACK_SPEC[domainName];
+  if (!spec) throw new Error(`No rollback spec for domain: ${domainName}`);
+
+  const { file: checkpointFile, data: checkpoint } = loadCheckpoint(domainName);
+  const entries = Object.entries(checkpoint);
+  if (entries.length === 0) {
+    console.log(`[${domainName}] rollback: nothing to roll back (no checkpoint entries)`);
+    return { domain: domainName, deleted: 0 };
+  }
+
+  let deleted = 0;
+  let alreadyGone = 0;
+  for (const [sourceId, { pgId }] of entries) {
+    try {
+      let result;
+      if (spec.composite) {
+        const [a, b] = String(pgId).split(':');
+        result = await pgClient.query(`DELETE FROM ${spec.table} WHERE ${spec.composite[0]} = $1 AND ${spec.composite[1]} = $2`, [a, b]);
+      } else {
+        result = await pgClient.query(`DELETE FROM ${spec.table} WHERE ${spec.pkColumn ?? 'id'} = $1`, [pgId]);
+      }
+      // rowCount, not "the query didn't throw" — a DELETE with no matching
+      // row succeeds silently, and a stale checkpoint (e.g. left over from
+      // a previous rehearsal run against a different, since-recreated
+      // Postgres instance) would otherwise be misreported as "deleted".
+      if (result.rowCount > 0) deleted += 1;
+      else alreadyGone += 1;
+    } catch (err) {
+      console.error(`[${domainName}] rollback FAILED sourceId=${sourceId} pgId=${pgId}: ${err.message}`);
+    }
+  }
+
+  // The checkpoint's own job is done once every row it tracked is gone —
+  // clearing it means a subsequent forward migration starts clean rather
+  // than believing rows still exist that rollback just deleted.
+  saveCheckpoint(checkpointFile, {});
+  console.log(
+    `[${domainName}] rollback: deleted ${deleted}/${entries.length} row(s)` +
+      (alreadyGone ? `, ${alreadyGone} already gone (stale checkpoint)` : '') +
+      `, checkpoint cleared`
+  );
+  return { domain: domainName, deleted, alreadyGone };
+}
 
 async function migrateDomain(domainName, { dryRun, resetCheckpoint, pgClient }) {
   const domain = DOMAINS[domainName];
@@ -195,6 +798,10 @@ async function migrateDomain(domainName, { dryRun, resetCheckpoint, pgClient }) 
   const mongoDocs = await domain.export();
   console.log(`[${domainName}] exported ${mongoDocs.length} document(s) (content not logged)`);
 
+  // Only built when a domain actually needs it (loadUserEmailMap does one
+  // Mongo query and caches the result across every domain in this run).
+  const ctx = { pgClient, userEmailMap: domain.needsUserMap ? await loadUserEmailMap() : null };
+
   let imported = 0;
   let skippedUnchanged = 0;
   let failed = 0;
@@ -202,7 +809,7 @@ async function migrateDomain(domainName, { dryRun, resetCheckpoint, pgClient }) 
   for (const doc of mongoDocs) {
     const sourceId = String(doc._id);
     try {
-      const row = domain.transform(doc);
+      const row = await domain.transform(doc, ctx);
       domain.validate(row);
       const contentHash = hashOf(row);
 
@@ -266,24 +873,32 @@ async function main() {
   const requested = args.domain === 'all' || !args.domain ? Object.keys(DOMAINS) : [args.domain];
   const dryRun = !!args['dry-run'];
   const resetCheckpoint = !!args['reset-checkpoint'];
+  const rollback = !!args.rollback;
 
   console.log(`[migrate] mongo=${mongoUri.replace(/:[^:@]*@/, ':***@')}`);
   console.log(`[migrate] postgres=${pgUri.replace(/:[^:@]*@/, ':***@')}`);
-  console.log(`[migrate] domains=${requested.join(',')} dryRun=${dryRun} resetCheckpoint=${resetCheckpoint}`);
+  console.log(`[migrate] domains=${requested.join(',')} dryRun=${dryRun} resetCheckpoint=${resetCheckpoint} rollback=${rollback}`);
 
-  await mongoose.connect(mongoUri);
+  // Rollback only ever reads its own checkpoint files and deletes from
+  // Postgres — it never needs Mongo (the source data isn't touched by any
+  // operation this tool performs), so the connection is skipped entirely.
+  if (!rollback) await mongoose.connect(mongoUri);
   const pool = new pg.Pool({ connectionString: pgUri });
   const pgClient = await pool.connect();
 
   const results = [];
   try {
     for (const domainName of requested) {
-      results.push(await migrateDomain(domainName, { dryRun, resetCheckpoint, pgClient }));
+      results.push(
+        rollback
+          ? await rollbackDomain(domainName, { pgClient })
+          : await migrateDomain(domainName, { dryRun, resetCheckpoint, pgClient })
+      );
     }
   } finally {
     pgClient.release();
     await pool.end();
-    await mongoose.disconnect();
+    if (!rollback) await mongoose.disconnect();
   }
 
   fs.mkdirSync(OUT_DIR, { recursive: true });

@@ -95,8 +95,16 @@ node scripts/production-preflight-gate.mjs \
   --confirm-token "I-UNDERSTAND-THIS-WILL-DROP-PRODUCTION-difzynyphojgisrfvrkd" \
   --approval-manifest fixtures/approval-manifest.example.json \
   --dump-file out/old-schema-bundle/public_schema.dump \
-  --checksum-file out/old-schema-bundle/manifest.json
+  --checksum-file out/old-schema-bundle/manifest.json \
+  --ca-cert-file out/prod-ca-2021.crt
 ```
+
+`--ca-cert-file` is required only in `--mode production` (Supabase's pooler/
+direct hosts use a project-specific CA, not a publicly-trusted one — see
+the v4 comment at the top of `production-preflight-gate.mjs`). Download it
+from the project's own dashboard: Project Settings > Database > SSL
+Configuration > Download certificate. It is a public certificate, safe to
+keep in `out/` (gitignored) or paste anywhere — never a secret.
 
 `fixtures/approval-manifest.example.json` is a **LOCAL FIXTURE ONLY** —
 its `approvedBy` field is a literal the gate itself refuses under
@@ -105,6 +113,83 @@ its `approvedBy` field is a literal the gate itself refuses under
 tool file and the backup bundle's own `manifest.json`) any time the
 branch advances, a migration changes, or any checksummed tool script
 changes.
+
+## Production orchestrators (never run against production by this repo)
+
+`scripts/production-cutover-orchestrator.mjs` and
+`scripts/production-rollback-orchestrator.mjs` are the only two tools in
+this repo authorized to touch the real Alrahma project — and neither has
+ever been run against it. Both share their critical-section logic with
+`scripts/lib/cutover-core.mjs` / `scripts/lib/rollback-core.mjs`, which
+is exactly what `test/cutover-core.test.mjs`, `test/rollback-core.test.mjs`,
+and `test/concurrency.test.mjs` exercise directly (against local Postgres
+only) — the tests run the SAME code the production tools do, not a
+reimplementation of it.
+
+**Shared advisory lock.** Both tools derive their lock key from
+`scripts/lib/shared-lock.mjs`'s `sharedAdvisoryLockKey(projectRef)` — the
+SAME key for both cutover and rollback. A corrective review caught that
+the original design used two different keys ("option-a-cutover:<ref>" vs
+"option-a-rollback:<ref>"), so a cutover and a rollback run could both
+acquire their own lock and proceed concurrently without either seeing
+the other — the mutex only worked within one tool, not across the two.
+`test/concurrency.test.mjs` proves the fix directly: cutover-vs-cutover,
+cutover-vs-rollback, and rollback-vs-rollback all correctly serialize on
+the shared key. The lock is acquired on ONE connection and held for the
+tool's ENTIRE critical section — through commit or rollback — never
+released and reacquired partway through.
+
+**Cutover is a single atomic transaction.** The final recheck, Surgical
+Reset, all pending migrations, the migration journal, and the full
+post-migration verification all run as plain SQL on ONE already-locked
+connection, inside ONE `BEGIN ... COMMIT`. `COMMIT` only happens after
+verification passes; any error at any point issues `ROLLBACK`
+automatically — nothing from a failed run is ever left committed. This
+is possible because drizzle-orm's own `migrate()` cannot be used for
+this (it opens its own internal transaction and commits before control
+returns to the caller — see `cutover-core.mjs`'s module doc for the
+exact mechanism); instead the migration files are read with
+drizzle-orm's own `readMigrationFiles()` (same hash/journal format) and
+applied as plain queries on the shared connection. `test/cutover-core.test.mjs`
+proves this with real failure injection at three points (right after
+Surgical Reset, mid-migration, and right after verification but before
+COMMIT) and asserts the old 34-table fixture is back, byte-for-byte,
+after each one.
+
+**Rollback's honesty about its own atomicity boundary.** Unlike cutover,
+a rollback's `pg_restore` step is an external subprocess with its own
+connection and its own `--single-transaction` boundary — it cannot share
+one Postgres transaction with the rest of the rollback run. Rather than
+claim false atomicity, `scripts/lib/rollback-core.mjs` uses three
+independently-safe boundaries (inverse-reset's own begin/commit,
+pg_restore's own `--single-transaction`, and the auth-trigger-restore
+step's own explicit transaction — the last one is a real bug fix: it
+used to be a bare loop of auto-committing statements) and documents
+exactly what state each one's failure leaves behind.
+`test/rollback-core.test.mjs` proves every one of those states with
+failure injection: after the target check (nothing touched), after the
+inverse reset (a clean, empty intermediate state — not corrupt, just
+incomplete), after `pg_restore` (old schema+data back, triggers
+correctly not yet applied), and during the trigger-restore transaction
+(neither of its two statements left applied). The order is also fixed:
+`sql/inverse-reset-new-schema.sql` always runs — and is verified gone —
+*before* `pg_restore` ever executes.
+
+**No bypass flag.** The rollback orchestrator's target check requires
+the live public schema to be EXACTLY the expected new (post-cutover)
+20-table schema before touching anything — there is no `--allow-nonempty`
+flag anywhere in this codebase to widen that check. A target that
+doesn't match must be investigated and resolved by a human.
+
+**Re-verification under the lock, not preflight-only.** The cutover
+orchestrator runs the full `production-preflight-gate.mjs` TWICE: once
+before requesting the lock (fail fast), and once again immediately after
+acquiring it, right before `BEGIN` — closing the gap between "the gate
+checked a moment ago" and "the lock is held and something is about to
+change." The rollback orchestrator independently verifies its backup
+bundle's checksums, `sourceMode`, `projectRef`, and freshness
+(`generatedAt` age) itself, rather than relying on any separate process
+having done so.
 
 ## What's committed vs regenerated
 

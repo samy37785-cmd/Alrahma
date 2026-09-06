@@ -29,6 +29,11 @@ const repoRoot = path.resolve(opsDir, "..", "..");
 const fixturePath = path.join(opsDir, "fixtures", "old_public_schema.sql");
 const gateScript = path.join(opsDir, "scripts", "production-preflight-gate.mjs");
 const scratchDir = path.join(opsDir, "out", "gate-test-automated");
+// A real, public (non-secret) Supabase root CA — --ca-cert-file is
+// required in --mode production as of this task's v4 hardening; every
+// production-mode invocation below needs a real-looking PEM file to get
+// past that check before reaching the specific static check it targets.
+const testCaCertPath = path.join(opsDir, "fixtures", "test-ca.crt");
 
 const baseConnectionString = process.env.TEST_DATABASE_URL;
 if (!baseConnectionString) {
@@ -130,17 +135,32 @@ async function loadOldFixtureWithSupabaseShapedAcl(client) {
   await client.query(`alter table auth.users add column if not exists created_at timestamptz not null default now();`);
   await createLocalAuthRolesAndFunctions(client);
   // Match the real Supabase-provisioned public schema owner/ACL shape
-  // exactly (EXPECTED_SCHEMA_OWNER/ACL in the gate script) — a fresh
-  // plain-Postgres 17 database owns `public` as `pg_database_owner` by
-  // default (Postgres 15+'s own default), which does NOT match what
-  // Supabase actually provisions (owner=postgres, an explicit ACL).
+  // exactly (EXPECTED_SCHEMA_OWNER/ACL in the gate script) — CONFIRMED
+  // live against the real project (difzynyphojgisrfvrkd) via
+  // scripts/production-readonly-ownership-audit.mjs, a strictly
+  // read-only query. Real production's `public` is owned by
+  // `pg_database_owner` with an explicit USAGE grant to
+  // postgres/anon/authenticated/service_role — which is ALREADY the
+  // exact shape a fresh `CREATE DATABASE` produces on Postgres 17 (the
+  // owner defaults to `pg_database_owner`, never session-inherited, and
+  // `pg_database_owner` resolves to whoever owns the current database —
+  // `postgres`, here — for grant-authority purposes). An EARLIER version
+  // of this fixture used to `alter schema public owner to postgres`,
+  // fighting that correct default to match an EARLIER, now-corrected,
+  // wrong pinned constant — removed; only the four explicit USAGE
+  // grants are added, matching production's real ACL exactly.
   await client.query(`
-    alter schema public owner to postgres;
-    revoke all on schema public from public;
-    grant usage, create on schema public to postgres;
-    grant usage on schema public to anon, authenticated, service_role;
+    grant usage on schema public to postgres, anon, authenticated, service_role;
   `);
-  await client.query(fs.readFileSync(fixturePath, "utf8"));
+  // .replace normalizes CRLF -> LF: on a Windows checkout with
+  // core.autocrlf=true, this file's own dollar-quoted function bodies
+  // would otherwise embed a literal \r in every line, which
+  // pg_get_functiondef() then reproduces verbatim — silently changing
+  // the live body-hash fingerprint checks below to fail against
+  // production-preflight-gate.mjs's LF-computed EXPECTED_FUNCTIONS
+  // constants. Found by actually running this suite on Windows, not by
+  // inspection.
+  await client.query(fs.readFileSync(fixturePath, "utf8").replace(/\r\n/g, "\n"));
   // The fixture seeds a handful of synthetic rows (blogs/subscribers/
   // the trigger-derived profiles row, plus its own auth.users row) —
   // the gate's live checks require every old table AND auth.users to
@@ -198,7 +218,7 @@ async function main() {
   assert.match(t1.out, /PASS {2}function rls_auto_enable: security_definer \+ search_path \+ args \+ return type \+ body hash all match/);
   assert.match(t1.out, /PASS {2}trigger on_auth_user_created matches the approved old inventory exactly, including its target function/);
   assert.match(t1.out, /PASS {2}event trigger rls_auto_enable_trigger is present, enabled, and its event\/tags\/handler match/);
-  assert.match(t1.out, /PASS {2}public schema owner \(postgres\) and ACL match the pinned expectation exactly/);
+  assert.match(t1.out, /PASS {2}public schema owner \(pg_database_owner\) and ACL match the pinned expectation exactly/);
   assert.match(t1.out, /PASS {2}all \d+ tool file\(s\) match the approval manifest exactly/);
 
   console.log("--- T1b: the worktree-cleanliness check runs the exact command this repo's own git state answers");
@@ -215,7 +235,7 @@ async function main() {
   console.log("--- T2: --mode production refuses the legacy single-file checksum format");
   const t2 = runGate(
     { GATE_DATABASE_URL: "postgresql://postgres:x@db.difzynyphojgisrfvrkd.supabase.co:5432/postgres?sslmode=require" },
-    ["--mode", "production", "--approval-manifest", goodManifest, "--dump-file", path.join(scratchDir, "dump.bin"), "--checksum-file", path.join(scratchDir, "checksum-legacy.sha256")]
+    ["--mode", "production", "--approval-manifest", goodManifest, "--dump-file", path.join(scratchDir, "dump.bin"), "--checksum-file", path.join(scratchDir, "checksum-legacy.sha256"), "--ca-cert-file", testCaCertPath]
   );
   assert.notEqual(t2.code, 0);
   assert.match(t2.out, /refuses the legacy single-file checksum format/);
@@ -226,7 +246,7 @@ async function main() {
   console.log("--- T3: --mode production refuses a local-sourced backup bundle");
   const t3 = runGate(
     { GATE_DATABASE_URL: "postgresql://postgres:x@db.difzynyphojgisrfvrkd.supabase.co:5432/postgres?sslmode=require" },
-    ["--mode", "production", "--approval-manifest", goodManifest, "--dump-file", path.join(scratchDir, "dump.bin"), "--checksum-file", path.join(scratchDir, "manifest-local.json")]
+    ["--mode", "production", "--approval-manifest", goodManifest, "--dump-file", path.join(scratchDir, "dump.bin"), "--checksum-file", path.join(scratchDir, "manifest-local.json"), "--ca-cert-file", testCaCertPath]
   );
   assert.notEqual(t3.code, 0);
   assert.match(t3.out, /requires the backup bundle's own sourceMode to be "production"/);
@@ -237,7 +257,7 @@ async function main() {
   console.log("--- T4: --mode production refuses a backup bundle stamped with the wrong projectRef");
   const t4 = runGate(
     { GATE_DATABASE_URL: "postgresql://postgres:x@db.difzynyphojgisrfvrkd.supabase.co:5432/postgres?sslmode=require" },
-    ["--mode", "production", "--approval-manifest", goodManifest, "--dump-file", path.join(scratchDir, "dump.bin"), "--checksum-file", path.join(scratchDir, "manifest-wrongref.json")]
+    ["--mode", "production", "--approval-manifest", goodManifest, "--dump-file", path.join(scratchDir, "dump.bin"), "--checksum-file", path.join(scratchDir, "manifest-wrongref.json"), "--ca-cert-file", testCaCertPath]
   );
   assert.notEqual(t4.code, 0);
   assert.match(t4.out, /requires the backup bundle's own projectRef \("someotherref"\) to equal --project-ref/);
@@ -249,7 +269,7 @@ async function main() {
   const localFixtureManifest = path.join(scratchDir, "approval-manifest-local-fixture-approver.json");
   const t5 = runGate(
     { GATE_DATABASE_URL: "postgresql://postgres:x@db.difzynyphojgisrfvrkd.supabase.co:5432/postgres?sslmode=require" },
-    ["--mode", "production", "--approval-manifest", localFixtureManifest, "--dump-file", path.join(scratchDir, "dump.bin"), "--checksum-file", path.join(scratchDir, "manifest-production.json")]
+    ["--mode", "production", "--approval-manifest", localFixtureManifest, "--dump-file", path.join(scratchDir, "dump.bin"), "--checksum-file", path.join(scratchDir, "manifest-production.json"), "--ca-cert-file", testCaCertPath]
   );
   assert.notEqual(t5.code, 0);
   assert.match(t5.out, /refuses an approval manifest whose approvedBy is the known LOCAL-FIXTURE literal/);

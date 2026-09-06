@@ -55,11 +55,27 @@
 //     --project-ref difzynyphojgisrfvrkd \
 //     --confirm-token "I-UNDERSTAND-THIS-WILL-DROP-PRODUCTION-difzynyphojgisrfvrkd" \
 //     --approval-manifest <path to a signed-off JSON file> \
-//     --dump-file <path> --checksum-file <path> --max-dump-age-hours 24
+//     --dump-file <path> --checksum-file <path> --max-dump-age-hours 24 \
+//     --ca-cert-file <path to Supabase's Project Settings > Database >
+//       SSL Configuration certificate> (required in --mode production;
+//       see v4 changes below for why)
 //
 // Exit code 0 only if every check below passes. Exit code 1 on the
 // first failure, or if any required flag/env-var is missing (missing
 // is itself a failure, never a default-through).
+//
+// v4 change (Stage 2D Production Cutover Tooling Hardening task): added
+// a required --ca-cert-file flag for --mode production. Found by
+// actually running --mode production's live-check connection against
+// the real project for the first time (as part of a separate, explicitly
+// authorized read-only audit): rejectUnauthorized:true with no `ca`
+// fails EVERY connection to Supabase's pooler/direct host with
+// "self-signed certificate in certificate chain" — Supabase's own CA is
+// not in Node's default trust store. Before this change, --mode
+// production could never have passed its own live checks at all. The
+// fix supplies the real CA (downloaded from the project's own dashboard,
+// a public, non-secret artifact) so verification stays strict
+// (rejectUnauthorized stays true) instead of being weakened.
 //
 // v3 changes (Round 2 remediation, closing a real code-review's
 // findings — see the plan section this commit implements):
@@ -94,6 +110,7 @@ import path from "node:path";
 import crypto from "node:crypto";
 import { execSync } from "node:child_process";
 import pg from "pg";
+import { connectionStringForClient } from "./lib/pg-connection.mjs";
 
 const EXPECTED_PROJECT_REF = "difzynyphojgisrfvrkd";
 const REPO_ROOT = path.resolve(new URL(".", import.meta.url).pathname.replace(/^\/([A-Za-z]):/, "$1:"), "..", "..", "..");
@@ -185,23 +202,25 @@ const EXPECTED_EVENT_TRIGGER = {
   handlerFunction: "rls_auto_enable",
 };
 
-// Public schema owner/ACL — a real fail() check now (Round 2), not an
-// INFO print. HONEST CAVEAT: docs/remote-supabase-inventory.md never
-// captured nspowner/nspacl for `public` on the real project (confirmed
-// during this round's review) — this pinned value comes only from a
-// fresh `select nspowner::regrole::text, nspacl::text from pg_namespace
-// where nspname='public'` run directly against the real LOCAL Supabase
-// CLI stack (`supabase start` in ops/option-a-rehearsal) during this
-// round, not off difzynyphojgisrfvrkd. (An earlier capture in
-// ops/option-a-rehearsal/out/public_schema_acl.json recorded a
-// different value, "pg_database_owner"-owned — likely from an older
-// Supabase CLI/Postgres image; this constant was verified against a
-// live re-query, not trusted from that stale file.) Same tripwire
-// discipline as the rest of this file: re-verify against a fresh
-// Remote read before this gate is ever pointed at the real project
-// with --mode production.
-const EXPECTED_SCHEMA_OWNER = "postgres";
-const EXPECTED_SCHEMA_ACL = "{postgres=UC/postgres,anon=U/postgres,authenticated=U/postgres,service_role=U/postgres}";
+// Public schema owner/ACL — CONFIRMED against the real project
+// (difzynyphojgisrfvrkd) via scripts/production-readonly-ownership-audit.mjs
+// (Stage 2D "Final Live Read-Only Production Readiness Gate" task), a
+// strictly read-only BEGIN TRANSACTION READ ONLY / ROLLBACK query, not
+// an assumption. The value below is owner=pg_database_owner — this
+// CORRECTS an earlier version of this constant (owner=postgres) that a
+// prior round had pinned from a LOCAL Supabase CLI stack re-query
+// instead of the real project, dismissing the actual real-project
+// capture already sitting in ops/option-a-rehearsal/out/public_schema_acl.json
+// as "likely from an older Supabase CLI/Postgres image" — that
+// dismissal was wrong: the live re-audit reproduced that exact same
+// ACL string byte-for-byte, confirming public_schema_acl.json was real
+// production data all along. Postgres 17 (and recent Supabase Postgres
+// images generally) default `public`'s owner to `pg_database_owner`
+// with a `PUBLIC USAGE` grant (the empty-role `=U/pg_database_owner`
+// entry below) rather than the historically-common `postgres`-owned
+// pattern this constant used to encode.
+const EXPECTED_SCHEMA_OWNER = "pg_database_owner";
+const EXPECTED_SCHEMA_ACL = "{pg_database_owner=UC/pg_database_owner,=U/pg_database_owner,postgres=U/pg_database_owner,anon=U/pg_database_owner,authenticated=U/pg_database_owner,service_role=U/pg_database_owner}";
 
 // A hash of every fingerprint constant above, computed here and
 // compared against the approval manifest's expectedRemoteFingerprintSha256
@@ -314,9 +333,23 @@ function runStaticChecks(args) {
   const dumpFile = require_("dump-file");
   const checksumFile = require_("checksum-file");
   const maxDumpAgeHours = Number(args["max-dump-age-hours"] || 24);
+  const caCertFile = mode === "production" ? require_("ca-cert-file") : args["ca-cert-file"];
 
   if (!mode || !databaseUrl || !projectRef || !confirmToken || !approvalManifestPath || !dumpFile || !checksumFile) {
     return null;
+  }
+  if (mode === "production") {
+    if (!caCertFile) return null; // require_ already recorded the failure
+    if (!fs.existsSync(caCertFile)) {
+      fail(`--ca-cert-file "${caCertFile}" does not exist`);
+      return null;
+    }
+    const caCertContent = fs.readFileSync(caCertFile, "utf8");
+    if (!caCertContent.includes("-----BEGIN CERTIFICATE-----")) {
+      fail(`--ca-cert-file "${caCertFile}" does not look like a PEM certificate`);
+      return null;
+    }
+    pass(`--ca-cert-file "${caCertFile}" exists and looks like a PEM certificate`);
   }
 
   // 1. Project ref must match the hardcoded expectation.
@@ -627,17 +660,39 @@ function runStaticChecks(args) {
     }
   }
 
-  return { mode, databaseUrl, projectRef };
+  return { mode, databaseUrl, projectRef, caCertFile };
 }
 
 // ---------------------------------------------------------------------
 // Live-database checks — single connection, one READ ONLY transaction,
 // always rolled back.
 // ---------------------------------------------------------------------
-async function runLiveChecks(mode, databaseUrl) {
-  const clientConfig = { connectionString: databaseUrl, statement_timeout: 15_000 };
+async function runLiveChecks(mode, databaseUrl, caCertFile) {
+  // connectionStringForClient strips `sslmode` from the URL before the
+  // connection is opened — see scripts/lib/pg-connection.mjs. Found by
+  // actually running production-readonly-ownership-audit.mjs against
+  // the real project for the first time (Stage 2D "Final Live
+  // Read-Only Production Readiness Gate" task): with `sslmode=require`
+  // left in the connection string, pg-connection-string's current
+  // version silently overrides the explicit `ssl.ca` below and the
+  // connection fails with "self-signed certificate in certificate
+  // chain" even with a correct CA supplied. The static check requiring
+  // sslmode=require in the ORIGINAL --mode production URL (elsewhere in
+  // this file) still enforces the real intent; only the literal query
+  // parameter is dropped for the actual connection.
+  const clientConfig = { connectionString: connectionStringForClient(databaseUrl), statement_timeout: 15_000 };
   if (mode === "production") {
-    clientConfig.ssl = { rejectUnauthorized: true };
+    // Supabase's pooler/direct hosts present a certificate chain rooted
+    // at Supabase's own CA (Project Settings > Database > SSL
+    // Configuration), not a publicly-trusted one — rejectUnauthorized:
+    // true with no `ca` fails every real connection with "self-signed
+    // certificate in certificate chain" (found by actually running this
+    // against the real pooler, not by inspection). --ca-cert-file is
+    // required in production mode specifically so this can never
+    // silently degrade to rejectUnauthorized:false — the flag is
+    // required, checked to exist and parse as a real certificate, and
+    // verification stays strict throughout.
+    clientConfig.ssl = { rejectUnauthorized: true, ca: fs.readFileSync(caCertFile, "utf8") };
   }
   const client = new pg.Client(clientConfig);
 
@@ -931,7 +986,7 @@ async function main() {
     process.exit(1);
   }
 
-  await runLiveChecks(staticResult.mode, staticResult.databaseUrl);
+  await runLiveChecks(staticResult.mode, staticResult.databaseUrl, staticResult.caCertFile);
 
   console.log("");
   if (failures === 0) {

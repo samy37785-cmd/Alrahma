@@ -31,7 +31,21 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const opsDir = path.join(__dirname, "..");
 const scratchBundleDir = path.join(opsDir, "out", "rollback-roundtrip-test-bundle");
 
-const DB_URL = "postgresql://postgres:postgres@127.0.0.1:54322/postgres";
+// supabase_admin, not postgres: this local CLI stack's `postgres` role
+// is not a true Postgres superuser (matches the real project's own role
+// model — see docs/remote-supabase-inventory.md §F). Two real failures
+// were hit by actually running this test as plain `postgres`, not found
+// by inspection: (1) restore-bundle.mjs's pg_restore replays the dump's
+// own recorded `ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin ...`
+// statements, which only supabase_admin (or a real superuser) can
+// execute; (2) a mixed-role attempt (postgres for fixture-load/reset/
+// migrate, supabase_admin only for the final restore) then failed
+// differently ("Superuser owned event trigger must execute a superuser
+// owned function") because the fixture-created rls_auto_enable() ended
+// up owned by postgres while the event trigger creator was
+// supabase_admin. Using supabase_admin consistently for every step
+// avoids both — everything it creates, it also owns.
+const DB_URL = "postgresql://supabase_admin:postgres@127.0.0.1:54322/postgres";
 
 function run(scriptRelPath, env, args = []) {
   const scriptPath = path.join(opsDir, scriptRelPath);
@@ -75,6 +89,23 @@ async function resetToCleanSlate(client) {
   // fixture load. Clean up only the synthetic *.invalid rows this
   // rehearsal itself creates — never a real address.
   await client.query(`delete from auth.users where email like '%@example.invalid';`);
+  // Normalize rls_auto_enable()'s owner before the fixture reload below
+  // re-creates its event trigger: `create or replace function` preserves
+  // whatever owner the function already had on this shared, long-lived
+  // local stack (e.g. left as plain `postgres` by an earlier manual or
+  // automated run), and Postgres refuses to let a superuser (this test
+  // now connects as supabase_admin throughout) create an event trigger
+  // pointing at a non-superuser-owned function — found by actually
+  // hitting "Superuser owned event trigger must execute a superuser
+  // owned function" here, not by inspection.
+  await client.query(`
+    do $$
+    begin
+      if exists (select 1 from pg_proc where proname = 'rls_auto_enable' and pronamespace = 'public'::regnamespace) then
+        alter function public.rls_auto_enable() owner to supabase_admin;
+      end if;
+    end $$;
+  `);
 }
 
 async function main() {
@@ -86,7 +117,10 @@ async function main() {
   await client.connect();
   await resetToCleanSlate(client);
   console.log("--- loading the OLD 34-table fixture");
-  await client.query(fs.readFileSync(path.join(opsDir, "fixtures", "old_public_schema.sql"), "utf8"));
+  // CRLF -> LF: see the identical fix in test/gate.test.mjs for why —
+  // a Windows checkout otherwise contaminates this fixture's function
+  // body hashes with literal \r.
+  await client.query(fs.readFileSync(path.join(opsDir, "fixtures", "old_public_schema.sql"), "utf8").replace(/\r\n/g, "\n"));
   const { rows: tableCountRows } = await client.query(`select count(*) as c from pg_tables where schemaname='public';`);
   assert.equal(Number(tableCountRows[0].c), 34, "fixture load: expected exactly 34 old tables");
   await client.end();
@@ -174,5 +208,11 @@ async function main() {
 
 main().catch((e) => {
   console.error(e);
-  process.exitCode = 1;
+  // process.exit(1), not process.exitCode = 1: an error thrown before
+  // the matching client.end() leaves an open pg connection keeping the
+  // event loop alive — exitCode alone only takes effect once the loop
+  // drains naturally, which it never does with a dangling connection.
+  // Found by actually hitting this: an early failure hung the process
+  // for 25+ minutes with zero further output instead of exiting.
+  process.exit(1);
 });

@@ -45,6 +45,7 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
 import pg from "pg";
+import { parsePgTextArray } from "./lib/pg-array.mjs";
 
 const execFileAsync = promisify(execFile);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -276,7 +277,17 @@ async function main() {
         select tablename, policyname, cmd, roles, qual, with_check
         from pg_policies where schemaname='public' order by tablename, policyname;
       `);
-      const normalize = (rows) => rows.map((r) => ({ ...r, roles: [...(r.roles || [])].sort() }));
+      // parsePgTextArray, not `[...(r.roles || [])]`: node-postgres has no
+      // type parser registered for `name[]` (pg_policies.roles is one),
+      // so it comes back as the raw Postgres text literal
+      // ("{authenticated,anon}"), not a parsed JS array — spreading a
+      // STRING splits it into individual characters, not role names.
+      // Found while building fixtures/new-schema-rls-policies.json for
+      // the Option A cutover tooling (scripts/lib/pg-array.mjs's own
+      // comment has the full story); see test/restore-roles-array.test.mjs
+      // for a test that fails against the old `[...r.roles]` pattern and
+      // passes with this one.
+      const normalize = (rows) => rows.map((r) => ({ ...r, roles: parsePgTextArray(r.roles || []).sort() }));
       const restoredNorm = JSON.stringify(normalize(restoredPolicies));
       const expectedNorm = JSON.stringify(normalize(inventory.policies));
       if (restoredNorm !== expectedNorm) {

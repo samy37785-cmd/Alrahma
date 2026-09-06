@@ -48,6 +48,19 @@ import { requestLogger } from './middleware/requestLogger.js';
 import { correlationId } from './middleware/correlationId.js';
 import { issueCsrfToken, verifyCsrfToken } from './middleware/csrf.js';
 import logger from './config/logger.js';
+import { isSupabaseBackend } from './config/dataBackend.js';
+import supabaseAuthRoutes from './data/supabase/routes/authRoutes.js';
+import supabaseQuranBookmarkRoutes from './data/supabase/routes/quranBookmarkRoutes.js';
+import supabaseQuranProgressRoutes from './data/supabase/routes/quranProgressRoutes.js';
+import supabaseQuranMemoRoutes from './data/supabase/routes/quranMemoRoutes.js';
+import supabaseNotificationRoutes from './data/supabase/routes/notificationRoutes.js';
+import supabaseCouponRoutes from './data/supabase/routes/couponRoutes.js';
+import supabaseTrialRoutes from './data/supabase/routes/trialRoutes.js';
+import supabaseSubscriberRoutes from './data/supabase/routes/subscriberRoutes.js';
+import supabaseBlogRoutes from './data/supabase/routes/blogRoutes.js';
+import supabaseEnrollmentRoutes from './data/supabase/routes/enrollmentRoutes.js';
+import supabasePaymentRoutes from './data/supabase/routes/paymentRoutes.js';
+import supabaseInvoiceRoutes from './data/supabase/routes/invoiceRoutes.js';
 
 // Validate required environment variables immediately — fails fast with a
 // clear error rather than surfacing a cryptic runtime failure later.
@@ -170,8 +183,16 @@ app.use('/api', apiLimiter);
 // a DB hiccup.
 app.get('/api/csrf', (_req, res) => res.json({ ok: true }));
 
-// Ensure DB is connected on every request (cached after first call).
+// Ensure DB is connected on every request (cached after first call). Under
+// DATA_BACKEND=supabase there is no MongoDB connection to wait on — every
+// matched-domain route already opens its own Postgres connection via
+// data/supabase/client.js, and unmatched domains simply aren't mounted
+// differently by backend (they still use their Mongo controllers either
+// way, per docs/option-a-mongo-supabase-parity-map.md, so those still need
+// this check). Skipping this gate specifically for supabase mode avoids
+// every /api/* request 503'ing on a MongoDB connection this mode doesn't use.
 app.use(async (req, res, next) => {
+  if (isSupabaseBackend()) return next();
   try {
     await connectDB();
     next();
@@ -181,30 +202,34 @@ app.use(async (req, res, next) => {
   }
 });
 
-app.use('/api/auth', authLimiter, authRoutes);
+// DATA_BACKEND selects which controller implementation handles each matched
+// domain's routes — the routes/paths/response shapes are identical either
+// way (see docs/option-a-mongo-supabase-parity-map.md). Defaults to the
+// unchanged MongoDB path; this is the only backend actually deployed.
+app.use('/api/auth', authLimiter, isSupabaseBackend() ? supabaseAuthRoutes : authRoutes);
 app.use('/api/courses', courseRoutes);
-app.use('/api/trials', trialRoutes);
-app.use('/api/payments', paymentRoutes);
-app.use('/api/invoices', invoiceRoutes);
-app.use('/api/newsletter', subscriberRoutes);
-app.use('/api/enrollments', enrollmentRoutes);
+app.use('/api/trials', isSupabaseBackend() ? supabaseTrialRoutes : trialRoutes);
+app.use('/api/payments', isSupabaseBackend() ? supabasePaymentRoutes : paymentRoutes);
+app.use('/api/invoices', isSupabaseBackend() ? supabaseInvoiceRoutes : invoiceRoutes);
+app.use('/api/newsletter', isSupabaseBackend() ? supabaseSubscriberRoutes : subscriberRoutes);
+app.use('/api/enrollments', isSupabaseBackend() ? supabaseEnrollmentRoutes : enrollmentRoutes);
 app.use('/api/hifz', hifzRoutes);
 app.use('/api/progress', progressRoutes);
-app.use('/api/quran-bookmarks', quranBookmarkRoutes);
-app.use('/api/quran-progress',  quranProgressRoutes);
-app.use('/api/quran-memo',      quranMemoRoutes);
+app.use('/api/quran-bookmarks', isSupabaseBackend() ? supabaseQuranBookmarkRoutes : quranBookmarkRoutes);
+app.use('/api/quran-progress',  isSupabaseBackend() ? supabaseQuranProgressRoutes : quranProgressRoutes);
+app.use('/api/quran-memo',      isSupabaseBackend() ? supabaseQuranMemoRoutes : quranMemoRoutes);
 app.use('/api/certificates', certificateRoutes);
 app.use('/api/teacher', teacherRoutes);
 app.use('/api/parent', parentRoutes);
 app.use('/api/classes', liveClassRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/cron', cronRoutes);
-app.use('/api/notifications', notificationRoutes);
+app.use('/api/notifications', isSupabaseBackend() ? supabaseNotificationRoutes : notificationRoutes);
 app.use('/api/contact',       contactRoutes);
-app.use('/api/coupons',       couponRoutes);
+app.use('/api/coupons',       isSupabaseBackend() ? supabaseCouponRoutes : couponRoutes);
 app.use('/api/wishlist',      wishlistRoutes);
 app.use('/api/reviews',       reviewRoutes);
-app.use('/api/blog',          blogRoutes);
+app.use('/api/blog',          isSupabaseBackend() ? supabaseBlogRoutes : blogRoutes);
 app.use('/api/search',        searchRoutes);
 app.use('/api/referrals',     referralRoutes);
 

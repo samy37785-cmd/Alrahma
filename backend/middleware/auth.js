@@ -1,5 +1,16 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
+import { isSupabaseBackend } from '../config/dataBackend.js';
+import { loadUserById } from '../data/supabase/loadUser.js';
+
+// DATA_BACKEND=supabase has no tokenVersion column (see data/supabase/
+// loadUser.js) — sessions aren't invalidated on password change under that
+// backend, so the version check is skipped rather than compared against a
+// value that doesn't exist.
+async function findUserById(id) {
+  if (isSupabaseBackend()) return loadUserById(id);
+  return User.findById(id).select('-password');
+}
 
 // Resolves the JWT from the httpOnly cookie (primary) or a Bearer header
 // (fallback, e.g. for API tooling). The cookie is never readable by JS, which
@@ -24,12 +35,14 @@ async function _loadUser(req, res) {
   }
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
-    const user = await User.findById(decoded.id).select('-password');
+    const user = await findUserById(decoded.id);
     if (!user) {
       res.status(401).json({ message: 'User no longer exists' });
       return null;
     }
     // Reject tokens issued before a password change (tokenVersion mismatch).
+    // Always matches under supabase mode (see findUserById) since there's no
+    // tokenVersion column to compare against there.
     if ((decoded.v ?? 0) !== (user.tokenVersion ?? 0)) {
       res.status(401).json({ message: 'Session expired — please log in again' });
       return null;
@@ -88,7 +101,7 @@ export async function softProtect(req, res, next) {
     const token = getToken(req);
     if (token) {
       const decoded = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
-      const user = await User.findById(decoded.id).select('-password');
+      const user = await findUserById(decoded.id);
       // Honour tokenVersion so a post-password-reset token doesn't persist here either.
       if (user && (decoded.v ?? 0) === (user.tokenVersion ?? 0)) {
         req.user = user;

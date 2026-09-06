@@ -214,16 +214,16 @@ export const resetPassword = asyncHandler(async () => {
 });
 
 // @route  GET /api/auth/link-code
-export const getLinkCode = asyncHandler(async () => {
-  // Stage 2F added profiles.parent_link_code/family_name (0014_close_
-  // partial_gaps_schema.sql), but there is still no parent<->child linking
-  // table or RPC to resolve a code back into a relationship — the column
-  // exists, the feature doesn't. Left as an explicit, documented gap.
-  const err = new Error(
-    'Parent-child linking is not supported under DATA_BACKEND=supabase yet — see docs/option-a-mongo-supabase-parity-map.md.'
-  );
-  err.status = 501;
-  throw err;
+export const getLinkCode = asyncHandler(async (req, res) => {
+  // ensure_parent_link_code() (lib/db/drizzle/0016_parent_linking_and_
+  // review_safe_view.sql) lazily generates and persists profiles.
+  // parent_link_code on first call, idempotent thereafter — same pattern as
+  // ensure_referral_code() (0015).
+  const code = await withUserContext(req.user._id, async (client) => {
+    const r = await client.query(`SELECT ensure_parent_link_code() AS code`);
+    return r.rows[0].code;
+  });
+  res.json({ code });
 });
 
 // @route  POST /api/auth/google

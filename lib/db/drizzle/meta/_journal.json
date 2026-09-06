@@ -85,6 +85,34 @@
       "when": 1788110400000,
       "tag": "0011_default_privileges_deny_by_default",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1788800000000,
+      "tag": "0012_new_domains_baseline",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1788800001000,
+      "tag": "0013_admin_rbac",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1788800002000,
+      "tag": "0014_close_partial_gaps_schema",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1788800003000,
+      "tag": "0015_new_domains_rls",
+      "breakpoints": true
     }
   ]
 }

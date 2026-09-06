@@ -47,6 +47,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import pg from "pg";
+import { connectionStringForClient } from "./lib/pg-connection.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const OPS_DIR = path.join(__dirname, "..");
@@ -115,7 +116,11 @@ async function main() {
   }
   ok(`host/username matches project ref ${projectRef}, sslmode=${sslmode}, --ca-cert-file is a PEM certificate`);
 
-  const client = new pg.Client({ connectionString: databaseUrl, statement_timeout: 30_000, ssl: { rejectUnauthorized: true, ca: caCert } });
+  // connectionStringForClient strips `sslmode` before the connection is
+  // actually opened — see scripts/lib/pg-connection.mjs for exactly why
+  // (found by actually connecting to real production for the first
+  // time under this task).
+  const client = new pg.Client({ connectionString: connectionStringForClient(databaseUrl), statement_timeout: 30_000, ssl: { rejectUnauthorized: true, ca: caCert } });
   await client.connect();
   const result = { projectRef, auditedAt: new Date().toISOString() };
 

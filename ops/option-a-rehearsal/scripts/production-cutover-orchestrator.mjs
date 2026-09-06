@@ -90,6 +90,7 @@ import { fileURLToPath } from "node:url";
 import pg from "pg";
 import { sharedAdvisoryLockKey } from "./lib/shared-lock.mjs";
 import { runAtomicCutoverOnClient } from "./lib/cutover-core.mjs";
+import { connectionStringForClient } from "./lib/pg-connection.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const OPS_DIR = path.join(__dirname, "..");
@@ -250,7 +251,10 @@ function runPreflightGate(ctx, label) {
 async function phase2_atomicCriticalSection(ctx) {
   step("Phase 2 — advisory lock (shared with the rollback tool) + atomic critical section");
   const client = new pg.Client({
-    connectionString: ctx.databaseUrl,
+    // connectionStringForClient strips `sslmode` before connecting —
+    // see scripts/lib/pg-connection.mjs for why: left in, it silently
+    // overrides the explicit ssl.ca below against a real Supabase host.
+    connectionString: connectionStringForClient(ctx.databaseUrl),
     statement_timeout: 0, // migrations can legitimately run longer than a short fixed timeout; the advisory lock, not a timeout, is what bounds this
     ssl: { rejectUnauthorized: true, ca: ctx.caCert },
   });

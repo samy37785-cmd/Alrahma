@@ -95,6 +95,7 @@ import pg from "pg";
 import { sharedAdvisoryLockKey } from "./lib/shared-lock.mjs";
 import { runRollbackOnClient, verifyBundleChecksumsAndFreshness } from "./lib/rollback-core.mjs";
 import { restorePublicSchemaDump } from "./lib/pg-restore-runner.mjs";
+import { connectionStringForClient } from "./lib/pg-connection.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const OPS_DIR = path.join(__dirname, "..");
@@ -226,7 +227,10 @@ async function main() {
   ok("bundle checksums match, sourceMode=production, projectRef matches, generatedAt is within 1h");
 
   step("Phase 3 — advisory lock (shared with the cutover tool) + critical section");
-  const client = new pg.Client({ connectionString: ctx.databaseUrl, statement_timeout: 0, ssl: { rejectUnauthorized: true, ca: ctx.caCert } });
+  // connectionStringForClient strips `sslmode` before connecting — see
+  // scripts/lib/pg-connection.mjs: left in, it silently overrides the
+  // explicit ssl.ca below against a real Supabase host.
+  const client = new pg.Client({ connectionString: connectionStringForClient(ctx.databaseUrl), statement_timeout: 0, ssl: { rejectUnauthorized: true, ca: ctx.caCert } });
   await client.connect();
   try {
     const { rows: lockRows } = await client.query("select pg_try_advisory_lock($1::bigint) as acquired;", [SHARED_ADVISORY_LOCK_KEY]);

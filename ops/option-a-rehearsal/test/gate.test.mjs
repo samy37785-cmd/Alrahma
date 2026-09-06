@@ -135,15 +135,22 @@ async function loadOldFixtureWithSupabaseShapedAcl(client) {
   await client.query(`alter table auth.users add column if not exists created_at timestamptz not null default now();`);
   await createLocalAuthRolesAndFunctions(client);
   // Match the real Supabase-provisioned public schema owner/ACL shape
-  // exactly (EXPECTED_SCHEMA_OWNER/ACL in the gate script) — a fresh
-  // plain-Postgres 17 database owns `public` as `pg_database_owner` by
-  // default (Postgres 15+'s own default), which does NOT match what
-  // Supabase actually provisions (owner=postgres, an explicit ACL).
+  // exactly (EXPECTED_SCHEMA_OWNER/ACL in the gate script) — CONFIRMED
+  // live against the real project (difzynyphojgisrfvrkd) via
+  // scripts/production-readonly-ownership-audit.mjs, a strictly
+  // read-only query. Real production's `public` is owned by
+  // `pg_database_owner` with an explicit USAGE grant to
+  // postgres/anon/authenticated/service_role — which is ALREADY the
+  // exact shape a fresh `CREATE DATABASE` produces on Postgres 17 (the
+  // owner defaults to `pg_database_owner`, never session-inherited, and
+  // `pg_database_owner` resolves to whoever owns the current database —
+  // `postgres`, here — for grant-authority purposes). An EARLIER version
+  // of this fixture used to `alter schema public owner to postgres`,
+  // fighting that correct default to match an EARLIER, now-corrected,
+  // wrong pinned constant — removed; only the four explicit USAGE
+  // grants are added, matching production's real ACL exactly.
   await client.query(`
-    alter schema public owner to postgres;
-    revoke all on schema public from public;
-    grant usage, create on schema public to postgres;
-    grant usage on schema public to anon, authenticated, service_role;
+    grant usage on schema public to postgres, anon, authenticated, service_role;
   `);
   // .replace normalizes CRLF -> LF: on a Windows checkout with
   // core.autocrlf=true, this file's own dollar-quoted function bodies
@@ -211,7 +218,7 @@ async function main() {
   assert.match(t1.out, /PASS {2}function rls_auto_enable: security_definer \+ search_path \+ args \+ return type \+ body hash all match/);
   assert.match(t1.out, /PASS {2}trigger on_auth_user_created matches the approved old inventory exactly, including its target function/);
   assert.match(t1.out, /PASS {2}event trigger rls_auto_enable_trigger is present, enabled, and its event\/tags\/handler match/);
-  assert.match(t1.out, /PASS {2}public schema owner \(postgres\) and ACL match the pinned expectation exactly/);
+  assert.match(t1.out, /PASS {2}public schema owner \(pg_database_owner\) and ACL match the pinned expectation exactly/);
   assert.match(t1.out, /PASS {2}all \d+ tool file\(s\) match the approval manifest exactly/);
 
   console.log("--- T1b: the worktree-cleanliness check runs the exact command this repo's own git state answers");

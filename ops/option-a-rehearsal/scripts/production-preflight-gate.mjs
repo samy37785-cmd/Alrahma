@@ -110,6 +110,7 @@ import path from "node:path";
 import crypto from "node:crypto";
 import { execSync } from "node:child_process";
 import pg from "pg";
+import { connectionStringForClient } from "./lib/pg-connection.mjs";
 
 const EXPECTED_PROJECT_REF = "difzynyphojgisrfvrkd";
 const REPO_ROOT = path.resolve(new URL(".", import.meta.url).pathname.replace(/^\/([A-Za-z]):/, "$1:"), "..", "..", "..");
@@ -201,23 +202,25 @@ const EXPECTED_EVENT_TRIGGER = {
   handlerFunction: "rls_auto_enable",
 };
 
-// Public schema owner/ACL — a real fail() check now (Round 2), not an
-// INFO print. HONEST CAVEAT: docs/remote-supabase-inventory.md never
-// captured nspowner/nspacl for `public` on the real project (confirmed
-// during this round's review) — this pinned value comes only from a
-// fresh `select nspowner::regrole::text, nspacl::text from pg_namespace
-// where nspname='public'` run directly against the real LOCAL Supabase
-// CLI stack (`supabase start` in ops/option-a-rehearsal) during this
-// round, not off difzynyphojgisrfvrkd. (An earlier capture in
-// ops/option-a-rehearsal/out/public_schema_acl.json recorded a
-// different value, "pg_database_owner"-owned — likely from an older
-// Supabase CLI/Postgres image; this constant was verified against a
-// live re-query, not trusted from that stale file.) Same tripwire
-// discipline as the rest of this file: re-verify against a fresh
-// Remote read before this gate is ever pointed at the real project
-// with --mode production.
-const EXPECTED_SCHEMA_OWNER = "postgres";
-const EXPECTED_SCHEMA_ACL = "{postgres=UC/postgres,anon=U/postgres,authenticated=U/postgres,service_role=U/postgres}";
+// Public schema owner/ACL — CONFIRMED against the real project
+// (difzynyphojgisrfvrkd) via scripts/production-readonly-ownership-audit.mjs
+// (Stage 2D "Final Live Read-Only Production Readiness Gate" task), a
+// strictly read-only BEGIN TRANSACTION READ ONLY / ROLLBACK query, not
+// an assumption. The value below is owner=pg_database_owner — this
+// CORRECTS an earlier version of this constant (owner=postgres) that a
+// prior round had pinned from a LOCAL Supabase CLI stack re-query
+// instead of the real project, dismissing the actual real-project
+// capture already sitting in ops/option-a-rehearsal/out/public_schema_acl.json
+// as "likely from an older Supabase CLI/Postgres image" — that
+// dismissal was wrong: the live re-audit reproduced that exact same
+// ACL string byte-for-byte, confirming public_schema_acl.json was real
+// production data all along. Postgres 17 (and recent Supabase Postgres
+// images generally) default `public`'s owner to `pg_database_owner`
+// with a `PUBLIC USAGE` grant (the empty-role `=U/pg_database_owner`
+// entry below) rather than the historically-common `postgres`-owned
+// pattern this constant used to encode.
+const EXPECTED_SCHEMA_OWNER = "pg_database_owner";
+const EXPECTED_SCHEMA_ACL = "{pg_database_owner=UC/pg_database_owner,=U/pg_database_owner,postgres=U/pg_database_owner,anon=U/pg_database_owner,authenticated=U/pg_database_owner,service_role=U/pg_database_owner}";
 
 // A hash of every fingerprint constant above, computed here and
 // compared against the approval manifest's expectedRemoteFingerprintSha256
@@ -665,7 +668,19 @@ function runStaticChecks(args) {
 // always rolled back.
 // ---------------------------------------------------------------------
 async function runLiveChecks(mode, databaseUrl, caCertFile) {
-  const clientConfig = { connectionString: databaseUrl, statement_timeout: 15_000 };
+  // connectionStringForClient strips `sslmode` from the URL before the
+  // connection is opened — see scripts/lib/pg-connection.mjs. Found by
+  // actually running production-readonly-ownership-audit.mjs against
+  // the real project for the first time (Stage 2D "Final Live
+  // Read-Only Production Readiness Gate" task): with `sslmode=require`
+  // left in the connection string, pg-connection-string's current
+  // version silently overrides the explicit `ssl.ca` below and the
+  // connection fails with "self-signed certificate in certificate
+  // chain" even with a correct CA supplied. The static check requiring
+  // sslmode=require in the ORIGINAL --mode production URL (elsewhere in
+  // this file) still enforces the real intent; only the literal query
+  // parameter is dropped for the actual connection.
+  const clientConfig = { connectionString: connectionStringForClient(databaseUrl), statement_timeout: 15_000 };
   if (mode === "production") {
     // Supabase's pooler/direct hosts present a certificate chain rooted
     // at Supabase's own CA (Project Settings > Database > SSL

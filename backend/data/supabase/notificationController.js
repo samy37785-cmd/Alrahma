@@ -5,15 +5,16 @@
 // outside this domain's own routes and isn't part of this adapter — see the
 // notification_type gap note below, which only matters for INSERT paths.
 //
-// Postgres's notification_type enum (lib/db/drizzle/
-// 0000_init_20_table_baseline.sql) has only 7 of Mongo's 14 values
-// (payment_received, payment_failed, subscription_renewed,
-// subscription_expiring, trial_status, admin_announcement, daily_reminder —
-// missing class_scheduled/class_cancelled/class_reminder/message_received/
+// Stage 2E documented notification_type as having only 7 of Mongo's values.
+// Stage 2F added the missing 9 (0014_close_partial_gaps_schema.sql —
+// class_scheduled/class_cancelled/class_reminder/message_received/
 // enrollment_approved/enrollment_rejected/certificate_issued/
-// coupon_received/review_approved). Irrelevant to every route here (all pure
-// reads/mark-read/delete on existing rows), so just documented, not worked
-// around.
+// coupon_received/review_approved), closing that gap at the schema level.
+// Irrelevant to every route in this file regardless (all pure reads/mark-
+// read/delete on existing rows, never an INSERT) — nothing in this file
+// needed to change; the new values simply make future INSERTs (e.g. from a
+// live_classes/messages/referrals adapter) representable, which was not
+// possible before this migration.
 //
 // notifications has no raw UPDATE policy at all (see lib/db/drizzle/
 // 0002_rls.sql, "18. notifications") — the only way to mark a row read is

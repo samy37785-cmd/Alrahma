@@ -7,21 +7,19 @@ import { asyncHandler } from '../../utils/asyncHandler.js';
 import { parsePagination } from '../../utils/pagination.js';
 import { withAnonContext } from './client.js';
 
-// KNOWN GAP (see docs/option-a-mongo-supabase-parity-map.md, "Blog"
-// section): Mongo's `category` (enum), `coverImage` (URL string) and
-// `readTime` (number, default 5) fields have no Postgres column at all —
-// returned as null below rather than guessing a mapping or fabricating a
-// default value.
+// Stage 2E documented category/coverImage/readTime as missing columns
+// (always null). Stage 2F closed that (0014_close_partial_gaps_schema.sql
+// adds blogs.category/cover_image/read_time/canonical_url).
 function mapListRow(row) {
   return {
     slug: row.slug,
     title: row.title,
     excerpt: row.excerpt,
-    category: null,
+    category: row.category,
     tags: row.tags,
     author: { name: row.author_name, role: row.author_role, image: row.author_image },
-    coverImage: null,
-    readTime: null,
+    coverImage: row.cover_image,
+    readTime: row.read_time,
     publishedAt: row.published_at,
     views: row.views,
   };
@@ -32,38 +30,35 @@ function mapListRow(row) {
 export const listPosts = asyncHandler(async (req, res) => {
   const { page, limit, skip } = parsePagination(req.query, { defaultLimit: 9, maxLimit: 20 });
   const { category, tag } = req.query;
-  // `category` has no Postgres column (see mapListRow's comment) — a
-  // category filter cannot be applied under this backend and is silently
-  // ignored rather than guessing a mapping. `tag` maps onto the `tags`
-  // jsonb array via the `?` containment operator ("does this array contain
-  // this string element").
-  void category;
 
   const { rows, total } = await withAnonContext(async (client) => {
     // blogs_select_published_or_admin (0002_rls.sql) lets anon see only
     // published = true rows, matching the Mongo filter's { published: true }.
-    const listSql = tag
-      ? `SELECT id, title, slug, excerpt, tags, author_name, author_role,
-                author_image, published_at, views
-           FROM blogs
-          WHERE published = true AND tags ? $3
-          ORDER BY published_at DESC NULLS LAST
-          LIMIT $1 OFFSET $2`
-      : `SELECT id, title, slug, excerpt, tags, author_name, author_role,
-                author_image, published_at, views
-           FROM blogs
-          WHERE published = true
-          ORDER BY published_at DESC NULLS LAST
-          LIMIT $1 OFFSET $2`;
-    const listParams = tag ? [limit, skip, tag] : [limit, skip];
+    const conditions = ['published = true'];
+    const params = [];
+    if (category) {
+      params.push(category);
+      conditions.push(`category = $${params.length}`);
+    }
+    if (tag) {
+      params.push(tag);
+      conditions.push(`tags ? $${params.length}`);
+    }
+    const where = conditions.join(' AND ');
 
-    const countSql = tag
-      ? 'SELECT count(*)::int AS total FROM blogs WHERE published = true AND tags ? $1'
-      : 'SELECT count(*)::int AS total FROM blogs WHERE published = true';
-    const countParams = tag ? [tag] : [];
+    params.push(limit, skip);
+    const listSql = `SELECT id, title, slug, excerpt, category, tags, author_name, author_role,
+              author_image, cover_image, read_time, published_at, views
+         FROM blogs
+        WHERE ${where}
+        ORDER BY published_at DESC NULLS LAST
+        LIMIT $${params.length - 1} OFFSET $${params.length}`;
+
+    const countParams = params.slice(0, params.length - 2);
+    const countSql = `SELECT count(*)::int AS total FROM blogs WHERE ${where}`;
 
     const [listRes, countRes] = await Promise.all([
-      client.query(listSql, listParams),
+      client.query(listSql, params),
       client.query(countSql, countParams),
     ]);
     return { rows: listRes.rows, total: countRes.rows[0].total };
@@ -80,9 +75,9 @@ export const listPosts = asyncHandler(async (req, res) => {
 export const getPost = asyncHandler(async (req, res) => {
   const post = await withAnonContext(async (client) => {
     const r = await client.query(
-      `SELECT id, title, slug, content, excerpt, tags, author_name,
-              author_role, author_image, published, views, published_at,
-              seo_title, seo_description, created_at
+      `SELECT id, title, slug, content, excerpt, category, tags, author_name,
+              author_role, author_image, cover_image, read_time, canonical_url,
+              published, views, published_at, seo_title, seo_description, created_at
          FROM blogs
         WHERE slug = $1 AND published = true`,
       [req.params.slug]
@@ -110,17 +105,17 @@ export const getPost = asyncHandler(async (req, res) => {
       title: post.title,
       excerpt: post.excerpt,
       body: post.content,
-      category: null, // gap — see mapListRow's comment
+      category: post.category,
       tags: post.tags,
       author: { name: post.author_name, role: post.author_role, image: post.author_image },
-      coverImage: null, // gap
-      readTime: null, // gap
+      coverImage: post.cover_image,
+      readTime: post.read_time,
       published: post.published,
       publishedAt: post.published_at,
       seo: {
         metaTitle: post.seo_title,
         metaDescription: post.seo_description,
-        canonicalUrl: null, // gap — no Postgres column
+        canonicalUrl: post.canonical_url,
       },
       views: post.views,
       createdAt: post.created_at,

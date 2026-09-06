@@ -41,20 +41,46 @@
 // indistinguishable from one migrated by calling migrate() directly.
 import { readMigrationFiles } from "drizzle-orm/migrator";
 import { verifyNewSchemaFingerprint } from "./new-schema-fingerprint.mjs";
+import { snapshotDefaultAcl, verifyCutoverDefaultAclChange } from "./default-acl.mjs";
 
 export class InjectedFailure extends Error {}
 
+// Stage 2D "Final Three-Gate Closure": pg_default_acl is fingerprinted
+// the moment this transaction opens (before the final recheck even
+// runs) and re-checked after migrations + fingerprint verification
+// pass, immediately before COMMIT — not for byte-for-byte equality
+// (migration 0011_default_privileges_deny_by_default.sql is a real,
+// intentional part of the 12 migrations every cutover applies, and
+// legitimately adds exactly one pg_default_acl row; see
+// default-acl.mjs's verifyCutoverDefaultAclChange for the pinned,
+// live-confirmed exact shape of that one tolerated addition), but for
+// "no change beyond exactly that one expected addition". Any OTHER
+// difference means something (a bad migration file, a bug, anything)
+// touched privileges it had no business touching, and must abort the
+// ENTIRE transaction, undoing the reset and every migration already
+// applied in it, not just log a warning. See
+// test/cutover-core.test.mjs's "corrupt-default-acl" failure-injection
+// case for proof: it deliberately mutates pg_default_acl mid-transaction
+// (a DIFFERENT default-acl entry than migration 0011's tolerated one)
+// and confirms COMMIT is refused and the old 34-table schema comes back
+// untouched.
+//
 // injectFailureAt (all optional, undefined = no injection, used only by
 // tests — see test/cutover-core.test.mjs):
-//   "after-reset"        throw right after Surgical Reset's own
-//                         post-condition check passes, before any
-//                         migration statement runs.
-//   <number> N            throw right after the N'th (0-based) migration
-//                         file's statements + journal row are applied.
-//   "before-commit"       throw right after verification passes, before
-//                         COMMIT — proves a verification-adjacent late
-//                         failure still rolls back the reset+migrations
-//                         too, not just the verification queries.
+//   "after-reset"          throw right after Surgical Reset's own
+//                           post-condition check passes, before any
+//                           migration statement runs.
+//   <number> N             throw right after the N'th (0-based) migration
+//                           file's statements + journal row are applied.
+//   "corrupt-default-acl"  deliberately mutate pg_default_acl right
+//                           after fingerprint verification passes, then
+//                           let verifyCutoverDefaultAclChange catch it
+//                           and abort — proves the guard itself, not
+//                           just "some other failure rolls back".
+//   "before-commit"        throw right after verification passes, before
+//                           COMMIT — proves a verification-adjacent late
+//                           failure still rolls back the reset+migrations
+//                           too, not just the verification queries.
 export async function runAtomicCutoverOnClient(client, {
   expectedOldTables,
   expectedOldEnums,
@@ -66,6 +92,10 @@ export async function runAtomicCutoverOnClient(client, {
 }) {
   await client.query("BEGIN");
   try {
+    log("=== snapshotting pg_default_acl (must not change beyond migration 0011's one known, expected addition) ===");
+    const defaultAclBefore = await snapshotDefaultAcl(client);
+    log(`OK    ${defaultAclBefore.length} pg_default_acl row(s) captured as the baseline, under this transaction, before anything is touched`);
+
     log("=== final recheck (same connection, same transaction, immediately before the first DROP) ===");
     const { rows: tableRows } = await client.query(`select tablename from pg_tables where schemaname='public' order by tablename;`);
     const actualTables = tableRows.map((r) => r.tablename).sort();
@@ -126,6 +156,14 @@ export async function runAtomicCutoverOnClient(client, {
     const { rows: migrationRows } = await client.query(`select hash, created_at from drizzle.__drizzle_migrations;`);
     await verifyNewSchemaFingerprint(client, { migrationRows, expectedMigrations: migrations, policyFixture });
     log("OK    post-migration fingerprint verified: tables, functions, enums, migrations journal, RLS, policies, grants");
+
+    if (injectFailureAt === "corrupt-default-acl") {
+      await client.query(`alter default privileges for role postgres in schema public grant select on tables to anon;`);
+    }
+
+    log("=== verifying pg_default_acl changed by no more than migration 0011's one known, expected addition ===");
+    await verifyCutoverDefaultAclChange(client, defaultAclBefore);
+    log("OK    pg_default_acl change is exactly the expected one — safe to commit.");
 
     if (injectFailureAt === "before-commit") {
       throw new InjectedFailure("TEST: injected failure after verification passed, before COMMIT");

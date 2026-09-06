@@ -1,26 +1,29 @@
 // Fast, no-database unit tests for scripts/lib/pg-restore-runner.mjs's
-// pure helpers — the three things the Stage 2D "Rollback Privilege +
-// Strict TLS Final Corrective" task specifically asked to be provable
-// without a live restore:
+// pure/near-pure helpers — the things the Stage 2D "Rollback Privilege +
+// Strict TLS Final Corrective" and "Final Three-Gate Closure" tasks
+// specifically asked to be provable without a live restore:
 //   1. TOC filtering: the bundle's three supabase_admin-owned
 //      DEFAULT ACL entries (the ones a non-member connecting role can't
 //      replay) are excluded, everything else survives untouched.
-//   2. TLS: withStrictTls forces sslmode=verify-full + sslrootcert onto
-//      a connection string, regardless of what sslmode it carried
-//      before.
-//   3. Credential redaction: an execFile-shaped failure whose command
-//      line embeds a connection-string password must never leak that
-//      password through message/cmd/stack once redactSecretsFromError
-//      has run on it (reproducing the exact Node behavior confirmed
-//      empirically during this task: execFile's non-zero-exit error
-//      embeds the full command line, password included, in all three
-//      fields).
+//   2. Credentials never become process arguments: pgEnvFromUrl parses a
+//      connection URL into libpq's own PG* names (never a connection-
+//      string shape), and runClientTool's actual child-process argv
+//      contains neither the password nor a connection URL — proven by
+//      spawning a REAL disposable child process and inspecting its OWN
+//      process.argv, not by inspecting the args array we built.
+//   3. Credential redaction (kept as defense-in-depth, not the primary
+//      control): an execFile-shaped failure whose command line embeds a
+//      connection-string password must never leak that password through
+//      message/cmd/stack once redactSecretsFromError has run on it.
 //
 // Usage: cd ops/option-a-rehearsal && node test/pg-restore-runner.test.mjs
+import fs from "node:fs";
+import path from "node:path";
+import os from "node:os";
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import { filterRestoreToc, withStrictTls, redactSecretsFromError } from "../scripts/lib/pg-restore-runner.mjs";
+import { filterRestoreToc, pgEnvFromUrl, runClientTool, redactSecretsFromError } from "../scripts/lib/pg-restore-runner.mjs";
 
 const execFileAsync = promisify(execFile);
 
@@ -86,19 +89,71 @@ async function main() {
   assert.ok(/DEFAULT ACL.*supabase_admin/.test(oldFiltered), "sanity check: the OLD filter really did let supabase_admin DEFAULT ACL lines through");
   console.log("OK    confirmed the old filter pattern would have shipped the exact lines that fail under a non-member actor");
 
-  console.log("--- withStrictTls: forces verify-full + sslrootcert regardless of the URL's original sslmode");
-  const forced = withStrictTls("postgresql://postgres.abc:pw@aws-1-eu-west-1.pooler.supabase.com:5432/postgres?sslmode=require", "/data/.rollback-ca.pem");
-  const forcedUrl = new URL(forced);
-  assert.equal(forcedUrl.searchParams.get("sslmode"), "verify-full");
-  assert.equal(forcedUrl.searchParams.get("sslrootcert"), "/data/.rollback-ca.pem");
-  console.log("OK    sslmode upgraded from require to verify-full, sslrootcert set");
+  const secretPassword = "SUPERSECRETPASSWORD";
+  const secretUrl = `postgresql://postgres.abc:${secretPassword}@aws-1-eu-west-1.pooler.supabase.com:5432/postgres?sslmode=require`;
 
-  console.log("--- withStrictTls: also works starting from a URL with NO sslmode at all");
-  const forced2 = withStrictTls("postgresql://postgres:pw@127.0.0.1:5432/postgres", "F:/Downloads/prod-ca-2021.crt");
-  const forced2Url = new URL(forced2);
-  assert.equal(forced2Url.searchParams.get("sslmode"), "verify-full");
-  assert.equal(forced2Url.searchParams.get("sslrootcert"), "F:/Downloads/prod-ca-2021.crt");
-  console.log("OK    strict TLS params added even when absent originally");
+  console.log("--- pgEnvFromUrl: parses a connection URL into libpq's PG* names, never a connection-string shape");
+  const pgEnv = pgEnvFromUrl(secretUrl);
+  assert.deepEqual(pgEnv, {
+    PGHOST: "aws-1-eu-west-1.pooler.supabase.com",
+    PGPORT: "5432",
+    PGDATABASE: "postgres",
+    PGUSER: "postgres.abc",
+    PGPASSWORD: secretPassword,
+  });
+  for (const value of Object.values(pgEnv)) {
+    assert.ok(!String(value).includes("://"), `no pgEnv value should be a connection-string fragment: ${value}`);
+  }
+  console.log("OK    parsed into PGHOST/PGPORT/PGDATABASE/PGUSER/PGPASSWORD, none shaped like a URL");
+
+  console.log("--- runClientTool ('path' kind): the CHILD PROCESS's own argv never contains the password or a connection URL, env carries it correctly");
+  {
+    const scriptPath = path.join(os.tmpdir(), `pg-restore-runner-test-argv-${process.pid}.mjs`);
+    fs.writeFileSync(
+      scriptPath,
+      `console.log(JSON.stringify({ argv: process.argv.slice(2), PGPASSWORD: process.env.PGPASSWORD, PGHOST: process.env.PGHOST }));`
+    );
+    try {
+      const { stdout } = await runClientTool(
+        { kind: "path", bin: process.execPath },
+        [scriptPath, "--dbname", pgEnv.PGDATABASE, "--exit-on-error", "--single-transaction"],
+        os.tmpdir(),
+        pgEnv
+      );
+      const seen = JSON.parse(stdout);
+      assert.deepEqual(seen.argv, ["--dbname", "postgres", "--exit-on-error", "--single-transaction"], "the child's own argv must be exactly the non-secret flags — no URL, no password, anywhere in it");
+      for (const arg of seen.argv) {
+        assert.ok(!arg.includes(secretPassword), `argv entry must not contain the password: ${arg}`);
+        assert.ok(!arg.includes("://"), `argv entry must not be connection-string shaped: ${arg}`);
+      }
+      assert.equal(seen.PGPASSWORD, secretPassword, "the password must still reach the child — via env, not argv");
+      assert.equal(seen.PGHOST, pgEnv.PGHOST);
+      console.log("OK    child argv is credential-free; PGPASSWORD/PGHOST correctly delivered via environment instead");
+    } finally {
+      fs.rmSync(scriptPath, { force: true });
+    }
+  }
+
+  console.log("--- runClientTool ('path' kind): on a REAL failure, error.message/.cmd/.stack contain neither the password nor a connection URL");
+  {
+    const scriptPath = path.join(os.tmpdir(), `pg-restore-runner-test-fail-${process.pid}.mjs`);
+    fs.writeFileSync(scriptPath, `process.exit(1);`);
+    let caught = null;
+    try {
+      await runClientTool({ kind: "path", bin: process.execPath }, [scriptPath, "--dbname", pgEnv.PGDATABASE], os.tmpdir(), pgEnv);
+    } catch (e) {
+      caught = e;
+    } finally {
+      fs.rmSync(scriptPath, { force: true });
+    }
+    assert.ok(caught, "expected the disposable script to fail");
+    for (const field of ["message", "cmd", "stack"]) {
+      const value = caught[field] || "";
+      assert.ok(!value.includes(secretPassword), `error.${field} must not contain the password (it was never an argument): ${value}`);
+      assert.ok(!value.includes("://"), `error.${field} must not contain a connection-string fragment: ${value}`);
+    }
+    console.log("OK    a real runClientTool failure carries no credential anywhere — argv never had one, and redaction (defense-in-depth) still ran");
+  }
 
   console.log("--- redactSecretsFromError: strips a connection-string password from message/cmd/stack/stdout/stderr");
   const secret = "SUPERSECRETPASSWORD";

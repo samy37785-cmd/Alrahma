@@ -45,45 +45,63 @@ export function redactSecretsFromError(e) {
   return e;
 }
 
-export async function runClientTool(tool, args, bindMountDir) {
+// `pgEnv` (default {}): PG* libpq environment variables (PGHOST/PGPORT/
+// PGDATABASE/PGUSER/PGPASSWORD/PGSSLMODE/PGSSLROOTCERT) — NEVER a
+// connection-string argument. This is Stage 2D "Final Three-Gate
+// Closure" item 2: a connection-string argument (even redacted
+// afterward) still exists, briefly, in this process's own argv — visible
+// to anything that can read `/proc/<pid>/cmdline` or a process listing
+// on the same host while pg_restore runs, which redaction (a
+// post-failure string scrub) cannot retroactively hide. Passing
+// everything through the environment instead means no credential is
+// EVER a command-line argument in the first place — redaction stays
+// below as defense-in-depth for anything this file didn't anticipate,
+// not as the primary control.
+//
+// For the "path" kind (host-installed binary), `env` on execFileAsync
+// is enough: the child process reads PG* the same way psql/pg_restore
+// always have. For the Docker fallback, secret VALUES must not become
+// `docker run` ARGUMENTS either (that would just move the same leak from
+// pg_restore's argv to docker's) — so docker is given bare `-e VARNAME`
+// flags (name only, no `=value`), which tells docker to copy that
+// variable's CURRENT VALUE from ITS OWN environment (set via this same
+// `env` option) into the container. The value is never written into
+// dockerArgs, so it can never appear in error.cmd/error.stack either.
+export async function runClientTool(tool, args, bindMountDir, pgEnv = {}) {
   try {
+    const env = { ...process.env, ...pgEnv };
     if (tool.kind === "path") {
-      return await execFileAsync(tool.bin, args, { maxBuffer: 1024 * 1024 * 256 });
+      return await execFileAsync(tool.bin, args, { maxBuffer: 1024 * 1024 * 256, env });
     }
     const dockerArgs = [
       "run", "--rm",
       "--add-host=host.docker.internal:host-gateway",
       "-v", `${path.resolve(bindMountDir)}:/data`,
+      ...Object.keys(pgEnv).flatMap((name) => ["-e", name]),
       "postgres:17", tool.bin,
       ...args.map((a) => (path.resolve(a).startsWith(path.resolve(bindMountDir)) ? `/data/${path.basename(a)}` : a)),
     ];
-    return await execFileAsync("docker", dockerArgs, { maxBuffer: 1024 * 1024 * 256 });
+    return await execFileAsync("docker", dockerArgs, { maxBuffer: 1024 * 1024 * 256, env });
   } catch (e) {
     throw redactSecretsFromError(e);
   }
 }
 
-function dockerRewriteUrl(url) {
-  const u = new URL(url);
-  u.hostname = "host.docker.internal";
-  return u.toString();
-}
-
-// Forces REAL certificate verification on pg_restore's OWN libpq
-// connection — a gap the Stage 2D read-only audit disclosed but did not
-// fix: libpq's sslmode=require means "encrypt only, don't verify the
-// certificate" (unlike the Node pg driver's newer verify-full-alias
-// behavior handled in lib/pg-connection.mjs), so pg_restore was
-// connecting to production with NO certificate validation at all.
-// sslrootcert must be a path pg_restore's OWN process can read — see
-// restorePublicSchemaDump for how that differs between a PATH-installed
-// binary (any host path) and the Docker fallback (only /data, the bind
-// mount).
-export function withStrictTls(url, sslrootcertPath) {
-  const u = new URL(url);
-  u.searchParams.set("sslmode", "verify-full");
-  u.searchParams.set("sslrootcert", sslrootcertPath);
-  return u.toString();
+// Parses a postgres connection URL into libpq's own PG* environment
+// variable names — never returns anything shaped like a connection
+// string or bearing a password in a way meant to be passed as a CLI
+// argument. See runClientTool's own comment for why this exists: an
+// argument is visible in this process's argv for as long as the child
+// runs; an environment variable is not.
+export function pgEnvFromUrl(databaseUrl) {
+  const u = new URL(databaseUrl);
+  return {
+    PGHOST: u.hostname,
+    PGPORT: u.port || "5432",
+    PGDATABASE: decodeURIComponent(u.pathname.replace(/^\//, "")) || "postgres",
+    PGUSER: decodeURIComponent(u.username || ""),
+    PGPASSWORD: decodeURIComponent(u.password || ""),
+  };
 }
 
 // Pure, independently testable: which TOC lines pg_restore is allowed
@@ -128,7 +146,7 @@ export function filterRestoreToc(tocText) {
 // `forLocalTestTarget` (default false, production path unaffected):
 // pass true ONLY from a local test pointed at 127.0.0.1 — a Docker
 // container can't reach the test-runner's own loopback address, so the
-// Docker-fallback invocation needs databaseUrl rewritten to
+// Docker-fallback invocation needs PGHOST rewritten to
 // host.docker.internal (same technique restore-bundle.mjs already uses
 // for its own, separate, local-only Docker fallback). The production
 // rollback orchestrator never passes this: Phase 0 already refuses
@@ -138,34 +156,43 @@ export function filterRestoreToc(tocText) {
 // `caCertFile` (default undefined, so local tests — which run against a
 // plaintext local Postgres with no CA of its own — are unaffected):
 // production-rollback-orchestrator.mjs passes its own --ca-cert-file
-// here so pg_restore's connection is forced to sslmode=verify-full
-// against Supabase's real CA (withStrictTls, above) rather than the
+// here so pg_restore's connection is forced to PGSSLMODE=verify-full
+// against Supabase's real CA (via PGSSLROOTCERT) rather than the
 // unverified encrypt-only connection it used before. Under the Docker
 // fallback the CA file is copied into bundleDir (the only directory
 // bind-mounted into the container) and referenced as /data/... instead
 // of its host path.
 export async function restorePublicSchemaDump(databaseUrl, bundleDir, { forLocalTestTarget = false, caCertFile } = {}) {
   const pgRestore = await resolveClientTool("pg_restore");
-  const effectiveUrl = forLocalTestTarget && pgRestore.kind === "docker" ? dockerRewriteUrl(databaseUrl) : databaseUrl;
+  const pgEnv = pgEnvFromUrl(databaseUrl);
+  if (forLocalTestTarget && pgRestore.kind === "docker") {
+    pgEnv.PGHOST = "host.docker.internal";
+  }
+
   const dumpPath = path.join(bundleDir, "public_schema.dump");
   const { stdout: tocText } = await runClientTool(pgRestore, ["--list", dumpPath], bundleDir);
   const tocPath = path.join(bundleDir, ".rollback-toc.filtered.txt");
   fs.writeFileSync(tocPath, filterRestoreToc(tocText));
 
-  let restoreUrl = effectiveUrl;
   let caCertCopyPath = null;
   if (caCertFile) {
+    pgEnv.PGSSLMODE = "verify-full";
     if (pgRestore.kind === "docker") {
       caCertCopyPath = path.join(bundleDir, ".rollback-ca.pem");
       fs.copyFileSync(caCertFile, caCertCopyPath);
-      restoreUrl = withStrictTls(restoreUrl, "/data/.rollback-ca.pem");
+      pgEnv.PGSSLROOTCERT = "/data/.rollback-ca.pem";
     } else {
-      restoreUrl = withStrictTls(restoreUrl, path.resolve(caCertFile).replace(/\\/g, "/"));
+      pgEnv.PGSSLROOTCERT = path.resolve(caCertFile).replace(/\\/g, "/");
     }
   }
 
   try {
-    await runClientTool(pgRestore, ["--dbname", restoreUrl, "--exit-on-error", "--single-transaction", "--use-list", tocPath, dumpPath], bundleDir);
+    await runClientTool(
+      pgRestore,
+      ["--dbname", pgEnv.PGDATABASE, "--exit-on-error", "--single-transaction", "--use-list", tocPath, dumpPath],
+      bundleDir,
+      pgEnv
+    );
   } finally {
     fs.rmSync(tocPath, { force: true });
     if (caCertCopyPath) fs.rmSync(caCertCopyPath, { force: true });

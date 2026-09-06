@@ -55,6 +55,9 @@ import path from "node:path";
 import crypto from "node:crypto";
 import { EXPECTED_NEW_TABLES } from "./new-schema-fingerprint.mjs";
 import { parsePgTextArray } from "./pg-array.mjs";
+import { snapshotDefaultAcl, verifyDefaultAclUnchanged } from "./default-acl.mjs";
+
+export { snapshotDefaultAcl, verifyDefaultAclUnchanged };
 
 export class InjectedFailure extends Error {}
 
@@ -96,31 +99,12 @@ export function verifyBundleChecksumsAndFreshness(bundleDir, { expectedProjectRe
   return { manifest, inventory: JSON.parse(fs.readFileSync(inventoryPath, "utf8")) };
 }
 
-// Confirms the rollback never touched pg_default_acl. The default-
-// privilege registrations for FUTURE objects are cluster/role state,
-// not backup content — a correct rollback restores objects without
-// ever re-registering (or de-registering) them. This is the independent,
-// live-evidence check that filterRestoreToc's exclusion of the
+// snapshotDefaultAcl / verifyDefaultAclUnchanged now live in
+// default-acl.mjs (shared with cutover-core.mjs) — re-exported above
+// for every existing importer of this file. The live-evidence proof
+// they give here is that filterRestoreToc's exclusion of the
 // supabase_admin-owned DEFAULT ACL TOC entries (pg-restore-runner.mjs)
 // actually worked, not merely that pg_restore didn't error.
-export async function snapshotDefaultAcl(client) {
-  const { rows } = await client.query(`
-    select defaclrole::regrole::text as role, defaclnamespace::regnamespace::text as schema, defaclobjtype, defaclacl::text as acl
-    from pg_default_acl order by role, schema, defaclobjtype;
-  `);
-  return rows;
-}
-
-export async function verifyDefaultAclUnchanged(client, before) {
-  const after = await snapshotDefaultAcl(client);
-  if (JSON.stringify(after) !== JSON.stringify(before)) {
-    throw new Error(
-      `pg_default_acl changed during rollback — a restore must never alter default-privilege registrations.\n` +
-      `  before: ${JSON.stringify(before)}\n` +
-      `  after:  ${JSON.stringify(after)}`
-    );
-  }
-}
 
 // Target must be EXACTLY the expected new (post-cutover) schema — no
 // bypass flag. Called directly under the shared advisory lock, before

@@ -134,6 +134,29 @@ async function main() {
   console.log("OK    mid-migration injection: fully rolled back, old fixture intact (no partial migration state leaked)");
 
   // -------------------------------------------------------------
+  // Failure injection: pg_default_acl itself is mutated mid-transaction,
+  // right after fingerprint verification passes — proves the dedicated
+  // default-ACL guard (not some other check) is what catches this, and
+  // that catching it rolls back the reset + all migrations too.
+  // -------------------------------------------------------------
+  console.log("--- FAILURE INJECTION: corrupt-default-acl (mutates pg_default_acl mid-transaction)");
+  await assert.rejects(
+    () => runAtomicCutoverOnClient(client, { ...coreOpts, injectFailureAt: "corrupt-default-acl" }),
+    /pg_default_acl changed unexpectedly during cutover/,
+    "a pg_default_acl mutation mid-transaction must be refused by name, not merely fail some other way"
+  );
+  await assertOldFixtureIntact(client, "after 'corrupt-default-acl' injection + rollback");
+  {
+    const { rows } = await client.query(`
+      select defaclrole::regrole::text as role from pg_default_acl
+      where defaclrole::regrole::text = 'postgres' and defaclnamespace::regnamespace::text = 'public'
+        and defaclobjtype = 'r' and defaclacl::text like '%anon=r/%';
+    `);
+    assert.equal(rows.length, 0, "the injected ALTER DEFAULT PRIVILEGES must itself have been rolled back, not just detected");
+  }
+  console.log("OK    'corrupt-default-acl' injection: COMMIT refused, fully rolled back (old fixture intact, the injected privilege change itself undone)");
+
+  // -------------------------------------------------------------
   // Failure injection: after verification passes, before COMMIT.
   // -------------------------------------------------------------
   console.log("--- FAILURE INJECTION: before-commit (after verification passes)");

@@ -40,3 +40,17 @@ export function getAnonClient() {
   }
   return anonClient;
 }
+
+// A brand-new anon-key client per call, never the shared getAnonClient()
+// singleton. Only used for the password-recovery bridge (resetPassword),
+// which must call setSession() with a per-request, per-user recovery
+// session — doing that on the shared singleton would let one request's
+// in-memory session bleed into a concurrent request's calls on the same
+// client instance (the same shared-client hazard this codebase has
+// eliminated everywhere else for `pg` clients). Cheap to construct: no
+// socket/connection is opened until a request is made.
+export function createScopedAnonClient() {
+  return createClient(requireEnv('SUPABASE_URL'), requireEnv('SUPABASE_ANON_KEY'), {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+}

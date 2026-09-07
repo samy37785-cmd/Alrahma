@@ -319,3 +319,34 @@ SELECT statements were run against the RLS/GRANT model:
   snapshot, not on the plan. The adapter's `getPlan()` returns `amount`
   (converted from minor units, seeded to match what customers currently pay)
   and `null` for the two marketing-display-only fields.
+
+## Stage 2F closure: password reset requires a production email-template change
+
+`POST /api/auth/reset-password` (`backend/data/supabase/authController.js`)
+is now fully implemented and E2E-tested against a real local GoTrue instance
+(`backend/scripts/migration/rehearsal-password-reset-e2e.mjs`, run against
+the isolated `ops/stage2f-authtest` stack — 15/15 checks pass, including
+real mail delivery, ownership proof via `verifyOtp`, replay rejection, and
+old/new password login). The design keeps the exact existing frontend
+contract (`POST {token, password}`, `token` read from the `?token=` query
+string by `ResetPassword.jsx`) by pointing GoTrue's **recovery email
+template** at our own frontend page instead of GoTrue's default
+`{{ .ConfirmationURL }}` link:
+
+```
+{{ .SiteURL }}/reset-password?token={{ .TokenHash }}&type=recovery
+```
+
+**This template override is local-only** (`ops/stage2f-authtest/supabase/
+config.toml`'s `[auth.email.template.recovery]` + `templates/recovery.html`,
+and equally in `ops/option-a-rehearsal` if that stack is ever used for this
+flow). It has **not** been applied to the real production Supabase project's
+Auth email templates (Dashboard → Authentication → Email Templates →
+"Reset Password") — doing so is a Supabase **production** Auth config
+change, explicitly out of scope/forbidden for this task. Until someone with
+production access makes that one dashboard edit, real users clicking a
+production recovery email will land on GoTrue's own default confirmation
+page/redirect shape (`#access_token=...` fragment), not on our
+`?token=...&type=recovery` contract. **This is a required, tracked
+pre-cutover step**, not a code gap — the backend and local rehearsal are
+both complete and correct for the contract described above.

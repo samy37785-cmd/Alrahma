@@ -73,6 +73,7 @@ import supabaseReviewRoutes from './data/supabase/routes/reviewRoutes.js';
 import supabaseReferralRoutes from './data/supabase/routes/referralRoutes.js';
 import supabaseTeacherRoutes from './data/supabase/routes/teacherRoutes.js';
 import supabaseParentRoutes from './data/supabase/routes/parentRoutes.js';
+import supabaseSearchRoutes from './data/supabase/routes/searchRoutes.js';
 
 // Validate required environment variables immediately — fails fast with a
 // clear error rather than surfacing a cryptic runtime failure later.
@@ -242,7 +243,7 @@ app.use('/api/coupons',       isSupabaseBackend() ? supabaseCouponRoutes : coupo
 app.use('/api/wishlist',      isSupabaseBackend() ? supabaseWishlistRoutes : wishlistRoutes);
 app.use('/api/reviews',       isSupabaseBackend() ? supabaseReviewRoutes : reviewRoutes);
 app.use('/api/blog',          isSupabaseBackend() ? supabaseBlogRoutes : blogRoutes);
-app.use('/api/search',        searchRoutes);
+app.use('/api/search',        isSupabaseBackend() ? supabaseSearchRoutes : searchRoutes);
 app.use('/api/referrals',     isSupabaseBackend() ? supabaseReferralRoutes : referralRoutes);
 
 // Admin dashboard — zero-trust, MFA-required, RBAC-enforced

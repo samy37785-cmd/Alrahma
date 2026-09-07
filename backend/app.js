@@ -75,6 +75,7 @@ import supabaseTeacherRoutes from './data/supabase/routes/teacherRoutes.js';
 import supabaseParentRoutes from './data/supabase/routes/parentRoutes.js';
 import supabaseSearchRoutes from './data/supabase/routes/searchRoutes.js';
 import supabaseCronRoutes from './data/supabase/routes/cronRoutes.js';
+import { getPool as getSupabasePool } from './data/supabase/client.js';
 
 // Validate required environment variables immediately — fails fast with a
 // clear error rather than surfacing a cryptic runtime failure later.
@@ -168,6 +169,18 @@ app.get('/health', healthCheckHandler);
 app.get('/api/healthz', healthCheckHandler);
 app.get('/ready', async (_req, res) => {
   try {
+    // Real gap found by a full route-mount audit (same pass that found
+    // /api/search and /api/cron): this probe unconditionally called Mongo's
+    // connectDB()/readyState with no isSupabaseBackend() branch at all —
+    // under supabase mode it would report "not ready" forever (mongoose
+    // never connects there at all), which is exactly the kind of thing a
+    // container orchestrator's readiness gate would act on and never route
+    // traffic to this instance.
+    if (isSupabaseBackend()) {
+      await getSupabasePool().query('SELECT 1');
+      return res.json({ status: 'ready' });
+    }
+
     await connectDB();
     // connectDB() resolves from a cached connection object once the process
     // has ever connected successfully (see config/db.js) — it does not by

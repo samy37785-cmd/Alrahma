@@ -558,6 +558,13 @@ async function main() {
     assert.ok(res.body.parents >= 1, `expected at least 1 parent with linked children, got ${JSON.stringify(res.body)}`);
   });
 
+  console.log('[rehearsal] /ready readiness probe (route-mount audit finding)');
+  await check('/ready reports ready via a real Postgres check, not a permanently-failing Mongo readyState check', async () => {
+    const res = await request(app).get('/ready');
+    assert.equal(res.status, 200, JSON.stringify(res.body));
+    assert.equal(res.body.status, 'ready');
+  });
+
   const failed = results.filter((r) => !r.ok);
   console.log(`\n[rehearsal] ${results.length - failed.length}/${results.length} Part A checks passed`);
   await pool.end();

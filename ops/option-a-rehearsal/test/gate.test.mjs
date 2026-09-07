@@ -462,6 +462,32 @@ $function$;`);
   const t14NonWorktreeFails = t14.out.split("\n").filter((l) => l.startsWith("FAIL") && !l.includes("worktree has uncommitted changes to tracked files"));
   assert.deepEqual(t14NonWorktreeFails, [], `T14: every check except worktree-cleanliness must pass again after all tamper-and-restore cases; got:\n${t14NonWorktreeFails.join("\n")}`);
 
+  // ------------------------------------------------------------------
+  // T15: approval manifest's approvedCommitSha != current HEAD is
+  // refused (Stage 2I-B1 audit: the check itself already existed —
+  // see runStaticChecks's "currentSha !== manifest.approvedCommitSha"
+  // fail() — but had no regression test proving it actually fires.)
+  // ------------------------------------------------------------------
+  console.log("--- T15: approval manifest with a mismatched approvedCommitSha is refused");
+  const goodManifestObj = JSON.parse(fs.readFileSync(goodManifest, "utf8"));
+  const wrongShaManifestPath = path.join(scratchDir, "approval-manifest-wrong-sha.json");
+  fs.writeFileSync(wrongShaManifestPath, JSON.stringify({ ...goodManifestObj, approvedCommitSha: "0".repeat(40) }, null, 2));
+  const t15 = runGate({ GATE_DATABASE_URL: testUrl.toString() }, ["--mode", "local", "--approval-manifest", wrongShaManifestPath, "--dump-file", path.join(scratchDir, "dump.bin"), "--checksum-file", path.join(scratchDir, "manifest-local.json")]);
+  assert.notEqual(t15.code, 0, "T15: gate must refuse an approval manifest whose approvedCommitSha != current HEAD");
+  assert.match(t15.out, /current HEAD ".*" != approval manifest's approvedCommitSha "0{40}"/, `T15 output:\n${t15.out}`);
+
+  // ------------------------------------------------------------------
+  // T16: approval manifest's approvedBranch != current branch is
+  // refused (Stage 2I-B1 audit: same as T15 — the check already
+  // existed, this proves it actually fires.)
+  // ------------------------------------------------------------------
+  console.log("--- T16: approval manifest with a mismatched approvedBranch is refused");
+  const wrongBranchManifestPath = path.join(scratchDir, "approval-manifest-wrong-branch.json");
+  fs.writeFileSync(wrongBranchManifestPath, JSON.stringify({ ...goodManifestObj, approvedBranch: "definitely-not-the-current-branch" }, null, 2));
+  const t16 = runGate({ GATE_DATABASE_URL: testUrl.toString() }, ["--mode", "local", "--approval-manifest", wrongBranchManifestPath, "--dump-file", path.join(scratchDir, "dump.bin"), "--checksum-file", path.join(scratchDir, "manifest-local.json")]);
+  assert.notEqual(t16.code, 0, "T16: gate must refuse an approval manifest whose approvedBranch != current branch");
+  assert.match(t16.out, /current branch ".*" != approval manifest's approvedBranch "definitely-not-the-current-branch"/, `T16 output:\n${t16.out}`);
+
   console.log("--- cleaning up dedicated test database and scratch fixtures");
   const admin2 = new pg.Client({ connectionString: maintenanceUrl.toString() });
   await admin2.connect();

@@ -28,6 +28,14 @@
 //                            was actually produced against the project
 //                            it claims to be.
 //   BACKUP_OUT_DIR          optional, default "./out/backup-bundle".
+//   BACKUP_CA_CERT_PATH      required when BACKUP_MODE=production
+//                            (Stage 2I-B1 audit hardening). Path to
+//                            Supabase's own CA (Project Settings >
+//                            Database > SSL Configuration). Validated to
+//                            exist and look like a PEM certificate before
+//                            any connection is attempted; rejectUnauthorized
+//                            stays true unconditionally either way — no
+//                            bypass. Ignored in BACKUP_MODE=local.
 //
 // pg_dump/pg_restore resolution: tries the `pg_dump`/`pg_restore`
 // binaries on PATH first; if not found (ENOENT), falls back to
@@ -115,10 +123,22 @@ if (mode === "local") {
   // certificate chain" without this. Providing the real CA (still with
   // rejectUnauthorized: true) verifies against the true issuer instead
   // of disabling verification.
+  //
+  // Stage 2I-B1 audit finding: BACKUP_CA_CERT_PATH used to be optional
+  // here — a production-mode backup with none set would silently fall
+  // through to Node's default trust store (no `ca` at all), which does
+  // still fail closed (the TLS handshake itself refuses with "self-signed
+  // certificate in certificate chain"), but only after everything else in
+  // this script had already run, and with an unhelpful low-level TLS
+  // error instead of a clear, early precondition failure naming exactly
+  // what's missing. It is now required and validated up front — no
+  // bypass either way: rejectUnauthorized stays true unconditionally.
   const caCertPath = process.env.BACKUP_CA_CERT_PATH;
-  if (caCertPath) {
-    clientConfig.ssl.ca = fs.readFileSync(caCertPath, "utf8");
-  }
+  if (!caCertPath) fail("BACKUP_MODE=production requires BACKUP_CA_CERT_PATH to be set (environment only — Supabase's own CA from Project Settings > Database > SSL Configuration).");
+  if (!fs.existsSync(caCertPath)) fail(`BACKUP_CA_CERT_PATH "${caCertPath}" does not exist.`);
+  const caCertContent = fs.readFileSync(caCertPath, "utf8");
+  if (!caCertContent.includes("-----BEGIN CERTIFICATE-----")) fail(`BACKUP_CA_CERT_PATH "${caCertPath}" does not look like a PEM certificate.`);
+  clientConfig.ssl.ca = caCertContent;
 }
 
 fs.mkdirSync(outDir, { recursive: true });

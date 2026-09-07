@@ -98,6 +98,38 @@ async function main() {
   );
   const manualSubmissionId = manualSubmissionRes.rows[0].id;
 
+  // Fixtures for the 7 admin subrouter closures (users/enrollments/blog/
+  // coupons/contact/referrals/system).
+  const planRes = await pool.query(
+    `INSERT INTO plans (slug, name, amount_minor, currency, active) VALUES ('rehearsal-monthly', 'Rehearsal Monthly', 5000, 'EUR', true) RETURNING id`
+  );
+  const planId = planRes.rows[0].id;
+
+  const approvedManualPaymentRes = await pool.query(
+    `INSERT INTO manual_payments (user_id, plan_id, requested_plan_slug, amount_minor, currency_snapshot, method, status)
+     VALUES ($1, $2, 'rehearsal-monthly', 5000, 'EUR', 'iban', 'approved') RETURNING id`,
+    [student, planId]
+  );
+  const approvedManualPaymentId = approvedManualPaymentRes.rows[0].id;
+
+  const referee = '30000000-0000-4000-8000-000000000005';
+  await pool.query(`INSERT INTO auth.users (id, email) VALUES ($1,$2) ON CONFLICT (id) DO NOTHING`, [referee, 'rehearsal.referee@test.local']);
+  await pool.query(
+    `INSERT INTO profiles (id, email, name, role) VALUES ($1,$2,$2,'user') ON CONFLICT (id) DO UPDATE SET name = $2`,
+    [referee, 'rehearsal.referee@test.local']
+  );
+  await pool.query(`UPDATE profiles SET referral_code = 'REHEARSL' WHERE id = $1`, [student]);
+  const referralRes = await pool.query(
+    `INSERT INTO referrals (referrer_id, referee_id, code) VALUES ($1, $2, 'REHEARSL') RETURNING id`,
+    [student, referee]
+  );
+  const referralId = referralRes.rows[0].id;
+
+  const contactMessageRes = await pool.query(
+    `INSERT INTO contact_messages (name, email, subject, message) VALUES ('Rehearsal Sender', 'rehearsal.sender@test.local', 'Subj', 'A message with enough length') RETURNING id`
+  );
+  const contactMessageId = contactMessageRes.rows[0].id;
+
   const { default: app } = await import('../../app.js');
 
   const results = [];
@@ -271,6 +303,231 @@ async function main() {
     assert.equal(first.status, 201);
     const second = await parentAgent.post('/api/parent/link').set(parentHeaders).send({ code });
     assert.equal(second.status, 409);
+  });
+
+  console.log('[rehearsal] admin blog CRUD');
+  let blogPostId;
+  await check('admin can create a blog post', async () => {
+    const { agent, csrfHeaders } = await adminAgent(superAdmin);
+    const res = await agent.post('/api/v1/admin/blog').set(csrfHeaders).send({
+      slug: 'rehearsal-post', title: 'Rehearsal Post', excerpt: 'An excerpt', body: 'Body text', author: { name: 'Admin' },
+    });
+    assert.equal(res.status, 201, JSON.stringify(res.body));
+    blogPostId = res.body.post._id;
+  });
+  await check('admin can update and delete the blog post', async () => {
+    const { agent, csrfHeaders } = await adminAgent(superAdmin);
+    const upd = await agent.patch(`/api/v1/admin/blog/${blogPostId}`).set(csrfHeaders).send({ published: true });
+    assert.equal(upd.status, 200, JSON.stringify(upd.body));
+    assert.equal(upd.body.post.published, true);
+    const del = await agent.delete(`/api/v1/admin/blog/${blogPostId}`).set(csrfHeaders);
+    assert.equal(del.status, 200);
+  });
+
+  console.log('[rehearsal] admin coupons CRUD');
+  let couponId;
+  await check('admin can create a coupon', async () => {
+    const { agent, csrfHeaders } = await adminAgent(superAdmin);
+    const res = await agent.post('/api/v1/admin/coupons').set(csrfHeaders).send({
+      code: 'REHEARSAL10', discountType: 'percent', discountValue: 10,
+    });
+    assert.equal(res.status, 201, JSON.stringify(res.body));
+    couponId = res.body.coupon._id;
+  });
+  await check('admin can update and delete the coupon', async () => {
+    const { agent, csrfHeaders } = await adminAgent(superAdmin);
+    const upd = await agent.patch(`/api/v1/admin/coupons/${couponId}`).set(csrfHeaders).send({ active: false });
+    assert.equal(upd.status, 200, JSON.stringify(upd.body));
+    assert.equal(upd.body.coupon.active, false);
+    const del = await agent.delete(`/api/v1/admin/coupons/${couponId}`).set(csrfHeaders);
+    assert.equal(del.status, 200);
+  });
+
+  console.log('[rehearsal] admin contact message status update');
+  await check('admin can mark a contact message resolved', async () => {
+    const { agent, csrfHeaders } = await adminAgent(superAdmin);
+    const res = await agent.patch(`/api/v1/admin/contact/${contactMessageId}`).set(csrfHeaders).send({ status: 'resolved' });
+    assert.equal(res.status, 200, JSON.stringify(res.body));
+    assert.equal(res.body.contact.status, 'resolved');
+    assert.ok(res.body.contact.repliedAt);
+  });
+
+  console.log('[rehearsal] admin referral conversion');
+  await check('admin can convert a pending referral', async () => {
+    const { agent, csrfHeaders } = await adminAgent(superAdmin);
+    const res = await agent.patch(`/api/v1/admin/referrals/${referralId}/convert`).set(csrfHeaders);
+    assert.equal(res.status, 200, JSON.stringify(res.body));
+    assert.equal(res.body.status, 'converted');
+  });
+
+  console.log('[rehearsal] admin enrollments CRUD');
+  let enrollmentId;
+  await check('admin can create a fully-specified enrollment (any status)', async () => {
+    const { agent, csrfHeaders } = await adminAgent(superAdmin);
+    const res = await agent.post('/api/v1/admin/enrollments').set(csrfHeaders).send({
+      name: 'Rehearsal Lead', email: 'rehearsal.lead@test.local', status: 'contacted',
+    });
+    assert.equal(res.status, 201, JSON.stringify(res.body));
+    assert.equal(res.body.status, 'contacted');
+    enrollmentId = res.body._id;
+  });
+  await check('a non-admin cannot insert an enrollment with a non-new status (public grant still restricted)', async () => {
+    const agent = request.agent(app);
+    const csrfRes = await agent.get('/api/blog');
+    const csrfToken = (csrfRes.headers['set-cookie'] || []).map(String).find((c) => c.startsWith('csrf_token=')).split(';')[0].split('=')[1];
+    const res = await agent.post('/api/enrollments').set('x-csrf-token', csrfToken).send({ name: 'x', email: 'x@test.local', status: 'enrolled' });
+    // enrollments_insert_public's WITH CHECK still forces status='new' for a
+    // guest submission; the new enrollments_insert_admin_aal2 policy only
+    // ever widens access for an AAL2 admin, never for anon/authenticated.
+    assert.equal(res.status, 201, JSON.stringify(res.body));
+    const check1 = await pool.query('SELECT status FROM enrollments WHERE email = $1', ['x@test.local']);
+    assert.equal(check1.rows[0].status, 'new');
+  });
+  await check('admin can update and delete the enrollment', async () => {
+    const { agent, csrfHeaders } = await adminAgent(superAdmin);
+    const upd = await agent.put(`/api/v1/admin/enrollments/${enrollmentId}`).set(csrfHeaders).send({ status: 'enrolled' });
+    assert.equal(upd.status, 200, JSON.stringify(upd.body));
+    assert.equal(upd.body.status, 'enrolled');
+    const del = await agent.delete(`/api/v1/admin/enrollments/${enrollmentId}`).set(csrfHeaders);
+    assert.equal(del.status, 200);
+  });
+
+  console.log('[rehearsal] admin users domain (role/teacher/family/subscription/generic CRUD)');
+  await check('admin can grant the teacher role, then assign it to a student', async () => {
+    const { agent, csrfHeaders } = await adminAgent(superAdmin);
+    const roleRes = await agent.patch(`/api/v1/admin/users/${teacher}/role`).set(csrfHeaders).send({ role: 'teacher' });
+    assert.equal(roleRes.status, 200, JSON.stringify(roleRes.body));
+
+    const listRes = await agent.get('/api/v1/admin/users/teachers').set('Cookie', csrfHeaders.Cookie);
+    assert.equal(listRes.status, 200);
+    assert.ok(listRes.body.some((t) => t._id === teacher), 'newly-flagged teacher missing from listTeachers');
+
+    const assignRes = await agent.patch(`/api/v1/admin/users/${student}/teacher`).set(csrfHeaders).send({ teacherId: teacher });
+    assert.equal(assignRes.status, 200, JSON.stringify(assignRes.body));
+    assert.equal(assignRes.body.teacher, teacher);
+  });
+  await check('assigning a non-teacher as a teacher is rejected', async () => {
+    const { agent, csrfHeaders } = await adminAgent(superAdmin);
+    const res = await agent.patch(`/api/v1/admin/users/${student}/teacher`).set(csrfHeaders).send({ teacherId: parent });
+    assert.equal(res.status, 400);
+  });
+  await check('admin can set a family name', async () => {
+    const { agent, csrfHeaders } = await adminAgent(superAdmin);
+    const res = await agent.patch(`/api/v1/admin/users/${student}/family`).set(csrfHeaders).send({ familyName: 'Rehearsal Family' });
+    assert.equal(res.status, 200, JSON.stringify(res.body));
+    assert.equal(res.body.familyName, 'Rehearsal Family');
+  });
+  await check('activating a subscription with no manual-payment evidence is rejected (honest 400, not a bypass)', async () => {
+    const { agent, csrfHeaders } = await adminAgent(superAdmin);
+    const res = await agent.patch(`/api/v1/admin/users/${student}/subscription`).set(csrfHeaders).send({ action: 'activate' });
+    assert.equal(res.status, 400);
+  });
+  await check('admin can activate a subscription backed by an approved manual payment, then deactivate it', async () => {
+    const { agent, csrfHeaders } = await adminAgent(superAdmin);
+    const activateRes = await agent.patch(`/api/v1/admin/users/${student}/subscription`).set(csrfHeaders).send({
+      action: 'activate', manualPaymentId: approvedManualPaymentId, planId,
+    });
+    assert.equal(activateRes.status, 200, JSON.stringify(activateRes.body));
+    assert.equal(activateRes.body.subscription.status, 'active');
+
+    const deactivateRes = await agent.patch(`/api/v1/admin/users/${student}/subscription`).set(csrfHeaders).send({ action: 'deactivate' });
+    assert.equal(deactivateRes.status, 200, JSON.stringify(deactivateRes.body));
+    assert.equal(deactivateRes.body.subscription.status, 'canceled');
+  });
+  await check('admin generic list/getOne/update on users', async () => {
+    const { agent, csrfHeaders } = await adminAgent(superAdmin);
+    const listRes = await agent.get('/api/v1/admin/users').set('Cookie', csrfHeaders.Cookie);
+    assert.equal(listRes.status, 200);
+    assert.ok(Array.isArray(listRes.body.data));
+    const getRes = await agent.get(`/api/v1/admin/users/${student}`).set('Cookie', csrfHeaders.Cookie);
+    assert.equal(getRes.status, 200);
+    assert.equal(getRes.body._id, student);
+    const updRes = await agent.put(`/api/v1/admin/users/${student}`).set(csrfHeaders).send({ bio: 'Updated bio' });
+    assert.equal(updRes.status, 200, JSON.stringify(updRes.body));
+    assert.equal(updRes.body.bio, 'Updated bio');
+  });
+  await check('granting the admin role requires a super-admin caller (a plain admin is rejected)', async () => {
+    const plainAdmin = '30000000-0000-4000-8000-000000000006';
+    await pool.query(`INSERT INTO auth.users (id, email) VALUES ($1,$2) ON CONFLICT (id) DO NOTHING`, [plainAdmin, 'rehearsal.plainadmin@test.local']);
+    await pool.query(`INSERT INTO profiles (id, email, name, role) VALUES ($1,$2,$2,'admin') ON CONFLICT (id) DO UPDATE SET role='admin'`, [plainAdmin, 'rehearsal.plainadmin@test.local']);
+    await pool.query(`INSERT INTO admin_role_assignments (user_id, role) VALUES ($1, 'admin') ON CONFLICT (user_id) DO UPDATE SET role = 'admin'`, [plainAdmin]);
+
+    const agent = request.agent(app);
+    const csrfRes = await agent.get('/api/blog');
+    const csrfToken = (csrfRes.headers['set-cookie'] || []).map(String).find((c) => c.startsWith('csrf_token=')).split(';')[0].split('=')[1];
+    const at = signAccessToken(plainAdmin, 'admin', true);
+    const sat = signSupabaseAal2(plainAdmin);
+    const csrfHeaders = { 'x-csrf-token': csrfToken, Cookie: `${ACCESS_TOKEN_COOKIE}=${at}; admin_sat=${sat}` };
+
+    const res = await agent.patch(`/api/v1/admin/users/${student}/role`).set(csrfHeaders).send({ role: 'admin' });
+    assert.equal(res.status, 403);
+  });
+
+  console.log('[rehearsal] admin system domain (status/maintenance/financial-freeze/audit-log/admins)');
+  await check('admin can read system status, toggle maintenance mode, then read the change back', async () => {
+    const { agent, csrfHeaders } = await adminAgent(superAdmin);
+    const before = await agent.get('/api/v1/admin/system/status').set('Cookie', csrfHeaders.Cookie);
+    assert.equal(before.status, 200);
+    const toggle = await agent.post('/api/v1/admin/system/maintenance').set(csrfHeaders).send({ enable: true });
+    assert.equal(toggle.status, 200, JSON.stringify(toggle.body));
+    const after = await agent.get('/api/v1/admin/system/status').set('Cookie', csrfHeaders.Cookie);
+    assert.equal(after.body.maintenanceMode, true);
+    await agent.post('/api/v1/admin/system/maintenance').set(csrfHeaders).send({ enable: false });
+  });
+  await check('admin can toggle the financial freeze', async () => {
+    const { agent, csrfHeaders } = await adminAgent(superAdmin);
+    const res = await agent.post('/api/v1/admin/system/financial-freeze').set(csrfHeaders).send({ enable: true });
+    assert.equal(res.status, 200, JSON.stringify(res.body));
+    await agent.post('/api/v1/admin/system/financial-freeze').set(csrfHeaders).send({ enable: false });
+  });
+  await check('admin can read the audit log and see a real prior action recorded', async () => {
+    const { agent, csrfHeaders } = await adminAgent(superAdmin);
+    const res = await agent.get('/api/v1/admin/system/audit-log').set('Cookie', csrfHeaders.Cookie);
+    assert.equal(res.status, 200, JSON.stringify(res.body));
+    assert.ok(res.body.data.length > 0);
+  });
+  await check('audit-log purge is honestly rejected (409, append-only by design), never silently no-op or 501', async () => {
+    const { agent, csrfHeaders } = await adminAgent(superAdmin);
+    const res = await agent.delete('/api/v1/admin/system/audit-log').set(csrfHeaders);
+    assert.equal(res.status, 409);
+  });
+  await check('admin can list admins (sees the super-admin fixture)', async () => {
+    const { agent, csrfHeaders } = await adminAgent(superAdmin);
+    const res = await agent.get('/api/v1/admin/system/admins').set('Cookie', csrfHeaders.Cookie);
+    assert.equal(res.status, 200, JSON.stringify(res.body));
+    assert.ok(res.body.data.some((a) => a.id === superAdmin));
+  });
+
+  console.log('[rehearsal] admin invoices architecture fix');
+  await check('the real admin invoice list lives behind the AAL2-capable admin router', async () => {
+    const { agent, csrfHeaders } = await adminAgent(superAdmin);
+    const res = await agent.get('/api/v1/admin/invoices').set('Cookie', csrfHeaders.Cookie);
+    assert.equal(res.status, 200, JSON.stringify(res.body));
+    assert.ok(Array.isArray(res.body.data));
+  });
+  await check('the old customer-session invoices/admin route is an honest 400, never a raw 500 or a silent AAL2 bypass', async () => {
+    const { agent, csrfHeaders } = await userAgent(superAdmin);
+    // superAdmin's profiles.role is 'admin' (adminOnly's own check), but this
+    // is the CUSTOMER session cookie (`token`), not admin_at/admin_sat.
+    const res = await agent.get('/api/invoices/admin').set('Cookie', csrfHeaders.Cookie);
+    assert.equal(res.status, 400, JSON.stringify(res.body));
+    assert.match(res.body.message, /api\/v1\/admin\/invoices/);
+  });
+
+  console.log('[rehearsal] /api/search (route-parity sweep finding, teachers_public view)');
+  await check('global/course/teacher search work under supabase mode via teachers_public', async () => {
+    const globalRes = await request(app).get('/api/search').query({ q: 'Rehearsal' });
+    assert.equal(globalRes.status, 200, JSON.stringify(globalRes.body));
+    assert.ok(Array.isArray(globalRes.body.results.teachers));
+    assert.ok(globalRes.body.results.teachers.some((t) => t.name === 'rehearsal.pa.teacher@test.local'), 'flagged teacher missing from global search');
+
+    const teachersRes = await request(app).get('/api/search/teachers').query({ q: 'Rehearsal' });
+    assert.equal(teachersRes.status, 200, JSON.stringify(teachersRes.body));
+    assert.ok(teachersRes.body.teachers.some((t) => t._id === teacher));
+
+    const coursesRes = await request(app).get('/api/search/courses').query({ q: 'PartA' });
+    assert.equal(coursesRes.status, 200, JSON.stringify(coursesRes.body));
+    assert.ok(coursesRes.body.courses.some((c) => c._id === courseId));
   });
 
   const failed = results.filter((r) => !r.ok);

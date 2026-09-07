@@ -68,18 +68,21 @@ export const getMyStudents = asyncHandler(async (req, res) => {
     if (students.length === 0) return [];
     const ids = students.map((s) => s.id);
 
-    const [recordStats, hifzStats] = await Promise.all([
-      client.query(
-        `SELECT student_id, count(*)::int AS record_count, max(record_date) AS last_record_date
-           FROM student_records WHERE student_id = ANY($1) GROUP BY student_id`,
-        [ids]
-      ),
-      client.query(
-        `SELECT user_id, coalesce(sum(jsonb_array_length(memorized_verses)), 0)::int AS memorized
-           FROM hifz_progress WHERE user_id = ANY($1) GROUP BY user_id`,
-        [ids]
-      ),
-    ]);
+    // Sequential, not Promise.all — a single pg client can only run one
+    // query at a time; firing several concurrently on it is deprecated,
+    // undefined behavior, not real parallelism (same bug class found and
+    // fixed in parentController.js/reviewController.js during the Al-Rahma
+    // Final Corrections Part A rehearsal).
+    const recordStats = await client.query(
+      `SELECT student_id, count(*)::int AS record_count, max(record_date) AS last_record_date
+         FROM student_records WHERE student_id = ANY($1) GROUP BY student_id`,
+      [ids]
+    );
+    const hifzStats = await client.query(
+      `SELECT user_id, coalesce(sum(jsonb_array_length(memorized_verses)), 0)::int AS memorized
+         FROM hifz_progress WHERE user_id = ANY($1) GROUP BY user_id`,
+      [ids]
+    );
     const recordById = new Map(recordStats.rows.map((r) => [r.student_id, r]));
     const memorizedById = new Map(hifzStats.rows.map((r) => [r.user_id, r.memorized]));
 
@@ -106,17 +109,16 @@ export const getStudentDetail = asyncHandler(async (req, res) => {
     const student = studentRes.rows[0];
     if (!student) return null;
 
-    const [recordsRes, hifzRes, courses] = await Promise.all([
-      client.query(
-        `SELECT sr.*, c.title AS course_title, c.icon AS course_icon FROM student_records sr
-           LEFT JOIN courses c ON c.id = sr.course_id
-          WHERE sr.student_id = $1
-          ORDER BY sr.record_date DESC`,
-        [student.id]
-      ),
-      client.query('SELECT * FROM hifz_progress WHERE user_id = $1 ORDER BY chapter_id', [student.id]),
-      courseReport(client, student.id),
-    ]);
+    // Sequential, not Promise.all — see getMyStudents's comment above.
+    const recordsRes = await client.query(
+      `SELECT sr.*, c.title AS course_title, c.icon AS course_icon FROM student_records sr
+         LEFT JOIN courses c ON c.id = sr.course_id
+        WHERE sr.student_id = $1
+        ORDER BY sr.record_date DESC`,
+      [student.id]
+    );
+    const hifzRes = await client.query('SELECT * FROM hifz_progress WHERE user_id = $1 ORDER BY chapter_id', [student.id]);
+    const courses = await courseReport(client, student.id);
 
     return {
       student: { _id: student.id, name: student.name, email: student.email },

@@ -50,17 +50,20 @@ export const getMyNotifications = asyncHandler(async (req, res) => {
   const whereClause = unreadOnly ? 'user_id = $1 AND read = false' : 'user_id = $1';
 
   const { notifications, total, unreadCount } = await withUserContext(req.user._id, async (client) => {
-    const [listRes, totalRes, unreadRes] = await Promise.all([
-      client.query(
-        `SELECT * FROM notifications WHERE ${whereClause} ORDER BY created_at DESC LIMIT $2 OFFSET $3`,
-        [req.user._id, limit, skip]
-      ),
-      client.query(`SELECT count(*)::int AS count FROM notifications WHERE ${whereClause}`, [req.user._id]),
-      client.query(
-        'SELECT count(*)::int AS count FROM notifications WHERE user_id = $1 AND read = false',
-        [req.user._id]
-      ),
-    ]);
+    // Sequential, not Promise.all — a single pg client can only run one
+    // query at a time; firing several concurrently on it is deprecated,
+    // undefined behavior, not real parallelism (same bug class found and
+    // fixed in parentController.js/reviewController.js during the Al-Rahma
+    // Final Corrections Part A rehearsal).
+    const listRes = await client.query(
+      `SELECT * FROM notifications WHERE ${whereClause} ORDER BY created_at DESC LIMIT $2 OFFSET $3`,
+      [req.user._id, limit, skip]
+    );
+    const totalRes = await client.query(`SELECT count(*)::int AS count FROM notifications WHERE ${whereClause}`, [req.user._id]);
+    const unreadRes = await client.query(
+      'SELECT count(*)::int AS count FROM notifications WHERE user_id = $1 AND read = false',
+      [req.user._id]
+    );
     return {
       notifications: listRes.rows,
       total: totalRes.rows[0].count,

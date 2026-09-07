@@ -34,30 +34,34 @@ export const getContacts = asyncHandler(async (req, res) => {
   });
 
   const withMeta = await withUserContext(req.user._id, async (client) => {
-    return Promise.all(
-      contacts.map(async (c) => {
-        const [unreadRes, lastRes] = await Promise.all([
-          client.query(
-            'SELECT count(*)::int AS n FROM messages WHERE from_user_id = $1 AND to_user_id = $2 AND read_at IS NULL',
-            [c.id, req.user._id]
-          ),
-          client.query(
-            `SELECT body, created_at, from_user_id FROM messages
-              WHERE (from_user_id = $1 AND to_user_id = $2) OR (from_user_id = $2 AND to_user_id = $1)
-              ORDER BY created_at DESC LIMIT 1`,
-            [req.user._id, c.id]
-          ),
-        ]);
-        const last = lastRes.rows[0];
-        return {
-          _id: c.id, name: c.name, email: c.email, role: c.role,
-          unread: unreadRes.rows[0].n,
-          lastMessage: last
-            ? { body: last.body, createdAt: last.created_at, mine: last.from_user_id === req.user._id }
-            : null,
-        };
-      })
-    );
+    // Sequential, not Promise.all (neither the outer map nor the inner
+    // pair) — a single pg client can only run one query at a time; firing
+    // several concurrently on it is deprecated, undefined behavior, not
+    // real parallelism (same bug class found and fixed in
+    // parentController.js/reviewController.js during the Al-Rahma Final
+    // Corrections Part A rehearsal).
+    const result = [];
+    for (const c of contacts) {
+      const unreadRes = await client.query(
+        'SELECT count(*)::int AS n FROM messages WHERE from_user_id = $1 AND to_user_id = $2 AND read_at IS NULL',
+        [c.id, req.user._id]
+      );
+      const lastRes = await client.query(
+        `SELECT body, created_at, from_user_id FROM messages
+          WHERE (from_user_id = $1 AND to_user_id = $2) OR (from_user_id = $2 AND to_user_id = $1)
+          ORDER BY created_at DESC LIMIT 1`,
+        [req.user._id, c.id]
+      );
+      const last = lastRes.rows[0];
+      result.push({
+        _id: c.id, name: c.name, email: c.email, role: c.role,
+        unread: unreadRes.rows[0].n,
+        lastMessage: last
+          ? { body: last.body, createdAt: last.created_at, mine: last.from_user_id === req.user._id }
+          : null,
+      });
+    }
+    return result;
   });
 
   res.json(withMeta);

@@ -57,10 +57,13 @@ export const listPosts = asyncHandler(async (req, res) => {
     const countParams = params.slice(0, params.length - 2);
     const countSql = `SELECT count(*)::int AS total FROM blogs WHERE ${where}`;
 
-    const [listRes, countRes] = await Promise.all([
-      client.query(listSql, params),
-      client.query(countSql, countParams),
-    ]);
+    // Sequential, not Promise.all — a single pg client can only run one
+    // query at a time; firing several concurrently on it is deprecated,
+    // undefined behavior, not real parallelism (same bug class found and
+    // fixed in parentController.js/reviewController.js during the Al-Rahma
+    // Final Corrections Part A rehearsal).
+    const listRes = await client.query(listSql, params);
+    const countRes = await client.query(countSql, countParams);
     return { rows: listRes.rows, total: countRes.rows[0].total };
   });
 

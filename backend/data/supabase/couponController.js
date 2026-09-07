@@ -97,19 +97,22 @@ export const listCoupons = asyncHandler(async (req, res) => {
   // fine for SELECT (coupons_select_admin has no aal2 requirement), so a
   // plain withUserContext(req.user._id, ...) call is sufficient; no
   // withAdminAal2Context() needed for this read.
+  // Sequential, not Promise.all — a single pg client can only run one query
+  // at a time; firing several concurrently on it is deprecated, undefined
+  // behavior, not real parallelism (same bug class found and fixed in
+  // parentController.js/reviewController.js during the Al-Rahma Final
+  // Corrections Part A rehearsal).
   const { coupons, total } = await withUserContext(req.user._id, async (client) => {
-    const [listRes, totalRes] = await Promise.all([
-      client.query(
-        `SELECT c.*, COUNT(cr.user_id)::int AS used_count
-           FROM coupons c
-           LEFT JOIN coupon_redemptions cr ON cr.coupon_id = c.id
-          GROUP BY c.id
-          ORDER BY c.code
-          LIMIT $1 OFFSET $2`,
-        [limit, skip]
-      ),
-      client.query('SELECT count(*)::int AS count FROM coupons'),
-    ]);
+    const listRes = await client.query(
+      `SELECT c.*, COUNT(cr.user_id)::int AS used_count
+         FROM coupons c
+         LEFT JOIN coupon_redemptions cr ON cr.coupon_id = c.id
+        GROUP BY c.id
+        ORDER BY c.code
+        LIMIT $1 OFFSET $2`,
+      [limit, skip]
+    );
+    const totalRes = await client.query('SELECT count(*)::int AS count FROM coupons');
     return { coupons: listRes.rows, total: totalRes.rows[0].count };
   });
 

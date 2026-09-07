@@ -138,20 +138,23 @@ export const getEnrollments = asyncHandler(async (req, res) => {
   // enrollments_select_admin is is_admin()-gated (no AAL2 needed) —
   // withUserContext(req.user._id, ...) is sufficient (protect + adminOnly
   // already verified req.user.role === 'admin').
+  // Sequential, not Promise.all — a single pg client can only run one query
+  // at a time; firing several concurrently on it is deprecated, undefined
+  // behavior, not real parallelism (same bug class found and fixed in
+  // parentController.js/reviewController.js during the Al-Rahma Final
+  // Corrections Part A rehearsal).
   const { rows, total } = await withUserContext(req.user._id, async (client) => {
-    const [listRes, countRes] = await Promise.all([
-      client.query(
-        `SELECT id, name, email, whatsapp, country, city, timezone, times,
-                subjects, lang, level, age_group, gender_pref,
-                preferred_teacher_key, preferred_teacher_name,
-                requested_plan_slug, status, notes, created_at, updated_at
-           FROM enrollments
-          ORDER BY created_at DESC
-          LIMIT $1 OFFSET $2`,
-        [limit, skip]
-      ),
-      client.query('SELECT count(*)::int AS total FROM enrollments'),
-    ]);
+    const listRes = await client.query(
+      `SELECT id, name, email, whatsapp, country, city, timezone, times,
+              subjects, lang, level, age_group, gender_pref,
+              preferred_teacher_key, preferred_teacher_name,
+              requested_plan_slug, status, notes, created_at, updated_at
+         FROM enrollments
+        ORDER BY created_at DESC
+        LIMIT $1 OFFSET $2`,
+      [limit, skip]
+    );
+    const countRes = await client.query('SELECT count(*)::int AS total FROM enrollments');
     return { rows: listRes.rows, total: countRes.rows[0].total };
   });
 

@@ -530,6 +530,34 @@ async function main() {
     assert.ok(coursesRes.body.courses.some((c) => c._id === courseId));
   });
 
+  console.log('[rehearsal] /api/cron (route-parity sweep finding: renewal reminders + weekly parent reports)');
+  await check('renewal-reminders emails an active subscription expiring soon, then skips it on replay', async () => {
+    const soon = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    await pool.query(
+      `INSERT INTO subscriptions (user_id, plan_id, provider, provider_subscription_id, status, current_period_start, current_period_end)
+       VALUES ($1, $2, 'manual', 'rehearsal-renewal-sub', 'active', now(), $3)
+       ON CONFLICT (provider_subscription_id) WHERE provider_subscription_id IS NOT NULL
+       DO UPDATE SET status = 'active', current_period_end = $3, renewal_reminder_sent_for = NULL`,
+      [student, planId, soon]
+    );
+    const first = await request(app).get('/api/cron/renewal-reminders').set('Authorization', `Bearer ${process.env.CRON_SECRET}`);
+    assert.equal(first.status, 200, JSON.stringify(first.body));
+    assert.ok(first.body.sent >= 1, `expected at least 1 reminder sent, got ${JSON.stringify(first.body)}`);
+
+    const second = await request(app).get('/api/cron/renewal-reminders').set('Authorization', `Bearer ${process.env.CRON_SECRET}`);
+    assert.equal(second.status, 200, JSON.stringify(second.body));
+    assert.ok(second.body.skipped >= 1, `replay should skip the already-reminded period, got ${JSON.stringify(second.body)}`);
+  });
+  await check('renewal-reminders rejects a request without the cron secret', async () => {
+    const res = await request(app).get('/api/cron/renewal-reminders');
+    assert.equal(res.status, 401);
+  });
+  await check('weekly-parent-reports summarizes the linked child', async () => {
+    const res = await request(app).get('/api/cron/weekly-parent-reports').set('Authorization', `Bearer ${process.env.CRON_SECRET}`);
+    assert.equal(res.status, 200, JSON.stringify(res.body));
+    assert.ok(res.body.parents >= 1, `expected at least 1 parent with linked children, got ${JSON.stringify(res.body)}`);
+  });
+
   const failed = results.filter((r) => !r.ok);
   console.log(`\n[rehearsal] ${results.length - failed.length}/${results.length} Part A checks passed`);
   await pool.end();

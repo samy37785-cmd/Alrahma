@@ -8,6 +8,22 @@
     "with_check": null
   },
   {
+    "tablename": "admin_role_assignments",
+    "policyname": "admin_role_assignments_base_authenticated",
+    "cmd": "SELECT",
+    "roles": "{authenticated}",
+    "qual": "true",
+    "with_check": null
+  },
+  {
+    "tablename": "admin_role_assignments",
+    "policyname": "admin_role_assignments_select_admin_aal2",
+    "cmd": "SELECT",
+    "roles": "{authenticated}",
+    "qual": "is_admin_aal2()",
+    "with_check": null
+  },
+  {
     "tablename": "blogs",
     "policyname": "blogs_delete_admin_aal2",
     "cmd": "DELETE",
@@ -38,6 +54,38 @@
     "roles": "{authenticated}",
     "qual": "is_admin_aal2()",
     "with_check": "is_admin_aal2()"
+  },
+  {
+    "tablename": "certificates",
+    "policyname": "certificates_select_own_non_revoked_or_admin",
+    "cmd": "SELECT",
+    "roles": "{authenticated}",
+    "qual": "(((user_id = auth.uid()) AND (revoked = false)) OR is_admin())",
+    "with_check": null
+  },
+  {
+    "tablename": "contact_messages",
+    "policyname": "contact_messages_insert_public",
+    "cmd": "INSERT",
+    "roles": "{anon,authenticated}",
+    "qual": null,
+    "with_check": "((status = 'new'::contact_status) AND (assigned_to IS NULL) AND (replied_at IS NULL))"
+  },
+  {
+    "tablename": "contact_messages",
+    "policyname": "contact_messages_select_admin",
+    "cmd": "SELECT",
+    "roles": "{authenticated}",
+    "qual": "is_admin()",
+    "with_check": null
+  },
+  {
+    "tablename": "contact_messages",
+    "policyname": "contact_messages_update_admin_aal2",
+    "cmd": "UPDATE",
+    "roles": "{authenticated}",
+    "qual": "(is_admin_aal2() AND authorize('contact:write'::text))",
+    "with_check": "(is_admin_aal2() AND authorize('contact:write'::text))"
   },
   {
     "tablename": "coupon_redemptions",
@@ -80,12 +128,68 @@
     "with_check": "is_admin_aal2()"
   },
   {
+    "tablename": "course_progress",
+    "policyname": "course_progress_owner_all",
+    "cmd": "ALL",
+    "roles": "{authenticated}",
+    "qual": "(user_id = auth.uid())",
+    "with_check": "(user_id = auth.uid())"
+  },
+  {
+    "tablename": "course_progress",
+    "policyname": "course_progress_select_admin",
+    "cmd": "SELECT",
+    "roles": "{authenticated}",
+    "qual": "is_admin()",
+    "with_check": null
+  },
+  {
+    "tablename": "course_progress",
+    "policyname": "course_progress_select_parent",
+    "cmd": "SELECT",
+    "roles": "{authenticated}",
+    "qual": "is_parent_of(user_id)",
+    "with_check": null
+  },
+  {
+    "tablename": "courses",
+    "policyname": "courses_insert_admin_aal2",
+    "cmd": "INSERT",
+    "roles": "{authenticated}",
+    "qual": null,
+    "with_check": "(is_admin_aal2() AND authorize('courses:write'::text))"
+  },
+  {
+    "tablename": "courses",
+    "policyname": "courses_select_published_or_admin",
+    "cmd": "SELECT",
+    "roles": "{anon,authenticated}",
+    "qual": "((published = true) OR is_admin())",
+    "with_check": null
+  },
+  {
+    "tablename": "courses",
+    "policyname": "courses_update_admin_aal2",
+    "cmd": "UPDATE",
+    "roles": "{authenticated}",
+    "qual": "(is_admin_aal2() AND authorize('courses:write'::text))",
+    "with_check": "(is_admin_aal2() AND authorize('courses:write'::text))"
+  },
+  {
     "tablename": "enrollments",
     "policyname": "enrollments_delete_admin_aal2",
     "cmd": "DELETE",
     "roles": "{authenticated}",
     "qual": "is_admin_aal2()",
     "with_check": null
+  },
+  {
+    "tablename": "enrollments",
+    "policyname": "enrollments_insert_admin_aal2",
+    "cmd": "INSERT",
+    "roles": "{authenticated}",
+    "qual": null,
+    "with_check": "(is_admin_aal2() AND authorize('enrollments:write'::text))"
   },
   {
     "tablename": "enrollments",
@@ -105,11 +209,43 @@
   },
   {
     "tablename": "enrollments",
+    "policyname": "enrollments_select_own_by_email",
+    "cmd": "SELECT",
+    "roles": "{authenticated}",
+    "qual": "(email = (auth.jwt() ->> 'email'::text))",
+    "with_check": null
+  },
+  {
+    "tablename": "enrollments",
     "policyname": "enrollments_update_admin_aal2",
     "cmd": "UPDATE",
     "roles": "{authenticated}",
     "qual": "is_admin_aal2()",
     "with_check": "is_admin_aal2()"
+  },
+  {
+    "tablename": "hifz_progress",
+    "policyname": "hifz_progress_owner_all",
+    "cmd": "ALL",
+    "roles": "{authenticated}",
+    "qual": "(user_id = auth.uid())",
+    "with_check": "(user_id = auth.uid())"
+  },
+  {
+    "tablename": "hifz_progress",
+    "policyname": "hifz_progress_select_admin",
+    "cmd": "SELECT",
+    "roles": "{authenticated}",
+    "qual": "is_admin()",
+    "with_check": null
+  },
+  {
+    "tablename": "hifz_progress",
+    "policyname": "hifz_progress_select_parent",
+    "cmd": "SELECT",
+    "roles": "{authenticated}",
+    "qual": "is_parent_of(user_id)",
+    "with_check": null
   },
   {
     "tablename": "invoices",
@@ -118,6 +254,38 @@
     "roles": "{authenticated}",
     "qual": "((user_id = auth.uid()) OR is_admin_aal2())",
     "with_check": null
+  },
+  {
+    "tablename": "live_classes",
+    "policyname": "live_classes_delete_owner_or_admin",
+    "cmd": "DELETE",
+    "roles": "{authenticated}",
+    "qual": "((teacher_id = auth.uid()) OR is_admin_aal2())",
+    "with_check": null
+  },
+  {
+    "tablename": "live_classes",
+    "policyname": "live_classes_insert_teacher_or_admin",
+    "cmd": "INSERT",
+    "roles": "{authenticated}",
+    "qual": null,
+    "with_check": "(((teacher_id = auth.uid()) AND is_teacher_of(student_id)) OR is_admin_aal2())"
+  },
+  {
+    "tablename": "live_classes",
+    "policyname": "live_classes_select_participant_or_admin",
+    "cmd": "SELECT",
+    "roles": "{authenticated}",
+    "qual": "((teacher_id = auth.uid()) OR (student_id = auth.uid()) OR is_admin())",
+    "with_check": null
+  },
+  {
+    "tablename": "live_classes",
+    "policyname": "live_classes_update_owner_or_admin",
+    "cmd": "UPDATE",
+    "roles": "{authenticated}",
+    "qual": "((teacher_id = auth.uid()) OR is_admin_aal2())",
+    "with_check": "((teacher_id = auth.uid()) OR is_admin_aal2())"
   },
   {
     "tablename": "manual_payments",
@@ -134,6 +302,30 @@
     "roles": "{authenticated}",
     "qual": "((user_id = auth.uid()) OR is_admin_aal2())",
     "with_check": null
+  },
+  {
+    "tablename": "messages",
+    "policyname": "messages_insert_allowed_pair",
+    "cmd": "INSERT",
+    "roles": "{authenticated}",
+    "qual": null,
+    "with_check": "((from_user_id = auth.uid()) AND can_message(auth.uid(), to_user_id))"
+  },
+  {
+    "tablename": "messages",
+    "policyname": "messages_select_participant_or_admin",
+    "cmd": "SELECT",
+    "roles": "{authenticated}",
+    "qual": "((from_user_id = auth.uid()) OR (to_user_id = auth.uid()) OR (is_admin_aal2() AND authorize('messages:read'::text)))",
+    "with_check": null
+  },
+  {
+    "tablename": "messages",
+    "policyname": "messages_update_recipient_mark_read",
+    "cmd": "UPDATE",
+    "roles": "{authenticated}",
+    "qual": "(to_user_id = auth.uid())",
+    "with_check": "(to_user_id = auth.uid())"
   },
   {
     "tablename": "notification_preferences",
@@ -192,6 +384,22 @@
     "with_check": null
   },
   {
+    "tablename": "parent_student_links",
+    "policyname": "parent_student_links_delete_own",
+    "cmd": "DELETE",
+    "roles": "{authenticated}",
+    "qual": "(parent_id = auth.uid())",
+    "with_check": null
+  },
+  {
+    "tablename": "parent_student_links",
+    "policyname": "parent_student_links_select_own",
+    "cmd": "SELECT",
+    "roles": "{authenticated}",
+    "qual": "(parent_id = auth.uid())",
+    "with_check": null
+  },
+  {
     "tablename": "payments",
     "policyname": "payments_select_own_or_admin_aal2",
     "cmd": "SELECT",
@@ -209,10 +417,34 @@
   },
   {
     "tablename": "profiles",
+    "policyname": "profiles_select_own_children",
+    "cmd": "SELECT",
+    "roles": "{authenticated}",
+    "qual": "is_parent_of(id)",
+    "with_check": null
+  },
+  {
+    "tablename": "profiles",
     "policyname": "profiles_select_own_or_admin",
     "cmd": "SELECT",
     "roles": "{authenticated}",
     "qual": "((id = auth.uid()) OR is_admin())",
+    "with_check": null
+  },
+  {
+    "tablename": "profiles",
+    "policyname": "profiles_select_own_students",
+    "cmd": "SELECT",
+    "roles": "{authenticated}",
+    "qual": "(teacher_id = auth.uid())",
+    "with_check": null
+  },
+  {
+    "tablename": "profiles",
+    "policyname": "profiles_select_own_teacher",
+    "cmd": "SELECT",
+    "roles": "{authenticated}",
+    "qual": "(id = my_teacher_id())",
     "with_check": null
   },
   {
@@ -272,6 +504,94 @@
     "with_check": null
   },
   {
+    "tablename": "referrals",
+    "policyname": "referrals_convert_admin_aal2",
+    "cmd": "UPDATE",
+    "roles": "{authenticated}",
+    "qual": "(is_admin_aal2() AND authorize('referrals:write'::text))",
+    "with_check": "(is_admin_aal2() AND authorize('referrals:write'::text))"
+  },
+  {
+    "tablename": "referrals",
+    "policyname": "referrals_select_own_or_admin",
+    "cmd": "SELECT",
+    "roles": "{authenticated}",
+    "qual": "((referrer_id = auth.uid()) OR is_admin())",
+    "with_check": null
+  },
+  {
+    "tablename": "reviews",
+    "policyname": "reviews_insert_own",
+    "cmd": "INSERT",
+    "roles": "{authenticated}",
+    "qual": null,
+    "with_check": "((student_id = auth.uid()) AND (status = 'pending'::review_status))"
+  },
+  {
+    "tablename": "reviews",
+    "policyname": "reviews_moderate_admin_aal2",
+    "cmd": "UPDATE",
+    "roles": "{authenticated}",
+    "qual": "(is_admin_aal2() AND authorize('reviews:write'::text))",
+    "with_check": "(is_admin_aal2() AND authorize('reviews:write'::text))"
+  },
+  {
+    "tablename": "reviews",
+    "policyname": "reviews_select_approved_own_or_admin",
+    "cmd": "SELECT",
+    "roles": "{anon,authenticated}",
+    "qual": "((status = 'approved'::review_status) OR (student_id = auth.uid()) OR is_admin())",
+    "with_check": null
+  },
+  {
+    "tablename": "role_permissions",
+    "policyname": "role_permissions_base_authenticated",
+    "cmd": "SELECT",
+    "roles": "{authenticated}",
+    "qual": "true",
+    "with_check": null
+  },
+  {
+    "tablename": "role_permissions",
+    "policyname": "role_permissions_select_admin_aal2",
+    "cmd": "SELECT",
+    "roles": "{authenticated}",
+    "qual": "is_admin_aal2()",
+    "with_check": null
+  },
+  {
+    "tablename": "student_records",
+    "policyname": "student_records_delete_own_teacher_or_admin",
+    "cmd": "DELETE",
+    "roles": "{authenticated}",
+    "qual": "((teacher_id = auth.uid()) OR is_admin_aal2())",
+    "with_check": null
+  },
+  {
+    "tablename": "student_records",
+    "policyname": "student_records_insert_own_teacher_or_admin",
+    "cmd": "INSERT",
+    "roles": "{authenticated}",
+    "qual": null,
+    "with_check": "(((teacher_id = auth.uid()) AND is_teacher_of(student_id)) OR is_admin_aal2())"
+  },
+  {
+    "tablename": "student_records",
+    "policyname": "student_records_select_parent",
+    "cmd": "SELECT",
+    "roles": "{authenticated}",
+    "qual": "is_parent_of(student_id)",
+    "with_check": null
+  },
+  {
+    "tablename": "student_records",
+    "policyname": "student_records_select_participant_or_admin",
+    "cmd": "SELECT",
+    "roles": "{authenticated}",
+    "qual": "((student_id = auth.uid()) OR (teacher_id = auth.uid()) OR is_admin())",
+    "with_check": null
+  },
+  {
     "tablename": "subscribers",
     "policyname": "subscribers_delete_admin_aal2",
     "cmd": "DELETE",
@@ -309,6 +629,14 @@
     "cmd": "SELECT",
     "roles": "{authenticated}",
     "qual": "((user_id = auth.uid()) OR is_admin_aal2())",
+    "with_check": null
+  },
+  {
+    "tablename": "system_config",
+    "policyname": "system_config_select_admin",
+    "cmd": "SELECT",
+    "roles": "{authenticated}",
+    "qual": "is_admin()",
     "with_check": null
   },
   {
@@ -374,5 +702,29 @@
     "roles": "{authenticated}",
     "qual": "is_admin_aal2()",
     "with_check": "is_admin_aal2()"
+  },
+  {
+    "tablename": "user_extra_permissions",
+    "policyname": "user_extra_permissions_base_authenticated",
+    "cmd": "SELECT",
+    "roles": "{authenticated}",
+    "qual": "true",
+    "with_check": null
+  },
+  {
+    "tablename": "user_extra_permissions",
+    "policyname": "user_extra_permissions_select_admin_aal2",
+    "cmd": "SELECT",
+    "roles": "{authenticated}",
+    "qual": "is_admin_aal2()",
+    "with_check": null
+  },
+  {
+    "tablename": "wishlists",
+    "policyname": "wishlists_owner_all",
+    "cmd": "ALL",
+    "roles": "{authenticated}",
+    "qual": "(user_id = auth.uid())",
+    "with_check": "(user_id = auth.uid())"
   }
 ]

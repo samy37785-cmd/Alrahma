@@ -26,6 +26,7 @@ import path from "node:path";
 import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
 import { execFileSync } from "node:child_process";
+import { EXPECTED_NEW_TABLES } from "../scripts/lib/new-schema-fingerprint.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const opsDir = path.join(__dirname, "..");
@@ -140,14 +141,14 @@ async function main() {
   const resetOut = run("scripts/03-surgical-reset.mjs", { RESET_DATABASE_URL: DB_URL });
   assert.match(resetOut, /SURGICAL RESET COMPLETE, VERIFIED, AND COMMITTED/);
 
-  console.log("--- migrate() (old 34 tables gone -> new 20-table schema)");
+  console.log(`--- migrate() (old 34 tables gone -> new ${EXPECTED_NEW_TABLES.length}-table schema)`);
   const migrateOut = run("scripts/run-migrate.mjs", { REHEARSAL_DATABASE_URL: DB_URL });
   assert.match(migrateOut, /migrate\(\) completed/);
 
   client = new pg.Client({ connectionString: DB_URL });
   await client.connect();
   const { rows: newTableCountRows } = await client.query(`select count(*) as c from pg_tables where schemaname='public';`);
-  assert.equal(Number(newTableCountRows[0].c), 20, "post-migrate: expected exactly 20 new tables");
+  assert.equal(Number(newTableCountRows[0].c), EXPECTED_NEW_TABLES.length, `post-migrate: expected exactly ${EXPECTED_NEW_TABLES.length} new tables`);
   await client.end();
 
   console.log("--- THE ROLLBACK: restoring the OLD bundle onto the NEW-state database");

@@ -31,6 +31,7 @@ import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
 import { createLocalAuthUsersStub, createLocalAuthRolesAndFunctions, assertLocalHost } from "../../../lib/db/test/local-harness.mjs";
 import { runAtomicCutoverOnClient, InjectedFailure } from "../scripts/lib/cutover-core.mjs";
+import { EXPECTED_NEW_TABLES } from "../scripts/lib/new-schema-fingerprint.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const opsDir = path.join(__dirname, "..");
@@ -170,16 +171,22 @@ async function main() {
 
   // -------------------------------------------------------------
   // Positive case: no injection, must actually commit and land on the
-  // real 20-table new schema with all 12 migrations applied.
+  // real new schema with every canonical migration applied. Stage 2I-A
+  // audit correction: this used to hardcode 12/20 (the original
+  // 0000-0011 baseline) — updated to match the current canonical
+  // migration count (lib/db/drizzle now has 22 files, 0000-0021) rather
+  // than re-hardcoding a new magic number, so this doesn't silently
+  // drift again the next time a migration is added.
   // -------------------------------------------------------------
   console.log("--- POSITIVE CASE: no injected failure, must commit atomically");
+  const expectedMigrationCount = fs.readdirSync(drizzleDir).filter((f) => f.endsWith(".sql")).length;
   const { appliedCount } = await runAtomicCutoverOnClient(client, { ...coreOpts, log: (m) => console.log(m) });
-  assert.equal(appliedCount, 12, `expected all 12 migration files (0000-0011) to be applied, got ${appliedCount}`);
+  assert.equal(appliedCount, expectedMigrationCount, `expected all ${expectedMigrationCount} migration file(s) to be applied, got ${appliedCount}`);
   const { rows: newTableRows } = await client.query(`select count(*) as c from pg_tables where schemaname='public';`);
-  assert.equal(Number(newTableRows[0].c), 20, "positive case: expected exactly 20 new tables after atomic cutover");
+  assert.equal(Number(newTableRows[0].c), EXPECTED_NEW_TABLES.length, `positive case: expected exactly ${EXPECTED_NEW_TABLES.length} new tables after atomic cutover`);
   const { rows: migRows } = await client.query(`select count(*) as c from drizzle.__drizzle_migrations;`);
-  assert.equal(Number(migRows[0].c), 12, "positive case: expected exactly 12 rows in the migration journal");
-  console.log("OK    positive case: atomic cutover committed — 20 new tables, 12 migrations journaled");
+  assert.equal(Number(migRows[0].c), expectedMigrationCount, `positive case: expected exactly ${expectedMigrationCount} rows in the migration journal`);
+  console.log(`OK    positive case: atomic cutover committed — ${EXPECTED_NEW_TABLES.length} new tables, ${expectedMigrationCount} migrations journaled`);
 
   // -------------------------------------------------------------
   // Positive case with --policy-fixture: proves the EXACT full policy

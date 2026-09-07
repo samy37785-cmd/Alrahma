@@ -9,7 +9,8 @@
 // Two distinct scenarios, both supported:
 //   - Restoring onto an EMPTY target (disaster recovery from nothing).
 //   - Restoring an OLD-schema bundle onto a target that currently has
-//     the NEW 20-table schema applied — the actual Option A ROLLBACK
+//     the NEW schema applied (scripts/lib/new-schema-fingerprint.mjs) —
+//     the actual Option A ROLLBACK
 //     scenario. Set RESTORE_ROLLBACK_FROM_NEW_SCHEMA=yes to first run
 //     sql/inverse-reset-new-schema.sql (drops the 20 named new tables/
 //     enums/functions explicitly — never DROP SCHEMA) before restoring,

@@ -204,9 +204,42 @@ async function runTest(setupClient, actorClient) {
 
   console.log("--- setup: old fixture (as supabase_admin) -> reassign everything to postgres -> real local backup bundle (dumped as postgres, matching real production's ownership shape exactly)");
   await loadOldFixtureAndBackup(setupClient);
-  console.log("--- setup: cutover to the real new (20-table) schema (as supabase_admin, matching rollback-core.test.mjs's existing convention — not what's under test here)");
+  // Stage 2I-A audit finding: loadOldFixtureAndBackup's reassignment
+  // above leaves rls_auto_enable() owned by "postgres" (for the backup
+  // bundle's realism, per its own comment) — but that ownership change
+  // persists into the cutover below too, since Surgical Reset never
+  // touches this function. Under that specific ownership, this local
+  // stack's rls_auto_enable_trigger silently fails to enable RLS on
+  // document_counters specifically (its EXCEPTION handler logs and
+  // swallows the error rather than raising — confirmed by direct
+  // reproduction, not by inspection: cutoverToNewSchema's own strict
+  // fingerprint check below caught it). rollback-core.test.mjs's cutover
+  // never hits this because it never reassigns ownership away from
+  // supabase_admin first. Restoring supabase_admin ownership here — the
+  // exact same statement the `finally` block below already runs — before
+  // cutover keeps this test's later rollback-under-restricted-actor
+  // proof (which only depends on the OLD-schema backup bundle's already-
+  // captured postgres ownership, not on anything about the NEW schema)
+  // while letting the migrate() step run under the same ownership
+  // rollback-core.test.mjs already proves works correctly.
+  await setupClient.query(`
+    alter function public.rls_auto_enable() owner to supabase_admin;
+    alter function public.handle_new_user() owner to supabase_admin;
+  `);
+  console.log("--- setup: cutover to the real new schema (as supabase_admin, matching rollback-core.test.mjs's existing convention — not what's under test here)");
   await cutoverToNewSchema(setupClient);
   assert.deepEqual(await currentPublicTableSet(setupClient), [...EXPECTED_NEW_TABLES].sort(), "setup: expected exactly the new schema after cutover");
+  // Borrow-and-return: cutover needed supabase_admin ownership (above) for
+  // rls_auto_enable_trigger to fire correctly; the ROLLBACK below needs the
+  // OPPOSITE — the live function back under "postgres" ownership, matching
+  // what the backup bundle actually recorded (loadOldFixtureAndBackup,
+  // earlier), because pg_restore's `GRANT ... ON FUNCTION rls_auto_enable`
+  // statements only succeed for the function's actual owner (or a
+  // superuser) — the non-admin actor under test is neither. Confirmed by
+  // direct reproduction: skipping this re-reassignment fails rollback with
+  // "permission denied for function rls_auto_enable" on the exact GRANT
+  // statements the bundle's TOC replays.
+  await setupClient.query(`alter function public.rls_auto_enable() owner to postgres;`);
 
   // Pure test-fixture correction, not a code change and not a production
   // finding: cutover-core.mjs's migration step does a plain

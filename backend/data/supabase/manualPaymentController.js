@@ -1,19 +1,19 @@
 // Supabase-mode manual-payment controller. See docs/option-a-mongo-supabase-
 // parity-map.md ("ManualPayment") for the schema comparison.
 //
-// Two real, documented gaps here (both are RLS/schema properties, not
-// implementation shortcuts):
-//   1. manual_payments' INSERT policy requires `user_id = auth.uid()` — there
-//      is no anon-insert policy, so (unlike the Mongo path, which allows a
-//      logged-out visitor to submit via softProtect) a caller MUST be signed
-//      in to submit a manual payment under DATA_BACKEND=supabase.
-//   2. Both admin endpoints (list, review) require `is_admin_aal2()` at the
-//      RLS/RPC level — this backend has no way to prove an admin completed
-//      MFA (see client.js's module comment), so they call
-//      withAdminAal2Context() and let it throw, surfacing as a clear error
-//      rather than silently bypassing the check.
+// One real, documented gap here (an RLS/schema property, not an
+// implementation shortcut): manual_payments' INSERT policy requires
+// `user_id = auth.uid()` — there is no anon-insert policy, so (unlike the
+// Mongo path, which allows a logged-out visitor to submit via softProtect) a
+// caller MUST be signed in to submit a manual payment under
+// DATA_BACKEND=supabase.
+//
+// Admin review (approve/reject) and refund now have a real implementation —
+// see data/supabase/admin/paymentsAdminController.js, wired at
+// /api/v1/admin/payments (routes/v1/admin/index.js), using req.adminAal (see
+// middleware/adminAuth.js) as genuine AAL2 proof.
 import { asyncHandler } from '../../utils/asyncHandler.js';
-import { withUserContext, withAdminAal2Context } from './client.js';
+import { withUserContext } from './client.js';
 import { getManualMethods } from '../../controllers/manualPaymentController.js';
 
 // Pure env-var read, no database access either way — safe to reuse verbatim
@@ -56,14 +56,4 @@ export const submitManualPayment = asyncHandler(async (req, res) => {
     message: 'Payment request received. We will verify and activate your plan within 24 hours.',
     id: record.id,
   });
-});
-
-// @route GET /api/v1/admin/payments/manual
-export const listManualPayments = asyncHandler(async () => {
-  await withAdminAal2Context();
-});
-
-// @route PATCH /api/v1/admin/payments/manual/:id
-export const reviewManualPayment = asyncHandler(async () => {
-  await withAdminAal2Context();
 });

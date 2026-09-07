@@ -1,27 +1,43 @@
-// Supabase-mode invoice controller. See docs/option-a-mongo-supabase-parity-
-// map.md ("Invoice") — the Postgres `invoices` table has no invoice-number
-// column at all, so `invoiceNumber` is always returned as `null` here (a
-// real, documented gap: there is no customer-facing "INV-2026-0001"-style
-// identifier under this backend yet). Everything else in the response is
+// Supabase-mode invoice controller. Stage 2E documented invoices.invoice_
+// number as missing (always null); Stage 2F closed that gap
+// (0014_close_partial_gaps_schema.sql adds the column, and
+// issue_invoice_from_payment() now populates it via next_document_number()
+// — see 0015_new_domains_rls.sql). Everything else in the response is
 // reshaped from Postgres's snapshot columns into the same field names the
 // Mongo controller returns.
 //
-// getAdminInvoices requires is_admin_aal2() at the RLS level (see
-// client.js's module comment on why this backend can't safely assert that) —
-// it calls withAdminAal2Context() and lets it throw.
+// getAdminInvoices used to require is_admin_aal2() at the RLS level while
+// running under GET /api/invoices/admin — a customer-session route
+// (protect+adminOnly), which has no AAL2 concept at all. Real fix (Al-Rahma
+// Final Corrections, Part A item 3): the canonical admin invoice list moved
+// to GET /api/v1/admin/invoices (data/supabase/admin/invoicesAdminController.js),
+// which runs under the real, AAL2-capable admin router. This route stays
+// mounted for backward compatibility but now returns a clear, structured
+// 400 pointing callers at the real endpoint, instead of an opaque 500 from
+// a placeholder that always threw.
 import { asyncHandler } from '../../utils/asyncHandler.js';
-import { withUserContext, withAdminAal2Context } from './client.js';
+import { withUserContext } from './client.js';
 
 function toMongoShape(row) {
+  // invoices stores the discount as a currency amount (discount_minor_
+  // snapshot), not a percentage — derived here rather than faked as null,
+  // since the underlying amount is real (closes the discountPct gap noted
+  // in the parity map's field-mismatch list).
+  const pretaxMinor = row.amount_minor_snapshot + (row.discount_minor_snapshot ?? 0);
+  const discountPct =
+    row.discount_minor_snapshot > 0 && pretaxMinor > 0
+      ? Math.round((row.discount_minor_snapshot / pretaxMinor) * 100)
+      : 0;
+
   return {
     _id: row.id,
-    invoiceNumber: null, // gap — see module comment
+    invoiceNumber: row.invoice_number ?? null,
     user: row.user_id,
     customerEmail: row.customer_email ?? null,
     customerName: row.customer_name_snapshot,
     plan: row.plan_name_snapshot,
     amount: row.amount_minor_snapshot / 100,
-    discountPct: null, // no equivalent column — see plans.js gap note
+    discountPct,
     currency: row.currency_snapshot,
     status: row.status,
     payment: row.payment_id,
@@ -31,16 +47,20 @@ function toMongoShape(row) {
 }
 
 // @route GET /api/invoices/admin
-export const getAdminInvoices = asyncHandler(async () => {
-  await withAdminAal2Context();
+export const getAdminInvoices = asyncHandler(async (req, res) => {
+  res.status(400).json({
+    message: 'This endpoint cannot serve admin invoices under DATA_BACKEND=supabase: it runs under a ' +
+      'customer session, which has no AAL2 proof, but invoices RLS requires an AAL2-verified admin. ' +
+      'Use GET /api/v1/admin/invoices (the real, MFA-verified admin API) instead.',
+  });
 });
 
 // @route GET /api/invoices
 export const getMyInvoices = asyncHandler(async (req, res) => {
   const rows = await withUserContext(req.user._id, async (client) => {
     const r = await client.query(
-      `SELECT id, user_id, plan_name_snapshot, customer_name_snapshot,
-              amount_minor_snapshot, currency_snapshot, status, payment_id,
+      `SELECT id, invoice_number, user_id, plan_name_snapshot, customer_name_snapshot,
+              amount_minor_snapshot, discount_minor_snapshot, currency_snapshot, status, payment_id,
               gateway_invoice_id, created_at
          FROM invoices
         WHERE user_id = $1
@@ -56,8 +76,8 @@ export const getMyInvoices = asyncHandler(async (req, res) => {
 export const getInvoice = asyncHandler(async (req, res) => {
   const row = await withUserContext(req.user._id, async (client) => {
     const r = await client.query(
-      `SELECT id, user_id, plan_name_snapshot, customer_name_snapshot,
-              amount_minor_snapshot, currency_snapshot, status, payment_id,
+      `SELECT id, invoice_number, user_id, plan_name_snapshot, customer_name_snapshot,
+              amount_minor_snapshot, discount_minor_snapshot, currency_snapshot, status, payment_id,
               gateway_invoice_id, created_at
          FROM invoices
         WHERE id = $1 AND user_id = $2`,

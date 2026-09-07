@@ -61,6 +61,21 @@ import supabaseBlogRoutes from './data/supabase/routes/blogRoutes.js';
 import supabaseEnrollmentRoutes from './data/supabase/routes/enrollmentRoutes.js';
 import supabasePaymentRoutes from './data/supabase/routes/paymentRoutes.js';
 import supabaseInvoiceRoutes from './data/supabase/routes/invoiceRoutes.js';
+import supabaseCourseRoutes from './data/supabase/routes/courseRoutes.js';
+import supabaseProgressRoutes from './data/supabase/routes/progressRoutes.js';
+import supabaseHifzRoutes from './data/supabase/routes/hifzRoutes.js';
+import supabaseCertificateRoutes from './data/supabase/routes/certificateRoutes.js';
+import supabaseLiveClassRoutes from './data/supabase/routes/liveClassRoutes.js';
+import supabaseMessageRoutes from './data/supabase/routes/messageRoutes.js';
+import supabaseContactRoutes from './data/supabase/routes/contactRoutes.js';
+import supabaseWishlistRoutes from './data/supabase/routes/wishlistRoutes.js';
+import supabaseReviewRoutes from './data/supabase/routes/reviewRoutes.js';
+import supabaseReferralRoutes from './data/supabase/routes/referralRoutes.js';
+import supabaseTeacherRoutes from './data/supabase/routes/teacherRoutes.js';
+import supabaseParentRoutes from './data/supabase/routes/parentRoutes.js';
+import supabaseSearchRoutes from './data/supabase/routes/searchRoutes.js';
+import supabaseCronRoutes from './data/supabase/routes/cronRoutes.js';
+import { getPool as getSupabasePool } from './data/supabase/client.js';
 
 // Validate required environment variables immediately — fails fast with a
 // clear error rather than surfacing a cryptic runtime failure later.
@@ -154,6 +169,18 @@ app.get('/health', healthCheckHandler);
 app.get('/api/healthz', healthCheckHandler);
 app.get('/ready', async (_req, res) => {
   try {
+    // Real gap found by a full route-mount audit (same pass that found
+    // /api/search and /api/cron): this probe unconditionally called Mongo's
+    // connectDB()/readyState with no isSupabaseBackend() branch at all —
+    // under supabase mode it would report "not ready" forever (mongoose
+    // never connects there at all), which is exactly the kind of thing a
+    // container orchestrator's readiness gate would act on and never route
+    // traffic to this instance.
+    if (isSupabaseBackend()) {
+      await getSupabasePool().query('SELECT 1');
+      return res.json({ status: 'ready' });
+    }
+
     await connectDB();
     // connectDB() resolves from a cached connection object once the process
     // has ever connected successfully (see config/db.js) — it does not by
@@ -207,31 +234,31 @@ app.use(async (req, res, next) => {
 // way (see docs/option-a-mongo-supabase-parity-map.md). Defaults to the
 // unchanged MongoDB path; this is the only backend actually deployed.
 app.use('/api/auth', authLimiter, isSupabaseBackend() ? supabaseAuthRoutes : authRoutes);
-app.use('/api/courses', courseRoutes);
+app.use('/api/courses', isSupabaseBackend() ? supabaseCourseRoutes : courseRoutes);
 app.use('/api/trials', isSupabaseBackend() ? supabaseTrialRoutes : trialRoutes);
 app.use('/api/payments', isSupabaseBackend() ? supabasePaymentRoutes : paymentRoutes);
 app.use('/api/invoices', isSupabaseBackend() ? supabaseInvoiceRoutes : invoiceRoutes);
 app.use('/api/newsletter', isSupabaseBackend() ? supabaseSubscriberRoutes : subscriberRoutes);
 app.use('/api/enrollments', isSupabaseBackend() ? supabaseEnrollmentRoutes : enrollmentRoutes);
-app.use('/api/hifz', hifzRoutes);
-app.use('/api/progress', progressRoutes);
+app.use('/api/hifz', isSupabaseBackend() ? supabaseHifzRoutes : hifzRoutes);
+app.use('/api/progress', isSupabaseBackend() ? supabaseProgressRoutes : progressRoutes);
 app.use('/api/quran-bookmarks', isSupabaseBackend() ? supabaseQuranBookmarkRoutes : quranBookmarkRoutes);
 app.use('/api/quran-progress',  isSupabaseBackend() ? supabaseQuranProgressRoutes : quranProgressRoutes);
 app.use('/api/quran-memo',      isSupabaseBackend() ? supabaseQuranMemoRoutes : quranMemoRoutes);
-app.use('/api/certificates', certificateRoutes);
-app.use('/api/teacher', teacherRoutes);
-app.use('/api/parent', parentRoutes);
-app.use('/api/classes', liveClassRoutes);
-app.use('/api/messages', messageRoutes);
-app.use('/api/cron', cronRoutes);
+app.use('/api/certificates', isSupabaseBackend() ? supabaseCertificateRoutes : certificateRoutes);
+app.use('/api/teacher', isSupabaseBackend() ? supabaseTeacherRoutes : teacherRoutes);
+app.use('/api/parent', isSupabaseBackend() ? supabaseParentRoutes : parentRoutes);
+app.use('/api/classes', isSupabaseBackend() ? supabaseLiveClassRoutes : liveClassRoutes);
+app.use('/api/messages', isSupabaseBackend() ? supabaseMessageRoutes : messageRoutes);
+app.use('/api/cron', isSupabaseBackend() ? supabaseCronRoutes : cronRoutes);
 app.use('/api/notifications', isSupabaseBackend() ? supabaseNotificationRoutes : notificationRoutes);
-app.use('/api/contact',       contactRoutes);
+app.use('/api/contact',       isSupabaseBackend() ? supabaseContactRoutes : contactRoutes);
 app.use('/api/coupons',       isSupabaseBackend() ? supabaseCouponRoutes : couponRoutes);
-app.use('/api/wishlist',      wishlistRoutes);
-app.use('/api/reviews',       reviewRoutes);
+app.use('/api/wishlist',      isSupabaseBackend() ? supabaseWishlistRoutes : wishlistRoutes);
+app.use('/api/reviews',       isSupabaseBackend() ? supabaseReviewRoutes : reviewRoutes);
 app.use('/api/blog',          isSupabaseBackend() ? supabaseBlogRoutes : blogRoutes);
-app.use('/api/search',        searchRoutes);
-app.use('/api/referrals',     referralRoutes);
+app.use('/api/search',        isSupabaseBackend() ? supabaseSearchRoutes : searchRoutes);
+app.use('/api/referrals',     isSupabaseBackend() ? supabaseReferralRoutes : referralRoutes);
 
 // Admin dashboard — zero-trust, MFA-required, RBAC-enforced
 // All security middleware (IP whitelist, Helmet CSP, rate limit, sanitization,

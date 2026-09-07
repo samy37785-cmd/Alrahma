@@ -73,3 +73,9 @@ Thumbs.db
 # Replit
 .cache/
 .local/
+
+# Migration-tool runtime checkpoints (may contain real emails on a real run)
+.checkpoints/
+
+# Route Parity Gate generated report (regenerate via `npm run route-parity-gate`)
+backend/scripts/route-parity-gate/last-run-report.md

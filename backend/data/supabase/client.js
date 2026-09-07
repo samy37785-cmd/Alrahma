@@ -14,18 +14,32 @@
 // locally for the schema's own test suite).
 //
 // SECURITY RULE — do not relax this without a real design change: this module
-// deliberately provides NO way to set an `aal2` claim. Every `is_admin_aal2()`
-// policy and every AAL2-gated RPC (admin_record_refund, admin_review_manual_
-// payment, admin_set_role, create_plan_version, admin_activate_manual_
-// subscription, issue_invoice_from_payment) exists specifically to require
-// proof of a completed MFA step-up. The live admin system (backend/models/
-// AdminUser.js) tracks MFA itself, but has no Postgres/Supabase counterpart
-// (see docs/option-a-mongo-supabase-parity-map.md, "AdminUser" gap) — there is
-// currently no trustworthy signal this module could use to assert "this
-// admin really completed MFA". Fabricating `aal:"aal2"` on every admin
-// request would silently defeat the whole point of those policies. Until the
-// AdminUser/MFA gap is closed, any adapter function that would need an AAL2
-// RPC must call `withAdminAal2Context`, which always throws.
+// only ever sets an `aal2` claim when the caller passes one in explicitly,
+// and the ONE legitimate caller (middleware/adminAuth.js's verifyAccessToken,
+// supabase mode) only does so after re-verifying, on THAT request, the
+// admin_sat cookie's signature against SUPABASE_JWT_SECRET and reading a
+// real `aal: "aal2"` claim GoTrue itself put there when the admin completed
+// a TOTP challenge (see data/supabase/supabaseSessionCookie.js and
+// data/supabase/adminAuthController.js). It is never read from this
+// backend's own signed admin_at JWT, which under Mongo mode is genuinely
+// the only signal available (no external identity provider to re-check
+// against there) but under Supabase mode is exactly the kind of
+// self-asserted, cacheable claim this rule exists to distrust. Every
+// `is_admin_aal2()` policy and every AAL2-gated RPC (admin_record_refund,
+// admin_review_manual_payment, admin_set_role, create_plan_version,
+// admin_activate_manual_subscription, issue_invoice_from_payment,
+// system_config_set) exists specifically to require that proof. Fabricating
+// `aal:"aal2"` from any other code path would silently defeat the whole
+// point of those policies — every caller needing one of these RPCs must run
+// under the real /api/v1/admin/* verifyAccessToken flow and forward its
+// req.adminAal, never invent one. (Admin invoices used to be the one
+// exception — GET /api/invoices/admin, mounted under the customer-session
+// protect+adminOnly middleware, structurally had no AAL2 concept at all and
+// called a withAdminAal2Context() placeholder that always threw. Closed in
+// the Al-Rahma Final Corrections pass by moving the real admin invoice list
+// to GET /api/v1/admin/invoices — see data/supabase/admin/
+// invoicesAdminController.js — which runs under the real, AAL2-capable
+// admin router instead.)
 import pg from 'pg';
 
 let pool;
@@ -62,20 +76,32 @@ export function getPool() {
 }
 
 // Runs `fn(client)` as the given end user: RLS policies see
-// auth.uid() = userId and auth.jwt()->>'aal' is absent (AAL1). Sufficient for
-// every owner-scoped policy in the matched-domain schema (quran_*,
-// notifications, notification_preferences, manual_payments insert,
-// subscriptions/payments/invoices select) — none of those require AAL2.
-export async function withUserContext(userId, fn) {
+// auth.uid() = userId and auth.jwt()->>'aal' is absent (AAL1) unless `aal`
+// is passed explicitly. Sufficient for every owner-scoped policy in the
+// matched-domain schema (quran_*, notifications, notification_preferences,
+// manual_payments insert, subscriptions/payments/invoices select) — none of
+// those require AAL2.
+//
+// The `aal` option exists for exactly one legitimate caller: data/supabase/
+// adminAuth.js's verifyAccessToken(), AFTER it has decoded our own signed
+// admin_at JWT and found `mfaVerified: true` — a claim this backend only
+// ever sets (see adminAuthController.js) once Supabase Auth's own GoTrue
+// service has genuinely verified a TOTP challenge for that admin's real
+// session. That is a trustworthy, narrowly-scoped signal, categorically
+// different from a route handler self-asserting "trust me, this admin did
+// MFA" — which is exactly what withAdminAal2Context() below refuses to do
+// for every OTHER caller, since no such signed, GoTrue-verified claim
+// exists anywhere else in this codebase. Never pass `aal:'aal2'` here from
+// any code path that hasn't gone through that real verification.
+export async function withUserContext(userId, fn, { aal } = {}) {
   if (!userId) throw new Error('withUserContext requires a userId');
   const client = await getPool().connect();
   try {
     await client.query('BEGIN');
     await client.query('SET LOCAL ROLE authenticated');
-    await client.query('SELECT set_config($1, $2, true)', [
-      'request.jwt.claims',
-      JSON.stringify({ sub: userId, role: 'authenticated' }),
-    ]);
+    const claims = { sub: userId, role: 'authenticated' };
+    if (aal) claims.aal = aal;
+    await client.query('SELECT set_config($1, $2, true)', ['request.jwt.claims', JSON.stringify(claims)]);
     const result = await fn(client);
     await client.query('COMMIT');
     return result;
@@ -127,20 +153,6 @@ export async function withServiceRole(fn) {
   } finally {
     client.release();
   }
-}
-
-// Always throws. Placeholder call site for the AAL2-gated RPCs so every
-// adapter function that needs one fails loudly and explicitly, with a message
-// pointing at the real gap, instead of silently downgrading security. See the
-// module-level SECURITY RULE comment for why this can't be implemented yet.
-export async function withAdminAal2Context() {
-  throw new Error(
-    'DATA_BACKEND=supabase cannot perform AAL2-gated admin actions yet: ' +
-      'AdminUser (RBAC + MFA) has no Postgres/Supabase mapping, so this ' +
-      'backend has no trustworthy signal that the calling admin has actually ' +
-      'completed MFA. See docs/option-a-mongo-supabase-parity-map.md, ' +
-      '"AdminUser" gap, before implementing this.'
-  );
 }
 
 export async function closePool() {

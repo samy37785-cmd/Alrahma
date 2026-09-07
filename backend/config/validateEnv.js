@@ -56,6 +56,11 @@ const SUPABASE_REQUIRED = [
   'SUPABASE_ANON_KEY',
   'SUPABASE_SERVICE_ROLE_KEY',
   'SUPABASE_DB_URL',
+  // Stage 2F: verifies the signature of the live GoTrue access token carried
+  // in the admin_sat cookie, so admin AAL2 proof is read from a real,
+  // signed Supabase JWT claim on every request — see
+  // data/supabase/supabaseSessionCookie.js.
+  'SUPABASE_JWT_SECRET',
 ];
 
 export function validateEnv() {

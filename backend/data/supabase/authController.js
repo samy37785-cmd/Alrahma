@@ -13,7 +13,7 @@
 import { asyncHandler } from '../../utils/asyncHandler.js';
 import { handleValidationErrors } from '../../utils/validationHelper.js';
 import { AUTH_COOKIE, authCookieOptions, sendAuth } from '../../utils/authCookie.js';
-import { getAdminClient, getAnonClient } from './authClients.js';
+import { getAdminClient, getAnonClient, createScopedAnonClient } from './authClients.js';
 import { withUserContext } from './client.js';
 import { loadUserById } from './loadUser.js';
 
@@ -194,35 +194,86 @@ export const forgotPassword = asyncHandler(async (req, res) => {
 });
 
 // @route  POST /api/auth/reset-password
-export const resetPassword = asyncHandler(async () => {
-  // Supabase Auth's reset-password flow is link-based: the emailed link
-  // carries its own short-lived Supabase session token and the browser is
-  // expected to call supabase-js's own updateUser({password}) directly with
-  // it — there is no equivalent of the Mongo path's "POST a raw reset token
-  // + new password to our own backend" contract, because GoTrue (not this
-  // backend) is what validates that token. Implementing this endpoint would
-  // mean either (a) changing the frontend's reset-password page to talk to
-  // Supabase directly for this one flow, or (b) building a bridge endpoint
-  // that exchanges the Supabase recovery token for a password update via the
-  // admin API — neither is a same-API-contract adapter change, so this is
-  // left as an explicit gap rather than a silent behavior mismatch.
-  const err = new Error(
-    'Password reset via POST /api/auth/reset-password is not supported under DATA_BACKEND=supabase yet — see docs/option-a-mongo-supabase-parity-map.md.'
-  );
-  err.status = 501;
-  throw err;
+//
+// Same wire contract as the Mongo path: POST { token, password } -> 200
+// { message }. Under this backend, `token` is GoTrue's own recovery
+// token_hash rather than our own HMAC'd random token — the emailed link is
+// built from a custom recovery template (see ops/*/supabase/templates/
+// recovery.html and [auth.email.template.recovery] in the matching
+// config.toml) that points straight at
+// `${SITE_URL}/reset-password?token={{ .TokenHash }}&type=recovery`, so the
+// existing ResetPassword.jsx (which already reads `token` from the query
+// string and POSTs { token, password }) needed no changes at all.
+//
+// Security properties, all verified against a real local GoTrue instance
+// (see ops/stage2f-authtest):
+//  - Ownership of the recovery link is proven by GoTrue itself via
+//    verifyOtp({token_hash, type:'recovery'}) — invalid, expired, or
+//    already-used tokens are rejected by GoTrue with a generic error before
+//    this handler ever sees a user id, and never distinguish "wrong token"
+//    from "no such account" (no email-enumeration channel).
+//  - The password change itself uses ONLY the short-lived recovery session
+//    verifyOtp just returned (auth.updateUser, self-service) via a
+//    request-scoped client (createScopedAnonClient() — never the shared
+//    getAnonClient()/getAdminClient() singletons, so one request's in-memory
+//    session can never leak into a concurrent request). The service-role
+//    key and admin.updateUserById are never used for this path.
+//  - No user id is ever accepted from the request body — the only identity
+//    involved is whichever account GoTrue's own token_hash lookup resolves.
+//  - Reuse of the same link a second time fails closed (GoTrue marks
+//    recovery tokens single-use; confirmed empirically: replaying the same
+//    token_hash returns "Email link is invalid or has expired").
+export const resetPassword = asyncHandler(async (req, res) => {
+  const { token, password } = req.body;
+  if (!token || !password) {
+    res.status(400);
+    throw new Error('Token and new password are required');
+  }
+  if (typeof password !== 'string' || password.length < 8) {
+    res.status(400);
+    throw new Error('Password must be at least 8 characters');
+  }
+
+  const scoped = createScopedAnonClient();
+
+  const { data: verified, error: verifyError } = await scoped.auth.verifyOtp({
+    token_hash: token,
+    type: 'recovery',
+  });
+  if (verifyError || !verified?.session) {
+    res.status(400);
+    throw new Error('Reset link is invalid or has expired');
+  }
+
+  await scoped.auth.setSession({
+    access_token: verified.session.access_token,
+    refresh_token: verified.session.refresh_token,
+  });
+  const { error: updateError } = await scoped.auth.updateUser({ password });
+  if (updateError) {
+    res.status(updateError.status || 400);
+    throw new Error(updateError.message);
+  }
+
+  // Best-effort: end the recovery session itself so it can't be reused for
+  // anything else (updateUser already consumed the one-time token; this
+  // just discards the resulting session rather than leaving it dangling).
+  await scoped.auth.signOut().catch(() => {});
+
+  res.json({ message: 'Password reset successfully. You can now log in.' });
 });
 
 // @route  GET /api/auth/link-code
-export const getLinkCode = asyncHandler(async () => {
-  // parentLinkCode has no Postgres column (see loadUser.js) — parent-child
-  // linking is part of the "Missing" domain list (Referral/teacher-linking),
-  // not something the matched-domain adapter covers.
-  const err = new Error(
-    'Parent-child linking is not supported under DATA_BACKEND=supabase yet — see docs/option-a-mongo-supabase-parity-map.md.'
-  );
-  err.status = 501;
-  throw err;
+export const getLinkCode = asyncHandler(async (req, res) => {
+  // ensure_parent_link_code() (lib/db/drizzle/0016_parent_linking_and_
+  // review_safe_view.sql) lazily generates and persists profiles.
+  // parent_link_code on first call, idempotent thereafter — same pattern as
+  // ensure_referral_code() (0015).
+  const code = await withUserContext(req.user._id, async (client) => {
+    const r = await client.query(`SELECT ensure_parent_link_code() AS code`);
+    return r.rows[0].code;
+  });
+  res.json({ code });
 });
 
 // @route  POST /api/auth/google

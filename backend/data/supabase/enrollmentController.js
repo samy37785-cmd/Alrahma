@@ -105,35 +105,13 @@ export const createEnrollment = asyncHandler(async (req, res) => {
 // @route  GET /api/enrollments/mine
 // @access Student (own enrollment, matched by email)
 export const getMyEnrollment = asyncHandler(async (req, res) => {
-  // REAL, CONFIRMED GAP (found while implementing this exact endpoint, see
-  // also docs/option-a-mongo-supabase-parity-map.md's "Enrollment" section):
-  // Postgres `enrollments` has exactly one SELECT policy —
-  // `enrollments_select_admin`, `for select to authenticated using
-  // (is_admin())` (0002_rls.sql). There is NO owner/email-match SELECT
-  // policy at all. `authenticated` DOES hold the base table-level SELECT
-  // privilege (`grant select on all tables in schema public to
-  // authenticated`, 0002_rls.sql / 0004_privilege_reconciliation.sql), so
-  // the query below executes without a permission error — but RLS still
-  // filters out every row for a non-admin caller regardless of whether
-  // `email` matches `req.user.email`, because Postgres RLS policies (not
-  // the base GRANT) are the real row-visibility gate, and no policy here
-  // ever evaluates "is this my own row by email".
-  //
-  // Net effect: a regular (non-admin) authenticated user always gets 0 rows
-  // back from this query — this endpoint is silently broken (always
-  // returns null) for the exact audience it's meant to serve, under
-  // DATA_BACKEND=supabase as currently migrated. This is consistent with
-  // `enrollments` having no `user_id` column at all (it's guest-submittable
-  // by design) — the schema as written does not appear to have been
-  // designed with a "logged-in user reads their own guest submission back"
-  // case in mind. Fixing this for real needs a new RLS policy added to the
-  // schema (e.g. `using (email = (auth.jwt() ->> 'email') OR is_admin())`)
-  // — not something this adapter layer can work around without bypassing
-  // RLS via withServiceRole, which would defeat row-level security for a
-  // case the schema author did not evidently intend regular users to have.
-  // Implemented exactly as specified anyway (query by the caller's own
-  // email, under the caller's own impersonated identity) so this gap is
-  // provable via a real request/response rather than merely asserted.
+  // Stage 2E found this endpoint silently broken: `enrollments` had exactly
+  // one SELECT policy (admin-only), so a non-admin caller always got 0 rows
+  // back regardless of email match. Closed in Stage 2F by adding
+  // `enrollments_select_own_by_email` (lib/db/drizzle/0015_new_domains_rls.sql)
+  // — `using (email = auth.jwt()->>'email' OR is_admin())` — so the query
+  // below (unchanged since Stage 2E) now actually returns the caller's own
+  // guest submission(s) by email match.
   const enrollment = await withUserContext(req.user._id, async (client) => {
     const r = await client.query(
       `SELECT id, name, email, whatsapp, country, city, timezone, times,
@@ -160,20 +138,23 @@ export const getEnrollments = asyncHandler(async (req, res) => {
   // enrollments_select_admin is is_admin()-gated (no AAL2 needed) —
   // withUserContext(req.user._id, ...) is sufficient (protect + adminOnly
   // already verified req.user.role === 'admin').
+  // Sequential, not Promise.all — a single pg client can only run one query
+  // at a time; firing several concurrently on it is deprecated, undefined
+  // behavior, not real parallelism (same bug class found and fixed in
+  // parentController.js/reviewController.js during the Al-Rahma Final
+  // Corrections Part A rehearsal).
   const { rows, total } = await withUserContext(req.user._id, async (client) => {
-    const [listRes, countRes] = await Promise.all([
-      client.query(
-        `SELECT id, name, email, whatsapp, country, city, timezone, times,
-                subjects, lang, level, age_group, gender_pref,
-                preferred_teacher_key, preferred_teacher_name,
-                requested_plan_slug, status, notes, created_at, updated_at
-           FROM enrollments
-          ORDER BY created_at DESC
-          LIMIT $1 OFFSET $2`,
-        [limit, skip]
-      ),
-      client.query('SELECT count(*)::int AS total FROM enrollments'),
-    ]);
+    const listRes = await client.query(
+      `SELECT id, name, email, whatsapp, country, city, timezone, times,
+              subjects, lang, level, age_group, gender_pref,
+              preferred_teacher_key, preferred_teacher_name,
+              requested_plan_slug, status, notes, created_at, updated_at
+         FROM enrollments
+        ORDER BY created_at DESC
+        LIMIT $1 OFFSET $2`,
+      [limit, skip]
+    );
+    const countRes = await client.query('SELECT count(*)::int AS total FROM enrollments');
     return { rows: listRes.rows, total: countRes.rows[0].total };
   });
 

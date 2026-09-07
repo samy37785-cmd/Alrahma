@@ -7,21 +7,47 @@
 //   - role is only ever 'user' or 'admin' (Postgres account_role enum) — the
 //     Mongo student/teacher/parent distinction has no Postgres column, so it
 //     cannot be reproduced here. Every supabase-mode account surfaces as
-//     role:'user' unless profiles.role='admin'.
-//   - xp/level/streak/badges (gamification), teacher/children/parentLinkCode/
-//     familyName (teacher-student linking), specialization/bio/gender/
-//     languages/subjects/rating (teacher profile fields), googleId,
-//     referralCode have no Postgres column anywhere — all returned as null.
+//     role:'user' unless profiles.role='admin'. The Stage 2F `teacher_id`
+//     self-FK on profiles represents "this student's assigned teacher" as a
+//     relationship, not a role — a real, deliberately different mechanism
+//     (see live_classes/messages/student_records RLS in 0015).
+//   - xp/level/streak/badges/teacher_id/parent_link_code/family_name/
+//     specialization/bio/gender/languages/subjects were closed in Stage 2F
+//     (0014_close_partial_gaps_schema.sql) and are now real columns, wired
+//     in below. `children` (a parent's linked students) and `rating`
+//     (aggregate review score) still have no representation here — no
+//     parent-linking table/RPC and no reviews-aggregate view were built —
+//     and remain real, documented gaps. googleId has no Postgres column
+//     (Supabase Auth's identity linking replaces it entirely; a Google-
+//     authenticated account's own auth.users id is the identity, there is
+//     nothing further to expose).
 //   - tokenVersion has no Postgres column, so a supabase-mode account's
 //     existing sessions are NOT invalidated on password change/reset the way
 //     Mongo's are. protect()/softProtect() skip the version check entirely
 //     for supabase-backed tokens (see middleware/auth.js).
 import { withUserContext } from './client.js';
 
+// Same logic as models/User.js's hasActiveSubscription() instance method,
+// operating on the plain subscription sub-object this module returns
+// instead of a Mongoose document. Exported separately so a controller can
+// call it directly; also attached below as a bound method on the returned
+// user object so the many existing call sites written against the Mongo
+// contract (req.user.hasActiveSubscription()) keep working unchanged
+// regardless of backend.
+export function hasActiveSubscription(user) {
+  const s = user?.subscription;
+  if (!s || s.status !== 'active') return false;
+  if (!s.validUntil) return false;
+  return new Date(s.validUntil).getTime() > Date.now();
+}
+
 export async function loadUserById(id) {
   return withUserContext(id, async (client) => {
     const profileRes = await client.query(
-      'SELECT id, email, name, role FROM profiles WHERE id = $1',
+      `SELECT id, email, name, role, referral_code, xp, level, streak, last_study_date,
+              badges, teacher_id, parent_link_code, family_name, specialization, bio,
+              gender, languages, subjects
+         FROM profiles WHERE id = $1`,
       [id]
     );
     const profile = profileRes.rows[0];
@@ -38,7 +64,7 @@ export async function loadUserById(id) {
     );
     const sub = subRes.rows[0];
 
-    return {
+    const user = {
       _id: profile.id,
       name: profile.name,
       email: profile.email,
@@ -52,18 +78,30 @@ export async function loadUserById(id) {
             cancelAtPeriodEnd: sub.cancel_at_period_end,
           }
         : { plan: null, status: 'inactive', validUntil: null },
-      // Documented gaps (see module comment) — not representable in Postgres yet.
-      xp: null,
-      level: null,
-      streak: null,
-      badges: [],
-      teacher: null,
+      xp: profile.xp,
+      level: profile.level,
+      streak: profile.streak,
+      lastStudyDate: profile.last_study_date,
+      badges: profile.badges ?? [],
+      teacher: profile.teacher_id,
+      // No parent-linking table/RPC exists yet — a real, documented gap
+      // (see module comment) — a student's own parent_link_code is real,
+      // but resolving it back to a list of linked parent accounts is not.
       children: [],
-      parentLinkCode: null,
-      familyName: null,
+      parentLinkCode: profile.parent_link_code,
+      familyName: profile.family_name,
+      specialization: profile.specialization,
+      bio: profile.bio,
+      gender: profile.gender,
+      languages: profile.languages ?? [],
+      subjects: profile.subjects ?? [],
       googleId: null,
-      referralCode: null,
+      referralCode: profile.referral_code,
       tokenVersion: 0,
     };
+    // Bound method so existing call sites (req.user.hasActiveSubscription())
+    // keep working unchanged under this backend too.
+    user.hasActiveSubscription = () => hasActiveSubscription(user);
+    return user;
   });
 }

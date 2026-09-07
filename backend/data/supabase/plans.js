@@ -3,22 +3,18 @@
 // controllers (backend/controllers/stripeController.js, paymentController.js,
 // manualPaymentController.js) so the browser can never dictate what it pays.
 //
-// KNOWN GAP (see docs/option-a-mongo-supabase-parity-map.md, "plans" section):
-// the Postgres `plans` table has no `originalAmount`/`discountPct` columns —
-// it stores one flat `amount_minor` per plan version, with per-transaction
-// discounts (from a coupon) captured as a *payment-level* snapshot
-// (`payments.discount_minor_snapshot`), not as a permanent property of the
-// plan itself. `amount_minor` here is seeded to match what customers
-// currently actually pay (the Mongo config's already-discounted Starter/
-// Standard/Premium prices), so nobody is over/undercharged — but the
-// marketing-page "crossed out original price" display has no backing data
-// under this backend and is returned as `null`.
+// Stage 2E documented originalAmount/discountPct as missing columns (the
+// plan's real charge amount is `amount_minor`, unaffected either way — these
+// two fields only ever drove the marketing page's "crossed out original
+// price" display). Stage 2F closed the gap (0014_close_partial_gaps_schema.sql
+// adds plans.original_amount_minor/discount_pct, display-only, updatable only
+// via admin_update_plan_marketing() — see its own AAL2-gated RPC).
 import { withAnonContext } from './client.js';
 
 export async function getPlan(slug) {
   const row = await withAnonContext(async (client) => {
     const r = await client.query(
-      `SELECT slug, name, amount_minor, currency
+      `SELECT slug, name, amount_minor, original_amount_minor, discount_pct, currency
          FROM plans
         WHERE slug = $1 AND active = true`,
       [slug]
@@ -29,8 +25,8 @@ export async function getPlan(slug) {
   return {
     name: row.name,
     amount: row.amount_minor / 100,
-    originalAmount: null,
-    discountPct: null,
+    originalAmount: row.original_amount_minor != null ? row.original_amount_minor / 100 : null,
+    discountPct: row.discount_pct,
     currency: row.currency,
   };
 }

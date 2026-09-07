@@ -71,13 +71,21 @@ const ORG_NAME = "alrahmaacademy038@gmail.com's Org";
 //                           verification stays strict throughout — no
 //                           code path in this file ever sets
 //                           rejectUnauthorized:false.
-//   --policy-fixture <path>   optional. A captured {tablename,
-//                             policyname, cmd, roles, qual, with_check}[]
-//                             fixture (see fixtures/new-schema-rls-
-//                             policies.json) — when present, the
-//                             post-migration verification compares the
-//                             FULL restored policy set against it
-//                             exactly, not just a nonzero count.
+//   --policy-fixture <path>   required (Stage 2I-B1 audit hardening — used
+//                             to be optional, silently degrading the
+//                             post-migration RLS check to "policies exist
+//                             (count > 0)" on the one script actually
+//                             authorized to touch production). A captured
+//                             {tablename, policyname, cmd, roles, qual,
+//                             with_check}[] fixture (see fixtures/new-
+//                             schema-rls-policies.json) — post-migration
+//                             verification compares the FULL restored
+//                             policy set against it exactly, as an Exact
+//                             Set (same element count, same normalized
+//                             {tablename, policyname, cmd, roles, qual,
+//                             with_check} rows — see
+//                             lib/new-schema-fingerprint.mjs's policyFixture
+//                             branch), not merely a nonzero count.
 //   --confirm-token <literal>   must equal exactly
 //     I-UNDERSTAND-THIS-WILL-CUTOVER-PRODUCTION-<PROJECT_REF>-<current-git-SHA>
 //     — recomputed fresh from the actual repo state every run, so a
@@ -194,7 +202,14 @@ function phase0_validateArgsAndIdentity(args) {
   // or both gate invocations fail closed (correctly) with a missing-flag
   // error instead of ever reaching the DB.
   const signupsAttestation = args["signups-disabled-attestation"];
-  for (const [name, value] of Object.entries({ "approval-manifest": approvalManifestPath, "dump-file": dumpFile, "checksum-file": checksumFile, "ca-cert-file": caCertFile, "signups-disabled-attestation": signupsAttestation })) {
+  // Stage 2I-B1 audit finding: --policy-fixture is now REQUIRED, in the
+  // same fail-closed list as every other precondition below — it used to
+  // be optional (see the header comment above), which meant the one
+  // script actually authorized to touch production could run its
+  // post-migration RLS check against nothing more than "policies exist
+  // (count > 0)" instead of the FULL expected policy set. No fixture,
+  // no cutover.
+  for (const [name, value] of Object.entries({ "approval-manifest": approvalManifestPath, "dump-file": dumpFile, "checksum-file": checksumFile, "ca-cert-file": caCertFile, "signups-disabled-attestation": signupsAttestation, "policy-fixture": policyFixturePath })) {
     if (!value) fail(`missing required --${name}`);
   }
   if (!fs.existsSync(caCertFile)) fail(`--ca-cert-file "${caCertFile}" does not exist`);
@@ -205,14 +220,17 @@ function phase0_validateArgsAndIdentity(args) {
     fail(`--signups-disabled-attestation did not match the required exact literal ("${expectedSignupsAttestation}")`);
   }
 
+  if (!fs.existsSync(policyFixturePath)) fail(`--policy-fixture "${policyFixturePath}" does not exist`);
   let policyFixture;
-  if (policyFixturePath) {
-    if (!fs.existsSync(policyFixturePath)) fail(`--policy-fixture "${policyFixturePath}" does not exist`);
+  try {
     policyFixture = JSON.parse(fs.readFileSync(policyFixturePath, "utf8"));
-    ok(`--policy-fixture loaded (${policyFixture.length} policy definition(s)) — post-migration verification will match the FULL policy set exactly`);
-  } else {
-    console.log("INFO  no --policy-fixture given — post-migration verification will only check that RLS policies exist (count > 0), not match an exact set");
+  } catch (e) {
+    fail(`--policy-fixture "${policyFixturePath}" is not valid JSON: ${e.message}`);
   }
+  if (!Array.isArray(policyFixture) || policyFixture.length === 0) {
+    fail(`--policy-fixture "${policyFixturePath}" must be a non-empty JSON array of captured policy definitions — an empty/missing set is not an Exact Set match, it is nothing to match against`);
+  }
+  ok(`--policy-fixture loaded (${policyFixture.length} policy definition(s)) — post-migration verification will match the FULL policy set against it as an Exact Set, not just a nonzero count`);
 
   const sha = currentGitSha();
   const expectedToken = `I-UNDERSTAND-THIS-WILL-CUTOVER-PRODUCTION-${PROJECT_REF}-${sha}`;

@@ -235,7 +235,7 @@ async function main() {
   console.log("--- T2: --mode production refuses the legacy single-file checksum format");
   const t2 = runGate(
     { GATE_DATABASE_URL: "postgresql://postgres:x@db.difzynyphojgisrfvrkd.supabase.co:5432/postgres?sslmode=require" },
-    ["--mode", "production", "--approval-manifest", goodManifest, "--dump-file", path.join(scratchDir, "dump.bin"), "--checksum-file", path.join(scratchDir, "checksum-legacy.sha256"), "--ca-cert-file", testCaCertPath]
+    ["--mode", "production", "--approval-manifest", goodManifest, "--dump-file", path.join(scratchDir, "dump.bin"), "--checksum-file", path.join(scratchDir, "checksum-legacy.sha256"), "--ca-cert-file", testCaCertPath, "--signups-disabled-attestation", "SIGNUPS-DISABLED-CONFIRMED-VIA-DASHBOARD-difzynyphojgisrfvrkd"]
   );
   assert.notEqual(t2.code, 0);
   assert.match(t2.out, /refuses the legacy single-file checksum format/);
@@ -246,7 +246,7 @@ async function main() {
   console.log("--- T3: --mode production refuses a local-sourced backup bundle");
   const t3 = runGate(
     { GATE_DATABASE_URL: "postgresql://postgres:x@db.difzynyphojgisrfvrkd.supabase.co:5432/postgres?sslmode=require" },
-    ["--mode", "production", "--approval-manifest", goodManifest, "--dump-file", path.join(scratchDir, "dump.bin"), "--checksum-file", path.join(scratchDir, "manifest-local.json"), "--ca-cert-file", testCaCertPath]
+    ["--mode", "production", "--approval-manifest", goodManifest, "--dump-file", path.join(scratchDir, "dump.bin"), "--checksum-file", path.join(scratchDir, "manifest-local.json"), "--ca-cert-file", testCaCertPath, "--signups-disabled-attestation", "SIGNUPS-DISABLED-CONFIRMED-VIA-DASHBOARD-difzynyphojgisrfvrkd"]
   );
   assert.notEqual(t3.code, 0);
   assert.match(t3.out, /requires the backup bundle's own sourceMode to be "production"/);
@@ -257,7 +257,7 @@ async function main() {
   console.log("--- T4: --mode production refuses a backup bundle stamped with the wrong projectRef");
   const t4 = runGate(
     { GATE_DATABASE_URL: "postgresql://postgres:x@db.difzynyphojgisrfvrkd.supabase.co:5432/postgres?sslmode=require" },
-    ["--mode", "production", "--approval-manifest", goodManifest, "--dump-file", path.join(scratchDir, "dump.bin"), "--checksum-file", path.join(scratchDir, "manifest-wrongref.json"), "--ca-cert-file", testCaCertPath]
+    ["--mode", "production", "--approval-manifest", goodManifest, "--dump-file", path.join(scratchDir, "dump.bin"), "--checksum-file", path.join(scratchDir, "manifest-wrongref.json"), "--ca-cert-file", testCaCertPath, "--signups-disabled-attestation", "SIGNUPS-DISABLED-CONFIRMED-VIA-DASHBOARD-difzynyphojgisrfvrkd"]
   );
   assert.notEqual(t4.code, 0);
   assert.match(t4.out, /requires the backup bundle's own projectRef \("someotherref"\) to equal --project-ref/);
@@ -269,7 +269,7 @@ async function main() {
   const localFixtureManifest = path.join(scratchDir, "approval-manifest-local-fixture-approver.json");
   const t5 = runGate(
     { GATE_DATABASE_URL: "postgresql://postgres:x@db.difzynyphojgisrfvrkd.supabase.co:5432/postgres?sslmode=require" },
-    ["--mode", "production", "--approval-manifest", localFixtureManifest, "--dump-file", path.join(scratchDir, "dump.bin"), "--checksum-file", path.join(scratchDir, "manifest-production.json"), "--ca-cert-file", testCaCertPath]
+    ["--mode", "production", "--approval-manifest", localFixtureManifest, "--dump-file", path.join(scratchDir, "dump.bin"), "--checksum-file", path.join(scratchDir, "manifest-production.json"), "--ca-cert-file", testCaCertPath, "--signups-disabled-attestation", "SIGNUPS-DISABLED-CONFIRMED-VIA-DASHBOARD-difzynyphojgisrfvrkd"]
   );
   assert.notEqual(t5.code, 0);
   assert.match(t5.out, /refuses an approval manifest whose approvedBy is the known LOCAL-FIXTURE literal/);
@@ -343,6 +343,124 @@ $function$;`);
   const t7c = runGate({ GATE_DATABASE_URL: testUrl.toString() }, ["--mode", "local", "--approval-manifest", goodManifest, "--dump-file", path.join(scratchDir, "dump.bin"), "--checksum-file", path.join(scratchDir, "manifest-local.json")]);
   const t7cNonWorktreeFails = t7c.out.split("\n").filter((l) => l.startsWith("FAIL") && !l.includes("worktree has uncommitted changes to tracked files"));
   assert.deepEqual(t7cNonWorktreeFails, [], `T7 restore-check: every check except worktree-cleanliness must pass again after restoring; got:\n${t7cNonWorktreeFails.join("\n")}`);
+
+  // ------------------------------------------------------------------
+  // T8: extension-owned object in public is detected (Stage 2I-A audit
+  // addition — the exact-set table/function/view/sequence checks above
+  // would already catch an extension-created object of THOSE kinds, so
+  // this plants something only the dedicated pg_depend/pg_extension
+  // check (also new this round) can catch: a pgcrypto-owned domain would
+  // need pgcrypto's actual extobjects, which local rehearsal doesn't
+  // install — instead this uses uuid-ossp, already available in the
+  // fixture's own createLocalAuthRolesAndFunctions() setup, and marks a
+  // fresh table as extension-owned via pg_extension's own recommended
+  // mechanism (ALTER EXTENSION ... ADD TABLE) so the planted dependency
+  // is a real pg_depend row, not a hand-rolled fake.
+  // ------------------------------------------------------------------
+  console.log("--- T8: extension-owned object in public is detected");
+  const c8 = new pg.Client({ connectionString: testUrl.toString() });
+  await c8.connect();
+  const hasUuidOssp = (await c8.query(`select 1 from pg_extension where extname='uuid-ossp';`)).rows.length > 0;
+  if (!hasUuidOssp) {
+    await c8.query(`create extension if not exists "uuid-ossp";`);
+  }
+  await c8.query(`create table public.__gate_test_ext_owned (id uuid primary key default public.uuid_generate_v4());`);
+  await c8.query(`alter extension "uuid-ossp" add table public.__gate_test_ext_owned;`);
+  await c8.end();
+  const t8 = runGate({ GATE_DATABASE_URL: testUrl.toString() }, ["--mode", "local", "--approval-manifest", goodManifest, "--dump-file", path.join(scratchDir, "dump.bin"), "--checksum-file", path.join(scratchDir, "manifest-local.json")]);
+  assert.notEqual(t8.code, 0, "T8: gate must fail with an extension-owned object in public");
+  assert.match(t8.out, /extension-owned object\(s\) found in public: uuid-ossp:__gate_test_ext_owned/);
+
+  const c8b = new pg.Client({ connectionString: testUrl.toString() });
+  await c8b.connect();
+  await c8b.query(`alter extension "uuid-ossp" drop table public.__gate_test_ext_owned;`);
+  await c8b.query(`drop table public.__gate_test_ext_owned;`);
+  if (!hasUuidOssp) {
+    await c8b.query(`drop extension "uuid-ossp";`);
+  }
+  await c8b.end();
+
+  // ------------------------------------------------------------------
+  // T9: --mode production refuses a missing --signups-disabled-attestation
+  // ------------------------------------------------------------------
+  console.log("--- T9: --mode production refuses a missing --signups-disabled-attestation");
+  const t9 = runGate(
+    { GATE_DATABASE_URL: "postgresql://postgres:x@db.difzynyphojgisrfvrkd.supabase.co:5432/postgres?sslmode=require" },
+    ["--mode", "production", "--approval-manifest", goodManifest, "--dump-file", path.join(scratchDir, "dump.bin"), "--checksum-file", path.join(scratchDir, "manifest-production.json"), "--ca-cert-file", testCaCertPath]
+  );
+  assert.notEqual(t9.code, 0);
+  assert.match(t9.out, /missing required --signups-disabled-attestation/);
+
+  // ------------------------------------------------------------------
+  // T10: --mode production refuses a wrong --signups-disabled-attestation value
+  // ------------------------------------------------------------------
+  console.log("--- T10: --mode production refuses a wrong --signups-disabled-attestation value");
+  const t10 = runGate(
+    { GATE_DATABASE_URL: "postgresql://postgres:x@db.difzynyphojgisrfvrkd.supabase.co:5432/postgres?sslmode=require" },
+    ["--mode", "production", "--approval-manifest", goodManifest, "--dump-file", path.join(scratchDir, "dump.bin"), "--checksum-file", path.join(scratchDir, "manifest-production.json"), "--ca-cert-file", testCaCertPath, "--signups-disabled-attestation", "I-PROMISE-SIGNUPS-ARE-OFF"]
+  );
+  assert.notEqual(t10.code, 0);
+  assert.match(t10.out, /--signups-disabled-attestation did not match the required exact literal/);
+
+  // ------------------------------------------------------------------
+  // T11: nonzero auth.users row is refused (Stage 2I-A audit: the code
+  // path existed already — see runLiveChecks's "auth.users has N row(s)"
+  // fail() — but had no regression test proving it actually fires.)
+  // ------------------------------------------------------------------
+  console.log("--- T11: nonzero auth.users row is refused");
+  const c11 = new pg.Client({ connectionString: testUrl.toString() });
+  await c11.connect();
+  await c11.query(`insert into auth.users (id, email) values (gen_random_uuid(), 'gate-test-leftover@example.invalid');`);
+  await c11.end();
+  const t11 = runGate({ GATE_DATABASE_URL: testUrl.toString() }, ["--mode", "local", "--approval-manifest", goodManifest, "--dump-file", path.join(scratchDir, "dump.bin"), "--checksum-file", path.join(scratchDir, "manifest-local.json")]);
+  assert.notEqual(t11.code, 0, "T11: gate must fail with a leftover auth.users row");
+  assert.match(t11.out, /auth\.users has 1 row\(s\) — refusing/);
+  const c11b = new pg.Client({ connectionString: testUrl.toString() });
+  await c11b.connect();
+  await c11b.query(`delete from auth.users;`);
+  await c11b.end();
+
+  // ------------------------------------------------------------------
+  // T12: nonzero storage.objects row is refused
+  // ------------------------------------------------------------------
+  console.log("--- T12: nonzero storage.objects row is refused");
+  const c12 = new pg.Client({ connectionString: testUrl.toString() });
+  await c12.connect();
+  await c12.query(`insert into storage.buckets (id) values ('gate-test-leftover-bucket');`);
+  await c12.query(`insert into storage.objects (bucket_id) values ('gate-test-leftover-bucket');`);
+  await c12.end();
+  const t12 = runGate({ GATE_DATABASE_URL: testUrl.toString() }, ["--mode", "local", "--approval-manifest", goodManifest, "--dump-file", path.join(scratchDir, "dump.bin"), "--checksum-file", path.join(scratchDir, "manifest-local.json")]);
+  assert.notEqual(t12.code, 0, "T12: gate must fail with a leftover storage.objects row");
+  assert.match(t12.out, /storage\.buckets has 1 row\(s\) — refusing/);
+  assert.match(t12.out, /storage\.objects has 1 row\(s\) — refusing/);
+  const c12b = new pg.Client({ connectionString: testUrl.toString() });
+  await c12b.connect();
+  await c12b.query(`delete from storage.objects; delete from storage.buckets;`);
+  await c12b.end();
+
+  // ------------------------------------------------------------------
+  // T13: nonzero public old-table row is refused
+  // ------------------------------------------------------------------
+  console.log("--- T13: nonzero public old-table row is refused");
+  const c13 = new pg.Client({ connectionString: testUrl.toString() });
+  await c13.connect();
+  await c13.query(`insert into public.subscribers (id, email, status, created_at) values (gen_random_uuid(), 'gate-test-leftover@example.invalid', 'active', now());`);
+  await c13.end();
+  const t13 = runGate({ GATE_DATABASE_URL: testUrl.toString() }, ["--mode", "local", "--approval-manifest", goodManifest, "--dump-file", path.join(scratchDir, "dump.bin"), "--checksum-file", path.join(scratchDir, "manifest-local.json")]);
+  assert.notEqual(t13.code, 0, "T13: gate must fail with a leftover public.subscribers row");
+  assert.match(t13.out, /public\.subscribers has 1 row\(s\) — refusing/);
+  const c13b = new pg.Client({ connectionString: testUrl.toString() });
+  await c13b.connect();
+  await c13b.query(`delete from public.subscribers;`);
+  await c13b.end();
+
+  // Final restore-check: confirm the gate is back to a clean pass after
+  // T8/T11/T12/T13's tamper-and-restore, same discipline as T7's own
+  // restore-check above.
+  console.log("--- T14: full positive matrix again, after T8/T11/T12/T13's tamper-and-restore");
+  const t14 = runGate({ GATE_DATABASE_URL: testUrl.toString() }, ["--mode", "local", "--approval-manifest", goodManifest, "--dump-file", path.join(scratchDir, "dump.bin"), "--checksum-file", path.join(scratchDir, "manifest-local.json")]);
+  const t14NonWorktreeFails = t14.out.split("\n").filter((l) => l.startsWith("FAIL") && !l.includes("worktree has uncommitted changes to tracked files"));
+  assert.deepEqual(t14NonWorktreeFails, [], `T14: every check except worktree-cleanliness must pass again after all tamper-and-restore cases; got:\n${t14NonWorktreeFails.join("\n")}`);
 
   console.log("--- cleaning up dedicated test database and scratch fixtures");
   const admin2 = new pg.Client({ connectionString: maintenanceUrl.toString() });

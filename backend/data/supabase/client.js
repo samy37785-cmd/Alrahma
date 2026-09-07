@@ -30,9 +30,16 @@
 // admin_activate_manual_subscription, issue_invoice_from_payment,
 // system_config_set) exists specifically to require that proof. Fabricating
 // `aal:"aal2"` from any other code path would silently defeat the whole
-// point of those policies — any adapter function needing an AAL2 RPC
-// outside of a real, forwarded req.adminAal must call
-// `withAdminAal2Context`, which always throws.
+// point of those policies — every caller needing one of these RPCs must run
+// under the real /api/v1/admin/* verifyAccessToken flow and forward its
+// req.adminAal, never invent one. (Admin invoices used to be the one
+// exception — GET /api/invoices/admin, mounted under the customer-session
+// protect+adminOnly middleware, structurally had no AAL2 concept at all and
+// called a withAdminAal2Context() placeholder that always threw. Closed in
+// the Al-Rahma Final Corrections pass by moving the real admin invoice list
+// to GET /api/v1/admin/invoices — see data/supabase/admin/
+// invoicesAdminController.js — which runs under the real, AAL2-capable
+// admin router instead.)
 import pg from 'pg';
 
 let pool;
@@ -146,31 +153,6 @@ export async function withServiceRole(fn) {
   } finally {
     client.release();
   }
-}
-
-// Always throws. Placeholder call site for the AAL2-gated RPCs so every
-// adapter function that needs one fails loudly and explicitly, with a message
-// pointing at the real gap, instead of silently downgrading security. See the
-// module-level SECURITY RULE comment for why this can't be implemented yet.
-// Only remaining caller: data/supabase/invoiceController.js's
-// getAdminInvoices, mounted at GET /api/invoices/admin under the CUSTOMER-
-// facing `protect`+`adminOnly` middleware (a regular user session with
-// role='admin'), not the MFA'd /api/v1/admin/* router. That session type has
-// no AAL2 concept at all — there is no admin_sat cookie to verify on a
-// customer session, unlike every /api/v1/admin/* route (see middleware/
-// adminAuth.js's verifyAccessToken, which DOES have a real, per-request
-// verified req.adminAal). This is a genuine, structural mismatch between
-// that one endpoint's auth model and what the invoices RLS policy requires,
-// not a missing-feature gap — it cannot be closed without either changing
-// this endpoint's auth model or relaxing the invoices RLS policy, both out
-// of scope here.
-export async function withAdminAal2Context() {
-  throw new Error(
-    'GET /api/invoices/admin cannot satisfy invoices\' is_admin_aal2() RLS requirement under ' +
-      'DATA_BACKEND=supabase: it runs under a customer-session (protect+adminOnly), which never ' +
-      'carries AAL2 proof — only the separate /api/v1/admin/* auth flow does. See client.js\'s ' +
-      'module comment.'
-  );
 }
 
 export async function closePool() {

@@ -6,13 +6,17 @@
 // reshaped from Postgres's snapshot columns into the same field names the
 // Mongo controller returns.
 //
-// getAdminInvoices requires is_admin_aal2() at the RLS level, but runs under
-// GET /api/invoices/admin — a customer-session route (protect+adminOnly),
-// which has no AAL2 concept at all (see client.js's module comment on
-// withAdminAal2Context for the full explanation). It calls
-// withAdminAal2Context() and lets it throw, rather than fabricating AAL2.
+// getAdminInvoices used to require is_admin_aal2() at the RLS level while
+// running under GET /api/invoices/admin — a customer-session route
+// (protect+adminOnly), which has no AAL2 concept at all. Real fix (Al-Rahma
+// Final Corrections, Part A item 3): the canonical admin invoice list moved
+// to GET /api/v1/admin/invoices (data/supabase/admin/invoicesAdminController.js),
+// which runs under the real, AAL2-capable admin router. This route stays
+// mounted for backward compatibility but now returns a clear, structured
+// 400 pointing callers at the real endpoint, instead of an opaque 500 from
+// a placeholder that always threw.
 import { asyncHandler } from '../../utils/asyncHandler.js';
-import { withUserContext, withAdminAal2Context } from './client.js';
+import { withUserContext } from './client.js';
 
 function toMongoShape(row) {
   // invoices stores the discount as a currency amount (discount_minor_
@@ -43,8 +47,12 @@ function toMongoShape(row) {
 }
 
 // @route GET /api/invoices/admin
-export const getAdminInvoices = asyncHandler(async () => {
-  await withAdminAal2Context();
+export const getAdminInvoices = asyncHandler(async (req, res) => {
+  res.status(400).json({
+    message: 'This endpoint cannot serve admin invoices under DATA_BACKEND=supabase: it runs under a ' +
+      'customer session, which has no AAL2 proof, but invoices RLS requires an AAL2-verified admin. ' +
+      'Use GET /api/v1/admin/invoices (the real, MFA-verified admin API) instead.',
+  });
 });
 
 // @route GET /api/invoices

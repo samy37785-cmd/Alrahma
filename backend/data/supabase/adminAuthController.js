@@ -68,7 +68,10 @@ function readPreAuthToken(req) {
     // exercised through the actual HTTP login->mfa_setup chain rather than
     // a hand-signed rehearsal token (found via
     // rehearsal-auth-migration-real-gotrue.mjs).
-    const { iat, exp, nbf, ...decoded } = raw;
+    const decoded = { ...raw };
+    delete decoded.iat;
+    delete decoded.exp;
+    delete decoded.nbf;
     return { decoded };
   } catch {
     return { error: { status: 401, message: 'Invalid or expired pre-auth token' } };

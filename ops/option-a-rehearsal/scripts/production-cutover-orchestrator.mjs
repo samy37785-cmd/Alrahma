@@ -82,6 +82,11 @@ const ORG_NAME = "alrahmaacademy038@gmail.com's Org";
 //     I-UNDERSTAND-THIS-WILL-CUTOVER-PRODUCTION-<PROJECT_REF>-<current-git-SHA>
 //     — recomputed fresh from the actual repo state every run, so a
 //     stale/copy-pasted token from a previous commit fails closed.
+//   --signups-disabled-attestation <literal>   must equal exactly
+//     SIGNUPS-DISABLED-CONFIRMED-VIA-DASHBOARD-<PROJECT_REF> (Stage 2I-A
+//     audit addition — see production-preflight-gate.mjs's v5 changelog
+//     for why this is an attestation and not a live DB check: Auth's
+//     signup toggle isn't a queryable table).
 
 import fs from "node:fs";
 import path from "node:path";
@@ -183,12 +188,22 @@ function phase0_validateArgsAndIdentity(args) {
   const checksumFile = args["checksum-file"];
   const caCertFile = args["ca-cert-file"];
   const policyFixturePath = args["policy-fixture"];
-  for (const [name, value] of Object.entries({ "approval-manifest": approvalManifestPath, "dump-file": dumpFile, "checksum-file": checksumFile, "ca-cert-file": caCertFile })) {
+  // Stage 2I-A audit finding, threaded through from production-preflight-
+  // gate.mjs's v5 change: this orchestrator calls that gate twice and
+  // must supply everything the gate now requires in --mode production,
+  // or both gate invocations fail closed (correctly) with a missing-flag
+  // error instead of ever reaching the DB.
+  const signupsAttestation = args["signups-disabled-attestation"];
+  for (const [name, value] of Object.entries({ "approval-manifest": approvalManifestPath, "dump-file": dumpFile, "checksum-file": checksumFile, "ca-cert-file": caCertFile, "signups-disabled-attestation": signupsAttestation })) {
     if (!value) fail(`missing required --${name}`);
   }
   if (!fs.existsSync(caCertFile)) fail(`--ca-cert-file "${caCertFile}" does not exist`);
   const caCert = fs.readFileSync(caCertFile, "utf8");
   if (!caCert.includes("-----BEGIN CERTIFICATE-----")) fail(`--ca-cert-file "${caCertFile}" does not look like a PEM certificate`);
+  const expectedSignupsAttestation = `SIGNUPS-DISABLED-CONFIRMED-VIA-DASHBOARD-${PROJECT_REF}`;
+  if (signupsAttestation !== expectedSignupsAttestation) {
+    fail(`--signups-disabled-attestation did not match the required exact literal ("${expectedSignupsAttestation}")`);
+  }
 
   let policyFixture;
   if (policyFixturePath) {
@@ -206,7 +221,7 @@ function phase0_validateArgsAndIdentity(args) {
   }
   ok("confirm-token matches the exact literal for the current HEAD SHA");
 
-  return { databaseUrl, approvalManifestPath, dumpFile, checksumFile, caCertFile, caCert, policyFixture, sha };
+  return { databaseUrl, approvalManifestPath, dumpFile, checksumFile, caCertFile, caCert, policyFixture, sha, signupsAttestation };
 }
 
 // ---------------------------------------------------------------------
@@ -229,6 +244,7 @@ function runPreflightGate(ctx, label) {
     "--dump-file", ctx.dumpFile,
     "--checksum-file", ctx.checksumFile,
     "--ca-cert-file", ctx.caCertFile,
+    "--signups-disabled-attestation", ctx.signupsAttestation,
     "--max-dump-age-hours", "1",
   ];
   try {

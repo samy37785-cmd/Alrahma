@@ -40,7 +40,9 @@ const ORG_NAME = "alrahmaacademy038@gmail.com's Org";
 //      critical section below (target check through post-restore
 //      verification) — never released early.
 //   5. target verification: the live public schema must be EXACTLY the
-//      expected NEW (post-cutover) 20-table schema — not "no table
+//      expected NEW (post-cutover) schema (scripts/lib/new-schema-
+//      fingerprint.mjs's EXPECTED_NEW_TABLES — 37 tables as of Stage
+//      2I-A) — not "no table
 //      outside the bundle's inventory" (which --allow-nonempty used to
 //      let a caller bypass entirely). --allow-nonempty has been REMOVED
 //      — there is no flag anywhere in this file that widens this check.

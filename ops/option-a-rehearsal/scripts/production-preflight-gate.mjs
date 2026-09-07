@@ -59,6 +59,20 @@
 //     --ca-cert-file <path to Supabase's Project Settings > Database >
 //       SSL Configuration certificate> (required in --mode production;
 //       see v4 changes below for why)
+//     --signups-disabled-attestation "SIGNUPS-DISABLED-CONFIRMED-VIA-DASHBOARD-difzynyphojgisrfvrkd"
+//       (required in --mode production; see v5 changes below for why)
+//
+// v5 change (Stage 2I-A audit): added --signups-disabled-attestation
+// (--mode production only) and a live check that no pg_extension row has
+// extnamespace='public' (an extension-owned object inside public would
+// silently survive Surgical Reset's named-object-only DROPs, unlike an
+// ordinary extra table/function/view/sequence, all of which the exact-set
+// checks above already catch). Auth's "allow new user signups" toggle is
+// Management-API/Dashboard config, not a queryable auth.* table, so it
+// cannot be checked the way auth.users/storage.objects row counts are —
+// the attestation is the honest substitute: an exact-literal operator
+// confirmation, same fail-closed discipline as --confirm-token, not a
+// silent skip.
 //
 // Exit code 0 only if every check below passes. Exit code 1 on the
 // first failure, or if any required flag/env-var is missing (missing
@@ -334,6 +348,20 @@ function runStaticChecks(args) {
   const checksumFile = require_("checksum-file");
   const maxDumpAgeHours = Number(args["max-dump-age-hours"] || 24);
   const caCertFile = mode === "production" ? require_("ca-cert-file") : args["ca-cert-file"];
+  // Stage 2I-A audit finding: nothing in this gate (or anywhere else in
+  // this tool) ever checked the real project's Auth "allow new user
+  // signups" setting — a real, meaningful precondition (Surgical Reset
+  // must never run while the public-facing app could be creating rows in
+  // the tables it's about to touch) that simply cannot be read over this
+  // plain Postgres connection: GoTrue's signup toggle is Management-API/
+  // Dashboard config, not a queryable `auth.*` table. Rather than add a
+  // new external API dependency (out of scope for this task, and its own
+  // separate credential-safety surface), this is a mandatory, exact-
+  // literal operator ATTESTATION in --mode production — same fail-closed
+  // discipline as --confirm-token: the operator must have actually looked
+  // at Auth > Providers > "Allow new users to sign up" and confirmed it
+  // is off, not just be willing to type a flag.
+  const signupsAttestation = mode === "production" ? require_("signups-disabled-attestation") : args["signups-disabled-attestation"];
 
   if (!mode || !databaseUrl || !projectRef || !confirmToken || !approvalManifestPath || !dumpFile || !checksumFile) {
     return null;
@@ -350,6 +378,14 @@ function runStaticChecks(args) {
       return null;
     }
     pass(`--ca-cert-file "${caCertFile}" exists and looks like a PEM certificate`);
+
+    if (!signupsAttestation) return null; // require_ already recorded the failure
+    const expectedSignupsAttestation = `SIGNUPS-DISABLED-CONFIRMED-VIA-DASHBOARD-${EXPECTED_PROJECT_REF}`;
+    if (signupsAttestation !== expectedSignupsAttestation) {
+      fail(`--signups-disabled-attestation did not match the required exact literal ("${expectedSignupsAttestation}") — this gate cannot verify Auth signup state itself (no Management API call is made here); the operator must confirm Auth > Providers > "Allow new users to sign up" is OFF on the real project, then pass this literal`);
+      return null;
+    }
+    pass("signups-disabled-attestation matches (operator-confirmed, not independently re-checked by this gate)");
   }
 
   // 1. Project ref must match the hardcoded expectation.
@@ -931,6 +967,29 @@ async function runLiveChecks(mode, databaseUrl, caCertFile) {
       fail(`unexpected sequence(s) in public: ${seqRows.map((r) => r.sequencename).join(", ")}`);
     } else {
       pass("no sequences in public");
+    }
+
+    // No extension-owned object anywhere in public. Round-1's exact-set
+    // checks above (tables/functions/views/matviews/sequences) already
+    // catch an extension that created one of THOSE object kinds in
+    // public, but not e.g. a custom type/operator/cast an extension owns
+    // there — and Surgical Reset only ever DROPs the 34 named old tables
+    // and 3 named old enums, so an extension-owned object in public would
+    // never even be touched, unlike a DROP-SCHEMA-based design. This is a
+    // direct, cheap catch-all rather than relying on the object-kind
+    // checks to happen to cover it.
+    const { rows: extObjRows } = await client.query(`
+      select e.extname, d.deptype, c.relkind::text as relkind, c.relname
+      from pg_depend d
+      join pg_extension e on d.refobjid = e.oid and d.refclassid = 'pg_extension'::regclass
+      join pg_class c on d.objid = c.oid and d.classid = 'pg_class'::regclass
+      join pg_namespace n on n.oid = c.relnamespace
+      where n.nspname = 'public';
+    `);
+    if (extObjRows.length > 0) {
+      fail(`extension-owned object(s) found in public: ${extObjRows.map((r) => `${r.extname}:${r.relname}`).join(", ")}`);
+    } else {
+      pass("no extension-owned object exists in public");
     }
 
     // Policy count must be exactly 0, matching the old inventory.

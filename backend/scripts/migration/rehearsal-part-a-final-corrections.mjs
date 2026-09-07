@@ -264,6 +264,26 @@ async function main() {
     assert.equal(res.body.kind, 'refund');
     assert.equal(res.body.amount_minor, 1000);
   });
+  await check('refund rejects a non-positive amountMinor (422, no partial write)', async () => {
+    const { agent, csrfHeaders } = await adminAgent(superAdmin);
+    const res = await agent.post(`/api/v1/admin/payments/${manualChargeId}/refund`).set(csrfHeaders).send({ amountMinor: 0 });
+    assert.equal(res.status, 422, JSON.stringify(res.body));
+  });
+  await check('refund of a nonexistent payment id is a clean 404', async () => {
+    const { agent, csrfHeaders } = await adminAgent(superAdmin);
+    const res = await agent.post(`/api/v1/admin/payments/00000000-0000-4000-8000-000000000000/refund`).set(csrfHeaders).send({ amountMinor: 500 });
+    assert.equal(res.status, 404, JSON.stringify(res.body));
+  });
+  await check('refund of a not-yet-succeeded charge is rejected (400), proving the gateway/ledger path is never reached for the wrong state', async () => {
+    const pendingChargeRes = await pool.query(
+      `INSERT INTO payments (user_id, kind, amount_minor, currency_snapshot, gateway, status)
+       VALUES ($1, 'charge', 2000, 'EUR', 'manual', 'pending') RETURNING id`,
+      [student]
+    );
+    const { agent, csrfHeaders } = await adminAgent(superAdmin);
+    const res = await agent.post(`/api/v1/admin/payments/${pendingChargeRes.rows[0].id}/refund`).set(csrfHeaders).send({ amountMinor: 500 });
+    assert.equal(res.status, 400, JSON.stringify(res.body));
+  });
 
   console.log('[rehearsal] parent<->child linking round-trip');
   await check('student gets a share code, parent links, sees the child, then unlinks', async () => {

@@ -74,6 +74,7 @@ import supabaseReferralRoutes from './data/supabase/routes/referralRoutes.js';
 import supabaseTeacherRoutes from './data/supabase/routes/teacherRoutes.js';
 import supabaseParentRoutes from './data/supabase/routes/parentRoutes.js';
 import supabaseSearchRoutes from './data/supabase/routes/searchRoutes.js';
+import supabaseCronRoutes from './data/supabase/routes/cronRoutes.js';
 
 // Validate required environment variables immediately — fails fast with a
 // clear error rather than surfacing a cryptic runtime failure later.
@@ -236,7 +237,7 @@ app.use('/api/teacher', isSupabaseBackend() ? supabaseTeacherRoutes : teacherRou
 app.use('/api/parent', isSupabaseBackend() ? supabaseParentRoutes : parentRoutes);
 app.use('/api/classes', isSupabaseBackend() ? supabaseLiveClassRoutes : liveClassRoutes);
 app.use('/api/messages', isSupabaseBackend() ? supabaseMessageRoutes : messageRoutes);
-app.use('/api/cron', cronRoutes);
+app.use('/api/cron', isSupabaseBackend() ? supabaseCronRoutes : cronRoutes);
 app.use('/api/notifications', isSupabaseBackend() ? supabaseNotificationRoutes : notificationRoutes);
 app.use('/api/contact',       isSupabaseBackend() ? supabaseContactRoutes : contactRoutes);
 app.use('/api/coupons',       isSupabaseBackend() ? supabaseCouponRoutes : couponRoutes);

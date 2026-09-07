@@ -141,6 +141,13 @@
       "when": 1788800007000,
       "tag": "0019_teachers_public_view",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1788800008000,
+      "tag": "0020_renewal_reminder_tracking",
+      "breakpoints": true
     }
   ]
 }

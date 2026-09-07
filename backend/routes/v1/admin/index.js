@@ -21,6 +21,7 @@ import certificatesRoutes from './certificatesRoutes.js';
 import referralsRoutes    from './referralsRoutes.js';
 import reviewsRoutes      from './reviewsRoutes.js';
 import systemRoutes       from './systemRoutes.js';
+import invoicesRoutes     from './invoicesRoutes.js';
 import {
   coursesRouter as supabaseCoursesRoutes,
   liveClassesRouter as supabaseLiveClassesRoutes,
@@ -28,6 +29,14 @@ import {
   reviewsRouter as supabaseReviewsRoutes,
 } from '../../../data/supabase/admin/adminRoutes.js';
 import supabasePaymentsAdminRoutes from '../../../data/supabase/admin/paymentsAdminRoutes.js';
+import supabaseUsersAdminRoutes from '../../../data/supabase/admin/usersAdminRoutes.js';
+import supabaseEnrollmentsAdminRoutes from '../../../data/supabase/admin/enrollmentsAdminRoutes.js';
+import supabaseBlogAdminRoutes from '../../../data/supabase/admin/blogAdminRoutes.js';
+import supabaseCouponsAdminRoutes from '../../../data/supabase/admin/couponsAdminRoutes.js';
+import supabaseContactAdminRoutes from '../../../data/supabase/admin/contactAdminRoutes.js';
+import supabaseReferralsAdminRoutes from '../../../data/supabase/admin/referralsAdminRoutes.js';
+import supabaseSystemAdminRoutes from '../../../data/supabase/admin/systemAdminRoutes.js';
+import supabaseInvoicesAdminRoutes from '../../../data/supabase/admin/invoicesAdminRoutes.js';
 
 const router = Router();
 
@@ -78,25 +87,29 @@ router.use(verifyAccessToken);
 // Maintenance guard: blocks non-super-admins when maintenance mode is on
 router.use(maintenanceGuard);
 
-// Stage 2F: courses/live-classes/certificates/reviews have a genuine
-// DATA_BACKEND=supabase admin implementation (see data/supabase/admin/) —
-// branched exactly like the customer-facing app.js router branches each
-// domain. The remaining sub-routers below (users/enrollments/payments/blog/
-// coupons/contact/referrals/system) are still Mongo-only: they import
-// Mongoose models directly and will error under supabase mode (Mongo is
-// never connected there) — a real, acknowledged, NOT-closed gap, tracked
-// separately from the 4 domains this closure targeted.
-router.use('/users',        usersRoutes);
+// Al-Rahma Final Corrections (Part A): every admin subrouter now has a real
+// DATA_BACKEND=supabase implementation (see data/supabase/admin/) — branched
+// exactly like the customer-facing app.js router branches each domain. Zero
+// admin subrouters are Mongo-only under supabase mode as of this closure.
+router.use('/users',        isSupabaseBackend() ? supabaseUsersAdminRoutes : usersRoutes);
 router.use('/courses',      isSupabaseBackend() ? supabaseCoursesRoutes : coursesRoutes);
 router.use('/live-classes', isSupabaseBackend() ? supabaseLiveClassesRoutes : (_req, res) => res.status(404).json({ message: 'Not found' }));
-router.use('/enrollments',  enrollmentsRoutes);
+router.use('/enrollments',  isSupabaseBackend() ? supabaseEnrollmentsAdminRoutes : enrollmentsRoutes);
 router.use('/payments',     isSupabaseBackend() ? supabasePaymentsAdminRoutes : paymentsRoutes);
-router.use('/blog',         blogRoutes);
-router.use('/coupons',      couponsRoutes);
-router.use('/contact',      contactRoutes);
+router.use('/blog',         isSupabaseBackend() ? supabaseBlogAdminRoutes : blogRoutes);
+router.use('/coupons',      isSupabaseBackend() ? supabaseCouponsAdminRoutes : couponsRoutes);
+router.use('/contact',      isSupabaseBackend() ? supabaseContactAdminRoutes : contactRoutes);
 router.use('/certificates', isSupabaseBackend() ? supabaseCertificatesRoutes : certificatesRoutes);
-router.use('/referrals',    referralsRoutes);
+router.use('/referrals',    isSupabaseBackend() ? supabaseReferralsAdminRoutes : referralsRoutes);
 router.use('/reviews',      isSupabaseBackend() ? supabaseReviewsRoutes : reviewsRoutes);
-router.use('/system',       systemRoutes);
+router.use('/system',       isSupabaseBackend() ? supabaseSystemAdminRoutes : systemRoutes);
+// Real fix for the admin-invoices architecture gap (Al-Rahma Final
+// Corrections): the canonical admin invoice list now lives here, behind the
+// real AAL2-capable admin router, instead of only under the customer-session
+// GET /api/invoices/admin (routes/invoiceRoutes.js / data/supabase/routes/
+// invoiceRoutes.js — kept mounted for compatibility, but see
+// data/supabase/invoiceController.js's getAdminInvoices for what it now
+// does under supabase mode instead of silently failing).
+router.use('/invoices',     isSupabaseBackend() ? supabaseInvoicesAdminRoutes : invoicesRoutes);
 
 export default router;

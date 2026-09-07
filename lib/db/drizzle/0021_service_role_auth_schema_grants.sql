@@ -1,0 +1,13 @@
+-- Stage 2F closure finding: loadAdmin.js's loadAdminById()/
+-- hasVerifiedMfaFactor() (used on every admin login, under
+-- withServiceRole()) join/query auth.users and auth.mfa_factors directly.
+-- On Supabase's hosted platform, service_role already has implicit SELECT
+-- on the auth schema as a platform-provisioning default — but that default
+-- is not something our own migrations create or can rely on being present
+-- everywhere this schema gets stood up (e.g. a local `supabase start`
+-- stack, as this rehearsal discovered: `permission denied for table users`
+-- the first time a REAL local GoTrue instance backed an admin login here,
+-- rather than a hand-signed rehearsal token). Idempotent and additive: if
+-- production already holds this grant, re-granting it is a documented
+-- Postgres no-op with no side effect; if it doesn't, this is the fix.
+GRANT SELECT ON auth.users, auth.mfa_factors TO service_role;

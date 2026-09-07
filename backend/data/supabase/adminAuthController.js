@@ -56,7 +56,20 @@ function readPreAuthToken(req) {
   const token = req.cookies?.[ACCESS_TOKEN_COOKIE];
   if (!token) return { error: { status: 401, message: 'Pre-auth token missing' } };
   try {
-    return { decoded: jwt.verify(token, process.env.ADMIN_JWT_ACCESS_SECRET, { algorithms: ['HS256'] }) };
+    const raw = jwt.verify(token, process.env.ADMIN_JWT_ACCESS_SECRET, { algorithms: ['HS256'] });
+    // Strip the standard registered claims jwt.verify() adds to the decoded
+    // payload (iat/exp[/nbf]) before handing it back — setupMfa() spreads
+    // this `decoded` object into a NEW signPreAuthToken({...decoded, ...})
+    // call with its own `expiresIn`, and jsonwebtoken refuses to sign a
+    // payload that already carries `exp` together with an `expiresIn`
+    // option ("Bad \"options.expiresIn\" option the payload already has an
+    // \"exp\" property"). This was a real, previously-undiscovered bug:
+    // every real mfa_setup step failed with a 500 the first time it was
+    // exercised through the actual HTTP login->mfa_setup chain rather than
+    // a hand-signed rehearsal token (found via
+    // rehearsal-auth-migration-real-gotrue.mjs).
+    const { iat, exp, nbf, ...decoded } = raw;
+    return { decoded };
   } catch {
     return { error: { status: 401, message: 'Invalid or expired pre-auth token' } };
   }
@@ -161,18 +174,30 @@ export async function confirmMfaSetup(req, res) {
   const { data: chData, error: chErr } = await sessionClient.auth.mfa.challenge({ factorId: decoded.factorId });
   if (chErr) return res.status(400).json({ message: 'Invalid TOTP code' });
 
+  // supabase-js's mfa.verify() resolves to the new session's tokens FLAT on
+  // `data` (data.access_token/data.refresh_token) — NOT nested under
+  // `data.session` the way signInWithPassword()/setSession() responses are.
+  // This was a real, previously-undiscovered bug: checking `vData?.session`
+  // is always falsy for a real verify() response, so this endpoint 400'd
+  // "Invalid TOTP code" on every real TOTP code, correct or not — no admin
+  // could ever complete MFA enrollment against real GoTrue. Masked in every
+  // prior rehearsal because those hand-signed AAL2 tokens directly and
+  // never called mfa.verify() at all. Found via
+  // rehearsal-auth-migration-real-gotrue.mjs (a direct supabase-js probe
+  // isolating enroll->challenge->verify from this controller confirmed the
+  // real response shape).
   const { data: vData, error: vErr } = await sessionClient.auth.mfa.verify({
     factorId: decoded.factorId,
     challengeId: chData.id,
     code: req.body.token,
   });
-  if (vErr || !vData?.session) return res.status(400).json({ message: 'Invalid TOTP code' });
+  if (vErr || !vData?.access_token) return res.status(400).json({ message: 'Invalid TOTP code' });
 
   const accessToken = signAccessToken(decoded.id, decoded.role, true);
   res
     .cookie(ACCESS_TOKEN_COOKIE, accessToken, accessCookieOptions())
-    .cookie(REFRESH_TOKEN_COOKIE, vData.session.refresh_token, refreshCookieOptions())
-    .cookie(SUPABASE_AT_COOKIE, vData.session.access_token, supabaseAtCookieOptions());
+    .cookie(REFRESH_TOKEN_COOKIE, vData.refresh_token, refreshCookieOptions())
+    .cookie(SUPABASE_AT_COOKIE, vData.access_token, supabaseAtCookieOptions());
 
   await auditAdminAuthEvent({ adminId: decoded.id, action: 'auth.mfa_activated' });
 
@@ -196,12 +221,14 @@ export async function verifyMfaLogin(req, res) {
   const { data: chData, error: chErr } = await sessionClient.auth.mfa.challenge({ factorId: decoded.factorId });
   if (chErr) return res.status(401).json({ message: 'Invalid TOTP code' });
 
+  // Same flat-shape response as confirmMfaSetup() above (data.access_token/
+  // data.refresh_token, not data.session.*) — see that function's comment.
   const { data: vData, error: vErr } = await sessionClient.auth.mfa.verify({
     factorId: decoded.factorId,
     challengeId: chData.id,
     code: req.body.token,
   });
-  if (vErr || !vData?.session) {
+  if (vErr || !vData?.access_token) {
     await auditAdminAuthEvent({ adminId: decoded.id, action: 'auth.mfa_failed', severity: 'warning' });
     return res.status(401).json({ message: 'Invalid TOTP code' });
   }
@@ -212,8 +239,8 @@ export async function verifyMfaLogin(req, res) {
   const accessToken = signAccessToken(admin.id, admin.role, true);
   res
     .cookie(ACCESS_TOKEN_COOKIE, accessToken, accessCookieOptions())
-    .cookie(REFRESH_TOKEN_COOKIE, vData.session.refresh_token, refreshCookieOptions())
-    .cookie(SUPABASE_AT_COOKIE, vData.session.access_token, supabaseAtCookieOptions());
+    .cookie(REFRESH_TOKEN_COOKIE, vData.refresh_token, refreshCookieOptions())
+    .cookie(SUPABASE_AT_COOKIE, vData.access_token, supabaseAtCookieOptions());
 
   await auditAdminAuthEvent({ adminId: admin.id, action: 'auth.login_success' });
 

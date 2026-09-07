@@ -213,21 +213,36 @@ async function main() {
       if (!a.email) continue;
       const result = await migrateOneAdmin(supabaseAdmin, pgClient, a, { execute });
       checkpoint[`admin:${a.email}`] = { ...result, at: new Date().toISOString() };
-      if (result.status === 'created' || result.status === 'role_assigned_existing_account') report.admins.created++;
+      if (result.status === 'created') report.admins.created++;
+      else if (result.status === 'role_assigned_existing_account') report.admins.roleAssignedExisting = (report.admins.roleAssignedExisting ?? 0) + 1;
       else if (result.status?.startsWith('already_exists')) report.admins.alreadyExists++;
       else if (result.status === 'would_create' || result.status === 'already_exists_would_assign_role') report.admins.wouldCreate++;
       else if (result.status === 'error') report.admins.errors.push({ email: a.email, message: result.message });
     }
 
-    // Reconciliation: total Mongo source rows vs. total profiles rows that
-    // now exist for those emails — a mismatch here (excluding intentional
-    // errors already reported above) means something silently didn't land.
+    // Reconciliation: DISTINCT Mongo source emails vs. matching profiles
+    // rows — distinct, not raw row count, because the source can legally
+    // contain duplicate-email rows (old Mongo data had no unique index
+    // guarantee across users/adminusers as separate collections); counting
+    // raw rows would report a false mismatch whenever migrateOneUser/
+    // migrateOneAdmin correctly collapse a duplicate email into the single
+    // auth.users row it resolves to (the "already_exists" status). A
+    // mismatch here (excluding intentional errors already reported above)
+    // means something silently didn't land.
     const allEmails = [...users, ...admins].map((r) => String(r.email).toLowerCase().trim());
-    const pgCountRes = await pgClient.query(`SELECT count(*)::int AS n FROM profiles WHERE email = ANY($1::text[])`, [allEmails]);
+    const distinctEmails = [...new Set(allEmails)];
+    const erroredEmails = new Set([
+      ...report.users.errors.map((e) => e.email),
+      ...report.admins.errors.map((e) => e.email),
+    ]);
+    const expectedEmails = distinctEmails.filter((e) => !erroredEmails.has(e));
+    const pgCountRes = await pgClient.query(`SELECT count(*)::int AS n FROM profiles WHERE email = ANY($1::text[])`, [distinctEmails]);
     report.reconciliation = {
       mongoSourceRows: allEmails.length,
+      mongoDistinctEmails: distinctEmails.length,
       matchingProfilesRows: pgCountRes.rows[0].n,
-      consistent: execute ? pgCountRes.rows[0].n === allEmails.length - report.users.errors.length - report.admins.errors.length : 'n/a (dry-run)',
+      expectedProfilesRows: expectedEmails.length,
+      consistent: execute ? pgCountRes.rows[0].n === expectedEmails.length : 'n/a (dry-run)',
     };
 
     if (execute && withInvitePlan) {

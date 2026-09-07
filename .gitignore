@@ -73,3 +73,6 @@ Thumbs.db
 # Replit
 .cache/
 .local/
+
+# Migration-tool runtime checkpoints (may contain real emails on a real run)
+.checkpoints/

@@ -62,6 +62,26 @@
 //     --signups-disabled-attestation "SIGNUPS-DISABLED-CONFIRMED-VIA-DASHBOARD-difzynyphojgisrfvrkd"
 //       (required in --mode production; see v5 changes below for why)
 //
+// v6 change (Stage 2I-D): the rls_auto_enable event trigger check no
+// longer looks up a hardcoded literal trigger name. A real production
+// backup (Stage 2I-C) proved the real Alrahma project's own trigger is
+// actually named "ensure_rls" — same event/tags/handler/owner as every
+// version of this file had assumed, just a different name than the
+// "rls_auto_enable_trigger" literal every earlier version hardcoded
+// (itself apparently carried over from this project's own local
+// rehearsal fixture, which happens to use that name, never actually
+// confirmed against the real project until Stage 2I-C's first-ever real
+// backup). The check now finds the trigger by its full semantic identity
+// (handler function + event + tags + enabled + owner) via
+// scripts/lib/rls-auto-enable-event-trigger.mjs, shared with
+// 03-surgical-reset.mjs and scripts/lib/new-schema-fingerprint.mjs so all
+// three tools agree on one definition instead of three separate
+// hardcoded assumptions. Fails closed on zero matches, on an ambiguous
+// multiple full match, and on a single near-miss candidate whose
+// handler/tags/event/enabled/owner is wrong — never silently accepts a
+// same-shaped-but-different trigger, and never merely swaps one hardcoded
+// name for another.
+//
 // v5 change (Stage 2I-A audit): added --signups-disabled-attestation
 // (--mode production only) and a live check that no pg_extension row has
 // extnamespace='public' (an extension-owned object inside public would
@@ -125,6 +145,13 @@ import crypto from "node:crypto";
 import { execSync } from "node:child_process";
 import pg from "pg";
 import { connectionStringForClient } from "./lib/pg-connection.mjs";
+import {
+  findRlsAutoEnableEventTrigger,
+  EventTriggerIdentityError,
+  EXPECTED_EVENT as EXPECTED_EVENT_TRIGGER_EVENT,
+  EXPECTED_TAGS as EXPECTED_EVENT_TRIGGER_TAGS,
+  EXPECTED_HANDLER_FUNCTION as EXPECTED_EVENT_TRIGGER_HANDLER,
+} from "./lib/rls-auto-enable-event-trigger.mjs";
 
 const EXPECTED_PROJECT_REF = "difzynyphojgisrfvrkd";
 const REPO_ROOT = path.resolve(new URL(".", import.meta.url).pathname.replace(/^\/([A-Za-z]):/, "$1:"), "..", "..", "..");
@@ -209,12 +236,25 @@ const EXPECTED_AUTH_TRIGGER = {
   actionStatement: "EXECUTE FUNCTION handle_new_user()",
 };
 
-const EXPECTED_EVENT_TRIGGER_NAME = "rls_auto_enable_trigger";
+// Stage 2I-D: this used to be a literal trigger NAME
+// ("rls_auto_enable_trigger") — a real production backup proved the real
+// Alrahma project's own trigger is actually named "ensure_rls" (same
+// event/tags/handler, just a different name), so every hardcoded-name
+// check here would have failed against production despite the trigger
+// being entirely correct. The expected SHAPE below (imported from the
+// shared module every tool that needs this now uses) is what actually
+// gets checked; the trigger's own name is discovered by that shape, never
+// assumed. See scripts/lib/rls-auto-enable-event-trigger.mjs.
 const EXPECTED_EVENT_TRIGGER = {
-  event: "ddl_command_end",
-  tags: ["CREATE TABLE", "CREATE TABLE AS", "SELECT INTO"].sort(),
-  handlerFunction: "rls_auto_enable",
+  event: EXPECTED_EVENT_TRIGGER_EVENT,
+  tags: EXPECTED_EVENT_TRIGGER_TAGS,
+  handlerFunction: EXPECTED_EVENT_TRIGGER_HANDLER,
 };
+// This project's own real-production owner for the event trigger,
+// CONFIRMED via a real backup taken against difzynyphojgisrfvrkd in
+// Stage 2I-C (backup-bundle.mjs's own evtowner='postgres' filter found
+// exactly one matching trigger there, named ensure_rls).
+const EXPECTED_EVENT_TRIGGER_OWNER = "postgres";
 
 // Public schema owner/ACL — CONFIRMED against the real project
 // (difzynyphojgisrfvrkd) via scripts/production-readonly-ownership-audit.mjs
@@ -249,7 +289,8 @@ function computeFingerprintDefinitionHash() {
     EXPECTED_OLD_ENUMS,
     EXPECTED_FUNCTIONS,
     EXPECTED_AUTH_TRIGGER,
-    EXPECTED_EVENT_TRIGGER_NAME,
+    EXPECTED_EVENT_TRIGGER,
+    EXPECTED_EVENT_TRIGGER_OWNER,
   });
   return crypto.createHash("sha256").update(canonical).digest("hex");
 }
@@ -896,30 +937,24 @@ async function runLiveChecks(mode, databaseUrl, caCertFile) {
       fail(`unexpected trigger(s) found: ${unexpectedTrigs.map((t) => t.trigger_name).join(", ")}`);
     }
 
-    // The event trigger (rls_auto_enable's) — must be present, enabled,
-    // and (Round 2) fire on the exact event/tags it did in the approved
-    // old inventory, calling the exact expected handler function. Before,
-    // a retargeted handler or narrowed/widened tag list with the same
-    // name+enabled state would have passed silently.
-    const { rows: eventTrigRows } = await client.query(`
-      select evtname, evtenabled, evtevent, evttags, evtfoid::regproc::text as handler
-      from pg_event_trigger where evtname = $1;
-    `, [EXPECTED_EVENT_TRIGGER_NAME]);
-    if (eventTrigRows.length === 0) {
-      fail(`expected event trigger "${EXPECTED_EVENT_TRIGGER_NAME}" not found — rls_auto_enable's safety net is missing`);
-    } else if (eventTrigRows[0].evtenabled === "D") {
-      fail(`event trigger "${EXPECTED_EVENT_TRIGGER_NAME}" exists but is disabled`);
-    } else {
-      const et = eventTrigRows[0];
-      const actualTags = [...(et.evttags || [])].sort();
-      if (et.evtevent !== EXPECTED_EVENT_TRIGGER.event) {
-        fail(`event trigger "${EXPECTED_EVENT_TRIGGER_NAME}": evtevent is "${et.evtevent}", expected "${EXPECTED_EVENT_TRIGGER.event}"`);
-      } else if (JSON.stringify(actualTags) !== JSON.stringify(EXPECTED_EVENT_TRIGGER.tags)) {
-        fail(`event trigger "${EXPECTED_EVENT_TRIGGER_NAME}": evttags are ${JSON.stringify(actualTags)}, expected ${JSON.stringify(EXPECTED_EVENT_TRIGGER.tags)}`);
-      } else if (et.handler !== EXPECTED_EVENT_TRIGGER.handlerFunction) {
-        fail(`event trigger "${EXPECTED_EVENT_TRIGGER_NAME}": handler function is "${et.handler}", expected "${EXPECTED_EVENT_TRIGGER.handlerFunction}"`);
+    // The event trigger (rls_auto_enable's) — Stage 2I-D: found by its
+    // SEMANTIC identity (handler function + event + tags + enabled +
+    // owner), never by a hardcoded literal trigger name. A real
+    // production backup (Stage 2I-C) proved the real Alrahma project's
+    // own trigger is named "ensure_rls", not the "rls_auto_enable_trigger"
+    // every earlier version of this check assumed — same behavior,
+    // different name. See scripts/lib/rls-auto-enable-event-trigger.mjs
+    // for the full rationale and fail-closed matching rules (zero
+    // matches, ambiguous multiple matches, and a wrong handler/tags/
+    // event/enabled/owner on a near-miss candidate are all refused).
+    try {
+      const et = await findRlsAutoEnableEventTrigger(client, { expectedOwner: EXPECTED_EVENT_TRIGGER_OWNER });
+      pass(`event trigger "${et.evtname}" matches rls_auto_enable's expected semantic identity exactly (event/tags/handler/enabled/owner) — found by shape, not by a hardcoded name`);
+    } catch (e) {
+      if (e instanceof EventTriggerIdentityError) {
+        fail(e.message);
       } else {
-        pass(`event trigger ${EXPECTED_EVENT_TRIGGER_NAME} is present, enabled, and its event/tags/handler match the approved old inventory exactly`);
+        throw e;
       }
     }
 

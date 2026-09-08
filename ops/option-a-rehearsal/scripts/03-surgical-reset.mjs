@@ -32,6 +32,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import pg from "pg";
+import { findRlsAutoEnableEventTrigger, EventTriggerIdentityError } from "./lib/rls-auto-enable-event-trigger.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SQL_FILE = path.join(__dirname, "..", "sql", "surgical-reset.sql");
@@ -154,12 +155,28 @@ async function captureFingerprint(client) {
     from pg_proc p join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'public' and p.proname = 'rls_auto_enable';
   `);
-  const { rows: eventTriggerRows } = await client.query(`
-    select oid, evtname, evtevent, evtenabled,
-      (select array_agg(x::text) from unnest(evttags) as x) as tags,
-      evtfoid::regproc::text as handler
-    from pg_event_trigger where evtname = 'rls_auto_enable_trigger';
-  `);
+  // Stage 2I-D: found by semantic identity (handler function + event +
+  // tags + enabled), never by a hardcoded literal trigger name — a real
+  // production backup (Stage 2I-C) proved the real project's own trigger
+  // is named "ensure_rls", not "rls_auto_enable_trigger". No expectedOwner
+  // constraint here deliberately: this script is invoked by local
+  // rehearsal tests using different connecting actors (e.g. some run
+  // entirely as `supabase_admin`), so the OWNER this fingerprint records
+  // is whatever the real match actually has — compareFingerprints() below
+  // proves it is the SAME before and after, not that it equals one
+  // specific hardcoded role name unrelated to what this script is
+  // actually verifying (that Surgical Reset didn't touch it).
+  let eventTrigger;
+  try {
+    const et = await findRlsAutoEnableEventTrigger(client);
+    eventTrigger = { found: true, oid: et.oid, evtname: et.evtname, owner: et.owner, evtevent: et.evtevent, evtenabled: et.evtenabled, tags: et.tags, handler: et.handler };
+  } catch (e) {
+    if (e instanceof EventTriggerIdentityError) {
+      eventTrigger = { found: false, reason: e.message };
+    } else {
+      throw e;
+    }
+  }
   const { rows: authUsersRows } = await client.query(`select count(*)::int as c from auth.users;`);
 
   return {
@@ -169,10 +186,7 @@ async function captureFingerprint(client) {
     defaultAcl: defaultAclRows, // full content: {defacl_role, defaclobjtype, defaclacl}[]
     rlsAutoEnableOid: rlsAutoEnableRows[0]?.oid ?? null,
     rlsAutoEnableDef: rlsAutoEnableRows[0]?.def ?? null,
-    eventTriggerOid: eventTriggerRows[0]?.oid ?? null,
-    eventTriggerShape: eventTriggerRows[0]
-      ? { evtevent: eventTriggerRows[0].evtevent, evtenabled: eventTriggerRows[0].evtenabled, tags: eventTriggerRows[0].tags, handler: eventTriggerRows[0].handler }
-      : null,
+    eventTrigger, // {found:true, oid, evtname, owner, evtevent, evtenabled, tags, handler} | {found:false, reason}
     authUsersCount: authUsersRows[0]?.c ?? null,
   };
 }
@@ -193,8 +207,13 @@ function compareFingerprints(before, after) {
   check("pg_default_acl content for public (full role/objtype/acl tuples, not just a count)", before.defaultAcl, after.defaultAcl);
   check("rls_auto_enable() function oid", before.rlsAutoEnableOid, after.rlsAutoEnableOid);
   check("rls_auto_enable() function definition", before.rlsAutoEnableDef, after.rlsAutoEnableDef);
-  check("rls_auto_enable_trigger event trigger oid", before.eventTriggerOid, after.eventTriggerOid);
-  check("rls_auto_enable_trigger shape (event/enabled/tags/handler)", before.eventTriggerShape, after.eventTriggerShape);
+  // Stage 2I-D: compares the FULL semantic-match result (whatever the
+  // trigger is actually named — proven correct even when that's
+  // "ensure_rls", not "rls_auto_enable_trigger") — oid, name, owner, and
+  // event/tags/enabled/handler all together, so any of "renamed",
+  // "recreated under a new oid", "ownership changed", or "shape changed"
+  // is caught as a real regression, not just a shape-only comparison.
+  check("rls_auto_enable's event trigger (identity: oid/name/owner/event/tags/enabled/handler)", before.eventTrigger, after.eventTrigger);
   check("auth.users row count", before.authUsersCount, after.authUsersCount);
   return failures;
 }

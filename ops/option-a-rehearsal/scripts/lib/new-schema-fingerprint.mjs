@@ -250,12 +250,18 @@ export async function verifyNewSchemaFingerprint(client, { migrationRows, expect
     fail(`post-migration fingerprint: no pg_default_acl row for role postgres/functions — migration 0011's deny-by-default posture does not appear to have taken effect (see that migration's own header for why this exact failure mode has happened before).`);
   }
 
-  // 7. No unexpected leftover triggers/event-triggers beyond what this
-  // project's own migrations create (auth.users' on_auth_user_created +
-  // rls_auto_enable_trigger are pre-existing Supabase/local-stack
-  // infrastructure this project never drops or recreates — anything
-  // else naming one of the new tables as a leftover from a PARTIAL
-  // prior state would be a real red flag).
+  // 7. No unexpected leftover triggers beyond what this project's own
+  // migrations create (auth.users' on_auth_user_created + the
+  // rls_auto_enable() event trigger — Stage 2I-D: its own name is NOT
+  // assumed here or anywhere else in this project; see
+  // scripts/lib/rls-auto-enable-event-trigger.mjs — are pre-existing
+  // Supabase/local-stack infrastructure this project never drops or
+  // recreates — anything else naming one of the new tables as a leftover
+  // from a PARTIAL prior state would be a real red flag). Note: this
+  // query only inspects ordinary row-level triggers (pg_trigger), not
+  // event triggers — the event trigger's own semantic identity is
+  // verified separately, by 03-surgical-reset.mjs and
+  // production-preflight-gate.mjs, not by this function.
   const { rows: unexpectedTrigRows } = await client.query(`
     select tgname, relname from pg_trigger t
     join pg_class c on c.oid = t.tgrelid

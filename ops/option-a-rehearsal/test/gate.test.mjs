@@ -217,7 +217,7 @@ async function main() {
   assert.match(t1.out, /PASS {2}function handle_new_user: security_definer \+ search_path \+ args \+ return type \+ body hash all match/);
   assert.match(t1.out, /PASS {2}function rls_auto_enable: security_definer \+ search_path \+ args \+ return type \+ body hash all match/);
   assert.match(t1.out, /PASS {2}trigger on_auth_user_created matches the approved old inventory exactly, including its target function/);
-  assert.match(t1.out, /PASS {2}event trigger rls_auto_enable_trigger is present, enabled, and its event\/tags\/handler match/);
+  assert.match(t1.out, /PASS {2}event trigger "rls_auto_enable_trigger" matches rls_auto_enable's expected semantic identity exactly/);
   assert.match(t1.out, /PASS {2}public schema owner \(pg_database_owner\) and ACL match the pinned expectation exactly/);
   assert.match(t1.out, /PASS {2}all \d+ tool file\(s\) match the approval manifest exactly/);
 
@@ -332,7 +332,7 @@ $function$;`);
   await c7.end();
   const t7 = runGate({ GATE_DATABASE_URL: testUrl.toString() }, ["--mode", "local", "--approval-manifest", goodManifest, "--dump-file", path.join(scratchDir, "dump.bin"), "--checksum-file", path.join(scratchDir, "manifest-local.json")]);
   assert.notEqual(t7.code, 0);
-  assert.match(t7.out, /event trigger "rls_auto_enable_trigger": evttags are \["CREATE TABLE"\]/);
+  assert.match(t7.out, /event trigger "rls_auto_enable_trigger" resembles rls_auto_enable's expected identity but does not match fully: evttags are \["CREATE TABLE"\], expected \["CREATE TABLE","CREATE TABLE AS","SELECT INTO"\]/);
 
   // restore, verified back to a clean positive pass (minus worktree)
   const c7b = new pg.Client({ connectionString: testUrl.toString() });

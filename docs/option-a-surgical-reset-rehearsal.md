@@ -44,8 +44,7 @@ PASS  public schema ACL unchanged
 PASS  pg_default_acl content for public (full role/objtype/acl tuples, not just a count) unchanged
 PASS  rls_auto_enable() function oid unchanged
 PASS  rls_auto_enable() function definition unchanged
-PASS  rls_auto_enable_trigger event trigger oid unchanged
-PASS  rls_auto_enable_trigger shape (event/enabled/tags/handler) unchanged
+PASS  rls_auto_enable's event trigger (identity: oid/name/owner/event/tags/enabled/handler) unchanged
 PASS  auth.users row count unchanged
 --- verifying every named old table is gone
 OK    all 34 named old tables are gone
@@ -54,6 +53,8 @@ OK    all 3 named old enums are gone
 
 SURGICAL RESET COMPLETE, VERIFIED, AND COMMITTED — every preserved item is unchanged, every named old object is gone.
 ```
+
+Stage 2I-D update: the event trigger's two separate PASS lines above (oid, then shape) collapsed into one combined check once the lookup itself became semantic (found by handler function/event/tags/enabled/owner, never a hardcoded name — real production turned out to name it `ensure_rls`, not `rls_auto_enable_trigger` as this local rehearsal's own fixture happens to; see `scripts/lib/rls-auto-enable-event-trigger.mjs`). The trigger's name is no longer part of what "unchanged" even checks — only its full semantic identity is.
 
 The dependency check was broadened from "views/matviews only" to a
 real `pg_depend`-based sweep also covering external foreign keys and

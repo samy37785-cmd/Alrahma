@@ -50,7 +50,7 @@ which is what "preserved" means here:**
 |---|---|
 | the `public` schema itself | never `drop schema`/`create schema` — no statement targets the schema object |
 | schema owner + ACL, `pg_default_acl` for `public` | untouched by definition — nothing here is schema-level DDL |
-| `rls_auto_enable()` + `rls_auto_enable_trigger` | not named anywhere in the script; confirmed no migration (0000-0011) references `rls_auto_enable` either — it is pure Supabase-managed/pre-existing infrastructure this project's migrations have never touched |
+| `rls_auto_enable()` + its event trigger (named `ensure_rls` in real production, `rls_auto_enable_trigger` in this project's own local fixtures — Stage 2I-D: never assume either name; verified by full semantic identity — handler/event/tags/enabled/owner — in `scripts/lib/rls-auto-enable-event-trigger.mjs`) | not named anywhere in the script (by name OR by shape); confirmed no migration (0000-0011) references `rls_auto_enable` either — it is pure Supabase-managed/pre-existing infrastructure this project's migrations have never touched |
 | `auth` schema, `auth.users` (table + rows) | only a *trigger on* `auth.users` is dropped — the table, its data, and every other trigger/policy on it are untouched |
 | Supabase roles/extensions/storage/realtime/vault | none named |
 

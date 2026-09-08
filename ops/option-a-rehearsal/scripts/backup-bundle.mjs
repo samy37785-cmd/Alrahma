@@ -245,9 +245,18 @@ async function main() {
     // recreate it. Those platform event triggers are not this project's
     // to back up or restore in the first place (same reasoning as
     // never touching an extension in sql/surgical-reset.sql /
-    // sql/inverse-reset-new-schema.sql) — `rls_auto_enable_trigger` is
-    // the only event trigger this project's own tooling has ever
-    // created, and it is the only one owned by `postgres`.
+    // sql/inverse-reset-new-schema.sql) — the rls_auto_enable() event
+    // trigger is the only event trigger owned by `postgres` on every
+    // target this tooling has ever run against, regardless of its own
+    // name. Deliberately captured by OWNER here, not by name: real
+    // production names it `ensure_rls`; this project's own local
+    // fixtures happen to name it `rls_auto_enable_trigger` (Stage 2I-D
+    // found both in the wild) — code that verifies its full semantic
+    // identity (handler function/event/tags/enabled/owner, never a
+    // hardcoded name) lives in scripts/lib/rls-auto-enable-event-trigger.mjs,
+    // used by production-preflight-gate.mjs and 03-surgical-reset.mjs;
+    // this backup step only needs to capture it, not verify it, so the
+    // simpler owner-scoped query above is enough.
     const { rows: eventTrigDefs } = await client.query(`
       select evtname, evtevent, evtfoid::regproc::text as handler_function,
         (select array_agg(x::text) from unnest(evttags) as x) as tags

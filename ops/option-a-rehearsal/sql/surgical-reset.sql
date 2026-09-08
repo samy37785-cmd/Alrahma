@@ -10,10 +10,13 @@
 -- anti-pattern, see default-privileges-deny-by-default.sql) and it
 -- relies on Postgres's CASCADE algorithm to discover what else depends
 -- on `public` (which is how it reaches cross-schema objects like the
--- `auth.users` trigger and `rls_auto_enable_trigger` — correct in that
--- specific case, per docs/option-a-cascade-scope.md, but "correct by
--- accident of CASCADE's traversal" is not the same guarantee as
--- "explicitly named and reviewed").
+-- `auth.users` trigger and rls_auto_enable()'s event trigger — real
+-- production names it `ensure_rls`, this project's own local fixtures
+-- name it `rls_auto_enable_trigger`; CASCADE doesn't care what it's
+-- named, which was correct in that specific case, per
+-- docs/option-a-cascade-scope.md, but "correct by accident of CASCADE's
+-- traversal" is not the same guarantee as "explicitly named and
+-- reviewed").
 --
 -- This script instead:
 --   - NEVER runs `drop schema public` or any statement targeting the
@@ -29,8 +32,10 @@
 --   - Never touches: the `public` schema itself (and therefore never
 --     touches its owner, its ACL, or any `pg_default_acl` row for it —
 --     those simply are not addressed by anything below, which is what
---     "preserved" means here); `rls_auto_enable()` and
---     `rls_auto_enable_trigger` (not named anywhere below); the `auth`
+--     "preserved" means here); `rls_auto_enable()` and its event trigger
+--     (whatever it is actually named — `ensure_rls` in real production,
+--     `rls_auto_enable_trigger` in this project's own local fixtures;
+--     neither name, nor any other, is named anywhere below); the `auth`
 --     schema or `auth.users` itself (only a trigger ON auth.users is
 --     dropped — the table, its rows, and every other trigger/policy on
 --     it are untouched); any Supabase-managed role, extension, storage,

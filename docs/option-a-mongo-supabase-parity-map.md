@@ -166,6 +166,15 @@ column. Postgres's `seo_title`/`seo_description` flat columns map to Mongo's nes
 match (`author_name/author_role/author_image` ↔ `author.{name,role,image}`).
 Slug/title/excerpt/body↔content/tags/published/views/publishedAt all match cleanly.
 
+**Stage 2J-B update**: these 4 gaps were closed by decision, not by schema
+growth — see `docs/stage-2j-b-lossless-mapping-contract.md` §13. The
+migration tool now fails closed: any Mongo blog document that actually
+carries a non-empty value in `category`/`readTime`/`coverImage`/
+`seo.canonicalUrl` is rejected with a named reason rather than silently
+dropped (`backend/scripts/migration/mongo-to-supabase.mjs`'s `blogs`
+domain). 0 real Mongo blog documents exist today, so this path is
+currently exercised only via synthetic fixtures, not real data.
+
 ### 11–12. TrialRequest / Subscriber
 
 Clean matches, field-for-field (with the expected `snake_case` renames). No gaps.

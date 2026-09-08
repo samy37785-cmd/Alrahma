@@ -23,13 +23,23 @@
 // change; a rollback run against the OLD constants would have silently
 // left 16 tables, ~24 functions, 8 enums, and both views behind after
 // "rolling back."
+// Stage 2J-B / 0022_lossless_migration_support.sql added two tables
+// (migration_source_ledger, payment_source_snapshots) — both
+// service_role-only, RLS-enabled, no new function/enum. This constant is
+// intentionally kept in lockstep with the real migration set even though
+// 0022 is never applied to Supabase Production in Stage 2J-B itself: this
+// fingerprint is exercised by lib/db's own local-harness-based tests
+// (which DO run every migration, 0000-0022, against a disposable local
+// Postgres), and a stale list here would falsely fail those, not protect
+// anything.
 export const EXPECTED_NEW_TABLES = [
   "admin_audit_log", "admin_role_assignments", "blogs", "certificates",
   "contact_messages", "coupon_redemptions", "coupons", "course_progress",
   "courses", "document_counters", "enrollments", "hifz_progress",
   "invoices", "live_classes", "manual_payments", "messages",
-  "notification_preferences", "notifications", "parent_student_links",
-  "payments", "plans", "profiles", "provider_events", "quran_bookmarks",
+  "migration_source_ledger", "notification_preferences", "notifications",
+  "parent_student_links", "payment_source_snapshots", "payments", "plans",
+  "profiles", "provider_events", "quran_bookmarks",
   "quran_memorization_stats", "quran_reading_progress", "referrals",
   "reviews", "role_permissions", "student_records", "subscribers",
   "subscriptions", "system_config", "testimonials", "trial_requests",

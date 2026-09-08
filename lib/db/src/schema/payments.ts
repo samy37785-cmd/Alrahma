@@ -25,7 +25,10 @@ import {
 /**
  * Append-oriented financial ledger (docs/product-scope-audit.md §7) — one
  * row per transaction ATTEMPT, not a mutable "current state of this
- * payment" record. `user_id` is NOT NULL: paid checkout requires login.
+ * payment" record. `user_id` is nullable (Stage 2J-B, 0022): the live
+ * app's own paid checkout still requires login, but a genuinely unlinked
+ * historical charge (no resolvable account) is a real state this table
+ * must be able to represent without a fabricated profiles row.
  *
  * `kind` distinguishes a charge from a refund; a refund is always its own
  * new row (`parent_payment_id` → the charge it refunds), never an UPDATE
@@ -74,9 +77,13 @@ export const payments = pgTable(
   "payments",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    userId: uuid("user_id")
-      .notNull()
-      .references(() => profiles.id, { onDelete: "restrict" }),
+    // Stage 2J-B (0022_lossless_migration_support.sql): nullable — a
+    // genuinely unlinked ("guest") charge is a real, representable state,
+    // never a fabricated profiles row. payments_select_own_or_admin_aal2
+    // (0002_rls.sql) already makes a NULL-user_id row invisible to every
+    // authenticated user and visible only to an AAL2 admin, with no
+    // policy text change required (NULL = auth.uid() is never TRUE).
+    userId: uuid("user_id").references(() => profiles.id, { onDelete: "restrict" }),
     subscriptionId: uuid("subscription_id").references(() => subscriptions.id, {
       onDelete: "set null",
     }),
@@ -92,9 +99,25 @@ export const payments = pgTable(
     currencySnapshot: currencyCodeEnum("currency_snapshot").notNull().default("EUR"),
     providerPriceIdSnapshot: text("provider_price_id_snapshot"),
     gateway: paymentGatewayEnum("gateway").notNull(),
+    // The settled charge/capture identifier (Stripe payment_intent /
+    // PayPal capture id) — never the checkout/order identifier, see
+    // gatewayOrderId below (Stage 2J-B 0022: the two must never be
+    // conflated).
     gatewayPaymentId: text("gateway_payment_id"),
+    // Stage 2J-B (0022): the checkout-session/order identifier (Stripe
+    // Checkout Session id / PayPal order id) — distinct from
+    // gatewayPaymentId above.
+    gatewayOrderId: text("gateway_order_id"),
     status: paymentStatusEnum("status").notNull().default("pending"),
     gatewayMetadata: jsonb("gateway_metadata"),
+    // Stage 2J-B (0022): a snapshot of who paid, captured at write time —
+    // required for a guest (userId IS NULL) charge to remain
+    // identifiable/reconcilable at all; same "snapshot, never
+    // reinterpreted later" discipline as the amount/currency/plan
+    // snapshot columns above.
+    customerNameSnapshot: text("customer_name_snapshot"),
+    customerEmailSnapshot: text("customer_email_snapshot"),
+    customerPhoneSnapshot: text("customer_phone_snapshot"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -114,6 +137,11 @@ export const payments = pgTable(
     // Every ownership-scoped RLS policy on this table filters by
     // user_id — without a plain index that's a seq scan.
     index("payments_user_id_idx").on(t.userId),
+    // Stage 2J-B (0022): checkout/order-id lookups (reconciling a
+    // migrated or webhook-received charge back to its checkout session).
+    index("payments_gateway_order_id_idx")
+      .on(t.gatewayOrderId)
+      .where(sql`${t.gatewayOrderId} IS NOT NULL`),
   ],
 );
 

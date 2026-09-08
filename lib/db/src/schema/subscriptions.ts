@@ -34,6 +34,13 @@ export const subscriptions = pgTable(
     currentPeriodEnd: timestamp("current_period_end", { withTimezone: true }),
     cancelAtPeriodEnd: boolean("cancel_at_period_end").notNull().default(false),
     canceledAt: timestamp("canceled_at", { withTimezone: true }),
+    // Added by 0020_renewal_reminder_tracking.sql (raw SQL, not
+    // originally mirrored here — backfilled by Stage 2J-B while touching
+    // this file for other reasons). Records the current_period_end value
+    // sendRenewalReminders() last emailed for, so the same billing period
+    // is never re-emailed — mirrors the old Mongo
+    // User.subscription.renewalReminderSentFor field exactly.
+    renewalReminderSentFor: timestamp("renewal_reminder_sent_for", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },

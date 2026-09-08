@@ -56,7 +56,17 @@ export const quranReadingProgress = pgTable("quran_reading_progress", {
     verseTimestamp?: number;
   }>(),
   goal: integer("goal"),
+  // Stage 2J-B (0022_lossless_migration_support.sql): the old Mongo model
+  // (QuranReadingProgress.js) tracked a goal TYPE alongside its target —
+  // `goal` above is, and remains, the target only.
+  goalType: text("goal_type"),
   streak: integer("streak").notNull().default(0),
+  // Stage 2J-B (0022): the old model's streak.longest — `streak` above
+  // is, and remains, the CURRENT streak only.
+  longestStreak: integer("longest_streak").notNull().default(0),
+  // Stage 2J-B (0022): the old model's streak.lastReadDate, kept as the
+  // exact 'YYYY-MM-DD' text it was stored as (no date-type reinterpretation).
+  lastReadDate: text("last_read_date"),
   history: jsonb("history").$type<Array<{ date: string; [key: string]: unknown }>>()
     .notNull()
     .default([]),
@@ -68,7 +78,15 @@ export const quranMemorizationStats = pgTable("quran_memorization_stats", {
     .primaryKey()
     .references(() => profiles.id, { onDelete: "cascade" }),
   goal: integer("goal"),
+  // Stage 2J-B (0022): see quranReadingProgress.goalType above — same
+  // reasoning, this table's own old model also tracked a goal type.
+  goalType: text("goal_type"),
   totalRecordings: integer("total_recordings").notNull().default(0),
   totalPracticeTime: integer("total_practice_time").notNull().default(0), // seconds
   streak: integer("streak").notNull().default(0),
+  // Stage 2J-B (0022): see quranReadingProgress.longestStreak above.
+  longestStreak: integer("longest_streak").notNull().default(0),
+  // Stage 2J-B (0022): the old model's stats.lastPracticeDate, same
+  // 'YYYY-MM-DD' text discipline as quranReadingProgress.lastReadDate.
+  lastPracticeDate: text("last_practice_date"),
 });

@@ -155,6 +155,13 @@
       "when": 1788800009000,
       "tag": "0021_service_role_auth_schema_grants",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1788912000000,
+      "tag": "0022_lossless_migration_support",
+      "breakpoints": true
     }
   ]
 }

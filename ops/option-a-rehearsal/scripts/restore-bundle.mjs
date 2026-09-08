@@ -38,17 +38,50 @@
 //                                      RESTORE_ROLLBACK_FROM_NEW_SCHEMA —
 //                                      default refuses, to avoid silently
 //                                      clobbering an unrelated database.
+//
+// Stage 2I-D hardening — closes two gaps found rehearsing this script
+// against a REAL production bundle for the first time (Stage 2I-C):
+//   1. This script used to need `rls_auto_enable()` manually pre-created
+//      on the target before running, because its pg_restore step always
+//      excluded that function's own CREATE FUNCTION entry (assuming it
+//      already exists — true only for the ROLLBACK-from-new-schema
+//      scenario, where this project's own Surgical Reset never removed
+//      it; false for a genuinely fresh, just-reset target — this
+//      script's OTHER documented scenario, disaster recovery from
+//      nothing). It now extracts that ONE function's definition from the
+//      bundle's own dump and applies it as `CREATE OR REPLACE FUNCTION`
+//      before the main restore runs — idempotent either way, sourced
+//      from the bundle itself, never a separately hardcoded copy. See
+//      ensureRlsAutoEnableFunctionExists() below.
+//   2. This script used to need to be run AS `supabase_admin` to avoid
+//      "permission denied to change default privileges" on the bundle's
+//      `ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin ...` TOC
+//      entries — the real production connecting role (`postgres`) is not
+//      a member of `supabase_admin` and cannot act for it. It now shares
+//      scripts/lib/pg-restore-runner.mjs's `restorePublicSchemaDump()` /
+//      `filterRestoreToc()` — the SAME TOC-filtering already proven
+//      against this exact failure mode by the production rollback
+//      orchestrator's own tests — instead of this file's own, separately
+//      written and less complete filter. pg_default_acl is now also
+//      snapshotted before and verified byte-for-byte unchanged after
+//      (scripts/lib/default-acl.mjs, shared with cutover-core.mjs /
+//      rollback-core.mjs), proving the fix actually works rather than
+//      merely that pg_restore stopped erroring.
+// Neither fix needs RESTORE_ALLOW_NONEMPTY or a different connecting
+// role/actor than whatever RESTORE_DATABASE_URL already names — this
+// script now runs end-to-end, unmodified invocation, on a Supabase CLI
+// stack fresh out of `supabase db reset`, as the SAME actor a real
+// production rollback would use.
 
 import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
-import { execFile } from "node:child_process";
-import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
 import pg from "pg";
 import { parsePgTextArray } from "./lib/pg-array.mjs";
+import { resolveClientTool, runClientTool, restorePublicSchemaDump } from "./lib/pg-restore-runner.mjs";
+import { snapshotDefaultAcl, verifyDefaultAclUnchanged } from "./lib/default-acl.mjs";
 
-const execFileAsync = promisify(execFile);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const INVERSE_RESET_SQL_FILE = path.join(__dirname, "..", "sql", "inverse-reset-new-schema.sql");
 
@@ -96,35 +129,72 @@ function readStatements(name) {
 }
 
 // ---------------------------------------------------------------------
-// pg_restore/psql resolution — PATH first, disposable-Docker-for-the-
-// binary-only fallback second. Same discipline as backup-bundle.mjs.
+// Stage 2I-D: ensures rls_auto_enable() exists on the target BEFORE the
+// main restore runs, using the definition captured in THIS bundle's own
+// dump — never a separately hardcoded copy. Idempotent (CREATE OR
+// REPLACE): safe whether the function already exists (the ROLLBACK-from-
+// new-schema scenario, where Surgical Reset never removed it) or
+// genuinely doesn't yet (a fresh, just-reset target — disaster recovery
+// from nothing). This is what lets the main restore's TOC filter keep
+// excluding the function's own bare (non-idempotent) CREATE FUNCTION
+// entry without that exclusion silently assuming a precondition nobody
+// actually guaranteed.
 // ---------------------------------------------------------------------
-async function findOnPath(bin) {
-  try { await execFileAsync(bin, ["--version"]); return true; } catch { return false; }
-}
-async function resolveClientTool(bin) {
-  if (await findOnPath(bin)) return { kind: "path", bin };
-  console.log(`INFO  "${bin}" not found on PATH — falling back to a disposable Docker container for the binary only.`);
-  return { kind: "docker", bin };
-}
-function dockerRewriteUrl(url) {
-  const u = new URL(url);
-  u.hostname = "host.docker.internal"; // restore is local-only, always rewrite for the docker path
-  return u.toString();
-}
-async function runClientTool(tool, args, bindMountDir) {
-  const effectiveArgs = tool.kind === "docker" ? args.map((a) => (a === databaseUrl ? dockerRewriteUrl(a) : a)) : args;
-  if (tool.kind === "path") {
-    return execFileAsync(tool.bin, effectiveArgs, { maxBuffer: 1024 * 1024 * 256 });
+async function ensureRlsAutoEnableFunctionExists(client, pgRestoreTool, dumpPath, bundleDir) {
+  const { stdout: tocText } = await runClientTool(pgRestoreTool, ["--list", dumpPath], bundleDir);
+  const functionLine = tocText.split("\n").find((line) => /\bFUNCTION\s+public\s+rls_auto_enable\(/.test(line));
+  if (!functionLine) {
+    throw new Error("bundle's public_schema.dump has no rls_auto_enable() FUNCTION entry — refusing to fabricate a definition that isn't sourced from the bundle itself.");
   }
-  const dockerArgs = [
-    "run", "--rm",
-    "--add-host=host.docker.internal:host-gateway",
-    "-v", `${path.resolve(bindMountDir)}:/data`,
-    "postgres:17", tool.bin,
-    ...effectiveArgs.map((a) => (path.resolve(a).startsWith(path.resolve(bindMountDir)) ? `/data/${path.basename(a)}` : a)),
-  ];
-  return execFileAsync("docker", dockerArgs, { maxBuffer: 1024 * 1024 * 256 });
+  const tocPath = path.join(bundleDir, ".restore-rls-auto-enable-toc.txt");
+  const outSqlPath = path.join(bundleDir, ".restore-rls-auto-enable.sql");
+  try {
+    fs.writeFileSync(tocPath, `${functionLine}\n`);
+    await runClientTool(pgRestoreTool, ["--use-list", tocPath, "-f", outSqlPath, dumpPath], bundleDir);
+    let sql = fs.readFileSync(outSqlPath, "utf8");
+    // pg_restore -f always prepends two things to its plain-SQL
+    // extraction, neither of which this call wants applied to the
+    // shared, long-lived `client` connection the rest of this script
+    // keeps using afterward:
+    //   1. Postgres 17's `\restrict <token>` / `\unrestrict <token>`
+    //      psql-ONLY meta-commands (a new pg17 dump/restore-session
+    //      security feature) — `client.query()` is a raw SQL protocol
+    //      connection, not psql, and errors immediately on the leading
+    //      backslash ("syntax error at or near \"").
+    //   2. A preamble of top-level `SET ...;` statements plus `SELECT
+    //      pg_catalog.set_config('search_path', '', false);` — found by
+    //      actually running this, not by inspection: that set_config
+    //      call's third argument (is_local) is `false`, meaning it
+    //      applies to the whole SESSION, not just this one
+    //      client.query() call, so it silently emptied `client`'s
+    //      search_path for every later statement on this same
+    //      connection — the very next step's unqualified `EXECUTE
+    //      FUNCTION handle_new_user()` then failed with "function
+    //      handle_new_user() does not exist" despite the function
+    //      genuinely existing, because it could no longer be found
+    //      without explicit schema-qualification. (`SET row_security =
+    //      off;` in the same preamble is equally dangerous left
+    //      standing.) Stripped by anchoring to column 0 — the function
+    //      body's own internal `SET search_path TO 'pg_catalog'` line is
+    //      indented, not a top-level statement, so it is untouched.
+    //      Comments are left alone; SQL tolerates them.
+    sql = sql
+      .split("\n")
+      .filter((line) => !line.startsWith("\\"))
+      .filter((line) => !/^SET\s+\S/.test(line))
+      .filter((line) => !/^SELECT\s+pg_catalog\.set_config\(/.test(line))
+      .join("\n");
+    // pg_dump always emits a bare `CREATE FUNCTION` (never OR REPLACE)
+    // for a fresh dump — rewriting it is what makes this idempotent.
+    if (!/\bCREATE FUNCTION\b/.test(sql)) {
+      throw new Error(`extracted rls_auto_enable() TOC entry did not contain a CREATE FUNCTION statement as expected:\n${sql}`);
+    }
+    sql = sql.replace(/\bCREATE FUNCTION\b/, "CREATE OR REPLACE FUNCTION");
+    await client.query(sql);
+  } finally {
+    fs.rmSync(tocPath, { force: true });
+    fs.rmSync(outSqlPath, { force: true });
+  }
 }
 
 async function main() {
@@ -176,54 +246,81 @@ async function main() {
     }
 
     // ---------------------------------------------------------------
-    // 4. pg_restore the custom-format dump — schema, data, GRANTs, RLS,
-    // POLICIES, owners, comments, all as pg_dump itself captured them.
-    //
-    // pg_dump -n public includes a `CREATE SCHEMA public;` (and a
-    // `COMMENT ON SCHEMA public ...`) entry — found by actually running
-    // this restore, not assumed: it fails with `schema "public" already
-    // exists` against any target this project ever restores onto,
-    // because Surgical Reset / Inverse Reset deliberately never drop
-    // `public` itself. Same reason `rls_auto_enable()` is excluded too
-    // — found the same way, by actually running this and hitting
-    // `function "rls_auto_enable" already exists`: it's Supabase-
-    // preexisting infrastructure Surgical Reset/Inverse Reset both
-    // deliberately never touch, so it's still live in the target under
-    // rollback exactly as it was in the source when this bundle was
-    // taken — restoring pg_dump's plain (non-`OR REPLACE`) `CREATE
-    // FUNCTION` for it would collide with itself. (Its event trigger
-    // does NOT need the same exclusion: that's restored separately, via
-    // functions_and_triggers.statements.json's own `DROP ... IF EXISTS`
-    // + `CREATE` pair, which is safely idempotent against an
-    // already-existing trigger.) Both filtered out via pg_restore's own
-    // `--list`/`--use-list` mechanism (the standard, correct way to
-    // selectively skip specific TOC entries from a custom-format dump)
-    // rather than any text-based SQL editing.
+    // pg_default_acl baseline — captured before this step touches
+    // anything, verified byte-for-byte unchanged at the very end. Same
+    // shared fingerprint (scripts/lib/default-acl.mjs) cutover-core.mjs
+    // and rollback-core.mjs already use — proves the TOC filter below
+    // actually keeps default-privilege registrations untouched, not
+    // merely that pg_restore stopped erroring on them.
     // ---------------------------------------------------------------
-    step("restoring public_schema.dump via pg_restore (filtering CREATE SCHEMA public + rls_auto_enable())");
-    const pgRestore = await resolveClientTool("pg_restore");
-    const dumpPath = path.join(bundleDir, "public_schema.dump");
-    const { stdout: tocText } = await runClientTool(pgRestore, ["--list", dumpPath], bundleDir);
-    const filteredToc = tocText
-      .split("\n")
-      .filter((line) => !/\bSCHEMA\s*-?\s*public\b/.test(line))
-      .filter((line) => !/\bFUNCTION\s+public\s+rls_auto_enable\(/.test(line))
-      .join("\n");
-    const tocPath = path.join(bundleDir, ".restore-toc.filtered.txt");
-    fs.writeFileSync(tocPath, filteredToc);
-    await runClientTool(pgRestore, ["--dbname", databaseUrl, "--exit-on-error", "--single-transaction", "--use-list", tocPath, dumpPath], bundleDir);
-    fs.rmSync(tocPath, { force: true });
-    ok("public_schema.dump restored (schema + data + GRANTs + RLS + POLICIES + owners, minus the public-schema-creation entry)");
+    const defaultAclBefore = await snapshotDefaultAcl(client);
 
     // ---------------------------------------------------------------
-    // 5. Cross-schema artifacts — auth.users trigger + event triggers.
+    // 4. Ensure rls_auto_enable() exists (Stage 2I-D — see
+    // ensureRlsAutoEnableFunctionExists()'s own comment above: sourced
+    // from THIS bundle's own dump, idempotent, no manual pre-create step
+    // needed regardless of whether the target already has it).
     // ---------------------------------------------------------------
-    step("restoring auth.users trigger + event triggers");
+    step("ensuring rls_auto_enable() exists (idempotent, sourced from this bundle's own dump)");
+    const dumpPath = path.join(bundleDir, "public_schema.dump");
+    const pgRestore = await resolveClientTool("pg_restore");
+    await ensureRlsAutoEnableFunctionExists(client, pgRestore, dumpPath, bundleDir);
+    ok("rls_auto_enable() present on the target, matching this bundle's own captured definition");
+
+    // ---------------------------------------------------------------
+    // 5. pg_restore the custom-format dump — schema, data, GRANTs, RLS,
+    // POLICIES, owners, comments, all as pg_dump itself captured them.
+    // Uses the SAME shared TOC filter the production rollback
+    // orchestrator's own tests already proved against this exact target
+    // shape (scripts/lib/pg-restore-runner.mjs's filterRestoreToc/
+    // restorePublicSchemaDump) instead of a separate, less complete
+    // filter — it excludes `CREATE SCHEMA public` (the target's public
+    // schema already exists, Surgical Reset/Inverse Reset never drop
+    // it), the bare `CREATE FUNCTION rls_auto_enable()` entry (just
+    // ensured above, idempotently, so this raw non-`OR REPLACE` entry
+    // would otherwise collide with itself), AND — the Stage 2I-C finding
+    // this closes — the bundle's `ALTER DEFAULT PRIVILEGES FOR ROLE
+    // supabase_admin ...` entries, which the real production connecting
+    // role (`postgres`, not a member of `supabase_admin`) cannot execute
+    // and does not need to: those are default-privilege REGISTRATIONS
+    // for future objects, not schema content, and the target's own
+    // pre-existing rows for `supabase_admin` are untouched by their
+    // absence here (proven by the pg_default_acl check below, not merely
+    // assumed). Connection info flows through libpq's own PG*
+    // environment variables (pg-restore-runner.mjs's pgEnvFromUrl), never
+    // a CLI argument — `forLocalTestTarget: true` because this script is
+    // local-only (its own host check above already guarantees that).
+    // ---------------------------------------------------------------
+    step("restoring public_schema.dump via pg_restore (shared TOC filter: public schema + rls_auto_enable() + supabase_admin default-ACL entries)");
+    await restorePublicSchemaDump(databaseUrl, bundleDir, { forLocalTestTarget: true });
+    ok("public_schema.dump restored (schema + data + GRANTs + RLS + POLICIES + owners, minus the entries the target either already has or cannot — and does not need to — replay)");
+
+    // ---------------------------------------------------------------
+    // 6. Cross-schema artifacts — auth.users trigger + event triggers.
+    // Wrapped in its own explicit transaction (Stage 2I-D — matching
+    // rollback-core.mjs's own already-fixed pattern): the un-wrapped
+    // per-statement loop this used to be left one statement committed
+    // and the other not on a failure between them, silently, with no
+    // transactional undo — "no partial restore on error" now actually
+    // holds here too, not just in the rollback path.
+    // ---------------------------------------------------------------
+    step("restoring auth.users trigger + event triggers (own explicit transaction)");
     const funcStatements = readStatements("functions_and_triggers.statements.json");
-    for (const stmt of funcStatements) {
-      await client.query(stmt);
+    await client.query("BEGIN");
+    try {
+      for (const stmt of funcStatements) {
+        await client.query(stmt);
+      }
+      await client.query("COMMIT");
+    } catch (e) {
+      try {
+        await client.query("ROLLBACK");
+      } catch {
+        // connection may already be broken; nothing more to undo either way
+      }
+      throw e;
     }
-    ok(`${funcStatements.length} statement(s) applied`);
+    ok(`${funcStatements.length} statement(s) applied atomically`);
 
     // ---------------------------------------------------------------
     // 6. Post-restore verification against the bundle's own
@@ -354,9 +451,13 @@ async function main() {
     // are correctly out of scope for a public-schema-only rollback to
     // restore, preserve, or fail on. What this check actually needs to
     // guarantee is narrower and still real: every event trigger the
-    // bundle DID record (this project's own — rls_auto_enable_trigger)
-    // is present after restore. An extra, unrecorded, platform-owned
-    // event trigger appearing is not a regression.
+    // bundle DID record (this project's own — rls_auto_enable()'s event
+    // trigger, by whatever name it actually carries: `ensure_rls` in
+    // real production, `rls_auto_enable_trigger` in this project's own
+    // local fixtures — inventory.json records the real captured name,
+    // never a hardcoded assumption) is present after restore. An extra,
+    // unrecorded, platform-owned event trigger appearing is not a
+    // regression.
     const { rows: restoredEventTrigs } = await client.query(`select evtname from pg_event_trigger order by evtname;`);
     const restoredEventTrigNames = restoredEventTrigs.map((r) => r.evtname).sort();
     const expectedEventTrigNames = [...inventory.eventTriggers].sort();
@@ -366,6 +467,17 @@ async function main() {
     } else {
       const extra = restoredEventTrigNames.filter((n) => !expectedEventTrigNames.includes(n));
       vpass(`all ${expectedEventTrigNames.length} event trigger(s) from inventory.json are present${extra.length ? ` (plus ${extra.length} platform/extension-owned one(s) not recorded by the bundle and out of its scope: ${extra.join(", ")})` : ""}`);
+    }
+
+    // Stage 2I-D: proves the shared TOC filter's exclusion of the
+    // bundle's supabase_admin DEFAULT ACL entries actually left
+    // pg_default_acl untouched, byte-for-byte — not merely that
+    // pg_restore stopped erroring on them.
+    try {
+      await verifyDefaultAclUnchanged(client, defaultAclBefore);
+      vpass("pg_default_acl unchanged — the filtered restore never touched default-privilege registrations");
+    } catch (e) {
+      vfail(e.message);
     }
 
     console.log("");

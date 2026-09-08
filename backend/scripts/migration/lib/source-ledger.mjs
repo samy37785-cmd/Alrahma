@@ -1,0 +1,64 @@
+// Stage 2J-B — the real, DB-side idempotency/provenance guarantee for
+// every migration domain in this directory. Backed by
+// migration_source_ledger (lib/db/drizzle/0022_lossless_migration_
+// support.sql) — NOT a local .checkpoints/*.json file (which is lost the
+// moment someone runs the import from a different machine, or the file
+// is deleted). The unique index on (source_system, source_database,
+// source_collection, source_document_id, target_table) is the actual
+// duplicate-import guard; this module is a thin, typed wrapper around it.
+import crypto from 'node:crypto';
+
+export function contentHashOf(row) {
+  return crypto.createHash('sha256').update(JSON.stringify(row)).digest('hex');
+}
+
+/**
+ * Returns the existing ledger row for this exact source document ->
+ * target table pair, or null if none exists yet (first time this
+ * document is being considered for this target).
+ */
+export async function findLedgerEntry(pgClient, { sourceDatabase, sourceCollection, sourceDocumentId, targetTable }) {
+  const r = await pgClient.query(
+    `SELECT id, source_content_hash, target_id, status, error_reason
+       FROM migration_source_ledger
+      WHERE source_system = 'mongodb' AND source_database = $1 AND source_collection = $2
+        AND source_document_id = $3 AND target_table = $4`,
+    [sourceDatabase, sourceCollection, String(sourceDocumentId), targetTable]
+  );
+  return r.rows[0] ?? null;
+}
+
+/** Records a 'planned' row before any target-table write is attempted — the Saga's first state. */
+export async function markPlanned(pgClient, { sourceDatabase, sourceCollection, sourceDocumentId, targetTable, contentHash }) {
+  const r = await pgClient.query(
+    `INSERT INTO migration_source_ledger
+       (source_system, source_database, source_collection, source_document_id, source_content_hash, target_table, status)
+     VALUES ('mongodb', $1, $2, $3, $4, $5, 'planned')
+     ON CONFLICT (source_system, source_database, source_collection, source_document_id, target_table)
+     DO UPDATE SET source_content_hash = EXCLUDED.source_content_hash, status = 'planned', error_reason = NULL
+     RETURNING id`,
+    [sourceDatabase, sourceCollection, String(sourceDocumentId), targetTable, contentHash]
+  );
+  return r.rows[0].id;
+}
+
+/** Records successful creation of the target row(s) — 'created', not yet independently reconciled. */
+export async function markCreated(pgClient, ledgerId, targetId) {
+  await pgClient.query(
+    `UPDATE migration_source_ledger SET status = 'created', target_id = $2, migrated_at = now() WHERE id = $1`,
+    [ledgerId, targetId === null || targetId === undefined ? null : String(targetId)]
+  );
+}
+
+/** Records that a target row was independently re-verified to exist and match — the final, trusted state. */
+export async function markReconciled(pgClient, ledgerId) {
+  await pgClient.query(`UPDATE migration_source_ledger SET status = 'reconciled' WHERE id = $1`, [ledgerId]);
+}
+
+/** Records a genuine, surfaced failure — never a silent skip. */
+export async function markFailed(pgClient, ledgerId, reason) {
+  await pgClient.query(
+    `UPDATE migration_source_ledger SET status = 'failed', error_reason = $2 WHERE id = $1`,
+    [ledgerId, String(reason).slice(0, 2000)]
+  );
+}

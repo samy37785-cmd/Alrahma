@@ -42,10 +42,18 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { findLedgerEntry, markPlanned, markCreated, markReconciled, markFailed, contentHashOf } from './lib/source-ledger.mjs';
+import { resolvePlanSlug, seedCanonicalPlans } from './lib/plan-catalog.mjs';
+import { withImpersonatedAdmin, ensureMigrationSeedAdmin } from './lib/admin-rpc.mjs';
+import { throwIfFaultStage } from './lib/fault-injection.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const CHECKPOINT_DIR = path.join(__dirname, '.checkpoints');
 const OUT_DIR = path.join(__dirname, 'out');
+// Stage 2J-B: the source database name is fixed and explicit, never
+// inferred from the connection string — every ledger row is tagged with
+// it so a future second source database can never collide silently.
+const SOURCE_DATABASE = 'al-rahma';
 
 function assertLocalHost(connectionString, label) {
   const host = new URL(connectionString).hostname;
@@ -111,6 +119,44 @@ async function loadUserEmailMap() {
   return userEmailMapPromise;
 }
 
+// Stage 2J-B — admin_audit_log.actor_admin_id resolution. Mongo
+// SystemAuditLog.adminId refs the `adminusers` collection specifically
+// (not `users`) — a real AdminUser account, resolved the same
+// email-bridge way resolveProfileId() resolves a `users` reference.
+let adminEmailMapPromise;
+async function loadAdminEmailMap() {
+  if (!adminEmailMapPromise) {
+    adminEmailMapPromise = (async () => {
+      const AdminUser = mongoose.connection.collection('adminusers');
+      const admins = await AdminUser.find({}, { projection: { email: 1 } }).toArray();
+      return new Map(admins.map((a) => [String(a._id), String(a.email).toLowerCase()]));
+    })();
+  }
+  return adminEmailMapPromise;
+}
+async function resolveAdminProfileId(pgClient, adminEmailMap, mongoAdminId) {
+  if (!mongoAdminId) return null;
+  const email = adminEmailMap.get(String(mongoAdminId));
+  if (!email) throw new Error(`Mongo admin ${mongoAdminId} not found in the adminusers collection`);
+  const r = await pgClient.query('SELECT id FROM profiles WHERE email = $1', [email]);
+  if (!r.rows[0]) throw new Error(`admin ${mongoAdminId} (${email}) has no migrated Supabase account yet`);
+  return r.rows[0].id;
+}
+
+// Stage 2J-B — coupon_redemptions' coupon_id resolution, same pattern as
+// resolveCoursePgId() (loads the coupons domain's own checkpoint).
+const couponIdCachePromise = { current: null };
+function resolveCouponPgId(mongoCouponId) {
+  if (!mongoCouponId) return null;
+  if (!couponIdCachePromise.current) {
+    const { data } = loadCheckpoint('coupons');
+    couponIdCachePromise.current = Object.fromEntries(Object.entries(data).map(([k, v]) => [k, v.pgId]));
+  }
+  const pgId = couponIdCachePromise.current[String(mongoCouponId)];
+  if (!pgId) throw new Error(`coupon ${mongoCouponId} has not been migrated yet — run --domain=coupons first`);
+  return pgId;
+}
+
 async function resolveProfileId(pgClient, userEmailMap, mongoUserId) {
   if (!mongoUserId) return null;
   const email = userEmailMap.get(String(mongoUserId));
@@ -126,6 +172,7 @@ async function resolveProfileId(pgClient, userEmailMap, mongoUserId) {
 
 const DOMAINS = {
   trial_requests: {
+    targetTable: "trial_requests",
     async export() {
       const TrialRequest = mongoose.connection.collection('trialrequests');
       return TrialRequest.find({}).toArray();
@@ -165,6 +212,7 @@ const DOMAINS = {
   },
 
   subscribers: {
+    targetTable: "subscribers",
     async export() {
       const Subscriber = mongoose.connection.collection('subscribers');
       return Subscriber.find({}).toArray();
@@ -191,11 +239,36 @@ const DOMAINS = {
   },
 
   blogs: {
+    targetTable: "blogs",
     async export() {
       const Blog = mongoose.connection.collection('blogs');
       return Blog.find({}).toArray();
     },
     transform(doc) {
+      // Stage 2J-B / docs/stage-2j-b-lossless-mapping-contract.md §13:
+      // category/readTime/coverImage/seo.canonicalUrl have no column on
+      // the current `blogs` table (a real, pre-existing gap — see
+      // docs/option-a-mongo-supabase-parity-map.md §9; no document this
+      // stage found says whether the original omission was deliberate,
+      // so that is not claimed here). Rather than either silently
+      // dropping these values or growing the schema for a field with
+      // zero real data behind it today, this migration tool fails
+      // closed: any document that actually carries a non-empty value in
+      // one of these fields is rejected with a named reason rather than
+      // silently losing it. 0 real documents today means this path is
+      // normally only exercised via synthetic fixtures.
+      const droppedButPresent = [];
+      if (doc.category != null && doc.category !== '') droppedButPresent.push('category');
+      if (doc.readTime != null && doc.readTime !== '') droppedButPresent.push('readTime');
+      if (doc.coverImage != null && doc.coverImage !== '') droppedButPresent.push('coverImage');
+      if (doc.seo?.canonicalUrl != null && doc.seo.canonicalUrl !== '') droppedButPresent.push('seo.canonicalUrl');
+      if (droppedButPresent.length > 0) {
+        throw new Error(
+          `blogs document ${doc._id} carries fields with no lossless Postgres destination ` +
+          `(${droppedButPresent.join(', ')}) — refusing to silently drop them. ` +
+          `See docs/stage-2j-b-lossless-mapping-contract.md §13.`
+        );
+      }
       return {
         title: doc.title,
         slug: doc.slug,
@@ -211,10 +284,6 @@ const DOMAINS = {
         seo_title: doc.seo?.metaTitle ?? null,
         seo_description: doc.seo?.metaDescription ?? null,
       };
-      // NOTE: category/readTime/coverImage/seo.canonicalUrl have no Postgres
-      // column — silently dropped here, matching the documented gap in
-      // docs/option-a-mongo-supabase-parity-map.md ("Blog" section). This is
-      // NOT a bug: there is nowhere to put them without a schema change.
     },
     validate(row) {
       if (!row.title || !row.slug || !row.content) throw new Error('blogs row missing title/slug/content');
@@ -248,6 +317,7 @@ const DOMAINS = {
   // ---------------------------------------------------------------------
 
   courses: {
+    targetTable: "courses",
     async export() {
       return mongoose.connection.collection('courses').find({}).toArray();
     },
@@ -299,6 +369,7 @@ const DOMAINS = {
   },
 
   contact_messages: {
+    targetTable: "contact_messages",
     async export() {
       return mongoose.connection.collection('contactmessages').find({}).toArray();
     },
@@ -340,6 +411,7 @@ const DOMAINS = {
   },
 
   system_config: {
+    targetTable: "system_config",
     async export() {
       return mongoose.connection.collection('systemconfigs').find({}).toArray();
     },
@@ -372,6 +444,7 @@ const DOMAINS = {
   },
 
   wishlists: {
+    targetTable: "wishlists",
     needsUserMap: true,
     async export() {
       const docs = await mongoose.connection.collection('wishlists').find({}).toArray();
@@ -410,6 +483,7 @@ const DOMAINS = {
   },
 
   hifz_progress: {
+    targetTable: "hifz_progress",
     needsUserMap: true,
     async export() {
       return mongoose.connection.collection('hifzprogresses').find({}).toArray();
@@ -444,6 +518,7 @@ const DOMAINS = {
   },
 
   certificates: {
+    targetTable: "certificates",
     needsUserMap: true,
     async export() {
       return mongoose.connection.collection('certificates').find({}).toArray();
@@ -486,6 +561,7 @@ const DOMAINS = {
   },
 
   reviews: {
+    targetTable: "reviews",
     needsUserMap: true,
     async export() {
       return mongoose.connection.collection('reviews').find({}).toArray();
@@ -528,6 +604,7 @@ const DOMAINS = {
   },
 
   referrals: {
+    targetTable: "referrals",
     needsUserMap: true,
     async export() {
       return mongoose.connection.collection('referrals').find({}).toArray();
@@ -567,6 +644,7 @@ const DOMAINS = {
   },
 
   course_progress: {
+    targetTable: "course_progress",
     needsUserMap: true,
     async export() {
       return mongoose.connection.collection('courseprogresses').find({}).toArray();
@@ -594,6 +672,7 @@ const DOMAINS = {
   },
 
   live_classes: {
+    targetTable: "live_classes",
     needsUserMap: true,
     async export() {
       return mongoose.connection.collection('liveclasses').find({}).toArray();
@@ -635,6 +714,7 @@ const DOMAINS = {
   },
 
   messages: {
+    targetTable: "messages",
     needsUserMap: true,
     async export() {
       return mongoose.connection.collection('messages').find({}).toArray();
@@ -669,6 +749,7 @@ const DOMAINS = {
   },
 
   student_records: {
+    targetTable: "student_records",
     needsUserMap: true,
     async export() {
       return mongoose.connection.collection('studentrecords').find({}).toArray();
@@ -714,6 +795,563 @@ const DOMAINS = {
       return Number((await client.query('SELECT count(*) FROM student_records')).rows[0].count);
     },
   },
+
+  // ---------------------------------------------------------------------
+  // Stage 2J-B — the 11 domains Stage 2J-A found missing entirely.
+  // ---------------------------------------------------------------------
+
+  payments: {
+    targetTable: 'payments',
+    needsUserMap: true,
+    needsPlanCatalog: true,
+    async export() {
+      return mongoose.connection.collection('payments').find({}).toArray();
+    },
+    async transform(doc, ctx) {
+      throwIfFaultStage('during_payments');
+      const statusMap = { pending: 'pending', paid: 'succeeded', failed: 'failed' };
+      const status = statusMap[doc.status];
+      if (!status) throw new Error(`payments row has unmapped status "${doc.status}" — not pending/paid/failed`);
+
+      if (!['stripe', 'paypal'].includes(doc.gateway)) {
+        throw new Error(`payments row has unsupported gateway "${doc.gateway}"`);
+      }
+      if (String(doc.currency ?? 'EUR') !== 'EUR') {
+        throw new Error(`payments row currency "${doc.currency}" is not EUR — currency conversion is never performed silently`);
+      }
+      const cents = Number(doc.amount) * 100;
+      if (!Number.isFinite(cents) || Math.abs(cents - Math.round(cents)) > 1e-6) {
+        throw new Error(`payments row amount ${doc.amount} does not convert cleanly to integer minor units`);
+      }
+      const amountMinor = Math.round(cents);
+
+      let planId = null;
+      if (doc.plan) {
+        const slug = ctx.resolvePlanSlug(doc.plan);
+        if (!slug || !ctx.planSlugToId?.has(slug)) {
+          throw new Error(`payments row plan "${doc.plan}" does not resolve to a known plan slug`);
+        }
+        planId = ctx.planSlugToId.get(slug);
+      }
+
+      const userId = doc.userId ? await resolveProfileId(ctx.pgClient, ctx.userEmailMap, doc.userId).catch(() => null) : null;
+
+      return {
+        user_id: userId,
+        plan_id: planId,
+        kind: 'charge',
+        amount_minor: amountMinor,
+        currency_snapshot: 'EUR',
+        gateway: doc.gateway,
+        gateway_payment_id: doc.gatewayTxnId || null,
+        gateway_order_id: doc.gatewayOrderId || null,
+        status,
+        customer_name_snapshot: doc.customer?.name || null,
+        customer_email_snapshot: doc.customer?.email || null,
+        customer_phone_snapshot: doc.customer?.phone || null,
+        created_at: doc.createdAt ?? new Date(),
+        updated_at: doc.updatedAt ?? new Date(),
+        _raw: doc.raw ?? null,
+      };
+    },
+    validate(row) {
+      if (row.amount_minor < 0) throw new Error('payments row has negative amount_minor');
+      if (!row.gateway) throw new Error('payments row missing gateway');
+    },
+    async upsert(client, sourceId, row, checkpoint) {
+      const existingPgId = checkpoint[sourceId]?.pgId;
+      let pgId;
+      if (existingPgId) {
+        await client.query(
+          `UPDATE payments SET status=$1, customer_name_snapshot=$2, customer_email_snapshot=$3, customer_phone_snapshot=$4 WHERE id=$5`,
+          [row.status, row.customer_name_snapshot, row.customer_email_snapshot, row.customer_phone_snapshot, existingPgId]
+        );
+        pgId = existingPgId;
+      } else {
+        const r = await client.query(
+          `INSERT INTO payments
+             (user_id, plan_id, kind, amount_minor, currency_snapshot, gateway, gateway_payment_id, gateway_order_id,
+              status, customer_name_snapshot, customer_email_snapshot, customer_phone_snapshot, created_at, updated_at)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING id`,
+          [row.user_id, row.plan_id, row.kind, row.amount_minor, row.currency_snapshot, row.gateway, row.gateway_payment_id,
+           row.gateway_order_id, row.status, row.customer_name_snapshot, row.customer_email_snapshot, row.customer_phone_snapshot,
+           row.created_at, row.updated_at]
+        );
+        pgId = r.rows[0].id;
+      }
+      // The raw gateway payload — never dropped, never exposed beyond
+      // service_role (payment_source_snapshots, 0022). Idempotent: one
+      // row per payment_id.
+      await client.query(
+        `INSERT INTO payment_source_snapshots (payment_id, source_system, source_collection, source_document_id, raw_payload)
+         VALUES ($1, 'mongodb', 'payments', $2, $3::jsonb)
+         ON CONFLICT (payment_id) DO NOTHING`,
+        [pgId, sourceId, row._raw ? JSON.stringify(row._raw) : null]
+      );
+      return pgId;
+    },
+    async countPg(client) {
+      return Number((await client.query('SELECT count(*) FROM payments')).rows[0].count);
+    },
+  },
+
+  enrollments: {
+    targetTable: 'enrollments',
+    async export() {
+      return mongoose.connection.collection('enrollments').find({}).toArray();
+    },
+    transform(doc) {
+      const statusMap = { pending: 'new', contacted: 'contacted', enrolled: 'enrolled', cancelled: 'cancelled' };
+      const status = statusMap[doc.status];
+      if (!status) throw new Error(`enrollments row has unmapped status "${doc.status}"`);
+      return {
+        name: doc.name,
+        email: doc.email,
+        whatsapp: doc.whatsapp || null,
+        country: doc.country || null,
+        city: doc.city || null,
+        timezone: doc.timezone || null,
+        times: JSON.stringify(doc.times ?? []),
+        subjects: JSON.stringify(doc.subjects ?? []),
+        lang: doc.lang || null,
+        level: doc.level || null,
+        age_group: doc.ageGroup || null,
+        gender_pref: doc.genderPref || null,
+        preferred_teacher_key: doc.teacherId != null ? String(doc.teacherId) : null,
+        preferred_teacher_name: doc.teacherName || null,
+        requested_plan_slug: doc.plan || null,
+        status,
+        notes: doc.notes ?? null,
+      };
+    },
+    validate(row) {
+      if (!row.name || !row.email) throw new Error('enrollments row missing name/email');
+    },
+    async upsert(client, sourceId, row, checkpoint) {
+      const existingPgId = checkpoint[sourceId]?.pgId;
+      if (existingPgId) {
+        await client.query(`UPDATE enrollments SET status=$1, notes=$2 WHERE id=$3`, [row.status, row.notes, existingPgId]);
+        return existingPgId;
+      }
+      const r = await client.query(
+        `INSERT INTO enrollments
+           (name, email, whatsapp, country, city, timezone, times, subjects, lang, level, age_group, gender_pref,
+            preferred_teacher_key, preferred_teacher_name, requested_plan_slug, status, notes)
+         VALUES ($1,$2,$3,$4,$5,$6,$7::jsonb,$8::jsonb,$9,$10,$11,$12,$13,$14,$15,$16,$17) RETURNING id`,
+        [row.name, row.email, row.whatsapp, row.country, row.city, row.timezone, row.times, row.subjects, row.lang, row.level,
+         row.age_group, row.gender_pref, row.preferred_teacher_key, row.preferred_teacher_name, row.requested_plan_slug, row.status, row.notes]
+      );
+      return r.rows[0].id;
+    },
+    async countPg(client) {
+      return Number((await client.query('SELECT count(*) FROM enrollments')).rows[0].count);
+    },
+  },
+
+  quran_bookmarks: {
+    targetTable: 'quran_bookmarks',
+    needsUserMap: true,
+    async export() {
+      return mongoose.connection.collection('quranbookmarks').find({}).toArray();
+    },
+    async transform(doc, ctx) {
+      throwIfFaultStage('during_quran_import');
+      return {
+        user_id: await resolveProfileId(ctx.pgClient, ctx.userEmailMap, doc.user),
+        verse_key: doc.verseKey,
+        chapter_id: doc.chapterId,
+        verse_num: doc.verseNum,
+        note: doc.note || null,
+        color: doc.color || null,
+      };
+    },
+    validate(row) {
+      if (!row.verse_key || !row.user_id) throw new Error('quran_bookmarks row missing verse_key/user_id');
+    },
+    async upsert(client, sourceId, row) {
+      await client.query(
+        `INSERT INTO quran_bookmarks (user_id, verse_key, chapter_id, verse_num, note, color)
+         VALUES ($1,$2,$3,$4,$5,$6)
+         ON CONFLICT (user_id, verse_key) DO UPDATE SET note = EXCLUDED.note, color = EXCLUDED.color`,
+        [row.user_id, row.verse_key, row.chapter_id, row.verse_num, row.note, row.color]
+      );
+      return `${row.user_id}:${row.verse_key}`;
+    },
+    async countPg(client) {
+      return Number((await client.query('SELECT count(*) FROM quran_bookmarks')).rows[0].count);
+    },
+  },
+
+  quran_reading_progress: {
+    targetTable: 'quran_reading_progress',
+    needsUserMap: true,
+    async export() {
+      return mongoose.connection.collection('quranreadingprogresses').find({}).toArray();
+    },
+    async transform(doc, ctx) {
+      const allowedGoalTypes = ['verses', 'minutes', 'pages'];
+      const goalType = doc.dailyGoal?.type;
+      if (goalType && !allowedGoalTypes.includes(goalType)) {
+        throw new Error(`quran_reading_progress row has unmapped dailyGoal.type "${goalType}"`);
+      }
+      return {
+        user_id: await resolveProfileId(ctx.pgClient, ctx.userEmailMap, doc.user),
+        resume: JSON.stringify(doc.lastPosition ?? {}),
+        goal: doc.dailyGoal?.target ?? null,
+        goal_type: goalType || null,
+        streak: doc.streak?.current ?? 0,
+        longest_streak: doc.streak?.longest ?? 0,
+        last_read_date: doc.streak?.lastReadDate || null,
+        history: JSON.stringify(doc.history ?? []),
+      };
+    },
+    validate() {},
+    async upsert(client, sourceId, row) {
+      await client.query(
+        `INSERT INTO quran_reading_progress (user_id, resume, goal, goal_type, streak, longest_streak, last_read_date, history)
+         VALUES ($1,$2::jsonb,$3,$4,$5,$6,$7,$8::jsonb)
+         ON CONFLICT (user_id) DO UPDATE SET
+           resume=EXCLUDED.resume, goal=EXCLUDED.goal, goal_type=EXCLUDED.goal_type, streak=EXCLUDED.streak,
+           longest_streak=EXCLUDED.longest_streak, last_read_date=EXCLUDED.last_read_date, history=EXCLUDED.history`,
+        [row.user_id, row.resume, row.goal, row.goal_type, row.streak, row.longest_streak, row.last_read_date, row.history]
+      );
+      return row.user_id;
+    },
+    async countPg(client) {
+      return Number((await client.query('SELECT count(*) FROM quran_reading_progress')).rows[0].count);
+    },
+  },
+
+  quran_memorization_stats: {
+    targetTable: 'quran_memorization_stats',
+    needsUserMap: true,
+    async export() {
+      return mongoose.connection.collection('quranmemorizationstats').find({}).toArray();
+    },
+    async transform(doc, ctx) {
+      const allowedGoalTypes = ['verses', 'minutes'];
+      const goalType = doc.dailyGoal?.type;
+      if (goalType && !allowedGoalTypes.includes(goalType)) {
+        throw new Error(`quran_memorization_stats row has unmapped dailyGoal.type "${goalType}"`);
+      }
+      // DERIVED_WITH_PROOF (mapping contract §11): this collection's
+      // streak.lastReadDate and stats.lastPracticeDate are proven, per
+      // document, to carry the same value (a copy-paste artifact in the
+      // original Mongo schema) — recorded once as last_practice_date,
+      // not duplicated into a second column. Proof is the equality check
+      // below; a mismatch is a hard FAIL, never a silent pick-one.
+      const a = doc.streak?.lastReadDate || null;
+      const b = doc.stats?.lastPracticeDate || null;
+      if (a && b && a !== b) {
+        throw new Error(`quran_memorization_stats row: streak.lastReadDate ("${a}") and stats.lastPracticeDate ("${b}") disagree — cannot losslessly collapse to one column`);
+      }
+      return {
+        user_id: await resolveProfileId(ctx.pgClient, ctx.userEmailMap, doc.user),
+        goal: doc.dailyGoal?.target ?? null,
+        goal_type: goalType || null,
+        total_recordings: doc.stats?.totalRecordings ?? 0,
+        total_practice_time: doc.stats?.totalPracticeTime ?? 0,
+        streak: doc.streak?.current ?? 0,
+        longest_streak: doc.streak?.longest ?? 0,
+        last_practice_date: a || b || null,
+      };
+    },
+    validate() {},
+    async upsert(client, sourceId, row) {
+      await client.query(
+        `INSERT INTO quran_memorization_stats
+           (user_id, goal, goal_type, total_recordings, total_practice_time, streak, longest_streak, last_practice_date)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+         ON CONFLICT (user_id) DO UPDATE SET
+           goal=EXCLUDED.goal, goal_type=EXCLUDED.goal_type, total_recordings=EXCLUDED.total_recordings,
+           total_practice_time=EXCLUDED.total_practice_time, streak=EXCLUDED.streak,
+           longest_streak=EXCLUDED.longest_streak, last_practice_date=EXCLUDED.last_practice_date`,
+        [row.user_id, row.goal, row.goal_type, row.total_recordings, row.total_practice_time, row.streak, row.longest_streak, row.last_practice_date]
+      );
+      return row.user_id;
+    },
+    async countPg(client) {
+      return Number((await client.query('SELECT count(*) FROM quran_memorization_stats')).rows[0].count);
+    },
+  },
+
+  coupons: {
+    targetTable: 'coupons',
+    async export() {
+      return mongoose.connection.collection('coupons').find({}).toArray();
+    },
+    transform(doc) {
+      if (!['percent', 'fixed'].includes(doc.discountType)) {
+        throw new Error(`coupons row has unmapped discountType "${doc.discountType}"`);
+      }
+      return {
+        code: doc.code,
+        description: doc.description || null,
+        type: doc.discountType,
+        value: doc.discountValue,
+        // DERIVED_WITH_PROOF (mapping contract §Coupons): the old Mongo
+        // model applies its discount once, at checkout time
+        // (Coupon.calculateDiscount(), called from the order-creation
+        // path only) — never re-applied against a recurring renewal.
+        // 'first_payment_only' is the only value in the new
+        // discount_scope vocabulary that matches that real, observed
+        // behavior; not a guessed default.
+        discount_scope: 'first_payment_only',
+        discount_duration_cycles: null,
+        max_uses: doc.maxUses ?? null,
+        expires_at: doc.validUntil ?? null,
+        active: !!doc.active,
+      };
+    },
+    validate(row) {
+      if (!row.code || !row.value) throw new Error('coupons row missing code/value');
+      if (row.type === 'percent' && row.value > 100) throw new Error(`coupons row percent value ${row.value} exceeds 100`);
+    },
+    async upsert(client, sourceId, row, checkpoint) {
+      const existingPgId = checkpoint[sourceId]?.pgId;
+      if (existingPgId) {
+        await client.query(`UPDATE coupons SET active=$1, expires_at=$2, max_uses=$3 WHERE id=$4`, [row.active, row.expires_at, row.max_uses, existingPgId]);
+        return existingPgId;
+      }
+      const r = await client.query(
+        `INSERT INTO coupons (code, description, type, value, discount_scope, discount_duration_cycles, max_uses, expires_at, active)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id`,
+        [row.code, row.description, row.type, row.value, row.discount_scope, row.discount_duration_cycles, row.max_uses, row.expires_at, row.active]
+      );
+      return r.rows[0].id;
+    },
+    async countPg(client) {
+      return Number((await client.query('SELECT count(*) FROM coupons')).rows[0].count);
+    },
+  },
+
+  coupon_redemptions: {
+    targetTable: 'coupon_redemptions',
+    needsUserMap: true,
+    async export() {
+      const docs = await mongoose.connection.collection('coupons').find({}).toArray();
+      const flat = [];
+      for (const c of docs) {
+        for (const use of c.usedBy || []) {
+          flat.push({ _id: `${c._id}:${use.user}`, coupon: c._id, user: use.user, usedAt: use.usedAt });
+        }
+      }
+      return flat;
+    },
+    async transform(doc, ctx) {
+      return {
+        coupon_id: resolveCouponPgId(doc.coupon),
+        user_id: await resolveProfileId(ctx.pgClient, ctx.userEmailMap, doc.user),
+        used_at: doc.usedAt ?? new Date(),
+      };
+    },
+    validate() {},
+    async upsert(client, sourceId, row) {
+      await client.query(
+        `INSERT INTO coupon_redemptions (coupon_id, user_id, used_at) VALUES ($1,$2,$3) ON CONFLICT DO NOTHING`,
+        [row.coupon_id, row.user_id, row.used_at]
+      );
+      return `${row.coupon_id}:${row.user_id}`;
+    },
+    async countPg(client) {
+      return Number((await client.query('SELECT count(*) FROM coupon_redemptions')).rows[0].count);
+    },
+  },
+
+  manual_payments: {
+    targetTable: 'manual_payments',
+    needsUserMap: true,
+    async export() {
+      return mongoose.connection.collection('manualpayments').find({}).toArray();
+    },
+    async transform(doc, ctx) {
+      if (!doc.userId) {
+        // manual_payments.user_id is NOT NULL (unlike payments — Stage
+        // 2J-B's Part D problem list named only `payments` for the
+        // nullable-user_id fix) — a manual payment with no linked
+        // account fails closed rather than silently gaining a fake one.
+        throw new Error('manual_payments row has no userId — manual_payments.user_id is NOT NULL, not silently defaulted');
+      }
+      if (!['pending', 'approved', 'rejected'].includes(doc.status)) {
+        throw new Error(`manual_payments row has unmapped status "${doc.status}"`);
+      }
+      const cents = Number(doc.amount) * 100;
+      if (!Number.isFinite(cents) || Math.abs(cents - Math.round(cents)) > 1e-6) {
+        throw new Error(`manual_payments row amount ${doc.amount} does not convert cleanly to integer minor units`);
+      }
+      if (String(doc.currency ?? 'EUR') !== 'EUR') {
+        throw new Error(`manual_payments row currency "${doc.currency}" is not EUR`);
+      }
+      return {
+        user_id: await resolveProfileId(ctx.pgClient, ctx.userEmailMap, doc.userId),
+        amount_minor: Math.round(cents),
+        method: doc.method,
+        reference: doc.reference || null,
+        notes: doc.notes || null,
+        status: doc.status,
+        admin_note: doc.adminNote || null,
+        created_at: doc.createdAt ?? new Date(),
+        updated_at: doc.updatedAt ?? new Date(),
+      };
+    },
+    validate(row) {
+      if (!row.method) throw new Error('manual_payments row missing method');
+    },
+    async upsert(client, sourceId, row, checkpoint) {
+      const existingPgId = checkpoint[sourceId]?.pgId;
+      if (existingPgId) {
+        await client.query(`UPDATE manual_payments SET status=$1, admin_note=$2 WHERE id=$3`, [row.status, row.admin_note, existingPgId]);
+        return existingPgId;
+      }
+      const r = await client.query(
+        `INSERT INTO manual_payments (user_id, amount_minor, currency_snapshot, method, reference, notes, status, admin_note, created_at, updated_at)
+         VALUES ($1,$2,'EUR',$3,$4,$5,$6,$7,$8,$9) RETURNING id`,
+        [row.user_id, row.amount_minor, row.method, row.reference, row.notes, row.status, row.admin_note, row.created_at, row.updated_at]
+      );
+      return r.rows[0].id;
+    },
+    async countPg(client) {
+      return Number((await client.query('SELECT count(*) FROM manual_payments')).rows[0].count);
+    },
+  },
+
+  invoices: {
+    targetTable: 'invoices',
+    needsUserMap: true,
+    async export() {
+      return mongoose.connection.collection('invoices').find({}).toArray();
+    },
+    async transform(doc, ctx) {
+      if (!doc.payment) throw new Error('invoices row has no linked payment — issue_invoice_from_payment() requires one');
+      const paymentLedger = await findLedgerEntry(ctx.pgClient, {
+        sourceDatabase: SOURCE_DATABASE, sourceCollection: 'payments', sourceDocumentId: String(doc.payment), targetTable: 'payments',
+      });
+      if (!paymentLedger || !paymentLedger.target_id) {
+        throw new Error(`invoices row references payment ${doc.payment}, which has not been migrated yet — run --domain=payments first`);
+      }
+      return { payment_id: paymentLedger.target_id };
+    },
+    validate(row) {
+      if (!row.payment_id) throw new Error('invoices row could not resolve payment_id');
+    },
+    async upsert(client, sourceId, row) {
+      return withImpersonatedAdmin(client, async (c) => {
+        const r = await c.query(`SELECT issue_invoice_from_payment($1) AS invoice`, [row.payment_id]);
+        return r.rows[0].invoice.id;
+      });
+    },
+    async countPg(client) {
+      return Number((await client.query('SELECT count(*) FROM invoices')).rows[0].count);
+    },
+  },
+
+  notifications: {
+    targetTable: 'notifications',
+    needsUserMap: true,
+    async export() {
+      return mongoose.connection.collection('notifications').find({}).toArray();
+    },
+    async transform(doc, ctx) {
+      // The redesigned notification_type vocabulary is intentionally
+      // narrower (LMS-free) — only these 5 of the old model's 14 values
+      // overlap. Any other value fails closed rather than being silently
+      // dropped or reinterpreted.
+      const allowed = ['payment_received', 'payment_failed', 'subscription_renewed', 'subscription_expiring', 'admin_announcement'];
+      if (!allowed.includes(doc.type)) {
+        throw new Error(`notifications row has type "${doc.type}", not in the new (LMS-free) notification_type vocabulary — no destination`);
+      }
+      return {
+        user_id: await resolveProfileId(ctx.pgClient, ctx.userEmailMap, doc.recipient),
+        type: doc.type,
+        title: doc.title,
+        body: doc.body || null,
+        link: doc.link || null,
+        read: !!doc.read,
+        meta: doc.data ? JSON.stringify(doc.data) : null,
+        created_at: doc.createdAt ?? new Date(),
+      };
+    },
+    validate(row) {
+      if (!row.title) throw new Error('notifications row missing title');
+    },
+    async upsert(client, sourceId, row) {
+      const r = await client.query(
+        `INSERT INTO notifications (user_id, type, title, body, link, read, meta, created_at)
+         VALUES ($1,$2,$3,$4,$5,$6,$7::jsonb,$8) RETURNING id`,
+        [row.user_id, row.type, row.title, row.body, row.link, row.read, row.meta, row.created_at]
+      );
+      return r.rows[0].id;
+    },
+    async countPg(client) {
+      return Number((await client.query('SELECT count(*) FROM notifications')).rows[0].count);
+    },
+  },
+
+  system_audit_logs: {
+    targetTable: 'admin_audit_log',
+    async export() {
+      return mongoose.connection.collection('systemauditlogs').find({}).toArray();
+    },
+    async transform(doc, ctx) {
+      if (doc.userAgent || doc.ipAnon || doc.metadata) {
+        throw new Error('system_audit_logs row carries userAgent/ipAnon/metadata — admin_audit_log has no column for these, failing closed rather than dropping silently');
+      }
+      if (!['info', 'warning', 'critical'].includes(doc.severity)) {
+        throw new Error(`system_audit_logs row has unmapped severity "${doc.severity}"`);
+      }
+      const adminEmailMap = ctx.adminEmailMap ?? (ctx.adminEmailMap = await loadAdminEmailMap());
+      return {
+        actor_admin_id: await resolveAdminProfileId(ctx.pgClient, adminEmailMap, doc.adminId),
+        action: doc.action,
+        resource_type: doc.resource,
+        resource_id: doc.resourceId != null ? String(doc.resourceId) : null,
+        before: doc.before ? JSON.stringify(doc.before) : null,
+        after: doc.after ? JSON.stringify(doc.after) : null,
+        severity: doc.severity,
+        created_at: doc.createdAt ?? new Date(),
+      };
+    },
+    validate(row) {
+      if (!row.actor_admin_id || !row.action || !row.resource_type) throw new Error('system_audit_logs row missing actor_admin_id/action/resource_type');
+    },
+    async upsert(client, sourceId, row) {
+      const r = await client.query(
+        `INSERT INTO admin_audit_log (actor_admin_id, action, resource_type, resource_id, before, after, severity, created_at)
+         VALUES ($1,$2,$3,$4,$5::jsonb,$6::jsonb,$7,$8) RETURNING id`,
+        [row.actor_admin_id, row.action, row.resource_type, row.resource_id, row.before, row.after, row.severity, row.created_at]
+      );
+      return r.rows[0].id;
+    },
+    async countPg(client) {
+      return Number((await client.query('SELECT count(*) FROM admin_audit_log')).rows[0].count);
+    },
+  },
+
+  document_counters: {
+    targetTable: 'document_counters',
+    async export() {
+      return mongoose.connection.collection('counters').find({}).toArray();
+    },
+    transform(doc) {
+      const m = /^(.+)-(\d{4})$/.exec(String(doc._id));
+      if (!m) throw new Error(`counters row _id "${doc._id}" does not match the expected "<scope>-<year>" shape`);
+      return { scope: m[1], year: Number(m[2]), seq: doc.seq ?? 0 };
+    },
+    validate(row) {
+      if (!row.scope) throw new Error('document_counters row missing scope');
+    },
+    async upsert(client, sourceId, row) {
+      await client.query(
+        `INSERT INTO document_counters (scope, year, seq) VALUES ($1,$2,$3)
+         ON CONFLICT (scope, year) DO UPDATE SET seq = GREATEST(document_counters.seq, EXCLUDED.seq)`,
+        [row.scope, row.year, row.seq]
+      );
+      return `${row.scope}:${row.year}`;
+    },
+    async countPg(client) {
+      return Number((await client.query('SELECT count(*) FROM document_counters')).rows[0].count);
+    },
+  },
 };
 
 // --- Rollback ---
@@ -740,11 +1378,37 @@ const ROLLBACK_SPEC = {
   live_classes:    { table: 'live_classes' },
   messages:        { table: 'messages' },
   student_records: { table: 'student_records' },
+  // payments is ALSO immutable by design (forbid_payment_delete(),
+  // 0001_functions_triggers.sql) — same treatment as invoices/
+  // admin_audit_log below.
+  payments:                  { table: 'payments', immutable: true },
+  enrollments:               { table: 'enrollments' },
+  quran_bookmarks:           { table: 'quran_bookmarks', composite: ['user_id', 'verse_key'] },
+  quran_reading_progress:    { table: 'quran_reading_progress', pkColumn: 'user_id' },
+  quran_memorization_stats:  { table: 'quran_memorization_stats', pkColumn: 'user_id' },
+  coupons:                   { table: 'coupons' },
+  coupon_redemptions:        { table: 'coupon_redemptions', composite: ['coupon_id', 'user_id'] },
+  manual_payments:           { table: 'manual_payments' },
+  document_counters:         { table: 'document_counters', composite: ['scope', 'year'] },
+  // invoices/admin_audit_log are immutable BY DESIGN — forbid_invoice_
+  // mutation() / forbid_audit_log_mutation() (0001_functions_triggers.sql,
+  // 0013_admin_rbac.sql) block UPDATE/DELETE for every role, service_role
+  // included. A migrated row genuinely cannot be rolled back by deleting
+  // it — this is a real, pre-existing security property of the schema,
+  // not a gap in this tool. rollbackDomain() below reports this
+  // explicitly rather than attempting a DELETE that would only ever fail.
+  invoices:           { table: 'invoices', immutable: true },
+  system_audit_logs:  { table: 'admin_audit_log', immutable: true },
 };
 
 async function rollbackDomain(domainName, { pgClient }) {
   const spec = ROLLBACK_SPEC[domainName];
   if (!spec) throw new Error(`No rollback spec for domain: ${domainName}`);
+
+  if (spec.immutable) {
+    console.log(`[${domainName}] rollback: NOT SUPPORTED — ${spec.table} rows are immutable by design (forbid_*_mutation() trigger blocks DELETE for every role). Migrated rows stay; this is a real schema property, not a tool gap.`);
+    return { domain: domainName, deleted: 0, immutable: true };
+  }
 
   const { file: checkpointFile, data: checkpoint } = loadCheckpoint(domainName);
   const entries = Object.entries(checkpoint);
@@ -801,6 +1465,11 @@ async function migrateDomain(domainName, { dryRun, resetCheckpoint, pgClient }) 
   // Only built when a domain actually needs it (loadUserEmailMap does one
   // Mongo query and caches the result across every domain in this run).
   const ctx = { pgClient, userEmailMap: domain.needsUserMap ? await loadUserEmailMap() : null };
+  if (domain.needsPlanCatalog) {
+    if (!dryRun) await ensureMigrationSeedAdmin(pgClient);
+    ctx.planSlugToId = dryRun ? null : await seedCanonicalPlans(pgClient, { withImpersonatedAdmin });
+    ctx.resolvePlanSlug = resolvePlanSlug;
+  }
 
   let imported = 0;
   let skippedUnchanged = 0;
@@ -808,14 +1477,38 @@ async function migrateDomain(domainName, { dryRun, resetCheckpoint, pgClient }) 
 
   for (const doc of mongoDocs) {
     const sourceId = String(doc._id);
+    let ledgerId = null;
     try {
       const row = await domain.transform(doc, ctx);
       domain.validate(row);
       const contentHash = hashOf(row);
+      const fullHash = contentHashOf(row);
 
-      if (checkpoint[sourceId]?.hash === contentHash) {
-        skippedUnchanged += 1;
-        continue;
+      // Stage 2J-B: the real, DB-side duplicate-import guard — checked
+      // FIRST and independent of the local checkpoint file, so a run
+      // from a different machine (or after the checkpoint file was
+      // lost) still never re-imports a document already recorded here.
+      if (!dryRun) {
+        const existing = await findLedgerEntry(pgClient, {
+          sourceDatabase: SOURCE_DATABASE,
+          sourceCollection: domainName,
+          sourceDocumentId: sourceId,
+          targetTable: domain.targetTable,
+        });
+        if (existing && existing.source_content_hash === fullHash && existing.status !== 'failed') {
+          skippedUnchanged += 1;
+          checkpoint[sourceId] = { pgId: existing.target_id, hash: contentHash, migratedAt: new Date().toISOString() };
+          continue;
+        }
+      }
+
+      if (checkpoint[sourceId]?.hash === contentHash && !dryRun) {
+        // Local checkpoint agrees unchanged AND the DB ledger check above
+        // didn't find a mismatch/absence — both guards agree, safe skip.
+        const existing = await findLedgerEntry(pgClient, {
+          sourceDatabase: SOURCE_DATABASE, sourceCollection: domainName, sourceDocumentId: sourceId, targetTable: domain.targetTable,
+        });
+        if (existing) { skippedUnchanged += 1; continue; }
       }
 
       if (dryRun) {
@@ -824,16 +1517,26 @@ async function migrateDomain(domainName, { dryRun, resetCheckpoint, pgClient }) 
         continue;
       }
 
+      ledgerId = await markPlanned(pgClient, {
+        sourceDatabase: SOURCE_DATABASE, sourceCollection: domainName, sourceDocumentId: sourceId,
+        targetTable: domain.targetTable, contentHash: fullHash,
+      });
+
       const pgId = await domain.upsert(pgClient, sourceId, row, checkpoint);
       checkpoint[sourceId] = { pgId, hash: contentHash, migratedAt: new Date().toISOString() };
+      await markCreated(pgClient, ledgerId, pgId);
+      await markReconciled(pgClient, ledgerId);
       imported += 1;
     } catch (err) {
       failed += 1;
+      if (ledgerId) await markFailed(pgClient, ledgerId, err.message).catch(() => {});
       console.error(`[${domainName}] FAILED sourceId=${sourceId}: ${err.message}`);
     }
 
     // Checkpoint after every record — a kill -9 mid-run loses at most the
-    // record in flight, not the whole batch (resumability).
+    // record in flight, not the whole batch (resumability). This file is
+    // now a fast local cache ON TOP OF the DB-side ledger above, never
+    // the sole source of truth for idempotency.
     if (!dryRun) saveCheckpoint(checkpointFile, checkpoint);
   }
 

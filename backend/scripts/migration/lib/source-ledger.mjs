@@ -37,7 +37,7 @@ export async function markPlanned(pgClient, { sourceDatabase, sourceCollection, 
      ON CONFLICT (source_system, source_database, source_collection, source_document_id, target_table)
      DO UPDATE SET source_content_hash = EXCLUDED.source_content_hash, status = 'planned', error_reason = NULL
      RETURNING id`,
-    [sourceDatabase, sourceCollection, String(sourceDocumentId), targetTable, contentHash]
+    [sourceDatabase, sourceCollection, String(sourceDocumentId), contentHash, targetTable]
   );
   return r.rows[0].id;
 }

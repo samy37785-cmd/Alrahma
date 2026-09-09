@@ -1410,11 +1410,32 @@ async function rollbackDomain(domainName, { pgClient }) {
     return { domain: domainName, deleted: 0, immutable: true };
   }
 
+  // Stage 2J-B Part H fix: the DB-side ledger (migration_source_ledger)
+  // must be cleared unconditionally here — BEFORE the local-checkpoint
+  // early-return below, not after it — because the ledger can hold stale
+  // 'reconciled' rows even when the local checkpoint is already empty
+  // (e.g. a prior rollback that cleared the checkpoint but not the
+  // ledger, or a checkpoint file lost/deleted after a real rollback).
+  // Left uncleared, a stale ledger row (still pointing at a pgId
+  // rollback already deleted) makes findLedgerEntry() report "already
+  // migrated, skip" on the very next forward run — the row never comes
+  // back, and the tool silently reports "unchanged" for data that no
+  // longer exists (found via an actual rollback-then-forward-migrate
+  // rehearsal, not by inspection: trial_requests went from 10 rows to 0
+  // after rollback, then a forward re-run reported "unchanged=10" while
+  // the table stayed at 0 rows). This resets the ledger to "never
+  // migrated" for this domain, matching what clearing the checkpoint
+  // file does for the local side of the same contract.
+  const ledgerDeleted = await pgClient.query(
+    `DELETE FROM migration_source_ledger WHERE source_system = 'mongodb' AND source_database = $1 AND source_collection = $2 AND target_table = $3`,
+    [SOURCE_DATABASE, domainName, spec.table]
+  );
+
   const { file: checkpointFile, data: checkpoint } = loadCheckpoint(domainName);
   const entries = Object.entries(checkpoint);
   if (entries.length === 0) {
-    console.log(`[${domainName}] rollback: nothing to roll back (no checkpoint entries)`);
-    return { domain: domainName, deleted: 0 };
+    console.log(`[${domainName}] rollback: nothing to roll back (no checkpoint entries), ${ledgerDeleted.rowCount} ledger entry/entries cleared`);
+    return { domain: domainName, deleted: 0, ledgerCleared: ledgerDeleted.rowCount };
   }
 
   let deleted = 0;
@@ -1446,9 +1467,9 @@ async function rollbackDomain(domainName, { pgClient }) {
   console.log(
     `[${domainName}] rollback: deleted ${deleted}/${entries.length} row(s)` +
       (alreadyGone ? `, ${alreadyGone} already gone (stale checkpoint)` : '') +
-      `, checkpoint cleared`
+      `, checkpoint cleared, ${ledgerDeleted.rowCount} ledger entry/entries cleared`
   );
-  return { domain: domainName, deleted, alreadyGone };
+  return { domain: domainName, deleted, alreadyGone, ledgerCleared: ledgerDeleted.rowCount };
 }
 
 async function migrateDomain(domainName, { dryRun, resetCheckpoint, pgClient }) {

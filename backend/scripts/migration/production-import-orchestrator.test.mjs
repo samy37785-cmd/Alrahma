@@ -269,6 +269,40 @@ async function main() {
     assert.deepEqual(deferred.deferredDomains, ['payments']);
   });
 
+  // -----------------------------------------------------------------
+  // Review round 4, item 2: with migrate-users-to-supabase-auth.mjs now
+  // exiting non-zero for a genuine document-level failure (users.errors/
+  // admins.errors/subscriptions.failed/reconciliation.consistent -- see
+  // its own changelog and migrate-users-to-supabase-auth.test.mjs), this
+  // orchestrator must react to that non-zero exit correctly in BOTH the
+  // --plan preflight call and the real --execute call: the sequence
+  // stops immediately, and the run can never be recorded as 'reconciled'
+  // (or 'completed_with_deferred') -- `result.status` simply does not
+  // exist on an `ok:false` result, structurally, not by convention.
+  // -----------------------------------------------------------------
+
+  await test('runImport: a user-migration PLAN-mode document-level failure stops the sequence before the domain preflight, and is never recorded as reconciled', async () => {
+    const runWorkerFn = makeRecordingWorker([{ code: 1, stdout: JSON.stringify({ admins: { errors: [{ email: 'x', message: 'unmapped AdminUser role' }] } }) }]);
+    const result = await runImport({ pgClient: null, execute: false, runWorkerFn });
+    assert.equal(result.ok, false);
+    assert.equal(result.failedAt, 'users_and_relationships_preflight');
+    assert.equal(result.status, undefined, 'an ok:false result must never carry a status field at all -- it cannot be mistaken for reconciled or completed_with_deferred');
+    assert.equal(runWorkerFn.calls.length, 1, 'the domain preflight must never even be attempted after a user-migration plan failure');
+  });
+
+  await test('runImport: a user-migration EXECUTE-mode document-level failure stops the sequence before any domain write, and is never recorded as reconciled', async () => {
+    const runWorkerFn = makeRecordingWorker([
+      { code: 0 }, // user-migration preflight: passes
+      { code: 0 }, // domain dry-run preflight: passes
+      { code: 1, stdout: JSON.stringify({ subscriptions: { failed: [{ email: 'x', reason: 'unresolvable plan name' }] } }) }, // user-migration --execute: a real document-level failure
+    ]);
+    const result = await runImport({ pgClient: null, execute: true, runWorkerFn });
+    assert.equal(result.ok, false);
+    assert.equal(result.failedAt, 'users_and_relationships');
+    assert.equal(result.status, undefined);
+    assert.equal(runWorkerFn.calls.length, 3, 'the domain --execute call must never be attempted after users_and_relationships fails for real');
+  });
+
   const failed = results.filter((r) => !r.pass);
   console.log(`\n${results.length - failed.length}/${results.length} passed.`);
   if (failed.length > 0) process.exitCode = 1;

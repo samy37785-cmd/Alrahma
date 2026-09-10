@@ -42,23 +42,56 @@ export async function ensureMigrationSeedAdmin(pgClient) {
 }
 
 /**
- * Runs `fn(client)` inside a transaction with the AAL2-admin session
- * impersonation active for that transaction only — reverted the instant
- * the transaction ends (SET LOCAL is transaction-scoped by definition).
- * `fn` must issue its own SQL against `pgClient` (e.g. `SELECT
- * create_plan_version(...)`) — this wrapper only sets up/tears down the
- * impersonation context around it.
+ * Sets up the AAL2-admin session impersonation for the CALLER's own,
+ * already-open transaction, runs `fn(client)`, then resets the role —
+ * WITHOUT issuing BEGIN/COMMIT/ROLLBACK itself. Use this (not
+ * withImpersonatedAdmin() below) whenever the RPC call must be part of a
+ * LARGER atomic unit than "just this RPC" — e.g. an invoice write that
+ * must commit or roll back together with its own ledger bookkeeping.
+ *
+ * Review round 4: this is the fix for a real nested-transaction bug —
+ * mongo-to-supabase.mjs's invoices domain called the transaction-OWNING
+ * withImpersonatedAdmin() from INSIDE migrateDomain()'s own already-open
+ * transaction. Postgres does not support real nested transactions: the
+ * inner BEGIN was a silent no-op (with a server warning), and the inner
+ * COMMIT actually committed the OUTER transaction — durably, immediately
+ * after the invoice INSERT, before markCreated() ever ran. Kill-window
+ * 2's "target write and markCreated commit or roll back together"
+ * guarantee did not actually hold for this one domain: an injected fault
+ * (or a real crash) between the invoice write and markCreated left a
+ * REAL, committed, orphaned invoice with no ledger record at all.
+ *
+ * `SET LOCAL` is transaction-scoped by definition, so the explicit RESET
+ * ROLE at the end is a defensive courtesy (the role reverts automatically
+ * at the caller's own COMMIT or ROLLBACK either way), not a correctness
+ * requirement — and if `fn` throws, that throw propagates up to the
+ * caller's own catch/ROLLBACK unchanged; this function never swallows it
+ * and never attempts to roll back a transaction it does not own.
+ */
+export async function withImpersonatedAdminContext(pgClient, fn) {
+  await pgClient.query('SET LOCAL ROLE authenticated');
+  await pgClient.query('SELECT set_config($1, $2, true)', [
+    'request.jwt.claims',
+    JSON.stringify({ sub: MIGRATION_SEED_ADMIN_ID, role: 'authenticated', aal: 'aal2' }),
+  ]);
+  const result = await fn(pgClient);
+  await pgClient.query('RESET ROLE');
+  return result;
+}
+
+/**
+ * Runs `fn(client)` inside its OWN, self-owned transaction with the
+ * AAL2-admin session impersonation active for that transaction only.
+ * Only ever call this when the RPC is the entire unit of work — never
+ * from inside a transaction the caller already opened (use
+ * withImpersonatedAdminContext() above for that; see its own comment for
+ * why nesting these is a real, previously-shipped bug, not a style
+ * preference).
  */
 export async function withImpersonatedAdmin(pgClient, fn) {
   await pgClient.query('BEGIN');
   try {
-    await pgClient.query('SET LOCAL ROLE authenticated');
-    await pgClient.query('SELECT set_config($1, $2, true)', [
-      'request.jwt.claims',
-      JSON.stringify({ sub: MIGRATION_SEED_ADMIN_ID, role: 'authenticated', aal: 'aal2' }),
-    ]);
-    const result = await fn(pgClient);
-    await pgClient.query('RESET ROLE');
+    const result = await withImpersonatedAdminContext(pgClient, fn);
     await pgClient.query('COMMIT');
     return result;
   } catch (err) {

@@ -120,19 +120,69 @@ const ADVISORY_LOCK_KEY = BigInt(
 const USER_MIGRATION_SCRIPT = path.join(__dirname, 'migrate-users-to-supabase-auth.mjs');
 const DOMAIN_MIGRATION_SCRIPT = path.join(__dirname, 'mongo-to-supabase.mjs');
 
-// The tables mongo-to-supabase.mjs's own DOMAINS object writes to — kept
-// as an explicit, independently-maintained list here (not imported from
-// that module — importing it would execute its unconditional main(), see
-// that file's own bottom) so the "no unrecorded data" preflight below can
-// check every one of them without ever loading/running that script.
-const LEDGER_BACKED_TARGET_TABLES = [
-  'trial_requests', 'subscribers', 'blogs', 'courses', 'contact_messages',
-  'system_config', 'wishlists', 'hifz_progress', 'certificates', 'reviews',
-  'referrals', 'course_progress', 'live_classes', 'messages', 'student_records',
-  'payments', 'enrollments', 'quran_bookmarks', 'quran_reading_progress',
-  'quran_memorization_stats', 'coupons', 'coupon_redemptions', 'manual_payments',
-  'invoices', 'notifications', 'admin_audit_log', 'document_counters',
-];
+// The tables mongo-to-supabase.mjs's own DOMAINS object writes to, PLUS
+// each one's real identity shape — kept as an explicit, independently-
+// maintained spec here (not imported from that module — importing it
+// would execute its unconditional main(), see that file's own bottom) so
+// the "no unrecorded data" preflight below can check every one of them
+// without ever loading/running that script.
+//
+// Review round 4: this used to be a flat table-name array, and
+// verifyNoUnrecordedData() below assumed every table has a plain `id`
+// column — wrong for system_config (pkColumn `key`) and every composite-
+// key table (wishlists, hifz_progress, course_progress, quran_bookmarks,
+// coupon_redemptions, document_counters), whose migration_source_ledger
+// .target_id is a ":"-joined string, never a real column value at all —
+// surfaced live as `error: column t.id does not exist`. This spec
+// mirrors mongo-to-supabase.mjs's own ROLLBACK_SPEC identity shape for
+// the SAME real tables (composite column order matters — it must match
+// the exact ":"-joined encoding that file's own upsert() functions
+// return and store as target_id) — independently maintained on purpose,
+// but the two must always describe the same real schema; a table's shape
+// changing in one without the other is exactly the kind of drift the
+// dedicated test below (one unrecorded row per identity shape) exists to
+// catch.
+const LEDGER_BACKED_TARGET_SPECS = {
+  trial_requests: {},
+  subscribers: {},
+  blogs: {},
+  courses: {},
+  contact_messages: {},
+  system_config: { pkColumn: 'key' },
+  wishlists: { composite: ['user_id', 'course_id'] },
+  hifz_progress: { composite: ['user_id', 'chapter_id'] },
+  certificates: {},
+  reviews: {},
+  referrals: {},
+  course_progress: { composite: ['user_id', 'course_id'] },
+  live_classes: {},
+  messages: {},
+  student_records: {},
+  payments: {},
+  enrollments: {},
+  quran_bookmarks: { composite: ['user_id', 'verse_key'] },
+  quran_reading_progress: { pkColumn: 'user_id' },
+  quran_memorization_stats: { pkColumn: 'user_id' },
+  coupons: {},
+  coupon_redemptions: { composite: ['coupon_id', 'user_id'] },
+  manual_payments: {},
+  invoices: {},
+  notifications: {},
+  admin_audit_log: {},
+  document_counters: { composite: ['scope', 'year'] },
+};
+
+/**
+ * Builds the exact SQL identity expression for one target row, matching
+ * whatever mongo-to-supabase.mjs's own upsert() for that table stores as
+ * migration_source_ledger.target_id: the default `id` column, an
+ * explicit pkColumn (e.g. system_config.key), or a composite ":"-joined
+ * pair in the SAME column order the real upsert() functions use.
+ */
+function targetIdentityExpr(spec) {
+  if (spec.composite) return spec.composite.map((c) => `t.${c}::text`).join(` || ':' || `);
+  return `t.${spec.pkColumn ?? 'id'}::text`;
+}
 
 // migrate-users-to-supabase-auth.mjs does NOT go through migration_source_
 // ledger (it predates it, and auth.users/profiles have their own natural
@@ -327,11 +377,13 @@ export async function verifySignupsOff(supabaseUrl, serviceRoleKey) {
 /**
  * Two different guarantees, because the two worker scripts use two
  * different idempotency mechanisms (documented at LEDGER_BACKED_
- * TARGET_TABLES / NON_LEDGER_PRISTINE_TABLES above):
+ * TARGET_SPECS / NON_LEDGER_PRISTINE_TABLES above):
  *   - Ledger-backed tables: every row must be traceable to a
- *     migration_source_ledger entry pointing at it. A row with no
- *     matching ledger entry means something wrote to this table outside
- *     this tooling's own bookkeeping — refuse rather than risk silently
+ *     migration_source_ledger entry pointing at it — matched via each
+ *     table's own real identity shape (LEDGER_BACKED_TARGET_SPECS),
+ *     never assumed to be a plain `id` column. A row with no matching
+ *     ledger entry means something wrote to this table outside this
+ *     tooling's own bookkeeping — refuse rather than risk silently
  *     overwriting or double-counting it.
  *   - Non-ledger tables (profiles/subscriptions): must be genuinely
  *     empty. This orchestrator's whole design assumes a fresh target;
@@ -340,12 +392,12 @@ export async function verifySignupsOff(supabaseUrl, serviceRoleKey) {
  */
 export async function verifyNoUnrecordedData(pgClient) {
   const problems = [];
-  for (const table of LEDGER_BACKED_TARGET_TABLES) {
+  for (const [table, spec] of Object.entries(LEDGER_BACKED_TARGET_SPECS)) {
     const { rows } = await pgClient.query(`
       select count(*)::int as n from public.${table} t
       where not exists (
         select 1 from public.migration_source_ledger l
-        where l.target_table = $1 and l.target_id = t.id::text
+        where l.target_table = $1 and l.target_id = ${targetIdentityExpr(spec)}
       );
     `, [table]);
     if (rows[0].n > 0) problems.push(`${table}: ${rows[0].n} row(s) with no matching migration_source_ledger entry`);

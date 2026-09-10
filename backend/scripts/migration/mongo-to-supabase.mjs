@@ -138,7 +138,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { findLedgerEntry, markPlanned, markCreated, markReconciled, markFailed, contentHashOf } from './lib/source-ledger.mjs';
 import { resolvePlanSlug, seedCanonicalPlans } from './lib/plan-catalog.mjs';
-import { withImpersonatedAdmin, ensureMigrationSeedAdmin } from './lib/admin-rpc.mjs';
+import { withImpersonatedAdmin, withImpersonatedAdminContext, ensureMigrationSeedAdmin } from './lib/admin-rpc.mjs';
 import { throwIfFaultStage } from './lib/fault-injection.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -1328,10 +1328,38 @@ const DOMAINS = {
     validate(row) {
       if (!row.payment_id) throw new Error('invoices row could not resolve payment_id');
     },
+    // Review round 4: MUST use the context-only helper, never the
+    // transaction-OWNING withImpersonatedAdmin() -- this upsert() is
+    // called from INSIDE migrateDomain()'s own already-open BEGIN
+    // (together with markCreated(), as one atomic unit — see that
+    // function's own comment). withImpersonatedAdmin() would issue its
+    // own nested BEGIN/COMMIT, and Postgres does not support real nested
+    // transactions: its COMMIT would silently commit the OUTER
+    // transaction too, immediately after the invoice write and BEFORE
+    // markCreated() ever runs — a real, previously-shipped bug (see
+    // lib/admin-rpc.mjs's own comment on withImpersonatedAdminContext()
+    // for the full story). withImpersonatedAdminContext() sets up/tears
+    // down the impersonation only, leaving BEGIN/COMMIT/ROLLBACK entirely
+    // to the caller, exactly as this call site now needs.
+    // Review round 4: also fixes a real, previously-undetected bug found
+    // WHILE proving the transaction fix above with a live invoice (this
+    // domain has 0 real documents in the actual dump, so this exact code
+    // path had never been exercised end-to-end before). `issue_invoice_
+    // from_payment` returns a composite `public.invoices` row; `pg` does
+    // NOT auto-parse an arbitrary composite type into a JS object (no
+    // type parser is registered for it), so `SELECT f($1) AS invoice`
+    // came back as an opaque string and `r.rows[0].invoice.id` was
+    // silently `undefined` -- markCreated() then received `undefined`
+    // and stored target_id as NULL (its own documented behavior for a
+    // missing id), yet the process still reported success and the ledger
+    // row still reached 'reconciled'. Fixed by extracting the one field
+    // actually needed directly in SQL via Postgres's composite field-
+    // access syntax `(f($1)).id`, which `pg` parses as a plain scalar
+    // column like any other.
     async upsert(client, sourceId, row) {
-      return withImpersonatedAdmin(client, async (c) => {
-        const r = await c.query(`SELECT issue_invoice_from_payment($1) AS invoice`, [row.payment_id]);
-        return r.rows[0].invoice.id;
+      return withImpersonatedAdminContext(client, async (c) => {
+        const r = await c.query(`SELECT (issue_invoice_from_payment($1)).id AS id`, [row.payment_id]);
+        return r.rows[0].id;
       });
     },
     async countPg(client) {

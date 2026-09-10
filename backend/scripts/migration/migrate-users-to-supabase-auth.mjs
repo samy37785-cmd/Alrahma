@@ -38,6 +38,7 @@ import pg from 'pg';
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import { fileURLToPath } from 'node:url';
 import { createClient } from '@supabase/supabase-js';
 import { resolvePlanSlug, seedCanonicalPlans } from './lib/plan-catalog.mjs';
 import { withImpersonatedAdmin, ensureMigrationSeedAdmin } from './lib/admin-rpc.mjs';
@@ -272,22 +273,45 @@ function deriveSubscriptionStatus(mongoSub) {
   return { status: 'expired', reason: 'status=inactive, validUntil never set (never activated)' };
 }
 
+// Review round 4: pure, no I/O -- everything about a subscription record
+// that can be determined invalid WITHOUT touching the database or writing
+// anything at all (an unresolvable plan name, or an unknown provider) is
+// a structural fact about the Mongo document itself, checkable in --plan
+// mode exactly as reliably as in --execute mode. CANONICAL_PLANS
+// (lib/plan-catalog.mjs) is the one hardcoded, data-independent source of
+// truth resolvePlanSlug() resolves against, so a slug it returns is
+// always seedable later -- a --plan run never needs planSlugToId (which
+// only exists post-seed, an --execute-only side effect) to know whether
+// a subscription's plan name and provider are valid.
+export function validateSubscriptionPlan(sub) {
+  if (!sub || !sub.plan) return { ok: true, skip: true };
+  const slug = resolvePlanSlug(sub.plan);
+  if (!slug) {
+    return { ok: false, reason: 'unresolvable plan name on subscription: not migrated, not defaulted' };
+  }
+  if (sub.provider && !['stripe', 'paypal', 'manual'].includes(sub.provider)) {
+    return { ok: false, reason: `unknown subscription provider "${sub.provider}"` };
+  }
+  return { ok: true, slug };
+}
+
 async function migrateSubscription(pgClient, profileId, mongoUser, planSlugToId) {
   const sub = mongoUser.subscription;
   if (!sub || !sub.plan) return { status: 'skipped_no_subscription' };
 
-  const slug = resolvePlanSlug(sub.plan);
-  if (!slug || !planSlugToId.has(slug)) {
-    return { status: 'FAIL', reason: `unresolvable plan name on subscription: not migrated, not defaulted` };
+  const validation = validateSubscriptionPlan(sub);
+  if (!validation.ok) return { status: 'FAIL', reason: validation.reason };
+  const slug = validation.slug;
+  if (!planSlugToId.has(slug)) {
+    // Should be unreachable in practice (CANONICAL_PLANS is exactly what
+    // seedCanonicalPlans() seeds, and validateSubscriptionPlan() only
+    // ever resolves a slug FROM that same list) -- kept as a genuine
+    // fail-closed guard rather than assumed, not a silent default.
+    return { status: 'FAIL', reason: `plan slug "${slug}" resolved but was not seeded -- not migrated, not defaulted` };
   }
   const planId = planSlugToId.get(slug);
   const derived = deriveSubscriptionStatus(sub);
   throwIfFaultStage('during_subscriptions');
-
-  const provider = ['stripe', 'paypal', 'manual'].includes(sub.provider) ? sub.provider : null;
-  if (sub.provider && !provider) {
-    return { status: 'FAIL', reason: `unknown subscription provider "${sub.provider}"` };
-  }
 
   await pgClient.query(
     `INSERT INTO subscriptions
@@ -297,7 +321,7 @@ async function migrateSubscription(pgClient, profileId, mongoUser, planSlugToId)
      ON CONFLICT (user_id) WHERE status = 'active' DO NOTHING
      RETURNING id`,
     [
-      profileId, planId, provider || 'manual', sub.stripeCustomerId || null, sub.stripeSubscriptionId || null,
+      profileId, planId, sub.provider || 'manual', sub.stripeCustomerId || null, sub.stripeSubscriptionId || null,
       derived.status, sub.activeSince || null, sub.validUntil || null, !!sub.cancelAtPeriodEnd,
       sub.renewalReminderSentFor || null,
     ]
@@ -349,7 +373,7 @@ async function main() {
     users: { created: 0, alreadyExists: 0, wouldCreate: 0, errors: [] },
     admins: { created: 0, alreadyExists: 0, wouldCreate: 0, errors: [] },
     relationships: null,
-    subscriptions: { migrated: 0, skipped: 0, failed: [] },
+    subscriptions: { migrated: 0, skipped: 0, wouldMigrate: 0, failed: [] },
   };
 
   try {
@@ -400,6 +424,24 @@ async function main() {
           else report.subscriptions.skipped++;
         }
       }
+    } else {
+      // Review round 4: a --plan run must fail on every error detectable
+      // WITHOUT writing anything, not just an --execute run -- an
+      // unresolvable plan name or unknown provider on a subscription is
+      // exactly such an error (validateSubscriptionPlan() is pure, no DB
+      // access). Previously this whole section only ran under `if
+      // (execute)`, so --plan could never surface a broken subscription
+      // at all; it would only be discovered for the first time during a
+      // real write.
+      const usersWithSubscription = users.filter((u) => u.subscription && u.subscription.plan);
+      for (const u of usersWithSubscription) {
+        const validation = validateSubscriptionPlan(u.subscription);
+        if (!validation.ok) {
+          report.subscriptions.failed.push({ email: u.email, reason: validation.reason });
+        } else {
+          report.subscriptions.wouldMigrate++;
+        }
+      }
     }
 
     // Reconciliation: DISTINCT Mongo source emails vs. matching profiles rows.
@@ -423,6 +465,15 @@ async function main() {
 
     saveCheckpoint(checkpoint);
     console.log(JSON.stringify(report, null, 2));
+    // Review round 4: document-level failures were previously only ever
+    // logged inside `report` -- this process's own exit code stayed 0 as
+    // long as nothing THREW, exactly the same class of bug fixed in
+    // mongo-to-supabase.mjs's own changelog (a caller checking only the
+    // exit code -- production-import-orchestrator.mjs's runWorker()/
+    // domainResult.code -- could see success while real per-document
+    // failures sat unexamined in the JSON report). Fixed: any of the 4
+    // conditions computeExitFailure() checks now sets a non-zero exit.
+    if (computeExitFailure(report, execute)) process.exitCode = 1;
   } finally {
     pgClient.release();
     await pool.end();
@@ -430,7 +481,40 @@ async function main() {
   }
 }
 
-main().catch((err) => {
-  console.error('[migrate-users-to-supabase-auth] FATAL:', err.message);
-  process.exitCode = 1;
-});
+// Review round 4: pure -- given the final report and whether this was an
+// --execute run, true iff the process must exit non-zero. Exported
+// specifically so each of the 4 conditions is unit-testable in isolation
+// with a plain object, no live Mongo/Postgres/GoTrue needed:
+//   - report.users.errors is non-empty
+//   - report.admins.errors is non-empty
+//   - report.subscriptions.failed is non-empty
+//   - (execute only) report.reconciliation.consistent !== true
+// The reconciliation condition is execute-only because --plan's own
+// reconciliation.consistent is always the string 'n/a (dry-run)' --
+// literally not `true`, but that's "not yet applicable", not a failure.
+export function computeExitFailure(report, execute) {
+  return (
+    report.users.errors.length > 0 ||
+    report.admins.errors.length > 0 ||
+    report.subscriptions.failed.length > 0 ||
+    (execute && report.reconciliation?.consistent !== true)
+  );
+}
+
+// Guarded (unlike this file's original version) so computeExitFailure()
+// and validateSubscriptionPlan() above can be imported directly by a unit
+// test without also triggering a real Mongo/Postgres/GoTrue connection
+// attempt via an unconditional main() call -- mongo-to-supabase.mjs's own
+// header documents the SAME risk for that file, which is why every test
+// in this directory drives these two scripts via child-process CLI
+// invocation only; this guard makes that no longer the ONLY safe option
+// for the pure exports here specifically, while leaving child-process
+// invocation (used by every live/integration test) behaving identically
+// (process.argv[1] equals this file's own path in that case, same as
+// before).
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  main().catch((err) => {
+    console.error('[migrate-users-to-supabase-auth] FATAL:', err.message);
+    process.exitCode = 1;
+  });
+}

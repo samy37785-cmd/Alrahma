@@ -44,7 +44,7 @@ import { fileURLToPath } from 'node:url';
 import pg from 'pg';
 import { runCommand } from '../../../lib/db/test/orchestrator-lib.mjs';
 import { verifyNoUnrecordedData } from './production-import-orchestrator.mjs';
-import { MIGRATION_SEED_ADMIN_ID } from './lib/admin-rpc.mjs';
+import { MIGRATION_SEED_ADMIN_ID, MIGRATION_SEED_ADMIN_EMAIL, ensureMigrationSeedAdmin } from './lib/admin-rpc.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, '..', '..', '..');
@@ -104,12 +104,14 @@ async function main() {
 
   const pgPool = new pg.Pool({ connectionString: pgUri });
 
-  async function addLedgerEntry(table, sourceId, targetId, { sourceSystem = 'mongodb', sourceDatabase = 'al-rahma' } = {}) {
+  async function addLedgerEntry(table, sourceId, targetId, {
+    sourceSystem = 'mongodb', sourceDatabase = 'al-rahma', sourceCollection = table, status = 'reconciled', contentHash = 'a'.repeat(64),
+  } = {}) {
     await pgPool.query(
       `INSERT INTO migration_source_ledger
          (source_system, source_database, source_collection, source_document_id, source_content_hash, target_table, status, target_id, migrated_at)
-       VALUES ($4, $5, $1, $2, 'test-fixture-hash', $1, 'reconciled', $3, now())`,
-      [table, sourceId, targetId, sourceSystem, sourceDatabase]
+       VALUES ($4, $5, $6, $2, $7, $1, $8, $3, now())`,
+      [table, sourceId, targetId, sourceSystem, sourceDatabase, sourceCollection, contentHash, status]
     );
   }
   async function clearLedgerFor(table) {
@@ -152,6 +154,21 @@ async function main() {
       await addLedgerEntry('trial_requests', 'fake-mongo-id-1', rowId);
       const result = await verifyNoUnrecordedData(client);
       assert.equal(result, true, 'a row WITH a matching ledger entry must never be flagged');
+    } finally {
+      await client.query('DELETE FROM trial_requests');
+      await clearLedgerFor('trial_requests');
+      client.release();
+    }
+  });
+
+  await test('a planned-only ledger row is not valid target provenance even when target_id happens to match', async () => {
+    const client = await pgPool.connect();
+    try {
+      const r = await client.query(
+        `INSERT INTO trial_requests (name, email, status) VALUES ('Test', 'planned-only@example.invalid', 'new') RETURNING id`
+      );
+      await addLedgerEntry('trial_requests', 'planned-only-source', r.rows[0].id, { status: 'planned' });
+      await assert.rejects(() => verifyNoUnrecordedData(client), /trial_requests: 1 row\(s\) with no matching migration_source_ledger entry/);
     } finally {
       await client.query('DELETE FROM trial_requests');
       await clearLedgerFor('trial_requests');
@@ -240,24 +257,37 @@ async function main() {
     await pgPool.query('DELETE FROM auth.users WHERE id = $1', [id]);
   }
 
-  await test('round 5 item 1: a profiles row tagged migrated_from=mongodb is attributable and never flagged', async () => {
+  await test('round 6: a spoofed migrated_from=mongodb tag without source ledger provenance fails closed', async () => {
     const client = await pgPool.connect();
     const id = crypto.randomUUID();
     try {
       await insertAuthUser(id, 'tagged-user@example.invalid', { migrated_from: 'mongodb', migrated_at: new Date().toISOString() });
-      const result = await verifyNoUnrecordedData(client);
-      assert.equal(result, true, 'a profiles row whose owning auth.users record is tagged migrated_from must never be flagged');
+      await assert.rejects(() => verifyNoUnrecordedData(client), /profiles: 1 row\(s\) not attributable/);
     } finally {
       await deleteAuthUser(id);
       client.release();
     }
   });
 
-  await test('round 5 item 1: a profiles row tagged migrated_from=mongodb_adminuser (AdminUser accounts) is also attributable', async () => {
+  await test('round 6: a profile ledger entry from a different source database does not legitimize the profile', async () => {
     const client = await pgPool.connect();
     const id = crypto.randomUUID();
     try {
-      await insertAuthUser(id, 'tagged-admin@example.invalid', { migrated_from: 'mongodb_adminuser', migrated_at: new Date().toISOString() });
+      await insertAuthUser(id, 'wrong-source-profile@example.invalid', { migrated_from: 'mongodb' });
+      await addLedgerEntry('profiles', 'mongo-user-wrong-db', id, { sourceDatabase: 'other-database', sourceCollection: 'users' });
+      await assert.rejects(() => verifyNoUnrecordedData(client), /profiles: 1 row\(s\) not attributable/);
+    } finally {
+      await deleteAuthUser(id);
+      client.release();
+    }
+  });
+
+  await test('round 6: a correctly source-scoped, hash-bearing profile ledger entry is attributable', async () => {
+    const client = await pgPool.connect();
+    const id = crypto.randomUUID();
+    try {
+      await insertAuthUser(id, 'ledgered-profile@example.invalid', {});
+      await addLedgerEntry('profiles', 'mongo-user-1', id, { sourceCollection: 'users' });
       const result = await verifyNoUnrecordedData(client);
       assert.equal(result, true);
     } finally {
@@ -266,18 +296,82 @@ async function main() {
     }
   });
 
-  await test('round 5 item 1: the migration-seed admin identity is always attributable, even though it carries NO migrated_from tag', async () => {
+  await test('round 6: only the complete exact migration-seed admin identity is exempt; UUID/email collision fails closed', async () => {
     const client = await pgPool.connect();
     try {
-      // Exactly what ensureMigrationSeedAdmin() (lib/admin-rpc.mjs) itself
-      // creates: no raw_user_meta_data tag at all -- its identity IS the
-      // provenance.
-      await insertAuthUser(MIGRATION_SEED_ADMIN_ID, 'stage2jb-migration-tool@rehearsal.local', {});
-      const result = await verifyNoUnrecordedData(client);
-      assert.equal(result, true, 'the hardcoded migration-seed admin profile row must never block a run, tagged or not');
+      await ensureMigrationSeedAdmin(pgPool);
+      assert.equal(await verifyNoUnrecordedData(client), true);
+      await deleteAuthUser(MIGRATION_SEED_ADMIN_ID);
+      await insertAuthUser(MIGRATION_SEED_ADMIN_ID, 'collision@example.invalid', {});
+      await assert.rejects(() => verifyNoUnrecordedData(client), /seed-admin identity collides/);
+    } finally {
+      await deleteAuthUser(MIGRATION_SEED_ADMIN_ID);
+      await pgPool.query('DELETE FROM auth.users WHERE email = $1', [MIGRATION_SEED_ADMIN_EMAIL]);
+      client.release();
+    }
+  });
+
+  // Round 6 (PR #70 blockers, item 3): "الهوية الصحيحة والاصطدامات الجزئية
+  // والكاملة" -- the ONE collision variant above (reserved UUID, wrong
+  // email) is not the only way an incomplete/mismatched identity can occur.
+  // Each case below plants a DIFFERENT kind of partial match and proves
+  // verifyNoUnrecordedData() (and, separately, ensureMigrationSeedAdmin()
+  // itself) still fails closed rather than treating "close enough" as the
+  // exempted seed identity.
+  await test('round 6: the reserved seed-admin EMAIL under a DIFFERENT uuid is a collision too, not just the reverse', async () => {
+    const client = await pgPool.connect();
+    const otherId = crypto.randomUUID();
+    try {
+      await insertAuthUser(otherId, MIGRATION_SEED_ADMIN_EMAIL, {});
+      await assert.rejects(() => verifyNoUnrecordedData(client), /seed-admin identity collides/);
+      await assert.rejects(() => ensureMigrationSeedAdmin(pgPool), /collides with an incomplete or mismatched/);
+    } finally {
+      await deleteAuthUser(otherId);
+      client.release();
+    }
+  });
+
+  await test('round 6: exact id+email but profiles.role has been changed away from admin is a partial collision', async () => {
+    const client = await pgPool.connect();
+    try {
+      await ensureMigrationSeedAdmin(pgPool);
+      assert.equal(await verifyNoUnrecordedData(client), true, 'setup: the real seed-admin identity is exempt before tampering');
+      await pgPool.query(`UPDATE profiles SET role = 'user' WHERE id = $1`, [MIGRATION_SEED_ADMIN_ID]);
+      await assert.rejects(() => verifyNoUnrecordedData(client), /seed-admin identity collides/);
+      await assert.rejects(() => ensureMigrationSeedAdmin(pgPool), /collides with an incomplete or mismatched/);
     } finally {
       await deleteAuthUser(MIGRATION_SEED_ADMIN_ID);
       client.release();
+    }
+  });
+
+  await test('round 6: exact id+email+profiles.role=admin but no matching admin_role_assignments row is a partial collision', async () => {
+    const client = await pgPool.connect();
+    try {
+      await ensureMigrationSeedAdmin(pgPool);
+      assert.equal(await verifyNoUnrecordedData(client), true, 'setup: the real seed-admin identity is exempt before tampering');
+      await pgPool.query(`DELETE FROM admin_role_assignments WHERE user_id = $1`, [MIGRATION_SEED_ADMIN_ID]);
+      await assert.rejects(() => verifyNoUnrecordedData(client), /seed-admin identity collides/);
+      await assert.rejects(() => ensureMigrationSeedAdmin(pgPool), /collides with an incomplete or mismatched/);
+    } finally {
+      await deleteAuthUser(MIGRATION_SEED_ADMIN_ID);
+      client.release();
+    }
+  });
+
+  await test('round 6: ensureMigrationSeedAdmin never uses ON CONFLICT to convert a conflicting identity into the seed admin', async () => {
+    // A row that already holds the reserved UUID with a foreign email must
+    // stay exactly as it was -- ensureMigrationSeedAdmin() must throw
+    // BEFORE its own INSERT .. ON CONFLICT DO NOTHING is ever reached, not
+    // silently leave the foreign row in place while reporting success, and
+    // never overwrite it into the seed identity either.
+    await insertAuthUser(MIGRATION_SEED_ADMIN_ID, 'foreign-identity@example.invalid', {});
+    try {
+      await assert.rejects(() => ensureMigrationSeedAdmin(pgPool), /collides with an incomplete or mismatched/);
+      const row = await pgPool.query('SELECT email FROM auth.users WHERE id = $1', [MIGRATION_SEED_ADMIN_ID]);
+      assert.equal(row.rows[0].email, 'foreign-identity@example.invalid', 'the foreign row must be untouched -- never overwritten into the seed identity');
+    } finally {
+      await deleteAuthUser(MIGRATION_SEED_ADMIN_ID);
     }
   });
 
@@ -301,18 +395,22 @@ async function main() {
     }
   });
 
-  await test('round 5 item 1: a subscriptions row owned by an attributable profile passes; owned by an unrelated profile fails closed', async () => {
+  await test('round 6: an unknown subscription owned by a ledger-attributed profile still fails; its own ledger is required', async () => {
     const client = await pgPool.connect();
     const taggedId = crypto.randomUUID();
     const untaggedId = crypto.randomUUID();
     try {
       await insertAuthUser(taggedId, 'sub-tagged@example.invalid', { migrated_from: 'mongodb' });
+      await addLedgerEntry('profiles', 'mongo-sub-owner', taggedId, { sourceCollection: 'users' });
       await pgPool.query(
-        `INSERT INTO subscriptions (user_id, provider, status) VALUES ($1, 'manual', 'expired')`,
+        `INSERT INTO subscriptions (user_id, provider, status) VALUES ($1, 'manual', 'expired') RETURNING id`,
         [taggedId]
       );
-      const result = await verifyNoUnrecordedData(client);
-      assert.equal(result, true, 'a subscription owned by an attributable profile must never be flagged');
+      await assert.rejects(() => verifyNoUnrecordedData(client), /subscriptions: 1 row\(s\) not attributable/);
+
+      const subscription = await pgPool.query('SELECT id FROM subscriptions WHERE user_id = $1', [taggedId]);
+      await addLedgerEntry('subscriptions', 'mongo-sub-owner', subscription.rows[0].id, { sourceCollection: 'users' });
+      assert.equal(await verifyNoUnrecordedData(client), true, 'subscription passes only with its own exact source ledger row');
 
       await insertAuthUser(untaggedId, 'sub-untagged@example.invalid', {});
       await pgPool.query(
@@ -321,7 +419,7 @@ async function main() {
       );
       await assert.rejects(
         () => verifyNoUnrecordedData(client),
-        /subscriptions: 1 row\(s\) not attributable to this migration/,
+        /profiles: 1 row\(s\) not attributable to this migration/,
         'a subscription owned by an untagged, non-seed-admin profile must fail closed'
       );
     } finally {

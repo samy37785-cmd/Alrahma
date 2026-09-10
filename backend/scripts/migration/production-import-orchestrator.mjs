@@ -98,7 +98,8 @@ import path from 'node:path';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import pg from 'pg';
-import { MIGRATION_SEED_ADMIN_ID } from './lib/admin-rpc.mjs';
+import { MIGRATION_SEED_ADMIN_ID, MIGRATION_SEED_ADMIN_EMAIL } from './lib/admin-rpc.mjs';
+import { parseApprovedDispositions } from './migrate-users-to-supabase-auth.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, '..', '..', '..');
@@ -185,18 +186,16 @@ function targetIdentityExpr(spec) {
   return `t.${spec.pkColumn ?? 'id'}::text`;
 }
 
-// migrate-users-to-supabase-auth.mjs does NOT go through migration_source_
-// ledger (it predates it, and auth.users/profiles have their own natural
-// idempotency key: email) — profiles and subscriptions get a
-// provenance-aware preflight instead of a ledger lookup (see
-// verifyNoUnrecordedData()'s own comment, round 5 item 1, for the full
-// rationale and the bug this replaced).
-
-// The exact `migrated_from` tags migrateOneUser()/migrateOneAdmin()
-// (migrate-users-to-supabase-auth.mjs) stamp onto
-// auth.users.raw_user_meta_data at real account-creation time — the only
-// two values a genuinely-migrated account can ever carry there.
-const MIGRATED_FROM_TAGS = ['mongodb', 'mongodb_adminuser'];
+// Review round 6, item 3: migrate-users-to-supabase-auth.mjs used to
+// never go through migration_source_ledger at all (it predates that
+// table) and round 5 substituted a raw_user_meta_data tag check instead
+// -- rejected on further review as not durable provenance (see
+// verifyNoUnrecordedData()'s own comment for the full history). Fixed:
+// that script now writes real migration_source_ledger rows for every
+// profile/subscription it creates/confirms (lib/source-ledger.mjs, the
+// same helpers every domain table already uses), so profiles/
+// subscriptions are checked below with the EXACT SAME ledger-match query
+// every domain table uses — no separate provenance mechanism needed.
 
 // Stage 2J-B Part H, review round 2: a domain is NEVER excluded merely
 // because it appears in a hardcoded list -- that was this file's actual
@@ -259,6 +258,33 @@ export function computeDomainWorkerPlan({ deferDomains = [] } = {}) {
 
 function sha256File(filePath) {
   return crypto.createHash('sha256').update(fs.readFileSync(filePath)).digest('hex');
+}
+
+// Review round 6, item 2: "--approved-dispositions is unreachable through
+// the production orchestrator" -- migrate-users-to-supabase-auth.mjs
+// supported the flag, but this file neither parsed nor forwarded it, so
+// the approved-disposition mechanism was reachable only by running that
+// worker script directly, never through the actual production
+// entrypoint. Fixed: parse once, forward the exact same path to every
+// user-migration invocation (plan, execute, compensate), and pin its
+// content by hash + read its approvedBy/approvedAt for the saga log --
+// this file does NOT re-validate the file's internal structure (the
+// worker script's own loadApprovedDispositions() does that, fail-closed,
+// and will crash the child process on anything malformed); this is
+// purely for hash-pinning and saga auditability.
+function readDispositionsMeta(dispositionsPath) {
+  if (!dispositionsPath) return null;
+  if (!fs.existsSync(dispositionsPath)) fail(`--approved-dispositions file does not exist: ${dispositionsPath}`);
+  const contents = fs.readFileSync(dispositionsPath);
+  const parsed = parseApprovedDispositions(contents.toString('utf8'));
+  const hash = crypto.createHash('sha256').update(contents).digest('hex');
+  return {
+    path: dispositionsPath,
+    hash,
+    approvedBy: parsed.approvedBy,
+    approvedAt: parsed.approvedAt,
+    signatures: parsed.signatures,
+  };
 }
 
 function currentGitSha() {
@@ -382,62 +408,109 @@ export async function verifySignupsOff(supabaseUrl, serviceRoleKey) {
 // ---------------------------------------------------------------------
 
 /**
- * Two different guarantees, because the two worker scripts use two
- * different idempotency mechanisms (documented at LEDGER_BACKED_
- * TARGET_SPECS above and MIGRATED_FROM_TAGS below):
- *   - Ledger-backed tables: every row must be traceable to a
- *     migration_source_ledger entry pointing at it — matched via each
- *     table's own real identity shape (LEDGER_BACKED_TARGET_SPECS),
- *     never assumed to be a plain `id` column, AND scoped to THIS
- *     migration's own source (source_system='mongodb', source_database=
- *     SOURCE_DATABASE) with a real, non-null target_id — see round 5 item
- *     3 below. A row with no such matching ledger entry means something
- *     wrote to this table outside this tooling's own bookkeeping —
- *     refuse rather than risk silently overwriting or double-counting it.
- *   - Non-ledger tables (profiles/subscriptions): every row must be
- *     PROVABLY ATTRIBUTABLE to this migration — see round 5 item 1 below.
+ * Every table now uses the SAME real guarantee: every row must be
+ * traceable to a migration_source_ledger entry pointing at it, scoped to
+ * THIS migration's own source (source_system='mongodb', source_database=
+ * SOURCE_DATABASE) with a real, non-null target_id. A row with no such
+ * matching ledger entry means something wrote to this table outside this
+ * tooling's own bookkeeping — refuse rather than risk silently
+ * overwriting or double-counting it. `profiles` and `subscriptions` carry
+ * one additional, narrow exemption for the migration-seed admin's own
+ * identity (see below) — every other row in those two tables is checked
+ * exactly like a domain table.
  *
- * Review round 5, item 3: the ledger-backed check above used to match
- * purely on `target_table` + `target_id`, with no `source_system`/
- * `source_database` scoping at all. An unrelated migration_source_ledger
- * record — a different source system entirely, or the right system but
- * the wrong source database — could coincidentally share the same
+ * Review round 5, item 3: the ledger-backed check used to match purely on
+ * `target_table` + `target_id`, with no `source_system`/`source_database`
+ * scoping at all. An unrelated migration_source_ledger record — a
+ * different source system entirely, or the right system but the wrong
+ * source database — could coincidentally share the same
  * target_table/target_id and incorrectly legitimize an otherwise
- * unrecorded target row. Fixed: every ledger match now also requires
+ * unrecorded target row. Fixed: every ledger match also requires
  * source_system='mongodb', source_database=SOURCE_DATABASE (this file's
  * own hardcoded target, never operator-supplied), and a non-null
- * target_id (a 'planned' ledger row that never actually got a target_id
- * assigned can never legitimately match a real target row — NULL never
- * equals anything in the identity comparison either, but the explicit
- * check documents that requirement rather than leaving it implicit).
+ * target_id.
  *
- * Review round 5, item 1: profiles and subscriptions used to require the
- * table be COMPLETELY EMPTY, unconditionally — this broke every resume (a retry after
- * users/profiles or subscriptions were partially created failed here
- * before any resume logic in the worker scripts got a chance to run),
- * broke --compensate identically (main() runs this same preflight before
- * branching on --compensate at all — see runPreflight()), and could be
- * tripped by nothing more than ensureMigrationSeedAdmin()'s own
- * MIGRATION_SEED_ADMIN_ID profiles row, created the moment ANY domain
- * needing plan-catalog seeding runs. Fixed: a profiles/subscriptions row
- * no longer needs to not-exist — it needs to be provably attributable to
- * this migration: either the hardcoded migration-seed admin identity, or
- * (via the row's owning auth.users record) tagged with one of
- * MIGRATED_FROM_TAGS, the exact markers migrateOneUser()/migrateOneAdmin()
- * (migrate-users-to-supabase-auth.mjs) themselves stamp onto
- * raw_user_meta_data at real account-creation time. This reduces to
- * exactly the old strict-pristine behavior on a genuinely fresh target
- * (zero rows is vacuously "every row is attributable"); permits resume
- * and --compensate once only migration-tagged rows exist; and still fails
- * closed for a real, unrelated, untagged pre-existing row — unknown data
- * is never silently accepted no matter which of runImport()/compensate()
- * is about to run, which is what makes a single provenance-aware check
- * safe to use unconditionally rather than needing a separate explicit
- * "strict" vs. "resume" mode switch on this function or its caller.
+ * Review round 6, item 3: round 5's fix for profiles/subscriptions
+ * (raw_user_meta_data->>'migrated_from') was itself rejected on further
+ * review — it is not durable migration provenance: it's user metadata,
+ * not an admin-only migration record; it carries only a generic value
+ * ("mongodb"/"mongodb_adminuser"), never a real source database/document
+ * identity/content hash; and ANY matching tag legitimized a profile with
+ * no real relationship to the current al-rahma source. More critically,
+ * a subscriptions row was accepted transitively — "owned by an accepted
+ * profile" — with NO check on the subscription row itself, so an
+ * unrelated subscription attached to a migrated user passed preflight
+ * even though migrateSubscription() never wrote it.
+ *
+ * Fixed properly: migrate-users-to-supabase-auth.mjs now writes a REAL
+ * migration_source_ledger row for every profile and subscription it
+ * creates/confirms (source-ledger.mjs, the same helpers every domain
+ * table already uses) — see that file's own comment. profiles and
+ * subscriptions are now checked with the EXACT SAME ledger-match query
+ * every domain table uses (default `id` identity), closing the
+ * transitive-trust hole: each subscription needs its OWN ledger entry,
+ * not merely an attributable owner.
+ *
+ * The one narrow exception is the migration-seed admin's own profile
+ * (MIGRATION_SEED_ADMIN_ID, lib/admin-rpc.mjs) — created directly by
+ * ensureMigrationSeedAdmin(), never through migrateOneUser()/
+ * migrateOneAdmin(), so it never gets a ledger row of its own; without an
+ * exemption, that single row would block every later run the moment ANY
+ * domain needing plan-catalog seeding runs. Round 5's version exempted it
+ * by id alone; a reviewer correctly flagged that as accepting a UUID
+ * collision/mismatch without verifying the rest of the identity. Fixed:
+ * the exemption now requires the COMPLETE expected identity — this exact
+ * id, AND its owning auth.users row has exactly MIGRATION_SEED_ADMIN_EMAIL,
+ * AND profiles.role='admin', AND a matching admin_role_assignments row
+ * with role='admin' — any single mismatch is NOT exempted and fails
+ * closed like any other unrecorded row.
+ *
+ * This reduces to exactly strict-pristine behavior on a genuinely fresh
+ * target (zero rows is vacuously "every row is attributable"); permits
+ * resume and --compensate once only genuinely ledger-recorded rows exist;
+ * and still fails closed for a real, unrelated, unledgered pre-existing
+ * row — unknown data is never silently accepted no matter which of
+ * runImport()/compensate() is about to run, which is what makes a single
+ * provenance-aware check safe to use unconditionally rather than needing
+ * a separate explicit "strict" vs. "resume" mode switch on this function
+ * or its caller.
  */
 export async function verifyNoUnrecordedData(pgClient) {
   const problems = [];
-  for (const [table, spec] of Object.entries(LEDGER_BACKED_TARGET_SPECS)) {
+
+  // The seed identity is optional on a pristine target. Once either its
+  // reserved UUID or reserved email exists, however, the whole identity
+  // must match exactly; a partial/colliding row is not a seed exemption.
+  const { rows: seedRows } = await pgClient.query(
+    `select u.id, u.email, p.id as profile_id, p.email as profile_email,
+            p.role as profile_role, a.role as admin_role
+       from auth.users u
+       left join public.profiles p on p.id = u.id
+       left join public.admin_role_assignments a on a.user_id = u.id
+      where u.id = $1 or u.email = $2`,
+    [MIGRATION_SEED_ADMIN_ID, MIGRATION_SEED_ADMIN_EMAIL]
+  );
+  if (seedRows.length > 0) {
+    const exact = seedRows.length === 1 &&
+      String(seedRows[0].id) === MIGRATION_SEED_ADMIN_ID &&
+      seedRows[0].email === MIGRATION_SEED_ADMIN_EMAIL &&
+      String(seedRows[0].profile_id) === MIGRATION_SEED_ADMIN_ID &&
+      seedRows[0].profile_email === MIGRATION_SEED_ADMIN_EMAIL &&
+      seedRows[0].profile_role === 'admin' &&
+      seedRows[0].admin_role === 'admin';
+    if (!exact) problems.push('migration seed-admin identity collides with or differs from the complete expected auth/profile/admin-role identity');
+  }
+
+  const ledgerBackedSpecs = { ...LEDGER_BACKED_TARGET_SPECS, profiles: {}, subscriptions: {} };
+  for (const [table, spec] of Object.entries(ledgerBackedSpecs)) {
+    const isSeedAdminExempt = table === 'profiles'
+      ? `and not (
+           t.id = $3
+           and t.role = 'admin'
+           and exists (select 1 from auth.users su where su.id = t.id and su.email = $4)
+           and exists (select 1 from admin_role_assignments sr where sr.user_id = t.id and sr.role = 'admin')
+         )`
+      : '';
     const { rows } = await pgClient.query(`
       select count(*)::int as n from public.${table} t
       where not exists (
@@ -445,38 +518,25 @@ export async function verifyNoUnrecordedData(pgClient) {
         where l.target_table = $1
           and l.source_system = 'mongodb'
           and l.source_database = $2
+          and btrim(l.source_collection) <> ''
+          and btrim(l.source_document_id) <> ''
+          and l.source_content_hash ~ '^[0-9a-f]{64}$'
+          and l.status in ('created', 'reconciled', 'failed')
           and l.target_id is not null
           and l.target_id = ${targetIdentityExpr(spec)}
+      )
+      ${isSeedAdminExempt};
+    `, table === 'profiles'
+      ? [table, SOURCE_DATABASE, MIGRATION_SEED_ADMIN_ID, MIGRATION_SEED_ADMIN_EMAIL]
+      : [table, SOURCE_DATABASE]);
+    if (rows[0].n > 0) {
+      problems.push(
+        table === 'profiles' || table === 'subscriptions'
+          ? `${table}: ${rows[0].n} row(s) not attributable to this migration (no matching migration_source_ledger entry` +
+            (table === 'profiles' ? ', and not a fully-verified migration-seed admin identity)' : ')')
+          : `${table}: ${rows[0].n} row(s) with no matching migration_source_ledger entry`
       );
-    `, [table, SOURCE_DATABASE]);
-    if (rows[0].n > 0) problems.push(`${table}: ${rows[0].n} row(s) with no matching migration_source_ledger entry`);
-  }
-
-  const { rows: profileRows } = await pgClient.query(
-    `select count(*)::int as n
-     from public.profiles p
-     left join auth.users u on u.id = p.id
-     where p.id <> $1
-       and not (coalesce(u.raw_user_meta_data->>'migrated_from', '') = any($2::text[]));`,
-    [MIGRATION_SEED_ADMIN_ID, MIGRATED_FROM_TAGS]
-  );
-  if (profileRows[0].n > 0) {
-    problems.push(`profiles: ${profileRows[0].n} row(s) not attributable to this migration (not the migration-seed admin, not tagged migrated_from)`);
-  }
-
-  const { rows: subscriptionRows } = await pgClient.query(
-    `select count(*)::int as n
-     from public.subscriptions s
-     where not exists (
-       select 1 from public.profiles p
-       join auth.users u on u.id = p.id
-       where p.id = s.user_id
-         and (p.id = $1 or coalesce(u.raw_user_meta_data->>'migrated_from', '') = any($2::text[]))
-     );`,
-    [MIGRATION_SEED_ADMIN_ID, MIGRATED_FROM_TAGS]
-  );
-  if (subscriptionRows[0].n > 0) {
-    problems.push(`subscriptions: ${subscriptionRows[0].n} row(s) not attributable to this migration (owning profile is not the migration-seed admin and not tagged migrated_from)`);
+    }
   }
 
   if (problems.length > 0) {
@@ -576,10 +636,26 @@ function runWorker(scriptPath, args, env) {
 // with no live Postgres/Mongo/GoTrue needed for that specific property,
 // without changing a single line of real runtime behavior (the default
 // is the same function every real caller already used).
-export async function runImport({ pgClient, execute, faultStage, deferDomains = [], runWorkerFn = runWorker }) {
+export async function runImport({ pgClient, execute, faultStage, deferDomains = [], runWorkerFn = runWorker, approvedDispositionsPath = null }) {
   const runId = new Date().toISOString().replace(/[:.]/g, '-');
   const saga = newSagaLog(runId);
   const commonEnv = faultStage ? { MIGRATION_FAULT_INJECT_STAGE: faultStage, MIGRATION_FAULT_INJECT_ONCE: '1' } : {};
+
+  // Review round 6, item 2: bind the plan pass and the execute pass to
+  // the SAME immutable dispositions content -- hashed ONCE, here, before
+  // either user-migration invocation below, and recorded in the saga
+  // (path/hash/approvedBy/approvedAt) for a real audit trail. The hash is
+  // re-verified immediately before the execute pass (below); a mismatch
+  // means the file was mutated between the two passes and the run refuses
+  // to proceed with a no-longer-pinned approval artifact.
+  const dispositionsMeta = readDispositionsMeta(approvedDispositionsPath);
+  if (dispositionsMeta) {
+    saga.record('approved_dispositions', 'bound', {
+      path: dispositionsMeta.path, hash: dispositionsMeta.hash,
+      approvedBy: dispositionsMeta.approvedBy, approvedAt: dispositionsMeta.approvedAt,
+    });
+  }
+  const dispositionArgs = approvedDispositionsPath ? [`--approved-dispositions=${approvedDispositionsPath}`] : [];
 
   // Every domain the OPERATOR explicitly deferred on this run's command
   // line is recorded here, by name and reason — never silently dropped.
@@ -600,7 +676,7 @@ export async function runImport({ pgClient, execute, faultStage, deferDomains = 
   // preflight, so a real account-creation write could already have
   // landed before the domain side had any chance to fail the run closed.
   saga.record('users_and_relationships_preflight', 'planned');
-  const userPreflightResult = runWorkerFn(USER_MIGRATION_SCRIPT, [], commonEnv);
+  const userPreflightResult = runWorkerFn(USER_MIGRATION_SCRIPT, [...dispositionArgs], commonEnv);
   saga.record('users_and_relationships_preflight', userPreflightResult.code === 0 ? 'reconciled' : 'failed', { code: userPreflightResult.code });
   if (userPreflightResult.code !== 0) {
     return { ok: false, failedAt: 'users_and_relationships_preflight', saga: saga.filePath, stderr: userPreflightResult.stderr };
@@ -634,8 +710,23 @@ export async function runImport({ pgClient, execute, faultStage, deferDomains = 
   // Both preflights passed — only NOW is any write ever attempted,
   // starting with users (domains that reference profiles/auth accounts
   // depend on those accounts already existing).
+  if (dispositionsMeta) {
+    const currentHash = sha256File(dispositionsMeta.path);
+    if (currentHash !== dispositionsMeta.hash) {
+      saga.record('approved_dispositions', 'failed', {
+        reason: 'file mutated between the plan preflight and the execute pass', boundHash: dispositionsMeta.hash, currentHash,
+      });
+      return {
+        ok: false,
+        failedAt: 'approved_dispositions_integrity',
+        saga: saga.filePath,
+        stderr: `--approved-dispositions file ${dispositionsMeta.path} changed between the plan preflight and the execute pass ` +
+          `-- refusing to proceed with a mutated approval artifact`,
+      };
+    }
+  }
   saga.record('users_and_relationships', 'planned');
-  const userResult = runWorkerFn(USER_MIGRATION_SCRIPT, ['--execute'], commonEnv);
+  const userResult = runWorkerFn(USER_MIGRATION_SCRIPT, ['--execute', ...dispositionArgs], commonEnv);
   saga.record('users_and_relationships', userResult.code === 0 ? 'reconciled' : 'failed', { code: userResult.code });
   if (userResult.code !== 0) {
     return { ok: false, failedAt: 'users_and_relationships', saga: saga.filePath, stderr: userResult.stderr };
@@ -680,24 +771,68 @@ export async function runImport({ pgClient, execute, faultStage, deferDomains = 
 // account — it only re-invokes the idempotent forward path.
 // ---------------------------------------------------------------------
 
-async function compensate({ pgClient, execute }) {
-  const result = runWorker(USER_MIGRATION_SCRIPT, execute ? ['--execute'] : [], {});
-  return { ok: result.code === 0, stdout: result.stdout, stderr: result.stderr };
+export async function compensate({ pgClient, execute, approvedDispositionsPath = null, runWorkerFn = runWorker }) {
+  const runId = new Date().toISOString().replace(/[:.]/g, '-');
+  const saga = newSagaLog(`compensate-${runId}`);
+
+  // Review round 6, item 2: "forward the exact same reviewed artifact to
+  // user plan, execute, and compensate" -- compensate() only ever makes
+  // ONE user-migration invocation (no separate plan-then-execute pair
+  // within itself, unlike runImport()), so there is no "between passes"
+  // mutation window here to guard against; the file is still hash-pinned
+  // and its approvedBy/approvedAt recorded for the same audit trail.
+  const dispositionsMeta = readDispositionsMeta(approvedDispositionsPath);
+  if (dispositionsMeta) {
+    saga.record('approved_dispositions', 'bound', {
+      path: dispositionsMeta.path, hash: dispositionsMeta.hash,
+      approvedBy: dispositionsMeta.approvedBy, approvedAt: dispositionsMeta.approvedAt,
+    });
+  }
+  const dispositionArgs = approvedDispositionsPath ? [`--approved-dispositions=${approvedDispositionsPath}`] : [];
+
+  if (dispositionsMeta && sha256File(dispositionsMeta.path) !== dispositionsMeta.hash) {
+    saga.record('approved_dispositions', 'failed', { reason: 'file mutated before compensate invocation' });
+    return {
+      ok: false,
+      stderr: '--approved-dispositions file changed after it was hash-bound; refusing compensation with a mutated artifact',
+      saga: saga.filePath,
+    };
+  }
+  saga.record('compensate', 'planned');
+  const result = runWorkerFn(USER_MIGRATION_SCRIPT, execute ? ['--execute', ...dispositionArgs] : [...dispositionArgs], {});
+  saga.record('compensate', result.code === 0 ? 'reconciled' : 'failed', { code: result.code });
+  return { ok: result.code === 0, stdout: result.stdout, stderr: result.stderr, saga: saga.filePath };
 }
 
 // ---------------------------------------------------------------------
 // CLI entrypoint.
 // ---------------------------------------------------------------------
 
+export function parseCliArgs(argv) {
+  const parsed = {};
+  const seen = new Set();
+  for (const token of argv) {
+    if (!token.startsWith('--')) fail(`unexpected positional argument "${token}"`);
+    const body = token.slice(2);
+    const equalsAt = body.indexOf('=');
+    const key = equalsAt === -1 ? body : body.slice(0, equalsAt);
+    const value = equalsAt === -1 ? true : body.slice(equalsAt + 1);
+    if (!key) fail('empty CLI flag is not allowed');
+    if (seen.has(key)) fail(`--${key} was passed more than once -- pass each flag exactly once`);
+    seen.add(key);
+    if (key === 'approved-dispositions' && (value === true || value === '')) {
+      fail('--approved-dispositions requires a non-empty =<path> value');
+    }
+    parsed[key] = value;
+  }
+  return parsed;
+}
+
 async function main() {
-  const args = Object.fromEntries(
-    process.argv.slice(2).map((a) => {
-      const [k, v] = a.replace(/^--/, '').split('=');
-      return [k, v ?? true];
-    })
-  );
+  const args = parseCliArgs(process.argv.slice(2));
   const execute = !!args.execute;
   const compensateMode = !!args.compensate;
+  const approvedDispositionsPath = typeof args['approved-dispositions'] === 'string' ? args['approved-dispositions'] : null;
   // The operator's own explicit acknowledgement for THIS run -- absent
   // (the default) means nothing is deferred, and the mandatory preflight
   // dry-run in runImport() will fail the whole run closed, with no
@@ -736,8 +871,8 @@ async function main() {
       });
 
       const result = compensateMode
-        ? await compensate({ pgClient, execute })
-        : await runImport({ pgClient, execute, faultStage: process.env.MIGRATION_FAULT_INJECT_STAGE, deferDomains });
+        ? await compensate({ pgClient, execute, approvedDispositionsPath })
+        : await runImport({ pgClient, execute, faultStage: process.env.MIGRATION_FAULT_INJECT_STAGE, deferDomains, approvedDispositionsPath });
 
       console.log(JSON.stringify(result, null, 2));
       if (!result.ok) process.exitCode = 1;

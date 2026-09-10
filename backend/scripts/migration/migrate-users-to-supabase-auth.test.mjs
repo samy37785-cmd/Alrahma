@@ -58,12 +58,19 @@ import {
   computeExitFailure,
   validateSubscriptionPlan,
   computeIdentityEmailProblems,
+  computeInvalidDocIds,
   computeRelationshipPlan,
+  computeAdminRoleMappingProblems,
+  computeSubscriptionProblems,
   emailProblemSignature,
   relationshipSkipSignature,
   partitionByDisposition,
   loadApprovedDispositions,
+  parseApprovedDispositions,
+  findUnusedApprovedSignatures,
+  migrateSubscription,
 } from './migrate-users-to-supabase-auth.mjs';
+import { contentHashOf } from './lib/source-ledger.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, '..', '..', '..');
@@ -195,6 +202,13 @@ async function main() {
     assert.equal(problems[0].reason, 'invalid email format');
   });
 
+  await test('invalid email normalization: case/whitespace is canonicalized and the source document remains invalid by stable identity', () => {
+    const problems = computeIdentityEmailProblems([{ _id: 'u-bad', email: ' BAD-EMAIL ' }], []);
+    assert.equal(problems[0].email, 'bad-email');
+    assert.equal(problems[0].rawEmail, ' BAD-EMAIL ');
+    assert.deepEqual([...computeInvalidDocIds(problems)], ['user:u-bad']);
+  });
+
   await test('computeIdentityEmailProblems: two user docs sharing one email -> a duplicate problem, both users individually clean', () => {
     const users = [{ _id: 'u1', email: 'shared@example.invalid' }, { _id: 'u2', email: 'Shared@Example.Invalid ' }];
     const problems = computeIdentityEmailProblems(users, []);
@@ -247,7 +261,7 @@ async function main() {
       { _id: 's1', email: 'student@example.invalid', teacher: 't1' },
       { _id: 't1', email: 'badteacher@example.invalid' },
     ];
-    const plan = computeRelationshipPlan(users, new Set(['badteacher@example.invalid']));
+    const plan = computeRelationshipPlan(users, new Set(['user:t1']));
     assert.equal(plan.teacherLinksSkippedNoTarget, 1);
     assert.equal(plan.teacherLinksResolved, 0);
   });
@@ -264,10 +278,26 @@ async function main() {
       { _id: 's1', email: 'badstudent@example.invalid', teacher: 't1' },
       { _id: 't1', email: 'teacher@example.invalid' },
     ];
-    const plan = computeRelationshipPlan(users, new Set(['badstudent@example.invalid']));
+    const plan = computeRelationshipPlan(users, new Set(['user:s1']));
     assert.equal(plan.teacherLinksResolved, 0);
     assert.equal(plan.teacherLinksSkippedNoTarget, 0);
     assert.deepEqual(plan.skipped, [], 'the student\'s own bad identity is already an identity problem -- not ALSO a relationship problem');
+  });
+
+  await test('computeRelationshipPlan: an invalid target with raw/normalized email differences is never counted resolved', () => {
+    const users = [
+      { _id: 'student', email: 'student@example.invalid', teacher: 'bad-target' },
+      { _id: 'bad-target', email: ' BAD-EMAIL ' },
+    ];
+    const invalidIds = computeInvalidDocIds(computeIdentityEmailProblems(users, []));
+    const plan = computeRelationshipPlan(users, invalidIds);
+    assert.equal(plan.teacherLinksResolved, 0);
+    assert.equal(plan.teacherLinksSkippedNoTarget, 1);
+  });
+
+  await test('admin-role and subscription structural validation are pure and complete before writes', () => {
+    assert.equal(computeAdminRoleMappingProblems([{ _id: 'a1', email: 'a@example.invalid', role: 'bogus' }]).length, 1);
+    assert.equal(computeSubscriptionProblems([{ _id: 'u1', email: 'u@example.invalid', subscription: { plan: 'unknown' } }]).length, 1);
   });
 
   // -----------------------------------------------------------------
@@ -313,11 +343,55 @@ async function main() {
     assert.deepEqual(loadApprovedDispositions(p), ['sig-a', 'sig-b']);
   });
 
+  await test('approved dispositions reject malformed timestamps, duplicate signatures, and report unused signatures', () => {
+    assert.throws(
+      () => parseApprovedDispositions(JSON.stringify({ approvedBy: 'ops', approvedAt: '2026-01-01', items: [] })),
+      /valid ISO/
+    );
+    assert.throws(
+      () => parseApprovedDispositions(JSON.stringify({
+        approvedBy: 'ops', approvedAt: new Date().toISOString(),
+        items: [{ signature: 'same', reason: 'a' }, { signature: 'same', reason: 'b' }],
+      })),
+      /duplicate signature/
+    );
+    assert.deepEqual(findUnusedApprovedSignatures(['known', 'stale'], ['known']), ['stale']);
+  });
+
+  await test('migrateSubscription: ON CONFLICT DO NOTHING with no prior target provenance is FAIL, never migrated', async () => {
+    const queries = [];
+    const fakePg = {
+      async query(sql) {
+        queries.push(sql);
+        if (sql.includes('SELECT id, source_content_hash')) return { rows: [] };
+        if (sql.includes('SELECT id FROM subscriptions WHERE user_id')) return { rows: [] };
+        if (sql.includes('INSERT INTO migration_source_ledger')) return { rows: [{ id: 'ledger-1' }] };
+        if (sql.includes('INSERT INTO subscriptions')) return { rows: [] };
+        if (sql.includes('UPDATE migration_source_ledger')) return { rows: [] };
+        throw new Error(`unexpected SQL in fake: ${sql}`);
+      },
+    };
+    const result = await migrateSubscription(
+      fakePg,
+      'profile-1',
+      { _id: 'mongo-1', subscription: { plan: 'Starter', status: 'active', validUntil: '2999-01-01T00:00:00.000Z' } },
+      new Map([['Starter', 'plan-1']])
+    );
+    assert.equal(result.status, 'FAIL');
+    assert.equal(queries.filter((sql) => sql.includes('INSERT INTO subscriptions')).length, 1);
+    assert.equal(queries.filter((sql) => sql.includes("status = 'failed'")).length, 1);
+  });
+
   await test('loadApprovedDispositions: fail-closed on a malformed file -- missing "items", missing "approvedBy", missing a "reason"', () => {
     assert.throws(() => loadApprovedDispositions(writeDispositions({ approvedBy: 'x', approvedAt: 'y' })), /"items" array/);
     assert.throws(() => loadApprovedDispositions(writeDispositions({ approvedAt: 'y', items: [] })), /"approvedBy"/);
+    // approvedAt must be a valid ISO instant here so this case actually
+    // exercises the per-item "reason" check, not the (now stricter)
+    // round-6 approvedAt-format check tested separately above.
     assert.throws(
-      () => loadApprovedDispositions(writeDispositions({ approvedBy: 'x', approvedAt: 'y', items: [{ signature: 's1' }] })),
+      () => loadApprovedDispositions(writeDispositions({
+        approvedBy: 'x', approvedAt: new Date().toISOString(), items: [{ signature: 's1' }],
+      })),
       /"reason"/
     );
   });
@@ -406,6 +480,15 @@ async function main() {
     await pgPool.query('INSERT INTO auth.users (id, email) VALUES ($1,$2)', [id, email]);
     return id;
   }
+  async function addProfileLedger(sourceDoc, profileId, sourceCollection = 'users') {
+    await pgPool.query(
+      `INSERT INTO migration_source_ledger
+         (source_system, source_database, source_collection, source_document_id, source_content_hash,
+          target_table, target_id, status, migrated_at)
+       VALUES ('mongodb', 'al-rahma', $1, $2, $3, 'profiles', $4, 'reconciled', now())`,
+      [sourceCollection, String(sourceDoc._id), contentHashOf(sourceDoc), profileId]
+    );
+  }
 
   await test('--plan: an unmapped AdminUser role is a document-level error detectable without any write, and fails the whole run closed', async () => {
     await resetAll();
@@ -477,13 +560,98 @@ async function main() {
   await test('--execute: a fully clean run (valid admin role, valid subscription) exits 0 with consistent=true', async () => {
     await resetAll();
     const email = 'cleanadmin@example.invalid';
+    const sourceDoc = { _id: new mongoose.Types.ObjectId(), email, role: 'admin' };
     await seedExistingProfile(email);
-    await mongoose.connection.collection('adminusers').insertOne({ email, role: 'admin' });
+    const existing = await pgPool.query('SELECT id FROM auth.users WHERE email = $1', [email]);
+    await addProfileLedger(sourceDoc, existing.rows[0].id, 'adminusers');
+    await mongoose.connection.collection('adminusers').insertOne(sourceDoc);
 
     const run = runUserMigrationCLI(['--execute']);
     assert.equal(run.code, 0, run.stderr);
     assert.equal(run.report.admins.errors.length, 0);
     assert.equal(run.report.reconciliation.consistent, true);
+  });
+
+  await test('genuine partial subscription migration resumes from exact source ledger without inserting a duplicate', async () => {
+    await resetAll();
+    const email = 'resume-subscription@example.invalid';
+    const sourceDoc = {
+      _id: new mongoose.Types.ObjectId(), email, role: 'student',
+      subscription: { plan: 'Starter', status: 'inactive', validUntil: '2025-01-01T00:00:00.000Z' },
+    };
+    const profileId = await seedExistingProfile(email);
+    await addProfileLedger(sourceDoc, profileId);
+    // enforce_subscription_transition (0006/0010) requires canceled_at to
+    // be set iff status='canceled', on INSERT as well as UPDATE.
+    const inserted = await pgPool.query(
+      `INSERT INTO subscriptions (user_id, provider, status, canceled_at) VALUES ($1, 'manual', 'canceled', now()) RETURNING id`,
+      [profileId]
+    );
+    await pgPool.query(
+      `INSERT INTO migration_source_ledger
+         (source_system, source_database, source_collection, source_document_id, source_content_hash,
+          target_table, target_id, status, migrated_at)
+       VALUES ('mongodb', 'al-rahma', 'users', $1, $2, 'subscriptions', $3, 'created', now())`,
+      [String(sourceDoc._id), contentHashOf(sourceDoc.subscription), inserted.rows[0].id]
+    );
+    const client = await pgPool.connect();
+    try {
+      const result = await migrateSubscription(client, profileId, sourceDoc, new Map([['Starter', crypto.randomUUID()]]));
+      assert.equal(result.status, 'migrated');
+      assert.equal(result.resumed, true);
+      assert.equal((await pgPool.query('SELECT count(*)::int AS n FROM subscriptions')).rows[0].n, 1);
+      const ledger = await pgPool.query(
+        `SELECT status FROM migration_source_ledger WHERE target_table = 'subscriptions' AND source_document_id = $1`,
+        [String(sourceDoc._id)]
+      );
+      assert.equal(ledger.rows[0].status, 'reconciled');
+    } finally {
+      client.release();
+    }
+  });
+
+  await test('conflicting active subscription: a real, unrelated pre-existing active subscription is never silently claimed by this migration', async () => {
+    // Live-DB proof (not the mocked-pg unit test above): a profile that
+    // already has a real active subscription this migration never wrote
+    // (no ledger entry at all) must FAIL rather than silently succeed --
+    // caught here by migrateSubscription()'s own "any pre-existing
+    // subscription with no matching ledger entry" guard, which fires
+    // before the INSERT is even attempted (the strictest possible
+    // outcome: never even reaching the real subscriptions_one_active_per_user
+    // partial unique index / ON CONFLICT DO NOTHING path this same
+    // condition would otherwise hit for a genuinely concurrent writer --
+    // that specific branch is covered directly by the mocked-pg unit test
+    // above, since this earlier guard makes it unreachable via a plain
+    // sequential call here).
+    await resetAll();
+    const email = 'conflicting-active-subscription@example.invalid';
+    const sourceDoc = {
+      _id: new mongoose.Types.ObjectId(), email, role: 'student',
+      subscription: { plan: 'Starter', status: 'active', validUntil: '2999-01-01T00:00:00.000Z' },
+    };
+    const profileId = await seedExistingProfile(email);
+    const preExisting = await pgPool.query(
+      `INSERT INTO subscriptions (user_id, provider, status, current_period_end)
+       VALUES ($1, 'manual', 'active', '2999-01-01T00:00:00.000Z') RETURNING id`,
+      [profileId]
+    );
+
+    const client = await pgPool.connect();
+    try {
+      const result = await migrateSubscription(client, profileId, sourceDoc, new Map([['Starter', crypto.randomUUID()]]));
+      assert.equal(result.status, 'FAIL');
+      assert.match(result.reason, /no matching source-scoped migration_source_ledger entry/);
+      const rows = await pgPool.query('SELECT id FROM subscriptions WHERE user_id = $1', [profileId]);
+      assert.equal(rows.rows.length, 1, 'no second row must ever be inserted');
+      assert.equal(rows.rows[0].id, preExisting.rows[0].id, 'the original, unrelated active subscription must be the exact row still present, untouched');
+      const ledger = await pgPool.query(
+        `SELECT status FROM migration_source_ledger WHERE target_table = 'subscriptions' AND source_document_id = $1`,
+        [String(sourceDoc._id)]
+      );
+      assert.equal(ledger.rows.length, 0, 'a pre-write-detected conflict must never even reach markPlanned -- no ledger row at all for this source document');
+    } finally {
+      client.release();
+    }
   });
 
   // -----------------------------------------------------------------
@@ -549,6 +717,57 @@ async function main() {
     assert.equal(run.code, 1, 'execute must not report success while a real relationship was skipped');
     assert.equal(run.report.relationships.unapprovedSkippedCount, 1);
     assert.equal(run.report.relationships.teacherLinksSkippedNoTarget, 1);
+  });
+
+  async function writeCounts() {
+    const names = ['auth.users', 'profiles', 'subscriptions', 'parent_student_links', 'plans', 'migration_source_ledger'];
+    const counts = {};
+    for (const name of names) counts[name] = (await pgPool.query(`SELECT count(*)::int AS n FROM ${name}`)).rows[0].n;
+    return counts;
+  }
+
+  await test('--execute: mixed valid + case/whitespace-invalid source fails before every auth/profile/relationship/plan/subscription write', async () => {
+    await resetAll();
+    await mongoose.connection.collection('users').insertMany([
+      { email: 'valid-before-invalid@example.invalid', role: 'student', subscription: { plan: 'Starter' } },
+      { email: ' BAD-EMAIL ', role: 'student' },
+    ]);
+    const before = await writeCounts();
+    const run = runUserMigrationCLI(['--execute']);
+    const after = await writeCounts();
+    assert.equal(run.code, 1);
+    assert.equal(run.report.identity.problems[0].email, 'bad-email');
+    assert.deepEqual(after, before, 'validation failure must leave every writable target and ledger unchanged');
+  });
+
+  await test('--execute: dangling relationship fails before every auth/profile/relationship/plan/subscription write', async () => {
+    await resetAll();
+    await mongoose.connection.collection('users').insertMany([
+      { email: 'valid-a@example.invalid', role: 'student', teacher: 'missing-source-id' },
+      { email: 'valid-b@example.invalid', role: 'student', subscription: { plan: 'Starter' } },
+    ]);
+    const before = await writeCounts();
+    const run = runUserMigrationCLI(['--execute']);
+    const after = await writeCounts();
+    assert.equal(run.code, 1);
+    assert.equal(run.report.relationships.teacherLinksSkippedNoTarget, 1);
+    assert.deepEqual(after, before, 'relationship validation failure must occur before all writes and plan seeding');
+  });
+
+  await test('--approved-dispositions CLI rejects duplicate flags and unused signatures', async () => {
+    await resetAll();
+    const one = writeDispositions({ approvedBy: 'ops', approvedAt: new Date().toISOString(), items: [] });
+    const duplicate = runUserMigrationCLI([`--approved-dispositions=${one}`, `--approved-dispositions=${one}`]);
+    assert.equal(duplicate.code, 1);
+    assert.match(duplicate.stderr, /more than once/);
+
+    const unused = writeDispositions({
+      approvedBy: 'ops', approvedAt: new Date().toISOString(),
+      items: [{ signature: 'relationship:teacher:nobody@example.invalid:missing', reason: 'stale' }],
+    });
+    const stale = runUserMigrationCLI([`--approved-dispositions=${unused}`]);
+    assert.equal(stale.code, 1);
+    assert.match(stale.stderr, /matched no real problem/);
   });
 
   await test('--approved-dispositions: an explicitly approved, reviewed skip no longer fails the run (but is still fully reported, never silently dropped)', async () => {

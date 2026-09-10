@@ -60,6 +60,7 @@ import pg from 'pg';
 import { runCommand } from '../../../lib/db/test/orchestrator-lib.mjs';
 import { TARGET_SUPABASE_REF, computeConfirmToken } from './production-import-orchestrator.mjs';
 import { ensureMigrationSeedAdmin } from './lib/admin-rpc.mjs';
+import { contentHashOf } from './lib/source-ledger.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, '..', '..', '..');
@@ -133,6 +134,13 @@ async function main() {
     }));
     return manifestPath;
   }
+  function writeDispositions(items, overrides = {}) {
+    const filePath = path.join(tmpDir, `dispositions-${crypto.randomUUID()}.json`);
+    fs.writeFileSync(filePath, JSON.stringify({
+      approvedBy: 'round-6-cli-test', approvedAt: '2026-09-10T00:00:00.000Z', items, ...overrides,
+    }));
+    return filePath;
+  }
 
   function runOrchestratorCLI(args, envOverrides = {}) {
     const backupManifestPath = writeBackupManifest();
@@ -167,11 +175,18 @@ async function main() {
     await mongoose.connection.collection('trialrequests').deleteMany({});
   }
 
-  async function seedTaggedAccount(email, migratedFrom = 'mongodb') {
+  async function seedLedgeredAccount(sourceDoc, migratedFrom = 'mongodb') {
     const id = crypto.randomUUID();
     await pgPool.query(
       `INSERT INTO auth.users (id, email, raw_user_meta_data) VALUES ($1, $2, $3::jsonb)`,
-      [id, email, JSON.stringify({ migrated_from: migratedFrom, migrated_at: new Date().toISOString() })]
+      [id, sourceDoc.email, JSON.stringify({ migrated_from: migratedFrom, migrated_at: new Date().toISOString() })]
+    );
+    await pgPool.query(
+      `INSERT INTO migration_source_ledger
+         (source_system, source_database, source_collection, source_document_id, source_content_hash,
+          target_table, target_id, status, migrated_at)
+       VALUES ('mongodb', 'al-rahma', 'users', $1, $2, 'profiles', $3, 'reconciled', now())`,
+      [String(sourceDoc._id), contentHashOf(sourceDoc), id]
     );
     return id;
   }
@@ -185,6 +200,12 @@ async function main() {
   }
   async function authUserCount() {
     return (await pgPool.query('SELECT count(*)::int AS n FROM auth.users')).rows[0].n;
+  }
+  async function migrationWriteCounts() {
+    const tables = ['auth.users', 'profiles', 'subscriptions', 'parent_student_links', 'migration_source_ledger', 'plans'];
+    const result = {};
+    for (const table of tables) result[table] = (await pgPool.query(`SELECT count(*)::int AS n FROM ${table}`)).rows[0].n;
+    return result;
   }
 
   // -----------------------------------------------------------------
@@ -201,8 +222,9 @@ async function main() {
   await test('item 1: partial user migration (profiles/auth.users already populated, migration-tagged) -> rerun resumes safely, no longer blocked by the old pristine-only preflight', async () => {
     await resetAll();
     const email = 'resume-user@example.invalid';
-    const preExistingId = await seedTaggedAccount(email, 'mongodb');
-    await mongoose.connection.collection('users').insertOne({ email, role: 'student' });
+    const sourceDoc = { _id: new mongoose.Types.ObjectId(), email, role: 'student' };
+    const preExistingId = await seedLedgeredAccount(sourceDoc, 'mongodb');
+    await mongoose.connection.collection('users').insertOne(sourceDoc);
 
     const run = runOrchestratorCLI(['--execute']);
     assert.ok(run.json, `OLD BUG: preflight crashed instead of resuming -- stderr: ${run.stderr}`);
@@ -225,8 +247,9 @@ async function main() {
   await test('item 1 + item 3: partial domain failure -> rerun resumes safely (real fault injection, real rollback, real resume)', async () => {
     await resetAll();
     const email = 'resume-domain-user@example.invalid';
-    await seedTaggedAccount(email, 'mongodb');
-    await mongoose.connection.collection('users').insertOne({ email, role: 'student' });
+    const sourceDoc = { _id: new mongoose.Types.ObjectId(), email, role: 'student' };
+    await seedLedgeredAccount(sourceDoc, 'mongodb');
+    await mongoose.connection.collection('users').insertOne(sourceDoc);
     await mongoose.connection.collection('trialrequests').insertOne({ name: 'Resume Test', email: 'trial-resume@example.invalid', status: 'new' });
 
     // First attempt: a real fault fires mid-write for the one domain
@@ -273,8 +296,9 @@ async function main() {
   await test('item 1: --compensate now actually reaches compensation with pre-existing attributable data, and removes nothing', async () => {
     await resetAll();
     const email = 'compensate-user@example.invalid';
-    const id = await seedTaggedAccount(email, 'mongodb');
-    await mongoose.connection.collection('users').insertOne({ email, role: 'student' });
+    const sourceDoc = { _id: new mongoose.Types.ObjectId(), email, role: 'student' };
+    const id = await seedLedgeredAccount(sourceDoc, 'mongodb');
+    await mongoose.connection.collection('users').insertOne(sourceDoc);
 
     const profilesBefore = await profileCount();
     const authUsersBefore = await authUserCount();
@@ -312,6 +336,77 @@ async function main() {
     assert.equal(runCompensate.code, 1);
     assert.match(runCompensate.stderr, /FATAL/);
     assert.match(runCompensate.stderr, /not attributable to this migration/);
+  });
+
+  await test('round 6 item 1: --compensate --execute with mixed valid + normalized-invalid users performs zero writes', async () => {
+    await resetAll();
+    await mongoose.connection.collection('users').insertMany([
+      { email: 'valid-compensate@example.invalid', role: 'student', subscription: { plan: 'Starter' } },
+      { email: ' BAD-EMAIL ', role: 'student' },
+    ]);
+    const before = await migrationWriteCounts();
+    const run = runOrchestratorCLI(['--compensate', '--execute']);
+    const after = await migrationWriteCounts();
+    assert.ok(run.json, run.stderr);
+    assert.equal(run.code, 1);
+    assert.equal(run.json.ok, false);
+    assert.deepEqual(after, before, 'compensation must inherit the worker zero-write validation gate');
+  });
+
+  await test('round 6 item 1: --compensate --execute with a dangling relationship performs zero writes', async () => {
+    await resetAll();
+    await mongoose.connection.collection('users').insertOne({
+      email: 'dangling-compensate@example.invalid', role: 'student', teacher: 'missing-source-id',
+    });
+    const before = await migrationWriteCounts();
+    const run = runOrchestratorCLI(['--compensate', '--execute']);
+    const after = await migrationWriteCounts();
+    assert.ok(run.json, run.stderr);
+    assert.equal(run.code, 1);
+    assert.deepEqual(after, before);
+  });
+
+  await test('round 6 item 2: production CLI forwards one approved disposition through plan, execute, and compensate', async () => {
+    const modes = [[], ['--execute'], ['--compensate', '--execute']];
+    for (const mode of modes) {
+      await resetAll();
+      const email = `approved-${mode.join('-') || 'plan'}@example.invalid`;
+      const sourceDoc = { _id: new mongoose.Types.ObjectId(), email, role: 'student', teacher: 'missing-source-id' };
+      if (mode.includes('--execute')) await seedLedgeredAccount(sourceDoc);
+      await mongoose.connection.collection('users').insertOne(sourceDoc);
+      const dispositions = writeDispositions([{
+        signature: `relationship:teacher:${email}:missing-source-id`, reason: 'reviewed fixture gap',
+      }]);
+      const run = runOrchestratorCLI([...mode, `--approved-dispositions=${dispositions}`]);
+      assert.ok(run.json, run.stderr);
+      assert.equal(run.code, 0, run.stderr);
+      assert.equal(run.json.ok, true);
+      const saga = JSON.parse(fs.readFileSync(run.json.saga, 'utf8'));
+      const binding = saga.steps.find((step) => step.step === 'approved_dispositions' && step.status === 'bound');
+      assert.equal(binding.hash, sha256File(dispositions));
+      assert.equal(binding.approvedBy, 'round-6-cli-test');
+      assert.equal(binding.approvedAt, '2026-09-10T00:00:00.000Z');
+    }
+  });
+
+  await test('round 6 item 2: production CLI rejects duplicate flags, malformed timestamps, and unused signatures', async () => {
+    await resetAll();
+    const empty = writeDispositions([]);
+    const duplicate = runOrchestratorCLI([`--approved-dispositions=${empty}`, `--approved-dispositions=${empty}`]);
+    assert.equal(duplicate.code, 1);
+    assert.match(duplicate.stderr, /more than once/);
+
+    const malformed = writeDispositions([], { approvedAt: 'not-an-instant' });
+    const badTimestamp = runOrchestratorCLI([`--approved-dispositions=${malformed}`]);
+    assert.equal(badTimestamp.code, 1);
+    assert.match(badTimestamp.stderr, /valid ISO/);
+
+    const unused = writeDispositions([{ signature: 'relationship:teacher:unused@example.invalid:none', reason: 'stale' }]);
+    const stale = runOrchestratorCLI([`--approved-dispositions=${unused}`]);
+    assert.equal(stale.code, 1);
+    assert.ok(stale.json, stale.stderr);
+    assert.equal(stale.json.failedAt, 'users_and_relationships_preflight');
+    assert.match(stale.json.stderr, /matched no real problem/);
   });
 
   await pgPool.end();

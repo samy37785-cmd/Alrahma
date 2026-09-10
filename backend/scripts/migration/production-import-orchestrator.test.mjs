@@ -18,6 +18,8 @@ import {
   verifyFreshBackup,
   computeDomainWorkerPlan,
   runImport,
+  compensate,
+  parseCliArgs,
 } from './production-import-orchestrator.mjs';
 
 const results = [];
@@ -140,8 +142,6 @@ async function main() {
   await test('verifyFreshBackup rejects a missing manifest file', () => {
     assert.throws(() => verifyFreshBackup(path.join(tmpDir, 'does-not-exist.json')), /no backup manifest/);
   });
-
-  fs.rmSync(tmpDir, { recursive: true, force: true });
 
   // Stage 2J-B Part H, review round 2: operator-acknowledged deferral
   // only -- nothing is ever excluded by a hardcoded default.
@@ -302,6 +302,86 @@ async function main() {
     assert.equal(result.status, undefined);
     assert.equal(runWorkerFn.calls.length, 3, 'the domain --execute call must never be attempted after users_and_relationships fails for real');
   });
+
+  function writeDispositions(overrides = {}) {
+    const filePath = path.join(tmpDir, `dispositions-${crypto.randomUUID()}.json`);
+    fs.writeFileSync(filePath, JSON.stringify({
+      approvedBy: 'round-6-reviewer',
+      approvedAt: '2026-09-10T00:00:00.000Z',
+      items: [],
+      ...overrides,
+    }));
+    return filePath;
+  }
+
+  await test('approved dispositions: plan/execute receive the exact same path and saga binds hash + approver + timestamp', async () => {
+    const dispositionPath = writeDispositions();
+    const runWorkerFn = makeRecordingWorker([{ code: 0 }, { code: 0 }, { code: 0 }, { code: 0 }]);
+    const result = await runImport({ pgClient: null, execute: true, runWorkerFn, approvedDispositionsPath: dispositionPath });
+    const flag = `--approved-dispositions=${dispositionPath}`;
+    assert.deepEqual(runWorkerFn.calls[0].args, [flag]);
+    assert.deepEqual(runWorkerFn.calls[2].args, ['--execute', flag]);
+    const saga = JSON.parse(fs.readFileSync(result.saga, 'utf8'));
+    const binding = saga.steps.find((s) => s.step === 'approved_dispositions' && s.status === 'bound');
+    assert.equal(binding.hash, sha256Of(dispositionPath));
+    assert.equal(binding.approvedBy, 'round-6-reviewer');
+    assert.equal(binding.approvedAt, '2026-09-10T00:00:00.000Z');
+  });
+
+  await test('approved dispositions: mutation between plan and execute is rejected before either execute worker runs', async () => {
+    const dispositionPath = writeDispositions();
+    const runWorkerFn = makeRecordingWorker([{ code: 0 }, { code: 0 }]);
+    const base = runWorkerFn.bind(null);
+    let calls = 0;
+    const mutatingWorker = (...args) => {
+      const result = base(...args);
+      calls += 1;
+      if (calls === 2) fs.appendFileSync(dispositionPath, ' ');
+      return result;
+    };
+    mutatingWorker.calls = runWorkerFn.calls;
+    const result = await runImport({ pgClient: null, execute: true, runWorkerFn: mutatingWorker, approvedDispositionsPath: dispositionPath });
+    assert.equal(result.ok, false);
+    assert.equal(result.failedAt, 'approved_dispositions_integrity');
+    assert.equal(runWorkerFn.calls.length, 2);
+  });
+
+  await test('approved dispositions: malformed timestamp and duplicate signatures are rejected before worker invocation', async () => {
+    const worker = makeRecordingWorker([]);
+    await assert.rejects(
+      () => runImport({ pgClient: null, execute: false, runWorkerFn: worker, approvedDispositionsPath: writeDispositions({ approvedAt: 'tomorrow' }) }),
+      /valid ISO/
+    );
+    await assert.rejects(
+      () => runImport({
+        pgClient: null, execute: false, runWorkerFn: worker,
+        approvedDispositionsPath: writeDispositions({ items: [{ signature: 'x', reason: 'a' }, { signature: 'x', reason: 'b' }] }),
+      }),
+      /duplicate signature/
+    );
+    assert.equal(worker.calls.length, 0);
+  });
+
+  await test('orchestrator CLI parser rejects duplicate/bare disposition flags and preserves paths containing equals signs', () => {
+    assert.throws(() => parseCliArgs(['--approved-dispositions=a', '--approved-dispositions=b']), /more than once/);
+    assert.throws(() => parseCliArgs(['--approved-dispositions']), /non-empty/);
+    assert.equal(parseCliArgs(['--approved-dispositions=C:\\tmp\\a=b.json'])['approved-dispositions'], 'C:\\tmp\\a=b.json');
+  });
+
+  await test('compensate forwards the same reviewed disposition artifact in both plan and execute modes', async () => {
+    const dispositionPath = writeDispositions();
+    const planWorker = makeRecordingWorker([{ code: 0 }]);
+    const plan = await compensate({ pgClient: null, execute: false, runWorkerFn: planWorker, approvedDispositionsPath: dispositionPath });
+    assert.equal(plan.ok, true);
+    assert.deepEqual(planWorker.calls[0].args, [`--approved-dispositions=${dispositionPath}`]);
+
+    const executeWorker = makeRecordingWorker([{ code: 0 }]);
+    const executeResult = await compensate({ pgClient: null, execute: true, runWorkerFn: executeWorker, approvedDispositionsPath: dispositionPath });
+    assert.equal(executeResult.ok, true);
+    assert.deepEqual(executeWorker.calls[0].args, ['--execute', `--approved-dispositions=${dispositionPath}`]);
+  });
+
+  fs.rmSync(tmpDir, { recursive: true, force: true });
 
   const failed = results.filter((r) => !r.pass);
   console.log(`\n${results.length - failed.length}/${results.length} passed.`);

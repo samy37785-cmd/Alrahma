@@ -17,13 +17,47 @@
 // under the same superuser trust model (RLS bypassed by the Postgres
 // superuser role itself, not by this trick).
 export const MIGRATION_SEED_ADMIN_ID = '00000000-0000-4000-8000-000000000099';
-const MIGRATION_SEED_ADMIN_EMAIL = 'stage2jb-migration-tool@rehearsal.local';
+// Review round 6, item 3: exported (was module-private) so
+// production-import-orchestrator.mjs's verifyNoUnrecordedData() can
+// verify the COMPLETE expected seed-admin identity (id + this exact
+// email + profiles.role='admin' + a matching admin_role_assignments row)
+// rather than trusting the id alone -- a row that merely happens to share
+// MIGRATION_SEED_ADMIN_ID but not this email (or any other mismatch) is a
+// collision that must fail closed, never be silently exempted.
+export const MIGRATION_SEED_ADMIN_EMAIL = 'stage2jb-migration-tool@rehearsal.local';
+
+export async function inspectMigrationSeedAdmin(pgClient) {
+  const { rows } = await pgClient.query(
+    `SELECT u.id, u.email, p.id AS profile_id, p.email AS profile_email,
+            p.role AS profile_role, a.role AS admin_role
+       FROM auth.users u
+       LEFT JOIN profiles p ON p.id = u.id
+       LEFT JOIN admin_role_assignments a ON a.user_id = u.id
+      WHERE u.id = $1 OR u.email = $2`,
+    [MIGRATION_SEED_ADMIN_ID, MIGRATION_SEED_ADMIN_EMAIL]
+  );
+  if (rows.length === 0) return { state: 'absent' };
+  const row = rows[0];
+  const exact = rows.length === 1 &&
+    String(row.id) === MIGRATION_SEED_ADMIN_ID &&
+    row.email === MIGRATION_SEED_ADMIN_EMAIL &&
+    String(row.profile_id) === MIGRATION_SEED_ADMIN_ID &&
+    row.profile_email === MIGRATION_SEED_ADMIN_EMAIL &&
+    row.profile_role === 'admin' &&
+    row.admin_role === 'admin';
+  return { state: exact ? 'exact' : 'collision' };
+}
 
 /**
  * Ensures the throwaway local admin identity exists (idempotent) — call
  * once per run, outside any RPC-calling transaction.
  */
 export async function ensureMigrationSeedAdmin(pgClient) {
+  const before = await inspectMigrationSeedAdmin(pgClient);
+  if (before.state === 'exact') return;
+  if (before.state === 'collision') {
+    throw new Error('migration seed-admin UUID/email collides with an incomplete or mismatched auth/profile/admin-role identity');
+  }
   await pgClient.query(
     `INSERT INTO auth.users (id, email, raw_user_meta_data) VALUES ($1, $2, '{}'::jsonb)
      ON CONFLICT (id) DO NOTHING`,
@@ -39,6 +73,10 @@ export async function ensureMigrationSeedAdmin(pgClient) {
      ON CONFLICT (user_id) DO UPDATE SET role = 'admin'`,
     [MIGRATION_SEED_ADMIN_ID]
   );
+  const after = await inspectMigrationSeedAdmin(pgClient);
+  if (after.state !== 'exact') {
+    throw new Error('migration seed-admin creation did not produce the exact expected auth/profile/admin-role identity');
+  }
 }
 
 /**

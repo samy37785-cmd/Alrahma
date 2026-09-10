@@ -14,6 +14,21 @@
 // shape that made the duplicate-row risk in kill-window 2 real), tears
 // down and verifies cleanup at the end. Safe to run any number of times.
 //
+// Review round 3 additions (mongo-to-supabase.mjs's own changelog has the
+// full rationale for each fix; summarized here):
+//   - rollback's ledger-fallback query now also matches status='failed'
+//     rows with a target_id set (kill-window 3's real shape) -- proven by
+//     a dedicated kill-window-3 -> delete-checkpoint -> rollback test.
+//   - rollback's target-row verification now runs INSIDE the transaction,
+//     before the ledger-row delete and before COMMIT -- proven with a
+//     REAL BEFORE DELETE trigger that vetoes a delete (not a mock), which
+//     must leave both the target row and its ledger row intact.
+//   - resumeTargetId is now an ENFORCED adapter contract, not a
+//     convention two plain-INSERT domains (notifications,
+//     system_audit_logs) silently didn't honor -- proven against exactly
+//     those two domains, each with the local checkpoint intact and
+//     deleted, asserting exactly one row survives a kill-window-3 resume.
+//
 // Every scenario drives mongo-to-supabase.mjs ONLY via child-process CLI
 // invocation (never imported directly) -- that file's own bottom runs its
 // main() unconditionally on import, exactly like production-import-
@@ -392,6 +407,192 @@ async function main() {
     assert.equal(await totalTargetRows(), 0);
     assert.equal(await ledgerRow(sourceId), null);
   });
+
+  await test('review round 3, item 2: kill-window 3 -> delete checkpoint -> rollback -> both target and ledger must disappear', async () => {
+    await resetAll();
+    const sourceId = await insertTrialRequest(pgPool, 1);
+
+    // Crash between markCreated and markReconciled -- the outer catch
+    // always calls markFailed() (even for an injected fault), so the
+    // ledger row ends up status='failed' with target_id STILL SET
+    // (markFailed() never touches target_id) and the target row genuinely
+    // exists. This is exactly the row shape the round-2 rollback fallback
+    // query silently ignored (it only matched 'created'/'reconciled').
+    const faulted = runMigrateCLI(['--domain=trial_requests'], {
+      MIGRATION_FAULT_INJECT_STAGE: 'after_marked_created_before_reconciled',
+    });
+    assert.equal(faulted.code, 1);
+    const rowAfterFault = await ledgerRow(sourceId);
+    assert.equal(rowAfterFault.status, 'failed');
+    assert.ok(rowAfterFault.target_id, 'markCreated committed before the fault -- target_id must be set');
+    assert.equal(await totalTargetRows(), 1);
+
+    deleteLocalCheckpoint();
+
+    const rb = runMigrateCLI(['--domain=trial_requests', '--rollback']);
+    assert.equal(rb.code, 0, rb.stderr);
+    assert.match(rb.stdout, /source=ledger-fallback/, 'must have used the ledger fallback (no local checkpoint)');
+    assert.equal(await totalTargetRows(), 0, 'the target row must be gone -- a status=failed ledger row with a target_id is NOT a no-op for rollback');
+    assert.equal(await ledgerRow(sourceId), null, 'the ledger row must be gone too -- no orphan left behind');
+  });
+
+  await test('review round 3, item 3: a real BEFORE DELETE trigger that vetoes the delete is never mistaken for success -- both target and ledger survive', async () => {
+    await resetAll();
+    const sourceId = await insertTrialRequest(pgPool, 1);
+    const fwd = runMigrateCLI(['--domain=trial_requests']);
+    assert.equal(fwd.code, 0, fwd.stderr);
+    const row = await ledgerRow(sourceId);
+
+    // A real trigger, not a mock: BEFORE DELETE ... RETURN NULL is a
+    // legal Postgres way to silently veto a delete -- the DELETE command
+    // itself reports rowCount=0 for that row, exactly like "already
+    // gone". Only an explicit, independent re-check (verifyTargetRowExists
+    // run INSIDE the transaction, before the ledger row is touched and
+    // before COMMIT) can tell the two apart.
+    await pgPool.query(`
+      CREATE OR REPLACE FUNCTION test_veto_trial_request_delete() RETURNS trigger AS $$
+      BEGIN
+        RETURN NULL;
+      END;
+      $$ LANGUAGE plpgsql;
+    `);
+    await pgPool.query(`
+      CREATE TRIGGER test_veto_trial_request_delete_trigger
+      BEFORE DELETE ON trial_requests
+      FOR EACH ROW EXECUTE FUNCTION test_veto_trial_request_delete();
+    `);
+    try {
+      const rb = runMigrateCLI(['--domain=trial_requests', '--rollback']);
+      assert.equal(rb.code, 1, 'a vetoed delete must be reported as a genuine rollback failure, never silent success');
+      assert.match(rb.stdout, /1 FAILED/);
+
+      // The row was never actually removed (the trigger vetoed it) -- but
+      // prove the STRONGER property: even if it briefly "looked" deleted
+      // to the DELETE statement, the whole transaction rolled back, so
+      // its ledger row was never touched either.
+      const stillThere = await pgPool.query('SELECT 1 FROM trial_requests WHERE id=$1', [row.target_id]);
+      assert.equal(stillThere.rowCount, 1, 'the target row must still exist -- the trigger vetoed its deletion');
+      const ledgerStillThere = await ledgerRow(sourceId);
+      assert.ok(ledgerStillThere, 'the ledger row must also still exist -- it must never be deleted ahead of a confirmed target deletion');
+    } finally {
+      // Must be removed even on assertion failure -- every later test in
+      // this file reuses the same trial_requests table.
+      await pgPool.query('DROP TRIGGER IF EXISTS test_veto_trial_request_delete_trigger ON trial_requests');
+      await pgPool.query('DROP FUNCTION IF EXISTS test_veto_trial_request_delete()');
+    }
+
+    // With the trigger gone, a normal retry now completes cleanly --
+    // proving the earlier "failure" really was just the trigger, not a
+    // wider regression.
+    const rb2 = runMigrateCLI(['--domain=trial_requests', '--rollback']);
+    assert.equal(rb2.code, 0, rb2.stderr);
+    assert.equal(await totalTargetRows(), 0);
+    assert.equal(await ledgerRow(sourceId), null);
+  });
+
+  // =====================================================================
+  // Item 4: resumeTargetId as an ENFORCED adapter contract -- proven
+  // against the two plain-INSERT domains (no natural dedup key, no
+  // checkpoint-aware upsert() before this round's fix) the reviewer
+  // specifically named: notifications and system_audit_logs.
+  // =====================================================================
+
+  const DOMAIN_TABLE = { notifications: 'notifications', system_audit_logs: 'admin_audit_log' };
+
+  function checkpointFileFor(domain) {
+    return path.join(__dirname, '.checkpoints', `${domain}.json`);
+  }
+  function deleteCheckpointFor(domain) {
+    fs.rmSync(checkpointFileFor(domain), { force: true });
+  }
+  async function domainLedgerRow(domain, sourceId) {
+    const r = await pgPool.query(
+      `SELECT status, target_id, source_content_hash FROM migration_source_ledger
+       WHERE source_collection=$1 AND source_document_id=$2`,
+      [domain, sourceId]
+    );
+    return r.rows[0] ?? null;
+  }
+  async function domainTotalRows(domain) {
+    const r = await pgPool.query(`SELECT count(*) FROM ${DOMAIN_TABLE[domain]}`);
+    return Number(r.rows[0].count);
+  }
+  async function resetPlainInsertDomainsState() {
+    await pgPool.query('TRUNCATE notifications, admin_audit_log, profiles, auth.users, migration_source_ledger RESTART IDENTITY CASCADE');
+    deleteCheckpointFor('notifications');
+    deleteCheckpointFor('system_audit_logs');
+    await mongoose.connection.collection('users').deleteMany({});
+    await mongoose.connection.collection('adminusers').deleteMany({});
+    await mongoose.connection.collection('notifications').deleteMany({});
+    await mongoose.connection.collection('systemauditlogs').deleteMany({});
+  }
+  async function seedNotificationPrereqs() {
+    const email = `notifuser-${crypto.randomBytes(4).toString('hex')}@example.invalid`;
+    const profileId = crypto.randomUUID();
+    await pgPool.query('INSERT INTO auth.users (id, email) VALUES ($1,$2)', [profileId, email]);
+    const res = await mongoose.connection.collection('users').insertOne({ email });
+    return String(res.insertedId);
+  }
+  async function insertNotificationDoc(recipientMongoId, seq) {
+    const res = await mongoose.connection.collection('notifications').insertOne({
+      recipient: recipientMongoId, type: 'admin_announcement', title: `Notice ${seq}`,
+    });
+    return String(res.insertedId);
+  }
+  async function seedAdminPrereqs() {
+    const email = `adminuser-${crypto.randomBytes(4).toString('hex')}@example.invalid`;
+    const profileId = crypto.randomUUID();
+    await pgPool.query('INSERT INTO auth.users (id, email) VALUES ($1,$2)', [profileId, email]);
+    const res = await mongoose.connection.collection('adminusers').insertOne({ email });
+    return String(res.insertedId);
+  }
+  async function insertAuditLogDoc(adminMongoId, seq) {
+    const res = await mongoose.connection.collection('systemauditlogs').insertOne({
+      adminId: adminMongoId, action: `test_action_${seq}`, resource: 'test_resource', severity: 'info',
+    });
+    return String(res.insertedId);
+  }
+
+  for (const domainName of ['notifications', 'system_audit_logs']) {
+    for (const repeatAfterCheckpointLoss of [false, true]) {
+      const label = repeatAfterCheckpointLoss ? '(checkpoint deleted before resume)' : '(checkpoint intact)';
+      await test(`review round 3, item 4: kill-window 3 recovery for plain-insert domain ${domainName} -- exactly one row must remain ${label}`, async () => {
+        await resetPlainInsertDomainsState();
+
+        let sourceId;
+        if (domainName === 'notifications') {
+          const recipientMongoId = await seedNotificationPrereqs();
+          sourceId = await insertNotificationDoc(recipientMongoId, 1);
+        } else {
+          const adminMongoId = await seedAdminPrereqs();
+          sourceId = await insertAuditLogDoc(adminMongoId, 1);
+        }
+
+        const faulted = runMigrateCLI([`--domain=${domainName}`], {
+          MIGRATION_FAULT_INJECT_STAGE: 'after_marked_created_before_reconciled',
+        });
+        assert.equal(faulted.code, 1, faulted.stderr);
+
+        const rowAfterFault = await domainLedgerRow(domainName, sourceId);
+        assert.notEqual(rowAfterFault.status, 'reconciled');
+        assert.ok(rowAfterFault.target_id, 'the target row must exist at this point (markCreated committed before the fault)');
+        assert.equal(await domainTotalRows(domainName), 1, 'exactly one row must exist before resume');
+
+        if (repeatAfterCheckpointLoss) deleteCheckpointFor(domainName);
+
+        const resumed = runMigrateCLI([`--domain=${domainName}`]);
+        assert.equal(resumed.code, 0, resumed.stderr);
+        assert.equal(
+          await domainTotalRows(domainName), 1,
+          `CONTRACT VIOLATION: ${domainName} must reuse the existing row on resume, never insert a duplicate -- ` +
+          `this is exactly the bug the resumeTargetId adapter-contract fix closes`
+        );
+        const finalRow = await domainLedgerRow(domainName, sourceId);
+        assert.equal(finalRow.status, 'reconciled');
+        assert.equal(finalRow.target_id, rowAfterFault.target_id, 'must be the SAME row, not a new one');
+      });
+    }
+  }
 
   await test('an immutable domain (invoices) still refuses rollback outright, with `failed` staying 0', async () => {
     const rb = runMigrateCLI(['--domain=invoices', '--rollback']);

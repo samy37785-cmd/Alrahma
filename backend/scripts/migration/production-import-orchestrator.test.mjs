@@ -17,6 +17,7 @@ import {
   verifyApprovalManifest,
   verifyFreshBackup,
   computeDomainWorkerPlan,
+  runImport,
 } from './production-import-orchestrator.mjs';
 
 const results = [];
@@ -177,6 +178,95 @@ async function main() {
     const input = ['payments'];
     computeDomainWorkerPlan({ deferDomains: input });
     assert.deepEqual(input, ['payments']);
+  });
+
+  // -----------------------------------------------------------------
+  // Stage 2J-B Part H, review round 3, item 1: BOTH the user-migration
+  // plan/preflight AND the full domain dry-run must run BEFORE either
+  // one is ever allowed to execute/write. Proven purely in-process, no
+  // live Postgres/Mongo/GoTrue needed, via runWorkerFn (an injectable
+  // stand-in for the real child-process spawn used ONLY by tests) --
+  // this asserts the exact call sequence runImport() actually issues.
+  // -----------------------------------------------------------------
+
+  function makeRecordingWorker(responses) {
+    const calls = [];
+    const fn = (scriptPath, args) => {
+      calls.push({ args: [...args] });
+      const r = responses[calls.length - 1] ?? { code: 0 };
+      return { code: r.code, stdout: r.stdout ?? '', stderr: r.stderr ?? '' };
+    };
+    fn.calls = calls;
+    return fn;
+  }
+
+  await test('runImport (--plan): only the two preflight/dry-run calls ever happen, neither ever carries --execute', async () => {
+    const runWorkerFn = makeRecordingWorker([{ code: 0 }, { code: 0 }]);
+    const result = await runImport({ pgClient: null, execute: false, runWorkerFn });
+    assert.equal(result.ok, true);
+    assert.equal(result.status, 'reconciled');
+    assert.equal(runWorkerFn.calls.length, 2, 'a --plan run must never call more than the two preflight steps');
+    assert.deepEqual(runWorkerFn.calls[0].args, [], 'step 1 must be the user-migration preflight, with no --execute');
+    assert.deepEqual(runWorkerFn.calls[1].args, ['--domain=all', '--dry-run'], 'step 2 must be the domain dry-run preflight');
+  });
+
+  await test('runImport (--execute, both preflights pass): preflights run FIRST, in full, before either execute call', async () => {
+    const runWorkerFn = makeRecordingWorker([{ code: 0 }, { code: 0 }, { code: 0 }, { code: 0 }]);
+    const result = await runImport({ pgClient: null, execute: true, runWorkerFn });
+    assert.equal(result.ok, true);
+    assert.equal(result.status, 'reconciled');
+    assert.equal(runWorkerFn.calls.length, 4, 'an --execute run must issue exactly 4 calls: 2 preflights + 2 real writes');
+    assert.deepEqual(runWorkerFn.calls[0].args, [], 'call 1: user-migration preflight, NOT --execute');
+    assert.deepEqual(runWorkerFn.calls[1].args, ['--domain=all', '--dry-run'], 'call 2: domain preflight, dry-run');
+    assert.deepEqual(runWorkerFn.calls[2].args, ['--execute'], 'call 3 (only after both preflights passed): user-migration for real');
+    assert.deepEqual(runWorkerFn.calls[3].args, ['--domain=all'], 'call 4 (only after both preflights passed): domains for real, no --dry-run');
+  });
+
+  await test('runImport (--execute): a failing user-migration preflight stops EVERYTHING -- zero further calls, zero writes anywhere', async () => {
+    const runWorkerFn = makeRecordingWorker([{ code: 1, stderr: 'boom' }]);
+    const result = await runImport({ pgClient: null, execute: true, runWorkerFn });
+    assert.equal(result.ok, false);
+    assert.equal(result.failedAt, 'users_and_relationships_preflight');
+    assert.equal(runWorkerFn.calls.length, 1, 'the domain preflight, and both execute calls, must never even be attempted');
+  });
+
+  await test('runImport (--execute): a failing domain dry-run preflight stops BOTH executes -- neither users nor domains ever write', async () => {
+    const runWorkerFn = makeRecordingWorker([{ code: 0 }, { code: 1, stderr: 'a domain would fail' }]);
+    const result = await runImport({ pgClient: null, execute: true, runWorkerFn });
+    assert.equal(result.ok, false);
+    assert.equal(result.failedAt, 'mongo_domains_preflight');
+    assert.equal(runWorkerFn.calls.length, 2, 'neither the user-migration --execute call nor the domain --execute call may ever run after this');
+  });
+
+  await test('runImport (--plan): a failing user-migration preflight still stops before the domain preflight even runs', async () => {
+    const runWorkerFn = makeRecordingWorker([{ code: 1, stderr: 'boom' }]);
+    const result = await runImport({ pgClient: null, execute: false, runWorkerFn });
+    assert.equal(result.ok, false);
+    assert.equal(result.failedAt, 'users_and_relationships_preflight');
+    assert.equal(runWorkerFn.calls.length, 1);
+  });
+
+  // -----------------------------------------------------------------
+  // Review round 3 correction: the comment claiming a caller checking
+  // only `ok` could never mistake 'completed_with_deferred' for
+  // 'reconciled' was itself false -- `ok` is `true` for both. This
+  // asserts the actually-true property: `status`/`deferredDomains` are
+  // what distinguish them, `ok` alone cannot.
+  // -----------------------------------------------------------------
+
+  await test('runImport: `ok` is true for BOTH reconciled and completed_with_deferred -- only `status`/`deferredDomains` distinguish them', async () => {
+    const plainRunWorkerFn = makeRecordingWorker([{ code: 0 }, { code: 0 }]);
+    const plain = await runImport({ pgClient: null, execute: false, runWorkerFn: plainRunWorkerFn });
+    const deferredRunWorkerFn = makeRecordingWorker([{ code: 0 }, { code: 0 }]);
+    const deferred = await runImport({ pgClient: null, execute: false, deferDomains: ['payments'], runWorkerFn: deferredRunWorkerFn });
+
+    assert.equal(plain.ok, true);
+    assert.equal(deferred.ok, true);
+    assert.equal(plain.ok, deferred.ok, '`ok` alone is identical for both -- it cannot be what tells them apart');
+    assert.equal(plain.status, 'reconciled');
+    assert.equal(deferred.status, 'completed_with_deferred');
+    assert.deepEqual(plain.deferredDomains, []);
+    assert.deepEqual(deferred.deferredDomains, ['payments']);
   });
 
   const failed = results.filter((r) => !r.pass);

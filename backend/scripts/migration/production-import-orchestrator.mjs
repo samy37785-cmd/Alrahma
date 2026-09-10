@@ -68,6 +68,30 @@
 // exact reason in stderr; --defer-domains=payments -> run succeeds,
 // status='completed_with_deferred', deferredDomains=['payments'], the
 // saga logs it as 'deferred' with its reason.
+//
+// Round 3 (review): round 2's own "fail closed before writes" claim was
+// itself incomplete -- the domain dry-run preflight really did run before
+// any DOMAIN write, but users_and_relationships (the very first step) was
+// invoked with --execute IMMEDIATELY, before the domain preflight had any
+// chance to run at all. A real account-creation write could land, then
+// the domain preflight could still fail the rest of the run closed --
+// "zero writes performed" was never actually true for that case. Fixed:
+// runImport() now ALWAYS runs a plan/preflight pass of BOTH steps first
+// (users_and_relationships without --execute, then the domain dry-run) --
+// neither one is ever allowed to execute/write until BOTH have passed.
+// Only then, and only if --execute was requested, does a second pass run
+// both for real (users first, since domains that reference profiles
+// depend on accounts already existing). A --plan-only run never reaches
+// that second pass at all -- the preflight pass already IS the whole
+// --plan run, unchanged in substance from before, just correctly ordered.
+//
+// Also (round 3): the comment that used to sit on the 'run' saga step
+// below claimed a caller "checking only `ok` can never mistake" a partial
+// migration for a complete one -- that was written wrong and a reviewer
+// correctly called it out: `ok` is `true` for BOTH 'reconciled' and
+// 'completed_with_deferred' (deferring a domain is not itself a failure),
+// so `ok` alone cannot and never could distinguish the two. See that
+// comment's corrected wording below for what is actually guaranteed.
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -420,18 +444,17 @@ function runWorker(scriptPath, args, env) {
 // never proceeds to a dependent domain on top of a broken one.
 // ---------------------------------------------------------------------
 
-export async function runImport({ pgClient, execute, faultStage, deferDomains = [] }) {
+// runWorkerFn defaults to the real runWorker (real child-process spawns)
+// — the only reason this is an injectable parameter at all is so
+// production-import-orchestrator.test.mjs can verify the exact CALL
+// SEQUENCE (which script, which args, in what order) purely in-process,
+// with no live Postgres/Mongo/GoTrue needed for that specific property,
+// without changing a single line of real runtime behavior (the default
+// is the same function every real caller already used).
+export async function runImport({ pgClient, execute, faultStage, deferDomains = [], runWorkerFn = runWorker }) {
   const runId = new Date().toISOString().replace(/[:.]/g, '-');
   const saga = newSagaLog(runId);
   const commonEnv = faultStage ? { MIGRATION_FAULT_INJECT_STAGE: faultStage, MIGRATION_FAULT_INJECT_ONCE: '1' } : {};
-
-  saga.record('users_and_relationships', 'planned');
-  const userArgs = execute ? ['--execute'] : [];
-  const userResult = runWorker(USER_MIGRATION_SCRIPT, userArgs, commonEnv);
-  saga.record('users_and_relationships', userResult.code === 0 ? 'reconciled' : 'failed', { code: userResult.code });
-  if (userResult.code !== 0) {
-    return { ok: false, failedAt: 'users_and_relationships', saga: saga.filePath, stderr: userResult.stderr };
-  }
 
   // Every domain the OPERATOR explicitly deferred on this run's command
   // line is recorded here, by name and reason — never silently dropped.
@@ -442,40 +465,60 @@ export async function runImport({ pgClient, execute, faultStage, deferDomains = 
     saga.record('mongo_domains', 'deferred', { domain, reason });
   }
 
-  // Stage 2J-B Part H, review round 2: ALWAYS preflight the FULL domain
-  // set (minus only what the operator explicitly deferred) with a real
-  // --dry-run first — even when --execute was requested — before any
-  // write is attempted anywhere. This is what makes "fail closed before
-  // writes" a real, general property: a domain that would genuinely fail
-  // (any domain, not specifically payments — nothing here names payments
-  // as special) fails the WHOLE run here, with zero writes performed, an
-  // operator not merely reads about this in the eventual last-domain
-  // report but is stopped before it starts. Skipped in an already-plan
-  // (!execute) run, since that run IS the dry-run.
-  if (execute) {
-    saga.record('mongo_domains_preflight', 'planned');
-    const preflightArgs = ['--domain=all', ...(excludeArg ? [`--exclude-domain=${excludeArg}`] : []), '--dry-run'];
-    const preflightResult = runWorker(DOMAIN_MIGRATION_SCRIPT, preflightArgs, commonEnv);
-    saga.record('mongo_domains_preflight', preflightResult.code === 0 ? 'reconciled' : 'failed', { code: preflightResult.code });
-    if (preflightResult.code !== 0) {
-      return {
-        ok: false,
-        failedAt: 'mongo_domains_preflight',
-        saga: saga.filePath,
-        stderr: preflightResult.stderr,
-        hint: 'one or more domains would fail and were NOT explicitly deferred -- no write was attempted anywhere. ' +
-          'Either fix the underlying issue, or re-run with --defer-domains=<name>[,<name>...] to explicitly acknowledge excluding it.',
-      };
-    }
+  // Review round 3: BOTH the user-migration plan/preflight AND the full
+  // domain dry-run now ALWAYS run first, as a pair, before EITHER one is
+  // ever allowed to execute/write — this is what actually makes "no
+  // write until everything has been checked" a true property. Round 2
+  // already got the domain side right (a real --dry-run before any
+  // domain write); what it missed is that users_and_relationships itself
+  // was invoked with --execute immediately, ahead of that domain
+  // preflight, so a real account-creation write could already have
+  // landed before the domain side had any chance to fail the run closed.
+  saga.record('users_and_relationships_preflight', 'planned');
+  const userPreflightResult = runWorkerFn(USER_MIGRATION_SCRIPT, [], commonEnv);
+  saga.record('users_and_relationships_preflight', userPreflightResult.code === 0 ? 'reconciled' : 'failed', { code: userPreflightResult.code });
+  if (userPreflightResult.code !== 0) {
+    return { ok: false, failedAt: 'users_and_relationships_preflight', saga: saga.filePath, stderr: userPreflightResult.stderr };
+  }
+
+  saga.record('mongo_domains_preflight', 'planned');
+  const preflightArgs = ['--domain=all', ...(excludeArg ? [`--exclude-domain=${excludeArg}`] : []), '--dry-run'];
+  const preflightResult = runWorkerFn(DOMAIN_MIGRATION_SCRIPT, preflightArgs, commonEnv);
+  saga.record('mongo_domains_preflight', preflightResult.code === 0 ? 'reconciled' : 'failed', { code: preflightResult.code });
+  if (preflightResult.code !== 0) {
+    return {
+      ok: false,
+      failedAt: 'mongo_domains_preflight',
+      saga: saga.filePath,
+      stderr: preflightResult.stderr,
+      hint: 'one or more domains would fail and were NOT explicitly deferred -- no write was attempted anywhere ' +
+        '(users_and_relationships included). Either fix the underlying issue, or re-run with ' +
+        '--defer-domains=<name>[,<name>...] to explicitly acknowledge excluding it.',
+    };
+  }
+
+  if (!execute) {
+    // A --plan-only run never gets further than the preflight pass above
+    // — that pass already performed and reported every check this run
+    // would ever need, for both users and domains, with zero writes.
+    const status = deferred.length > 0 ? 'completed_with_deferred' : 'reconciled';
+    saga.record('run', status, deferred.length > 0 ? { deferredDomains: deferred.map((d) => d.domain) } : {});
+    return { ok: true, status, deferredDomains: deferred.map((d) => d.domain), saga: saga.filePath };
+  }
+
+  // Both preflights passed — only NOW is any write ever attempted,
+  // starting with users (domains that reference profiles/auth accounts
+  // depend on those accounts already existing).
+  saga.record('users_and_relationships', 'planned');
+  const userResult = runWorkerFn(USER_MIGRATION_SCRIPT, ['--execute'], commonEnv);
+  saga.record('users_and_relationships', userResult.code === 0 ? 'reconciled' : 'failed', { code: userResult.code });
+  if (userResult.code !== 0) {
+    return { ok: false, failedAt: 'users_and_relationships', saga: saga.filePath, stderr: userResult.stderr };
   }
 
   saga.record('mongo_domains', 'planned');
-  const domainArgs = [
-    '--domain=all',
-    ...(excludeArg ? [`--exclude-domain=${excludeArg}`] : []),
-    ...(execute ? [] : ['--dry-run']),
-  ];
-  const domainResult = runWorker(DOMAIN_MIGRATION_SCRIPT, domainArgs, commonEnv);
+  const domainArgs = ['--domain=all', ...(excludeArg ? [`--exclude-domain=${excludeArg}`] : [])];
+  const domainResult = runWorkerFn(DOMAIN_MIGRATION_SCRIPT, domainArgs, commonEnv);
   saga.record('mongo_domains', domainResult.code === 0 ? 'reconciled' : 'failed', { code: domainResult.code });
   if (domainResult.code !== 0) {
     // Fail closed: this is exactly what protects against a domain the
@@ -490,8 +533,13 @@ export async function runImport({ pgClient, execute, faultStage, deferDomains = 
   // Stage 2J-B Part H, review round 2: a run with ANY deferred domain is
   // never reported as fully 'reconciled' -- 'completed_with_deferred'
   // plus the explicit deferredDomains list is the only status such a run
-  // can ever carry, so a caller checking only `ok` can never mistake a
-  // partial migration for a complete one.
+  // can ever carry. Round 3 correction: this does NOT mean a caller
+  // checking only `ok` is safe from mistaking one for the other -- `ok`
+  // is `true` for BOTH statuses (deferring a domain is a deliberate,
+  // acknowledged choice, not a failure), so `ok` alone cannot distinguish
+  // "every domain migrated" from "some were explicitly deferred". Any
+  // caller that needs to know whether the run was complete MUST inspect
+  // `status` (or `deferredDomains.length`), not `ok` alone.
   const status = deferred.length > 0 ? 'completed_with_deferred' : 'reconciled';
   saga.record('run', status, deferred.length > 0 ? { deferredDomains: deferred.map((d) => d.domain) } : {});
   return { ok: true, status, deferredDomains: deferred.map((d) => d.domain), saga: saga.filePath };

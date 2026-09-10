@@ -73,6 +73,63 @@
 //      orchestrator's explicit DEFERRED_DOMAINS policy (payments is
 //      DEFERRED_BY_PRODUCT_DECISION this round: not migrated, not
 //      modified, original Mongo data untouched).
+//
+// Review round 3 (PR #70, second review pass -- four further fixes, all
+// found by re-reading round 2's own new code, not by inspection alone):
+//   5. rollbackDomain()'s missing-checkpoint ledger fallback only matched
+//      status IN ('created', 'reconciled') -- but kill-window 3 (a crash
+//      between markCreated and markReconciled) leaves a row at
+//      status='failed' (the outer per-document catch always calls
+//      markFailed(), even for an injected fault -- see migrateDomain()'s
+//      own comment) with target_id STILL SET, since markFailed() never
+//      touches target_id. That row was invisible to the fallback query,
+//      so a rollback with a lost checkpoint after exactly that crash left
+//      the row permanently orphaned -- no checkpoint entry, no ledger
+//      entry, the row itself still physically present. Fixed: the
+//      fallback now also matches status='failed' rows that have a
+//      target_id, since a failure AFTER the target write genuinely did
+//      leave a real row behind, unlike a failure before it.
+//   6. rollbackDomain() deleted the target row, then unconditionally
+//      deleted its ledger row and COMMITted, and only checked whether the
+//      row actually still existed AFTER the commit was already durable.
+//      A DELETE that reports success (or reports 0 rows affected because
+//      a BEFORE DELETE trigger silently vetoed it -- a real, legal
+//      Postgres behavior, not a hypothetical) was trusted blindly at
+//      exactly the moment that mattered: the ledger row was already gone
+//      by the time anyone checked. Fixed: verifyTargetRowExists() now
+//      runs INSIDE the transaction, after the DELETE but BEFORE the
+//      ledger-row DELETE and BEFORE COMMIT -- if the row is still there,
+//      this throws before either of those happens, so ROLLBACK discards
+//      everything and BOTH the target row and its ledger row survive
+//      intact, exactly as if rollback for that row had never run. The
+//      post-commit re-check from round 2 stays in place too, as a second,
+//      independent confirmation once the transaction IS durable.
+//   7. migrateDomain()'s resumeTargetId (the existing target row a resume
+//      must reuse rather than re-INSERT) was only ever honored by domains
+//      whose upsert() happened to read checkpoint[sourceId]?.pgId --
+//      an unenforced convention most domains follow (via a natural unique
+//      constraint's ON CONFLICT, or an explicit checkpoint check) but two
+//      plain-INSERT domains with no natural dedup key did not:
+//      notifications and system_audit_logs (admin_audit_log). A resume
+//      after a crash between markCreated and markReconciled for either
+//      of those would have silently INSERTed a second, orphaned row.
+//      Fixed two ways: (a) both domains' upsert() now honor
+//      checkpoint[sourceId]?.pgId like every other non-natural-key
+//      domain (admin_audit_log additionally never attempts an UPDATE on
+//      reuse -- forbid_audit_log_mutation() blocks UPDATE for every role,
+//      and an audit log's content cannot legitimately change anyway, so
+//      reusing the id with zero writes is the only correct action); and
+//      (b) resumeTargetId is now a STRUCTURALLY ENFORCED contract, not
+//      just a fixed convention -- migrateDomain() itself now verifies,
+//      for every domain, that a known resumeTargetId was actually reused
+//      (the id upsert() returns must equal it); any domain -- this one or
+//      a future one -- that ignores it and inserts a fresh row anyway is
+//      caught HERE, before COMMIT, and the whole transaction (including
+//      that erroneous INSERT) is rolled back rather than ever landing a
+//      silent duplicate.
+//   8. production-import-orchestrator.mjs's runImport() ran
+//      users_and_relationships for REAL (--execute) before the domain
+//      dry-run preflight even happened -- see that file's own changelog.
 import pg from 'pg';
 import mongoose from 'mongoose';
 import crypto from 'node:crypto';
@@ -1311,7 +1368,22 @@ const DOMAINS = {
     validate(row) {
       if (!row.title) throw new Error('notifications row missing title');
     },
-    async upsert(client, sourceId, row) {
+    // Review round 3: this domain has no natural unique key to dedupe on
+    // (unlike blogs' slug, subscribers' email, etc.), so it MUST honor
+    // checkpoint[sourceId]?.pgId (== resumeTargetId once migrateDomain()
+    // has proven the row still exists) the same way trial_requests/
+    // contact_messages/etc. do -- a plain unconditional INSERT here was
+    // exactly the gap that let a kill-window-3 resume silently create a
+    // duplicate, orphaned row.
+    async upsert(client, sourceId, row, checkpoint) {
+      const existingPgId = checkpoint[sourceId]?.pgId;
+      if (existingPgId) {
+        await client.query(
+          `UPDATE notifications SET user_id=$1, type=$2, title=$3, body=$4, link=$5, read=$6, meta=$7::jsonb, created_at=$8 WHERE id=$9`,
+          [row.user_id, row.type, row.title, row.body, row.link, row.read, row.meta, row.created_at, existingPgId]
+        );
+        return existingPgId;
+      }
       const r = await client.query(
         `INSERT INTO notifications (user_id, type, title, body, link, read, meta, created_at)
          VALUES ($1,$2,$3,$4,$5,$6,$7::jsonb,$8) RETURNING id`,
@@ -1351,7 +1423,18 @@ const DOMAINS = {
     validate(row) {
       if (!row.actor_admin_id || !row.action || !row.resource_type) throw new Error('system_audit_logs row missing actor_admin_id/action/resource_type');
     },
-    async upsert(client, sourceId, row) {
+    // Review round 3: same no-natural-key gap as notifications above, but
+    // admin_audit_log additionally has forbid_audit_log_mutation()
+    // (0001_functions_triggers.sql) blocking UPDATE for every role,
+    // service_role included -- an UPDATE-on-resume like notifications'
+    // would itself throw. On resume (existingPgId set, proven by
+    // migrateDomain()'s verifyTargetRowExists() to still be present),
+    // the correct action is therefore to reuse the id with NO write at
+    // all: an audit log's content cannot legitimately change anyway, so
+    // there is nothing to update even if the trigger allowed it.
+    async upsert(client, sourceId, row, checkpoint) {
+      const existingPgId = checkpoint[sourceId]?.pgId;
+      if (existingPgId) return existingPgId;
       const r = await client.query(
         `INSERT INTO admin_audit_log (actor_admin_id, action, resource_type, resource_id, before, after, severity, created_at)
          VALUES ($1,$2,$3,$4,$5::jsonb,$6::jsonb,$7,$8) RETURNING id`,
@@ -1427,6 +1510,19 @@ const ROLLBACK_SPEC = {
   coupon_redemptions:        { table: 'coupon_redemptions', composite: ['coupon_id', 'user_id'] },
   manual_payments:           { table: 'manual_payments' },
   document_counters:         { table: 'document_counters', composite: ['scope', 'year'] },
+  // Review round 3: this entry was missing entirely -- discovered while
+  // proving item 4's kill-window-3 resume test for notifications (with
+  // the local checkpoint deleted). Without a ROLLBACK_SPEC entry,
+  // verifyTargetRowExists(pgClient, spec, ...) receives spec=undefined
+  // and unconditionally returns false (its own documented fail-closed
+  // behavior for "an unknown domain shape"), so migrateDomain() could
+  // never compute a resumeTargetId for this domain from the ledger alone
+  // -- only the LOCAL checkpoint (when not lost) masked the gap, which is
+  // exactly why the checkpoint-intact variant of that test passed while
+  // the checkpoint-deleted variant caught it. notifications has no
+  // forbid_*_mutation() trigger (unlike admin_audit_log) and no
+  // composite/non-`id` primary key, so this is the plain, default shape.
+  notifications: { table: 'notifications' },
   // invoices/admin_audit_log are immutable BY DESIGN — forbid_invoice_
   // mutation() / forbid_audit_log_mutation() (0001_functions_triggers.sql,
   // 0013_admin_rbac.sql) block UPDATE/DELETE for every role, service_role
@@ -1463,16 +1559,27 @@ async function rollbackDomain(domainName, { pgClient }) {
   // If the local checkpoint is missing/empty, it is NOT "nothing to roll
   // back" — the DB-side ledger is the rollback source of truth (this is
   // the exact resume-after-checkpoint-loss guarantee the ledger exists
-  // for, applied to rollback instead of forward migration). Only
-  // 'created'/'reconciled' rows have a target_id at all (a 'planned'-only
-  // row never reached a target write, per the migrateDomain fix above --
-  // there is nothing to delete for it).
+  // for, applied to rollback instead of forward migration). Any row with
+  // a target_id genuinely has a real target row to roll back, REGARDLESS
+  // of its final status: 'created'/'reconciled' are the obvious cases,
+  // but 'failed' with a target_id set is real too (review round 3) --
+  // that is exactly kill-window 3 (a crash between markCreated and
+  // markReconciled): the outer catch always calls markFailed(), even for
+  // an injected fault, which overwrites status to 'failed' but never
+  // touches target_id (see markFailed()'s own definition). Excluding
+  // 'failed' rows here left them permanently un-rollback-able once the
+  // checkpoint was lost -- no checkpoint entry, no ledger entry after a
+  // rollback attempt "succeeded" by finding nothing, the row itself still
+  // physically present. A 'planned'-only row never reached a target
+  // write (per the migrateDomain fix above) and so never has a target_id
+  // -- it is correctly excluded by the target_id IS NOT NULL check alone,
+  // no status filtering needed for that case.
   let usingLedgerFallback = false;
   if (entries.length === 0) {
     const ledgerRows = await pgClient.query(
       `SELECT source_document_id, target_id FROM migration_source_ledger
        WHERE source_system = 'mongodb' AND source_database = $1 AND source_collection = $2
-         AND target_table = $3 AND target_id IS NOT NULL AND status IN ('created', 'reconciled')`,
+         AND target_table = $3 AND target_id IS NOT NULL AND status IN ('created', 'reconciled', 'failed')`,
       [SOURCE_DATABASE, domainName, spec.table]
     );
     entries = ledgerRows.rows.map((r) => [r.source_document_id, { pgId: r.target_id }]);
@@ -1507,6 +1614,25 @@ async function rollbackDomain(domainName, { pgClient }) {
       // proves the two are genuinely one transaction (the target DELETE
       // is undone too), not proves it by inspection.
       throwIfFaultStage('during_rollback_before_ledger_delete');
+
+      // Review round 3: never trust the DELETE's own rowCount/absence-of-
+      // exception alone as proof the row is truly gone -- a BEFORE DELETE
+      // trigger can legally veto a delete (RETURN NULL), which reports
+      // rowCount=0, indistinguishable from "already gone" without this
+      // check. This verification now runs INSIDE the transaction, BEFORE
+      // the ledger row is touched and BEFORE COMMIT -- if the row is
+      // still really there, the throw below aborts to the catch block,
+      // which ROLLBACKs, so NEITHER the (never-actually-deleted) target
+      // row NOR its ledger row is ever lost: both survive exactly as if
+      // this rollback attempt for that row had never run.
+      const stillPresentPreCommit = await verifyTargetRowExists(pgClient, spec, pgId);
+      if (stillPresentPreCommit) {
+        throw new Error(
+          `target row still present after DELETE (sourceId=${sourceId} pgId=${pgId}) -- ` +
+          `refusing to delete its ledger row or commit; both preserved`
+        );
+      }
+
       await pgClient.query(
         `DELETE FROM migration_source_ledger WHERE source_system = 'mongodb' AND source_database = $1
            AND source_collection = $2 AND source_document_id = $3 AND target_table = $4`,
@@ -1514,14 +1640,14 @@ async function rollbackDomain(domainName, { pgClient }) {
       );
       await pgClient.query('COMMIT');
 
-      // Never trust the DELETE's own rowCount/absence-of-exception alone
-      // as proof the row is truly gone — an independent post-commit
-      // re-check, same principle as this repo's filesystem safe-delete
-      // (Remove-DumpDirSafely) and script-file cleanup
-      // (Remove-MongoManifestScriptFile).
-      const stillPresent = await verifyTargetRowExists(pgClient, spec, pgId);
-      if (stillPresent) {
-        throw new Error(`CRITICAL: row still present after DELETE + COMMIT reported success (sourceId=${sourceId} pgId=${pgId})`);
+      // A second, independent re-check once the transaction is durable --
+      // belt-and-braces defense in depth (a separate query issued after
+      // COMMIT, catching e.g. a concurrent re-insert racing the commit),
+      // not the primary correctness gate. That gate is the pre-commit
+      // check above, which is what actually decides commit vs. rollback.
+      const stillPresentPostCommit = await verifyTargetRowExists(pgClient, spec, pgId);
+      if (stillPresentPostCommit) {
+        throw new Error(`CRITICAL: row present again after a verified DELETE + COMMIT (sourceId=${sourceId} pgId=${pgId}) -- possible concurrent re-insert`);
       }
 
       if (result.rowCount > 0) deleted += 1;
@@ -1701,6 +1827,26 @@ async function migrateDomain(domainName, { dryRun, resetCheckpoint, pgClient }) 
       try {
         await pgClient.query('BEGIN');
         pgId = await domain.upsert(pgClient, sourceId, row, checkpoint);
+        // Review round 3: resumeTargetId is now an ENFORCED adapter
+        // contract, not an optional checkpoint convention some domains
+        // happened to honor (via checkpoint[sourceId]?.pgId or a natural
+        // ON CONFLICT key) and two plain-INSERT domains (notifications,
+        // system_audit_logs) silently did not. This check applies to
+        // EVERY domain, structurally, so a future domain making the same
+        // mistake is caught here too, not just the two fixed this round.
+        // If the id upsert() actually returned does not match a known-
+        // existing resumeTargetId, that domain ignored it and inserted a
+        // fresh row -- caught HERE, before COMMIT, so the throw below
+        // rolls back the whole transaction, including that erroneous
+        // INSERT: a duplicate can never actually land, not even
+        // transiently.
+        if (resumeTargetId && String(pgId) !== String(resumeTargetId)) {
+          throw new Error(
+            `CONTRACT VIOLATION: ${domainName}.upsert() ignored resumeTargetId (${resumeTargetId}) ` +
+            `and returned a different id (${pgId}) -- this domain's adapter must reuse an existing ` +
+            `target row on resume, never insert a duplicate`
+          );
+        }
         throwIfFaultStage('after_target_write_before_marked_created');
         await markCreated(pgClient, ledgerId, pgId);
         await pgClient.query('COMMIT');

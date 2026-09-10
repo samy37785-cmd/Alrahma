@@ -18,7 +18,7 @@
 // script must never be reachable from an HTTP route.
 //
 // Usage:
-//   node mongo-to-supabase.mjs --domain=<name>|all [--dry-run] [--reset-checkpoint]
+//   node mongo-to-supabase.mjs --domain=<name>|all [--exclude-domain=<name>[,<name>...]] [--dry-run] [--reset-checkpoint]
 //   node mongo-to-supabase.mjs --domain=<name>|all --rollback
 //
 // --rollback deletes exactly the Postgres rows this tool's own checkpoint
@@ -36,6 +36,43 @@
 //     never email/name/message/note content.
 //   - Dry-run: --dry-run performs the export/transform/validate/hash steps
 //     and prints exactly what WOULD be imported, without writing anything.
+//
+// Stage 2J-B Part H fixes (both found on a REAL local rehearsal against
+// the actual validated dump, not by inspection):
+//   1. lib/source-ledger.mjs's markPlanned() had `targetTable` and
+//      `contentHash` swapped in its INSERT params relative to the named
+//      column list -- every ledger row got a content hash stored in
+//      target_table and a table name stored in source_content_hash. This
+//      silently broke findLedgerEntry()'s matching, so the DB-side
+//      duplicate-import guard (built specifically to protect a resume
+//      "after the checkpoint file was lost, or from a different machine")
+//      never actually fired. Fixed; re-verified via a full reset -> real
+//      import -> idempotent-rerun -> simulated-checkpoint-loss cycle.
+//   2. rollbackDomain() deleted target-table rows and cleared the LOCAL
+//      checkpoint file, but never touched migration_source_ledger -- a
+//      stale 'reconciled' ledger row (still pointing at a pgId rollback
+//      had just deleted) made a subsequent forward run report "unchanged"
+//      and skip re-creating the row, so the data never came back. Fixed:
+//      rollback now clears this domain's ledger rows unconditionally,
+//      even when the local checkpoint is already empty (the ledger can be
+//      stale on its own). Re-verified: rollback -> forward-migrate now
+//      correctly restores every row.
+//   3. This process's own exit code previously stayed 0 even when a
+//      domain's documents genuinely failed transform/validate (only an
+//      uncaught top-level exception set a non-zero exit) -- confirmed for
+//      real: --domain=payments against the actual dump reported
+//      "failed=15" for all 15 real payment records (gateway "paymob" is
+//      not supported by this adapter) yet exited 0, which would have let
+//      a caller checking only the exit code (exactly what
+//      production-import-orchestrator.mjs does) silently treat total data
+//      loss as success. Any domain with failed > 0 now sets a non-zero
+//      exit code.
+//   4. New --exclude-domain=<name>[,<name>...] (valid only with
+//      --domain=all) lets a caller run "every domain except N" without
+//      enumerating every other domain by hand -- used by the production
+//      orchestrator's explicit DEFERRED_DOMAINS policy (payments is
+//      DEFERRED_BY_PRODUCT_DECISION this round: not migrated, not
+//      modified, original Mongo data untouched).
 import pg from 'pg';
 import mongoose from 'mongoose';
 import crypto from 'node:crypto';
@@ -1594,7 +1631,25 @@ async function main() {
   assertLocalHost(mongoUri, 'MIGRATION_MONGO_URI');
   assertLocalHost(pgUri, 'MIGRATION_DB_URL');
 
-  const requested = args.domain === 'all' || !args.domain ? Object.keys(DOMAINS) : [args.domain];
+  const requestedAll = args.domain === 'all' || !args.domain;
+  const requestedRaw = requestedAll ? Object.keys(DOMAINS) : [args.domain];
+  // Stage 2J-B Part H: lets a caller (the production orchestrator, or a
+  // human operator) explicitly exclude one or more domains from an
+  // otherwise-"all" run -- e.g. a domain deliberately DEFERRED_BY_PRODUCT_
+  // DECISION -- without having to enumerate every OTHER domain by hand.
+  // Only meaningful together with --domain=all; excluding a domain from a
+  // single explicit --domain=<name> request makes no sense and is
+  // rejected rather than silently ignored.
+  const excludeList = args['exclude-domain']
+    ? String(args['exclude-domain']).split(',').map((s) => s.trim()).filter(Boolean)
+    : [];
+  for (const ex of excludeList) {
+    if (!DOMAINS[ex]) throw new Error(`--exclude-domain references unknown domain: ${ex}`);
+  }
+  if (excludeList.length > 0 && !requestedAll) {
+    throw new Error('--exclude-domain is only valid together with --domain=all (or no --domain at all)');
+  }
+  const requested = requestedRaw.filter((d) => !excludeList.includes(d));
   const dryRun = !!args['dry-run'];
   const resetCheckpoint = !!args['reset-checkpoint'];
   const rollback = !!args.rollback;
@@ -1602,6 +1657,7 @@ async function main() {
   console.log(`[migrate] mongo=${mongoUri.replace(/:[^:@]*@/, ':***@')}`);
   console.log(`[migrate] postgres=${pgUri.replace(/:[^:@]*@/, ':***@')}`);
   console.log(`[migrate] domains=${requested.join(',')} dryRun=${dryRun} resetCheckpoint=${resetCheckpoint} rollback=${rollback}`);
+  if (excludeList.length > 0) console.log(`[migrate] excluded domains (not touched this run): ${excludeList.join(',')}`);
 
   // Rollback only ever reads its own checkpoint files and deletes from
   // Postgres — it never needs Mongo (the source data isn't touched by any
@@ -1629,6 +1685,29 @@ async function main() {
   const reportPath = path.join(OUT_DIR, `migration-report-${Date.now()}.json`);
   fs.writeFileSync(reportPath, JSON.stringify({ ranAt: new Date().toISOString(), dryRun, results }, null, 2));
   console.log(`\n[migrate] report written to ${reportPath}`);
+
+  // Stage 2J-B Part H fix: per-document failures inside migrateDomain()'s
+  // own try/catch were previously only ever logged (console.error) and
+  // counted in that domain's `failed` field -- never propagated to this
+  // process's own exit code, which stayed 0 as long as nothing THREW.
+  // A caller that only checks the exit code (exactly what
+  // production-import-orchestrator.mjs's runWorker()/domainResult.code
+  // does, despite its own header comment claiming it "stops on the FIRST
+  // domain that reports any failure") would see success even when EVERY
+  // document in a domain failed to migrate -- confirmed for real this
+  // round: --domain=payments against the actual dump reported
+  // "failed=15" for all 15 real payment records (unsupported gateway
+  // "paymob") yet exited 0. Any domain with failed > 0 now makes this
+  // process exit non-zero, so a failure can never be silently swallowed
+  // by a caller that only checks the exit code.
+  const failedDomains = results.filter((r) => (r.failed ?? 0) > 0);
+  if (failedDomains.length > 0) {
+    console.error(
+      `[migrate] FAILED: ${failedDomains.length} domain(s) had document-level failures: ` +
+        failedDomains.map((r) => `${r.domain}(${r.failed})`).join(', ')
+    );
+    process.exitCode = 1;
+  }
 }
 
 main().catch((err) => {

@@ -16,6 +16,7 @@ import {
   computeConfirmToken,
   verifyApprovalManifest,
   verifyFreshBackup,
+  computeDomainWorkerPlan,
 } from './production-import-orchestrator.mjs';
 
 const results = [];
@@ -140,6 +141,31 @@ async function main() {
   });
 
   fs.rmSync(tmpDir, { recursive: true, force: true });
+
+  // Stage 2J-B Part H: payments deferred-by-product-decision policy.
+  await test('computeDomainWorkerPlan excludes every deferred domain by default, with its reason', () => {
+    const { excludeArg, deferred } = computeDomainWorkerPlan();
+    assert.equal(excludeArg, 'payments');
+    assert.equal(deferred.length, 1);
+    assert.equal(deferred[0].domain, 'payments');
+    assert.match(deferred[0].reason, /DEFERRED_BY_PRODUCT_DECISION/);
+  });
+
+  await test('computeDomainWorkerPlan includes a deferred domain ONLY when explicitly named', () => {
+    const result = computeDomainWorkerPlan({ includeDeferredDomains: ['payments'] });
+    assert.equal(result.excludeArg, null);
+    assert.equal(result.deferred.length, 0);
+  });
+
+  await test('computeDomainWorkerPlan rejects --include-deferred-domains naming a domain that is not actually deferred', () => {
+    assert.throws(() => computeDomainWorkerPlan({ includeDeferredDomains: ['courses'] }), /not deferred/);
+  });
+
+  await test('computeDomainWorkerPlan never mutates its input array', () => {
+    const input = ['payments'];
+    computeDomainWorkerPlan({ includeDeferredDomains: input });
+    assert.deepEqual(input, ['payments']);
+  });
 
   const failed = results.filter((r) => !r.pass);
   console.log(`\n${results.length - failed.length}/${results.length} passed.`);

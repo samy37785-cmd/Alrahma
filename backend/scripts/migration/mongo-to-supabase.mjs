@@ -1447,38 +1447,54 @@ async function rollbackDomain(domainName, { pgClient }) {
     return { domain: domainName, deleted: 0, immutable: true };
   }
 
-  // Stage 2J-B Part H fix: the DB-side ledger (migration_source_ledger)
-  // must be cleared unconditionally here — BEFORE the local-checkpoint
-  // early-return below, not after it — because the ledger can hold stale
-  // 'reconciled' rows even when the local checkpoint is already empty
-  // (e.g. a prior rollback that cleared the checkpoint but not the
-  // ledger, or a checkpoint file lost/deleted after a real rollback).
-  // Left uncleared, a stale ledger row (still pointing at a pgId
-  // rollback already deleted) makes findLedgerEntry() report "already
-  // migrated, skip" on the very next forward run — the row never comes
-  // back, and the tool silently reports "unchanged" for data that no
-  // longer exists (found via an actual rollback-then-forward-migrate
-  // rehearsal, not by inspection: trial_requests went from 10 rows to 0
-  // after rollback, then a forward re-run reported "unchanged=10" while
-  // the table stayed at 0 rows). This resets the ledger to "never
-  // migrated" for this domain, matching what clearing the checkpoint
-  // file does for the local side of the same contract.
-  const ledgerDeleted = await pgClient.query(
-    `DELETE FROM migration_source_ledger WHERE source_system = 'mongodb' AND source_database = $1 AND source_collection = $2 AND target_table = $3`,
-    [SOURCE_DATABASE, domainName, spec.table]
-  );
-
+  // Stage 2J-B Part H fix (review round 2): rollback no longer clears
+  // migration_source_ledger wholesale up front. That was itself unsafe:
+  // wiping every ledger row for this domain BEFORE any target row is
+  // actually deleted means a row whose DELETE later fails is left with
+  // NO ledger record at all, even though the row still physically
+  // exists — exactly the "unrecorded data" state this whole tool's
+  // ledger design exists to make impossible. Each row's target-table
+  // DELETE and its OWN ledger-row DELETE now happen together, inside one
+  // transaction, per row (see the loop below) — so a row is only ever
+  // ledger-cleared at the exact moment its target row is verified gone.
   const { file: checkpointFile, data: checkpoint } = loadCheckpoint(domainName);
-  const entries = Object.entries(checkpoint);
+  let entries = Object.entries(checkpoint);
+
+  // If the local checkpoint is missing/empty, it is NOT "nothing to roll
+  // back" — the DB-side ledger is the rollback source of truth (this is
+  // the exact resume-after-checkpoint-loss guarantee the ledger exists
+  // for, applied to rollback instead of forward migration). Only
+  // 'created'/'reconciled' rows have a target_id at all (a 'planned'-only
+  // row never reached a target write, per the migrateDomain fix above --
+  // there is nothing to delete for it).
+  let usingLedgerFallback = false;
   if (entries.length === 0) {
-    console.log(`[${domainName}] rollback: nothing to roll back (no checkpoint entries), ${ledgerDeleted.rowCount} ledger entry/entries cleared`);
-    return { domain: domainName, deleted: 0, ledgerCleared: ledgerDeleted.rowCount };
+    const ledgerRows = await pgClient.query(
+      `SELECT source_document_id, target_id FROM migration_source_ledger
+       WHERE source_system = 'mongodb' AND source_database = $1 AND source_collection = $2
+         AND target_table = $3 AND target_id IS NOT NULL AND status IN ('created', 'reconciled')`,
+      [SOURCE_DATABASE, domainName, spec.table]
+    );
+    entries = ledgerRows.rows.map((r) => [r.source_document_id, { pgId: r.target_id }]);
+    usingLedgerFallback = true;
+  }
+
+  if (entries.length === 0) {
+    console.log(`[${domainName}] rollback: nothing to roll back (no checkpoint entries and no ledger rows)`);
+    return { domain: domainName, deleted: 0, failed: 0 };
+  }
+  if (usingLedgerFallback) {
+    console.log(`[${domainName}] rollback: local checkpoint missing/empty — using ${entries.length} row(s) from the DB-side ledger as the source of truth`);
   }
 
   let deleted = 0;
   let alreadyGone = 0;
+  let failedCount = 0;
+  const stillPending = {};
+
   for (const [sourceId, { pgId }] of entries) {
     try {
+      await pgClient.query('BEGIN');
       let result;
       if (spec.composite) {
         const [a, b] = String(pgId).split(':');
@@ -1486,27 +1502,78 @@ async function rollbackDomain(domainName, { pgClient }) {
       } else {
         result = await pgClient.query(`DELETE FROM ${spec.table} WHERE ${spec.pkColumn ?? 'id'} = $1`, [pgId]);
       }
-      // rowCount, not "the query didn't throw" — a DELETE with no matching
-      // row succeeds silently, and a stale checkpoint (e.g. left over from
-      // a previous rehearsal run against a different, since-recreated
-      // Postgres instance) would otherwise be misreported as "deleted".
+      // Test-only hook: a fault injected here fires AFTER the target
+      // DELETE above but BEFORE the ledger DELETE below and the COMMIT --
+      // proves the two are genuinely one transaction (the target DELETE
+      // is undone too), not proves it by inspection.
+      throwIfFaultStage('during_rollback_before_ledger_delete');
+      await pgClient.query(
+        `DELETE FROM migration_source_ledger WHERE source_system = 'mongodb' AND source_database = $1
+           AND source_collection = $2 AND source_document_id = $3 AND target_table = $4`,
+        [SOURCE_DATABASE, domainName, sourceId, spec.table]
+      );
+      await pgClient.query('COMMIT');
+
+      // Never trust the DELETE's own rowCount/absence-of-exception alone
+      // as proof the row is truly gone — an independent post-commit
+      // re-check, same principle as this repo's filesystem safe-delete
+      // (Remove-DumpDirSafely) and script-file cleanup
+      // (Remove-MongoManifestScriptFile).
+      const stillPresent = await verifyTargetRowExists(pgClient, spec, pgId);
+      if (stillPresent) {
+        throw new Error(`CRITICAL: row still present after DELETE + COMMIT reported success (sourceId=${sourceId} pgId=${pgId})`);
+      }
+
       if (result.rowCount > 0) deleted += 1;
       else alreadyGone += 1;
+      // Only a VERIFIED-successful deletion is ever dropped from the
+      // checkpoint — a failed one stays, so a retry finds it again.
     } catch (err) {
+      await pgClient.query('ROLLBACK').catch(() => {});
+      failedCount += 1;
+      stillPending[sourceId] = { pgId };
       console.error(`[${domainName}] rollback FAILED sourceId=${sourceId} pgId=${pgId}: ${err.message}`);
     }
   }
 
-  // The checkpoint's own job is done once every row it tracked is gone —
-  // clearing it means a subsequent forward migration starts clean rather
-  // than believing rows still exist that rollback just deleted.
-  saveCheckpoint(checkpointFile, {});
+  // Persist only what's left to retry — everything verified-deleted is
+  // gone from both the target table AND its own ledger row already (each
+  // inside its own transaction above); nothing here re-clears the WHOLE
+  // domain's checkpoint the way the old code did.
+  saveCheckpoint(checkpointFile, stillPending);
+
   console.log(
     `[${domainName}] rollback: deleted ${deleted}/${entries.length} row(s)` +
-      (alreadyGone ? `, ${alreadyGone} already gone (stale checkpoint)` : '') +
-      `, checkpoint cleared, ${ledgerDeleted.rowCount} ledger entry/entries cleared`
+      (alreadyGone ? `, ${alreadyGone} already gone` : '') +
+      (failedCount ? `, ${failedCount} FAILED (left in place for retry)` : '') +
+      (usingLedgerFallback ? ', source=ledger-fallback' : '')
   );
-  return { domain: domainName, deleted, alreadyGone, ledgerCleared: ledgerDeleted.rowCount };
+  return { domain: domainName, deleted, alreadyGone, failed: failedCount };
+}
+
+/**
+ * Independently confirms a target row genuinely still exists on disk --
+ * never trusts a ledger's target_id (or a local checkpoint's pgId) alone
+ * as proof of presence. `spec` is a ROLLBACK_SPEC entry (has the real
+ * table name and, where the primary key isn't a plain `id` column, its
+ * pkColumn/composite shape) -- reused here rather than duplicated,
+ * because it already has to be correct for rollback to work at all.
+ * Fails closed (returns false) on an unknown domain shape or a missing
+ * targetId, rather than assuming presence.
+ */
+async function verifyTargetRowExists(pgClient, spec, targetId) {
+  if (!spec || !targetId) return false;
+  if (spec.composite) {
+    const [a, b] = String(targetId).split(':');
+    if (!a || !b) return false;
+    const r = await pgClient.query(
+      `SELECT 1 FROM ${spec.table} WHERE ${spec.composite[0]} = $1 AND ${spec.composite[1]} = $2 LIMIT 1`,
+      [a, b]
+    );
+    return r.rowCount > 0;
+  }
+  const r = await pgClient.query(`SELECT 1 FROM ${spec.table} WHERE ${spec.pkColumn ?? 'id'} = $1 LIMIT 1`, [targetId]);
+  return r.rowCount > 0;
 }
 
 async function migrateDomain(domainName, { dryRun, resetCheckpoint, pgClient }) {
@@ -1541,11 +1608,28 @@ async function migrateDomain(domainName, { dryRun, resetCheckpoint, pgClient }) 
       domain.validate(row);
       const contentHash = hashOf(row);
       const fullHash = contentHashOf(row);
+      const spec = ROLLBACK_SPEC[domainName];
 
-      // Stage 2J-B: the real, DB-side duplicate-import guard — checked
-      // FIRST and independent of the local checkpoint file, so a run
-      // from a different machine (or after the checkpoint file was
-      // lost) still never re-imports a document already recorded here.
+      // Stage 2J-B Part H fix (review round 2): a ledger row is ONLY ever
+      // treated as "nothing to do" when it is FULLY reconciled -- status
+      // 'planned' (markPlanned ran, but the target write may never have
+      // happened) or 'created' (the write happened, but this process
+      // crashed before independently re-verifying it) must ALWAYS fall
+      // through and be (re-)processed, never silently counted as
+      // unchanged. And even 'reconciled' is not trusted blindly: the
+      // target row's actual PRESENCE is independently re-verified via
+      // verifyTargetRowExists() (never inferred from the ledger's own
+      // target_id column alone) before anything is skipped.
+      //
+      // Separately -- and regardless of whether we end up skipping --
+      // if the ledger already points at a target row that genuinely
+      // still exists, that pgId MUST be reused for the upsert below
+      // (never a second INSERT). This is what makes resuming a crash
+      // between the target write and markCreated/markReconciled safe: a
+      // fresh forward run finds the same row (via the ledger, even with
+      // NO local checkpoint at all) and UPDATEs it in place instead of
+      // creating a duplicate.
+      let resumeTargetId = null;
       if (!dryRun) {
         const existing = await findLedgerEntry(pgClient, {
           sourceDatabase: SOURCE_DATABASE,
@@ -1553,20 +1637,22 @@ async function migrateDomain(domainName, { dryRun, resetCheckpoint, pgClient }) 
           sourceDocumentId: sourceId,
           targetTable: domain.targetTable,
         });
-        if (existing && existing.source_content_hash === fullHash && existing.status !== 'failed') {
+
+        if (existing && existing.target_id) {
+          const stillThere = await verifyTargetRowExists(pgClient, spec, existing.target_id);
+          if (stillThere) resumeTargetId = existing.target_id;
+        }
+
+        if (
+          existing &&
+          existing.source_content_hash === fullHash &&
+          existing.status === 'reconciled' &&
+          resumeTargetId
+        ) {
           skippedUnchanged += 1;
-          checkpoint[sourceId] = { pgId: existing.target_id, hash: contentHash, migratedAt: new Date().toISOString() };
+          checkpoint[sourceId] = { pgId: resumeTargetId, hash: contentHash, migratedAt: new Date().toISOString() };
           continue;
         }
-      }
-
-      if (checkpoint[sourceId]?.hash === contentHash && !dryRun) {
-        // Local checkpoint agrees unchanged AND the DB ledger check above
-        // didn't find a mismatch/absence — both guards agree, safe skip.
-        const existing = await findLedgerEntry(pgClient, {
-          sourceDatabase: SOURCE_DATABASE, sourceCollection: domainName, sourceDocumentId: sourceId, targetTable: domain.targetTable,
-        });
-        if (existing) { skippedUnchanged += 1; continue; }
       }
 
       if (dryRun) {
@@ -1575,14 +1661,69 @@ async function migrateDomain(domainName, { dryRun, resetCheckpoint, pgClient }) 
         continue;
       }
 
+      if (resumeTargetId) {
+        checkpoint[sourceId] = { ...(checkpoint[sourceId] ?? {}), pgId: resumeTargetId };
+      }
+
       ledgerId = await markPlanned(pgClient, {
         sourceDatabase: SOURCE_DATABASE, sourceCollection: domainName, sourceDocumentId: sourceId,
         targetTable: domain.targetTable, contentHash: fullHash,
       });
+      // Kill-window 1: crash after the ledger records intent, before the
+      // target table is ever written. On resume, findLedgerEntry() above
+      // sees status='planned' (never 'reconciled') -- never skipped, and
+      // resumeTargetId stays null (no target_id was ever recorded), so
+      // the document is processed as if starting fresh.
+      throwIfFaultStage('after_ledger_planned_before_target_write');
 
-      const pgId = await domain.upsert(pgClient, sourceId, row, checkpoint);
+      // Kill-window 2 (review round 2): the target write and markCreated()
+      // are now ONE transaction, not two separate steps with a gap
+      // between them. This is a real fix, not just a tested-around gap:
+      // most domains' target tables have no natural key tying a row back
+      // to its Mongo source document, so a crash strictly BETWEEN "the
+      // row was written" and "the ledger was told its id" would have left
+      // a genuinely un-trackable orphan row -- a resume with no local
+      // checkpoint (findLedgerEntry() sees target_id=null, since
+      // markCreated never ran) would then call upsert() again and INSERT
+      // a duplicate, because nothing recorded the first row's id anywhere
+      // durable. Wrapping the two together makes that window impossible
+      // to observe: either both committed together (row exists, ledger
+      // says 'created') or neither did (row does not exist -- the target
+      // write itself rolls back with the transaction; the ledger's
+      // 'planned' row from markPlanned above is a separate, already-
+      // committed statement, so it survives and the outer catch below
+      // marks it 'failed', which the tightened resume check treats
+      // exactly like 'planned' -- never skipped, never trusted as having
+      // a target row). Proven, not assumed: the kill-window test injects
+      // the fault INSIDE this transaction and confirms the target row
+      // genuinely does not exist afterward.
+      let pgId;
+      try {
+        await pgClient.query('BEGIN');
+        pgId = await domain.upsert(pgClient, sourceId, row, checkpoint);
+        throwIfFaultStage('after_target_write_before_marked_created');
+        await markCreated(pgClient, ledgerId, pgId);
+        await pgClient.query('COMMIT');
+      } catch (err) {
+        await pgClient.query('ROLLBACK').catch(() => {});
+        throw err;
+      }
       checkpoint[sourceId] = { pgId, hash: contentHash, migratedAt: new Date().toISOString() };
-      await markCreated(pgClient, ledgerId, pgId);
+
+      // Kill-window 3: crash after the target write AND markCreated have
+      // both committed together (status='created', target_id set), before
+      // the INDEPENDENT re-verification that promotes it to 'reconciled'
+      // -- this one is deliberately never folded into the transaction
+      // above (this file never claims false atomicity between a write and
+      // an independent post-hoc check of it, same principle
+      // production-import-orchestrator.mjs's own header states for its
+      // GoTrue/Postgres boundary). On resume, status='created' is never
+      // treated as unchanged (per the tightened check above) -- the
+      // document is re-processed, resumeTargetId correctly reuses the
+      // same committed row (no duplicate), and markReconciled() finally
+      // runs.
+      throwIfFaultStage('after_marked_created_before_reconciled');
+
       await markReconciled(pgClient, ledgerId);
       imported += 1;
     } catch (err) {

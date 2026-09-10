@@ -36,27 +36,38 @@
 //     newly-created-but-unreconciled account gets a real compensating
 //     path (--compensate), never a silent "probably fine."
 //
-// Stage 2J-B Part H fix: this header used to claim "stops on the FIRST
-// domain that reports any failure" while that was not actually true --
-// mongo-to-supabase.mjs's own exit code never reflected per-document
-// transform/validate failures (only a top-level thrown exception did),
-// so a domain where EVERY document failed (confirmed for real: payments,
+// Stage 2J-B Part H fix, round 1: this header used to claim "stops on the
+// FIRST domain that reports any failure" while that was not actually true
+// -- mongo-to-supabase.mjs's own exit code never reflected per-document
+// transform/validate failures (only a top-level thrown exception did), so
+// a domain where EVERY document failed (confirmed for real: payments,
 // 15/15 real records rejected for using gateway "paymob", which the
 // payments adapter does not support) could be silently treated as
-// "reconciled" by this file's own domainResult.code check. Fixed in two
-// parts: (1) mongo-to-supabase.mjs now sets a non-zero exit code whenever
-// any domain it processed had document-level failures (see that file's
-// own changelog); (2) this file now has an explicit, named
-// DEFERRED_DOMAINS policy (currently: payments) -- every deferred domain
-// is excluded from a run and logged into the saga as 'deferred' with its
-// reason by default, and can only ever be included via the explicit
-// --include-deferred-domains=<name> flag, in which case fix (1) above
-// means a still-not-ready deferred domain now genuinely fails the whole
-// run closed rather than being silently swallowed. Verified live,
-// end-to-end, against a real local stack: the default run excludes
-// payments and logs it deferred (run succeeds); --include-deferred-
-// domains=payments against a real unsupported-gateway record fails the
-// run closed with the exact reason in stderr.
+// "reconciled" by this file's own domainResult.code check. Fixed:
+// mongo-to-supabase.mjs now sets a non-zero exit code whenever any domain
+// it processed had document-level failures (see that file's own
+// changelog).
+//
+// Round 2 (review): the FIRST fix for "which domains to run" was itself
+// wrong -- a hardcoded DEFERRED_DOMAINS object silently excluded payments
+// by default, which is exactly the kind of tool-decides-for-the-operator
+// behavior a reviewer correctly rejected. Replaced: NOTHING is excluded
+// unless the OPERATOR explicitly names it on this run's command line via
+// --defer-domains=<name>[,<name>...] (DEFERRED_DOMAIN_REASONS is now only
+// an optional canned-reason lookup for the saga log, never a default-
+// exclusion driver). Without --defer-domains, runImport() ALWAYS
+// preflights the full domain set with a real --dry-run BEFORE any
+// --execute write happens anywhere -- so a domain that would genuinely
+// fail (any domain, not specifically payments) fails the WHOLE run
+// closed, zero writes performed, rather than 26 domains succeeding and
+// only the last one belatedly failing. With --defer-domains, the run's
+// own result/saga is tagged 'completed_with_deferred' (never plain
+// 'reconciled') and carries an explicit deferredDomains list. Verified
+// live, end-to-end, against a real local stack: no flag + a real
+// unsupported-gateway record -> whole run fails closed before any write,
+// exact reason in stderr; --defer-domains=payments -> run succeeds,
+// status='completed_with_deferred', deferredDomains=['payments'], the
+// saga logs it as 'deferred' with its reason.
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -106,31 +117,35 @@ const LEDGER_BACKED_TARGET_TABLES = [
 // assumed covered by the ledger check above.
 const NON_LEDGER_PRISTINE_TABLES = ['profiles', 'subscriptions'];
 
-// Stage 2J-B Part H product decision: payments (all 15 real records use
-// gateway "paymob", which mongo-to-supabase.mjs's payments adapter does
-// not support — stripe/paypal only) is deliberately DEFERRED. Not
-// migrated, not modified; payment_gateway, payment controllers/tables,
-// and the original Mongo data are all untouched by this decision.
+// Stage 2J-B Part H, review round 2: a domain is NEVER excluded merely
+// because it appears in a hardcoded list -- that was this file's actual
+// previous design (DEFERRED_DOMAINS drove automatic exclusion) and a
+// reviewer correctly rejected it: a hardcoded default can silently go
+// stale, and it puts the tool, not the operator, in charge of a decision
+// ("is it OK to run without payments?") that must be made freshly, in the
+// open, every time. The only mechanism that can ever exclude a domain now
+// is the operator explicitly naming it via --defer-domains=<name>[,...]
+// on THIS run's command line. DEFERRED_DOMAIN_REASONS below is not a
+// default-exclusion list -- it is purely an optional canned-reason
+// lookup, used ONLY to make the saga log more informative when an
+// operator happens to defer a domain this file already has a reason on
+// file for (currently: payments, real records use gateway "paymob",
+// unsupported by mongo-to-supabase.mjs's payments adapter). Deferring any
+// OTHER domain works identically, just without a canned reason.
 //
-// This is a NAMED, explicit policy object — not a silent "leave payments
-// for later" left to an operator's memory — so runImport() below can
-// neither silently include nor silently drop a deferred domain: every
-// domain in this object is EXCLUDED by default (and logged into the saga
-// as 'deferred' with the reason, every run) unless the caller explicitly
-// names it via --include-deferred-domains. This is the fix for a real,
-// confirmed gap found in Part H's own rehearsal: this file's `runImport`
-// previously called mongo-to-supabase.mjs with `--domain=all` unconditio-
-// nally, and (until the paired mongo-to-supabase.mjs fix, see that file's
-// own changelog) that script's own exit code never reflected per-document
-// failures either — meaning a domain where EVERY document failed (as
-// payments would, with paymob unsupported) could silently be treated as
-// "reconciled" by this orchestrator's stop-on-first-failure logic, despite
-// this file's own header/comment claiming that could never happen.
-const DEFERRED_DOMAINS = {
+// Without --defer-domains at all, runImport() below ALWAYS preflights the
+// full, unmodified domain set with a real --dry-run BEFORE any --execute
+// write is attempted (see runImport()'s own comment) -- so a domain that
+// would genuinely fail (payments, today) fails the WHOLE run closed
+// before a single row is written anywhere, rather than 26 domains
+// succeeding and only the last one silently or belatedly failing. This is
+// what makes "fail closed before writes" a real, general property that
+// does not depend on payments being named anywhere in this file at all.
+const DEFERRED_DOMAIN_REASONS = {
   payments:
-    'DEFERRED_BY_PRODUCT_DECISION -- all real records use gateway "paymob", ' +
-    'not supported by mongo-to-supabase.mjs\'s payments adapter (stripe/paypal ' +
-    'only). Not migrated, not modified; original Mongo data untouched.',
+    'real records use gateway "paymob", not supported by mongo-to-supabase.mjs\'s ' +
+    'payments adapter (stripe/paypal only). Not migrated, not modified; original ' +
+    'Mongo data untouched.',
 };
 
 function fail(msg) {
@@ -138,25 +153,25 @@ function fail(msg) {
 }
 
 /**
- * Pure: decides which domains this run will actually touch, and which
- * DEFERRED domains it will explicitly skip (with a reason, for the saga
- * log) versus explicitly include (only if the caller named it). Never
- * mutates anything — callers apply the result.
+ * Pure: given the operator's own explicit --defer-domains list, returns
+ * the mongo-to-supabase.mjs --exclude-domain argument to pass (or null)
+ * plus a saga-loggable {domain, reason} entry for each. Deduplicates.
+ * Never mutates its input. This function excludes NOTHING on its own --
+ * an empty/absent `deferDomains` means an empty result, always.
  *
- * @param {{ includeDeferredDomains?: string[] }} opts
+ * @param {{ deferDomains?: string[] }} opts
  * @returns {{ excludeArg: string|null, deferred: {domain: string, reason: string}[] }}
  */
-export function computeDomainWorkerPlan({ includeDeferredDomains = [] } = {}) {
-  const includeSet = new Set(includeDeferredDomains);
-  for (const name of includeSet) {
-    if (!(name in DEFERRED_DOMAINS)) {
-      fail(`--include-deferred-domains references a domain that is not deferred: ${name}`);
-    }
-  }
-  const toExclude = Object.keys(DEFERRED_DOMAINS).filter((name) => !includeSet.has(name));
-  const deferred = toExclude.map((domain) => ({ domain, reason: DEFERRED_DOMAINS[domain] }));
+export function computeDomainWorkerPlan({ deferDomains = [] } = {}) {
+  const list = [...new Set(deferDomains)];
+  const deferred = list.map((domain) => ({
+    domain,
+    reason: DEFERRED_DOMAIN_REASONS[domain]
+      ? `DEFERRED_BY_OPERATOR -- ${DEFERRED_DOMAIN_REASONS[domain]}`
+      : 'DEFERRED_BY_OPERATOR -- operator-specified via --defer-domains (no canned reason on file for this domain)',
+  }));
   return {
-    excludeArg: toExclude.length > 0 ? toExclude.join(',') : null,
+    excludeArg: list.length > 0 ? list.join(',') : null,
     deferred,
   };
 }
@@ -405,7 +420,7 @@ function runWorker(scriptPath, args, env) {
 // never proceeds to a dependent domain on top of a broken one.
 // ---------------------------------------------------------------------
 
-async function runImport({ pgClient, execute, faultStage, includeDeferredDomains = [] }) {
+export async function runImport({ pgClient, execute, faultStage, deferDomains = [] }) {
   const runId = new Date().toISOString().replace(/[:.]/g, '-');
   const saga = newSagaLog(runId);
   const commonEnv = faultStage ? { MIGRATION_FAULT_INJECT_STAGE: faultStage, MIGRATION_FAULT_INJECT_ONCE: '1' } : {};
@@ -418,13 +433,40 @@ async function runImport({ pgClient, execute, faultStage, includeDeferredDomains
     return { ok: false, failedAt: 'users_and_relationships', saga: saga.filePath, stderr: userResult.stderr };
   }
 
-  // Every DEFERRED domain not explicitly named via includeDeferredDomains
-  // is recorded here EVERY run, by name and reason — never silently
-  // dropped, never left to an operator's memory. See DEFERRED_DOMAINS'
-  // own comment for why this exists and the real gap it closes.
-  const { excludeArg, deferred } = computeDomainWorkerPlan({ includeDeferredDomains });
+  // Every domain the OPERATOR explicitly deferred on this run's command
+  // line is recorded here, by name and reason — never silently dropped.
+  // An empty deferDomains list (the default) means nothing is excluded
+  // and nothing is logged as deferred here.
+  const { excludeArg, deferred } = computeDomainWorkerPlan({ deferDomains });
   for (const { domain, reason } of deferred) {
     saga.record('mongo_domains', 'deferred', { domain, reason });
+  }
+
+  // Stage 2J-B Part H, review round 2: ALWAYS preflight the FULL domain
+  // set (minus only what the operator explicitly deferred) with a real
+  // --dry-run first — even when --execute was requested — before any
+  // write is attempted anywhere. This is what makes "fail closed before
+  // writes" a real, general property: a domain that would genuinely fail
+  // (any domain, not specifically payments — nothing here names payments
+  // as special) fails the WHOLE run here, with zero writes performed, an
+  // operator not merely reads about this in the eventual last-domain
+  // report but is stopped before it starts. Skipped in an already-plan
+  // (!execute) run, since that run IS the dry-run.
+  if (execute) {
+    saga.record('mongo_domains_preflight', 'planned');
+    const preflightArgs = ['--domain=all', ...(excludeArg ? [`--exclude-domain=${excludeArg}`] : []), '--dry-run'];
+    const preflightResult = runWorker(DOMAIN_MIGRATION_SCRIPT, preflightArgs, commonEnv);
+    saga.record('mongo_domains_preflight', preflightResult.code === 0 ? 'reconciled' : 'failed', { code: preflightResult.code });
+    if (preflightResult.code !== 0) {
+      return {
+        ok: false,
+        failedAt: 'mongo_domains_preflight',
+        saga: saga.filePath,
+        stderr: preflightResult.stderr,
+        hint: 'one or more domains would fail and were NOT explicitly deferred -- no write was attempted anywhere. ' +
+          'Either fix the underlying issue, or re-run with --defer-domains=<name>[,<name>...] to explicitly acknowledge excluding it.',
+      };
+    }
   }
 
   saga.record('mongo_domains', 'planned');
@@ -436,18 +478,23 @@ async function runImport({ pgClient, execute, faultStage, includeDeferredDomains
   const domainResult = runWorker(DOMAIN_MIGRATION_SCRIPT, domainArgs, commonEnv);
   saga.record('mongo_domains', domainResult.code === 0 ? 'reconciled' : 'failed', { code: domainResult.code });
   if (domainResult.code !== 0) {
-    // Fail closed: this is exactly what protects against a deferred
-    // domain that WAS explicitly included (--include-deferred-domains)
-    // turning out not to actually be ready (e.g. payments, before paymob
-    // support exists) -- mongo-to-supabase.mjs's own exit code now
-    // honestly reflects per-document failures (see its changelog), so a
-    // domain that fails here stops the whole run rather than being
-    // silently treated as reconciled.
+    // Fail closed: this is exactly what protects against a domain the
+    // operator DID explicitly defer, or that unexpectedly regresses
+    // between the preflight dry-run and this real write -- mongo-to-
+    // supabase.mjs's own exit code now honestly reflects per-document
+    // failures (see its changelog), so a domain that fails here stops
+    // the whole run rather than being silently treated as reconciled.
     return { ok: false, failedAt: 'mongo_domains', saga: saga.filePath, stderr: domainResult.stderr };
   }
 
-  saga.record('run', 'reconciled');
-  return { ok: true, saga: saga.filePath };
+  // Stage 2J-B Part H, review round 2: a run with ANY deferred domain is
+  // never reported as fully 'reconciled' -- 'completed_with_deferred'
+  // plus the explicit deferredDomains list is the only status such a run
+  // can ever carry, so a caller checking only `ok` can never mistake a
+  // partial migration for a complete one.
+  const status = deferred.length > 0 ? 'completed_with_deferred' : 'reconciled';
+  saga.record('run', status, deferred.length > 0 ? { deferredDomains: deferred.map((d) => d.domain) } : {});
+  return { ok: true, status, deferredDomains: deferred.map((d) => d.domain), saga: saga.filePath };
 }
 
 // ---------------------------------------------------------------------
@@ -478,10 +525,12 @@ async function main() {
   );
   const execute = !!args.execute;
   const compensateMode = !!args.compensate;
-  // Explicit, named opt-in only -- see DEFERRED_DOMAINS' own comment.
-  // Absent (the default), every deferred domain is excluded and logged.
-  const includeDeferredDomains = args['include-deferred-domains']
-    ? String(args['include-deferred-domains']).split(',').map((s) => s.trim()).filter(Boolean)
+  // The operator's own explicit acknowledgement for THIS run -- absent
+  // (the default) means nothing is deferred, and the mandatory preflight
+  // dry-run in runImport() will fail the whole run closed, with no
+  // writes attempted, if any domain would actually fail.
+  const deferDomains = args['defer-domains']
+    ? String(args['defer-domains']).split(',').map((s) => s.trim()).filter(Boolean)
     : [];
 
   const pgUri = process.env.MIGRATION_DB_URL;
@@ -515,7 +564,7 @@ async function main() {
 
       const result = compensateMode
         ? await compensate({ pgClient, execute })
-        : await runImport({ pgClient, execute, faultStage: process.env.MIGRATION_FAULT_INJECT_STAGE, includeDeferredDomains });
+        : await runImport({ pgClient, execute, faultStage: process.env.MIGRATION_FAULT_INJECT_STAGE, deferDomains });
 
       console.log(JSON.stringify(result, null, 2));
       if (!result.ok) process.exitCode = 1;

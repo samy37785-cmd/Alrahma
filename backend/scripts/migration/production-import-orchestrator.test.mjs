@@ -142,28 +142,40 @@ async function main() {
 
   fs.rmSync(tmpDir, { recursive: true, force: true });
 
-  // Stage 2J-B Part H: payments deferred-by-product-decision policy.
-  await test('computeDomainWorkerPlan excludes every deferred domain by default, with its reason', () => {
+  // Stage 2J-B Part H, review round 2: operator-acknowledged deferral
+  // only -- nothing is ever excluded by a hardcoded default.
+  await test('computeDomainWorkerPlan excludes and defers NOTHING by default', () => {
     const { excludeArg, deferred } = computeDomainWorkerPlan();
-    assert.equal(excludeArg, 'payments');
-    assert.equal(deferred.length, 1);
-    assert.equal(deferred[0].domain, 'payments');
-    assert.match(deferred[0].reason, /DEFERRED_BY_PRODUCT_DECISION/);
+    assert.equal(excludeArg, null);
+    assert.deepEqual(deferred, []);
   });
 
-  await test('computeDomainWorkerPlan includes a deferred domain ONLY when explicitly named', () => {
-    const result = computeDomainWorkerPlan({ includeDeferredDomains: ['payments'] });
-    assert.equal(result.excludeArg, null);
-    assert.equal(result.deferred.length, 0);
+  await test('computeDomainWorkerPlan defers exactly the domain(s) the operator names, with a canned reason for a known one', () => {
+    const result = computeDomainWorkerPlan({ deferDomains: ['payments'] });
+    assert.equal(result.excludeArg, 'payments');
+    assert.equal(result.deferred.length, 1);
+    assert.equal(result.deferred[0].domain, 'payments');
+    assert.match(result.deferred[0].reason, /DEFERRED_BY_OPERATOR/);
+    assert.match(result.deferred[0].reason, /paymob/);
   });
 
-  await test('computeDomainWorkerPlan rejects --include-deferred-domains naming a domain that is not actually deferred', () => {
-    assert.throws(() => computeDomainWorkerPlan({ includeDeferredDomains: ['courses'] }), /not deferred/);
+  await test('computeDomainWorkerPlan can defer a domain with no canned reason on file, without rejecting it', () => {
+    const result = computeDomainWorkerPlan({ deferDomains: ['courses'] });
+    assert.equal(result.excludeArg, 'courses');
+    assert.equal(result.deferred[0].domain, 'courses');
+    assert.match(result.deferred[0].reason, /DEFERRED_BY_OPERATOR/);
+    assert.match(result.deferred[0].reason, /no canned reason/);
+  });
+
+  await test('computeDomainWorkerPlan deduplicates a repeated domain name', () => {
+    const result = computeDomainWorkerPlan({ deferDomains: ['payments', 'payments'] });
+    assert.equal(result.excludeArg, 'payments');
+    assert.equal(result.deferred.length, 1);
   });
 
   await test('computeDomainWorkerPlan never mutates its input array', () => {
     const input = ['payments'];
-    computeDomainWorkerPlan({ includeDeferredDomains: input });
+    computeDomainWorkerPlan({ deferDomains: input });
     assert.deepEqual(input, ['payments']);
   });
 

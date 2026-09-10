@@ -24,6 +24,12 @@ export const FAULT_STAGES = Object.freeze([
   'during_payments',
   'during_relationships',
   'during_quran_import',
+  // Stage 2J-B Part H, review round 2 -- ledger-resume and rollback-
+  // atomicity kill-window tests (mongo-to-supabase.mjs):
+  'after_ledger_planned_before_target_write',
+  'after_target_write_before_marked_created',
+  'after_marked_created_before_reconciled',
+  'during_rollback_before_ledger_delete',
 ]);
 
 export function throwIfFaultStage(stage) {

@@ -24,6 +24,19 @@
 // never a workaround that calls runImport() directly instead, against
 // every LEDGER_BACKED_TARGET_TABLES entry on a pristine schema, plus one
 // deliberately unrecorded row for each of the three identity shapes.
+//
+// Review round 5 additions:
+//   item 1 -- profiles/subscriptions moved from "must be completely
+//     empty" to provenance-aware (migration-seed admin identity, or an
+//     auth.users migrated_from tag). Tests below prove an attributable
+//     row is never flagged and a genuinely unrelated/untagged row still
+//     fails closed.
+//   item 3 -- the ledger-backed check now also requires
+//     source_system='mongodb' and source_database=SOURCE_DATABASE (not
+//     just target_table+target_id). Tests below prove a ledger entry from
+//     a different source system, a different source database, or a
+//     different target table/identity never legitimizes an otherwise
+//     unrecorded row.
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import path from 'node:path';
@@ -31,6 +44,7 @@ import { fileURLToPath } from 'node:url';
 import pg from 'pg';
 import { runCommand } from '../../../lib/db/test/orchestrator-lib.mjs';
 import { verifyNoUnrecordedData } from './production-import-orchestrator.mjs';
+import { MIGRATION_SEED_ADMIN_ID } from './lib/admin-rpc.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, '..', '..', '..');
@@ -90,12 +104,12 @@ async function main() {
 
   const pgPool = new pg.Pool({ connectionString: pgUri });
 
-  async function addLedgerEntry(table, sourceId, targetId) {
+  async function addLedgerEntry(table, sourceId, targetId, { sourceSystem = 'mongodb', sourceDatabase = 'al-rahma' } = {}) {
     await pgPool.query(
       `INSERT INTO migration_source_ledger
          (source_system, source_database, source_collection, source_document_id, source_content_hash, target_table, status, target_id, migrated_at)
-       VALUES ('mongodb', 'al-rahma', $1, $2, 'test-fixture-hash', $1, 'reconciled', $3, now())`,
-      [table, sourceId, targetId]
+       VALUES ($4, $5, $1, $2, 'test-fixture-hash', $1, 'reconciled', $3, now())`,
+      [table, sourceId, targetId, sourceSystem, sourceDatabase]
     );
   }
   async function clearLedgerFor(table) {
@@ -197,6 +211,231 @@ async function main() {
     } finally {
       await client.query('DELETE FROM document_counters');
       await clearLedgerFor('document_counters');
+      client.release();
+    }
+  });
+
+  // -----------------------------------------------------------------
+  // Review round 5, item 1: profiles/subscriptions used to require the
+  // table be completely empty -- this broke every resume, broke
+  // --compensate, and could be tripped by nothing more than
+  // ensureMigrationSeedAdmin()'s own seed-admin profile row. Fixed:
+  // provenance-aware -- a profiles row is allowed iff it IS the
+  // migration-seed admin identity OR its owning auth.users row carries a
+  // migrated_from tag; a subscriptions row is allowed iff its owning
+  // profile satisfies the same test. Genuinely unattributed rows must
+  // still fail closed.
+  // -----------------------------------------------------------------
+
+  async function insertAuthUser(id, email, rawUserMetaData) {
+    await pgPool.query(
+      `INSERT INTO auth.users (id, email, raw_user_meta_data) VALUES ($1, $2, $3::jsonb)`,
+      [id, email, JSON.stringify(rawUserMetaData ?? {})]
+    );
+  }
+  async function deleteAuthUser(id) {
+    // profiles.id -> auth.users(id) ON DELETE CASCADE, and
+    // subscriptions.user_id -> profiles.id ON DELETE CASCADE -- one
+    // delete here cleans up everything this helper created.
+    await pgPool.query('DELETE FROM auth.users WHERE id = $1', [id]);
+  }
+
+  await test('round 5 item 1: a profiles row tagged migrated_from=mongodb is attributable and never flagged', async () => {
+    const client = await pgPool.connect();
+    const id = crypto.randomUUID();
+    try {
+      await insertAuthUser(id, 'tagged-user@example.invalid', { migrated_from: 'mongodb', migrated_at: new Date().toISOString() });
+      const result = await verifyNoUnrecordedData(client);
+      assert.equal(result, true, 'a profiles row whose owning auth.users record is tagged migrated_from must never be flagged');
+    } finally {
+      await deleteAuthUser(id);
+      client.release();
+    }
+  });
+
+  await test('round 5 item 1: a profiles row tagged migrated_from=mongodb_adminuser (AdminUser accounts) is also attributable', async () => {
+    const client = await pgPool.connect();
+    const id = crypto.randomUUID();
+    try {
+      await insertAuthUser(id, 'tagged-admin@example.invalid', { migrated_from: 'mongodb_adminuser', migrated_at: new Date().toISOString() });
+      const result = await verifyNoUnrecordedData(client);
+      assert.equal(result, true);
+    } finally {
+      await deleteAuthUser(id);
+      client.release();
+    }
+  });
+
+  await test('round 5 item 1: the migration-seed admin identity is always attributable, even though it carries NO migrated_from tag', async () => {
+    const client = await pgPool.connect();
+    try {
+      // Exactly what ensureMigrationSeedAdmin() (lib/admin-rpc.mjs) itself
+      // creates: no raw_user_meta_data tag at all -- its identity IS the
+      // provenance.
+      await insertAuthUser(MIGRATION_SEED_ADMIN_ID, 'stage2jb-migration-tool@rehearsal.local', {});
+      const result = await verifyNoUnrecordedData(client);
+      assert.equal(result, true, 'the hardcoded migration-seed admin profile row must never block a run, tagged or not');
+    } finally {
+      await deleteAuthUser(MIGRATION_SEED_ADMIN_ID);
+      client.release();
+    }
+  });
+
+  await test('round 5 item 1: an UNTAGGED, unrelated profiles row still fails closed', async () => {
+    const client = await pgPool.connect();
+    const id = crypto.randomUUID();
+    try {
+      // No migrated_from tag, not the seed-admin identity -- this is
+      // exactly the "unknown pre-existing row" case that must remain
+      // rejected no matter which mode (fresh/resume/compensate) is about
+      // to run.
+      await insertAuthUser(id, 'unrelated-preexisting@example.invalid', {});
+      await assert.rejects(
+        () => verifyNoUnrecordedData(client),
+        /profiles: 1 row\(s\) not attributable to this migration/,
+        'an untagged, non-seed-admin profiles row must still fail closed'
+      );
+    } finally {
+      await deleteAuthUser(id);
+      client.release();
+    }
+  });
+
+  await test('round 5 item 1: a subscriptions row owned by an attributable profile passes; owned by an unrelated profile fails closed', async () => {
+    const client = await pgPool.connect();
+    const taggedId = crypto.randomUUID();
+    const untaggedId = crypto.randomUUID();
+    try {
+      await insertAuthUser(taggedId, 'sub-tagged@example.invalid', { migrated_from: 'mongodb' });
+      await pgPool.query(
+        `INSERT INTO subscriptions (user_id, provider, status) VALUES ($1, 'manual', 'expired')`,
+        [taggedId]
+      );
+      const result = await verifyNoUnrecordedData(client);
+      assert.equal(result, true, 'a subscription owned by an attributable profile must never be flagged');
+
+      await insertAuthUser(untaggedId, 'sub-untagged@example.invalid', {});
+      await pgPool.query(
+        `INSERT INTO subscriptions (user_id, provider, status) VALUES ($1, 'manual', 'expired')`,
+        [untaggedId]
+      );
+      await assert.rejects(
+        () => verifyNoUnrecordedData(client),
+        /subscriptions: 1 row\(s\) not attributable to this migration/,
+        'a subscription owned by an untagged, non-seed-admin profile must fail closed'
+      );
+    } finally {
+      await deleteAuthUser(taggedId);
+      await deleteAuthUser(untaggedId);
+      client.release();
+    }
+  });
+
+  // -----------------------------------------------------------------
+  // Review round 5, item 3: the ledger-backed NOT EXISTS check used to
+  // match purely on target_table + target_id, with no source_system/
+  // source_database scoping -- an unrelated migration_source_ledger
+  // record from a different source system or database could
+  // coincidentally legitimize an otherwise-unrecorded target row just by
+  // sharing the same target_table/target_id. Each test below plants
+  // exactly that kind of "wrong source" ledger entry and proves the real
+  // row is STILL flagged unrecorded -- it must never be silently accepted
+  // as this migration's own bookkeeping.
+  // -----------------------------------------------------------------
+
+  await test('round 5 item 3: a ledger entry from a DIFFERENT source_system never legitimizes a target row', async () => {
+    const client = await pgPool.connect();
+    try {
+      const r = await client.query(
+        `INSERT INTO trial_requests (name, email, status) VALUES ('Test', 'wrongsystem@example.invalid', 'new') RETURNING id`
+      );
+      const rowId = r.rows[0].id;
+
+      // Same target_table/target_id, but source_system is NOT 'mongodb' --
+      // must not match.
+      await addLedgerEntry('trial_requests', 'fake-mongo-id-wrongsystem', rowId, { sourceSystem: 'some_other_system' });
+      await assert.rejects(
+        () => verifyNoUnrecordedData(client),
+        /trial_requests: 1 row\(s\) with no matching migration_source_ledger entry/,
+        'a ledger entry from a different source_system must never legitimize the target row'
+      );
+
+      // Confirm it's purely the source_system that's wrong: add a SECOND,
+      // correctly-scoped entry for the same row and it now passes.
+      await addLedgerEntry('trial_requests', 'fake-mongo-id-wrongsystem-correct', rowId);
+      const result = await verifyNoUnrecordedData(client);
+      assert.equal(result, true, 'a correctly-scoped mongodb/al-rahma ledger entry for the same row must legitimize it');
+    } finally {
+      await client.query('DELETE FROM trial_requests');
+      await clearLedgerFor('trial_requests');
+      client.release();
+    }
+  });
+
+  await test('round 5 item 3: a ledger entry from a DIFFERENT source_database never legitimizes a target row', async () => {
+    const client = await pgPool.connect();
+    try {
+      const r = await client.query(
+        `INSERT INTO trial_requests (name, email, status) VALUES ('Test', 'wrongdb@example.invalid', 'new') RETURNING id`
+      );
+      const rowId = r.rows[0].id;
+
+      // Right source_system (mongodb), but a DIFFERENT source_database --
+      // e.g. a hypothetical other Mongo database migrated by different
+      // tooling -- must not match.
+      await addLedgerEntry('trial_requests', 'fake-mongo-id-wrongdb', rowId, { sourceDatabase: 'some-other-database' });
+      await assert.rejects(
+        () => verifyNoUnrecordedData(client),
+        /trial_requests: 1 row\(s\) with no matching migration_source_ledger entry/,
+        'a ledger entry from a different source_database must never legitimize the target row'
+      );
+
+      await addLedgerEntry('trial_requests', 'fake-mongo-id-wrongdb-correct', rowId);
+      const result = await verifyNoUnrecordedData(client);
+      assert.equal(result, true, 'a correctly-scoped mongodb/al-rahma ledger entry for the same row must legitimize it');
+    } finally {
+      await client.query('DELETE FROM trial_requests');
+      await clearLedgerFor('trial_requests');
+      client.release();
+    }
+  });
+
+  await test('round 5 item 3: a ledger entry for a DIFFERENT target table/identity never legitimizes an unrelated row', async () => {
+    const client = await pgPool.connect();
+    try {
+      const r1 = await client.query(
+        `INSERT INTO trial_requests (name, email, status) VALUES ('Test', 'righttable@example.invalid', 'new') RETURNING id`
+      );
+      const r2 = await client.query(`INSERT INTO system_config (key, value) VALUES ('test_wrongtarget_key', 'x') RETURNING key`);
+      const trialRowId = r1.rows[0].id;
+
+      // A correctly-scoped (mongodb/al-rahma) ledger entry, but for a
+      // DIFFERENT target_table (system_config, not trial_requests) --
+      // must not legitimize the trial_requests row.
+      await addLedgerEntry('system_config', 'fake-mongo-id-wrongtarget', 'test_wrongtarget_key');
+      await assert.rejects(
+        () => verifyNoUnrecordedData(client),
+        /trial_requests: 1 row\(s\) with no matching migration_source_ledger entry/,
+        'a ledger entry recorded against a different target table must never legitimize this one'
+      );
+
+      // Same target_table (trial_requests), but a DIFFERENT target_id
+      // (some other row's UUID, never this one's) -- must also not match.
+      await addLedgerEntry('trial_requests', 'fake-mongo-id-wrongid', '00000000-0000-4000-8000-000000000000');
+      await assert.rejects(
+        () => verifyNoUnrecordedData(client),
+        /trial_requests: 1 row\(s\) with no matching migration_source_ledger entry/,
+        'a ledger entry pointing at a different target_id must never legitimize this row'
+      );
+
+      await addLedgerEntry('trial_requests', 'fake-mongo-id-righttarget', trialRowId);
+      const result = await verifyNoUnrecordedData(client);
+      assert.equal(result, true, 'a ledger entry that genuinely matches this row\'s own table+id must legitimize it');
+    } finally {
+      await client.query('DELETE FROM trial_requests');
+      await client.query(`DELETE FROM system_config WHERE key = 'test_wrongtarget_key'`);
+      await clearLedgerFor('trial_requests');
+      await clearLedgerFor('system_config');
       client.release();
     }
   });

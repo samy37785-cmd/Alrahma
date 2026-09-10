@@ -218,41 +218,96 @@ async function migrateOneAdmin(supabaseAdmin, pgClient, mongoAdmin, { execute })
 // — teacher_id/parent_student_links both reference profiles(id).
 // ---------------------------------------------------------------------
 
-async function resolveRelationships(pgClient, mongoUsers, emailToProfileId) {
-  const report = { teacherLinksResolved: 0, teacherLinksSkippedNoTarget: 0, parentLinksResolved: 0, parentLinksSkippedNoTarget: 0 };
-  const idByMongoId = new Map(mongoUsers.map((u) => [String(u._id), u]));
+// Review round 5, item 2: pure, no I/O -- given the full source `users`
+// array and the set of normalized emails already known invalid (missing/
+// malformed/duplicate, from computeIdentityEmailProblems() below), decides
+// exactly which teacher/parent-child references WOULD resolve and which
+// WOULD be skipped for lack of a target -- entirely from source-document
+// shape, without touching profiles/auth.users. This is what makes
+// relationship validation possible during `--plan`, before any write:
+// the old resolveRelationships() (now applyRelationships(), writes only)
+// could only ever answer this question post-write, via emailToProfileId,
+// which is why `--plan` never computed relationships at all and a real
+// skipped link was invisible until (or unless) someone read the raw
+// report of a completed --execute run.
+export function computeRelationshipPlan(users, invalidEmails) {
+  const idByMongoId = new Map(users.map((u) => [String(u._id), u]));
+  const invalid = invalidEmails instanceof Set ? invalidEmails : new Set(invalidEmails || []);
 
-  for (const u of mongoUsers) {
+  const isResolvableTarget = (mongoId) => {
+    const doc = idByMongoId.get(String(mongoId));
+    if (!doc || !doc.email || typeof doc.email !== 'string') return false; // dangling reference: no such source document
+    const email = doc.email.toLowerCase().trim();
+    if (!email || invalid.has(email)) return false; // reference exists, but its own identity is unmigratable
+    return true;
+  };
+
+  const stats = { teacherLinksResolved: 0, teacherLinksSkippedNoTarget: 0, parentLinksResolved: 0, parentLinksSkippedNoTarget: 0 };
+  const skipped = [];
+
+  for (const u of users) {
+    if (!u.email || typeof u.email !== 'string') continue;
+    const studentEmail = u.email.toLowerCase().trim();
+    if (!studentEmail || invalid.has(studentEmail)) continue; // the student's own identity already failed separately -- not a NEW relationship problem
+
+    if (u.teacher) {
+      if (isResolvableTarget(u.teacher)) {
+        stats.teacherLinksResolved += 1;
+      } else {
+        stats.teacherLinksSkippedNoTarget += 1;
+        skipped.push({ kind: 'teacher', studentEmail, targetMongoId: String(u.teacher) });
+      }
+    }
+
+    for (const childMongoId of u.children || []) {
+      if (isResolvableTarget(childMongoId)) {
+        stats.parentLinksResolved += 1;
+      } else {
+        stats.parentLinksSkippedNoTarget += 1;
+        skipped.push({ kind: 'parent-child', studentEmail, targetMongoId: String(childMongoId) });
+      }
+    }
+  }
+  return { ...stats, skipped };
+}
+
+// Review round 5, item 2: the WRITE half of relationship migration, kept
+// deliberately separate from computeRelationshipPlan() above (which is
+// the VALIDATION half, pure, run in both --plan and --execute). This
+// function only runs under --execute, after every account in this batch
+// has been created/confirmed, and writes exactly the links
+// computeRelationshipPlan() already predicted would resolve -- resolved
+// here against the DB-authoritative emailToProfileId (built from real
+// profiles rows), not re-derived, so a link is only ever written for a
+// target that genuinely has a profile.
+async function applyRelationships(pgClient, users, emailToProfileId) {
+  const idByMongoId = new Map(users.map((u) => [String(u._id), u]));
+
+  for (const u of users) {
+    if (!u.email) continue;
     const studentProfileId = emailToProfileId.get(String(u.email).toLowerCase().trim());
     if (!studentProfileId) continue;
     throwIfFaultStage('during_relationships');
 
     if (u.teacher) {
       const teacherMongo = idByMongoId.get(String(u.teacher));
-      const teacherProfileId = teacherMongo ? emailToProfileId.get(String(teacherMongo.email).toLowerCase().trim()) : null;
+      const teacherProfileId = teacherMongo?.email ? emailToProfileId.get(String(teacherMongo.email).toLowerCase().trim()) : null;
       if (teacherProfileId) {
         await pgClient.query(`UPDATE profiles SET teacher_id = $2 WHERE id = $1`, [studentProfileId, teacherProfileId]);
-        report.teacherLinksResolved += 1;
-      } else {
-        report.teacherLinksSkippedNoTarget += 1;
       }
     }
 
     for (const childMongoId of u.children || []) {
       const childMongo = idByMongoId.get(String(childMongoId));
-      const childProfileId = childMongo ? emailToProfileId.get(String(childMongo.email).toLowerCase().trim()) : null;
+      const childProfileId = childMongo?.email ? emailToProfileId.get(String(childMongo.email).toLowerCase().trim()) : null;
       if (childProfileId) {
         await pgClient.query(
           `INSERT INTO parent_student_links (parent_id, student_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
           [studentProfileId, childProfileId]
         );
-        report.parentLinksResolved += 1;
-      } else {
-        report.parentLinksSkippedNoTarget += 1;
       }
     }
   }
-  return report;
 }
 
 // ---------------------------------------------------------------------
@@ -293,6 +348,113 @@ export function validateSubscriptionPlan(sub) {
     return { ok: false, reason: `unknown subscription provider "${sub.provider}"` };
   }
   return { ok: true, slug };
+}
+
+// ---------------------------------------------------------------------
+// Review round 5, item 2 -- identity validation (Mapping Contract's
+// implicit requirement that every migrated account be uniquely and
+// validly addressable by email, since email is the resumability key this
+// whole script's idempotency depends on, per this file's own header rule
+// #4). Pure, no I/O, so it runs identically and BEFORE ANY WRITE in both
+// --plan and --execute: previously `if (!u.email) continue;` silently
+// dropped malformed source documents with no trace in the report at all,
+// and two source documents sharing one email were never even
+// checked -- both would reach migrateOneUser()/migrateOneAdmin()
+// independently, the second always resolving to whatever the first one
+// produced (silently merging two distinct source identities into one
+// account).
+// ---------------------------------------------------------------------
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+export function computeIdentityEmailProblems(users, admins) {
+  const problems = [];
+  const seen = new Map(); // normalized email -> [{kind, id}]
+
+  const record = (kind, doc, index) => {
+    const id = String(doc?._id ?? `${kind}#${index}`);
+    const rawEmail = doc?.email;
+    if (!rawEmail || typeof rawEmail !== 'string' || !rawEmail.trim()) {
+      problems.push({ kind, id, email: null, reason: 'missing email' });
+      return;
+    }
+    const normalized = rawEmail.toLowerCase().trim();
+    if (!EMAIL_RE.test(normalized)) {
+      problems.push({ kind, id, email: rawEmail, reason: 'invalid email format' });
+      return;
+    }
+    if (!seen.has(normalized)) seen.set(normalized, []);
+    seen.get(normalized).push({ kind, id });
+  };
+
+  users.forEach((u, i) => record('user', u, i));
+  admins.forEach((a, i) => record('admin', a, i));
+
+  for (const [email, occurrences] of seen) {
+    if (occurrences.length > 1) {
+      problems.push({
+        kind: 'duplicate',
+        id: occurrences.map((o) => `${o.kind}:${o.id}`).join('+'),
+        email,
+        reason: `email used by ${occurrences.length} source documents (${occurrences.map((o) => `${o.kind}:${o.id}`).join(', ')})`,
+      });
+    }
+  }
+  return problems;
+}
+
+// Review round 5, item 2 -- "unless there is an explicit, approved
+// disposition". A skipped relationship or an invalid identity is allowed
+// to NOT fail the run only when an operator has reviewed it and recorded
+// that review in an --approved-dispositions file (a small, explicit,
+// human-authored artifact -- never inferred, never a silent default).
+// Each problem/skip has a stable signature; a disposition matches by
+// signature only, so approving one specific known issue can never
+// accidentally blanket-approve a different, unreviewed one.
+export function emailProblemSignature(p) {
+  return `email:${p.kind}:${p.reason}:${p.email ?? 'null'}:${p.id}`;
+}
+export function relationshipSkipSignature(s) {
+  return `relationship:${s.kind}:${s.studentEmail}:${s.targetMongoId}`;
+}
+
+export function partitionByDisposition(items, signatureFn, approvedSignatures) {
+  const approvedSet = approvedSignatures instanceof Set ? approvedSignatures : new Set(approvedSignatures || []);
+  const approved = [];
+  const unapproved = [];
+  for (const item of items) {
+    if (approvedSet.has(signatureFn(item))) approved.push(item);
+    else unapproved.push(item);
+  }
+  return { approved, unapproved };
+}
+
+// The disposition file itself is I/O (not pure), but its validation is
+// strict and fail-closed: a malformed or incomplete file is a hard error,
+// never treated as "no dispositions approved" (that would silently
+// weaken the gate) nor as "everything approved" (that would silently
+// bypass it).
+export function loadApprovedDispositions(filePath) {
+  if (!filePath) return [];
+  const raw = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw) || !Array.isArray(raw.items)) {
+    throw new Error('--approved-dispositions file must be a JSON object with an "items" array');
+  }
+  if (!raw.approvedBy || typeof raw.approvedBy !== 'string') {
+    throw new Error('--approved-dispositions file must include a non-empty "approvedBy" string');
+  }
+  if (!raw.approvedAt || typeof raw.approvedAt !== 'string') {
+    throw new Error('--approved-dispositions file must include a non-empty "approvedAt" string');
+  }
+  return raw.items.map((item, i) => {
+    if (!item || typeof item.signature !== 'string' || !item.signature) {
+      throw new Error(`--approved-dispositions items[${i}] is missing a non-empty "signature"`);
+    }
+    if (!item.reason || typeof item.reason !== 'string' || !item.reason) {
+      throw new Error(`--approved-dispositions items[${i}] is missing a non-empty "reason"`);
+    }
+    return item.signature;
+  });
 }
 
 async function migrateSubscription(pgClient, profileId, mongoUser, planSlugToId) {
@@ -348,9 +510,16 @@ async function generateInvitePlan(supabaseAdmin, emails) {
 }
 
 async function main() {
-  const args = new Set(process.argv.slice(2));
+  const argv = process.argv.slice(2);
+  const args = new Set(argv);
   const execute = args.has('--execute');
   const withInvitePlan = args.has('--with-invite-plan');
+  const dispositionsFlag = argv.find((a) => a.startsWith('--approved-dispositions='));
+  const approvedDispositionsPath = dispositionsFlag ? dispositionsFlag.slice('--approved-dispositions='.length) : null;
+  // Fail fast on a malformed dispositions file before touching Mongo/PG at
+  // all -- this file is trusted operator input, same fail-closed posture
+  // as loadApprovedDispositions() itself.
+  const approvedSignatures = loadApprovedDispositions(approvedDispositionsPath);
 
   const mongoUri = process.env.MIGRATION_MONGO_URI;
   const pgUri = process.env.MIGRATION_DB_URL;
@@ -372,6 +541,7 @@ async function main() {
   const report = {
     users: { created: 0, alreadyExists: 0, wouldCreate: 0, errors: [] },
     admins: { created: 0, alreadyExists: 0, wouldCreate: 0, errors: [] },
+    identity: null,
     relationships: null,
     subscriptions: { migrated: 0, skipped: 0, wouldMigrate: 0, failed: [] },
   };
@@ -380,8 +550,38 @@ async function main() {
     const users = await db.collection('users').find({}).toArray();
     const admins = await db.collection('adminusers').find({}).toArray();
 
+    // Review round 5, item 2: identity + relationship validation happens
+    // HERE -- immediately after reading the source, before either
+    // per-document loop below writes anything, and identically in --plan
+    // and --execute. A source document whose email is missing/invalid, or
+    // that collides with another document's email, is never handed to
+    // migrateOneUser()/migrateOneAdmin() at all (guarded in the loops
+    // below) -- it is reported, not silently dropped and not silently
+    // processed into a merged/ambiguous account.
+    const identityProblems = computeIdentityEmailProblems(users, admins);
+    const identityDisposition = partitionByDisposition(identityProblems, emailProblemSignature, approvedSignatures);
+    report.identity = {
+      problems: identityProblems,
+      approvedCount: identityDisposition.approved.length,
+      unapprovedCount: identityDisposition.unapproved.length,
+    };
+    const invalidEmails = new Set(identityProblems.filter((p) => p.email).map((p) => p.email));
+
+    const relationshipPlan = computeRelationshipPlan(users, invalidEmails);
+    const relationshipDisposition = partitionByDisposition(relationshipPlan.skipped, relationshipSkipSignature, approvedSignatures);
+    report.relationships = {
+      teacherLinksResolved: relationshipPlan.teacherLinksResolved,
+      teacherLinksSkippedNoTarget: relationshipPlan.teacherLinksSkippedNoTarget,
+      parentLinksResolved: relationshipPlan.parentLinksResolved,
+      parentLinksSkippedNoTarget: relationshipPlan.parentLinksSkippedNoTarget,
+      skipped: relationshipPlan.skipped,
+      approvedSkippedCount: relationshipDisposition.approved.length,
+      unapprovedSkippedCount: relationshipDisposition.unapproved.length,
+    };
+
     for (const u of users) {
-      if (!u.email) continue;
+      const normalizedEmail = u.email && typeof u.email === 'string' ? u.email.toLowerCase().trim() : null;
+      if (!normalizedEmail || invalidEmails.has(normalizedEmail)) continue; // recorded in report.identity above, never silently processed
       const result = await migrateOneUser(supabaseAdmin, pgClient, u, { execute });
       checkpoint[`user:${u.email}`] = { ...result, at: new Date().toISOString() };
       if (result.status === 'created') report.users.created++;
@@ -391,7 +591,8 @@ async function main() {
     }
 
     for (const a of admins) {
-      if (!a.email) continue;
+      const normalizedEmail = a.email && typeof a.email === 'string' ? a.email.toLowerCase().trim() : null;
+      if (!normalizedEmail || invalidEmails.has(normalizedEmail)) continue; // recorded in report.identity above, never silently processed
       const result = await migrateOneAdmin(supabaseAdmin, pgClient, a, { execute });
       checkpoint[`admin:${a.email}`] = { ...result, at: new Date().toISOString() };
       if (result.status === 'created') report.admins.created++;
@@ -404,12 +605,13 @@ async function main() {
     if (execute) {
       const emailToProfileId = new Map();
       for (const u of users) {
+        if (!u.email) continue;
         const email = String(u.email).toLowerCase().trim();
         const r = await pgClient.query('SELECT id FROM profiles WHERE email = $1', [email]);
         if (r.rows[0]) emailToProfileId.set(email, r.rows[0].id);
       }
 
-      report.relationships = await resolveRelationships(pgClient, users, emailToProfileId);
+      await applyRelationships(pgClient, users, emailToProfileId);
 
       const usersWithSubscription = users.filter((u) => u.subscription && u.subscription.plan);
       if (usersWithSubscription.length > 0) {
@@ -444,11 +646,20 @@ async function main() {
       }
     }
 
-    // Reconciliation: DISTINCT Mongo source emails vs. matching profiles rows.
-    const allEmails = [...users, ...admins].map((r) => String(r.email).toLowerCase().trim());
+    // Reconciliation: DISTINCT Mongo source emails vs. matching profiles
+    // rows. Review round 5: a document with no usable email (missing, or
+    // an unapproved identity problem) was never processed above and must
+    // not be counted as "expected" here either -- previously
+    // `String(undefined).toLowerCase()` turned every missing-email doc
+    // into a bogus "undefined" pseudo-email folded into distinctEmails,
+    // which could make an otherwise-consistent run falsely report
+    // reconciliation.consistent=false.
+    const allEmails = [...users, ...admins]
+      .filter((r) => r.email && typeof r.email === 'string')
+      .map((r) => String(r.email).toLowerCase().trim());
     const distinctEmails = [...new Set(allEmails)];
     const erroredEmails = new Set([...report.users.errors.map((e) => e.email), ...report.admins.errors.map((e) => e.email)]);
-    const expectedEmails = distinctEmails.filter((e) => !erroredEmails.has(e));
+    const expectedEmails = distinctEmails.filter((e) => !erroredEmails.has(e) && !invalidEmails.has(e));
     const pgCountRes = await pgClient.query(`SELECT count(*)::int AS n FROM profiles WHERE email = ANY($1::text[])`, [distinctEmails]);
     report.reconciliation = {
       mongoSourceRows: allEmails.length,
@@ -465,14 +676,15 @@ async function main() {
 
     saveCheckpoint(checkpoint);
     console.log(JSON.stringify(report, null, 2));
-    // Review round 4: document-level failures were previously only ever
-    // logged inside `report` -- this process's own exit code stayed 0 as
-    // long as nothing THREW, exactly the same class of bug fixed in
-    // mongo-to-supabase.mjs's own changelog (a caller checking only the
-    // exit code -- production-import-orchestrator.mjs's runWorker()/
-    // domainResult.code -- could see success while real per-document
-    // failures sat unexamined in the JSON report). Fixed: any of the 4
-    // conditions computeExitFailure() checks now sets a non-zero exit.
+    // Review round 4 (extended round 5): document-level failures were
+    // previously only ever logged inside `report` -- this process's own
+    // exit code stayed 0 as long as nothing THREW, exactly the same class
+    // of bug fixed in mongo-to-supabase.mjs's own changelog (a caller
+    // checking only the exit code -- production-import-orchestrator.mjs's
+    // runWorker()/domainResult.code -- could see success while real
+    // per-document or relationship/identity failures sat unexamined in the
+    // JSON report). Fixed: every condition computeExitFailure() checks now
+    // sets a non-zero exit.
     if (computeExitFailure(report, execute)) process.exitCode = 1;
   } finally {
     pgClient.release();
@@ -481,13 +693,24 @@ async function main() {
   }
 }
 
-// Review round 4: pure -- given the final report and whether this was an
-// --execute run, true iff the process must exit non-zero. Exported
-// specifically so each of the 4 conditions is unit-testable in isolation
-// with a plain object, no live Mongo/Postgres/GoTrue needed:
+// Review round 4 (extended round 5, item 2): pure -- given the final
+// report and whether this was an --execute run, true iff the process
+// must exit non-zero. Exported specifically so each condition is
+// unit-testable in isolation with a plain object, no live
+// Mongo/Postgres/GoTrue needed:
 //   - report.users.errors is non-empty
 //   - report.admins.errors is non-empty
 //   - report.subscriptions.failed is non-empty
+//   - report.identity.unapprovedCount is non-zero (round 5: a missing,
+//     invalid, or conflicting/duplicate user/admin email that has no
+//     matching --approved-dispositions entry)
+//   - report.relationships.unapprovedSkippedCount is non-zero (round 5: a
+//     teacher/parent-child reference that would be skipped for lack of a
+//     target, with no matching --approved-dispositions entry) -- checked
+//     in BOTH modes now, not execute-only, because relationships are
+//     computed identically in --plan and --execute (see
+//     computeRelationshipPlan()) and a skip is exactly as real a problem
+//     pre-write as post-write.
 //   - (execute only) report.reconciliation.consistent !== true
 // The reconciliation condition is execute-only because --plan's own
 // reconciliation.consistent is always the string 'n/a (dry-run)' --
@@ -497,6 +720,8 @@ export function computeExitFailure(report, execute) {
     report.users.errors.length > 0 ||
     report.admins.errors.length > 0 ||
     report.subscriptions.failed.length > 0 ||
+    (report.identity?.unapprovedCount ?? 0) > 0 ||
+    (report.relationships?.unapprovedSkippedCount ?? 0) > 0 ||
     (execute && report.reconciliation?.consistent !== true)
   );
 }

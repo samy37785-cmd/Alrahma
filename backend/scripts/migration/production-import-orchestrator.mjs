@@ -98,6 +98,7 @@ import path from 'node:path';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import pg from 'pg';
+import { MIGRATION_SEED_ADMIN_ID } from './lib/admin-rpc.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, '..', '..', '..');
@@ -186,10 +187,16 @@ function targetIdentityExpr(spec) {
 
 // migrate-users-to-supabase-auth.mjs does NOT go through migration_source_
 // ledger (it predates it, and auth.users/profiles have their own natural
-// idempotency key: email) — these tables get a simpler "must currently be
-// pristine" preflight instead, documented explicitly rather than silently
-// assumed covered by the ledger check above.
-const NON_LEDGER_PRISTINE_TABLES = ['profiles', 'subscriptions'];
+// idempotency key: email) — profiles and subscriptions get a
+// provenance-aware preflight instead of a ledger lookup (see
+// verifyNoUnrecordedData()'s own comment, round 5 item 1, for the full
+// rationale and the bug this replaced).
+
+// The exact `migrated_from` tags migrateOneUser()/migrateOneAdmin()
+// (migrate-users-to-supabase-auth.mjs) stamp onto
+// auth.users.raw_user_meta_data at real account-creation time — the only
+// two values a genuinely-migrated account can ever carry there.
+const MIGRATED_FROM_TAGS = ['mongodb', 'mongodb_adminuser'];
 
 // Stage 2J-B Part H, review round 2: a domain is NEVER excluded merely
 // because it appears in a hardcoded list -- that was this file's actual
@@ -377,18 +384,56 @@ export async function verifySignupsOff(supabaseUrl, serviceRoleKey) {
 /**
  * Two different guarantees, because the two worker scripts use two
  * different idempotency mechanisms (documented at LEDGER_BACKED_
- * TARGET_SPECS / NON_LEDGER_PRISTINE_TABLES above):
+ * TARGET_SPECS above and MIGRATED_FROM_TAGS below):
  *   - Ledger-backed tables: every row must be traceable to a
  *     migration_source_ledger entry pointing at it — matched via each
  *     table's own real identity shape (LEDGER_BACKED_TARGET_SPECS),
- *     never assumed to be a plain `id` column. A row with no matching
- *     ledger entry means something wrote to this table outside this
- *     tooling's own bookkeeping — refuse rather than risk silently
- *     overwriting or double-counting it.
- *   - Non-ledger tables (profiles/subscriptions): must be genuinely
- *     empty. This orchestrator's whole design assumes a fresh target;
- *     it is not a merge tool for a partially-populated production
- *     project.
+ *     never assumed to be a plain `id` column, AND scoped to THIS
+ *     migration's own source (source_system='mongodb', source_database=
+ *     SOURCE_DATABASE) with a real, non-null target_id — see round 5 item
+ *     3 below. A row with no such matching ledger entry means something
+ *     wrote to this table outside this tooling's own bookkeeping —
+ *     refuse rather than risk silently overwriting or double-counting it.
+ *   - Non-ledger tables (profiles/subscriptions): every row must be
+ *     PROVABLY ATTRIBUTABLE to this migration — see round 5 item 1 below.
+ *
+ * Review round 5, item 3: the ledger-backed check above used to match
+ * purely on `target_table` + `target_id`, with no `source_system`/
+ * `source_database` scoping at all. An unrelated migration_source_ledger
+ * record — a different source system entirely, or the right system but
+ * the wrong source database — could coincidentally share the same
+ * target_table/target_id and incorrectly legitimize an otherwise
+ * unrecorded target row. Fixed: every ledger match now also requires
+ * source_system='mongodb', source_database=SOURCE_DATABASE (this file's
+ * own hardcoded target, never operator-supplied), and a non-null
+ * target_id (a 'planned' ledger row that never actually got a target_id
+ * assigned can never legitimately match a real target row — NULL never
+ * equals anything in the identity comparison either, but the explicit
+ * check documents that requirement rather than leaving it implicit).
+ *
+ * Review round 5, item 1: profiles and subscriptions used to require the
+ * table be COMPLETELY EMPTY, unconditionally — this broke every resume (a retry after
+ * users/profiles or subscriptions were partially created failed here
+ * before any resume logic in the worker scripts got a chance to run),
+ * broke --compensate identically (main() runs this same preflight before
+ * branching on --compensate at all — see runPreflight()), and could be
+ * tripped by nothing more than ensureMigrationSeedAdmin()'s own
+ * MIGRATION_SEED_ADMIN_ID profiles row, created the moment ANY domain
+ * needing plan-catalog seeding runs. Fixed: a profiles/subscriptions row
+ * no longer needs to not-exist — it needs to be provably attributable to
+ * this migration: either the hardcoded migration-seed admin identity, or
+ * (via the row's owning auth.users record) tagged with one of
+ * MIGRATED_FROM_TAGS, the exact markers migrateOneUser()/migrateOneAdmin()
+ * (migrate-users-to-supabase-auth.mjs) themselves stamp onto
+ * raw_user_meta_data at real account-creation time. This reduces to
+ * exactly the old strict-pristine behavior on a genuinely fresh target
+ * (zero rows is vacuously "every row is attributable"); permits resume
+ * and --compensate once only migration-tagged rows exist; and still fails
+ * closed for a real, unrelated, untagged pre-existing row — unknown data
+ * is never silently accepted no matter which of runImport()/compensate()
+ * is about to run, which is what makes a single provenance-aware check
+ * safe to use unconditionally rather than needing a separate explicit
+ * "strict" vs. "resume" mode switch on this function or its caller.
  */
 export async function verifyNoUnrecordedData(pgClient) {
   const problems = [];
@@ -397,15 +442,43 @@ export async function verifyNoUnrecordedData(pgClient) {
       select count(*)::int as n from public.${table} t
       where not exists (
         select 1 from public.migration_source_ledger l
-        where l.target_table = $1 and l.target_id = ${targetIdentityExpr(spec)}
+        where l.target_table = $1
+          and l.source_system = 'mongodb'
+          and l.source_database = $2
+          and l.target_id is not null
+          and l.target_id = ${targetIdentityExpr(spec)}
       );
-    `, [table]);
+    `, [table, SOURCE_DATABASE]);
     if (rows[0].n > 0) problems.push(`${table}: ${rows[0].n} row(s) with no matching migration_source_ledger entry`);
   }
-  for (const table of NON_LEDGER_PRISTINE_TABLES) {
-    const { rows } = await pgClient.query(`select count(*)::int as n from public.${table};`);
-    if (rows[0].n > 0) problems.push(`${table}: expected 0 rows (pristine target), found ${rows[0].n}`);
+
+  const { rows: profileRows } = await pgClient.query(
+    `select count(*)::int as n
+     from public.profiles p
+     left join auth.users u on u.id = p.id
+     where p.id <> $1
+       and not (coalesce(u.raw_user_meta_data->>'migrated_from', '') = any($2::text[]));`,
+    [MIGRATION_SEED_ADMIN_ID, MIGRATED_FROM_TAGS]
+  );
+  if (profileRows[0].n > 0) {
+    problems.push(`profiles: ${profileRows[0].n} row(s) not attributable to this migration (not the migration-seed admin, not tagged migrated_from)`);
   }
+
+  const { rows: subscriptionRows } = await pgClient.query(
+    `select count(*)::int as n
+     from public.subscriptions s
+     where not exists (
+       select 1 from public.profiles p
+       join auth.users u on u.id = p.id
+       where p.id = s.user_id
+         and (p.id = $1 or coalesce(u.raw_user_meta_data->>'migrated_from', '') = any($2::text[]))
+     );`,
+    [MIGRATION_SEED_ADMIN_ID, MIGRATED_FROM_TAGS]
+  );
+  if (subscriptionRows[0].n > 0) {
+    problems.push(`subscriptions: ${subscriptionRows[0].n} row(s) not attributable to this migration (owning profile is not the migration-seed admin and not tagged migrated_from)`);
+  }
+
   if (problems.length > 0) {
     fail(`target already contains data this tooling did not record:\n  - ${problems.join('\n  - ')}`);
   }

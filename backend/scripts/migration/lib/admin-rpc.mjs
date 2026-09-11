@@ -16,6 +16,8 @@
 // other write in this directory is a plain, audited table INSERT/UPDATE
 // under the same superuser trust model (RLS bypassed by the Postgres
 // superuser role itself, not by this trick).
+import { throwIfFaultStage } from './fault-injection.mjs';
+
 export const MIGRATION_SEED_ADMIN_ID = '00000000-0000-4000-8000-000000000099';
 // Review round 6, item 3: exported (was module-private) so
 // production-import-orchestrator.mjs's verifyNoUnrecordedData() can
@@ -50,32 +52,76 @@ export async function inspectMigrationSeedAdmin(pgClient) {
 
 /**
  * Ensures the throwaway local admin identity exists (idempotent) — call
- * once per run, outside any RPC-calling transaction.
+ * once per run.
+ *
+ * PR #70 review round 7, item 7: the three writes below (auth.users,
+ * profiles, admin_role_assignments) used to be three independent,
+ * separately-committed statements, with the before/after
+ * inspectMigrationSeedAdmin() checks bracketing them from OUTSIDE any
+ * transaction. A crash between any two of the three writes left a
+ * PARTIAL seed admin — e.g. an auth.users row with no profiles row yet,
+ * or profiles.role='admin' with no admin_role_assignments row — which is
+ * exactly the kind of "real identity, but incomplete" state
+ * verifyNoUnrecordedData()'s seed-admin exemption (production-import-
+ * orchestrator.mjs) is deliberately designed to REJECT (it requires all
+ * four conditions simultaneously), permanently blocking every later run
+ * with no single write to point at as "the" failure, and no way to
+ * automatically recover (this function's own "collision" throw would fire
+ * forever, since the row now matches neither 'absent' nor 'exact').
+ *
+ * Fixed: all three writes, plus the pre- and post-write identity checks,
+ * now happen inside ONE real transaction. The complete identity is
+ * independently re-verified (via inspectMigrationSeedAdmin(), never
+ * assumed from having just issued the INSERTs) BEFORE COMMIT; any failure
+ * at any point — a real error, a collision, or a fault-injection throw —
+ * rolls back the WHOLE transaction, leaving either the complete correct
+ * identity or nothing at all, never a partial one.
  */
 export async function ensureMigrationSeedAdmin(pgClient) {
-  const before = await inspectMigrationSeedAdmin(pgClient);
-  if (before.state === 'exact') return;
-  if (before.state === 'collision') {
-    throw new Error('migration seed-admin UUID/email collides with an incomplete or mismatched auth/profile/admin-role identity');
-  }
-  await pgClient.query(
-    `INSERT INTO auth.users (id, email, raw_user_meta_data) VALUES ($1, $2, '{}'::jsonb)
-     ON CONFLICT (id) DO NOTHING`,
-    [MIGRATION_SEED_ADMIN_ID, MIGRATION_SEED_ADMIN_EMAIL]
-  );
-  await pgClient.query(
-    `INSERT INTO profiles (id, email, name, role) VALUES ($1, $2, 'Stage 2J-B Migration Tool', 'admin')
-     ON CONFLICT (id) DO UPDATE SET role = 'admin'`,
-    [MIGRATION_SEED_ADMIN_ID, MIGRATION_SEED_ADMIN_EMAIL]
-  );
-  await pgClient.query(
-    `INSERT INTO admin_role_assignments (user_id, role) VALUES ($1, 'admin')
-     ON CONFLICT (user_id) DO UPDATE SET role = 'admin'`,
-    [MIGRATION_SEED_ADMIN_ID]
-  );
-  const after = await inspectMigrationSeedAdmin(pgClient);
-  if (after.state !== 'exact') {
-    throw new Error('migration seed-admin creation did not produce the exact expected auth/profile/admin-role identity');
+  try {
+    await pgClient.query('BEGIN');
+
+    const before = await inspectMigrationSeedAdmin(pgClient);
+    if (before.state === 'exact') {
+      await pgClient.query('COMMIT');
+      return;
+    }
+    if (before.state === 'collision') {
+      throw new Error('migration seed-admin UUID/email collides with an incomplete or mismatched auth/profile/admin-role identity');
+    }
+
+    await pgClient.query(
+      `INSERT INTO auth.users (id, email, raw_user_meta_data) VALUES ($1, $2, '{}'::jsonb)
+       ON CONFLICT (id) DO NOTHING`,
+      [MIGRATION_SEED_ADMIN_ID, MIGRATION_SEED_ADMIN_EMAIL]
+    );
+    throwIfFaultStage('after_seed_admin_auth_user_insert');
+
+    await pgClient.query(
+      `INSERT INTO profiles (id, email, name, role) VALUES ($1, $2, 'Stage 2J-B Migration Tool', 'admin')
+       ON CONFLICT (id) DO UPDATE SET role = 'admin'`,
+      [MIGRATION_SEED_ADMIN_ID, MIGRATION_SEED_ADMIN_EMAIL]
+    );
+    throwIfFaultStage('after_seed_admin_profile_insert');
+
+    await pgClient.query(
+      `INSERT INTO admin_role_assignments (user_id, role) VALUES ($1, 'admin')
+       ON CONFLICT (user_id) DO UPDATE SET role = 'admin'`,
+      [MIGRATION_SEED_ADMIN_ID]
+    );
+    throwIfFaultStage('after_seed_admin_role_assignment_insert');
+
+    // Full identity verification BEFORE commit — never assumed from having
+    // just issued the INSERTs above.
+    const after = await inspectMigrationSeedAdmin(pgClient);
+    if (after.state !== 'exact') {
+      throw new Error('migration seed-admin creation did not produce the exact expected auth/profile/admin-role identity -- refusing to commit a partial identity');
+    }
+
+    await pgClient.query('COMMIT');
+  } catch (err) {
+    await pgClient.query('ROLLBACK').catch(() => {});
+    throw err;
   }
 }
 

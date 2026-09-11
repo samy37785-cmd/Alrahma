@@ -100,6 +100,7 @@ import { fileURLToPath } from 'node:url';
 import pg from 'pg';
 import { MIGRATION_SEED_ADMIN_ID, MIGRATION_SEED_ADMIN_EMAIL } from './lib/admin-rpc.mjs';
 import { parseApprovedDispositions } from './migrate-users-to-supabase-auth.mjs';
+import { parseStrictCliArgs } from './lib/cli-args.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, '..', '..', '..');
@@ -172,6 +173,15 @@ const LEDGER_BACKED_TARGET_SPECS = {
   notifications: {},
   admin_audit_log: {},
   document_counters: { composite: ['scope', 'year'] },
+  // PR #70 review round 7, item 4/6: parent_student_links is a REAL table
+  // with a real (parent_id, student_id) composite primary key -- exactly
+  // the same composite-identity shape as wishlists/hifz_progress/etc.
+  // above, so it needs no bespoke code at all to be covered by BOTH
+  // verifyNoUnrecordedData() (Target -> Ledger) and
+  // verifyLedgerPointsToRealTargets() (Ledger -> Target) below, the same
+  // generic mechanism every other domain table already uses. Written by
+  // migrate-users-to-supabase-auth.mjs's applyParentChildLink().
+  parent_student_links: { composite: ['parent_id', 'student_id'] },
 };
 
 /**
@@ -267,24 +277,84 @@ function sha256File(filePath) {
 // worker script directly, never through the actual production
 // entrypoint. Fixed: parse once, forward the exact same path to every
 // user-migration invocation (plan, execute, compensate), and pin its
-// content by hash + read its approvedBy/approvedAt for the saga log --
-// this file does NOT re-validate the file's internal structure (the
-// worker script's own loadApprovedDispositions() does that, fail-closed,
-// and will crash the child process on anything malformed); this is
-// purely for hash-pinning and saga auditability.
-function readDispositionsMeta(dispositionsPath) {
+// content by hash + read its approvedBy/approvedAt for the saga log.
+//
+// PR #70 review round 7, item 5: round 6's fix still had a real TOCTOU
+// window. It hashed the OPERATOR'S OWN file once, then re-hashed that SAME
+// path again immediately before the execute pass -- but the CHILD PROCESS
+// (migrate-users-to-supabase-auth.mjs) does its own INDEPENDENT
+// `fs.readFileSync` of that same operator path when it starts up. Even if
+// the orchestrator's own re-hash-right-before-spawn check passes, the file
+// could still be mutated in the gap between that check and the moment the
+// child actually reads it a moment later -- a classic read-check-then-use
+// race, not actually closed by re-hashing the SAME mutable path twice.
+//
+// Fixed: the orchestrator now reads the operator's file ONCE, from fixed
+// bytes, and writes those EXACT bytes to a PRIVATE, orchestrator-owned
+// snapshot file under OUT_DIR that the operator's own file is never
+// touched or referenced by again. That snapshot path — never the
+// operator's original path — is what gets forwarded to EVERY child
+// invocation (plan, execute, compensate), so every child reads the
+// identical bytes from a file only this orchestrator process controls.
+// Immediately after writing the snapshot, its bytes are read back and
+// compared to what was written (closing any filesystem-level race in the
+// write itself); before each subsequent invocation, the snapshot's hash is
+// re-verified against what was recorded at creation time; any mismatch —
+// or the snapshot going missing — refuses to proceed. The snapshot is
+// deleted in a `finally` block by the caller, and that deletion is itself
+// verified (the file must actually be gone afterward), so a stray
+// approval artifact is never left behind on disk after the run ends.
+function writeImmutableDispositionsSnapshot(dispositionsPath, runId) {
   if (!dispositionsPath) return null;
   if (!fs.existsSync(dispositionsPath)) fail(`--approved-dispositions file does not exist: ${dispositionsPath}`);
-  const contents = fs.readFileSync(dispositionsPath);
+  const contents = fs.readFileSync(dispositionsPath); // read ONCE, fixed bytes
   const parsed = parseApprovedDispositions(contents.toString('utf8'));
   const hash = crypto.createHash('sha256').update(contents).digest('hex');
+
+  fs.mkdirSync(OUT_DIR, { recursive: true });
+  const snapshotPath = path.join(OUT_DIR, `approved-dispositions-snapshot-${runId}.json`);
+  fs.writeFileSync(snapshotPath, contents);
+
+  // Read back immediately to prove the bytes actually landed as written —
+  // closes any filesystem-level race between the write above and this
+  // check, before the snapshot is ever handed to a child process.
+  const readBack = fs.readFileSync(snapshotPath);
+  if (!readBack.equals(contents)) {
+    fs.rmSync(snapshotPath, { force: true });
+    fail(`--approved-dispositions snapshot at ${snapshotPath} did not read back identical to what was written -- refusing to proceed`);
+  }
+
   return {
-    path: dispositionsPath,
+    originalPath: dispositionsPath,
+    snapshotPath,
     hash,
     approvedBy: parsed.approvedBy,
     approvedAt: parsed.approvedAt,
     signatures: parsed.signatures,
   };
+}
+
+/** Re-verifies the snapshot is present and byte-identical to what was recorded at creation time — call before EVERY child invocation that will read it. */
+function verifyDispositionsSnapshotUnchanged(meta) {
+  if (!meta) return;
+  if (!fs.existsSync(meta.snapshotPath)) {
+    fail(`--approved-dispositions snapshot at ${meta.snapshotPath} is missing -- refusing to proceed with a removed approval artifact`);
+  }
+  const currentHash = sha256File(meta.snapshotPath);
+  if (currentHash !== meta.hash) {
+    fail(`--approved-dispositions snapshot at ${meta.snapshotPath} changed after it was created -- refusing to proceed with a mutated approval artifact`);
+  }
+}
+
+/** Deletes the private snapshot and verifies it is actually gone — call from a `finally` block, never assumed to have succeeded silently. */
+function cleanupDispositionsSnapshot(meta) {
+  if (!meta) return;
+  fs.rmSync(meta.snapshotPath, { force: true });
+  if (fs.existsSync(meta.snapshotPath)) {
+    // Structurally should be unreachable given rmSync above -- never
+    // silently claim cleanup succeeded if the file is somehow still there.
+    throw new Error(`--approved-dispositions snapshot at ${meta.snapshotPath} still exists after deletion -- cleanup could not be verified`);
+  }
 }
 
 function currentGitSha() {
@@ -475,6 +545,14 @@ export async function verifySignupsOff(supabaseUrl, serviceRoleKey) {
  * a separate explicit "strict" vs. "resume" mode switch on this function
  * or its caller.
  */
+// PR #70 review round 7, item 4: the exact same set of ledger-backed
+// targets is used by BOTH directions of the bidirectional integrity check
+// below (verifyNoUnrecordedData = Target -> Ledger,
+// verifyLedgerPointsToRealTargets = Ledger -> Target) -- factored out once
+// so the two can never silently drift apart on which tables/identity
+// shapes they each cover.
+const LEDGER_AND_PROVENANCE_SPECS = { ...LEDGER_BACKED_TARGET_SPECS, profiles: {}, subscriptions: {} };
+
 export async function verifyNoUnrecordedData(pgClient) {
   const problems = [];
 
@@ -501,8 +579,7 @@ export async function verifyNoUnrecordedData(pgClient) {
     if (!exact) problems.push('migration seed-admin identity collides with or differs from the complete expected auth/profile/admin-role identity');
   }
 
-  const ledgerBackedSpecs = { ...LEDGER_BACKED_TARGET_SPECS, profiles: {}, subscriptions: {} };
-  for (const [table, spec] of Object.entries(ledgerBackedSpecs)) {
+  for (const [table, spec] of Object.entries(LEDGER_AND_PROVENANCE_SPECS)) {
     const isSeedAdminExempt = table === 'profiles'
       ? `and not (
            t.id = $3
@@ -545,6 +622,105 @@ export async function verifyNoUnrecordedData(pgClient) {
   return true;
 }
 
+// PR #70 review round 7, item 4: "تحقق Target → Ledger وLedger → Target"
+// -- verifyNoUnrecordedData() above only ever checked ONE direction (every
+// TARGET row must trace back to a ledger entry). The other direction was
+// never checked anywhere: a migration_source_ledger row claiming
+// status='created'/'reconciled' with a real target_id, where that target
+// row has since gone missing (deleted out-of-band, a partial rollback of
+// a different domain, manual intervention, etc.), was silently invisible
+// to every preflight -- the NEXT forward run would only discover it deep
+// inside the affected worker's own resume logic (which round 7 items 2/3
+// now correctly fail closed on, never auto-recreating a substitute
+// target), but the orchestrator's own "is everything consistent" gate
+// never surfaced it up front. Fixed: this function walks the ledger
+// itself and, for every row claiming a real target, independently
+// verifies that target still exists — using the EXACT SAME
+// LEDGER_AND_PROVENANCE_SPECS identity shapes as the Target -> Ledger
+// direction, so the two can never check a different set of tables. A
+// mismatch here is a hard, fail-closed preflight error; this function
+// makes no attempt to repair or recreate anything itself ("أضف recovery
+// صريحًا فقط للحالات التي يمكن إثباتها بشكل قطعي" — the only sanctioned
+// recovery is re-running the normal forward step, which items 2/3/6's own
+// resume logic already proves safe for a target that genuinely still
+// exists; a target that does NOT exist anymore is a real problem for a
+// human to look at, not something this tooling silently papers over).
+export async function verifyLedgerPointsToRealTargets(pgClient) {
+  const problems = [];
+  for (const [table, spec] of Object.entries(LEDGER_AND_PROVENANCE_SPECS)) {
+    const { rows } = await pgClient.query(`
+      select count(*)::int as n
+      from public.migration_source_ledger l
+      where l.target_table = $1
+        and l.source_system = 'mongodb'
+        and l.source_database = $2
+        and l.target_id is not null
+        and l.status in ('created', 'reconciled')
+        and not exists (
+          select 1 from public.${table} t where ${targetIdentityExpr(spec)} = l.target_id
+        );
+    `, [table, SOURCE_DATABASE]);
+    if (rows[0].n > 0) {
+      problems.push(`${table}: ${rows[0].n} migration_source_ledger row(s) claim a target that no longer exists`);
+    }
+  }
+  if (problems.length > 0) {
+    fail(`migration_source_ledger references targets that are missing (Ledger -> Target integrity failure):\n  - ${problems.join('\n  - ')}`);
+  }
+  return true;
+}
+
+// PR #70 review round 7, item 4/6: profiles.teacher_id is a COLUMN on an
+// existing row, not a separately insertable target row, so it cannot use
+// the generic table-spec mechanism above -- it needs its own bidirectional
+// check. Written/ledgered by migrate-users-to-supabase-auth.mjs's
+// applyTeacherLink() under target_table='profiles_teacher_link', with a
+// stable composite target_id of `<studentProfileId>:<teacherProfileId>`.
+export async function verifyTeacherLinkProvenance(pgClient) {
+  const problems = [];
+
+  // Target -> Ledger: every profiles row with a non-null teacher_id must
+  // have a matching, source-scoped ledger entry for exactly that pair.
+  const { rows: unledgered } = await pgClient.query(`
+    select count(*)::int as n from public.profiles t
+    where t.teacher_id is not null
+      and not exists (
+        select 1 from public.migration_source_ledger l
+        where l.target_table = 'profiles_teacher_link'
+          and l.source_system = 'mongodb'
+          and l.source_database = $1
+          and l.status in ('created', 'reconciled', 'failed')
+          and l.target_id = (t.id::text || ':' || t.teacher_id::text)
+      );
+  `, [SOURCE_DATABASE]);
+  if (unledgered[0].n > 0) {
+    problems.push(`profiles.teacher_id: ${unledgered[0].n} row(s) with no matching migration_source_ledger entry`);
+  }
+
+  // Ledger -> Target: every ledger row claiming a teacher_id link must
+  // still find that EXACT pair on the referenced profiles row.
+  const { rows: ghosts } = await pgClient.query(`
+    select count(*)::int as n
+    from public.migration_source_ledger l
+    where l.target_table = 'profiles_teacher_link'
+      and l.source_system = 'mongodb'
+      and l.source_database = $1
+      and l.target_id is not null
+      and l.status in ('created', 'reconciled')
+      and not exists (
+        select 1 from public.profiles t where (t.id::text || ':' || t.teacher_id::text) = l.target_id
+      );
+  `, [SOURCE_DATABASE]);
+  if (ghosts[0].n > 0) {
+    problems.push(`profiles_teacher_link ledger: ${ghosts[0].n} row(s) claim a teacher_id relationship that no longer exists`);
+  }
+
+  if (problems.length > 0) {
+    fail(`profiles.teacher_id provenance is inconsistent:\n  - ${problems.join('\n  - ')}`);
+  }
+  return true;
+}
+
 // ---------------------------------------------------------------------
 // Advisory lock — only one orchestrator run against this target at a
 // time. pg_try_advisory_lock (non-blocking) so a second concurrent
@@ -580,7 +756,14 @@ async function runPreflight(pgClient, { execute, approvalManifestPath, backupMan
   const manifest = JSON.parse(fs.readFileSync(approvalManifestPath, 'utf8'));
   verifyApprovalManifest(manifest, { gitSha, backupHash: backup.sha256 });
   await verifySignupsOff(supabaseUrl, serviceRoleKey);
+  // Round 7, item 4: BOTH directions of ledger integrity are checked, not
+  // just Target -> Ledger (verifyNoUnrecordedData). Round 7, item 6:
+  // relationship provenance (profiles.teacher_id specifically;
+  // parent_student_links is already covered generically by both of the
+  // functions above via LEDGER_AND_PROVENANCE_SPECS).
   await verifyNoUnrecordedData(pgClient);
+  await verifyLedgerPointsToRealTargets(pgClient);
+  await verifyTeacherLinkProvenance(pgClient);
   return { gitSha, mode: 'execute', backup, manifest };
 }
 
@@ -641,21 +824,29 @@ export async function runImport({ pgClient, execute, faultStage, deferDomains = 
   const saga = newSagaLog(runId);
   const commonEnv = faultStage ? { MIGRATION_FAULT_INJECT_STAGE: faultStage, MIGRATION_FAULT_INJECT_ONCE: '1' } : {};
 
-  // Review round 6, item 2: bind the plan pass and the execute pass to
-  // the SAME immutable dispositions content -- hashed ONCE, here, before
-  // either user-migration invocation below, and recorded in the saga
-  // (path/hash/approvedBy/approvedAt) for a real audit trail. The hash is
-  // re-verified immediately before the execute pass (below); a mismatch
-  // means the file was mutated between the two passes and the run refuses
-  // to proceed with a no-longer-pinned approval artifact.
-  const dispositionsMeta = readDispositionsMeta(approvedDispositionsPath);
+  // Round 7, item 5: read the operator's file ONCE into a private,
+  // orchestrator-owned snapshot -- see writeImmutableDispositionsSnapshot()'s
+  // own comment for the exact TOCTOU window this closes. EVERY child
+  // invocation below (plan preflight AND execute) is forwarded the
+  // SNAPSHOT path, never the operator's original path, and the snapshot is
+  // deleted (with deletion verified) in the `finally` block at the very
+  // end of this function.
+  const dispositionsMeta = writeImmutableDispositionsSnapshot(approvedDispositionsPath, runId);
+  try {
+    return await runImportBody({ pgClient, execute, faultStage, deferDomains, runWorkerFn, dispositionsMeta, saga, commonEnv });
+  } finally {
+    cleanupDispositionsSnapshot(dispositionsMeta);
+  }
+}
+
+async function runImportBody({ execute, deferDomains, runWorkerFn, dispositionsMeta, saga, commonEnv }) {
   if (dispositionsMeta) {
     saga.record('approved_dispositions', 'bound', {
-      path: dispositionsMeta.path, hash: dispositionsMeta.hash,
+      path: dispositionsMeta.originalPath, snapshotPath: dispositionsMeta.snapshotPath, hash: dispositionsMeta.hash,
       approvedBy: dispositionsMeta.approvedBy, approvedAt: dispositionsMeta.approvedAt,
     });
   }
-  const dispositionArgs = approvedDispositionsPath ? [`--approved-dispositions=${approvedDispositionsPath}`] : [];
+  const dispositionArgs = dispositionsMeta ? [`--approved-dispositions=${dispositionsMeta.snapshotPath}`] : [];
 
   // Every domain the OPERATOR explicitly deferred on this run's command
   // line is recorded here, by name and reason — never silently dropped.
@@ -675,6 +866,7 @@ export async function runImport({ pgClient, execute, faultStage, deferDomains = 
   // was invoked with --execute immediately, ahead of that domain
   // preflight, so a real account-creation write could already have
   // landed before the domain side had any chance to fail the run closed.
+  verifyDispositionsSnapshotUnchanged(dispositionsMeta);
   saga.record('users_and_relationships_preflight', 'planned');
   const userPreflightResult = runWorkerFn(USER_MIGRATION_SCRIPT, [...dispositionArgs], commonEnv);
   saga.record('users_and_relationships_preflight', userPreflightResult.code === 0 ? 'reconciled' : 'failed', { code: userPreflightResult.code });
@@ -710,20 +902,11 @@ export async function runImport({ pgClient, execute, faultStage, deferDomains = 
   // Both preflights passed — only NOW is any write ever attempted,
   // starting with users (domains that reference profiles/auth accounts
   // depend on those accounts already existing).
-  if (dispositionsMeta) {
-    const currentHash = sha256File(dispositionsMeta.path);
-    if (currentHash !== dispositionsMeta.hash) {
-      saga.record('approved_dispositions', 'failed', {
-        reason: 'file mutated between the plan preflight and the execute pass', boundHash: dispositionsMeta.hash, currentHash,
-      });
-      return {
-        ok: false,
-        failedAt: 'approved_dispositions_integrity',
-        saga: saga.filePath,
-        stderr: `--approved-dispositions file ${dispositionsMeta.path} changed between the plan preflight and the execute pass ` +
-          `-- refusing to proceed with a mutated approval artifact`,
-      };
-    }
+  try {
+    verifyDispositionsSnapshotUnchanged(dispositionsMeta);
+  } catch (err) {
+    saga.record('approved_dispositions', 'failed', { reason: err.message });
+    return { ok: false, failedAt: 'approved_dispositions_integrity', saga: saga.filePath, stderr: err.message };
   }
   saga.record('users_and_relationships', 'planned');
   const userResult = runWorkerFn(USER_MIGRATION_SCRIPT, ['--execute', ...dispositionArgs], commonEnv);
@@ -775,57 +958,69 @@ export async function compensate({ pgClient, execute, approvedDispositionsPath =
   const runId = new Date().toISOString().replace(/[:.]/g, '-');
   const saga = newSagaLog(`compensate-${runId}`);
 
-  // Review round 6, item 2: "forward the exact same reviewed artifact to
-  // user plan, execute, and compensate" -- compensate() only ever makes
-  // ONE user-migration invocation (no separate plan-then-execute pair
-  // within itself, unlike runImport()), so there is no "between passes"
-  // mutation window here to guard against; the file is still hash-pinned
-  // and its approvedBy/approvedAt recorded for the same audit trail.
-  const dispositionsMeta = readDispositionsMeta(approvedDispositionsPath);
-  if (dispositionsMeta) {
-    saga.record('approved_dispositions', 'bound', {
-      path: dispositionsMeta.path, hash: dispositionsMeta.hash,
-      approvedBy: dispositionsMeta.approvedBy, approvedAt: dispositionsMeta.approvedAt,
-    });
-  }
-  const dispositionArgs = approvedDispositionsPath ? [`--approved-dispositions=${approvedDispositionsPath}`] : [];
+  // Round 7, item 5: same private, orchestrator-owned immutable snapshot
+  // mechanism as runImport() -- see writeImmutableDispositionsSnapshot()'s
+  // own comment. compensate() only ever makes ONE user-migration
+  // invocation, but the child-process read is still a live TOCTOU window
+  // against a bare operator path, so the snapshot -- read once, verified
+  // right before use, deleted (and deletion verified) in `finally` -- is
+  // used here identically, not just in runImport().
+  const dispositionsMeta = writeImmutableDispositionsSnapshot(approvedDispositionsPath, `compensate-${runId}`);
+  try {
+    if (dispositionsMeta) {
+      saga.record('approved_dispositions', 'bound', {
+        path: dispositionsMeta.originalPath, snapshotPath: dispositionsMeta.snapshotPath, hash: dispositionsMeta.hash,
+        approvedBy: dispositionsMeta.approvedBy, approvedAt: dispositionsMeta.approvedAt,
+      });
+    }
+    const dispositionArgs = dispositionsMeta ? [`--approved-dispositions=${dispositionsMeta.snapshotPath}`] : [];
 
-  if (dispositionsMeta && sha256File(dispositionsMeta.path) !== dispositionsMeta.hash) {
-    saga.record('approved_dispositions', 'failed', { reason: 'file mutated before compensate invocation' });
-    return {
-      ok: false,
-      stderr: '--approved-dispositions file changed after it was hash-bound; refusing compensation with a mutated artifact',
-      saga: saga.filePath,
-    };
+    try {
+      verifyDispositionsSnapshotUnchanged(dispositionsMeta);
+    } catch (err) {
+      saga.record('approved_dispositions', 'failed', { reason: err.message });
+      return { ok: false, stderr: err.message, saga: saga.filePath };
+    }
+    saga.record('compensate', 'planned');
+    const result = runWorkerFn(USER_MIGRATION_SCRIPT, execute ? ['--execute', ...dispositionArgs] : [...dispositionArgs], {});
+    saga.record('compensate', result.code === 0 ? 'reconciled' : 'failed', { code: result.code });
+    return { ok: result.code === 0, stdout: result.stdout, stderr: result.stderr, saga: saga.filePath };
+  } finally {
+    cleanupDispositionsSnapshot(dispositionsMeta);
   }
-  saga.record('compensate', 'planned');
-  const result = runWorkerFn(USER_MIGRATION_SCRIPT, execute ? ['--execute', ...dispositionArgs] : [...dispositionArgs], {});
-  saga.record('compensate', result.code === 0 ? 'reconciled' : 'failed', { code: result.code });
-  return { ok: result.code === 0, stdout: result.stdout, stderr: result.stderr, saga: saga.filePath };
 }
 
 // ---------------------------------------------------------------------
 // CLI entrypoint.
 // ---------------------------------------------------------------------
 
+// PR #70 review round 7, item 1: rebuilt on the shared strict parser
+// (lib/cli-args.mjs) -- see that module's header for the exact bug this
+// closes. Concretely for THIS script: `--execute` and `--compensate` are
+// now boolean-ONLY. Before this round, both were read as `!!args.execute`
+// / `!!args.compensate` from a generic string-valued parser -- `--execute
+// =false` parsed to the STRING `"false"`, and `!!"false"` is `true` in
+// JavaScript, so a single stray `=false` silently turned an intended
+// dry-run into a REAL --execute run. `--compansate` (or any other typo)
+// was previously accepted as an unrecognized-but-harmless key and simply
+// ignored, silently falling back to the forward-import path instead of
+// compensate, with no error at all. Both classes of bug are now
+// structurally impossible: an unknown flag is a hard error, and a boolean
+// flag rejects any `=value` outright, tested by both a typo AND an
+// `=false`/`=true` suffix.
+const CLI_SPEC = {
+  flags: {
+    execute: { type: 'boolean' },
+    compensate: { type: 'boolean' },
+    'approval-manifest': { type: 'string' },
+    'backup-manifest': { type: 'string' },
+    'approved-dispositions': { type: 'string' },
+    'defer-domains': { type: 'string' },
+  },
+};
+
 export function parseCliArgs(argv) {
-  const parsed = {};
-  const seen = new Set();
-  for (const token of argv) {
-    if (!token.startsWith('--')) fail(`unexpected positional argument "${token}"`);
-    const body = token.slice(2);
-    const equalsAt = body.indexOf('=');
-    const key = equalsAt === -1 ? body : body.slice(0, equalsAt);
-    const value = equalsAt === -1 ? true : body.slice(equalsAt + 1);
-    if (!key) fail('empty CLI flag is not allowed');
-    if (seen.has(key)) fail(`--${key} was passed more than once -- pass each flag exactly once`);
-    seen.add(key);
-    if (key === 'approved-dispositions' && (value === true || value === '')) {
-      fail('--approved-dispositions requires a non-empty =<path> value');
-    }
-    parsed[key] = value;
-  }
-  return parsed;
+  return parseStrictCliArgs(argv, CLI_SPEC);
 }
 
 async function main() {

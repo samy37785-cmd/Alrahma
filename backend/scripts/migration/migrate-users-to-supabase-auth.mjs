@@ -44,6 +44,7 @@ import { resolvePlanSlug, seedCanonicalPlans } from './lib/plan-catalog.mjs';
 import { withImpersonatedAdmin, ensureMigrationSeedAdmin } from './lib/admin-rpc.mjs';
 import { throwIfFaultStage } from './lib/fault-injection.mjs';
 import { findLedgerEntry, markPlanned, markCreated, markReconciled, markFailed, contentHashOf } from './lib/source-ledger.mjs';
+import { parseStrictCliArgs } from './lib/cli-args.mjs';
 
 // Review round 6, item 3: this script never went through migration_source_
 // ledger before this round (it predates that table, and auth.users/
@@ -82,11 +83,37 @@ async function openSourceLedger(pgClient, {
         'refusing to re-attribute changed source content'
       );
     }
-    if (existing.target_id && existingTargetId && String(existing.target_id) !== String(existingTargetId)) {
-      throw new Error(
-        `migration_source_ledger target mismatch for ${sourceCollection}/${sourceDocumentId} -> ${targetTable}; ` +
-        `ledger target ${existing.target_id} does not match existing target ${existingTargetId}`
-      );
+    if (existing.target_id) {
+      // PR #70 review round 7, item 2/4: a ledger row that already
+      // recorded a target_id is NEVER trusted blindly on resume. Before
+      // this fix, if the live email lookup found NOTHING (existingTargetId
+      // === null -- e.g. the target row was deleted out-of-band, or a
+      // compensating rollback removed it from a DIFFERENT table but left
+      // this ledger row behind), the mismatch check below was skipped
+      // entirely (both sides must be truthy for `&&`), openSourceLedger()
+      // returned the stale ledger row as if nothing were wrong, and the
+      // caller's own `if (!profileId)` branch would then happily CREATE A
+      // BRAND NEW auth.users account -- while `ledger.target_id` was
+      // already non-null, so the caller's own `if (!ledger.target_id)
+      // markCreated(...)` guard never fired for the NEW id either. The
+      // result: a genuinely orphaned, completely untracked duplicate
+      // account, and the ledger still silently pointing at the missing
+      // original. Fixed: a ledger row with a target_id is fail-closed the
+      // moment the live lookup does not corroborate it -- this function
+      // never manufactures a replacement target on the caller's behalf.
+      if (!existingTargetId) {
+        throw new Error(
+          `migration_source_ledger for ${sourceCollection}/${sourceDocumentId} -> ${targetTable} already recorded ` +
+          `target ${existing.target_id}, but no live row matches it anymore -- refusing to create a replacement ` +
+          `target automatically (this is a fail-closed ledger/target mismatch, not a fresh document)`
+        );
+      }
+      if (String(existing.target_id) !== String(existingTargetId)) {
+        throw new Error(
+          `migration_source_ledger target mismatch for ${sourceCollection}/${sourceDocumentId} -> ${targetTable}; ` +
+          `ledger target ${existing.target_id} does not match existing target ${existingTargetId}`
+        );
+      }
     }
     return existing;
   }
@@ -225,18 +252,56 @@ export async function migrateOneUser(supabaseAdmin, pgClient, mongoUser, { execu
 
   if (!profileId) {
     throwIfFaultStage('during_user_creation');
-    const { data, error } = await supabaseAdmin.auth.admin.createUser({
-      email,
-      password: randomThrowawayPassword(),
-      email_confirm: true,
-      user_metadata: { migrated_from: 'mongodb', migrated_at: new Date().toISOString() },
-    });
+    // PR #70 review round 7, item 2: "handle ambiguous success/network
+    // timeout". createUser() previously had no try/catch at all -- if the
+    // underlying HTTP call itself threw (a network timeout or connection
+    // reset, as opposed to a resolved `{data, error}` response) the
+    // exception propagated out of this function, out of main()'s
+    // per-document loop entirely, and crashed the WHOLE batch run: every
+    // OTHER document not yet processed this run was silently never
+    // attempted, and the report for them was lost. Worse, the outcome on
+    // GoTrue's side is genuinely AMBIGUOUS after a timeout -- the account
+    // may or may not actually have been created. Fixed: any thrown error
+    // here is caught, the ledger is marked failed (never left dangling as
+    // 'planned' forever), and this document is reported as a real error
+    // -- but the run continues to the next document. On the NEXT run,
+    // the `SELECT id FROM auth.users WHERE email = $1` lookup at the top
+    // of this function is what actually resolves the ambiguity: if
+    // GoTrue's write DID land despite the timeout, this exact ledger row
+    // (matched by source document identity, not by re-deriving anything)
+    // is safely resumed via the target_id-mismatch checks in
+    // openSourceLedger() above; if it did not land, createUser() is
+    // simply retried fresh.
+    let createResult;
+    try {
+      createResult = await supabaseAdmin.auth.admin.createUser({
+        email,
+        password: randomThrowawayPassword(),
+        email_confirm: true,
+        user_metadata: { migrated_from: 'mongodb', migrated_at: new Date().toISOString() },
+      });
+    } catch (thrown) {
+      await markFailed(pgClient, ledgerId, `createUser() threw (ambiguous outcome, possible network timeout): ${thrown.message}`);
+      return { status: 'error', message: `createUser() threw (ambiguous outcome, possible network timeout): ${thrown.message}` };
+    }
+    const { data, error } = createResult;
     if (error) {
       await markFailed(pgClient, ledgerId, error.message);
       return { status: 'error', message: error.message };
     }
     profileId = data.user.id;
     status = 'created';
+    // Round 7, item 2: a real, previously-unclosed kill window -- GoTrue's
+    // createUser() call actually succeeded (a real account now exists),
+    // but the process crashes before markCreated() ever commits that fact
+    // to the ledger. On resume, the ledger row is still 'planned' with no
+    // target_id at all -- migrateOneUser() must find the real account via
+    // the email lookup at the top of this function and link it to this
+    // SAME already-'planned' ledger row (never attempt a second
+    // createUser(), never leave the ledger permanently unaware of a
+    // target that genuinely exists). Proven by the dedicated kill-window
+    // test for this exact stage.
+    throwIfFaultStage('after_gotrue_create_before_marked_created');
     // The auth trigger creates profiles synchronously with auth.users.
     // Persist that target identity before the explicit kill-window fault:
     // a compensate/resume preflight can now prove the partial row belongs
@@ -283,17 +348,30 @@ export async function migrateOneAdmin(supabaseAdmin, pgClient, mongoAdmin, { exe
   const ledgerId = ledger.id;
 
   if (!userId) {
-    const { data, error } = await supabaseAdmin.auth.admin.createUser({
-      email,
-      password: randomThrowawayPassword(),
-      email_confirm: true,
-      user_metadata: { migrated_from: 'mongodb_adminuser', migrated_at: new Date().toISOString() },
-    });
+    // PR #70 review round 7, item 2: same createUser() try/catch and
+    // kill-window fault stage as migrateOneUser() -- see that function's
+    // own comment for the full "ambiguous success/network timeout"
+    // rationale, and unrecorded-data-preflight/migrate-users tests for the
+    // adminusers-specific proof.
+    let createResult;
+    try {
+      createResult = await supabaseAdmin.auth.admin.createUser({
+        email,
+        password: randomThrowawayPassword(),
+        email_confirm: true,
+        user_metadata: { migrated_from: 'mongodb_adminuser', migrated_at: new Date().toISOString() },
+      });
+    } catch (thrown) {
+      await markFailed(pgClient, ledgerId, `createUser() threw (ambiguous outcome, possible network timeout): ${thrown.message}`);
+      return { status: 'error', message: `createUser() threw (ambiguous outcome, possible network timeout): ${thrown.message}` };
+    }
+    const { data, error } = createResult;
     if (error) {
       await markFailed(pgClient, ledgerId, error.message);
       return { status: 'error', message: error.message };
     }
     userId = data.user.id;
+    throwIfFaultStage('after_gotrue_create_before_marked_created');
     await markCreated(pgClient, ledgerId, userId);
   }
 
@@ -374,20 +452,47 @@ export function computeRelationshipPlan(users, invalidDocIds) {
   return { ...stats, skipped };
 }
 
-// Review round 5, item 2: the WRITE half of relationship migration, kept
-// deliberately separate from computeRelationshipPlan() above (which is
-// the VALIDATION half, pure, run in both --plan and --execute). This
-// function only runs under --execute, after every account in this batch
-// has been created/confirmed, and writes exactly the links
-// computeRelationshipPlan() already predicted would resolve -- resolved
-// here against the DB-authoritative emailToProfileId (built from real
-// profiles rows), not re-derived, so a link is only ever written for a
-// target that genuinely has a profile.
+// Review round 5, item 2 (rewritten round 7, item 6): the WRITE half of
+// relationship migration, kept deliberately separate from
+// computeRelationshipPlan() above (which is the VALIDATION half, pure, run
+// in both --plan and --execute). This function only runs under --execute,
+// after every account in this batch has been created/confirmed, and
+// writes exactly the links computeRelationshipPlan() already predicted
+// would resolve -- resolved here against the DB-authoritative
+// emailToProfileId (built from real profiles rows), not re-derived, so a
+// link is only ever written for a target that genuinely has a profile.
+//
+// PR #70 review round 7, item 6: before this round, neither relationship
+// had ANY provenance at all -- `UPDATE profiles SET teacher_id = ...` and
+// `INSERT INTO parent_student_links ... ON CONFLICT DO NOTHING` were plain
+// writes with no migration_source_ledger row, no ownership check, and no
+// crash-recovery story of their own (a fault mid-loop just crashed the
+// whole batch, per the `during_relationships` stage below, which fires
+// once per source document, unchanged). Consequently: (1) this migration
+// could silently OVERWRITE a teacher_id a human or a different process had
+// already set, with no way to tell "migration-owned" from "someone else's"
+// data apart; (2) neither relationship was covered by
+// verifyNoUnrecordedData()/verifyLedgerPointsToRealTargets() at all,
+// because there was nothing in the ledger to check against; (3) a crash
+// between the write and any bookkeeping had literally nothing to resume
+// from except re-deriving the SAME UPDATE/INSERT, which happens to be
+// idempotent for these two specific writes but was true by accident, not
+// by a provable contract. Fixed: each relationship fact now gets a real,
+// source-scoped migration_source_ledger row (using a stable composite
+// target_id, exactly like this file's other composite-keyed targets),
+// written via the same markPlanned/markCreated/markReconciled discipline
+// every other target already uses, with the write + markCreated wrapped in
+// one real transaction and a post-commit read-back verification before
+// markReconciled -- the same pattern items 3/7 apply to
+// subscriptions/seed-admin. A relationship whose CURRENT value is not
+// attributable to this exact migration fact is never silently overwritten.
 async function applyRelationships(pgClient, users, emailToProfileId) {
   const idByMongoId = new Map(users.map((u) => [String(u._id), u]));
+  const errors = [];
 
   for (const u of users) {
     if (!u.email) continue;
+    const studentMongoId = String(u._id);
     const studentProfileId = emailToProfileId.get(String(u.email).toLowerCase().trim());
     if (!studentProfileId) continue;
     throwIfFaultStage('during_relationships');
@@ -396,7 +501,11 @@ async function applyRelationships(pgClient, users, emailToProfileId) {
       const teacherMongo = idByMongoId.get(String(u.teacher));
       const teacherProfileId = teacherMongo?.email ? emailToProfileId.get(String(teacherMongo.email).toLowerCase().trim()) : null;
       if (teacherProfileId) {
-        await pgClient.query(`UPDATE profiles SET teacher_id = $2 WHERE id = $1`, [studentProfileId, teacherProfileId]);
+        try {
+          await applyTeacherLink(pgClient, { studentMongoId, studentProfileId, teacherProfileId });
+        } catch (err) {
+          errors.push({ kind: 'teacher', studentEmail: u.email, message: err.message });
+        }
       }
     }
 
@@ -404,13 +513,133 @@ async function applyRelationships(pgClient, users, emailToProfileId) {
       const childMongo = idByMongoId.get(String(childMongoId));
       const childProfileId = childMongo?.email ? emailToProfileId.get(String(childMongo.email).toLowerCase().trim()) : null;
       if (childProfileId) {
-        await pgClient.query(
-          `INSERT INTO parent_student_links (parent_id, student_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
-          [studentProfileId, childProfileId]
-        );
+        try {
+          await applyParentChildLink(pgClient, {
+            parentMongoId: studentMongoId, childMongoId: String(childMongoId),
+            parentProfileId: studentProfileId, childProfileId,
+          });
+        } catch (err) {
+          errors.push({ kind: 'parent-child', studentEmail: u.email, message: err.message });
+        }
       }
     }
   }
+  return { errors };
+}
+
+/**
+ * teacher_id is a COLUMN on an existing profiles row, not a separate
+ * insertable row -- its stable composite identity is `<studentProfileId>:
+ * <teacherProfileId>`, ledgered under a dedicated target_table (never
+ * colliding with that same student's own account-creation ledger row,
+ * whose target_table is plain 'profiles') so migration_source_ledger's
+ * real unique index (source_system, source_database, source_collection,
+ * source_document_id, target_table) allows both to coexist for the same
+ * Mongo source document.
+ */
+async function applyTeacherLink(pgClient, { studentMongoId, studentProfileId, teacherProfileId }) {
+  const targetId = `${studentProfileId}:${teacherProfileId}`;
+  const ledgerKey = {
+    sourceDatabase: SOURCE_DATABASE, sourceCollection: 'users',
+    sourceDocumentId: studentMongoId, targetTable: 'profiles_teacher_link',
+  };
+  const contentHash = contentHashOf({ studentProfileId, teacherProfileId });
+  const prior = await findLedgerEntry(pgClient, ledgerKey);
+  if (prior && prior.source_content_hash !== contentHash) {
+    throw new Error('teacher_id link source content hash differs from its existing migration_source_ledger entry');
+  }
+  if (prior?.target_id === targetId && prior.status === 'reconciled') return; // already done -- resume-safe no-op
+
+  // Never overwrite a relationship this migration does not already own.
+  // profiles.teacher_id currently holding NULL, or exactly this
+  // teacherProfileId already (a resume), are both fine; anything else is
+  // data this migration has no relationship to.
+  const current = await pgClient.query('SELECT teacher_id FROM profiles WHERE id = $1', [studentProfileId]);
+  const currentTeacherId = current.rows[0]?.teacher_id ?? null;
+  if (currentTeacherId && String(currentTeacherId) !== String(teacherProfileId)) {
+    throw new Error(
+      `profiles.teacher_id for ${studentProfileId} is already set to ${currentTeacherId}, which this migration has ` +
+      `no matching migration_source_ledger entry for -- refusing to overwrite a relationship it does not own`
+    );
+  }
+
+  const ledgerId = prior?.id ?? await markPlanned(pgClient, { ...ledgerKey, contentHash });
+  try {
+    await pgClient.query('BEGIN');
+    await pgClient.query('UPDATE profiles SET teacher_id = $2 WHERE id = $1', [studentProfileId, teacherProfileId]);
+    throwIfFaultStage('after_relationship_write_before_marked_created');
+    await markCreated(pgClient, ledgerId, targetId);
+    await pgClient.query('COMMIT');
+  } catch (err) {
+    await pgClient.query('ROLLBACK').catch(() => {});
+    await markFailed(pgClient, ledgerId, err.message).catch(() => {});
+    throw err;
+  }
+
+  const verify = await pgClient.query('SELECT 1 FROM profiles WHERE id = $1 AND teacher_id = $2', [studentProfileId, teacherProfileId]);
+  if (verify.rows.length === 0) {
+    await markFailed(pgClient, ledgerId, 'post-commit read-back verification failed for teacher_id link');
+    throw new Error('post-commit read-back verification failed for teacher_id link');
+  }
+  await markReconciled(pgClient, ledgerId);
+}
+
+/**
+ * parent_student_links is a REAL table with a real (parent_id, student_id)
+ * composite primary key -- its stable composite identity is exactly that
+ * pair, same convention as this repo's other composite-keyed domain
+ * targets (wishlists, hifz_progress, etc., see production-import-
+ * orchestrator.mjs's LEDGER_BACKED_TARGET_SPECS). One PARENT Mongo
+ * document can produce several links (one per child), so the ledger's
+ * source_document_id is `<parentMongoId>:child:<childMongoId>` -- a
+ * stable, deterministic, per-link identity still traceable back to the
+ * real source document, not a fresh UUID or index-based key.
+ */
+async function applyParentChildLink(pgClient, { parentMongoId, childMongoId, parentProfileId, childProfileId }) {
+  const targetId = `${parentProfileId}:${childProfileId}`;
+  const ledgerKey = {
+    sourceDatabase: SOURCE_DATABASE, sourceCollection: 'users',
+    sourceDocumentId: `${parentMongoId}:child:${childMongoId}`, targetTable: 'parent_student_links',
+  };
+  const contentHash = contentHashOf({ parentProfileId, childProfileId });
+  const prior = await findLedgerEntry(pgClient, ledgerKey);
+  if (prior && prior.source_content_hash !== contentHash) {
+    throw new Error('parent_student_links source content hash differs from its existing migration_source_ledger entry');
+  }
+  if (prior?.target_id === targetId && prior.status === 'reconciled') return; // already done -- resume-safe no-op
+
+  // parent_student_links has no single-owner column to overwrite (a
+  // student can already be linked to a DIFFERENT parent by a completely
+  // unrelated, legitimate row) -- ON CONFLICT DO NOTHING on the real
+  // (parent_id, student_id) primary key is what already makes this
+  // idempotent AND non-destructive: it can only ever no-op against this
+  // EXACT pair, never against someone else's link, and it never DELETEs
+  // anything, so an external link is structurally impossible to duplicate
+  // or remove from here.
+  const ledgerId = prior?.id ?? await markPlanned(pgClient, { ...ledgerKey, contentHash });
+  try {
+    await pgClient.query('BEGIN');
+    await pgClient.query(
+      `INSERT INTO parent_student_links (parent_id, student_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+      [parentProfileId, childProfileId]
+    );
+    throwIfFaultStage('after_relationship_write_before_marked_created');
+    await markCreated(pgClient, ledgerId, targetId);
+    await pgClient.query('COMMIT');
+  } catch (err) {
+    await pgClient.query('ROLLBACK').catch(() => {});
+    await markFailed(pgClient, ledgerId, err.message).catch(() => {});
+    throw err;
+  }
+
+  const verify = await pgClient.query(
+    'SELECT 1 FROM parent_student_links WHERE parent_id = $1 AND student_id = $2', [parentProfileId, childProfileId]
+  );
+  if (verify.rows.length === 0) {
+    await markFailed(pgClient, ledgerId, 'post-commit read-back verification failed for parent_student_links');
+    throw new Error('post-commit read-back verification failed for parent_student_links');
+  }
+  await markReconciled(pgClient, ledgerId);
 }
 
 // ---------------------------------------------------------------------
@@ -684,81 +913,137 @@ export async function migrateSubscription(pgClient, profileId, mongoUser, planSl
     return { status: 'FAIL', reason: 'subscription source content hash differs from its existing migration_source_ledger entry' };
   }
 
+  // PR #70 review round 7, item 3: a ledger row that already recorded a
+  // target_id is NEVER trusted blindly -- the SAME "read back and
+  // independently re-verify, or fail closed" discipline as
+  // openSourceLedger()'s round-7 fix. A ledger claiming a target that no
+  // longer matches a real row for this profile means the target went
+  // missing (deleted out-of-band, a partial rollback of a different
+  // domain, etc.) -- this function must never silently create a
+  // replacement; it fails closed instead (item 4's "لا تنشئ target بديلًا
+  // تلقائيًا").
+  let resumeTargetId = null;
   if (priorLedger?.target_id) {
     const attributed = await pgClient.query(
       `SELECT id FROM subscriptions WHERE id = $1 AND user_id = $2`,
       [priorLedger.target_id, profileId]
     );
     if (attributed.rows.length === 0) {
-      return { status: 'FAIL', reason: 'subscription ledger target is missing or belongs to a different profile' };
+      await markFailed(pgClient, priorLedger.id, 'ledger target_id no longer matches a real subscription row for this profile').catch(() => {});
+      return {
+        status: 'FAIL',
+        reason: 'subscription ledger target is missing or belongs to a different profile -- refusing to create a replacement automatically',
+      };
     }
-    await markReconciled(pgClient, priorLedger.id);
-    return { status: 'migrated', resumed: true, planSlug: slug, derivedStatus: derived.status, reason: derived.reason };
+    resumeTargetId = priorLedger.target_id;
+    if (priorLedger.status === 'reconciled') {
+      return { status: 'migrated', resumed: true, planSlug: slug, derivedStatus: derived.status, reason: derived.reason };
+    }
+    // status is 'created' (crashed between the write and reconciliation)
+    // or 'failed' with a real, verified target -- fall through to the
+    // read-back-verify-then-reconcile path below, reusing this exact row,
+    // never re-inserting.
   }
 
-  // A target row with no exact source-document ledger entry is unrelated
-  // data, even when its owning profile is itself attributable. Detect it
-  // before writing a planned ledger row and before INSERT/ON CONFLICT.
-  const unknownExisting = await pgClient.query(`SELECT id FROM subscriptions WHERE user_id = $1 LIMIT 1`, [profileId]);
-  if (unknownExisting.rows.length > 0) {
+  if (!resumeTargetId) {
+    // A target row with no exact source-document ledger entry is unrelated
+    // data, even when its owning profile is itself attributable. Detect it
+    // before writing a planned ledger row and before INSERT/ON CONFLICT.
+    const unknownExisting = await pgClient.query(`SELECT id FROM subscriptions WHERE user_id = $1 LIMIT 1`, [profileId]);
+    if (unknownExisting.rows.length > 0) {
+      return {
+        status: 'FAIL',
+        reason: 'an existing subscription for this profile has no matching source-scoped migration_source_ledger entry',
+      };
+    }
+  }
+
+  // Round 7, item 3: reuses the EXISTING 'planned' ledger row (from a
+  // prior crash before any write, or before the INSERT below) rather than
+  // creating a second one -- "أغلق حالة subscription موجودة مع planned/
+  // null-target ledger بطريقة resume آمنة ومثبتة".
+  const ledgerId = priorLedger?.id ?? await markPlanned(pgClient, { ...ledgerKey, contentHash: sourceContentHash });
+
+  let targetId = resumeTargetId;
+  if (!targetId) {
+    // Round 7, item 3: the target write and markCreated() are now ONE
+    // real transaction -- exactly the pattern mongo-to-supabase.mjs's own
+    // migrateDomain() already uses for every domain table (see that
+    // file's own "Kill-window 2" comment). Without this, a crash strictly
+    // between "the row was written" and "the ledger was told its id"
+    // would leave a genuinely untracked orphan subscription row with no
+    // ledger linkage at all -- the exact bug class items 3/4 both target.
+    try {
+      await pgClient.query('BEGIN');
+      const insertResult = await pgClient.query(
+        `INSERT INTO subscriptions
+           (user_id, plan_id, provider, provider_customer_id, provider_subscription_id, status,
+            current_period_start, current_period_end, cancel_at_period_end, renewal_reminder_sent_for)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+         ON CONFLICT (user_id) WHERE status = 'active' DO NOTHING
+         RETURNING id`,
+        [
+          profileId, planId, sub.provider || 'manual', sub.stripeCustomerId || null, sub.stripeSubscriptionId || null,
+          derived.status, sub.activeSince || null, sub.validUntil || null, !!sub.cancelAtPeriodEnd,
+          sub.renewalReminderSentFor || null,
+        ]
+      ).catch(async (err) => {
+        // subscriptions_one_active_per_user only guards status='active' —
+        // a non-active derived status always inserts fine; if this DID
+        // fail on that unique index, a prior run already created the
+        // active row.
+        if (err.code === '23505') return { rows: [] };
+        throw err;
+      });
+
+      if (insertResult.rows.length === 0) {
+        // ON CONFLICT fired -- nothing was written by this statement.
+        // Roll back (a no-op, nothing to undo) and fall through to the
+        // conflicting-active-subscription handling below, OUTSIDE the
+        // transaction.
+        await pgClient.query('ROLLBACK');
+      } else {
+        targetId = insertResult.rows[0].id;
+        // Round 7, item 3: "اختبر kill window بعد INSERT وقبل markCreated"
+        // -- fires INSIDE the still-open transaction, after the INSERT,
+        // before markCreated(). The kill-window test proves the whole
+        // transaction rolls back: the row must NOT exist afterward.
+        throwIfFaultStage('after_subscription_insert_before_marked_created');
+        await markCreated(pgClient, ledgerId, targetId);
+        await pgClient.query('COMMIT');
+      }
+    } catch (err) {
+      await pgClient.query('ROLLBACK').catch(() => {});
+      await markFailed(pgClient, ledgerId, err.message).catch(() => {});
+      return { status: 'FAIL', reason: `subscription write failed and was rolled back: ${err.message}` };
+    }
+  }
+
+  if (!targetId) {
+    // ON CONFLICT DO NOTHING actually fired: some active subscription
+    // already occupies this user's slot. This is ONLY ever "migrated" if
+    // OUR OWN ledger already recorded that exact row (handled via
+    // resumeTargetId above) -- reaching here means it did not, so this is
+    // unknown/unrelated data this migration must never silently claim.
+    await markFailed(pgClient, ledgerId, 'a conflicting active subscription exists for this user and is not attributable to this migration');
     return {
       status: 'FAIL',
-      reason: 'an existing subscription for this profile has no matching source-scoped migration_source_ledger entry',
+      reason: 'a conflicting active subscription already exists for this user and is not attributable to this migration ' +
+        '(ON CONFLICT DO NOTHING fired against data with no matching migration_source_ledger entry)',
     };
   }
 
-  const ledgerId = priorLedger?.id ?? await markPlanned(pgClient, {
-    ...ledgerKey, contentHash: sourceContentHash,
-  });
-
-  // Review round 6, item 3: this used to discard the INSERT's own result
-  // entirely and unconditionally report status='migrated' -- including
-  // the exact moment `ON CONFLICT (user_id) WHERE status='active' DO
-  // NOTHING` actually fired (RETURNING then yields ZERO rows, no
-  // exception at all, so the pre-existing `.catch(23505)` never even ran
-  // for this path). An UNRELATED pre-existing active subscription for
-  // this user -- data this migration never wrote and has no relationship
-  // to -- was silently preserved AND falsely reported as this run's own
-  // successful migration.
-  const insertResult = await pgClient.query(
-    `INSERT INTO subscriptions
-       (user_id, plan_id, provider, provider_customer_id, provider_subscription_id, status,
-        current_period_start, current_period_end, cancel_at_period_end, renewal_reminder_sent_for)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
-     ON CONFLICT (user_id) WHERE status = 'active' DO NOTHING
-     RETURNING id`,
-    [
-      profileId, planId, sub.provider || 'manual', sub.stripeCustomerId || null, sub.stripeSubscriptionId || null,
-      derived.status, sub.activeSince || null, sub.validUntil || null, !!sub.cancelAtPeriodEnd,
-      sub.renewalReminderSentFor || null,
-    ]
-  ).catch(async (err) => {
-    // subscriptions_one_active_per_user only guards status='active' — a
-    // non-active derived status always inserts fine; if this DID fail on
-    // that unique index, a prior run already created the active row.
-    if (err.code === '23505') return { rows: [] };
-    throw err;
-  });
-
-  if (insertResult.rows.length > 0) {
-    const targetId = insertResult.rows[0].id;
-    await markCreated(pgClient, ledgerId, targetId);
-    await markReconciled(pgClient, ledgerId);
-    return { status: 'migrated', planSlug: slug, derivedStatus: derived.status, reason: derived.reason };
+  // Round 7, item 3: "نفّذ read-back verification بعد commit ثم
+  // markReconciled" -- never assume the just-committed (or just-resumed)
+  // row is exactly right; independently re-read it and confirm identity
+  // before calling it done.
+  const verify = await pgClient.query('SELECT id FROM subscriptions WHERE id = $1 AND user_id = $2', [targetId, profileId]);
+  if (verify.rows.length === 0) {
+    await markFailed(pgClient, ledgerId, 'post-commit read-back verification failed -- subscription row not found after commit').catch(() => {});
+    return { status: 'FAIL', reason: 'post-commit read-back verification failed -- subscription row not found after commit' };
   }
-
-  // ON CONFLICT DO NOTHING actually fired: some active subscription
-  // already occupies this user's slot. Fixed: this is ONLY ever treated
-  // as "migrated" (a genuine resume) if OUR OWN ledger already recorded
-  // that exact row for this exact source document -- never merely
-  // because a row happens to exist. Otherwise it is unknown/unrelated
-  // data this migration must never silently claim as its own.
-  await markFailed(pgClient, ledgerId, 'a conflicting active subscription exists for this user and is not attributable to this migration');
-  return {
-    status: 'FAIL',
-    reason: 'a conflicting active subscription already exists for this user and is not attributable to this migration ' +
-      '(ON CONFLICT DO NOTHING fired against data with no matching migration_source_ledger entry)',
-  };
+  await markReconciled(pgClient, ledgerId);
+  return { status: 'migrated', resumed: !!resumeTargetId, planSlug: slug, derivedStatus: derived.status, reason: derived.reason };
 }
 
 // ---------------------------------------------------------------------
@@ -772,22 +1057,27 @@ async function generateInvitePlan(supabaseAdmin, emails) {
   return results;
 }
 
+// PR #70 review round 7, item 1: an explicit allowlist, shared with every
+// other entrypoint in this directory (lib/cli-args.mjs) -- see that
+// module's own header for the exact truthy-string/unknown-flag bugs this
+// closes. `--execute` and `--with-invite-plan` are boolean-only (no
+// `=value` accepted at all, not even `=false`/`=true`); `--approved-
+// dispositions` requires a non-empty `=<path>`. Parsing happens as the
+// FIRST thing main() does, before any env var is even read, so a bad flag
+// stops the process before it can touch Mongo/Postgres/GoTrue at all.
+const CLI_SPEC = {
+  flags: {
+    execute: { type: 'boolean' },
+    'with-invite-plan': { type: 'boolean' },
+    'approved-dispositions': { type: 'string' },
+  },
+};
+
 async function main() {
-  const argv = process.argv.slice(2);
-  const args = new Set(argv);
-  const execute = args.has('--execute');
-  const withInvitePlan = args.has('--with-invite-plan');
-  // Review round 6, item 2: "reject duplicate flags" -- passing
-  // --approved-dispositions twice is ambiguous (which one governs?) and
-  // is never silently resolved by "last one wins".
-  const dispositionsFlags = argv.filter((a) => a === '--approved-dispositions' || a.startsWith('--approved-dispositions='));
-  if (dispositionsFlags.length > 1) {
-    throw new Error('--approved-dispositions was passed more than once -- pass it exactly once');
-  }
-  if (dispositionsFlags[0] === '--approved-dispositions' || dispositionsFlags[0] === '--approved-dispositions=') {
-    throw new Error('--approved-dispositions requires a non-empty =<path> value');
-  }
-  const approvedDispositionsPath = dispositionsFlags[0] ? dispositionsFlags[0].slice('--approved-dispositions='.length) : null;
+  const args = parseStrictCliArgs(process.argv.slice(2), CLI_SPEC);
+  const execute = !!args.execute;
+  const withInvitePlan = !!args['with-invite-plan'];
+  const approvedDispositionsPath = typeof args['approved-dispositions'] === 'string' ? args['approved-dispositions'] : null;
   // Fail fast on a malformed dispositions file before touching Mongo/PG at
   // all -- this file is trusted operator input, same fail-closed posture
   // as loadApprovedDispositions() itself.
@@ -944,7 +1234,15 @@ async function main() {
         if (r.rows[0]) emailToProfileId.set(email, r.rows[0].id);
       }
 
-      await applyRelationships(pgClient, users, emailToProfileId);
+      // Round 7, item 6: applyRelationships() no longer throws for a
+      // per-link ownership/verification failure (each of applyTeacherLink/
+      // applyParentChildLink already isolates and reports its own error
+      // internally) -- its `errors` array is folded into the report and
+      // fails the run closed via computeExitFailure(), exactly like
+      // users/admins/subscriptions errors, without ANY single bad
+      // relationship crashing the whole batch.
+      const relationshipWriteResult = await applyRelationships(pgClient, users, emailToProfileId);
+      report.relationships.writeErrors = relationshipWriteResult.errors;
 
       const usersWithSubscription = users.filter((u) => u.subscription && u.subscription.plan);
       if (usersWithSubscription.length > 0) {
@@ -1054,6 +1352,11 @@ export function computeExitFailure(report, execute) {
     report.subscriptions.failed.length > 0 ||
     (report.identity?.unapprovedCount ?? 0) > 0 ||
     (report.relationships?.unapprovedSkippedCount ?? 0) > 0 ||
+    // Round 7, item 6: a relationship WRITE failure (ownership conflict,
+    // post-commit verification failure, etc.) is just as real a failure as
+    // a plan-time skip -- execute-only, since writeErrors can only ever be
+    // populated once Phase B has actually run.
+    (report.relationships?.writeErrors?.length ?? 0) > 0 ||
     (execute && report.reconciliation?.consistent !== true)
   );
 }

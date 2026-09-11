@@ -1,0 +1,110 @@
+name: Stage 2J-B migration verification
+
+# PR #70 review round 7, item 8. What this workflow does NOT do, by
+# construction:
+#   - It never references a repository secret, an environment secret, or
+#     any credential of any kind -- there is no `secrets:` usage anywhere
+#     below. Every check runs against disposable, ephemeral Docker
+#     containers created and destroyed inside this job, or against pure
+#     in-memory/local-file logic.
+#   - It never touches Atlas, Supabase Production (project
+#     difzynyphojgisrfvrkd), or Render -- nothing in this repository's
+#     migration tooling CAN reach them without real credentials, and none
+#     are ever supplied here.
+#   - It never runs `production-import-orchestrator.mjs --execute` (or
+#     any other real-write production code path) against anything but the
+#     disposable local Postgres/Mongo containers the test files themselves
+#     start and tear down.
+#
+# This is the ONLY place `npm run test:migration` runs in CI -- the plain
+# `npm test` step below runs backend/tests/**/*.test.js only, a
+# structurally disjoint glob from backend/scripts/migration/*.test.mjs, so
+# a green `npm test` here (or anywhere) has never meant, and still does
+# not mean, "the migration tests ran".
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [feat/stage-2j-b-lossless-data-migration]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: stage2jb-migration-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Explicitly documented absence: no MIGRATION_MONGO_URI, MIGRATION_DB_URL,
+  # SUPABASE_URL, or SUPABASE_SERVICE_ROLE_KEY is set at the workflow level.
+  # Every test file that needs them sets its OWN localhost/disposable-
+  # container value internally and asserts a localhost/127.0.0.1 host
+  # before ever using it (see migrate-users-to-supabase-auth.mjs's and
+  # mongo-to-supabase.mjs's own assertLocalHost()).
+  CI: 'true'
+
+jobs:
+  verify:
+    name: Full verification (lint, tests, migration suite, build)
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout (full history, for git diff --check against main)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.9
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+
+      - name: Install workspace dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: git diff --check (no trailing whitespace / unresolved conflict markers vs. main)
+        run: |
+          git fetch origin main --depth=1 || git fetch origin main
+          git diff --check origin/main...HEAD
+
+      - name: Secret scan on the diff vs. main
+        run: |
+          git fetch origin main --depth=1 || git fetch origin main
+          git diff origin/main...HEAD > /tmp/pr.diff
+          if grep -inE \
+            "AKIA[0-9A-Z]{16}|BEGIN (RSA|EC|OPENSSH|PGP) PRIVATE KEY|eyJhbGciOi[A-Za-z0-9_.-]{20,}|sk-[a-zA-Z0-9]{20,}|SUPABASE_SERVICE_ROLE_KEY[[:space:]]*[:=][[:space:]]*['\"][^'\"]|postgres(ql)?://[^ '\"]+:[^ '\"@]+@[^ '\"]*supabase" \
+            /tmp/pr.diff; then
+            echo "::error::Potential secret detected in the diff -- failing the build."
+            exit 1
+          fi
+          echo "Secret scan: clean."
+
+      - name: Backend lint
+        working-directory: backend
+        run: npm run lint
+
+      - name: Backend tests (backend/tests/**/*.test.js only -- never the migration suite)
+        working-directory: backend
+        run: npm test
+
+      - name: Migration targeted tests (disposable Docker Mongo/Postgres only, no real credentials)
+        working-directory: backend
+        run: npm run test:migration
+
+      - name: lib/db test:db (disposable Docker Postgres only)
+        working-directory: lib/db
+        run: npm run test:db
+
+      - name: Frontend vitest
+        working-directory: artifacts/al-rahma-academy
+        run: npx vitest run
+
+      - name: Root typecheck + build
+        run: pnpm run build

@@ -43,7 +43,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import pg from 'pg';
 import { runCommand } from '../../../lib/db/test/orchestrator-lib.mjs';
-import { verifyNoUnrecordedData } from './production-import-orchestrator.mjs';
+import { verifyNoUnrecordedData, verifyLedgerPointsToRealTargets, verifyTeacherLinkProvenance } from './production-import-orchestrator.mjs';
 import { MIGRATION_SEED_ADMIN_ID, MIGRATION_SEED_ADMIN_EMAIL, ensureMigrationSeedAdmin } from './lib/admin-rpc.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -278,6 +278,7 @@ async function main() {
       await assert.rejects(() => verifyNoUnrecordedData(client), /profiles: 1 row\(s\) not attributable/);
     } finally {
       await deleteAuthUser(id);
+      await clearLedgerFor('profiles');
       client.release();
     }
   });
@@ -292,6 +293,11 @@ async function main() {
       assert.equal(result, true);
     } finally {
       await deleteAuthUser(id);
+      // Round 7, item 4: this ledger row's target_id (the just-deleted
+      // auth.users/profiles id) would otherwise be flagged as a genuinely
+      // missing target by verifyLedgerPointsToRealTargets() -- clean it up
+      // like every other fixture in this file.
+      await clearLedgerFor('profiles');
       client.release();
     }
   });
@@ -299,7 +305,14 @@ async function main() {
   await test('round 6: only the complete exact migration-seed admin identity is exempt; UUID/email collision fails closed', async () => {
     const client = await pgPool.connect();
     try {
-      await ensureMigrationSeedAdmin(pgPool);
+      // PR #70 review round 7, item 7: ensureMigrationSeedAdmin() now
+      // opens its own real transaction (BEGIN/COMMIT/ROLLBACK) -- it MUST
+      // be called with a single checked-out client, never a bare Pool
+      // (Pool.query() acquires/releases a connection per call, so BEGIN
+      // and the writes that follow it could silently land on DIFFERENT
+      // connections, breaking the very atomicity this function exists to
+      // guarantee).
+      await ensureMigrationSeedAdmin(client);
       assert.equal(await verifyNoUnrecordedData(client), true);
       await deleteAuthUser(MIGRATION_SEED_ADMIN_ID);
       await insertAuthUser(MIGRATION_SEED_ADMIN_ID, 'collision@example.invalid', {});
@@ -324,7 +337,7 @@ async function main() {
     try {
       await insertAuthUser(otherId, MIGRATION_SEED_ADMIN_EMAIL, {});
       await assert.rejects(() => verifyNoUnrecordedData(client), /seed-admin identity collides/);
-      await assert.rejects(() => ensureMigrationSeedAdmin(pgPool), /collides with an incomplete or mismatched/);
+      await assert.rejects(() => ensureMigrationSeedAdmin(client), /collides with an incomplete or mismatched/);
     } finally {
       await deleteAuthUser(otherId);
       client.release();
@@ -334,11 +347,11 @@ async function main() {
   await test('round 6: exact id+email but profiles.role has been changed away from admin is a partial collision', async () => {
     const client = await pgPool.connect();
     try {
-      await ensureMigrationSeedAdmin(pgPool);
+      await ensureMigrationSeedAdmin(client);
       assert.equal(await verifyNoUnrecordedData(client), true, 'setup: the real seed-admin identity is exempt before tampering');
       await pgPool.query(`UPDATE profiles SET role = 'user' WHERE id = $1`, [MIGRATION_SEED_ADMIN_ID]);
       await assert.rejects(() => verifyNoUnrecordedData(client), /seed-admin identity collides/);
-      await assert.rejects(() => ensureMigrationSeedAdmin(pgPool), /collides with an incomplete or mismatched/);
+      await assert.rejects(() => ensureMigrationSeedAdmin(client), /collides with an incomplete or mismatched/);
     } finally {
       await deleteAuthUser(MIGRATION_SEED_ADMIN_ID);
       client.release();
@@ -348,11 +361,11 @@ async function main() {
   await test('round 6: exact id+email+profiles.role=admin but no matching admin_role_assignments row is a partial collision', async () => {
     const client = await pgPool.connect();
     try {
-      await ensureMigrationSeedAdmin(pgPool);
+      await ensureMigrationSeedAdmin(client);
       assert.equal(await verifyNoUnrecordedData(client), true, 'setup: the real seed-admin identity is exempt before tampering');
       await pgPool.query(`DELETE FROM admin_role_assignments WHERE user_id = $1`, [MIGRATION_SEED_ADMIN_ID]);
       await assert.rejects(() => verifyNoUnrecordedData(client), /seed-admin identity collides/);
-      await assert.rejects(() => ensureMigrationSeedAdmin(pgPool), /collides with an incomplete or mismatched/);
+      await assert.rejects(() => ensureMigrationSeedAdmin(client), /collides with an incomplete or mismatched/);
     } finally {
       await deleteAuthUser(MIGRATION_SEED_ADMIN_ID);
       client.release();
@@ -366,11 +379,13 @@ async function main() {
     // silently leave the foreign row in place while reporting success, and
     // never overwrite it into the seed identity either.
     await insertAuthUser(MIGRATION_SEED_ADMIN_ID, 'foreign-identity@example.invalid', {});
+    const client = await pgPool.connect();
     try {
-      await assert.rejects(() => ensureMigrationSeedAdmin(pgPool), /collides with an incomplete or mismatched/);
+      await assert.rejects(() => ensureMigrationSeedAdmin(client), /collides with an incomplete or mismatched/);
       const row = await pgPool.query('SELECT email FROM auth.users WHERE id = $1', [MIGRATION_SEED_ADMIN_ID]);
       assert.equal(row.rows[0].email, 'foreign-identity@example.invalid', 'the foreign row must be untouched -- never overwritten into the seed identity');
     } finally {
+      client.release();
       await deleteAuthUser(MIGRATION_SEED_ADMIN_ID);
     }
   });
@@ -425,6 +440,8 @@ async function main() {
     } finally {
       await deleteAuthUser(taggedId);
       await deleteAuthUser(untaggedId);
+      await clearLedgerFor('profiles');
+      await clearLedgerFor('subscriptions');
       client.release();
     }
   });
@@ -538,11 +555,144 @@ async function main() {
     }
   });
 
+  // -----------------------------------------------------------------
+  // PR #70 review round 7, item 4: "تحقق Target → Ledger وLedger → Target"
+  // -- verifyNoUnrecordedData() above only ever checks the Target ->
+  // Ledger direction. verifyLedgerPointsToRealTargets() checks the OTHER
+  // direction: a ledger row claiming status='created'/'reconciled' with a
+  // real target_id, where that target has since gone missing, must fail
+  // closed -- and never trigger any attempt to recreate it.
+  // -----------------------------------------------------------------
+
+  await test('verifyLedgerPointsToRealTargets passes cleanly on a pristine schema', async () => {
+    const client = await pgPool.connect();
+    try {
+      assert.equal(await verifyLedgerPointsToRealTargets(client), true);
+    } finally {
+      client.release();
+    }
+  });
+
+  await test('round 7 item 4: a ledger row claiming a target that no longer exists fails closed (Ledger -> Target)', async () => {
+    const client = await pgPool.connect();
+    try {
+      // No real trial_requests row was ever created for this ledger entry.
+      await addLedgerEntry('trial_requests', 'ghost-mongo-id', '00000000-0000-4000-8000-00000000abcd', { status: 'created' });
+      await assert.rejects(
+        () => verifyLedgerPointsToRealTargets(client),
+        /trial_requests: 1 migration_source_ledger row\(s\) claim a target that no longer exists/
+      );
+    } finally {
+      await clearLedgerFor('trial_requests');
+      client.release();
+    }
+  });
+
+  await test('round 7 item 4: a "failed"-status ledger row pointing at nothing is NOT flagged -- it already documents why, it is not "missing"', async () => {
+    const client = await pgPool.connect();
+    try {
+      await addLedgerEntry('trial_requests', 'documented-failure-mongo-id', '00000000-0000-4000-8000-00000000abce', { status: 'failed' });
+      assert.equal(await verifyLedgerPointsToRealTargets(client), true);
+    } finally {
+      await clearLedgerFor('trial_requests');
+      client.release();
+    }
+  });
+
+  await test('round 7 item 4: a ledger row whose target genuinely still exists passes both directions', async () => {
+    const client = await pgPool.connect();
+    try {
+      const r = await client.query(`INSERT INTO trial_requests (name, email, status) VALUES ('Test', 'realtarget@example.invalid', 'new') RETURNING id`);
+      await addLedgerEntry('trial_requests', 'real-mongo-id', r.rows[0].id, { status: 'reconciled' });
+      assert.equal(await verifyNoUnrecordedData(client), true);
+      assert.equal(await verifyLedgerPointsToRealTargets(client), true);
+    } finally {
+      await client.query('DELETE FROM trial_requests');
+      await clearLedgerFor('trial_requests');
+      client.release();
+    }
+  });
+
+  await test('round 7 item 4/6: parent_student_links is covered by BOTH directions generically (composite identity)', async () => {
+    const client = await pgPool.connect();
+    const parentId = crypto.randomUUID();
+    const studentId = crypto.randomUUID();
+    try {
+      await insertAuthUser(parentId, 'preflight-parent@example.invalid', { migrated_from: 'mongodb' });
+      await addLedgerEntry('profiles', 'preflight-parent-mongo-id', parentId, { sourceCollection: 'users' });
+      await insertAuthUser(studentId, 'preflight-child@example.invalid', { migrated_from: 'mongodb' });
+      await addLedgerEntry('profiles', 'preflight-child-mongo-id', studentId, { sourceCollection: 'users' });
+
+      // Target -> Ledger: a real link with NO ledger entry fails closed.
+      await client.query('INSERT INTO parent_student_links (parent_id, student_id) VALUES ($1, $2)', [parentId, studentId]);
+      await assert.rejects(() => verifyNoUnrecordedData(client), /parent_student_links: 1 row\(s\) with no matching migration_source_ledger entry/);
+
+      // Ledger -> Target: a ledger entry claiming a link that does not
+      // exist fails closed too (delete the real link, keep only a
+      // dangling claim about it).
+      await client.query('DELETE FROM parent_student_links');
+      await addLedgerEntry('parent_student_links', 'preflight-parent-mongo-id:child:preflight-child-mongo-id', `${parentId}:${studentId}`, { status: 'reconciled' });
+      await assert.rejects(
+        () => verifyLedgerPointsToRealTargets(client),
+        /parent_student_links: 1 migration_source_ledger row\(s\) claim a target that no longer exists/
+      );
+
+      // Happy path: both the link and its ledger entry genuinely match.
+      await client.query('INSERT INTO parent_student_links (parent_id, student_id) VALUES ($1, $2)', [parentId, studentId]);
+      assert.equal(await verifyNoUnrecordedData(client), true);
+      assert.equal(await verifyLedgerPointsToRealTargets(client), true);
+    } finally {
+      await client.query('DELETE FROM parent_student_links WHERE parent_id = $1 OR student_id = $1', [parentId]).catch(() => {});
+      await clearLedgerFor('parent_student_links');
+      await clearLedgerFor('profiles');
+      await deleteAuthUser(parentId);
+      await deleteAuthUser(studentId);
+      client.release();
+    }
+  });
+
+  await test('round 7 item 6: profiles.teacher_id provenance -- both directions, dedicated check', async () => {
+    const client = await pgPool.connect();
+    const teacherId = crypto.randomUUID();
+    const studentId = crypto.randomUUID();
+    try {
+      await insertAuthUser(teacherId, 'preflight-teacher@example.invalid', { migrated_from: 'mongodb' });
+      await addLedgerEntry('profiles', 'preflight-teacher-mongo-id', teacherId, { sourceCollection: 'users' });
+      await insertAuthUser(studentId, 'preflight-teacherstudent@example.invalid', { migrated_from: 'mongodb' });
+      await addLedgerEntry('profiles', 'preflight-teacherstudent-mongo-id', studentId, { sourceCollection: 'users' });
+
+      // Target -> Ledger: teacher_id set with no ledger entry fails closed.
+      await pgPool.query('UPDATE profiles SET teacher_id = $2 WHERE id = $1', [studentId, teacherId]);
+      await assert.rejects(() => verifyTeacherLinkProvenance(client), /profiles\.teacher_id: 1 row\(s\) with no matching migration_source_ledger entry/);
+
+      // Ledger -> Target: a ledger entry claiming a teacher_id pair that
+      // does not match the real column value fails closed too.
+      await pgPool.query('UPDATE profiles SET teacher_id = NULL WHERE id = $1', [studentId]);
+      await addLedgerEntry('profiles_teacher_link', 'preflight-teacherstudent-mongo-id', `${studentId}:${teacherId}`, { status: 'reconciled' });
+      await assert.rejects(
+        () => verifyTeacherLinkProvenance(client),
+        /profiles_teacher_link ledger: 1 row\(s\) claim a teacher_id relationship that no longer exists/
+      );
+
+      // Happy path: both the column value and its ledger entry match.
+      await pgPool.query('UPDATE profiles SET teacher_id = $2 WHERE id = $1', [studentId, teacherId]);
+      assert.equal(await verifyTeacherLinkProvenance(client), true);
+    } finally {
+      await pgPool.query('UPDATE profiles SET teacher_id = NULL WHERE id = $1', [studentId]).catch(() => {});
+      await clearLedgerFor('profiles_teacher_link');
+      await clearLedgerFor('profiles');
+      await deleteAuthUser(teacherId);
+      await deleteAuthUser(studentId);
+      client.release();
+    }
+  });
+
   await test('after all fixtures are cleaned up, the schema is pristine again', async () => {
     const client = await pgPool.connect();
     try {
-      const result = await verifyNoUnrecordedData(client);
-      assert.equal(result, true);
+      assert.equal(await verifyNoUnrecordedData(client), true);
+      assert.equal(await verifyLedgerPointsToRealTargets(client), true);
+      assert.equal(await verifyTeacherLinkProvenance(client), true);
     } finally {
       client.release();
     }

@@ -200,7 +200,18 @@ async function main() {
   // every other test file in this directory).
   // -----------------------------------------------------------------
 
-  await ensureMigrationSeedAdmin(pgPool);
+  // PR #70 review round 7, item 7: ensureMigrationSeedAdmin() now opens
+  // its own real transaction -- it must be called with a single
+  // checked-out client, never a bare Pool (see that function's own
+  // comment for why a Pool would silently break the atomicity guarantee).
+  {
+    const seedAdminClient = await pgPool.connect();
+    try {
+      await ensureMigrationSeedAdmin(seedAdminClient);
+    } finally {
+      seedAdminClient.release();
+    }
+  }
 
   async function seedBuyerProfile(seq) {
     const email = `invoicebuyer-${seq}-${crypto.randomBytes(3).toString('hex')}@example.invalid`;

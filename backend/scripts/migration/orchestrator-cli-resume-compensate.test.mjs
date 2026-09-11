@@ -283,7 +283,17 @@ async function main() {
     // Exactly what a prior run's plan-catalog seeding (today: payments)
     // would have left behind -- created directly here via the same real
     // exported helper, without touching payments at all.
-    await ensureMigrationSeedAdmin(pgPool);
+    // PR #70 review round 7, item 7: ensureMigrationSeedAdmin() now opens
+    // its own real transaction -- must be called with a single
+    // checked-out client, never a bare Pool.
+    {
+      const seedAdminClient = await pgPool.connect();
+      try {
+        await ensureMigrationSeedAdmin(seedAdminClient);
+      } finally {
+        seedAdminClient.release();
+      }
+    }
     assert.equal(await profileCount(), 1, 'setup: the seed-admin profile row must exist before this run starts');
 
     const run = runOrchestratorCLI(['--execute']);

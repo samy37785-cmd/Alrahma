@@ -30,6 +30,30 @@ export const FAULT_STAGES = Object.freeze([
   'after_target_write_before_marked_created',
   'after_marked_created_before_reconciled',
   'during_rollback_before_ledger_delete',
+  // PR #70 review round 7, item 2 -- GoTrue account creation succeeded
+  // (a real HTTP 200 from the admin API) but the process crashes before
+  // markCreated() ever runs. On resume, migrateOneUser()/migrateOneAdmin()
+  // must find the real auth.users row by email and link it to the SAME
+  // already-`planned` ledger row -- never attempt a second createUser()
+  // call, never leave the ledger permanently orphaned from a target that
+  // genuinely exists.
+  'after_gotrue_create_before_marked_created',
+  // Round 7, item 3 -- subscriptions.INSERT and markCreated() are now one
+  // real transaction; this fires INSIDE it, after the INSERT, before
+  // markCreated(). The kill-window test proves the whole transaction rolls
+  // back -- the row must NOT exist afterward, not just "not yet ledgered".
+  'after_subscription_insert_before_marked_created',
+  // Round 7, item 6 -- profiles.teacher_id / parent_student_links write
+  // and markCreated() are now one real transaction per relationship link,
+  // mirroring the same pattern.
+  'after_relationship_write_before_marked_created',
+  // Round 7, item 7 -- ensureMigrationSeedAdmin() now writes auth.users +
+  // profiles + admin_role_assignments inside ONE transaction; one stage
+  // per statement so a test can prove a crash after ANY of the three
+  // leaves the whole identity rolled back, never a partial seed admin.
+  'after_seed_admin_auth_user_insert',
+  'after_seed_admin_profile_insert',
+  'after_seed_admin_role_assignment_insert',
 ]);
 
 export function throwIfFaultStage(stage) {

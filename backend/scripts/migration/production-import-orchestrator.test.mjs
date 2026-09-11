@@ -10,6 +10,8 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import {
   TARGET_SUPABASE_REF,
   SOURCE_DATABASE,
@@ -314,36 +316,96 @@ async function main() {
     return filePath;
   }
 
-  await test('approved dispositions: plan/execute receive the exact same path and saga binds hash + approver + timestamp', async () => {
+  await test('approved dispositions: plan/execute receive the SAME private snapshot path (never the operator\'s own path), and the snapshot is cleaned up afterward', async () => {
+    // PR #70 review round 7, item 5: the operator's own path is read ONCE
+    // and copied into a private, orchestrator-owned snapshot -- every
+    // child invocation is forwarded the SNAPSHOT path, never the original.
     const dispositionPath = writeDispositions();
+    const originalHash = sha256Of(dispositionPath);
     const runWorkerFn = makeRecordingWorker([{ code: 0 }, { code: 0 }, { code: 0 }, { code: 0 }]);
     const result = await runImport({ pgClient: null, execute: true, runWorkerFn, approvedDispositionsPath: dispositionPath });
-    const flag = `--approved-dispositions=${dispositionPath}`;
-    assert.deepEqual(runWorkerFn.calls[0].args, [flag]);
-    assert.deepEqual(runWorkerFn.calls[2].args, ['--execute', flag]);
+
+    assert.equal(runWorkerFn.calls[0].args.length, 1);
+    const forwardedArg = runWorkerFn.calls[0].args[0];
+    assert.match(forwardedArg, /^--approved-dispositions=/);
+    const snapshotPath = forwardedArg.slice('--approved-dispositions='.length);
+    assert.notEqual(snapshotPath, dispositionPath, 'the child must never be given the operator\'s own mutable path');
+    assert.match(path.basename(snapshotPath), /^approved-dispositions-snapshot-/);
+    assert.deepEqual(runWorkerFn.calls[2].args, ['--execute', `--approved-dispositions=${snapshotPath}`], 'plan and execute must receive the exact SAME snapshot path');
+
     const saga = JSON.parse(fs.readFileSync(result.saga, 'utf8'));
     const binding = saga.steps.find((s) => s.step === 'approved_dispositions' && s.status === 'bound');
-    assert.equal(binding.hash, sha256Of(dispositionPath));
+    assert.equal(binding.hash, originalHash, 'the snapshot must be a byte-faithful copy of the operator\'s original file');
+    assert.equal(binding.path, dispositionPath, 'the saga still records the ORIGINAL path for audit purposes');
+    assert.equal(binding.snapshotPath, snapshotPath);
     assert.equal(binding.approvedBy, 'round-6-reviewer');
     assert.equal(binding.approvedAt, '2026-09-10T00:00:00.000Z');
+
+    assert.equal(fs.existsSync(snapshotPath), false, 'the private snapshot must be deleted (and verified gone) once the run finishes');
+    assert.equal(fs.existsSync(dispositionPath), true, 'the operator\'s own original file is never touched or deleted');
   });
 
-  await test('approved dispositions: mutation between plan and execute is rejected before either execute worker runs', async () => {
+  await test('approved dispositions: mutating the OPERATOR\'S ORIGINAL file after the snapshot was taken has no effect -- the run only ever reads the snapshot', async () => {
+    // This is the direct proof of what item 5 actually closes: before
+    // round 7, re-hashing the SAME operator path twice (once at bind time,
+    // once right before execute) still left a live TOCTOU window against
+    // whatever the child process itself read a moment later. Now the
+    // child never reads the operator's path at all -- mutating it after
+    // snapshot creation is provably inert.
     const dispositionPath = writeDispositions();
-    const runWorkerFn = makeRecordingWorker([{ code: 0 }, { code: 0 }]);
+    const runWorkerFn = makeRecordingWorker([{ code: 0 }, { code: 0 }, { code: 0 }, { code: 0 }]);
     const base = runWorkerFn.bind(null);
     let calls = 0;
     const mutatingWorker = (...args) => {
-      const result = base(...args);
       calls += 1;
-      if (calls === 2) fs.appendFileSync(dispositionPath, ' ');
-      return result;
+      if (calls === 1) fs.appendFileSync(dispositionPath, ' '); // mutate the ORIGINAL right after the snapshot was taken from it
+      return base(...args);
+    };
+    mutatingWorker.calls = runWorkerFn.calls;
+    const result = await runImport({ pgClient: null, execute: true, runWorkerFn: mutatingWorker, approvedDispositionsPath: dispositionPath });
+    assert.equal(result.ok, true, 'mutating the operator\'s own original file after the snapshot was taken must never fail the run');
+    assert.equal(runWorkerFn.calls.length, 4);
+  });
+
+  await test('approved dispositions: mutating the PRIVATE SNAPSHOT itself between the preflight and execute passes is rejected before either execute worker runs', async () => {
+    const dispositionPath = writeDispositions();
+    const runWorkerFn = makeRecordingWorker([{ code: 0 }, { code: 0 }]);
+    const base = runWorkerFn.bind(null);
+    let snapshotPath = null;
+    let calls = 0;
+    const mutatingWorker = (scriptPath, args) => {
+      calls += 1;
+      const dispositionArg = args.find((a) => a.startsWith('--approved-dispositions='));
+      if (dispositionArg) snapshotPath = dispositionArg.slice('--approved-dispositions='.length);
+      if (calls === 2 && snapshotPath) fs.appendFileSync(snapshotPath, ' ');
+      return base(scriptPath, args);
     };
     mutatingWorker.calls = runWorkerFn.calls;
     const result = await runImport({ pgClient: null, execute: true, runWorkerFn: mutatingWorker, approvedDispositionsPath: dispositionPath });
     assert.equal(result.ok, false);
     assert.equal(result.failedAt, 'approved_dispositions_integrity');
-    assert.equal(runWorkerFn.calls.length, 2);
+    assert.equal(runWorkerFn.calls.length, 2, 'neither execute worker may ever run once the snapshot itself is found mutated');
+    assert.equal(fs.existsSync(snapshotPath), false, 'the (now-mutated) snapshot is still cleaned up on the way out');
+  });
+
+  await test('approved dispositions: a snapshot deleted out from under the run before the execute pass is treated exactly like a mutation -- fail closed, never silently skipped', async () => {
+    const dispositionPath = writeDispositions();
+    const runWorkerFn = makeRecordingWorker([{ code: 0 }, { code: 0 }]);
+    const base = runWorkerFn.bind(null);
+    let snapshotPath = null;
+    let calls = 0;
+    const deletingWorker = (scriptPath, args) => {
+      calls += 1;
+      const dispositionArg = args.find((a) => a.startsWith('--approved-dispositions='));
+      if (dispositionArg) snapshotPath = dispositionArg.slice('--approved-dispositions='.length);
+      if (calls === 2 && snapshotPath) fs.rmSync(snapshotPath, { force: true });
+      return base(scriptPath, args);
+    };
+    deletingWorker.calls = runWorkerFn.calls;
+    const result = await runImport({ pgClient: null, execute: true, runWorkerFn: deletingWorker, approvedDispositionsPath: dispositionPath });
+    assert.equal(result.ok, false);
+    assert.equal(result.failedAt, 'approved_dispositions_integrity');
+    assert.match(result.stderr, /missing/);
   });
 
   await test('approved dispositions: malformed timestamp and duplicate signatures are rejected before worker invocation', async () => {
@@ -368,17 +430,82 @@ async function main() {
     assert.equal(parseCliArgs(['--approved-dispositions=C:\\tmp\\a=b.json'])['approved-dispositions'], 'C:\\tmp\\a=b.json');
   });
 
-  await test('compensate forwards the same reviewed disposition artifact in both plan and execute modes', async () => {
+  // -----------------------------------------------------------------
+  // PR #70 review round 7, item 1: strict CLI parser -- explicit
+  // allowlist, boolean flags reject ANY "=value" (never coerced from a
+  // truthy string), and an unknown/typo'd flag is a hard error, never a
+  // silent no-op.
+  // -----------------------------------------------------------------
+
+  await test('CLI parser: --execute=false is REJECTED, never silently coerced to true (the exact truthy-string bug this round closes)', () => {
+    assert.throws(() => parseCliArgs(['--execute=false']), /boolean flag/);
+    assert.throws(() => parseCliArgs(['--execute=true']), /boolean flag/);
+    assert.throws(() => parseCliArgs(['--execute=']), /boolean flag/);
+    assert.throws(() => parseCliArgs(['--execute=0']), /boolean flag/);
+  });
+
+  await test('CLI parser: --compensate=false is REJECTED the same way', () => {
+    assert.throws(() => parseCliArgs(['--compensate=false']), /boolean flag/);
+  });
+
+  await test('CLI parser: an unknown/typo\'d flag (e.g. --compansate) is a hard error, never a silent no-op', () => {
+    assert.throws(() => parseCliArgs(['--compansate']), /unknown flag/);
+    assert.throws(() => parseCliArgs(['--compansate', '--execute']), /unknown flag/);
+  });
+
+  await test('CLI parser: a bare --execute / --compensate (no "=value") is accepted and parses to exactly `true`', () => {
+    assert.equal(parseCliArgs(['--execute']).execute, true);
+    assert.equal(parseCliArgs(['--compensate']).compensate, true);
+  });
+
+  await test('CLI: --compansate --execute (typo) never reaches any DB/network access -- fails during argument parsing, before main() reads a single env var or opens a connection', async () => {
+    // Live CLI proof, not just the pure parser above: spawn the real
+    // script with a typo'd flag and an env that would hang/error loudly
+    // if any DB connection were ever attempted (no MIGRATION_DB_URL at
+    // all -- main() would normally fail with "MIGRATION_DB_URL must be
+    // set", a LATER check than CLI parsing; seeing the "unknown flag"
+    // error instead proves parsing happened first and nothing after it
+    // ever ran).
+    const scriptPath = path.join(path.dirname(fileURLToPath(import.meta.url)), 'production-import-orchestrator.mjs');
+    const cleanEnv = { ...process.env };
+    delete cleanEnv.MIGRATION_DB_URL;
+    delete cleanEnv.SUPABASE_URL;
+    delete cleanEnv.SUPABASE_SERVICE_ROLE_KEY;
+    const result = spawnSync(process.execPath, [scriptPath, '--compansate', '--execute'], {
+      encoding: 'utf8',
+      env: cleanEnv,
+    });
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /unknown flag/);
+    assert.doesNotMatch(result.stderr, /MIGRATION_DB_URL must be set/, 'must never reach the env-var check -- parsing must fail first');
+  });
+
+  await test('compensate forwards the SAME private snapshot path in both plan and execute modes, cleaned up afterward', async () => {
     const dispositionPath = writeDispositions();
+    const originalHash = sha256Of(dispositionPath);
+
     const planWorker = makeRecordingWorker([{ code: 0 }]);
     const plan = await compensate({ pgClient: null, execute: false, runWorkerFn: planWorker, approvedDispositionsPath: dispositionPath });
     assert.equal(plan.ok, true);
-    assert.deepEqual(planWorker.calls[0].args, [`--approved-dispositions=${dispositionPath}`]);
+    const planArg = planWorker.calls[0].args[0];
+    assert.match(planArg, /^--approved-dispositions=/);
+    const planSnapshotPath = planArg.slice('--approved-dispositions='.length);
+    assert.notEqual(planSnapshotPath, dispositionPath);
+    assert.equal(fs.existsSync(planSnapshotPath), false, 'compensate must clean up its own snapshot after returning');
 
     const executeWorker = makeRecordingWorker([{ code: 0 }]);
     const executeResult = await compensate({ pgClient: null, execute: true, runWorkerFn: executeWorker, approvedDispositionsPath: dispositionPath });
     assert.equal(executeResult.ok, true);
-    assert.deepEqual(executeWorker.calls[0].args, ['--execute', `--approved-dispositions=${dispositionPath}`]);
+    const execArgs = executeWorker.calls[0].args;
+    assert.equal(execArgs[0], '--execute');
+    assert.match(execArgs[1], /^--approved-dispositions=/);
+    const execSnapshotPath = execArgs[1].slice('--approved-dispositions='.length);
+    assert.notEqual(execSnapshotPath, dispositionPath);
+    assert.equal(fs.existsSync(execSnapshotPath), false);
+
+    const saga = JSON.parse(fs.readFileSync(executeResult.saga, 'utf8'));
+    const binding = saga.steps.find((s) => s.step === 'approved_dispositions' && s.status === 'bound');
+    assert.equal(binding.hash, originalHash);
   });
 
   fs.rmSync(tmpDir, { recursive: true, force: true });

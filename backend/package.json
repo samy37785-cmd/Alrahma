@@ -14,6 +14,8 @@
     "create-admin": "node scripts/createAdminUser.js",
     "test": "node --test tests/**/*.test.js",
     "test:watch": "node --test --watch tests/**/*.test.js",
+    "test:migration": "node scripts/migration/run-all-tests.mjs",
+    "test:all": "npm run lint && npm run test && npm run test:migration",
     "route-parity-gate": "node scripts/route-parity-gate/route-parity-gate.mjs",
     "lint": "eslint ."
   },

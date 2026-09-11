@@ -488,6 +488,19 @@ async function main() {
     await pgPool.query('INSERT INTO auth.users (id, email) VALUES ($1,$2)', [id, email]);
     return id;
   }
+  // Round 9, item 5: migrateSubscription()'s own read-back now checks
+  // plan_id, which is a real FK to plans(id) -- a bare crypto.randomUUID()
+  // (what several tests used pre-round-9, when nothing ever read plan_id
+  // back) is rejected by Postgres itself at INSERT time, never reaching
+  // read-back at all. Tests exercising an actual subscriptions INSERT now
+  // need a real, minimal plans row.
+  async function seedPlan(slug = `test-plan-${crypto.randomUUID()}`) {
+    const r = await pgPool.query(
+      `INSERT INTO plans (slug, name, amount_minor) VALUES ($1, $2, 1000) RETURNING id`,
+      [slug, slug]
+    );
+    return r.rows[0].id;
+  }
   async function addProfileLedger(sourceDoc, profileId, sourceCollection = 'users') {
     await pgPool.query(
       `INSERT INTO migration_source_ledger
@@ -589,11 +602,21 @@ async function main() {
     };
     const profileId = await seedExistingProfile(email);
     await addProfileLedger(sourceDoc, profileId);
+    // Round 9, item 5: this row must be seeded with EVERY field
+    // migrateSubscription()'s own read-back now compares (plan_id,
+    // current_period_end included) -- it represents a row a PRIOR run
+    // genuinely, fully committed, not a partial/approximate stand-in. A
+    // resume that reuses this row (never re-writing it) must read back
+    // cleanly against exactly what this exact sourceDoc would derive.
+    // Must be a REAL plans row -- subscriptions.plan_id is a real FK, and
+    // read-back now genuinely reads this column back too.
+    const planId = await seedPlan();
     // enforce_subscription_transition (0006/0010) requires canceled_at to
     // be set iff status='canceled', on INSERT as well as UPDATE.
     const inserted = await pgPool.query(
-      `INSERT INTO subscriptions (user_id, provider, status, canceled_at) VALUES ($1, 'manual', 'canceled', now()) RETURNING id`,
-      [profileId]
+      `INSERT INTO subscriptions (user_id, plan_id, provider, status, current_period_end, canceled_at)
+       VALUES ($1, $2, 'manual', 'canceled', $3, now()) RETURNING id`,
+      [profileId, planId, sourceDoc.subscription.validUntil]
     );
     await pgPool.query(
       `INSERT INTO migration_source_ledger
@@ -604,7 +627,7 @@ async function main() {
     );
     const client = await pgPool.connect();
     try {
-      const result = await migrateSubscription(client, profileId, sourceDoc, new Map([['Starter', crypto.randomUUID()]]));
+      const result = await migrateSubscription(client, profileId, sourceDoc, new Map([['Starter', planId]]));
       assert.equal(result.status, 'migrated');
       assert.equal(result.resumed, true);
       assert.equal((await pgPool.query('SELECT count(*)::int AS n FROM subscriptions')).rows[0].n, 1);
@@ -934,13 +957,13 @@ async function main() {
 
       // Simulate GoTrue's OWN write having actually landed despite the
       // crash (its trigger creates profiles synchronously with auth.users
-      // -- exactly what this schema's real trigger does). Round 8, item 2:
+      // -- exactly what this schema's real trigger does). Round 8/9, item 2:
       // a real createUser() call would have embedded migration_correlation_id
-      // in user_metadata BEFORE the crash -- without it here, the round-8
-      // foreign-account check would (correctly) refuse to link this row.
+      // in app_metadata BEFORE the crash -- without it here, the foreign-
+      // account check would (correctly) refuse to link this row.
       const expectedCorrelationId = correlationIdFor({ sourceCollection: 'users', sourceDocumentId: mongoUser._id, sourceValue: mongoUser });
       await client.query(
-        'INSERT INTO auth.users (id, email, raw_user_meta_data) VALUES ($1, $2, $3::jsonb)',
+        'INSERT INTO auth.users (id, email, raw_app_meta_data) VALUES ($1, $2, $3::jsonb)',
         [fakeUserId, mongoUser.email, JSON.stringify({ migration_correlation_id: expectedCorrelationId })]
       );
 
@@ -979,7 +1002,7 @@ async function main() {
       }
       const expectedAdminCorrelationId = correlationIdFor({ sourceCollection: 'adminusers', sourceDocumentId: mongoAdmin._id, sourceValue: mongoAdmin });
       await client.query(
-        'INSERT INTO auth.users (id, email, raw_user_meta_data) VALUES ($1, $2, $3::jsonb)',
+        'INSERT INTO auth.users (id, email, raw_app_meta_data) VALUES ($1, $2, $3::jsonb)',
         [fakeUserId, mongoAdmin.email, JSON.stringify({ migration_correlation_id: expectedAdminCorrelationId })]
       );
 
@@ -1120,7 +1143,7 @@ async function main() {
       // a totally different Mongo user that happens to share this email
       // after some other, unrelated change).
       await client.query(
-        'INSERT INTO auth.users (id, email, raw_user_meta_data) VALUES ($1, $2, $3::jsonb)',
+        'INSERT INTO auth.users (id, email, raw_app_meta_data) VALUES ($1, $2, $3::jsonb)',
         [foreignId, mongoUser.email, JSON.stringify({ migration_correlation_id: 'not-the-right-correlation-id' })]
       );
 
@@ -1180,7 +1203,7 @@ async function main() {
       );
       const correlationId = correlationIdFor({ sourceCollection: 'users', sourceDocumentId: mongoUser._id, sourceValue: mongoUser });
       await client.query(
-        'INSERT INTO auth.users (id, email, raw_user_meta_data) VALUES ($1, $2, $3::jsonb)',
+        'INSERT INTO auth.users (id, email, raw_app_meta_data) VALUES ($1, $2, $3::jsonb)',
         [realId, mongoUser.email, JSON.stringify({ migration_correlation_id: correlationId })]
       );
 
@@ -1198,6 +1221,100 @@ async function main() {
       });
       assert.equal(ledger.status, 'reconciled');
       assert.equal(ledger.target_id, realId);
+    } finally {
+      client.release();
+    }
+  });
+
+  // -------------------------------------------------------------------
+  // Round 9, item 2: migration_correlation_id moved from user_metadata to
+  // app_metadata. Round 8's implementation stored/read it in
+  // raw_user_meta_data while its own comment incorrectly called it
+  // "admin-only" -- user_metadata is writable by the account's own owner
+  // via a normal authenticated `supabase.auth.updateUser({ data: {...} })`
+  // call, so anything checked there could be forged by whoever controls a
+  // foreign/attacker account sharing the email. The tests below prove:
+  // (a) writing the exact correct correlation ID to raw_user_meta_data
+  // alone does NOT forge the check -- it must still fail closed, and
+  // (b) mismatch/absent in raw_app_meta_data specifically still fails
+  // closed (the same round-8 guarantee, now on the correct field).
+  // -------------------------------------------------------------------
+
+  await test('round 9, item 2: writing the CORRECT migration_correlation_id to raw_user_meta_data alone does NOT forge the check -- app_metadata is what is actually trusted', async () => {
+    await resetAll();
+    const foreignId = crypto.randomUUID();
+    const mongoUser = { _id: new mongoose.Types.ObjectId(), email: 'forged-via-user-metadata@example.invalid', role: 'student', name: 'Mongo Name' };
+    const client = await pgPool.connect();
+    try {
+      await client.query(
+        `INSERT INTO migration_source_ledger
+           (source_system, source_database, source_collection, source_document_id, source_content_hash,
+            target_table, target_id, status, migrated_at)
+         VALUES ('mongodb', 'al-rahma', 'users', $1, $2, 'profiles', NULL, 'planned', now())`,
+        [String(mongoUser._id), contentHashOf(mongoUser)]
+      );
+      // An attacker/owner of a pre-existing account with this SAME email
+      // sets their OWN raw_user_meta_data (the field they CAN legitimately
+      // write via a normal authenticated session) to the exact correlation
+      // ID this migration is about to compute for mongoUser -- simulating
+      // a forgery attempt via the user-writable channel. raw_app_meta_data
+      // (the field this migration actually trusts) is left completely
+      // untouched/absent.
+      const correlationId = correlationIdFor({ sourceCollection: 'users', sourceDocumentId: mongoUser._id, sourceValue: mongoUser });
+      await client.query(
+        'INSERT INTO auth.users (id, email, raw_user_meta_data) VALUES ($1, $2, $3::jsonb)',
+        [foreignId, mongoUser.email, JSON.stringify({ migration_correlation_id: correlationId })]
+      );
+      await client.query(`UPDATE profiles SET name = 'Foreign Real Person' WHERE id = $1`, [foreignId]);
+
+      let createUserCalls = 0;
+      const supabaseAdmin = fakeSupabaseAdmin(async () => { createUserCalls += 1; return { data: { user: { id: crypto.randomUUID() } }, error: null }; });
+      const result = await migrateOneUser(supabaseAdmin, client, mongoUser, { execute: true });
+
+      assert.equal(result.status, 'blocked_foreign_account_same_email', 'a matching raw_user_meta_data.migration_correlation_id must NOT be enough -- it is not the trusted field');
+      assert.match(result.message, /correlation ID mismatch or absent/);
+      assert.equal(createUserCalls, 0);
+
+      const ledger = await findLedgerEntry(client, {
+        sourceDatabase: 'al-rahma', sourceCollection: 'users', sourceDocumentId: String(mongoUser._id), targetTable: 'profiles',
+      });
+      assert.equal(ledger.status, 'failed');
+      assert.equal(ledger.target_id, null, 'the forged-via-user-metadata account must never be recorded as this document\'s target');
+
+      const foreignProfile = await client.query('SELECT name FROM profiles WHERE id = $1', [foreignId]);
+      assert.equal(foreignProfile.rows[0].name, 'Foreign Real Person', 'the foreign account must remain completely untouched');
+    } finally {
+      client.release();
+    }
+  });
+
+  await test('round 9, item 2: the SAME user_metadata-cannot-forge property holds for migrateOneAdmin', async () => {
+    await resetAll();
+    const foreignId = crypto.randomUUID();
+    const mongoAdmin = { _id: new mongoose.Types.ObjectId(), email: 'forged-via-user-metadata-admin@example.invalid', role: 'admin' };
+    const client = await pgPool.connect();
+    try {
+      await client.query(
+        `INSERT INTO migration_source_ledger
+           (source_system, source_database, source_collection, source_document_id, source_content_hash,
+            target_table, target_id, status, migrated_at)
+         VALUES ('mongodb', 'al-rahma', 'adminusers', $1, $2, 'profiles', NULL, 'planned', now())`,
+        [String(mongoAdmin._id), contentHashOf(mongoAdmin)]
+      );
+      const correlationId = correlationIdFor({ sourceCollection: 'adminusers', sourceDocumentId: mongoAdmin._id, sourceValue: mongoAdmin });
+      await client.query(
+        'INSERT INTO auth.users (id, email, raw_user_meta_data) VALUES ($1, $2, $3::jsonb)',
+        [foreignId, mongoAdmin.email, JSON.stringify({ migration_correlation_id: correlationId })]
+      );
+
+      let createUserCalls = 0;
+      const supabaseAdmin = fakeSupabaseAdmin(async () => { createUserCalls += 1; return { data: { user: { id: crypto.randomUUID() } }, error: null }; });
+      const result = await migrateOneAdmin(supabaseAdmin, client, mongoAdmin, { execute: true });
+
+      assert.equal(result.status, 'blocked_foreign_account_same_email');
+      assert.equal(createUserCalls, 0);
+      const adminAssignment = await client.query('SELECT count(*)::int AS n FROM admin_role_assignments WHERE user_id = $1', [foreignId]);
+      assert.equal(adminAssignment.rows[0].n, 0, 'the forged-via-user-metadata account must never be granted an admin role assignment');
     } finally {
       client.release();
     }
@@ -1270,6 +1387,79 @@ async function main() {
       assert.match(result.reason, /refusing to create a replacement automatically/);
       const rows = await client.query('SELECT count(*)::int AS n FROM subscriptions');
       assert.equal(rows.rows[0].n, 0);
+    } finally {
+      client.release();
+    }
+  });
+
+  // -------------------------------------------------------------------
+  // PR #70 review round 9, item 5: migrateSubscription()'s own read-back
+  // used to only check bare existence (`id = $1 AND user_id = $2`) --
+  // never the actual subscription CONTENT (status, plan_id, dates, ...).
+  // Proven with a REAL Postgres trigger that silently rewrites `status`
+  // after the INSERT -- the strengthened, field-comparing read-back must
+  // catch it, refuse markReconciled, and report FAIL.
+  // -------------------------------------------------------------------
+
+  await test('subscription read-back (round 9, item 5): a trigger that silently rewrites `status` is caught -- never reconciled, reported as FAIL', async () => {
+    await resetAll();
+    const email = 'subscription-readback-tamper@example.invalid';
+    const sourceDoc = {
+      _id: new mongoose.Types.ObjectId(), email, role: 'student',
+      subscription: { plan: 'Starter', status: 'active', validUntil: '2999-01-01T00:00:00.000Z' },
+    };
+    const profileId = await seedExistingProfile(email);
+    const client = await pgPool.connect();
+    try {
+      // subscriptions.status is a real Postgres ENUM (subscription_status:
+      // active/past_due/canceled/expired), unlike trial_requests.status
+      // (plain text) -- an arbitrary string here would be rejected by
+      // Postgres itself at INSERT time (invalid enum literal), which is a
+      // totally different failure path than read-back and would never
+      // reach verifyReadBack() at all. Rewriting to a DIFFERENT but VALID
+      // enum value is what actually proves read-back's CONTENT comparison
+      // (not just bare-existence) catches a silent corruption. This
+      // trigger's name ("test_...") sorts alphabetically AFTER the real
+      // subscriptions_enforce_transition trigger, so Postgres fires that
+      // one FIRST (validating the real, untampered 'active' + far-future
+      // current_period_end -- passes) and only then this one, so the
+      // tampered value never fights the app's own transition/invariant
+      // checks.
+      await client.query(`
+        CREATE OR REPLACE FUNCTION test_mutate_subscription_status() RETURNS trigger AS $$
+        BEGIN
+          NEW.status := 'past_due';
+          RETURN NEW;
+        END;
+        $$ LANGUAGE plpgsql;
+      `);
+      await client.query(`
+        CREATE TRIGGER test_mutate_subscription_status_trigger
+        BEFORE INSERT ON subscriptions
+        FOR EACH ROW EXECUTE FUNCTION test_mutate_subscription_status();
+      `);
+      try {
+        // Must be a REAL plans row -- subscriptions.plan_id is a real FK;
+        // a bare random UUID would fail the INSERT itself, before this
+        // test's own trigger (or read-back) ever gets a chance to run.
+        const planId = await seedPlan();
+        const result = await migrateSubscription(client, profileId, sourceDoc, new Map([['Starter', planId]]));
+        assert.equal(result.status, 'FAIL', 'a read-back content mismatch must be reported as FAIL, never a silent success');
+        assert.match(result.reason, /does not match what this migration just wrote/);
+        assert.match(result.reason, /status/);
+
+        const ledger = await findLedgerEntry(client, {
+          sourceDatabase: 'al-rahma', sourceCollection: 'users', sourceDocumentId: String(sourceDoc._id), targetTable: 'subscriptions',
+        });
+        assert.equal(ledger.status, 'failed', 'must never be marked reconciled when persisted content does not match what was written');
+        assert.ok(ledger.target_id, 'the row really was written (and really exists) -- only its status content was wrong');
+
+        const persisted = await client.query('SELECT status FROM subscriptions WHERE id = $1', [ledger.target_id]);
+        assert.equal(persisted.rows[0].status, 'past_due', 'sanity: the trigger really did rewrite the value');
+      } finally {
+        await client.query('DROP TRIGGER IF EXISTS test_mutate_subscription_status_trigger ON subscriptions');
+        await client.query('DROP FUNCTION IF EXISTS test_mutate_subscription_status()');
+      }
     } finally {
       client.release();
     }

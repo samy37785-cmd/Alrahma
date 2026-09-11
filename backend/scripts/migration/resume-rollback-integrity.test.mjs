@@ -42,6 +42,7 @@ import { fileURLToPath } from 'node:url';
 import mongoose from 'mongoose';
 import pg from 'pg';
 import { runCommand } from '../../../lib/db/test/orchestrator-lib.mjs';
+import { decodeCompositeTargetId } from './lib/composite-target-id.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, '..', '..', '..');
@@ -302,6 +303,121 @@ async function main() {
     assert.equal(r2.code, 0, r2.stderr);
     assert.match(r2.stdout, /imported=1/, 'a reconciled ledger entry whose target row is verifiably GONE must never be skipped');
     assert.equal(await totalTargetRows(), 1, 'the row must be recreated');
+  });
+
+  // =====================================================================
+  // PR #70 review round 9, item 5: markReconciled() must never run without
+  // a real, content-comparing read-back. Round 8's own comment here
+  // claimed an "INDEPENDENT re-verification that promotes it to
+  // 'reconciled'" existed right before markReconciled() -- it did not;
+  // markReconciled() was called directly. Proven with REAL Postgres
+  // triggers (not mocks), matching this file's own established style for
+  // the BEFORE DELETE veto trigger above: a trigger that silently
+  // rewrites a value, and a trigger that deletes the row within the same
+  // transaction, must BOTH prevent status='reconciled' and make the run
+  // exit non-zero.
+  // =====================================================================
+
+  await test('review round 9, item 5: a trigger that silently rewrites a column value is caught by read-back -- never marked reconciled, exits non-zero', async () => {
+    await resetAll();
+    const sourceId = await insertTrialRequest(pgPool, 1);
+
+    // A real BEFORE INSERT trigger that silently substitutes a DIFFERENT
+    // status than what mongo-to-supabase.mjs's own `row` object intended
+    // to write ('new') -- simulates ANY mechanism (a trigger, a default,
+    // a concurrent process) that causes the persisted content to diverge
+    // from what this migration believes it wrote. Must be a value the
+    // real trial_requests_status_allowlist CHECK constraint still
+    // accepts ('new'/'contacted'/'scheduled') -- an arbitrary string
+    // would be rejected by Postgres at INSERT time (a CHECK violation),
+    // which never reaches read-back at all and proves nothing about it;
+    // a different but VALID value is what actually proves read-back's
+    // CONTENT comparison (not bare existence) catches a silent, valid-
+    // looking corruption.
+    await pgPool.query(`
+      CREATE OR REPLACE FUNCTION test_mutate_trial_request_status() RETURNS trigger AS $$
+      BEGIN
+        NEW.status := 'scheduled';
+        RETURN NEW;
+      END;
+      $$ LANGUAGE plpgsql;
+    `);
+    await pgPool.query(`
+      CREATE TRIGGER test_mutate_trial_request_status_trigger
+      BEFORE INSERT ON trial_requests
+      FOR EACH ROW EXECUTE FUNCTION test_mutate_trial_request_status();
+    `);
+    try {
+      const fwd = runMigrateCLI(['--domain=trial_requests']);
+      assert.equal(fwd.code, 1, 'a read-back content mismatch must make the whole run exit non-zero');
+      assert.match(fwd.stdout, /failed=1/);
+
+      const row = await ledgerRow(sourceId);
+      assert.notEqual(row.status, 'reconciled', 'must never be marked reconciled when the persisted content does not match what was written');
+      assert.equal(row.status, 'failed');
+      assert.ok(row.target_id, 'the row itself was really written (and really exists) -- only its CONTENT was wrong, which is exactly what bare existence checks miss');
+
+      const persisted = await pgPool.query('SELECT status FROM trial_requests WHERE id = $1', [row.target_id]);
+      assert.equal(persisted.rows[0].status, 'scheduled', 'sanity: the trigger really did rewrite the value -- this is a real corruption, not a hypothetical one');
+    } finally {
+      await pgPool.query('DROP TRIGGER IF EXISTS test_mutate_trial_request_status_trigger ON trial_requests');
+      await pgPool.query('DROP FUNCTION IF EXISTS test_mutate_trial_request_status()');
+    }
+
+    // With the trigger gone, a normal retry (resume) now completes
+    // cleanly -- proving the earlier failure really was the trigger, not
+    // a wider regression, and that resume correctly reuses the same row.
+    const resumed = runMigrateCLI(['--domain=trial_requests']);
+    assert.equal(resumed.code, 0, resumed.stderr);
+    assert.equal(await totalTargetRows(), 1, 'resume must reuse the same row, never insert a duplicate');
+    const finalRow = await ledgerRow(sourceId);
+    assert.equal(finalRow.status, 'reconciled');
+  });
+
+  await test('review round 9, item 5: a trigger that deletes the row within the same transaction is caught by read-back -- never marked reconciled, exits non-zero', async () => {
+    await resetAll();
+    const sourceId = await insertTrialRequest(pgPool, 1);
+
+    // A real AFTER INSERT trigger that deletes the row it just inserted,
+    // within the SAME transaction -- by the time COMMIT completes, the
+    // row this migration believes it just created is already gone.
+    // Simulates "a concurrent delete before reconciliation" (this
+    // engagement's own local sandbox has no way to inject genuine
+    // wall-clock concurrency mid-process; a same-transaction self-delete
+    // reproduces the exact same observable state read-back must catch:
+    // the row is gone by the time it runs).
+    await pgPool.query(`
+      CREATE OR REPLACE FUNCTION test_self_delete_trial_request() RETURNS trigger AS $$
+      BEGIN
+        DELETE FROM trial_requests WHERE id = NEW.id;
+        RETURN NEW;
+      END;
+      $$ LANGUAGE plpgsql;
+    `);
+    await pgPool.query(`
+      CREATE TRIGGER test_self_delete_trial_request_trigger
+      AFTER INSERT ON trial_requests
+      FOR EACH ROW EXECUTE FUNCTION test_self_delete_trial_request();
+    `);
+    try {
+      const fwd = runMigrateCLI(['--domain=trial_requests']);
+      assert.equal(fwd.code, 1, 'a read-back "row is gone" must make the whole run exit non-zero');
+      assert.match(fwd.stdout, /failed=1/);
+
+      const row = await ledgerRow(sourceId);
+      assert.notEqual(row.status, 'reconciled');
+      assert.equal(row.status, 'failed');
+      assert.equal(await totalTargetRows(), 0, 'sanity: the row really is gone -- the trigger really deleted it');
+    } finally {
+      await pgPool.query('DROP TRIGGER IF EXISTS test_self_delete_trial_request_trigger ON trial_requests');
+      await pgPool.query('DROP FUNCTION IF EXISTS test_self_delete_trial_request()');
+    }
+
+    const resumed = runMigrateCLI(['--domain=trial_requests']);
+    assert.equal(resumed.code, 0, resumed.stderr);
+    assert.equal(await totalTargetRows(), 1, 'resume must recreate the row (the ledger correctly does not trust a "created" status whose target vanished)');
+    const finalRow = await ledgerRow(sourceId);
+    assert.equal(finalRow.status, 'reconciled');
   });
 
   // =====================================================================
@@ -592,6 +708,88 @@ async function main() {
         assert.equal(finalRow.target_id, rowAfterFault.target_id, 'must be the SAME row, not a new one');
       });
     }
+  }
+
+  // =====================================================================
+  // PR #70 review round 9, item 1: composite target_id encoding. The old
+  // `${a}:${b}` / `.split(':')` scheme was not reversible whenever a
+  // component's own value contains the delimiter -- exactly
+  // quran_bookmarks.verse_key's real shape ("2:255", surah:ayah). Proven
+  // here against a REAL live migrate -> resume (checkpoint deleted) ->
+  // rollback cycle, not just the pure codec unit tests
+  // (lib/composite-target-id.test.mjs).
+  // =====================================================================
+
+  async function seedQuranUserPrereqs() {
+    const email = `quranuser-${crypto.randomBytes(4).toString('hex')}@example.invalid`;
+    const profileId = crypto.randomUUID();
+    await pgPool.query('INSERT INTO auth.users (id, email) VALUES ($1,$2)', [profileId, email]);
+    const res = await mongoose.connection.collection('users').insertOne({ email });
+    return { profileId, mongoUserId: String(res.insertedId) };
+  }
+  async function insertQuranBookmarkDoc(mongoUserId, verseKey) {
+    const [chapterId, verseNum] = verseKey.split(':').map(Number);
+    const res = await mongoose.connection.collection('quranbookmarks').insertOne({
+      user: mongoUserId, verseKey, chapterId, verseNum,
+    });
+    return String(res.insertedId);
+  }
+  async function resetQuranBookmarksState() {
+    await pgPool.query('TRUNCATE quran_bookmarks, profiles, auth.users, migration_source_ledger RESTART IDENTITY CASCADE');
+    deleteCheckpointFor('quran_bookmarks');
+    await mongoose.connection.collection('users').deleteMany({});
+    await mongoose.connection.collection('quranbookmarks').deleteMany({});
+  }
+
+  await test('review round 9, item 1: quran_bookmarks composite target_id with a delimiter INSIDE its own value (verse_key="2:255") -- migrate, resume (checkpoint deleted), and rollback all correctly round-trip the encoding', async () => {
+    await resetQuranBookmarksState();
+    const { profileId, mongoUserId } = await seedQuranUserPrereqs();
+    const verseKey = '2:255'; // real shape: "<surah>:<ayah>" -- contains the OLD delimiter
+    const sourceId = await insertQuranBookmarkDoc(mongoUserId, verseKey);
+
+    const fwd = runMigrateCLI(['--domain=quran_bookmarks']);
+    assert.equal(fwd.code, 0, fwd.stderr);
+    assert.match(fwd.stdout, /imported=1/);
+
+    const bookmarkRow = await pgPool.query('SELECT user_id, verse_key FROM quran_bookmarks WHERE user_id=$1', [profileId]);
+    assert.equal(bookmarkRow.rowCount, 1);
+    assert.equal(bookmarkRow.rows[0].verse_key, verseKey, 'the real verse_key must be stored whole -- unaffected by how target_id is encoded');
+
+    const ledger = await domainLedgerRow('quran_bookmarks', sourceId);
+    assert.equal(ledger.status, 'reconciled');
+    // THE fix, proven directly: the stored target_id must decode back to
+    // the exact (profileId, verseKey) pair, not a truncated/corrupted one
+    // (the old split(':') scheme would have decoded this to
+    // [profileId, "2"], silently dropping ":255").
+    assert.deepEqual(decodeCompositeTargetId(ledger.target_id), [profileId, verseKey]);
+
+    deleteCheckpointFor('quran_bookmarks');
+    const resumed = runMigrateCLI(['--domain=quran_bookmarks']);
+    assert.equal(resumed.code, 0, resumed.stderr);
+    const totalAfterResume = await pgPool.query('SELECT count(*) FROM quran_bookmarks');
+    assert.equal(Number(totalAfterResume.rows[0].count), 1, 'resume (checkpoint lost) must never duplicate the row');
+    const ledgerAfterResume = await domainLedgerRow('quran_bookmarks', sourceId);
+    assert.equal(ledgerAfterResume.status, 'reconciled');
+
+    const rb = runMigrateCLI(['--domain=quran_bookmarks', '--rollback']);
+    assert.equal(rb.code, 0, rb.stderr);
+    // THE critical assertion the old bug would have failed: independently
+    // re-query for the EXACT real row (not the corrupted (profileId, "2")
+    // identity the old split(':') bug would have looked for/deleted
+    // instead) and prove it is genuinely gone -- not merely that
+    // rollback's own exit code claimed success.
+    const stillThere = await pgPool.query('SELECT 1 FROM quran_bookmarks WHERE user_id=$1 AND verse_key=$2', [profileId, verseKey]);
+    assert.equal(
+      stillThere.rowCount, 0,
+      'CRITICAL: the real quran_bookmarks row (verse_key="2:255") must be gone after rollback -- with the old split(\':\') bug this exact row would silently survive while rollback still reported success'
+    );
+    assert.equal(await totalTargetRowsGeneric('quran_bookmarks'), 0, 'no orphaned quran_bookmarks row of any shape must remain');
+    assert.equal(await domainLedgerRow('quran_bookmarks', sourceId), null, 'the ledger row must be gone too -- no orphan left behind');
+  });
+
+  async function totalTargetRowsGeneric(table) {
+    const r = await pgPool.query(`SELECT count(*) FROM ${table}`);
+    return Number(r.rows[0].count);
   }
 
   await test('an immutable domain (invoices) still refuses rollback outright, with `failed` staying 0', async () => {

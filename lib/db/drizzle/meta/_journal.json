@@ -169,6 +169,13 @@
       "when": 1788912001000,
       "tag": "0023_ledger_integrity_constraints",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1788912002000,
+      "tag": "0024_ledger_failed_attribution_policy",
+      "breakpoints": true
     }
   ]
 }

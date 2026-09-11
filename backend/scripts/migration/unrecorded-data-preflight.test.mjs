@@ -39,12 +39,14 @@
 //     unrecorded row.
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
+import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import pg from 'pg';
 import { runCommand } from '../../../lib/db/test/orchestrator-lib.mjs';
-import { verifyNoUnrecordedData, verifyLedgerPointsToRealTargets, verifyTeacherLinkProvenance, verifyLedgerRowIntegrity } from './production-import-orchestrator.mjs';
+import { verifyNoUnrecordedData, verifyLedgerPointsToRealTargets, verifyTeacherLinkProvenance, verifyLedgerRowIntegrity, verifyMigrationJournal } from './production-import-orchestrator.mjs';
 import { MIGRATION_SEED_ADMIN_ID, MIGRATION_SEED_ADMIN_EMAIL, ensureMigrationSeedAdmin } from './lib/admin-rpc.mjs';
+import { encodeCompositeTargetId } from './lib/composite-target-id.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, '..', '..', '..');
@@ -200,12 +202,13 @@ async function main() {
 
       await assert.rejects(() => verifyNoUnrecordedData(client), /document_counters: 1 row\(s\) with no matching migration_source_ledger entry/);
 
-      // MUST be the exact same ":"-joined encoding and column ORDER
-      // mongo-to-supabase.mjs's own document_counters.upsert() returns
-      // (`${row.scope}:${row.year}`) -- a wrong order here would prove
-      // the spec itself has drifted from the real encoding, which is
-      // exactly what this assertion exists to catch.
-      await addLedgerEntry('document_counters', 'fake-mongo-id-3', 'test_scope:2099');
+      // PR #70 review round 9, item 1: MUST be the exact same
+      // encodeCompositeTargetId() encoding and column ORDER
+      // mongo-to-supabase.mjs's own document_counters.upsert() returns --
+      // a wrong order here would prove the spec itself has drifted from
+      // the real encoding, which is exactly what this assertion exists
+      // to catch.
+      await addLedgerEntry('document_counters', 'fake-mongo-id-3', encodeCompositeTargetId(['test_scope', 2099]));
       const result = await verifyNoUnrecordedData(client);
       assert.equal(result, true, 'a row WITH a matching composite-key ledger entry (correct column order) must never be flagged');
     } finally {
@@ -215,19 +218,78 @@ async function main() {
     }
   });
 
-  await test('composite shape, wrong column order: proves the identity expression is order-sensitive, not accidentally order-agnostic', async () => {
+  await test('composite shape, wrong column order: proves the identity comparison is order-sensitive, not accidentally order-agnostic', async () => {
     const client = await pgPool.connect();
     try {
       await client.query(`INSERT INTO document_counters (scope, year, seq) VALUES ('test_scope2', 2098, 0)`);
-      // Deliberately swapped order ("year:scope" instead of "scope:year")
-      // -- must NOT match, proving the check really does compare the
-      // full, order-sensitive string, not just "same values present".
-      await addLedgerEntry('document_counters', 'fake-mongo-id-4', '2098:test_scope2');
+      // Deliberately swapped order (["2098","test_scope2"] instead of
+      // ["test_scope2","2098"]) -- must NOT match, proving the check
+      // really does compare the full, order-sensitive encoded identity,
+      // not just "same values present".
+      await addLedgerEntry('document_counters', 'fake-mongo-id-4', encodeCompositeTargetId([2098, 'test_scope2']));
 
       await assert.rejects(() => verifyNoUnrecordedData(client), /document_counters: 1 row\(s\) with no matching migration_source_ledger entry/);
     } finally {
       await client.query('DELETE FROM document_counters');
       await clearLedgerFor('document_counters');
+      client.release();
+    }
+  });
+
+  // PR #70 review round 9, item 1 -- the composite target_id encoding
+  // bug (a plain `${a}:${b}` string is not reversible when a component
+  // can itself contain ":", corrupting quran_bookmarks.verse_key values
+  // like "2:255"). Proves the FIXED, JS-side composite comparison
+  // (countUnrecordedComposite()/countGhostLedgerComposite() in
+  // production-import-orchestrator.mjs) correctly handles a real
+  // delimiter-containing composite value in BOTH directions, against a
+  // real quran_bookmarks row (not a synthetic document_counters value
+  // that happens never to contain a colon in practice).
+  await test('composite shape with a delimiter INSIDE a component value (quran_bookmarks.verse_key="2:255"): Target -> Ledger', async () => {
+    const client = await pgPool.connect();
+    const userId = crypto.randomUUID();
+    try {
+      await insertAuthUser(userId, `quran-composite-${userId}@example.invalid`, {});
+      // This test is about quran_bookmarks' own composite encoding, not
+      // profile attribution -- ledger the profile too (same pattern the
+      // parent_student_links test below uses) so verifyNoUnrecordedData's
+      // OWN profiles check doesn't also flag this row as unattributed.
+      await addLedgerEntry('profiles', `quran-composite-profile-${userId}`, userId, { sourceCollection: 'users' });
+      await client.query(
+        `INSERT INTO quran_bookmarks (user_id, verse_key, chapter_id, verse_num) VALUES ($1, '2:255', 2, 255)`,
+        [userId]
+      );
+
+      await assert.rejects(() => verifyNoUnrecordedData(client), /quran_bookmarks: 1 row\(s\) with no matching migration_source_ledger entry/);
+
+      await addLedgerEntry('quran_bookmarks', 'fake-mongo-id-verse', encodeCompositeTargetId([userId, '2:255']));
+      const result = await verifyNoUnrecordedData(client);
+      assert.equal(result, true, 'a row correctly ledgered with the new codec, whose composite value itself contains ":", must never be flagged');
+    } finally {
+      await client.query('DELETE FROM quran_bookmarks');
+      await clearLedgerFor('quran_bookmarks');
+      await clearLedgerFor('profiles');
+      await deleteAuthUser(userId);
+      client.release();
+    }
+  });
+
+  await test('composite shape with a delimiter INSIDE a component value (quran_bookmarks.verse_key="2:255"): Ledger -> Target catches a ghost', async () => {
+    const client = await pgPool.connect();
+    const userId = crypto.randomUUID();
+    try {
+      await insertAuthUser(userId, `quran-composite-ghost-${userId}@example.invalid`, {});
+      // No real quran_bookmarks row is ever inserted -- the ledger claims
+      // one exists anyway, exactly the "target went missing" shape.
+      await addLedgerEntry('quran_bookmarks', 'fake-mongo-id-ghost-verse', encodeCompositeTargetId([userId, '2:255']), { status: 'reconciled' });
+
+      await assert.rejects(
+        () => verifyLedgerPointsToRealTargets(client),
+        /quran_bookmarks: 1 migration_source_ledger row\(s\) claim a target that no longer exists/
+      );
+    } finally {
+      await clearLedgerFor('quran_bookmarks');
+      await deleteAuthUser(userId);
       client.release();
     }
   });
@@ -467,13 +529,7 @@ async function main() {
       const rowId = r.rows[0].id;
 
       // Same target_table/target_id, but source_system is NOT 'mongodb' --
-      // must not match. status: 'failed' (round 8, item 6: 'created'/
-      // 'reconciled' would collide with the SECOND, correctly-scoped
-      // entry below under 0023's target-attribution unique index -- a
-      // real, correct property now, since two DIFFERENT ledger rows
-      // genuinely cannot both "own" the exact same target row; 'failed'
-      // keeps this test's actual point -- source_system scoping, not
-      // status -- isolated and provable).
+      // must not match.
       await addLedgerEntry('trial_requests', 'fake-mongo-id-wrongsystem', rowId, { sourceSystem: 'some_other_system', status: 'failed' });
       await assert.rejects(
         () => verifyNoUnrecordedData(client),
@@ -481,8 +537,14 @@ async function main() {
         'a ledger entry from a different source_system must never legitimize the target row'
       );
 
-      // Confirm it's purely the source_system that's wrong: add a SECOND,
-      // correctly-scoped entry for the same row and it now passes.
+      // Confirm it's purely the source_system that's wrong: replace it with
+      // a correctly-scoped entry for the same row and it now passes. (Round
+      // 9, item 4: migration 0024 extends the target-attribution unique
+      // index to also cover status='failed', so the wrong-scoped 'failed'
+      // row above must be cleared first -- two different source documents,
+      // even one merely 'failed', can no longer both claim the same
+      // target_id at once; that is the exact loophole round 9 closes.)
+      await clearLedgerFor('trial_requests');
       await addLedgerEntry('trial_requests', 'fake-mongo-id-wrongsystem-correct', rowId);
       const result = await verifyNoUnrecordedData(client);
       assert.equal(result, true, 'a correctly-scoped mongodb/al-rahma ledger entry for the same row must legitimize it');
@@ -503,10 +565,7 @@ async function main() {
 
       // Right source_system (mongodb), but a DIFFERENT source_database --
       // e.g. a hypothetical other Mongo database migrated by different
-      // tooling -- must not match. status: 'failed' for the same reason
-      // as the source_system test above (avoids colliding with 0023's
-      // target-attribution unique index against the correctly-scoped
-      // entry added below).
+      // tooling -- must not match.
       await addLedgerEntry('trial_requests', 'fake-mongo-id-wrongdb', rowId, { sourceDatabase: 'some-other-database', status: 'failed' });
       await assert.rejects(
         () => verifyNoUnrecordedData(client),
@@ -514,6 +573,11 @@ async function main() {
         'a ledger entry from a different source_database must never legitimize the target row'
       );
 
+      // Round 9, item 4: clear the wrong-scoped 'failed' row before adding
+      // the correctly-scoped one -- migration 0024 now includes 'failed' in
+      // the target-attribution unique index, so both can no longer coexist
+      // against the same target_id (see the source_system test above).
+      await clearLedgerFor('trial_requests');
       await addLedgerEntry('trial_requests', 'fake-mongo-id-wrongdb-correct', rowId);
       const result = await verifyNoUnrecordedData(client);
       assert.equal(result, true, 'a correctly-scoped mongodb/al-rahma ledger entry for the same row must legitimize it');
@@ -597,11 +661,22 @@ async function main() {
     }
   });
 
-  await test('round 7 item 4: a "failed"-status ledger row pointing at nothing is NOT flagged -- it already documents why, it is not "missing"', async () => {
+  // Superseded by round 9, item 4 (see the dedicated section below): a
+  // 'failed' row with a NON-NULL target_id that was never actually a real
+  // target (never existed at all, same as one that existed and later went
+  // missing) is now correctly detected, not silently exempted -- round
+  // 8's original "failed is never checked" policy was the very loophole
+  // round 9 item 4 closes. target_id = NULL (a failure that never reached
+  // a target write at all) remains the one genuinely-exempt case.
+  await test('round 9 item 4 (was round 7 item 4, now inverted): a "failed"-status ledger row pointing at a target_id that was never real IS flagged', async () => {
     const client = await pgPool.connect();
     try {
       await addLedgerEntry('trial_requests', 'documented-failure-mongo-id', '00000000-0000-4000-8000-00000000abce', { status: 'failed' });
-      assert.equal(await verifyLedgerPointsToRealTargets(client), true);
+      await assert.rejects(
+        () => verifyLedgerPointsToRealTargets(client),
+        /trial_requests: 1 migration_source_ledger row\(s\) claim a target that no longer exists/,
+        'a failed row claiming a non-null target_id that is not a real row must be surfaced, same as any other dangling claim'
+      );
     } finally {
       await clearLedgerFor('trial_requests');
       client.release();
@@ -797,34 +872,240 @@ async function main() {
     }
   });
 
-  await test('round 8, item 6: explicit, tested policy for "failed" rows -- exempt from BOTH new constraints, by design', async () => {
-    // A 'failed' row legitimately carries a NULL target_id (the normal
-    // case: the document was rejected before any write was attempted).
+  // -------------------------------------------------------------------
+  // PR #70 review round 9, item 4: unifies the 'failed'-row policy.
+  // Round 8's original design (directly above, superseded) exempted
+  // 'failed' rows from BOTH the target-attribution unique index and the
+  // Ledger -> Target liveness check. That was too broad: a 'failed' row
+  // with a real target_id is a genuine, provisional attribution (kill-
+  // window 3 proves the row it names is real), not a null claim.
+  // Migration 0024 (0023 left byte-for-byte unmodified) extends the
+  // partial unique index to also cover status='failed'; production-
+  // import-orchestrator.mjs's verifyLedgerPointsToRealTargets() /
+  // countGhostLedgerComposite() / verifyTeacherLinkProvenance() now also
+  // check 'failed' rows' target_id against the real target. What does
+  // NOT change: a 'failed' row with target_id = NULL (never reached a
+  // target write) remains completely valid -- 0023's CHECK constraint
+  // was never touched.
+  // -------------------------------------------------------------------
+
+  await test('round 9, item 4: a "failed" row with target_id = NULL remains valid (unchanged from round 8)', async () => {
     await addLedgerEntry('trial_requests', 'failed-null-target', null, { status: 'failed' });
-
-    // A 'failed' row ALSO legitimately carries a REAL target_id that
-    // still points at a live row -- kill-window 3 (crash between the
-    // target write and reconciliation; markFailed() never clears
-    // target_id -- see migrate-users-to-supabase-auth.mjs's own
-    // comment). This must never be flagged as "missing" (already proven
-    // above) and must never collide with the unique index either, even
-    // when ANOTHER row legitimately owns that same target as
-    // created/reconciled.
-    const realTarget = await pgPool.query(`INSERT INTO trial_requests (name, email, status) VALUES ('Test', 'failed-row-real-target@example.invalid', 'new') RETURNING id`);
-    await addLedgerEntry('trial_requests', 'owning-row', realTarget.rows[0].id, { status: 'reconciled' });
-    // A SECOND, unrelated source document's failed attempt happens to
-    // reference that exact same target_id (e.g. a retried, mis-resolved
-    // resume) -- still must not violate the unique index, because a
-    // 'failed' row is simply not covered by it at all.
-    await addLedgerEntry('trial_requests', 'failed-same-target-as-owner', realTarget.rows[0].id, { status: 'failed' });
-
     const client = await pgPool.connect();
     try {
-      assert.equal(await verifyLedgerRowIntegrity(client), true, 'failed rows must never trip the hash/source_collection checks either, given well-formed values');
-      assert.equal(await verifyLedgerPointsToRealTargets(client), true, 'a failed row is excluded from the Ledger -> Target liveness check regardless of its target_id');
+      assert.equal(await verifyLedgerRowIntegrity(client), true);
+      assert.equal(await verifyLedgerPointsToRealTargets(client), true, 'a NULL target_id is never a "missing target" -- there was never a target claimed at all');
+    } finally {
+      await clearLedgerFor('trial_requests');
+      client.release();
+    }
+  });
+
+  await test('round 9, item 4: a "failed" row whose OWN real target_id still exists (kill-window 3, not shared with anyone) is never flagged', async () => {
+    const realTarget = await pgPool.query(`INSERT INTO trial_requests (name, email, status) VALUES ('Test', 'failed-row-own-real-target@example.invalid', 'new') RETURNING id`);
+    try {
+      await addLedgerEntry('trial_requests', 'failed-own-target', realTarget.rows[0].id, { status: 'failed' });
+      const client = await pgPool.connect();
+      try {
+        assert.equal(await verifyLedgerPointsToRealTargets(client), true, 'a failed row\'s own genuinely-still-live target must never be flagged as missing');
+      } finally {
+        client.release();
+      }
     } finally {
       await pgPool.query('DELETE FROM trial_requests WHERE id = $1', [realTarget.rows[0].id]);
       await clearLedgerFor('trial_requests');
+    }
+  });
+
+  await test('round 9, item 4 (NEW behavior): a "failed" row whose target_id points at a target that has since gone MISSING is now detected (was silently invisible under round 8\'s policy)', async () => {
+    // Insert then immediately delete the target row out-of-band -- the
+    // ledger row still claims it, with status='failed' and a real
+    // target_id (exactly the kill-window-3 shape), but the row itself
+    // is now genuinely gone.
+    const goneTarget = await pgPool.query(`INSERT INTO trial_requests (name, email, status) VALUES ('Test', 'failed-row-gone-target@example.invalid', 'new') RETURNING id`);
+    const goneId = goneTarget.rows[0].id;
+    await addLedgerEntry('trial_requests', 'failed-gone-target', goneId, { status: 'failed' });
+    await pgPool.query('DELETE FROM trial_requests WHERE id = $1', [goneId]);
+
+    const client = await pgPool.connect();
+    try {
+      await assert.rejects(
+        () => verifyLedgerPointsToRealTargets(client),
+        /trial_requests: 1 migration_source_ledger row\(s\) claim a target that no longer exists/,
+        'a failed row\'s dangling target_id must now be surfaced, not silently ignored forever'
+      );
+    } finally {
+      await clearLedgerFor('trial_requests');
+      client.release();
+    }
+  });
+
+  await test('round 9, item 4 (DB constraint via migration 0024): two DIFFERENT source documents cannot both claim the SAME target while ONE of them is "failed"', async () => {
+    const realTarget = await pgPool.query(`INSERT INTO trial_requests (name, email, status) VALUES ('Test', 'failed-vs-owner-target@example.invalid', 'new') RETURNING id`);
+    const targetId = realTarget.rows[0].id;
+    try {
+      await addLedgerEntry('trial_requests', 'owning-row', targetId, { status: 'reconciled' });
+      // A SECOND, unrelated source document's failed attempt references
+      // that exact same target_id -- under round 8's policy this was
+      // silently allowed (excluded from the unique index entirely);
+      // under round 9's unified policy it must now be rejected by
+      // Postgres itself, the same way a duplicate created/reconciled
+      // attribution already was.
+      await assert.rejects(
+        () => addLedgerEntry('trial_requests', 'failed-same-target-as-owner', targetId, { status: 'failed' }),
+        /migration_source_ledger_target_attribution_unique/
+      );
+
+      // And the reverse order: a 'failed' row claims the target FIRST,
+      // then a second document tries to claim the SAME target as
+      // created/reconciled -- must also be rejected.
+      await pgPool.query('DELETE FROM migration_source_ledger WHERE target_table = $1', ['trial_requests']);
+      await addLedgerEntry('trial_requests', 'failed-first', targetId, { status: 'failed' });
+      await assert.rejects(
+        () => addLedgerEntry('trial_requests', 'reconciled-second', targetId, { status: 'reconciled' }),
+        /migration_source_ledger_target_attribution_unique/
+      );
+    } finally {
+      await pgPool.query('DELETE FROM trial_requests WHERE id = $1', [targetId]);
+      await clearLedgerFor('trial_requests');
+    }
+  });
+
+  await test('round 9, item 4: two DIFFERENT "failed" rows claiming the same target are ALSO rejected (not just failed-vs-created/reconciled)', async () => {
+    const realTarget = await pgPool.query(`INSERT INTO trial_requests (name, email, status) VALUES ('Test', 'failed-vs-failed-target@example.invalid', 'new') RETURNING id`);
+    const targetId = realTarget.rows[0].id;
+    try {
+      await addLedgerEntry('trial_requests', 'failed-a', targetId, { status: 'failed' });
+      await assert.rejects(
+        () => addLedgerEntry('trial_requests', 'failed-b', targetId, { status: 'failed' }),
+        /migration_source_ledger_target_attribution_unique/
+      );
+    } finally {
+      await pgPool.query('DELETE FROM trial_requests WHERE id = $1', [targetId]);
+      await clearLedgerFor('trial_requests');
+    }
+  });
+
+  // -----------------------------------------------------------------
+  // PR #70 review round 9, item 3: verifyMigrationJournal() used to
+  // claim (in its own docstring) that it "compares by tag, not just
+  // count" -- it actually only ever compared count(*) against the
+  // journal's own entry count, so a same-length-but-different-set (or
+  // reordered, or silently-edited-after-applying) target passed
+  // completely undetected. Fixed to compare EXACT ordered identity: for
+  // each journal entry, drizzle-orm's own sha256-of-file-content hash
+  // and journal `when` timestamp, position-by-position against
+  // drizzle.__drizzle_migrations ORDER BY id ASC (real application
+  // order). Proven below against every required state: same count with
+  // a different hash, a missing migration, an extra migration,
+  // reordered migrations, and the correct state -- each against the
+  // REAL __drizzle_migrations table this file's own setup populated via
+  // the real drizzle-orm migrator (lib/db/test/run-migrations.mjs), not
+  // a synthetic fixture table.
+  // -----------------------------------------------------------------
+
+  async function migrationsSnapshot() {
+    const { rows } = await pgPool.query('SELECT id, hash, created_at FROM drizzle.__drizzle_migrations ORDER BY id ASC');
+    return rows;
+  }
+  async function restoreMigrationsSnapshot(snapshot) {
+    await pgPool.query('DELETE FROM drizzle.__drizzle_migrations');
+    for (const row of snapshot) {
+      await pgPool.query('INSERT INTO drizzle.__drizzle_migrations (id, hash, created_at) VALUES ($1,$2,$3)', [row.id, row.hash, row.created_at]);
+    }
+    await pgPool.query(`SELECT setval(pg_get_serial_sequence('drizzle.__drizzle_migrations', 'id'), (SELECT COALESCE(MAX(id), 1) FROM drizzle.__drizzle_migrations))`);
+  }
+
+  await test('round 9, item 3: verifyMigrationJournal passes cleanly on a freshly-migrated schema (correct state)', async () => {
+    const client = await pgPool.connect();
+    try {
+      const result = await verifyMigrationJournal(client);
+      assert.ok(result.expectedCount > 0, 'sanity: the journal must actually have entries');
+      assert.equal(result.appliedCount, result.expectedCount);
+    } finally {
+      client.release();
+    }
+  });
+
+  await test('round 9, item 3: same COUNT but a different hash at one position is caught (e.g. a migration file edited after being applied)', async () => {
+    const snapshot = await migrationsSnapshot();
+    try {
+      const middle = snapshot[Math.floor(snapshot.length / 2)];
+      await pgPool.query('UPDATE drizzle.__drizzle_migrations SET hash = $2 WHERE id = $1', [middle.id, 'f'.repeat(64)]);
+      const client = await pgPool.connect();
+      try {
+        await assert.rejects(
+          () => verifyMigrationJournal(client),
+          /does not match this repo's journal entry/,
+          'a hash mismatch at one position, with the total count unchanged, must still be caught'
+        );
+      } finally {
+        client.release();
+      }
+    } finally {
+      await restoreMigrationsSnapshot(snapshot);
+    }
+  });
+
+  await test('round 9, item 3: a missing (deleted) migration is caught', async () => {
+    const snapshot = await migrationsSnapshot();
+    try {
+      const last = snapshot[snapshot.length - 1];
+      await pgPool.query('DELETE FROM drizzle.__drizzle_migrations WHERE id = $1', [last.id]);
+      const client = await pgPool.connect();
+      try {
+        await assert.rejects(() => verifyMigrationJournal(client), /INCOMPLETE/);
+      } finally {
+        client.release();
+      }
+    } finally {
+      await restoreMigrationsSnapshot(snapshot);
+    }
+  });
+
+  await test('round 9, item 3: an extra (unexpected) migration is caught', async () => {
+    const snapshot = await migrationsSnapshot();
+    try {
+      await pgPool.query('INSERT INTO drizzle.__drizzle_migrations (hash, created_at) VALUES ($1, $2)', ['e'.repeat(64), Date.now()]);
+      const client = await pgPool.connect();
+      try {
+        await assert.rejects(() => verifyMigrationJournal(client), /AHEAD/);
+      } finally {
+        client.release();
+      }
+    } finally {
+      await restoreMigrationsSnapshot(snapshot);
+    }
+  });
+
+  await test('round 9, item 3: two migrations applied in swapped/reordered positions are caught, even though the SET of hashes is unchanged', async () => {
+    const snapshot = await migrationsSnapshot();
+    try {
+      assert.ok(snapshot.length >= 2, 'sanity: need at least two applied migrations to test reordering');
+      const [a, b] = snapshot; // the two lowest ids -- positions 0 and 1
+      // Swap their hash+created_at values (NOT their id/application-order
+      // slot) -- position 0 now holds what used to be at position 1, and
+      // vice versa. A naive "is this set of hashes present" check would
+      // never notice; the real, order-sensitive comparison must.
+      await pgPool.query('UPDATE drizzle.__drizzle_migrations SET hash = $2, created_at = $3 WHERE id = $1', [a.id, b.hash, b.created_at]);
+      await pgPool.query('UPDATE drizzle.__drizzle_migrations SET hash = $2, created_at = $3 WHERE id = $1', [b.id, a.hash, a.created_at]);
+      const client = await pgPool.connect();
+      try {
+        await assert.rejects(() => verifyMigrationJournal(client), /does not match this repo's journal entry/);
+      } finally {
+        client.release();
+      }
+    } finally {
+      await restoreMigrationsSnapshot(snapshot);
+    }
+  });
+
+  await test('round 9, item 3: restored to the exact original state, verifyMigrationJournal passes again', async () => {
+    const client = await pgPool.connect();
+    try {
+      const result = await verifyMigrationJournal(client);
+      assert.equal(result.appliedCount, result.expectedCount);
+    } finally {
       client.release();
     }
   });

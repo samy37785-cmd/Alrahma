@@ -88,6 +88,24 @@ jobs:
       - name: Install workspace dependencies
         run: pnpm install --frozen-lockfile
 
+      # PR #70 review round 9, item 6 -- root package.json now pins
+      # "packageManager": "pnpm@10.34.5" (matching this workflow's own
+      # explicit pnpm/action-setup version above, and Vercel's real
+      # toolchain). `--frozen-lockfile` above already IS the strongest
+      # possible live proof that pnpm-lock.yaml's committed overrides
+      # match pnpm-workspace.yaml under this exact pnpm version --
+      # frozen-lockfile mode refuses to run at all on any mismatch
+      # (ERR_PNPM_LOCKFILE_CONFIG_MISMATCH, the exact failure this
+      # engagement hit and root-caused this round). This step is
+      # belt-and-suspenders: an explicit, independent check that the
+      # lockfile file itself was not modified as a side effect (frozen
+      # mode should never touch it) and that the overrides section is
+      # still physically present in what got committed.
+      - name: Verify pnpm-lock.yaml is untouched by the frozen install and still carries the workspace overrides
+        run: |
+          git diff --exit-code -- pnpm-lock.yaml
+          grep -q '^overrides:' pnpm-lock.yaml
+
       # PR #70 review round 8, item 4 -- a real, confirmed bug: `backend/`
       # is its own npm-managed package (backend/package-lock.json), NOT a
       # member of pnpm-workspace.yaml's `packages:` list (only

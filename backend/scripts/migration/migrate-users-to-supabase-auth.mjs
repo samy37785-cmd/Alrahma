@@ -45,6 +45,7 @@ import { withImpersonatedAdmin, ensureMigrationSeedAdmin } from './lib/admin-rpc
 import { throwIfFaultStage } from './lib/fault-injection.mjs';
 import { findLedgerEntry, markPlanned, markCreated, markReconciled, markFailed, contentHashOf } from './lib/source-ledger.mjs';
 import { parseStrictCliArgs } from './lib/cli-args.mjs';
+import { verifyReadBack } from './lib/read-back-verify.mjs';
 
 // Review round 6, item 3: this script never went through migration_source_
 // ledger before this round (it predates that table, and auth.users/
@@ -144,15 +145,31 @@ async function openSourceLedger(pgClient, {
 // Fixed with a deterministic, admin-only correlation identity: a stable
 // hash of this exact source document's database + collection + document
 // ID + content hash, computed BEFORE createUser() is ever called and
-// written into GoTrue's own user_metadata at creation time. On any later
+// written into GoTrue's own app_metadata at creation time. On any later
 // resume where an account is found by email, that account is linked to
-// this migration ONLY if its OWN metadata carries the exact matching
+// this migration ONLY if its OWN app_metadata carries the exact matching
 // correlation ID -- proving GoTrue's own admin-only record, not just a
 // coincidental email string, ties it to this specific source document.
 // Any mismatch (including a totally absent migration_correlation_id, the
 // normal signature of an account this migration never created) fails
 // closed: the document is reported as blocked, nothing about the foreign
 // account is read, linked, or modified.
+//
+// Round 9, item 2: round 8's original implementation wrote this into
+// user_metadata (raw_user_meta_data), while claiming "admin-only" in this
+// very comment -- that claim was false. GoTrue's own documented
+// distinction is that user_metadata is writable by the account's own
+// owner at any time via a normal authenticated `supabase.auth.
+// updateUser({ data: {...} })` call; only app_metadata is restricted to
+// the service-role/admin API. A user_metadata-based check is therefore
+// forgeable by whoever controls the (possibly foreign/attacker) account
+// sharing this email -- they could simply set their own
+// migration_correlation_id to whatever value makes this check pass,
+// defeating the entire point of this mechanism. Moved to app_metadata
+// (raw_app_meta_data), which only this migration's own service-role
+// client can ever write -- proven directly by a live test that mutates
+// a foreign account's raw_user_meta_data to the expected value and
+// confirms it still fails closed.
 export function correlationIdFor({ sourceCollection, sourceDocumentId, sourceValue }) {
   const contentHash = contentHashOf(sourceValue);
   return crypto
@@ -265,7 +282,7 @@ export async function migrateOneUser(supabaseAdmin, pgClient, mongoUser, { execu
   const email = String(mongoUser.email).toLowerCase().trim();
   const correlationId = correlationIdFor({ sourceCollection: 'users', sourceDocumentId: mongoUser._id, sourceValue: mongoUser });
 
-  const existingRes = await pgClient.query(`SELECT id, raw_user_meta_data FROM auth.users WHERE email = $1`, [email]);
+  const existingRes = await pgClient.query(`SELECT id, raw_app_meta_data FROM auth.users WHERE email = $1`, [email]);
   const existingRow = existingRes.rows[0] ?? null;
   let profileId = existingRow?.id ?? null;
   let status = profileId ? 'already_exists' : 'would_create';
@@ -292,7 +309,7 @@ export async function migrateOneUser(supabaseAdmin, pgClient, mongoUser, { execu
   // document if its own GoTrue metadata carries the exact correlation ID
   // this run just computed. See correlationIdFor()'s own header comment.
   if (!ledger.target_id && profileId) {
-    const existingCorrelationId = existingRow?.raw_user_meta_data?.migration_correlation_id ?? null;
+    const existingCorrelationId = existingRow?.raw_app_meta_data?.migration_correlation_id ?? null;
     if (existingCorrelationId !== correlationId) {
       await markFailed(
         pgClient, ledgerId,
@@ -335,10 +352,20 @@ export async function migrateOneUser(supabaseAdmin, pgClient, mongoUser, { execu
         email,
         password: randomThrowawayPassword(),
         email_confirm: true,
-        // Round 8, item 2: migration_correlation_id is the ONLY thing a
-        // later resume trusts to prove an account-found-by-email is
-        // genuinely this migration's own -- see correlationIdFor().
-        user_metadata: { migrated_from: 'mongodb', migrated_at: new Date().toISOString(), migration_correlation_id: correlationId },
+        user_metadata: { migrated_from: 'mongodb', migrated_at: new Date().toISOString() },
+        // Round 8, item 2 / round 9, item 2: migration_correlation_id is
+        // the ONLY thing a later resume trusts to prove an
+        // account-found-by-email is genuinely this migration's own -- see
+        // correlationIdFor(). It MUST live in app_metadata, not
+        // user_metadata: user_metadata is writable by the account's own
+        // owner via a normal authenticated `supabase.auth.updateUser()`
+        // call (GoTrue's own documented distinction), so anything stored
+        // there is not actually admin-only and could be forged by
+        // whoever controls that account. app_metadata is writable only
+        // through the service-role/admin API this migration itself uses
+        // -- never by the account holder -- which is what makes it a
+        // genuine, unforgeable proof of GoTrue-side provenance.
+        app_metadata: { migration_correlation_id: correlationId },
       });
     } catch (thrown) {
       await markFailed(pgClient, ledgerId, `createUser() threw (ambiguous outcome, possible network timeout): ${thrown.message}`);
@@ -390,7 +417,7 @@ export async function migrateOneAdmin(supabaseAdmin, pgClient, mongoAdmin, { exe
   if (!mappedRole) return { status: 'error', message: `unmapped AdminUser role: ${mongoAdmin.role}` };
   const correlationId = correlationIdFor({ sourceCollection: 'adminusers', sourceDocumentId: mongoAdmin._id, sourceValue: mongoAdmin });
 
-  const existingRes = await pgClient.query(`SELECT id, raw_user_meta_data FROM auth.users WHERE email = $1`, [email]);
+  const existingRes = await pgClient.query(`SELECT id, raw_app_meta_data FROM auth.users WHERE email = $1`, [email]);
   const existingRow = existingRes.rows[0] ?? null;
   let userId = existingRow?.id ?? null;
 
@@ -413,7 +440,7 @@ export async function migrateOneAdmin(supabaseAdmin, pgClient, mongoAdmin, { exe
   // migrateOneUser() -- see that function's own comment and
   // correlationIdFor()'s header for the full rationale.
   if (!ledger.target_id && userId) {
-    const existingCorrelationId = existingRow?.raw_user_meta_data?.migration_correlation_id ?? null;
+    const existingCorrelationId = existingRow?.raw_app_meta_data?.migration_correlation_id ?? null;
     if (existingCorrelationId !== correlationId) {
       await markFailed(
         pgClient, ledgerId,
@@ -440,7 +467,10 @@ export async function migrateOneAdmin(supabaseAdmin, pgClient, mongoAdmin, { exe
         email,
         password: randomThrowawayPassword(),
         email_confirm: true,
-        user_metadata: { migrated_from: 'mongodb_adminuser', migrated_at: new Date().toISOString(), migration_correlation_id: correlationId },
+        user_metadata: { migrated_from: 'mongodb_adminuser', migrated_at: new Date().toISOString() },
+        // Round 9, item 2: see migrateOneUser()'s own comment -- app_metadata,
+        // never user_metadata, for the same admin-only-provenance reason.
+        app_metadata: { migration_correlation_id: correlationId },
       });
     } catch (thrown) {
       await markFailed(pgClient, ledgerId, `createUser() threw (ambiguous outcome, possible network timeout): ${thrown.message}`);
@@ -1225,10 +1255,32 @@ export async function migrateSubscription(pgClient, profileId, mongoUser, planSl
   // markReconciled" -- never assume the just-committed (or just-resumed)
   // row is exactly right; independently re-read it and confirm identity
   // before calling it done.
-  const verify = await pgClient.query('SELECT id FROM subscriptions WHERE id = $1 AND user_id = $2', [targetId, profileId]);
-  if (verify.rows.length === 0) {
-    await markFailed(pgClient, ledgerId, 'post-commit read-back verification failed -- subscription row not found after commit').catch(() => {});
-    return { status: 'FAIL', reason: 'post-commit read-back verification failed -- subscription row not found after commit' };
+  //
+  // Round 9, item 5: round 7's own read-back only ever checked bare
+  // EXISTENCE (`id = $1 AND user_id = $2`) -- never compared any of the
+  // actual subscription CONTENT (plan_id, provider, status, period
+  // dates, cancel_at_period_end, renewal_reminder_sent_for) against what
+  // this migration itself just wrote. A trigger (or anything else)
+  // silently rewriting one of those values under the same id/user_id
+  // passed completely unnoticed. Strengthened to compare every field
+  // this INSERT itself set, via the same shared comparator
+  // mongo-to-supabase.mjs's generic domain loop now uses.
+  const readBack = await verifyReadBack(pgClient, { table: 'subscriptions' }, targetId, {
+    id: targetId,
+    user_id: profileId,
+    plan_id: planId,
+    provider: sub.provider || 'manual',
+    provider_customer_id: sub.stripeCustomerId || null,
+    provider_subscription_id: sub.stripeSubscriptionId || null,
+    status: derived.status,
+    current_period_start: sub.activeSince || null,
+    current_period_end: sub.validUntil || null,
+    cancel_at_period_end: !!sub.cancelAtPeriodEnd,
+    renewal_reminder_sent_for: sub.renewalReminderSentFor || null,
+  });
+  if (!readBack.ok) {
+    await markFailed(pgClient, ledgerId, readBack.reason).catch(() => {});
+    return { status: 'FAIL', reason: readBack.reason };
   }
   await markReconciled(pgClient, ledgerId);
   return { status: 'migrated', resumed: !!resumeTargetId, planSlug: slug, derivedStatus: derived.status, reason: derived.reason };

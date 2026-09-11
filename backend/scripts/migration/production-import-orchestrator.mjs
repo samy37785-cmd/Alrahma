@@ -101,6 +101,7 @@ import pg from 'pg';
 import { MIGRATION_SEED_ADMIN_ID, MIGRATION_SEED_ADMIN_EMAIL } from './lib/admin-rpc.mjs';
 import { parseApprovedDispositions } from './migrate-users-to-supabase-auth.mjs';
 import { parseStrictCliArgs } from './lib/cli-args.mjs';
+import { encodeCompositeTargetId } from './lib/composite-target-id.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, '..', '..', '..');
@@ -181,19 +182,102 @@ const LEDGER_BACKED_TARGET_SPECS = {
   // verifyLedgerPointsToRealTargets() (Ledger -> Target) below, the same
   // generic mechanism every other domain table already uses. Written by
   // migrate-users-to-supabase-auth.mjs's applyParentChildLink().
-  parent_student_links: { composite: ['parent_id', 'student_id'] },
+  //
+  // PR #70 review round 9, item 1: unlike the 6 mongo-to-supabase.mjs
+  // composite domains above, parent_student_links keeps the legacy plain
+  // ":"-joined target_id (applyParentChildLink() was never touched this
+  // round -- see lib/composite-target-id.mjs's header comment: both
+  // components are always UUIDs, which never contain ":", so the
+  // collision this round fixes elsewhere cannot occur here). `legacyColonJoin`
+  // tells countUnrecordedComposite()/countGhostLedgerComposite() below to
+  // compare against that real format instead of the new JSON codec.
+  parent_student_links: { composite: ['parent_id', 'student_id'], legacyColonJoin: true },
 };
 
+/** Encodes one composite-key table's identity the same way its OWN
+ * real writer does -- the new JSON codec for the 6 domains round 9
+ * migrated, or the legacy plain ":"-join for parent_student_links (see
+ * that spec entry's own comment). */
+function encodeForSpec(spec, values) {
+  return spec.legacyColonJoin ? values.join(':') : encodeCompositeTargetId(values);
+}
+
 /**
- * Builds the exact SQL identity expression for one target row, matching
- * whatever mongo-to-supabase.mjs's own upsert() for that table stores as
- * migration_source_ledger.target_id: the default `id` column, an
- * explicit pkColumn (e.g. system_config.key), or a composite ":"-joined
- * pair in the SAME column order the real upsert() functions use.
+ * Builds the exact SQL identity expression for one NON-composite target
+ * row, matching whatever mongo-to-supabase.mjs's own upsert() for that
+ * table stores as migration_source_ledger.target_id: the default `id`
+ * column, or an explicit pkColumn (e.g. system_config.key).
+ *
+ * PR #70 review round 9, item 1: composite tables used to be handled
+ * here too, by generating a `t.a::text || ':' || t.b::text` SQL
+ * expression and comparing it directly against migration_source_ledger
+ * .target_id as plain text. That relied on Postgres's SQL-side ":"-join
+ * producing byte-identical output to whatever JS-side code built the
+ * SAME target_id when the row was created -- exactly the kind of
+ * implicit, unenforced format agreement across two different codebases
+ * that let quran_bookmarks.verse_key (real values like "2:255") corrupt
+ * the encoding in the first place (see lib/composite-target-id.mjs's own
+ * header comment for the full story). Composite tables are no longer
+ * compared in SQL at all: countUnrecordedComposite()/
+ * countGhostLedgerComposite() below fetch the real rows, encode their
+ * identity in JS using the exact same encodeCompositeTargetId() every
+ * other part of this migration tooling uses, and compare in JS -- one
+ * single source of truth for the encoding, not two independently
+ * maintained ones that have to agree by convention.
  */
 function targetIdentityExpr(spec) {
-  if (spec.composite) return spec.composite.map((c) => `t.${c}::text`).join(` || ':' || `);
   return `t.${spec.pkColumn ?? 'id'}::text`;
+}
+
+/** Target -> Ledger, for one composite-key table: how many real rows in
+ * `table` have no live, source-scoped ledger entry naming their exact
+ * (encoded) composite identity. */
+async function countUnrecordedComposite(pgClient, table, spec) {
+  const cols = spec.composite;
+  const { rows: targetRows } = await pgClient.query(
+    `select ${cols.map((c) => `${c}::text as ${c}`).join(', ')} from public.${table}`
+  );
+  if (targetRows.length === 0) return 0;
+  const targetIds = targetRows.map((r) => encodeForSpec(spec, cols.map((c) => r[c])));
+  const { rows: ledgerRows } = await pgClient.query(
+    `select target_id from public.migration_source_ledger
+      where target_table = $1
+        and source_system = 'mongodb'
+        and source_database = $2
+        and btrim(source_collection) <> ''
+        and btrim(source_document_id) <> ''
+        and source_content_hash ~ '^[0-9a-f]{64}$'
+        and status in ('created', 'reconciled', 'failed')
+        and target_id = any($3::text[])`,
+    [table, SOURCE_DATABASE, targetIds]
+  );
+  const ledgeredIds = new Set(ledgerRows.map((r) => r.target_id));
+  return targetIds.filter((id) => !ledgeredIds.has(id)).length;
+}
+
+/** Ledger -> Target, for one composite-key table: how many
+ * 'created'/'reconciled'/'failed' ledger rows (round 9, item 4: 'failed'
+ * is included too -- a 'failed' row's target_id is a real, provisional
+ * attribution, not a null claim, so a dangling one must be surfaced the
+ * same as any other status) claim a composite identity that no longer
+ * has a matching real row. */
+async function countGhostLedgerComposite(pgClient, table, spec) {
+  const { rows: ledgerRows } = await pgClient.query(
+    `select target_id from public.migration_source_ledger
+      where target_table = $1
+        and source_system = 'mongodb'
+        and source_database = $2
+        and target_id is not null
+        and status in ('created', 'reconciled', 'failed')`,
+    [table, SOURCE_DATABASE]
+  );
+  if (ledgerRows.length === 0) return 0;
+  const cols = spec.composite;
+  const { rows: targetRows } = await pgClient.query(
+    `select ${cols.map((c) => `${c}::text as ${c}`).join(', ')} from public.${table}`
+  );
+  const existingIds = new Set(targetRows.map((r) => encodeForSpec(spec, cols.map((c) => r[c]))));
+  return ledgerRows.filter((r) => !existingIds.has(r.target_id)).length;
 }
 
 // Review round 6, item 3: migrate-users-to-supabase-auth.mjs used to
@@ -417,27 +501,77 @@ export function verifyFreshBackup(backupManifestPath, { maxAgeHours = 24 } = {})
 
 /**
  * Confirms the target Postgres has EXACTLY the migrations this repo's
- * own journal expects applied — no fewer (an incomplete schema), no more
- * (an unexpected/ahead schema this code was never reviewed against).
- * Compares by tag, not just count, so a same-length-but-different-set
- * drift is still caught.
+ * own journal expects applied, IN THE EXACT SAME ORDER — not merely the
+ * same count.
+ *
+ * PR #70 review round 9, item 3: this function's own docstring used to
+ * claim "Compares by tag, not just count, so a same-length-but-
+ * different-set drift is still caught" -- that was false. The actual
+ * implementation only ever compared `count(*)` against
+ * `expectedTags.length`; `expectedTags` itself was computed and then
+ * never used for anything but its `.length`. A target with the exact
+ * same NUMBER of applied migrations but a different SET, a different
+ * ORDER, or migration files that were edited after being applied
+ * (changing their content without changing the journal) passed this
+ * check completely silently.
+ *
+ * Fixed to compare real identity, using exactly what drizzle-orm's own
+ * migrator (drizzle-orm/node-postgres/migrator -> readMigrationFiles())
+ * computes and writes: for each journal entry, `hash` is sha256 of the
+ * COMPLETE raw .sql file content (not just the tag/filename -- so an
+ * edited-after-applying file is caught even if its filename/tag never
+ * changed), and `created_at` is the journal's own `when` timestamp
+ * (not wall-clock apply time). drizzle.__drizzle_migrations is read
+ * `ORDER BY id ASC` -- id is a SERIAL PK assigned in the exact order
+ * migrate() inserted each row, i.e. real application order -- and
+ * compared position-by-position against the journal's own array order.
+ * A migration applied out of order, substituted, or edited-post-apply
+ * changes what shows up at that position and is caught as a hash and/or
+ * created_at mismatch at that exact index; a genuinely missing or extra
+ * migration is caught by the length check up front.
  */
 export async function verifyMigrationJournal(pgClient) {
   const journalPath = path.join(REPO_ROOT, 'lib', 'db', 'drizzle', 'meta', '_journal.json');
   const journal = JSON.parse(fs.readFileSync(journalPath, 'utf8'));
-  const expectedTags = journal.entries.map((e) => e.tag).sort();
+  const expected = journal.entries.map((entry) => {
+    const sqlPath = path.join(REPO_ROOT, 'lib', 'db', 'drizzle', `${entry.tag}.sql`);
+    if (!fs.existsSync(sqlPath)) fail(`journal references ${entry.tag}.sql, which does not exist on disk`);
+    const hash = crypto.createHash('sha256').update(fs.readFileSync(sqlPath)).digest('hex');
+    return { tag: entry.tag, hash, createdAt: entry.when };
+  });
 
-  const { rows } = await pgClient.query(`
+  const { rows: tableExists } = await pgClient.query(`
     select 1 from information_schema.tables where table_schema = 'drizzle' and table_name = '__drizzle_migrations';
   `);
-  if (rows.length === 0) fail('target Postgres has no drizzle.__drizzle_migrations table at all — migrations have never been run here');
+  if (tableExists.length === 0) fail('target Postgres has no drizzle.__drizzle_migrations table at all — migrations have never been run here');
 
-  const appliedRes = await pgClient.query(`select count(*)::int as n from drizzle.__drizzle_migrations;`);
-  const appliedCount = appliedRes.rows[0].n;
-  if (appliedCount !== expectedTags.length) {
-    fail(`target Postgres has ${appliedCount} applied migration(s), expected exactly ${expectedTags.length} (0000-${journal.entries[journal.entries.length - 1].tag.slice(0, 4)})`);
+  const { rows: applied } = await pgClient.query(`select hash, created_at from drizzle.__drizzle_migrations order by id asc;`);
+
+  if (applied.length !== expected.length) {
+    fail(
+      `target Postgres has ${applied.length} applied migration(s), expected exactly ${expected.length} ` +
+      `(0000-${journal.entries[journal.entries.length - 1].tag.slice(0, 4)}) — ` +
+      (applied.length < expected.length
+        ? 'schema is INCOMPLETE (missing migrations)'
+        : 'schema is AHEAD of what this code was reviewed against (unexpected/extra migrations)')
+    );
   }
-  return { expectedCount: expectedTags.length, appliedCount };
+
+  for (let i = 0; i < expected.length; i++) {
+    const exp = expected[i];
+    const got = applied[i];
+    if (String(got.created_at) !== String(exp.createdAt) || got.hash !== exp.hash) {
+      fail(
+        `target Postgres's applied migration at position ${i} does not match this repo's journal entry "${exp.tag}" — ` +
+        `expected hash=${exp.hash} created_at=${exp.createdAt}, got hash=${got.hash} created_at=${got.created_at}. ` +
+        `The target's migration history has diverged from this exact codebase (a different/substituted migration at this ` +
+        `position, a migration file edited after being applied, or migrations applied out of order) — refusing to proceed ` +
+        `against a schema this code was never reviewed against.`
+      );
+    }
+  }
+
+  return { expectedCount: expected.length, appliedCount: applied.length };
 }
 
 // ---------------------------------------------------------------------
@@ -563,38 +697,47 @@ export async function verifyNoUnrecordedData(pgClient) {
   }
 
   for (const [table, spec] of Object.entries(LEDGER_AND_PROVENANCE_SPECS)) {
-    const isSeedAdminExempt = table === 'profiles'
-      ? `and not (
-           t.id = $3
-           and t.role = 'admin'
-           and exists (select 1 from auth.users su where su.id = t.id and su.email = $4)
-           and exists (select 1 from admin_role_assignments sr where sr.user_id = t.id and sr.role = 'admin')
-         )`
-      : '';
-    const { rows } = await pgClient.query(`
-      select count(*)::int as n from public.${table} t
-      where not exists (
-        select 1 from public.migration_source_ledger l
-        where l.target_table = $1
-          and l.source_system = 'mongodb'
-          and l.source_database = $2
-          and btrim(l.source_collection) <> ''
-          and btrim(l.source_document_id) <> ''
-          and l.source_content_hash ~ '^[0-9a-f]{64}$'
-          and l.status in ('created', 'reconciled', 'failed')
-          and l.target_id is not null
-          and l.target_id = ${targetIdentityExpr(spec)}
-      )
-      ${isSeedAdminExempt};
-    `, table === 'profiles'
-      ? [table, SOURCE_DATABASE, MIGRATION_SEED_ADMIN_ID, MIGRATION_SEED_ADMIN_EMAIL]
-      : [table, SOURCE_DATABASE]);
-    if (rows[0].n > 0) {
+    let unrecordedCount;
+    if (spec.composite) {
+      // profiles/subscriptions are never composite, so the seed-admin
+      // exemption below never applies to a composite table -- no branch
+      // needed for it here.
+      unrecordedCount = await countUnrecordedComposite(pgClient, table, spec);
+    } else {
+      const isSeedAdminExempt = table === 'profiles'
+        ? `and not (
+             t.id = $3
+             and t.role = 'admin'
+             and exists (select 1 from auth.users su where su.id = t.id and su.email = $4)
+             and exists (select 1 from admin_role_assignments sr where sr.user_id = t.id and sr.role = 'admin')
+           )`
+        : '';
+      const { rows } = await pgClient.query(`
+        select count(*)::int as n from public.${table} t
+        where not exists (
+          select 1 from public.migration_source_ledger l
+          where l.target_table = $1
+            and l.source_system = 'mongodb'
+            and l.source_database = $2
+            and btrim(l.source_collection) <> ''
+            and btrim(l.source_document_id) <> ''
+            and l.source_content_hash ~ '^[0-9a-f]{64}$'
+            and l.status in ('created', 'reconciled', 'failed')
+            and l.target_id is not null
+            and l.target_id = ${targetIdentityExpr(spec)}
+        )
+        ${isSeedAdminExempt};
+      `, table === 'profiles'
+        ? [table, SOURCE_DATABASE, MIGRATION_SEED_ADMIN_ID, MIGRATION_SEED_ADMIN_EMAIL]
+        : [table, SOURCE_DATABASE]);
+      unrecordedCount = rows[0].n;
+    }
+    if (unrecordedCount > 0) {
       problems.push(
         table === 'profiles' || table === 'subscriptions'
-          ? `${table}: ${rows[0].n} row(s) not attributable to this migration (no matching migration_source_ledger entry` +
+          ? `${table}: ${unrecordedCount} row(s) not attributable to this migration (no matching migration_source_ledger entry` +
             (table === 'profiles' ? ', and not a fully-verified migration-seed admin identity)' : ')')
-          : `${table}: ${rows[0].n} row(s) with no matching migration_source_ledger entry`
+          : `${table}: ${unrecordedCount} row(s) with no matching migration_source_ledger entry`
       );
     }
   }
@@ -628,23 +771,39 @@ export async function verifyNoUnrecordedData(pgClient) {
 // resume logic already proves safe for a target that genuinely still
 // exists; a target that does NOT exist anymore is a real problem for a
 // human to look at, not something this tooling silently papers over).
+//
+// PR #70 review round 9, item 4: 'failed' rows are now included in this
+// check too (previously only 'created'/'reconciled'). A 'failed' row's
+// target_id, when set, is a real, provisional attribution (kill-window
+// 3: markFailed() never clears target_id) -- not a null claim -- so a
+// dangling one (pointing at a target that has since gone missing) is a
+// real integrity problem worth surfacing, not something that should stay
+// silently invisible forever just because the row's status happens to
+// be 'failed'. This is the Ledger -> Target half of unifying the
+// 'failed'-row policy; migration 0024 unifies the DB-uniqueness half.
 export async function verifyLedgerPointsToRealTargets(pgClient) {
   const problems = [];
   for (const [table, spec] of Object.entries(LEDGER_AND_PROVENANCE_SPECS)) {
-    const { rows } = await pgClient.query(`
-      select count(*)::int as n
-      from public.migration_source_ledger l
-      where l.target_table = $1
-        and l.source_system = 'mongodb'
-        and l.source_database = $2
-        and l.target_id is not null
-        and l.status in ('created', 'reconciled')
-        and not exists (
-          select 1 from public.${table} t where ${targetIdentityExpr(spec)} = l.target_id
-        );
-    `, [table, SOURCE_DATABASE]);
-    if (rows[0].n > 0) {
-      problems.push(`${table}: ${rows[0].n} migration_source_ledger row(s) claim a target that no longer exists`);
+    let ghostCount;
+    if (spec.composite) {
+      ghostCount = await countGhostLedgerComposite(pgClient, table, spec);
+    } else {
+      const { rows } = await pgClient.query(`
+        select count(*)::int as n
+        from public.migration_source_ledger l
+        where l.target_table = $1
+          and l.source_system = 'mongodb'
+          and l.source_database = $2
+          and l.target_id is not null
+          and l.status in ('created', 'reconciled', 'failed')
+          and not exists (
+            select 1 from public.${table} t where ${targetIdentityExpr(spec)} = l.target_id
+          );
+      `, [table, SOURCE_DATABASE]);
+      ghostCount = rows[0].n;
+    }
+    if (ghostCount > 0) {
+      problems.push(`${table}: ${ghostCount} migration_source_ledger row(s) claim a target that no longer exists`);
     }
   }
   if (problems.length > 0) {
@@ -682,6 +841,8 @@ export async function verifyTeacherLinkProvenance(pgClient) {
 
   // Ledger -> Target: every ledger row claiming a teacher_id link must
   // still find that EXACT pair on the referenced profiles row.
+  // Round 9, item 4: 'failed' included here too, for the same unified
+  // policy reason as verifyLedgerPointsToRealTargets() above.
   const { rows: ghosts } = await pgClient.query(`
     select count(*)::int as n
     from public.migration_source_ledger l
@@ -689,7 +850,7 @@ export async function verifyTeacherLinkProvenance(pgClient) {
       and l.source_system = 'mongodb'
       and l.source_database = $1
       and l.target_id is not null
-      and l.status in ('created', 'reconciled')
+      and l.status in ('created', 'reconciled', 'failed')
       and not exists (
         select 1 from public.profiles t where (t.id::text || ':' || t.teacher_id::text) = l.target_id
       );

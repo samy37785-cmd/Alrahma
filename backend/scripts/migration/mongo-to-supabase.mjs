@@ -141,6 +141,8 @@ import { resolvePlanSlug, seedCanonicalPlans } from './lib/plan-catalog.mjs';
 import { withImpersonatedAdmin, withImpersonatedAdminContext, ensureMigrationSeedAdmin } from './lib/admin-rpc.mjs';
 import { throwIfFaultStage } from './lib/fault-injection.mjs';
 import { parseStrictCliArgs } from './lib/cli-args.mjs';
+import { encodeCompositeTargetId, decodeCompositeTargetId } from './lib/composite-target-id.mjs';
+import { verifyReadBack } from './lib/read-back-verify.mjs';
 
 // Stage 2J-B, PR #70 review round 8, item 1 -- this script's own CLI was
 // still parsed by hand (a generic --key=value splitter, `v ?? true`) even
@@ -615,7 +617,7 @@ const DOMAINS = {
          ON CONFLICT (user_id, course_id) DO UPDATE SET added_at = EXCLUDED.added_at`,
         [row.user_id, row.course_id, row.added_at]
       );
-      return `${row.user_id}:${row.course_id}`;
+      return encodeCompositeTargetId([row.user_id, row.course_id]);
     },
     async countPg(client) {
       return Number((await client.query('SELECT count(*) FROM wishlists')).rows[0].count);
@@ -650,7 +652,7 @@ const DOMAINS = {
            memorized_verses = EXCLUDED.memorized_verses, last_revised = EXCLUDED.last_revised`,
         [row.user_id, row.chapter_id, row.chapter_name, row.total_verses, row.memorized_verses, row.last_revised]
       );
-      return `${row.user_id}:${row.chapter_id}`;
+      return encodeCompositeTargetId([row.user_id, row.chapter_id]);
     },
     async countPg(client) {
       return Number((await client.query('SELECT count(*) FROM hifz_progress')).rows[0].count);
@@ -804,7 +806,7 @@ const DOMAINS = {
          ON CONFLICT (user_id, course_id) DO UPDATE SET completed = EXCLUDED.completed, last_activity = EXCLUDED.last_activity`,
         [row.user_id, row.course_id, row.completed, row.last_activity]
       );
-      return `${row.user_id}:${row.course_id}`;
+      return encodeCompositeTargetId([row.user_id, row.course_id]);
     },
     async countPg(client) {
       return Number((await client.query('SELECT count(*) FROM course_progress')).rows[0].count);
@@ -1115,7 +1117,7 @@ const DOMAINS = {
          ON CONFLICT (user_id, verse_key) DO UPDATE SET note = EXCLUDED.note, color = EXCLUDED.color`,
         [row.user_id, row.verse_key, row.chapter_id, row.verse_num, row.note, row.color]
       );
-      return `${row.user_id}:${row.verse_key}`;
+      return encodeCompositeTargetId([row.user_id, row.verse_key]);
     },
     async countPg(client) {
       return Number((await client.query('SELECT count(*) FROM quran_bookmarks')).rows[0].count);
@@ -1291,7 +1293,7 @@ const DOMAINS = {
         `INSERT INTO coupon_redemptions (coupon_id, user_id, used_at) VALUES ($1,$2,$3) ON CONFLICT DO NOTHING`,
         [row.coupon_id, row.user_id, row.used_at]
       );
-      return `${row.coupon_id}:${row.user_id}`;
+      return encodeCompositeTargetId([row.coupon_id, row.user_id]);
     },
     async countPg(client) {
       return Number((await client.query('SELECT count(*) FROM coupon_redemptions')).rows[0].count);
@@ -1540,7 +1542,7 @@ const DOMAINS = {
          ON CONFLICT (scope, year) DO UPDATE SET seq = GREATEST(document_counters.seq, EXCLUDED.seq)`,
         [row.scope, row.year, row.seq]
       );
-      return `${row.scope}:${row.year}`;
+      return encodeCompositeTargetId([row.scope, row.year]);
     },
     async countPg(client) {
       return Number((await client.query('SELECT count(*) FROM document_counters')).rows[0].count);
@@ -1678,7 +1680,7 @@ async function rollbackDomain(domainName, { pgClient }) {
       await pgClient.query('BEGIN');
       let result;
       if (spec.composite) {
-        const [a, b] = String(pgId).split(':');
+        const [a, b] = decodeCompositeTargetId(pgId);
         result = await pgClient.query(`DELETE FROM ${spec.table} WHERE ${spec.composite[0]} = $1 AND ${spec.composite[1]} = $2`, [a, b]);
       } else {
         result = await pgClient.query(`DELETE FROM ${spec.table} WHERE ${spec.pkColumn ?? 'id'} = $1`, [pgId]);
@@ -1764,7 +1766,12 @@ async function rollbackDomain(domainName, { pgClient }) {
 async function verifyTargetRowExists(pgClient, spec, targetId) {
   if (!spec || !targetId) return false;
   if (spec.composite) {
-    const [a, b] = String(targetId).split(':');
+    let a, b;
+    try {
+      [a, b] = decodeCompositeTargetId(targetId);
+    } catch {
+      return false; // fails closed on a malformed/legacy composite target_id, same as before
+    }
     if (!a || !b) return false;
     const r = await pgClient.query(
       `SELECT 1 FROM ${spec.table} WHERE ${spec.composite[0]} = $1 AND ${spec.composite[1]} = $2 LIMIT 1`,
@@ -1830,6 +1837,7 @@ async function migrateDomain(domainName, { dryRun, resetCheckpoint, pgClient }) 
       // NO local checkpoint at all) and UPDATEs it in place instead of
       // creating a duplicate.
       let resumeTargetId = null;
+      let ledgerEntryExists = false;
       if (!dryRun) {
         const existing = await findLedgerEntry(pgClient, {
           sourceDatabase: SOURCE_DATABASE,
@@ -1837,6 +1845,7 @@ async function migrateDomain(domainName, { dryRun, resetCheckpoint, pgClient }) 
           sourceDocumentId: sourceId,
           targetTable: domain.targetTable,
         });
+        ledgerEntryExists = !!existing;
 
         if (existing && existing.target_id) {
           const stillThere = await verifyTargetRowExists(pgClient, spec, existing.target_id);
@@ -1863,6 +1872,24 @@ async function migrateDomain(domainName, { dryRun, resetCheckpoint, pgClient }) 
 
       if (resumeTargetId) {
         checkpoint[sourceId] = { ...(checkpoint[sourceId] ?? {}), pgId: resumeTargetId };
+      } else if (ledgerEntryExists) {
+        // PR #70 review round 9, item 5 follow-up: the ledger is the
+        // authoritative source of truth for resume (same principle this
+        // file's own rollback path already relies on) -- if a ledger row
+        // exists for this exact source document but its target_id did NOT
+        // verify as a real, still-existing row above (deleted out-of-band,
+        // or a prior run's read-back failure after a same-transaction
+        // self-delete -- see resume-rollback-integrity.test.mjs's item 5
+        // "trigger that deletes the row" test), any STALE pgId a prior
+        // run's LOCAL checkpoint file left behind for this sourceId must
+        // never be trusted either. Without this, a domain adapter whose
+        // upsert() consults `checkpoint[sourceId]?.pgId` directly (e.g.
+        // trial_requests') would blindly UPDATE a target_id that no
+        // longer exists -- affecting 0 rows, throwing nothing, and
+        // returning that same dead id as if it were a real resume. Read-
+        // back would then correctly re-fail with "no row found" forever,
+        // since nothing ever forced a fresh INSERT.
+        delete checkpoint[sourceId];
       }
 
       ledgerId = await markPlanned(pgClient, {
@@ -1943,6 +1970,21 @@ async function migrateDomain(domainName, { dryRun, resetCheckpoint, pgClient }) 
       // same committed row (no duplicate), and markReconciled() finally
       // runs.
       throwIfFaultStage('after_marked_created_before_reconciled');
+
+      // PR #70 review round 9, item 5: this comment used to describe an
+      // "INDEPENDENT re-verification" that did not actually exist --
+      // markReconciled() was called directly, with no read-back at all.
+      // Fixed: verifyReadBack() re-reads the real row by its real
+      // identity (spec, above) and compares every field `row` itself
+      // carries against what Postgres actually persisted -- not just
+      // that SOME row with this id exists, but that its important
+      // content genuinely matches what this migration wrote. A mismatch
+      // (a trigger silently rewriting a value, the row having vanished
+      // by the time this runs, anything) is treated exactly like any
+      // other real failure: markFailed(), never markReconciled(), and
+      // this document counts toward `failed` (a non-zero exit).
+      const readBack = await verifyReadBack(pgClient, spec, pgId, row);
+      if (!readBack.ok) throw new Error(readBack.reason);
 
       await markReconciled(pgClient, ledgerId);
       imported += 1;

@@ -55,10 +55,29 @@ jobs:
         with:
           fetch-depth: 0
 
+      # Round 8 follow-up -- a real, confirmed bug found via the ACTUAL
+      # Vercel deployment status on this PR (which failed on every round-8
+      # commit, silently, since Vercel isn't a required check): this repo's
+      # committed pnpm-lock.yaml has always been written by pnpm@10 (see
+      # ba1ed6a, "regenerate pnpm-lock.yaml with pnpm@10 to restore
+      # workspace overrides" -- Vercel's own build uses pnpm@10.x). This
+      # workflow pinned pnpm@9.15.9 instead (the only pnpm on PATH in the
+      # dev sandbox that wrote round 8's changes), which cannot read a
+      # pnpm@10-written lockfile's "overrides" section under
+      # --frozen-lockfile (ERR_PNPM_LOCKFILE_CONFIG_MISMATCH) -- verified
+      # directly against a clean checkout of the lockfile as committed
+      # before this fix. Round 8's own pnpm-lock.yaml "fix" for item 4
+      # regenerated the lockfile with pnpm@9.15.9 to make THIS workflow's
+      # frozen-lockfile check pass, which silently dropped the overrides
+      # block again and broke Vercel's real build in exactly the way
+      # ba1ed6a had already fixed once. Corrected by pinning pnpm@10 here
+      # (matching Vercel and the lockfile's actual origin) instead of
+      # further modifying the lockfile; pnpm-lock.yaml is restored to
+      # byte-identical to the last commit with a passing Vercel deploy.
       - name: Set up pnpm
         uses: pnpm/action-setup@a15d269cd4658e1107c09f1fabf4cbd7bd1f308a # v4.4.0
         with:
-          version: 9.15.9
+          version: 10.34.5
 
       - name: Set up Node.js
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0

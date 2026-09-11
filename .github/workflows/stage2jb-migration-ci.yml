@@ -97,9 +97,32 @@ jobs:
         run: |
           git fetch origin main --depth=1 || git fetch origin main
           git diff origin/main...HEAD > /tmp/pr.diff
+          # PR #70 review round 8, item 4 -- a real, currently-live bug
+          # found running this exact step for real (not by inspection):
+          # this branch's own test fixtures assign an obviously-fake
+          # placeholder string to SUPABASE_SERVICE_ROLE_KEY (e.g.
+          # 'fake-service-role-key-for-test', introduced back in round
+          # 4/5, well before this workflow existed) -- a real service
+          # role key is ALWAYS a JWT (caught unconditionally by the
+          # eyJhbGciOi... pattern in pass 1 below), so the separate
+          # SUPABASE_SERVICE_ROLE_KEY=<quoted string> heuristic only
+          # exists to catch a non-JWT-shaped placeholder that still LOOKS
+          # like a real credential -- it was never meant to flag a string
+          # that says "fake"/"test" right in its own value. Split into
+          # two passes so the unambiguous secret SHAPES (AWS keys, PEM
+          # headers, JWTs, sk- API keys, real Postgres/Supabase
+          # connection strings) remain an absolute hard fail with no
+          # exceptions, while the SUPABASE_SERVICE_ROLE_KEY heuristic
+          # specifically ignores lines that are self-evidently test
+          # placeholders.
           if grep -inE \
-            "AKIA[0-9A-Z]{16}|BEGIN (RSA|EC|OPENSSH|PGP) PRIVATE KEY|eyJhbGciOi[A-Za-z0-9_.-]{20,}|sk-[a-zA-Z0-9]{20,}|SUPABASE_SERVICE_ROLE_KEY[[:space:]]*[:=][[:space:]]*['\"][^'\"]|postgres(ql)?://[^ '\"]+:[^ '\"@]+@[^ '\"]*supabase" \
+            "AKIA[0-9A-Z]{16}|BEGIN (RSA|EC|OPENSSH|PGP) PRIVATE KEY|eyJhbGciOi[A-Za-z0-9_.-]{20,}|sk-[a-zA-Z0-9]{20,}|postgres(ql)?://[^ '\"]+:[^ '\"@]+@[^ '\"]*supabase" \
             /tmp/pr.diff; then
+            echo "::error::Potential secret detected in the diff -- failing the build."
+            exit 1
+          fi
+          if grep -inE "SUPABASE_SERVICE_ROLE_KEY[[:space:]]*[:=][[:space:]]*['\"][^'\"]" /tmp/pr.diff \
+            | grep -viE "fake|test|mock|dummy|placeholder|example|not-a-real"; then
             echo "::error::Potential secret detected in the diff -- failing the build."
             exit 1
           fi

@@ -30,9 +30,9 @@
 --      impossible to write in the first place, race conditions included.
 --
 -- A 'failed' row is deliberately EXCLUDED from both constraints, by
--- explicit, tested policy (migrate-users-to-supabase-auth.test.mjs,
--- "round 8, item 6: a failed row may legitimately keep a real target_id
--- pointing at a live row"): markFailed() never clears target_id -- a
+-- explicit, tested policy (unrecorded-data-preflight.test.mjs,
+-- "round 8, item 6: explicit, tested policy for 'failed' rows"):
+-- markFailed() never clears target_id -- a
 -- crash between the target write and reconciliation (kill-window 3,
 -- documented since review round 3) legitimately leaves a 'failed' row
 -- with a real, live target_id set, and that row is NOT considered to

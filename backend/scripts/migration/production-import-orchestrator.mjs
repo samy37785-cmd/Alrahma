@@ -760,7 +760,7 @@ const ALLOWED_SOURCE_COLLECTIONS = {
  * target attribution", which migration 0023's own DB-level CHECK
  * constraint and partial unique index make structurally impossible to
  * even INSERT -- proven directly by a live insert-rejection test in
- * migrate-users-to-supabase-auth.test.mjs, not re-duplicated here as an
+ * unrecorded-data-preflight.test.mjs, not re-duplicated here as an
  * app-level check that could never actually fire against a real
  * database with 0023 applied):
  *   1. source_content_hash must be a real, well-formed sha256 hex digest

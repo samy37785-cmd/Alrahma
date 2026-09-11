@@ -127,6 +127,40 @@ async function openSourceLedger(pgClient, {
   return { id, source_content_hash: contentHash, target_id: null, status: 'planned' };
 }
 
+// PR #70 review round 8, item 2 -- closes the ambiguous-GoTrue-recovery
+// gap round 7 left open. Round 7's fix only handled "createUser() threw"
+// and "crash between createUser() success and markCreated()"; it never
+// addressed what migrateOneUser()/migrateOneAdmin() actually DO with an
+// existing auth.users row found by email alone. Before this fix, ANY
+// pre-existing account with a matching email -- not just one this exact
+// migration run created -- was silently treated as "our pending create
+// finally landed", reused as-is, and had this Mongo document's persona
+// WRITTEN INTO IT. A real account that happened to share an email with a
+// Mongo user (a completely unrelated signup, or one that appeared any
+// time between an ambiguous createUser() timeout and a later resume) was
+// therefore at real risk of being silently claimed and overwritten by a
+// migration that has no actual relationship to it.
+//
+// Fixed with a deterministic, admin-only correlation identity: a stable
+// hash of this exact source document's database + collection + document
+// ID + content hash, computed BEFORE createUser() is ever called and
+// written into GoTrue's own user_metadata at creation time. On any later
+// resume where an account is found by email, that account is linked to
+// this migration ONLY if its OWN metadata carries the exact matching
+// correlation ID -- proving GoTrue's own admin-only record, not just a
+// coincidental email string, ties it to this specific source document.
+// Any mismatch (including a totally absent migration_correlation_id, the
+// normal signature of an account this migration never created) fails
+// closed: the document is reported as blocked, nothing about the foreign
+// account is read, linked, or modified.
+export function correlationIdFor({ sourceCollection, sourceDocumentId, sourceValue }) {
+  const contentHash = contentHashOf(sourceValue);
+  return crypto
+    .createHash('sha256')
+    .update(`${SOURCE_DATABASE}:${sourceCollection}:${String(sourceDocumentId)}:${contentHash}`)
+    .digest('hex');
+}
+
 function assertLocalHost(uri, label) {
   const host = new URL(uri).hostname;
   if (host !== 'localhost' && host !== '127.0.0.1') {
@@ -229,9 +263,11 @@ async function applyPersona(pgClient, profileId, mongoUser) {
 
 export async function migrateOneUser(supabaseAdmin, pgClient, mongoUser, { execute }) {
   const email = String(mongoUser.email).toLowerCase().trim();
+  const correlationId = correlationIdFor({ sourceCollection: 'users', sourceDocumentId: mongoUser._id, sourceValue: mongoUser });
 
-  const existingRes = await pgClient.query(`SELECT id FROM auth.users WHERE email = $1`, [email]);
-  let profileId = existingRes.rows[0]?.id ?? null;
+  const existingRes = await pgClient.query(`SELECT id, raw_user_meta_data FROM auth.users WHERE email = $1`, [email]);
+  const existingRow = existingRes.rows[0] ?? null;
+  let profileId = existingRow?.id ?? null;
   let status = profileId ? 'already_exists' : 'would_create';
 
   if (!execute) return { status, id: profileId };
@@ -249,6 +285,27 @@ export async function migrateOneUser(supabaseAdmin, pgClient, mongoUser, { execu
     return { status: 'error', message: error.message };
   }
   const ledgerId = ledger.id;
+
+  // Round 8, item 2: an account found by email that this migration never
+  // itself recorded (ledger.target_id still null -- e.g. an ambiguous
+  // createUser() timeout being resumed) is ONLY linked to this source
+  // document if its own GoTrue metadata carries the exact correlation ID
+  // this run just computed. See correlationIdFor()'s own header comment.
+  if (!ledger.target_id && profileId) {
+    const existingCorrelationId = existingRow?.raw_user_meta_data?.migration_correlation_id ?? null;
+    if (existingCorrelationId !== correlationId) {
+      await markFailed(
+        pgClient, ledgerId,
+        `an auth.users account with email ${email} already exists but its migration_correlation_id does not match ` +
+        `this source document's expected identity -- refusing to link, read, or modify a foreign/external account`
+      );
+      return {
+        status: 'blocked_foreign_account_same_email',
+        message: `auth.users account for ${email} exists but is not provably this migration's own account ` +
+          `(correlation ID mismatch or absent) -- refusing to attribute or overwrite it`,
+      };
+    }
+  }
 
   if (!profileId) {
     throwIfFaultStage('during_user_creation');
@@ -278,7 +335,10 @@ export async function migrateOneUser(supabaseAdmin, pgClient, mongoUser, { execu
         email,
         password: randomThrowawayPassword(),
         email_confirm: true,
-        user_metadata: { migrated_from: 'mongodb', migrated_at: new Date().toISOString() },
+        // Round 8, item 2: migration_correlation_id is the ONLY thing a
+        // later resume trusts to prove an account-found-by-email is
+        // genuinely this migration's own -- see correlationIdFor().
+        user_metadata: { migrated_from: 'mongodb', migrated_at: new Date().toISOString(), migration_correlation_id: correlationId },
       });
     } catch (thrown) {
       await markFailed(pgClient, ledgerId, `createUser() threw (ambiguous outcome, possible network timeout): ${thrown.message}`);
@@ -328,9 +388,11 @@ export async function migrateOneAdmin(supabaseAdmin, pgClient, mongoAdmin, { exe
   const email = String(mongoAdmin.email).toLowerCase().trim();
   const mappedRole = ADMIN_ROLE_MAP[mongoAdmin.role];
   if (!mappedRole) return { status: 'error', message: `unmapped AdminUser role: ${mongoAdmin.role}` };
+  const correlationId = correlationIdFor({ sourceCollection: 'adminusers', sourceDocumentId: mongoAdmin._id, sourceValue: mongoAdmin });
 
-  const existingRes = await pgClient.query(`SELECT id FROM auth.users WHERE email = $1`, [email]);
-  let userId = existingRes.rows[0]?.id ?? null;
+  const existingRes = await pgClient.query(`SELECT id, raw_user_meta_data FROM auth.users WHERE email = $1`, [email]);
+  const existingRow = existingRes.rows[0] ?? null;
+  let userId = existingRow?.id ?? null;
 
   if (!execute) {
     return userId ? { status: 'already_exists_would_assign_role', role: mappedRole } : { status: 'would_create', role: mappedRole };
@@ -347,6 +409,25 @@ export async function migrateOneAdmin(supabaseAdmin, pgClient, mongoAdmin, { exe
   }
   const ledgerId = ledger.id;
 
+  // Round 8, item 2: same foreign-account-same-email fail-closed check as
+  // migrateOneUser() -- see that function's own comment and
+  // correlationIdFor()'s header for the full rationale.
+  if (!ledger.target_id && userId) {
+    const existingCorrelationId = existingRow?.raw_user_meta_data?.migration_correlation_id ?? null;
+    if (existingCorrelationId !== correlationId) {
+      await markFailed(
+        pgClient, ledgerId,
+        `an auth.users account with email ${email} already exists but its migration_correlation_id does not match ` +
+        `this source document's expected identity -- refusing to link, read, or modify a foreign/external account`
+      );
+      return {
+        status: 'blocked_foreign_account_same_email',
+        message: `auth.users account for ${email} exists but is not provably this migration's own account ` +
+          `(correlation ID mismatch or absent) -- refusing to attribute or overwrite it`,
+      };
+    }
+  }
+
   if (!userId) {
     // PR #70 review round 7, item 2: same createUser() try/catch and
     // kill-window fault stage as migrateOneUser() -- see that function's
@@ -359,7 +440,7 @@ export async function migrateOneAdmin(supabaseAdmin, pgClient, mongoAdmin, { exe
         email,
         password: randomThrowawayPassword(),
         email_confirm: true,
-        user_metadata: { migrated_from: 'mongodb_adminuser', migrated_at: new Date().toISOString() },
+        user_metadata: { migrated_from: 'mongodb_adminuser', migrated_at: new Date().toISOString(), migration_correlation_id: correlationId },
       });
     } catch (thrown) {
       await markFailed(pgClient, ledgerId, `createUser() threw (ambiguous outcome, possible network timeout): ${thrown.message}`);
@@ -385,7 +466,7 @@ export async function migrateOneAdmin(supabaseAdmin, pgClient, mongoAdmin, { exe
   await markCreated(pgClient, ledgerId, userId);
   await markReconciled(pgClient, ledgerId);
 
-  return { status: existingRes.rows[0] ? 'role_assigned_existing_account' : 'created', id: userId, role: mappedRole };
+  return { status: existingRow ? 'role_assigned_existing_account' : 'created', id: userId, role: mappedRole };
 }
 
 // ---------------------------------------------------------------------
@@ -549,6 +630,10 @@ async function applyTeacherLink(pgClient, { studentMongoId, studentProfileId, te
     throw new Error('teacher_id link source content hash differs from its existing migration_source_ledger entry');
   }
   if (prior?.target_id === targetId && prior.status === 'reconciled') return; // already done -- resume-safe no-op
+  // A prior ledger row for THIS EXACT source document already recorded
+  // this exact target -- a legitimate resume (e.g. a crash after COMMIT
+  // but before markReconciled), never "external data that merely agrees".
+  const resumeTargetId = prior?.target_id === targetId ? targetId : null;
 
   // Never overwrite a relationship this migration does not already own.
   // profiles.teacher_id currently holding NULL, or exactly this
@@ -560,6 +645,26 @@ async function applyTeacherLink(pgClient, { studentMongoId, studentProfileId, te
     throw new Error(
       `profiles.teacher_id for ${studentProfileId} is already set to ${currentTeacherId}, which this migration has ` +
       `no matching migration_source_ledger entry for -- refusing to overwrite a relationship it does not own`
+    );
+  }
+  // PR #70 review round 8, item 7: an EXACT VALUE MATCH is not proof of
+  // ownership either. Round 7 only rejected a MISMATCHED pre-existing
+  // teacher_id; a pre-existing value that happens to already equal
+  // teacherProfileId (set by something entirely outside this migration,
+  // with no ledger row for this exact source document) fell straight
+  // through to a harmless-looking no-op UPDATE, then got marked
+  // 'reconciled' -- silently attributing a relationship this migration
+  // never actually wrote to itself, the exact same "attribute external
+  // data to the migration" failure mode item 7 closes for
+  // parent_student_links' ON CONFLICT DO NOTHING below, just reached via
+  // a value-equality coincidence here instead. Only a genuine resume
+  // (this exact source document's OWN prior ledger row already recorded
+  // this target) is exempt.
+  if (currentTeacherId && String(currentTeacherId) === String(teacherProfileId) && !resumeTargetId) {
+    throw new Error(
+      `profiles.teacher_id for ${studentProfileId} already equals ${teacherProfileId}, but this migration has no ` +
+      `matching migration_source_ledger entry for this exact source document -- refusing to silently claim a ` +
+      `relationship it did not itself create`
     );
   }
 
@@ -607,22 +712,46 @@ async function applyParentChildLink(pgClient, { parentMongoId, childMongoId, par
     throw new Error('parent_student_links source content hash differs from its existing migration_source_ledger entry');
   }
   if (prior?.target_id === targetId && prior.status === 'reconciled') return; // already done -- resume-safe no-op
+  // A prior ledger row for THIS EXACT source document already recorded
+  // this exact target -- a legitimate resume, not "external data".
+  const resumeTargetId = prior?.target_id === targetId ? targetId : null;
 
   // parent_student_links has no single-owner column to overwrite (a
   // student can already be linked to a DIFFERENT parent by a completely
-  // unrelated, legitimate row) -- ON CONFLICT DO NOTHING on the real
-  // (parent_id, student_id) primary key is what already makes this
-  // idempotent AND non-destructive: it can only ever no-op against this
-  // EXACT pair, never against someone else's link, and it never DELETEs
-  // anything, so an external link is structurally impossible to duplicate
-  // or remove from here.
+  // unrelated, legitimate row), so ON CONFLICT DO NOTHING on the real
+  // (parent_id, student_id) primary key is genuinely the right idempotent
+  // write -- it can only ever collide with this EXACT pair, and it never
+  // DELETEs anything.
+  //
+  // PR #70 review round 8, item 7: what round 7 got WRONG was trusting
+  // that no-op as PROOF this migration's own write succeeded. ON
+  // CONFLICT DO NOTHING no-ops identically whether (a) THIS run's own
+  // prior attempt already inserted the row (a legitimate resume) or (b)
+  // the exact same pair was already linked by something ELSE entirely --
+  // an admin action, a different tool, anything with zero relationship
+  // to this Mongo document. Round 7 could not tell the two apart: either
+  // way it proceeded straight to markCreated()/markReconciled(),
+  // silently attributing an external row to this migration the moment
+  // case (b) occurred. Fixed with RETURNING id: a real, non-empty result
+  // means THIS statement actually inserted the row (case (a), or a
+  // genuine first write); an empty result together with no resume-
+  // justifying prior ledger entry is case (b) -- unattributable external
+  // data -- and is now rejected exactly like applyTeacherLink()'s own
+  // value-equality guard above, never silently claimed as reconciled.
   const ledgerId = prior?.id ?? await markPlanned(pgClient, { ...ledgerKey, contentHash });
   try {
     await pgClient.query('BEGIN');
-    await pgClient.query(
-      `INSERT INTO parent_student_links (parent_id, student_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+    const insertResult = await pgClient.query(
+      `INSERT INTO parent_student_links (parent_id, student_id) VALUES ($1, $2) ON CONFLICT DO NOTHING RETURNING parent_id`,
       [parentProfileId, childProfileId]
     );
+    if (insertResult.rows.length === 0 && !resumeTargetId) {
+      throw new Error(
+        `a parent_student_links row for (parent=${parentProfileId}, student=${childProfileId}) already exists and this ` +
+        `migration has no matching migration_source_ledger entry for this exact source document -- refusing to ` +
+        `silently claim a relationship it did not itself create`
+      );
+    }
     throwIfFaultStage('after_relationship_write_before_marked_created');
     await markCreated(pgClient, ledgerId, targetId);
     await pgClient.query('COMMIT');
@@ -884,6 +1013,44 @@ export function loadApprovedDispositions(filePath) {
   return parseApprovedDispositions(fs.readFileSync(filePath, 'utf8')).signatures;
 }
 
+// PR #70 review round 8, item 3 -- closes the approved-dispositions TOCTOU
+// round 7's snapshot mechanism narrowed but did not actually eliminate.
+// Round 7 had the orchestrator write a private, orchestrator-owned
+// snapshot file and re-verify its hash immediately before spawning this
+// script with `--approved-dispositions=<snapshotPath>` -- but the
+// snapshot was still a real path on disk, and this script's own
+// `loadApprovedDispositions()` still opened and read THAT PATH itself, a
+// separate operation happening some (however small) amount of time after
+// the orchestrator's own last check. Structurally, any path-based handoff
+// between two separate processes has this shape: check, then later,
+// separately, read -- exactly the definition of a TOCTOU window.
+//
+// This closes it for real: the orchestrator no longer hands this script a
+// path to open at all for the stdin mode. It reads the operator's
+// approved-dispositions file into memory exactly once, computes its own
+// sha256 of those bytes, and pipes the SAME bytes directly into this
+// process's stdin while passing only the hash (never a path) via
+// `--approved-dispositions-hash`. This function reads stdin fully into
+// memory exactly once, hashes what it actually received, and REFUSES to
+// even parse the content unless that hash matches what the caller
+// committed to on the command line -- the verification and the content
+// consumed are now provably the same bytes, because there is no
+// intermediate path for anything to race against between them.
+export async function loadApprovedDispositionsFromStdin(expectedHash) {
+  const chunks = [];
+  for await (const chunk of process.stdin) chunks.push(chunk);
+  const buf = Buffer.concat(chunks);
+  const actualHash = crypto.createHash('sha256').update(buf).digest('hex');
+  if (actualHash !== expectedHash) {
+    throw new Error(
+      `--approved-dispositions-hash mismatch: caller committed to ${expectedHash} but stdin actually contained content ` +
+      `hashing to ${actualHash} -- refusing to trust dispositions content that does not match the hash committed to ` +
+      'before this process started'
+    );
+  }
+  return parseApprovedDispositions(buf.toString('utf8')).signatures;
+}
+
 export async function migrateSubscription(pgClient, profileId, mongoUser, planSlugToId) {
   const sub = mongoUser.subscription;
   if (!sub || !sub.plan) return { status: 'skipped_no_subscription' };
@@ -949,12 +1116,33 @@ export async function migrateSubscription(pgClient, profileId, mongoUser, planSl
     // A target row with no exact source-document ledger entry is unrelated
     // data, even when its owning profile is itself attributable. Detect it
     // before writing a planned ledger row and before INSERT/ON CONFLICT.
+    //
+    // Round 8, item 5: this is EXACTLY the "planned/null-target ledger
+    // (or no ledger at all) with a target already present" case -- e.g. a
+    // ledger row still 'planned' (a prior run got this far but never
+    // wrote the target, or the target was created by something outside
+    // this migration's own INSERT). Round 7 failed this closed as a
+    // generic 'FAIL', which is correct in spirit but indistinguishable in
+    // the report from an ordinary validation error a re-run might fix on
+    // its own. This is NOT that: no amount of retrying this script will
+    // ever resolve it, because the ambiguity is real and can only be
+    // resolved by a human who can look at BOTH rows and decide whether
+    // they are the same subscription. Rather than attempt an automatic
+    // field-by-field "recovery" (comparing plan/status/dates and hoping
+    // agreement implies identity -- exactly the kind of assumption item 2
+    // rejected for accounts sharing an email), this fails closed with an
+    // explicit, distinct classification a caller/operator can filter and
+    // alert on separately from a transient/fixable FAIL, and never claims
+    // an automatic recovery it did not actually perform.
     const unknownExisting = await pgClient.query(`SELECT id FROM subscriptions WHERE user_id = $1 LIMIT 1`, [profileId]);
     if (unknownExisting.rows.length > 0) {
-      return {
-        status: 'FAIL',
-        reason: 'an existing subscription for this profile has no matching source-scoped migration_source_ledger entry',
-      };
+      const reason =
+        'an existing subscription row exists for this profile with no matching source-scoped migration_source_ledger ' +
+        'entry -- refusing to silently claim, overwrite, or ignore it; requires a human to manually verify whether this ' +
+        "IS this source document's subscription (then attribute it via the ledger) or resolve the conflict, before this " +
+        'document can proceed';
+      if (priorLedger) await markFailed(pgClient, priorLedger.id, reason).catch(() => {});
+      return { status: 'BLOCKED_MANUAL_RECONCILIATION', reason };
     }
   }
 
@@ -1070,6 +1258,12 @@ const CLI_SPEC = {
     execute: { type: 'boolean' },
     'with-invite-plan': { type: 'boolean' },
     'approved-dispositions': { type: 'string' },
+    // Round 8, item 3: the TOCTOU-closing alternative input mode -- see
+    // loadApprovedDispositionsFromStdin()'s own header. Orchestrator-only;
+    // a human operator running this script directly still uses the plain
+    // path-based --approved-dispositions above.
+    'approved-dispositions-stdin': { type: 'boolean' },
+    'approved-dispositions-hash': { type: 'string' },
   },
 };
 
@@ -1078,10 +1272,30 @@ async function main() {
   const execute = !!args.execute;
   const withInvitePlan = !!args['with-invite-plan'];
   const approvedDispositionsPath = typeof args['approved-dispositions'] === 'string' ? args['approved-dispositions'] : null;
-  // Fail fast on a malformed dispositions file before touching Mongo/PG at
-  // all -- this file is trusted operator input, same fail-closed posture
-  // as loadApprovedDispositions() itself.
-  const approvedSignatures = loadApprovedDispositions(approvedDispositionsPath);
+  const approvedDispositionsViaStdin = !!args['approved-dispositions-stdin'];
+  const approvedDispositionsHash = typeof args['approved-dispositions-hash'] === 'string' ? args['approved-dispositions-hash'] : null;
+
+  // Cross-flag validation (round 8, item 8): the two input modes are
+  // mutually exclusive, and the stdin mode's two flags must always be
+  // given together -- a hash with no stdin flag, or a stdin flag with no
+  // hash to verify against, are both meaningless and are rejected rather
+  // than silently defaulting to "no dispositions approved".
+  if (approvedDispositionsViaStdin && !approvedDispositionsHash) {
+    throw new Error('--approved-dispositions-stdin requires --approved-dispositions-hash=<sha256> to verify the content against');
+  }
+  if (approvedDispositionsHash && !approvedDispositionsViaStdin) {
+    throw new Error('--approved-dispositions-hash requires --approved-dispositions-stdin -- it has nothing to verify without it');
+  }
+  if (approvedDispositionsPath && (approvedDispositionsViaStdin || approvedDispositionsHash)) {
+    throw new Error('--approved-dispositions cannot be combined with --approved-dispositions-stdin/--approved-dispositions-hash -- pick exactly one input mode');
+  }
+
+  // Fail fast on a malformed dispositions file/stream before touching
+  // Mongo/PG at all -- this content is trusted operator input either way,
+  // same fail-closed posture as loadApprovedDispositions() itself.
+  const approvedSignatures = approvedDispositionsViaStdin
+    ? await loadApprovedDispositionsFromStdin(approvedDispositionsHash)
+    : loadApprovedDispositions(approvedDispositionsPath);
 
   const mongoUri = process.env.MIGRATION_MONGO_URI;
   const pgUri = process.env.MIGRATION_DB_URL;
@@ -1253,7 +1467,14 @@ async function main() {
           if (!profileId) continue;
           const result = await migrateSubscription(pgClient, profileId, u, planSlugToId);
           if (result.status === 'migrated') report.subscriptions.migrated++;
-          else if (result.status === 'FAIL') report.subscriptions.failed.push({ email: u.email, reason: result.reason });
+          else if (result.status === 'FAIL' || result.status === 'BLOCKED_MANUAL_RECONCILIATION') {
+            // Round 8, item 5: BLOCKED_MANUAL_RECONCILIATION is reported
+            // through the SAME failed[] array (so computeExitFailure()
+            // fails the run with zero new wiring), tagged with its own
+            // `status` so a human/CI can immediately tell "needs a manual
+            // decision" apart from an ordinary, possibly-transient FAIL.
+            report.subscriptions.failed.push({ email: u.email, reason: result.reason, status: result.status });
+          }
           else report.subscriptions.skipped++;
         }
       }

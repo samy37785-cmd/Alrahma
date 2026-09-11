@@ -140,6 +140,52 @@ import { findLedgerEntry, markPlanned, markCreated, markReconciled, markFailed, 
 import { resolvePlanSlug, seedCanonicalPlans } from './lib/plan-catalog.mjs';
 import { withImpersonatedAdmin, withImpersonatedAdminContext, ensureMigrationSeedAdmin } from './lib/admin-rpc.mjs';
 import { throwIfFaultStage } from './lib/fault-injection.mjs';
+import { parseStrictCliArgs } from './lib/cli-args.mjs';
+
+// Stage 2J-B, PR #70 review round 8, item 1 -- this script's own CLI was
+// still parsed by hand (a generic --key=value splitter, `v ?? true`) even
+// after round 7 moved BOTH other entrypoints to the shared strict parser.
+// The exact same truthy-string class of bug applied here too:
+// `--rollback=false`/`--reset-checkpoint=false` parsed to the STRING
+// "false", coerced truthy by `!!`, silently enabling the flag; an unknown
+// or misspelled flag (e.g. --domian) was simply ignored rather than
+// rejected. Fixed by adopting the same allowlisted, boolean-flags-bare-
+// only parser used by the other two entrypoints -- see lib/cli-args.mjs's
+// own header for the full rationale.
+export const CLI_SPEC = {
+  flags: {
+    domain: { type: 'string' },
+    'exclude-domain': { type: 'string' },
+    'dry-run': { type: 'boolean' },
+    'reset-checkpoint': { type: 'boolean' },
+    rollback: { type: 'boolean' },
+  },
+};
+
+// Cross-flag validation the shared parser deliberately does not attempt
+// (it only knows about individual flags, not their relationships to each
+// other) -- runs immediately after parseStrictCliArgs, still before any
+// env var read or DB/network connection. rollbackDomain() never reads
+// dryRun or resetCheckpoint at all (see its own definition): passing
+// either alongside --rollback was previously silently ignored, which is
+// exactly the kind of "operator believed X, tool silently did Y" footgun
+// this round exists to close -- `--rollback --dry-run` looked like a safe
+// preview but actually performed real deletes.
+export function validateCliArgs(args) {
+  if (args.rollback && args['dry-run']) {
+    throw new Error(
+      '--rollback and --dry-run cannot be combined -- rollback always performs real deletes ' +
+      '(there is no dry-run preview mode for it); pass one or the other.'
+    );
+  }
+  if (args.rollback && args['reset-checkpoint']) {
+    throw new Error(
+      '--rollback and --reset-checkpoint cannot be combined -- rollback already clears this ' +
+      "domain's checkpoint entries for every row it verifies deleted as part of its own " +
+      'contract; --reset-checkpoint has no meaning during a rollback run.'
+    );
+  }
+}
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const CHECKPOINT_DIR = path.join(__dirname, '.checkpoints');
@@ -1931,12 +1977,8 @@ async function migrateDomain(domainName, { dryRun, resetCheckpoint, pgClient }) 
 }
 
 async function main() {
-  const args = Object.fromEntries(
-    process.argv.slice(2).map((a) => {
-      const [k, v] = a.replace(/^--/, '').split('=');
-      return [k, v ?? true];
-    })
-  );
+  const args = parseStrictCliArgs(process.argv.slice(2), CLI_SPEC);
+  validateCliArgs(args);
 
   const mongoUri = process.env.MIGRATION_MONGO_URI;
   const pgUri = process.env.MIGRATION_DB_URL;
@@ -2025,7 +2067,23 @@ async function main() {
   }
 }
 
-main().catch((err) => {
-  console.error('[migrate] FATAL:', err.message);
-  process.exitCode = 1;
-});
+// PR #70 review round 8, item 1 -- discovered while adding CLI_SPEC/
+// validateCliArgs() live tests: this file had no entrypoint guard at all
+// (unlike migrate-users-to-supabase-auth.mjs and production-import-
+// orchestrator.mjs, both already guarded for exactly this reason), so a
+// plain `import { CLI_SPEC } from './mongo-to-supabase.mjs'` unconditionally
+// ran the REAL main() as a side effect of import -- in an environment
+// where MIGRATION_MONGO_URI/MIGRATION_DB_URL happened to be set, merely
+// importing this module for testing would have opened a real Mongo/
+// Postgres connection. Fixed the same way as the other two entrypoints:
+// main() only runs when this file is executed directly (process.argv[1]
+// is this file's own path), never as a side effect of import. Every
+// live/integration test still drives this script via child-process CLI
+// invocation, which is unaffected (process.argv[1] equals this file's own
+// path in that case, same as before).
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  main().catch((err) => {
+    console.error('[migrate] FATAL:', err.message);
+    process.exitCode = 1;
+  });
+}

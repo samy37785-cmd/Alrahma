@@ -22,6 +22,8 @@ import {
   runImport,
   compensate,
   parseCliArgs,
+  loadApprovedDispositionsPayload,
+  verifyDispositionsPayloadUnchanged,
 } from './production-import-orchestrator.mjs';
 
 const results = [];
@@ -193,8 +195,8 @@ async function main() {
 
   function makeRecordingWorker(responses) {
     const calls = [];
-    const fn = (scriptPath, args) => {
-      calls.push({ args: [...args] });
+    const fn = (scriptPath, args, env, stdinInput) => {
+      calls.push({ args: [...args], stdinInput });
       const r = responses[calls.length - 1] ?? { code: 0 };
       return { code: r.code, stdout: r.stdout ?? '', stderr: r.stderr ?? '' };
     };
@@ -316,96 +318,113 @@ async function main() {
     return filePath;
   }
 
-  await test('approved dispositions: plan/execute receive the SAME private snapshot path (never the operator\'s own path), and the snapshot is cleaned up afterward', async () => {
-    // PR #70 review round 7, item 5: the operator's own path is read ONCE
-    // and copied into a private, orchestrator-owned snapshot -- every
-    // child invocation is forwarded the SNAPSHOT path, never the original.
+  await test('approved dispositions: plan/execute receive the SAME hash + stdin bytes (never a re-openable path)', async () => {
+    // PR #70 review round 8, item 3: round 7's private-snapshot-file
+    // mechanism narrowed the TOCTOU window but did not close it -- the
+    // snapshot was still a real path the child independently re-opened.
+    // Now no path is ever forwarded for the disposition content at all:
+    // only a hash on the command line, with the exact bytes piped via
+    // stdin -- see loadApprovedDispositionsPayload()'s own comment.
     const dispositionPath = writeDispositions();
+    const originalContents = fs.readFileSync(dispositionPath);
     const originalHash = sha256Of(dispositionPath);
     const runWorkerFn = makeRecordingWorker([{ code: 0 }, { code: 0 }, { code: 0 }, { code: 0 }]);
     const result = await runImport({ pgClient: null, execute: true, runWorkerFn, approvedDispositionsPath: dispositionPath });
 
-    assert.equal(runWorkerFn.calls[0].args.length, 1);
-    const forwardedArg = runWorkerFn.calls[0].args[0];
-    assert.match(forwardedArg, /^--approved-dispositions=/);
-    const snapshotPath = forwardedArg.slice('--approved-dispositions='.length);
-    assert.notEqual(snapshotPath, dispositionPath, 'the child must never be given the operator\'s own mutable path');
-    assert.match(path.basename(snapshotPath), /^approved-dispositions-snapshot-/);
-    assert.deepEqual(runWorkerFn.calls[2].args, ['--execute', `--approved-dispositions=${snapshotPath}`], 'plan and execute must receive the exact SAME snapshot path');
+    assert.deepEqual(runWorkerFn.calls[0].args, ['--approved-dispositions-stdin', `--approved-dispositions-hash=${originalHash}`]);
+    assert.ok(!runWorkerFn.calls[0].args.some((a) => a.startsWith('--approved-dispositions=')), 'never a plain path-based --approved-dispositions flag');
+    assert.ok(runWorkerFn.calls[0].stdinInput.equals(originalContents), 'the child must receive the exact same bytes via stdin');
+    assert.deepEqual(
+      runWorkerFn.calls[2].args,
+      ['--execute', '--approved-dispositions-stdin', `--approved-dispositions-hash=${originalHash}`],
+      'plan and execute must receive the exact SAME hash'
+    );
+    assert.ok(runWorkerFn.calls[2].stdinInput.equals(originalContents), 'plan and execute must receive the exact SAME stdin bytes');
 
     const saga = JSON.parse(fs.readFileSync(result.saga, 'utf8'));
     const binding = saga.steps.find((s) => s.step === 'approved_dispositions' && s.status === 'bound');
-    assert.equal(binding.hash, originalHash, 'the snapshot must be a byte-faithful copy of the operator\'s original file');
+    assert.equal(binding.hash, originalHash);
     assert.equal(binding.path, dispositionPath, 'the saga still records the ORIGINAL path for audit purposes');
-    assert.equal(binding.snapshotPath, snapshotPath);
+    assert.equal(binding.snapshotPath, undefined, 'there is no snapshot path anymore -- nothing was ever written to disk for this');
     assert.equal(binding.approvedBy, 'round-6-reviewer');
     assert.equal(binding.approvedAt, '2026-09-10T00:00:00.000Z');
-
-    assert.equal(fs.existsSync(snapshotPath), false, 'the private snapshot must be deleted (and verified gone) once the run finishes');
-    assert.equal(fs.existsSync(dispositionPath), true, 'the operator\'s own original file is never touched or deleted');
   });
 
-  await test('approved dispositions: mutating the OPERATOR\'S ORIGINAL file after the snapshot was taken has no effect -- the run only ever reads the snapshot', async () => {
-    // This is the direct proof of what item 5 actually closes: before
-    // round 7, re-hashing the SAME operator path twice (once at bind time,
-    // once right before execute) still left a live TOCTOU window against
-    // whatever the child process itself read a moment later. Now the
-    // child never reads the operator's path at all -- mutating it after
-    // snapshot creation is provably inert.
+  await test('approved dispositions: mutating the OPERATOR\'S ORIGINAL file after it was loaded into memory has no effect on the run', async () => {
+    // The operator's file is read exactly once, at the very start of
+    // runImport(), into an in-process Buffer -- mutating the file on disk
+    // afterward can never affect what was already captured in memory.
     const dispositionPath = writeDispositions();
     const runWorkerFn = makeRecordingWorker([{ code: 0 }, { code: 0 }, { code: 0 }, { code: 0 }]);
     const base = runWorkerFn.bind(null);
     let calls = 0;
     const mutatingWorker = (...args) => {
       calls += 1;
-      if (calls === 1) fs.appendFileSync(dispositionPath, ' '); // mutate the ORIGINAL right after the snapshot was taken from it
+      if (calls === 1) fs.appendFileSync(dispositionPath, ' '); // mutate the ORIGINAL after it was already read into memory
       return base(...args);
     };
     mutatingWorker.calls = runWorkerFn.calls;
     const result = await runImport({ pgClient: null, execute: true, runWorkerFn: mutatingWorker, approvedDispositionsPath: dispositionPath });
-    assert.equal(result.ok, true, 'mutating the operator\'s own original file after the snapshot was taken must never fail the run');
+    assert.equal(result.ok, true, 'mutating the operator\'s own original file after it was loaded into memory must never fail the run');
     assert.equal(runWorkerFn.calls.length, 4);
   });
 
-  await test('approved dispositions: mutating the PRIVATE SNAPSHOT itself between the preflight and execute passes is rejected before either execute worker runs', async () => {
+  await test('round 8, item 3: verifyDispositionsPayloadUnchanged fails closed if the in-memory payload is corrupted between load and use', () => {
+    // Direct unit proof of the exact mechanism runImportBody()/compensate()
+    // call before EVERY child invocation. There is no longer any reachable
+    // EXTERNAL path to mutate between the orchestrator's load and a
+    // child's use (that is the entire point of removing the snapshot
+    // file) -- this proves the check itself still fails closed if the
+    // in-memory bytes are ever found not to match their recorded hash,
+    // exactly the "mutation after the last check, before use" property
+    // this item requires, applied at the boundary that actually still
+    // exists (this process's own memory) rather than a boundary (a
+    // reopenable file) that the fix itself eliminated.
     const dispositionPath = writeDispositions();
-    const runWorkerFn = makeRecordingWorker([{ code: 0 }, { code: 0 }]);
-    const base = runWorkerFn.bind(null);
-    let snapshotPath = null;
-    let calls = 0;
-    const mutatingWorker = (scriptPath, args) => {
-      calls += 1;
-      const dispositionArg = args.find((a) => a.startsWith('--approved-dispositions='));
-      if (dispositionArg) snapshotPath = dispositionArg.slice('--approved-dispositions='.length);
-      if (calls === 2 && snapshotPath) fs.appendFileSync(snapshotPath, ' ');
-      return base(scriptPath, args);
-    };
-    mutatingWorker.calls = runWorkerFn.calls;
-    const result = await runImport({ pgClient: null, execute: true, runWorkerFn: mutatingWorker, approvedDispositionsPath: dispositionPath });
-    assert.equal(result.ok, false);
-    assert.equal(result.failedAt, 'approved_dispositions_integrity');
-    assert.equal(runWorkerFn.calls.length, 2, 'neither execute worker may ever run once the snapshot itself is found mutated');
-    assert.equal(fs.existsSync(snapshotPath), false, 'the (now-mutated) snapshot is still cleaned up on the way out');
+    const payload = loadApprovedDispositionsPayload(dispositionPath);
+    assert.doesNotThrow(() => verifyDispositionsPayloadUnchanged(payload), 'unmodified payload must verify clean');
+    payload.contents[0] = payload.contents[0] ^ 0xff; // corrupt one byte in place
+    assert.throws(() => verifyDispositionsPayloadUnchanged(payload), /does not match its recorded hash/);
   });
 
-  await test('approved dispositions: a snapshot deleted out from under the run before the execute pass is treated exactly like a mutation -- fail closed, never silently skipped', async () => {
-    const dispositionPath = writeDispositions();
-    const runWorkerFn = makeRecordingWorker([{ code: 0 }, { code: 0 }]);
-    const base = runWorkerFn.bind(null);
-    let snapshotPath = null;
-    let calls = 0;
-    const deletingWorker = (scriptPath, args) => {
-      calls += 1;
-      const dispositionArg = args.find((a) => a.startsWith('--approved-dispositions='));
-      if (dispositionArg) snapshotPath = dispositionArg.slice('--approved-dispositions='.length);
-      if (calls === 2 && snapshotPath) fs.rmSync(snapshotPath, { force: true });
-      return base(scriptPath, args);
-    };
-    deletingWorker.calls = runWorkerFn.calls;
-    const result = await runImport({ pgClient: null, execute: true, runWorkerFn: deletingWorker, approvedDispositionsPath: dispositionPath });
-    assert.equal(result.ok, false);
-    assert.equal(result.failedAt, 'approved_dispositions_integrity');
-    assert.match(result.stderr, /missing/);
+  await test('LIVE: the worker script rejects stdin content that does not match --approved-dispositions-hash, before touching Mongo/PG at all', () => {
+    // The real trust boundary this item closes is between two separate
+    // OS processes -- proven here with a REAL spawned child (not the
+    // mocked runWorkerFn above), a deliberately wrong hash, and no
+    // Mongo/Postgres/GoTrue env vars at all. Seeing the hash-mismatch
+    // error (not the later "must all be set" env-var error) proves stdin
+    // verification runs, and fails closed, before anything else.
+    const scriptPath = path.join(path.dirname(fileURLToPath(import.meta.url)), 'migrate-users-to-supabase-auth.mjs');
+    const payload = Buffer.from(JSON.stringify({ approvedBy: 'x', approvedAt: '2026-09-10T00:00:00.000Z', items: [] }));
+    const wrongHash = crypto.createHash('sha256').update('not the real content').digest('hex');
+    const cleanEnv = { ...process.env };
+    delete cleanEnv.MIGRATION_MONGO_URI;
+    delete cleanEnv.MIGRATION_DB_URL;
+    delete cleanEnv.SUPABASE_URL;
+    delete cleanEnv.SUPABASE_SERVICE_ROLE_KEY;
+    const result = spawnSync(process.execPath, [scriptPath, '--approved-dispositions-stdin', `--approved-dispositions-hash=${wrongHash}`], {
+      encoding: 'utf8', env: cleanEnv, input: payload,
+    });
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /hash mismatch/);
+    assert.doesNotMatch(result.stderr, /must all be set/, 'must never reach the env-var check -- stdin verification must fail first');
+  });
+
+  await test('LIVE: the worker script accepts stdin content that DOES match --approved-dispositions-hash (control case -- proves the mismatch test fails for the right reason)', () => {
+    const scriptPath = path.join(path.dirname(fileURLToPath(import.meta.url)), 'migrate-users-to-supabase-auth.mjs');
+    const payload = Buffer.from(JSON.stringify({ approvedBy: 'x', approvedAt: '2026-09-10T00:00:00.000Z', items: [] }));
+    const correctHash = crypto.createHash('sha256').update(payload).digest('hex');
+    const cleanEnv = { ...process.env };
+    delete cleanEnv.MIGRATION_MONGO_URI;
+    delete cleanEnv.MIGRATION_DB_URL;
+    delete cleanEnv.SUPABASE_URL;
+    delete cleanEnv.SUPABASE_SERVICE_ROLE_KEY;
+    const result = spawnSync(process.execPath, [scriptPath, '--approved-dispositions-stdin', `--approved-dispositions-hash=${correctHash}`], {
+      encoding: 'utf8', env: cleanEnv, input: payload,
+    });
+    assert.notEqual(result.status, 0, 'still fails, but LATER -- at the env-var check, proving stdin verification passed');
+    assert.match(result.stderr, /must all be set/);
+    assert.doesNotMatch(result.stderr, /hash mismatch/);
   });
 
   await test('approved dispositions: malformed timestamp and duplicate signatures are rejected before worker invocation', async () => {
@@ -428,6 +447,63 @@ async function main() {
     assert.throws(() => parseCliArgs(['--approved-dispositions=a', '--approved-dispositions=b']), /more than once/);
     assert.throws(() => parseCliArgs(['--approved-dispositions']), /non-empty/);
     assert.equal(parseCliArgs(['--approved-dispositions=C:\\tmp\\a=b.json'])['approved-dispositions'], 'C:\\tmp\\a=b.json');
+  });
+
+  // -----------------------------------------------------------------
+  // Round 8, item 8: cross-flag validation -- a flag that has no effect
+  // in the mode actually selected must be a hard error, never silently
+  // dropped on the floor.
+  // -----------------------------------------------------------------
+
+  await test('LIVE: --compensate --defer-domains is rejected -- compensate() never migrates Mongo domains, so deferring one is meaningless', () => {
+    const scriptPath = path.join(path.dirname(fileURLToPath(import.meta.url)), 'production-import-orchestrator.mjs');
+    const cleanEnv = { ...process.env };
+    delete cleanEnv.MIGRATION_DB_URL;
+    const result = spawnSync(process.execPath, [scriptPath, '--compensate', '--defer-domains=payments'], { encoding: 'utf8', env: cleanEnv });
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /--defer-domains has no effect in --compensate mode/);
+    assert.doesNotMatch(result.stderr, /MIGRATION_DB_URL must be set/, 'must fail on the cross-flag check before the env-var check');
+  });
+
+  await test('LIVE: --defer-domains alone (no --compensate) is still accepted -- the rejection is specific to the combination, not the flag itself', () => {
+    const scriptPath = path.join(path.dirname(fileURLToPath(import.meta.url)), 'production-import-orchestrator.mjs');
+    const cleanEnv = { ...process.env };
+    delete cleanEnv.MIGRATION_DB_URL;
+    const result = spawnSync(process.execPath, [scriptPath, '--defer-domains=payments'], { encoding: 'utf8', env: cleanEnv });
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /MIGRATION_DB_URL must be set/, 'must reach the (later) env-var check, proving the cross-flag check let it through');
+    assert.doesNotMatch(result.stderr, /--defer-domains has no effect/);
+  });
+
+  // -----------------------------------------------------------------
+  // Round 8, item 3: cross-flag validation for the new stdin-based
+  // approved-dispositions input mode -- the worker's own contract, tested
+  // live here since it is the actual entrypoint the orchestrator invokes.
+  // -----------------------------------------------------------------
+
+  await test('LIVE: --approved-dispositions-stdin without --approved-dispositions-hash is rejected', () => {
+    const scriptPath = path.join(path.dirname(fileURLToPath(import.meta.url)), 'migrate-users-to-supabase-auth.mjs');
+    const result = spawnSync(process.execPath, [scriptPath, '--approved-dispositions-stdin'], { encoding: 'utf8', input: Buffer.from('{}') });
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /--approved-dispositions-stdin requires --approved-dispositions-hash/);
+  });
+
+  await test('LIVE: --approved-dispositions-hash without --approved-dispositions-stdin is rejected', () => {
+    const scriptPath = path.join(path.dirname(fileURLToPath(import.meta.url)), 'migrate-users-to-supabase-auth.mjs');
+    const result = spawnSync(process.execPath, [scriptPath, '--approved-dispositions-hash=abc123'], { encoding: 'utf8' });
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /--approved-dispositions-hash requires --approved-dispositions-stdin/);
+  });
+
+  await test('LIVE: --approved-dispositions combined with --approved-dispositions-stdin is rejected -- exactly one input mode', () => {
+    const scriptPath = path.join(path.dirname(fileURLToPath(import.meta.url)), 'migrate-users-to-supabase-auth.mjs');
+    const result = spawnSync(
+      process.execPath,
+      [scriptPath, '--approved-dispositions=/tmp/x.json', '--approved-dispositions-stdin', '--approved-dispositions-hash=abc123'],
+      { encoding: 'utf8', input: Buffer.from('{}') }
+    );
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /cannot be combined with --approved-dispositions-stdin/);
   });
 
   // -----------------------------------------------------------------
@@ -480,32 +556,29 @@ async function main() {
     assert.doesNotMatch(result.stderr, /MIGRATION_DB_URL must be set/, 'must never reach the env-var check -- parsing must fail first');
   });
 
-  await test('compensate forwards the SAME private snapshot path in both plan and execute modes, cleaned up afterward', async () => {
+  await test('compensate forwards the SAME hash + stdin bytes in both plan and execute modes (never a re-openable path)', async () => {
     const dispositionPath = writeDispositions();
+    const originalContents = fs.readFileSync(dispositionPath);
     const originalHash = sha256Of(dispositionPath);
 
     const planWorker = makeRecordingWorker([{ code: 0 }]);
     const plan = await compensate({ pgClient: null, execute: false, runWorkerFn: planWorker, approvedDispositionsPath: dispositionPath });
     assert.equal(plan.ok, true);
-    const planArg = planWorker.calls[0].args[0];
-    assert.match(planArg, /^--approved-dispositions=/);
-    const planSnapshotPath = planArg.slice('--approved-dispositions='.length);
-    assert.notEqual(planSnapshotPath, dispositionPath);
-    assert.equal(fs.existsSync(planSnapshotPath), false, 'compensate must clean up its own snapshot after returning');
+    assert.deepEqual(planWorker.calls[0].args, ['--approved-dispositions-stdin', `--approved-dispositions-hash=${originalHash}`]);
+    assert.ok(planWorker.calls[0].stdinInput.equals(originalContents));
 
     const executeWorker = makeRecordingWorker([{ code: 0 }]);
     const executeResult = await compensate({ pgClient: null, execute: true, runWorkerFn: executeWorker, approvedDispositionsPath: dispositionPath });
     assert.equal(executeResult.ok, true);
     const execArgs = executeWorker.calls[0].args;
     assert.equal(execArgs[0], '--execute');
-    assert.match(execArgs[1], /^--approved-dispositions=/);
-    const execSnapshotPath = execArgs[1].slice('--approved-dispositions='.length);
-    assert.notEqual(execSnapshotPath, dispositionPath);
-    assert.equal(fs.existsSync(execSnapshotPath), false);
+    assert.deepEqual(execArgs.slice(1), ['--approved-dispositions-stdin', `--approved-dispositions-hash=${originalHash}`]);
+    assert.ok(executeWorker.calls[0].stdinInput.equals(originalContents));
 
     const saga = JSON.parse(fs.readFileSync(executeResult.saga, 'utf8'));
     const binding = saga.steps.find((s) => s.step === 'approved_dispositions' && s.status === 'bound');
     assert.equal(binding.hash, originalHash);
+    assert.equal(binding.snapshotPath, undefined);
   });
 
   fs.rmSync(tmpDir, { recursive: true, force: true });

@@ -25,6 +25,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // infrastructure-backed files even start.
 const TEST_FILES = [
   'lib/cli-args.test.mjs',
+  'mongo-to-supabase-cli.test.mjs',
   'migrate-users-to-supabase-auth.test.mjs',
   'unrecorded-data-preflight.test.mjs',
   'orchestrator-cli-resume-compensate.test.mjs',

@@ -71,6 +71,7 @@ import {
   migrateSubscription,
   migrateOneUser,
   migrateOneAdmin,
+  correlationIdFor,
 } from './migrate-users-to-supabase-auth.mjs';
 import { contentHashOf, findLedgerEntry } from './lib/source-ledger.mjs';
 import { parseStrictCliArgs } from './lib/cli-args.mjs';
@@ -646,8 +647,8 @@ async function main() {
     const client = await pgPool.connect();
     try {
       const result = await migrateSubscription(client, profileId, sourceDoc, new Map([['Starter', crypto.randomUUID()]]));
-      assert.equal(result.status, 'FAIL');
-      assert.match(result.reason, /no matching source-scoped migration_source_ledger entry/);
+      assert.equal(result.status, 'BLOCKED_MANUAL_RECONCILIATION', 'round 8, item 5: this exact ambiguity gets its own explicit classification, distinct from a generic/retryable FAIL');
+      assert.match(result.reason, /no matching source-scoped migration_source_ledger/);
       const rows = await pgPool.query('SELECT id FROM subscriptions WHERE user_id = $1', [profileId]);
       assert.equal(rows.rows.length, 1, 'no second row must ever be inserted');
       assert.equal(rows.rows[0].id, preExisting.rows[0].id, 'the original, unrelated active subscription must be the exact row still present, untouched');
@@ -656,6 +657,57 @@ async function main() {
         [String(sourceDoc._id)]
       );
       assert.equal(ledger.rows.length, 0, 'a pre-write-detected conflict must never even reach markPlanned -- no ledger row at all for this source document');
+    } finally {
+      client.release();
+    }
+  });
+
+  await test('round 8, item 5: a "planned" (null-target) ledger row with an untracked target already present is BLOCKED_MANUAL_RECONCILIATION, never auto-linked', async () => {
+    // The literal old case this item names: a prior run got as far as
+    // markPlanned() (or a previous review round's code path did) but
+    // never recorded a target_id -- and a subscription row for this
+    // profile already exists, written by something this ledger row does
+    // not itself account for. Unlike the "no ledger row at all" case
+    // above, THIS ledger row must also be resolved (marked failed, not
+    // left dangling as 'planned' forever) as part of the same fail-closed
+    // response.
+    await resetAll();
+    const email = 'planned-null-target-existing-row@example.invalid';
+    const sourceDoc = {
+      _id: new mongoose.Types.ObjectId(), email, role: 'student',
+      subscription: { plan: 'Starter', status: 'active', validUntil: '2999-01-01T00:00:00.000Z' },
+    };
+    const profileId = await seedExistingProfile(email);
+    await pgPool.query(
+      `INSERT INTO migration_source_ledger
+         (source_system, source_database, source_collection, source_document_id, source_content_hash,
+          target_table, target_id, status, migrated_at)
+       VALUES ('mongodb', 'al-rahma', 'users', $1, $2, 'subscriptions', NULL, 'planned', now())`,
+      [String(sourceDoc._id), contentHashOf(sourceDoc.subscription)]
+    );
+    const preExisting = await pgPool.query(
+      `INSERT INTO subscriptions (user_id, provider, status, current_period_end)
+       VALUES ($1, 'manual', 'active', '2999-01-01T00:00:00.000Z') RETURNING id`,
+      [profileId]
+    );
+
+    const client = await pgPool.connect();
+    try {
+      const result = await migrateSubscription(client, profileId, sourceDoc, new Map([['Starter', crypto.randomUUID()]]));
+      assert.equal(result.status, 'BLOCKED_MANUAL_RECONCILIATION');
+      assert.match(result.reason, /no matching source-scoped migration_source_ledger/);
+
+      const rows = await pgPool.query('SELECT id FROM subscriptions WHERE user_id = $1', [profileId]);
+      assert.equal(rows.rows.length, 1, 'no second/duplicate row is ever inserted');
+      assert.equal(rows.rows[0].id, preExisting.rows[0].id, 'the pre-existing row is never touched');
+
+      const ledger = await pgPool.query(
+        `SELECT status, target_id FROM migration_source_ledger WHERE target_table = 'subscriptions' AND source_document_id = $1`,
+        [String(sourceDoc._id)]
+      );
+      assert.equal(ledger.rows.length, 1, 'the pre-existing planned ledger row is resolved, not silently left dangling as a second orphan');
+      assert.equal(ledger.rows[0].status, 'failed');
+      assert.equal(ledger.rows[0].target_id, null, 'never auto-linked to the untracked row -- no automatic recovery is ever claimed');
     } finally {
       client.release();
     }
@@ -882,8 +934,15 @@ async function main() {
 
       // Simulate GoTrue's OWN write having actually landed despite the
       // crash (its trigger creates profiles synchronously with auth.users
-      // -- exactly what this schema's real trigger does).
-      await client.query('INSERT INTO auth.users (id, email) VALUES ($1, $2)', [fakeUserId, mongoUser.email]);
+      // -- exactly what this schema's real trigger does). Round 8, item 2:
+      // a real createUser() call would have embedded migration_correlation_id
+      // in user_metadata BEFORE the crash -- without it here, the round-8
+      // foreign-account check would (correctly) refuse to link this row.
+      const expectedCorrelationId = correlationIdFor({ sourceCollection: 'users', sourceDocumentId: mongoUser._id, sourceValue: mongoUser });
+      await client.query(
+        'INSERT INTO auth.users (id, email, raw_user_meta_data) VALUES ($1, $2, $3::jsonb)',
+        [fakeUserId, mongoUser.email, JSON.stringify({ migration_correlation_id: expectedCorrelationId })]
+      );
 
       let createUserCalls = 0;
       const supabaseAdmin2 = fakeSupabaseAdmin(async () => { createUserCalls += 1; return { data: { user: { id: crypto.randomUUID() } }, error: null }; });
@@ -918,7 +977,11 @@ async function main() {
       } finally {
         delete process.env.MIGRATION_FAULT_INJECT_STAGE;
       }
-      await client.query('INSERT INTO auth.users (id, email) VALUES ($1, $2)', [fakeUserId, mongoAdmin.email]);
+      const expectedAdminCorrelationId = correlationIdFor({ sourceCollection: 'adminusers', sourceDocumentId: mongoAdmin._id, sourceValue: mongoAdmin });
+      await client.query(
+        'INSERT INTO auth.users (id, email, raw_user_meta_data) VALUES ($1, $2, $3::jsonb)',
+        [fakeUserId, mongoAdmin.email, JSON.stringify({ migration_correlation_id: expectedAdminCorrelationId })]
+      );
 
       let createUserCalls = 0;
       const supabaseAdmin2 = fakeSupabaseAdmin(async () => { createUserCalls += 1; return { data: { user: { id: crypto.randomUUID() } }, error: null }; });
@@ -979,6 +1042,162 @@ async function main() {
       assert.equal(createUserCalls, 0, 'must fail BEFORE ever attempting createUser() -- never manufacture a substitute account');
       const countRes = await client.query('SELECT count(*)::int AS n FROM auth.users');
       assert.equal(countRes.rows[0].n, 0);
+    } finally {
+      client.release();
+    }
+  });
+
+  // -------------------------------------------------------------------
+  // Round 8, item 2: a foreign/external account appears with the exact
+  // same email as a Mongo user AFTER an ambiguous createUser() timeout
+  // (or at any time before a later resume) -- must be rejected, never
+  // silently claimed by email alone.
+  // -------------------------------------------------------------------
+
+  await test('round 8: an external account with the SAME email but NO migration_correlation_id is rejected on resume, never linked or overwritten', async () => {
+    await resetAll();
+    const foreignId = crypto.randomUUID();
+    const mongoUser = { _id: new mongoose.Types.ObjectId(), email: 'foreign-account-same-email@example.invalid', role: 'student', name: 'Mongo Name' };
+    const client = await pgPool.connect();
+    try {
+      // Simulate an ambiguous timeout: the ledger is still 'planned' (no
+      // target_id), exactly as after migrateOneUser()'s own createUser()
+      // try/catch reports a thrown, ambiguous-outcome error.
+      await client.query(
+        `INSERT INTO migration_source_ledger
+           (source_system, source_database, source_collection, source_document_id, source_content_hash,
+            target_table, target_id, status, migrated_at)
+         VALUES ('mongodb', 'al-rahma', 'users', $1, $2, 'profiles', NULL, 'planned', now())`,
+        [String(mongoUser._id), contentHashOf(mongoUser)]
+      );
+      // A completely unrelated account (e.g. a real independent signup)
+      // appears with the exact same email -- no migration_correlation_id
+      // at all, the normal signature of an account this migration never
+      // touched. Give it a REAL foreign name/profile to prove it is never
+      // overwritten.
+      await client.query('INSERT INTO auth.users (id, email) VALUES ($1, $2)', [foreignId, mongoUser.email]);
+      await client.query(`UPDATE profiles SET name = 'Foreign Real Person' WHERE id = $1`, [foreignId]);
+
+      let createUserCalls = 0;
+      const supabaseAdmin = fakeSupabaseAdmin(async () => { createUserCalls += 1; return { data: { user: { id: crypto.randomUUID() } }, error: null }; });
+      const result = await migrateOneUser(supabaseAdmin, client, mongoUser, { execute: true });
+
+      assert.equal(result.status, 'blocked_foreign_account_same_email');
+      assert.match(result.message, /correlation ID mismatch or absent/);
+      assert.equal(createUserCalls, 0, 'must never attempt createUser() either -- GoTrue would just reject the duplicate email anyway, but this must fail BEFORE trying');
+
+      const ledger = await findLedgerEntry(client, {
+        sourceDatabase: 'al-rahma', sourceCollection: 'users', sourceDocumentId: String(mongoUser._id), targetTable: 'profiles',
+      });
+      assert.equal(ledger.status, 'failed');
+      assert.equal(ledger.target_id, null, 'the foreign account must never be recorded as this document\'s target');
+
+      const foreignProfile = await client.query('SELECT name, role, is_teacher FROM profiles WHERE id = $1', [foreignId]);
+      assert.equal(foreignProfile.rows[0].name, 'Foreign Real Person', 'the foreign account\'s profile must be completely untouched -- never overwritten with the Mongo persona');
+
+      const countRes = await client.query('SELECT count(*)::int AS n FROM auth.users');
+      assert.equal(countRes.rows[0].n, 1, 'no second/duplicate account was created either');
+    } finally {
+      client.release();
+    }
+  });
+
+  await test('round 8: an external account with a DIFFERENT migration_correlation_id (not just absent) is also rejected', async () => {
+    await resetAll();
+    const foreignId = crypto.randomUUID();
+    const mongoUser = { _id: new mongoose.Types.ObjectId(), email: 'foreign-account-different-correlation@example.invalid', role: 'student' };
+    const client = await pgPool.connect();
+    try {
+      await client.query(
+        `INSERT INTO migration_source_ledger
+           (source_system, source_database, source_collection, source_document_id, source_content_hash,
+            target_table, target_id, status, migrated_at)
+         VALUES ('mongodb', 'al-rahma', 'users', $1, $2, 'profiles', NULL, 'planned', now())`,
+        [String(mongoUser._id), contentHashOf(mongoUser)]
+      );
+      // Carries SOME migration_correlation_id -- just not the one that
+      // belongs to THIS source document (e.g. it was actually created for
+      // a totally different Mongo user that happens to share this email
+      // after some other, unrelated change).
+      await client.query(
+        'INSERT INTO auth.users (id, email, raw_user_meta_data) VALUES ($1, $2, $3::jsonb)',
+        [foreignId, mongoUser.email, JSON.stringify({ migration_correlation_id: 'not-the-right-correlation-id' })]
+      );
+
+      const supabaseAdmin = fakeSupabaseAdmin(async () => ({ data: { user: { id: crypto.randomUUID() } }, error: null }));
+      const result = await migrateOneUser(supabaseAdmin, client, mongoUser, { execute: true });
+      assert.equal(result.status, 'blocked_foreign_account_same_email');
+
+      const ledger = await findLedgerEntry(client, {
+        sourceDatabase: 'al-rahma', sourceCollection: 'users', sourceDocumentId: String(mongoUser._id), targetTable: 'profiles',
+      });
+      assert.equal(ledger.status, 'failed');
+    } finally {
+      client.release();
+    }
+  });
+
+  await test('round 8: the SAME foreign-account rejection holds for migrateOneAdmin', async () => {
+    await resetAll();
+    const foreignId = crypto.randomUUID();
+    const mongoAdmin = { _id: new mongoose.Types.ObjectId(), email: 'foreign-admin-same-email@example.invalid', role: 'admin' };
+    const client = await pgPool.connect();
+    try {
+      await client.query(
+        `INSERT INTO migration_source_ledger
+           (source_system, source_database, source_collection, source_document_id, source_content_hash,
+            target_table, target_id, status, migrated_at)
+         VALUES ('mongodb', 'al-rahma', 'adminusers', $1, $2, 'profiles', NULL, 'planned', now())`,
+        [String(mongoAdmin._id), contentHashOf(mongoAdmin)]
+      );
+      await client.query('INSERT INTO auth.users (id, email) VALUES ($1, $2)', [foreignId, mongoAdmin.email]);
+
+      let createUserCalls = 0;
+      const supabaseAdmin = fakeSupabaseAdmin(async () => { createUserCalls += 1; return { data: { user: { id: crypto.randomUUID() } }, error: null }; });
+      const result = await migrateOneAdmin(supabaseAdmin, client, mongoAdmin, { execute: true });
+
+      assert.equal(result.status, 'blocked_foreign_account_same_email');
+      assert.equal(createUserCalls, 0);
+      const adminAssignment = await client.query('SELECT count(*)::int AS n FROM admin_role_assignments WHERE user_id = $1', [foreignId]);
+      assert.equal(adminAssignment.rows[0].n, 0, 'the foreign account must never be granted an admin role assignment');
+    } finally {
+      client.release();
+    }
+  });
+
+  await test('round 8: happy path -- a genuine resume (matching migration_correlation_id) still succeeds and reconciles normally', async () => {
+    await resetAll();
+    const realId = crypto.randomUUID();
+    const mongoUser = { _id: new mongoose.Types.ObjectId(), email: 'genuine-resume@example.invalid', role: 'student', name: 'Real Migrated Name' };
+    const client = await pgPool.connect();
+    try {
+      await client.query(
+        `INSERT INTO migration_source_ledger
+           (source_system, source_database, source_collection, source_document_id, source_content_hash,
+            target_table, target_id, status, migrated_at)
+         VALUES ('mongodb', 'al-rahma', 'users', $1, $2, 'profiles', NULL, 'planned', now())`,
+        [String(mongoUser._id), contentHashOf(mongoUser)]
+      );
+      const correlationId = correlationIdFor({ sourceCollection: 'users', sourceDocumentId: mongoUser._id, sourceValue: mongoUser });
+      await client.query(
+        'INSERT INTO auth.users (id, email, raw_user_meta_data) VALUES ($1, $2, $3::jsonb)',
+        [realId, mongoUser.email, JSON.stringify({ migration_correlation_id: correlationId })]
+      );
+
+      let createUserCalls = 0;
+      const supabaseAdmin = fakeSupabaseAdmin(async () => { createUserCalls += 1; return { data: { user: { id: crypto.randomUUID() } }, error: null }; });
+      const result = await migrateOneUser(supabaseAdmin, client, mongoUser, { execute: true });
+
+      assert.equal(createUserCalls, 0);
+      assert.equal(result.id, realId);
+      const profile = await client.query('SELECT name FROM profiles WHERE id = $1', [realId]);
+      assert.equal(profile.rows[0].name, 'Real Migrated Name', 'a genuine, correlation-matched resume must still apply the persona');
+
+      const ledger = await findLedgerEntry(client, {
+        sourceDatabase: 'al-rahma', sourceCollection: 'users', sourceDocumentId: String(mongoUser._id), targetTable: 'profiles',
+      });
+      assert.equal(ledger.status, 'reconciled');
+      assert.equal(ledger.target_id, realId);
     } finally {
       client.release();
     }
@@ -1135,6 +1354,108 @@ async function main() {
 
     const after = await pgPool.query('SELECT teacher_id FROM profiles WHERE id = $1', [studentProfileId]);
     assert.equal(after.rows[0].teacher_id, foreignTeacherId, 'the foreign teacher_id must be completely untouched');
+  });
+
+  // -------------------------------------------------------------------
+  // Round 8, item 7: relationship workers must reject a pre-existing
+  // teacher_id/parent_student_links row that has NO migration_source_
+  // ledger provenance, even when that pre-existing value/row happens to
+  // exactly AGREE with what this migration would itself write -- never
+  // silently attribute it to this migration just because the write (or
+  // ON CONFLICT DO NOTHING) looked like a harmless no-op. Both proven via
+  // the real, direct worker CLI (runUserMigrationCLI), not the
+  // orchestrator -- the orchestrator never calls applyTeacherLink()/
+  // applyParentChildLink() itself, it only spawns this exact script.
+  // -------------------------------------------------------------------
+
+  await test('round 8, item 7 (direct worker): a teacher_id that ALREADY EXACTLY EQUALS the migration\'s own value, with no ledger provenance, is still rejected -- value agreement is not ownership', async () => {
+    await resetAll();
+    const teacherEmail = 'rel-teacher-exactmatch@example.invalid';
+    const studentEmail = 'rel-student-exactmatch@example.invalid';
+    const teacherDoc = { _id: new mongoose.Types.ObjectId(), email: teacherEmail, role: 'teacher' };
+    const studentDoc = { _id: new mongoose.Types.ObjectId(), email: studentEmail, role: 'student', teacher: teacherDoc._id };
+    await mongoose.connection.collection('users').insertMany([teacherDoc, studentDoc]);
+
+    const teacherProfileId = await seedExistingProfile(teacherEmail);
+    const studentProfileId = await seedExistingProfile(studentEmail);
+    await addProfileLedger(teacherDoc, teacherProfileId);
+    await addProfileLedger(studentDoc, studentProfileId);
+    // Set teacher_id to EXACTLY the value this migration would itself
+    // compute -- but with NO migration_source_ledger row for this exact
+    // relationship at all (simulating an external process, e.g. the
+    // admin UI, having already made this same real-world assignment).
+    await pgPool.query('UPDATE profiles SET teacher_id = $2 WHERE id = $1', [studentProfileId, teacherProfileId]);
+
+    const run = runUserMigrationCLI(['--execute']);
+    assert.notEqual(run.code, 0, 'a relationship write error must fail the run closed even on exact value agreement');
+    assert.equal(run.report.relationships.writeErrors.length, 1);
+    assert.match(run.report.relationships.writeErrors[0].message, /refusing to silently claim a relationship it did not itself create/);
+
+    const ledger = await pgPool.query(
+      `SELECT status FROM migration_source_ledger WHERE target_table = 'profiles_teacher_link' AND source_document_id = $1`,
+      [String(studentDoc._id)]
+    );
+    // The check fires BEFORE markPlanned() -- exactly like round 7's
+    // mismatched-teacher_id sibling test -- so no ledger row is created
+    // at all, never a 'reconciled' or dangling 'planned'/'failed' one.
+    assert.equal(ledger.rows.length, 0, 'no ledger row is ever created for an unattributable pre-existing value -- never reconciled, never left dangling');
+  });
+
+  await test('round 8, item 7 (direct worker): a pre-existing parent_student_links row with no ledger provenance is rejected, never silently claimed via ON CONFLICT DO NOTHING', async () => {
+    await resetAll();
+    const parentEmail = 'rel-parent-preexisting@example.invalid';
+    const childEmail = 'rel-child-preexisting@example.invalid';
+    const childDoc = { _id: new mongoose.Types.ObjectId(), email: childEmail, role: 'student' };
+    const parentDoc = { _id: new mongoose.Types.ObjectId(), email: parentEmail, role: 'parent', children: [childDoc._id] };
+    await mongoose.connection.collection('users').insertMany([childDoc, parentDoc]);
+
+    const parentProfileId = await seedExistingProfile(parentEmail);
+    const childProfileId = await seedExistingProfile(childEmail);
+    await addProfileLedger(parentDoc, parentProfileId);
+    await addProfileLedger(childDoc, childProfileId);
+    // A real parent_student_links row ALREADY exists for this exact
+    // pair -- created by something entirely outside this migration, with
+    // no ledger row at all. Round 7's ON CONFLICT DO NOTHING would have
+    // silently no-op'd and marked this reconciled anyway.
+    await pgPool.query('INSERT INTO parent_student_links (parent_id, student_id) VALUES ($1, $2)', [parentProfileId, childProfileId]);
+
+    const run = runUserMigrationCLI(['--execute']);
+    assert.notEqual(run.code, 0, 'a relationship write error must fail the run closed');
+    assert.equal(run.report.relationships.writeErrors.length, 1);
+    assert.match(run.report.relationships.writeErrors[0].message, /already exists and this migration has no matching migration_source_ledger entry/);
+
+    const linkCount = await pgPool.query('SELECT count(*)::int AS n FROM parent_student_links WHERE parent_id = $1 AND student_id = $2', [parentProfileId, childProfileId]);
+    assert.equal(linkCount.rows[0].n, 1, 'the pre-existing row is never duplicated or removed');
+
+    const ledger = await pgPool.query(
+      `SELECT status, target_id FROM migration_source_ledger WHERE target_table = 'parent_student_links' AND source_document_id = $1`,
+      [`${String(parentDoc._id)}:child:${String(childDoc._id)}`]
+    );
+    assert.equal(ledger.rows.length, 1);
+    assert.equal(ledger.rows[0].status, 'failed', 'must NEVER be marked reconciled -- this migration did not create this row');
+    assert.equal(ledger.rows[0].target_id, null, 'never auto-linked to the external row');
+  });
+
+  await test('round 8, item 7 (direct worker): the SAME parent_student_links resume (this migration\'s OWN prior write) still succeeds -- the fix only rejects UNATTRIBUTED pre-existing rows', async () => {
+    // Control case: proves item 7's fix distinguishes "my own prior
+    // write, resumed" from "someone else's row" -- it must not become
+    // over-broad and break the legitimate resume path.
+    await resetAll();
+    const parentEmail = 'rel-parent-resume@example.invalid';
+    const childEmail = 'rel-child-resume@example.invalid';
+    const childDoc = { _id: new mongoose.Types.ObjectId(), email: childEmail, role: 'student' };
+    const parentDoc = { _id: new mongoose.Types.ObjectId(), email: parentEmail, role: 'parent', children: [childDoc._id] };
+    await mongoose.connection.collection('users').insertMany([childDoc, parentDoc]);
+    for (const doc of [childDoc, parentDoc]) {
+      const id = await seedExistingProfile(doc.email);
+      await addProfileLedger(doc, id);
+    }
+
+    const run1 = runUserMigrationCLI(['--execute']);
+    assert.equal(run1.code, 0, run1.stderr);
+    const run2 = runUserMigrationCLI(['--execute']);
+    assert.equal(run2.code, 0, run2.stderr);
+    assert.deepEqual(run2.report.relationships.writeErrors, []);
   });
 
   await test('relationship provenance: re-running an already-reconciled relationship is a safe, idempotent no-op (resume)', async () => {

@@ -275,7 +275,7 @@ function sha256File(filePath) {
 // supported the flag, but this file neither parsed nor forwarded it, so
 // the approved-disposition mechanism was reachable only by running that
 // worker script directly, never through the actual production
-// entrypoint. Fixed: parse once, forward the exact same path to every
+// entrypoint. Fixed: parse once, forward the exact same content to every
 // user-migration invocation (plan, execute, compensate), and pin its
 // content by hash + read its approvedBy/approvedAt for the saga log.
 //
@@ -287,46 +287,36 @@ function sha256File(filePath) {
 // the orchestrator's own re-hash-right-before-spawn check passes, the file
 // could still be mutated in the gap between that check and the moment the
 // child actually reads it a moment later -- a classic read-check-then-use
-// race, not actually closed by re-hashing the SAME mutable path twice.
+// race. Round 7 narrowed this (a private orchestrator-owned snapshot file
+// instead of the operator's own mutable path) but did not actually close
+// it -- the snapshot was STILL a real path on disk that the child opened
+// with its own separate `fs.readFileSync` some (however small) amount of
+// time after the orchestrator's last check.
 //
-// Fixed: the orchestrator now reads the operator's file ONCE, from fixed
-// bytes, and writes those EXACT bytes to a PRIVATE, orchestrator-owned
-// snapshot file under OUT_DIR that the operator's own file is never
-// touched or referenced by again. That snapshot path — never the
-// operator's original path — is what gets forwarded to EVERY child
-// invocation (plan, execute, compensate), so every child reads the
-// identical bytes from a file only this orchestrator process controls.
-// Immediately after writing the snapshot, its bytes are read back and
-// compared to what was written (closing any filesystem-level race in the
-// write itself); before each subsequent invocation, the snapshot's hash is
-// re-verified against what was recorded at creation time; any mismatch —
-// or the snapshot going missing — refuses to proceed. The snapshot is
-// deleted in a `finally` block by the caller, and that deletion is itself
-// verified (the file must actually be gone afterward), so a stray
-// approval artifact is never left behind on disk after the run ends.
-function writeImmutableDispositionsSnapshot(dispositionsPath, runId) {
+// PR #70 review round 8, item 3: closes this for real by removing the
+// mutable path from the handoff entirely. The operator's file is read
+// ONCE into memory, from fixed bytes, and NEVER written to any file this
+// orchestrator or the child could independently re-open. Those exact
+// in-memory bytes are piped directly into the child's stdin
+// (spawnSync's `input` option) alongside only a sha256 hash on the
+// command line (`--approved-dispositions-hash`, never a path) --
+// migrate-users-to-supabase-auth.mjs's loadApprovedDispositionsFromStdin()
+// reads stdin fully exactly once, hashes what it actually received, and
+// refuses to parse it at all unless that hash matches. The verification
+// and the content consumed are now the SAME bytes in the SAME read, with
+// no intermediate path for anything to race against between them --
+// there is no longer a "check" step and a separate, later "read" step for
+// a TOCTOU to exist between at all.
+export function loadApprovedDispositionsPayload(dispositionsPath) {
   if (!dispositionsPath) return null;
   if (!fs.existsSync(dispositionsPath)) fail(`--approved-dispositions file does not exist: ${dispositionsPath}`);
-  const contents = fs.readFileSync(dispositionsPath); // read ONCE, fixed bytes
+  const contents = fs.readFileSync(dispositionsPath); // read ONCE, fixed bytes, kept in memory only
   const parsed = parseApprovedDispositions(contents.toString('utf8'));
   const hash = crypto.createHash('sha256').update(contents).digest('hex');
 
-  fs.mkdirSync(OUT_DIR, { recursive: true });
-  const snapshotPath = path.join(OUT_DIR, `approved-dispositions-snapshot-${runId}.json`);
-  fs.writeFileSync(snapshotPath, contents);
-
-  // Read back immediately to prove the bytes actually landed as written —
-  // closes any filesystem-level race between the write above and this
-  // check, before the snapshot is ever handed to a child process.
-  const readBack = fs.readFileSync(snapshotPath);
-  if (!readBack.equals(contents)) {
-    fs.rmSync(snapshotPath, { force: true });
-    fail(`--approved-dispositions snapshot at ${snapshotPath} did not read back identical to what was written -- refusing to proceed`);
-  }
-
   return {
     originalPath: dispositionsPath,
-    snapshotPath,
+    contents,
     hash,
     approvedBy: parsed.approvedBy,
     approvedAt: parsed.approvedAt,
@@ -334,26 +324,19 @@ function writeImmutableDispositionsSnapshot(dispositionsPath, runId) {
   };
 }
 
-/** Re-verifies the snapshot is present and byte-identical to what was recorded at creation time — call before EVERY child invocation that will read it. */
-function verifyDispositionsSnapshotUnchanged(meta) {
+/**
+ * Re-verifies the in-memory payload's bytes still hash to what was
+ * recorded when it was loaded -- call before EVERY child invocation that
+ * will consume it. Since `contents` is a plain in-process Buffer with no
+ * external path anyone outside this process could mutate, a mismatch here
+ * would mean something INSIDE this orchestrator process itself corrupted
+ * it -- still checked and still fails closed, never assumed impossible.
+ */
+export function verifyDispositionsPayloadUnchanged(meta) {
   if (!meta) return;
-  if (!fs.existsSync(meta.snapshotPath)) {
-    fail(`--approved-dispositions snapshot at ${meta.snapshotPath} is missing -- refusing to proceed with a removed approval artifact`);
-  }
-  const currentHash = sha256File(meta.snapshotPath);
+  const currentHash = crypto.createHash('sha256').update(meta.contents).digest('hex');
   if (currentHash !== meta.hash) {
-    fail(`--approved-dispositions snapshot at ${meta.snapshotPath} changed after it was created -- refusing to proceed with a mutated approval artifact`);
-  }
-}
-
-/** Deletes the private snapshot and verifies it is actually gone — call from a `finally` block, never assumed to have succeeded silently. */
-function cleanupDispositionsSnapshot(meta) {
-  if (!meta) return;
-  fs.rmSync(meta.snapshotPath, { force: true });
-  if (fs.existsSync(meta.snapshotPath)) {
-    // Structurally should be unreachable given rmSync above -- never
-    // silently claim cleanup succeeded if the file is somehow still there.
-    throw new Error(`--approved-dispositions snapshot at ${meta.snapshotPath} still exists after deletion -- cleanup could not be verified`);
+    fail(`--approved-dispositions in-memory payload does not match its recorded hash -- refusing to proceed with a corrupted approval artifact`);
   }
 }
 
@@ -721,6 +704,109 @@ export async function verifyTeacherLinkProvenance(pgClient) {
   return true;
 }
 
+// PR #70 review round 8, item 6 -- "تحقق exact source fields/hash format/
+// status" و"تحقق allowed source collection لكل target table". Every
+// domain-table ledger row's source_collection is always the DOMAIN KEY
+// mongo-to-supabase.mjs's own migrateDomain() passes as `sourceCollection:
+// domainName` (never the raw underlying Mongo collection name, e.g.
+// "quranbookmarks") -- see that file's own markPlanned()/markCreated()/
+// findLedgerEntry() call sites. The domain key equals its own target
+// table name for every domain except system_audit_logs -> admin_audit_log
+// (see mongo-to-supabase.mjs's own ROLLBACK_SPEC, the authoritative
+// domain-key -> target-table map). profiles/subscriptions/
+// profiles_teacher_link/parent_student_links are written by
+// migrate-users-to-supabase-auth.mjs instead, whose own sourceCollection
+// literals (migrateOneUser=/migrateOneAdmin='adminusers'/
+// migrateSubscription/applyTeacherLink/applyParentChildLink, all
+// ='users') are the authoritative source for those four.
+const ALLOWED_SOURCE_COLLECTIONS = {
+  trial_requests: ['trial_requests'],
+  subscribers: ['subscribers'],
+  blogs: ['blogs'],
+  courses: ['courses'],
+  contact_messages: ['contact_messages'],
+  system_config: ['system_config'],
+  wishlists: ['wishlists'],
+  hifz_progress: ['hifz_progress'],
+  certificates: ['certificates'],
+  reviews: ['reviews'],
+  referrals: ['referrals'],
+  course_progress: ['course_progress'],
+  live_classes: ['live_classes'],
+  messages: ['messages'],
+  student_records: ['student_records'],
+  payments: ['payments'],
+  enrollments: ['enrollments'],
+  quran_bookmarks: ['quran_bookmarks'],
+  quran_reading_progress: ['quran_reading_progress'],
+  quran_memorization_stats: ['quran_memorization_stats'],
+  coupons: ['coupons'],
+  coupon_redemptions: ['coupon_redemptions'],
+  manual_payments: ['manual_payments'],
+  invoices: ['invoices'],
+  notifications: ['notifications'],
+  admin_audit_log: ['system_audit_logs'], // the one domain-key/target-table mismatch
+  document_counters: ['document_counters'],
+  parent_student_links: ['users'], // applyParentChildLink()
+  profiles: ['users', 'adminusers'], // migrateOneUser() vs migrateOneAdmin()
+  subscriptions: ['users'], // migrateSubscription()
+  profiles_teacher_link: ['users'], // applyTeacherLink()
+};
+
+/**
+ * Ledger row structural integrity, independent of any target-table join.
+ * Two checks, both genuinely enforceable ONLY at the application level
+ * (unlike "created/reconciled requires target_id" and "no duplicate
+ * target attribution", which migration 0023's own DB-level CHECK
+ * constraint and partial unique index make structurally impossible to
+ * even INSERT -- proven directly by a live insert-rejection test in
+ * migrate-users-to-supabase-auth.test.mjs, not re-duplicated here as an
+ * app-level check that could never actually fire against a real
+ * database with 0023 applied):
+ *   1. source_content_hash must be a real, well-formed sha256 hex digest
+ *      -- the DB has no CHECK on this column's shape at all.
+ *   2. source_collection must be one this migration tooling's own write
+ *      paths actually ever use for that target_table -- the DB has no
+ *      way to know about that application-level convention either.
+ */
+export async function verifyLedgerRowIntegrity(pgClient) {
+  const problems = [];
+
+  const malformedHash = await pgClient.query(`
+    select target_table, count(*)::int as n
+    from public.migration_source_ledger
+    where source_system = 'mongodb' and source_database = $1
+      and source_content_hash !~ '^[0-9a-f]{64}$'
+    group by target_table;
+  `, [SOURCE_DATABASE]);
+  for (const row of malformedHash.rows) {
+    problems.push(`${row.target_table}: ${row.n} ledger row(s) with a malformed source_content_hash (not a 64-hex-char sha256 digest)`);
+  }
+
+  const bySourceCollection = await pgClient.query(`
+    select target_table, source_collection, count(*)::int as n
+    from public.migration_source_ledger
+    where source_system = 'mongodb' and source_database = $1
+    group by target_table, source_collection;
+  `, [SOURCE_DATABASE]);
+  for (const row of bySourceCollection.rows) {
+    const allowed = ALLOWED_SOURCE_COLLECTIONS[row.target_table];
+    if (!allowed) {
+      problems.push(`${row.target_table}: ${row.n} ledger row(s) reference a target_table this orchestrator does not recognize at all`);
+    } else if (!allowed.includes(row.source_collection)) {
+      problems.push(
+        `${row.target_table}: ${row.n} ledger row(s) have source_collection "${row.source_collection}", ` +
+        `not one of the allowed collections for this target table (${allowed.join(', ')})`
+      );
+    }
+  }
+
+  if (problems.length > 0) {
+    fail(`migration_source_ledger row integrity check failed:\n  - ${problems.join('\n  - ')}`);
+  }
+  return true;
+}
+
 // ---------------------------------------------------------------------
 // Advisory lock — only one orchestrator run against this target at a
 // time. pg_try_advisory_lock (non-blocking) so a second concurrent
@@ -764,6 +850,7 @@ async function runPreflight(pgClient, { execute, approvalManifestPath, backupMan
   await verifyNoUnrecordedData(pgClient);
   await verifyLedgerPointsToRealTargets(pgClient);
   await verifyTeacherLinkProvenance(pgClient);
+  await verifyLedgerRowIntegrity(pgClient);
   return { gitSha, mode: 'execute', backup, manifest };
 }
 
@@ -797,12 +884,18 @@ function newSagaLog(runId) {
 // Connection info flows through inherited env vars only, never CLI args.
 // ---------------------------------------------------------------------
 
-function runWorker(scriptPath, args, env) {
+// `stdinInput` (round 8, item 3) is an optional Buffer piped directly into
+// the child's stdin via spawnSync's own `input` option -- how the
+// approved-dispositions payload reaches the child with no intermediate
+// file for a TOCTOU race to exist against. Absent for every call that
+// carries no disposition content.
+function runWorker(scriptPath, args, env, stdinInput) {
   const result = spawnSync(process.execPath, [scriptPath, ...args], {
     cwd: __dirname,
     env: { ...process.env, ...env },
     encoding: 'utf8',
     maxBuffer: 64 * 1024 * 1024,
+    ...(stdinInput !== undefined ? { input: stdinInput } : {}),
   });
   return { code: result.status, stdout: result.stdout, stderr: result.stderr };
 }
@@ -824,29 +917,23 @@ export async function runImport({ pgClient, execute, faultStage, deferDomains = 
   const saga = newSagaLog(runId);
   const commonEnv = faultStage ? { MIGRATION_FAULT_INJECT_STAGE: faultStage, MIGRATION_FAULT_INJECT_ONCE: '1' } : {};
 
-  // Round 7, item 5: read the operator's file ONCE into a private,
-  // orchestrator-owned snapshot -- see writeImmutableDispositionsSnapshot()'s
-  // own comment for the exact TOCTOU window this closes. EVERY child
-  // invocation below (plan preflight AND execute) is forwarded the
-  // SNAPSHOT path, never the operator's original path, and the snapshot is
-  // deleted (with deletion verified) in the `finally` block at the very
-  // end of this function.
-  const dispositionsMeta = writeImmutableDispositionsSnapshot(approvedDispositionsPath, runId);
-  try {
-    return await runImportBody({ pgClient, execute, faultStage, deferDomains, runWorkerFn, dispositionsMeta, saga, commonEnv });
-  } finally {
-    cleanupDispositionsSnapshot(dispositionsMeta);
-  }
+  // Round 8, item 3: read the operator's file ONCE into memory -- never
+  // written to any path a child could independently re-open. See
+  // loadApprovedDispositionsPayload()'s own comment for the exact TOCTOU
+  // window this closes (structurally, not just narrows).
+  const dispositionsMeta = loadApprovedDispositionsPayload(approvedDispositionsPath);
+  return await runImportBody({ pgClient, execute, faultStage, deferDomains, runWorkerFn, dispositionsMeta, saga, commonEnv });
 }
 
 async function runImportBody({ execute, deferDomains, runWorkerFn, dispositionsMeta, saga, commonEnv }) {
   if (dispositionsMeta) {
     saga.record('approved_dispositions', 'bound', {
-      path: dispositionsMeta.originalPath, snapshotPath: dispositionsMeta.snapshotPath, hash: dispositionsMeta.hash,
+      path: dispositionsMeta.originalPath, hash: dispositionsMeta.hash,
       approvedBy: dispositionsMeta.approvedBy, approvedAt: dispositionsMeta.approvedAt,
     });
   }
-  const dispositionArgs = dispositionsMeta ? [`--approved-dispositions=${dispositionsMeta.snapshotPath}`] : [];
+  const dispositionArgs = dispositionsMeta ? ['--approved-dispositions-stdin', `--approved-dispositions-hash=${dispositionsMeta.hash}`] : [];
+  const dispositionStdin = dispositionsMeta?.contents;
 
   // Every domain the OPERATOR explicitly deferred on this run's command
   // line is recorded here, by name and reason — never silently dropped.
@@ -866,9 +953,9 @@ async function runImportBody({ execute, deferDomains, runWorkerFn, dispositionsM
   // was invoked with --execute immediately, ahead of that domain
   // preflight, so a real account-creation write could already have
   // landed before the domain side had any chance to fail the run closed.
-  verifyDispositionsSnapshotUnchanged(dispositionsMeta);
+  verifyDispositionsPayloadUnchanged(dispositionsMeta);
   saga.record('users_and_relationships_preflight', 'planned');
-  const userPreflightResult = runWorkerFn(USER_MIGRATION_SCRIPT, [...dispositionArgs], commonEnv);
+  const userPreflightResult = runWorkerFn(USER_MIGRATION_SCRIPT, [...dispositionArgs], commonEnv, dispositionStdin);
   saga.record('users_and_relationships_preflight', userPreflightResult.code === 0 ? 'reconciled' : 'failed', { code: userPreflightResult.code });
   if (userPreflightResult.code !== 0) {
     return { ok: false, failedAt: 'users_and_relationships_preflight', saga: saga.filePath, stderr: userPreflightResult.stderr };
@@ -903,13 +990,13 @@ async function runImportBody({ execute, deferDomains, runWorkerFn, dispositionsM
   // starting with users (domains that reference profiles/auth accounts
   // depend on those accounts already existing).
   try {
-    verifyDispositionsSnapshotUnchanged(dispositionsMeta);
+    verifyDispositionsPayloadUnchanged(dispositionsMeta);
   } catch (err) {
     saga.record('approved_dispositions', 'failed', { reason: err.message });
     return { ok: false, failedAt: 'approved_dispositions_integrity', saga: saga.filePath, stderr: err.message };
   }
   saga.record('users_and_relationships', 'planned');
-  const userResult = runWorkerFn(USER_MIGRATION_SCRIPT, ['--execute', ...dispositionArgs], commonEnv);
+  const userResult = runWorkerFn(USER_MIGRATION_SCRIPT, ['--execute', ...dispositionArgs], commonEnv, dispositionStdin);
   saga.record('users_and_relationships', userResult.code === 0 ? 'reconciled' : 'failed', { code: userResult.code });
   if (userResult.code !== 0) {
     return { ok: false, failedAt: 'users_and_relationships', saga: saga.filePath, stderr: userResult.stderr };
@@ -958,36 +1045,28 @@ export async function compensate({ pgClient, execute, approvedDispositionsPath =
   const runId = new Date().toISOString().replace(/[:.]/g, '-');
   const saga = newSagaLog(`compensate-${runId}`);
 
-  // Round 7, item 5: same private, orchestrator-owned immutable snapshot
-  // mechanism as runImport() -- see writeImmutableDispositionsSnapshot()'s
-  // own comment. compensate() only ever makes ONE user-migration
-  // invocation, but the child-process read is still a live TOCTOU window
-  // against a bare operator path, so the snapshot -- read once, verified
-  // right before use, deleted (and deletion verified) in `finally` -- is
-  // used here identically, not just in runImport().
-  const dispositionsMeta = writeImmutableDispositionsSnapshot(approvedDispositionsPath, `compensate-${runId}`);
-  try {
-    if (dispositionsMeta) {
-      saga.record('approved_dispositions', 'bound', {
-        path: dispositionsMeta.originalPath, snapshotPath: dispositionsMeta.snapshotPath, hash: dispositionsMeta.hash,
-        approvedBy: dispositionsMeta.approvedBy, approvedAt: dispositionsMeta.approvedAt,
-      });
-    }
-    const dispositionArgs = dispositionsMeta ? [`--approved-dispositions=${dispositionsMeta.snapshotPath}`] : [];
-
-    try {
-      verifyDispositionsSnapshotUnchanged(dispositionsMeta);
-    } catch (err) {
-      saga.record('approved_dispositions', 'failed', { reason: err.message });
-      return { ok: false, stderr: err.message, saga: saga.filePath };
-    }
-    saga.record('compensate', 'planned');
-    const result = runWorkerFn(USER_MIGRATION_SCRIPT, execute ? ['--execute', ...dispositionArgs] : [...dispositionArgs], {});
-    saga.record('compensate', result.code === 0 ? 'reconciled' : 'failed', { code: result.code });
-    return { ok: result.code === 0, stdout: result.stdout, stderr: result.stderr, saga: saga.filePath };
-  } finally {
-    cleanupDispositionsSnapshot(dispositionsMeta);
+  // Round 8, item 3: same in-memory, no-mutable-path payload mechanism as
+  // runImport() -- see loadApprovedDispositionsPayload()'s own comment.
+  const dispositionsMeta = loadApprovedDispositionsPayload(approvedDispositionsPath);
+  if (dispositionsMeta) {
+    saga.record('approved_dispositions', 'bound', {
+      path: dispositionsMeta.originalPath, hash: dispositionsMeta.hash,
+      approvedBy: dispositionsMeta.approvedBy, approvedAt: dispositionsMeta.approvedAt,
+    });
   }
+  const dispositionArgs = dispositionsMeta ? ['--approved-dispositions-stdin', `--approved-dispositions-hash=${dispositionsMeta.hash}`] : [];
+  const dispositionStdin = dispositionsMeta?.contents;
+
+  try {
+    verifyDispositionsPayloadUnchanged(dispositionsMeta);
+  } catch (err) {
+    saga.record('approved_dispositions', 'failed', { reason: err.message });
+    return { ok: false, stderr: err.message, saga: saga.filePath };
+  }
+  saga.record('compensate', 'planned');
+  const result = runWorkerFn(USER_MIGRATION_SCRIPT, execute ? ['--execute', ...dispositionArgs] : [...dispositionArgs], {}, dispositionStdin);
+  saga.record('compensate', result.code === 0 ? 'reconciled' : 'failed', { code: result.code });
+  return { ok: result.code === 0, stdout: result.stdout, stderr: result.stderr, saga: saga.filePath };
 }
 
 // ---------------------------------------------------------------------
@@ -1035,6 +1114,17 @@ async function main() {
   const deferDomains = args['defer-domains']
     ? String(args['defer-domains']).split(',').map((s) => s.trim()).filter(Boolean)
     : [];
+
+  // Round 8, item 8: cross-flag validation -- --defer-domains has no
+  // effect in --compensate mode. compensate() never migrates Mongo
+  // domains at all (it only re-invokes the idempotent user-migration
+  // path); before this check, passing both together silently dropped
+  // --defer-domains on the floor with no error, exactly the kind of
+  // "operator believed X, tool silently did Y" footgun this round closes
+  // elsewhere too.
+  if (compensateMode && args['defer-domains']) {
+    fail('--defer-domains has no effect in --compensate mode (compensate() never migrates Mongo domains) -- remove --defer-domains or drop --compensate');
+  }
 
   const pgUri = process.env.MIGRATION_DB_URL;
   const supabaseUrl = process.env.SUPABASE_URL;

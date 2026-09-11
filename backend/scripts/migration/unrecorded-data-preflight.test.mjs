@@ -43,7 +43,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import pg from 'pg';
 import { runCommand } from '../../../lib/db/test/orchestrator-lib.mjs';
-import { verifyNoUnrecordedData, verifyLedgerPointsToRealTargets, verifyTeacherLinkProvenance } from './production-import-orchestrator.mjs';
+import { verifyNoUnrecordedData, verifyLedgerPointsToRealTargets, verifyTeacherLinkProvenance, verifyLedgerRowIntegrity } from './production-import-orchestrator.mjs';
 import { MIGRATION_SEED_ADMIN_ID, MIGRATION_SEED_ADMIN_EMAIL, ensureMigrationSeedAdmin } from './lib/admin-rpc.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -467,8 +467,14 @@ async function main() {
       const rowId = r.rows[0].id;
 
       // Same target_table/target_id, but source_system is NOT 'mongodb' --
-      // must not match.
-      await addLedgerEntry('trial_requests', 'fake-mongo-id-wrongsystem', rowId, { sourceSystem: 'some_other_system' });
+      // must not match. status: 'failed' (round 8, item 6: 'created'/
+      // 'reconciled' would collide with the SECOND, correctly-scoped
+      // entry below under 0023's target-attribution unique index -- a
+      // real, correct property now, since two DIFFERENT ledger rows
+      // genuinely cannot both "own" the exact same target row; 'failed'
+      // keeps this test's actual point -- source_system scoping, not
+      // status -- isolated and provable).
+      await addLedgerEntry('trial_requests', 'fake-mongo-id-wrongsystem', rowId, { sourceSystem: 'some_other_system', status: 'failed' });
       await assert.rejects(
         () => verifyNoUnrecordedData(client),
         /trial_requests: 1 row\(s\) with no matching migration_source_ledger entry/,
@@ -497,8 +503,11 @@ async function main() {
 
       // Right source_system (mongodb), but a DIFFERENT source_database --
       // e.g. a hypothetical other Mongo database migrated by different
-      // tooling -- must not match.
-      await addLedgerEntry('trial_requests', 'fake-mongo-id-wrongdb', rowId, { sourceDatabase: 'some-other-database' });
+      // tooling -- must not match. status: 'failed' for the same reason
+      // as the source_system test above (avoids colliding with 0023's
+      // target-attribution unique index against the correctly-scoped
+      // entry added below).
+      await addLedgerEntry('trial_requests', 'fake-mongo-id-wrongdb', rowId, { sourceDatabase: 'some-other-database', status: 'failed' });
       await assert.rejects(
         () => verifyNoUnrecordedData(client),
         /trial_requests: 1 row\(s\) with no matching migration_source_ledger entry/,
@@ -687,12 +696,146 @@ async function main() {
     }
   });
 
+  // -----------------------------------------------------------------
+  // Round 8, item 6: bidirectional ledger integrity, completed.
+  // -----------------------------------------------------------------
+
+  await test('verifyLedgerRowIntegrity passes cleanly on a pristine schema', async () => {
+    const client = await pgPool.connect();
+    try {
+      assert.equal(await verifyLedgerRowIntegrity(client), true);
+    } finally {
+      client.release();
+    }
+  });
+
+  await test('round 8, item 6: a malformed source_content_hash (not a 64-hex-char sha256 digest) is flagged', async () => {
+    const client = await pgPool.connect();
+    try {
+      await addLedgerEntry('trial_requests', 'bad-hash-mongo-id', '00000000-0000-4000-8000-0000000000aa', { status: 'failed', contentHash: 'not-a-real-hash' });
+      await assert.rejects(
+        () => verifyLedgerRowIntegrity(client),
+        /trial_requests: 1 ledger row\(s\) with a malformed source_content_hash/
+      );
+    } finally {
+      await clearLedgerFor('trial_requests');
+      client.release();
+    }
+  });
+
+  await test('round 8, item 6: a source_collection this migration never actually uses for that target_table is flagged', async () => {
+    const client = await pgPool.connect();
+    try {
+      // trial_requests is only ever written with source_collection ==
+      // 'trial_requests' (the domain key) -- 'not_a_real_collection' is
+      // exactly the shape a hand-inserted or corrupted row would have.
+      await addLedgerEntry('trial_requests', 'bad-collection-mongo-id', '00000000-0000-4000-8000-0000000000bb', { status: 'failed', sourceCollection: 'not_a_real_collection' });
+      await assert.rejects(
+        () => verifyLedgerRowIntegrity(client),
+        /trial_requests: 1 ledger row\(s\) have source_collection "not_a_real_collection"/
+      );
+    } finally {
+      await clearLedgerFor('trial_requests');
+      client.release();
+    }
+  });
+
+  await test('round 8, item 6: profiles allows EITHER "users" or "adminusers" as source_collection -- both are real, legitimate cases', async () => {
+    const client = await pgPool.connect();
+    const userId = crypto.randomUUID();
+    const adminId = crypto.randomUUID();
+    try {
+      await insertAuthUser(userId, 'preflight-ledger-integrity-user@example.invalid', { migrated_from: 'mongodb' });
+      await addLedgerEntry('profiles', 'preflight-ledger-integrity-user-mongo-id', userId, { sourceCollection: 'users' });
+      await insertAuthUser(adminId, 'preflight-ledger-integrity-admin@example.invalid', { migrated_from: 'mongodb' });
+      await addLedgerEntry('profiles', 'preflight-ledger-integrity-admin-mongo-id', adminId, { sourceCollection: 'adminusers' });
+      assert.equal(await verifyLedgerRowIntegrity(client), true);
+    } finally {
+      await clearLedgerFor('profiles');
+      await deleteAuthUser(userId);
+      await deleteAuthUser(adminId);
+      client.release();
+    }
+  });
+
+  // -------------------------------------------------------------------
+  // Round 8, item 6: "created/reconciled يستلزمان target_id غير null"
+  // and "ارفض أكثر من ledger attribution لنفس target" are now enforced
+  // by migration 0023's own DB-level CHECK constraint and partial unique
+  // index -- proven here as LIVE INSERT-REJECTION tests, the strongest
+  // possible proof (the violating row cannot even be created, not merely
+  // detected after the fact by an app-level scan).
+  // -------------------------------------------------------------------
+
+  await test('round 8, item 6 (DB constraint): a "created"/"reconciled" ledger row with target_id NULL is rejected by Postgres itself', async () => {
+    await assert.rejects(
+      () => addLedgerEntry('trial_requests', 'null-target-created', null, { status: 'created' }),
+      /migration_source_ledger_created_reconciled_requires_target/
+    );
+    await assert.rejects(
+      () => addLedgerEntry('trial_requests', 'null-target-reconciled', null, { status: 'reconciled' }),
+      /migration_source_ledger_created_reconciled_requires_target/
+    );
+    await clearLedgerFor('trial_requests');
+  });
+
+  await test('round 8, item 6 (DB constraint): two DIFFERENT source documents both claiming the SAME (target_table, target_id) while created/reconciled is rejected by Postgres itself', async () => {
+    const sharedTargetId = '00000000-0000-4000-8000-0000000000cc';
+    await addLedgerEntry('trial_requests', 'dup-attribution-first', sharedTargetId, { status: 'created' });
+    try {
+      await assert.rejects(
+        () => addLedgerEntry('trial_requests', 'dup-attribution-second', sharedTargetId, { status: 'created' }),
+        /migration_source_ledger_target_attribution_unique/
+      );
+      // A DIFFERENT target_table sharing the same UUID string is fine --
+      // the constraint is scoped per (target_table, target_id), not
+      // target_id alone.
+      await addLedgerEntry('system_config', 'dup-attribution-different-table', sharedTargetId, { status: 'created' });
+    } finally {
+      await clearLedgerFor('trial_requests');
+      await clearLedgerFor('system_config');
+    }
+  });
+
+  await test('round 8, item 6: explicit, tested policy for "failed" rows -- exempt from BOTH new constraints, by design', async () => {
+    // A 'failed' row legitimately carries a NULL target_id (the normal
+    // case: the document was rejected before any write was attempted).
+    await addLedgerEntry('trial_requests', 'failed-null-target', null, { status: 'failed' });
+
+    // A 'failed' row ALSO legitimately carries a REAL target_id that
+    // still points at a live row -- kill-window 3 (crash between the
+    // target write and reconciliation; markFailed() never clears
+    // target_id -- see migrate-users-to-supabase-auth.mjs's own
+    // comment). This must never be flagged as "missing" (already proven
+    // above) and must never collide with the unique index either, even
+    // when ANOTHER row legitimately owns that same target as
+    // created/reconciled.
+    const realTarget = await pgPool.query(`INSERT INTO trial_requests (name, email, status) VALUES ('Test', 'failed-row-real-target@example.invalid', 'new') RETURNING id`);
+    await addLedgerEntry('trial_requests', 'owning-row', realTarget.rows[0].id, { status: 'reconciled' });
+    // A SECOND, unrelated source document's failed attempt happens to
+    // reference that exact same target_id (e.g. a retried, mis-resolved
+    // resume) -- still must not violate the unique index, because a
+    // 'failed' row is simply not covered by it at all.
+    await addLedgerEntry('trial_requests', 'failed-same-target-as-owner', realTarget.rows[0].id, { status: 'failed' });
+
+    const client = await pgPool.connect();
+    try {
+      assert.equal(await verifyLedgerRowIntegrity(client), true, 'failed rows must never trip the hash/source_collection checks either, given well-formed values');
+      assert.equal(await verifyLedgerPointsToRealTargets(client), true, 'a failed row is excluded from the Ledger -> Target liveness check regardless of its target_id');
+    } finally {
+      await pgPool.query('DELETE FROM trial_requests WHERE id = $1', [realTarget.rows[0].id]);
+      await clearLedgerFor('trial_requests');
+      client.release();
+    }
+  });
+
   await test('after all fixtures are cleaned up, the schema is pristine again', async () => {
     const client = await pgPool.connect();
     try {
       assert.equal(await verifyNoUnrecordedData(client), true);
       assert.equal(await verifyLedgerPointsToRealTargets(client), true);
       assert.equal(await verifyTeacherLinkProvenance(client), true);
+      assert.equal(await verifyLedgerRowIntegrity(client), true);
     } finally {
       client.release();
     }

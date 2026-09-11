@@ -61,6 +61,7 @@ import { runCommand } from '../../../lib/db/test/orchestrator-lib.mjs';
 import { TARGET_SUPABASE_REF, computeConfirmToken } from './production-import-orchestrator.mjs';
 import { ensureMigrationSeedAdmin } from './lib/admin-rpc.mjs';
 import { contentHashOf } from './lib/source-ledger.mjs';
+import { correlationIdFor } from './migrate-users-to-supabase-auth.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, '..', '..', '..');
@@ -177,9 +178,23 @@ async function main() {
 
   async function seedLedgeredAccount(sourceDoc, migratedFrom = 'mongodb') {
     const id = crypto.randomUUID();
+    // Round 10, item 3: this simulates an account a PRIOR run of this
+    // migration already fully created and ledgered as 'reconciled'. A real
+    // prior run can only reach that state via migrateOneUser()'s
+    // createUser() call, which always stamps app_metadata.
+    // migration_correlation_id -- migrateOneUser()'s new unconditional
+    // read-back (before every markReconciled()) now verifies this on
+    // EVERY run, including a resume, so the fixture must carry the exact
+    // same value a real prior run would have written or this "already
+    // migrated" simulation is not actually reachable in reality.
+    const correlationId = correlationIdFor({ sourceCollection: 'users', sourceDocumentId: sourceDoc._id, sourceValue: sourceDoc });
     await pgPool.query(
-      `INSERT INTO auth.users (id, email, raw_user_meta_data) VALUES ($1, $2, $3::jsonb)`,
-      [id, sourceDoc.email, JSON.stringify({ migrated_from: migratedFrom, migrated_at: new Date().toISOString() })]
+      `INSERT INTO auth.users (id, email, raw_user_meta_data, raw_app_meta_data) VALUES ($1, $2, $3::jsonb, $4::jsonb)`,
+      [
+        id, sourceDoc.email,
+        JSON.stringify({ migrated_from: migratedFrom, migrated_at: new Date().toISOString() }),
+        JSON.stringify({ migration_correlation_id: correlationId }),
+      ]
     );
     await pgPool.query(
       `INSERT INTO migration_source_ledger

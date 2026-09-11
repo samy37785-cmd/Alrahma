@@ -3,34 +3,65 @@
 // touches (mongo-to-supabase.mjs's generic per-domain loop,
 // migrate-users-to-supabase-auth.mjs's migrateSubscription()).
 //
-// Bug being fixed: markReconciled() was called immediately after COMMIT
-// with NO independent re-read of the row at all in most call sites
-// (mongo-to-supabase.mjs's generic domain loop had a comment claiming
-// "the INDEPENDENT re-verification that promotes it to 'reconciled'"
-// immediately above a call that did no such thing). The two call sites
-// that DID read back (migrateSubscription(), applyTeacherLink()/
-// applyParentChildLink() via their own bespoke queries) only ever
-// checked bare row EXISTENCE (`SELECT 1 ... WHERE id = $1 AND
-// user_id = $2`) -- never compared the actual important field VALUES
-// (status, plan_id, provider dates, ...) against what this migration
-// itself just wrote. A trigger silently rewriting a value, or any other
-// mechanism substituting different content under the same id, passed
-// completely unnoticed and was marked 'reconciled' regardless.
-//
-// verifyReadBack() re-reads the real row by its real identity (plain id,
-// pkColumn, or composite -- reusing the exact same shapes ROLLBACK_SPEC/
-// LEDGER_BACKED_TARGET_SPECS already define) and compares every field
+// Bug being fixed (round 9): markReconciled() was called immediately
+// after COMMIT with NO independent re-read of the row at all in most
+// call sites. verifyReadBack() re-reads the real row by its real
+// identity (plain id, pkColumn, or composite) and compares every field
 // named in `expectedFields` against the column Postgres actually
-// persisted, tolerant of the couple of JS<->Postgres round-trip shapes
-// this codebase's own domains produce (Date objects, jsonb columns whose
-// JS-side value was already JSON.stringify()'d before being passed as a
-// `::jsonb` parameter) -- not a byte-exact comparison, but a real
-// content comparison, not just "a row with this id exists".
+// persisted -- not just "a row with this id exists".
+//
+// PR #70 review round 10 -- two further real gaps, both found by actually
+// exercising this code against real Postgres, not by inspection:
+//
+// item 1: round 9's own comparator treated ANY two non-null
+// Date/timestamp values as a match ("presence only"), reasoning some
+// domains derive a bookkeeping timestamp with a client-side
+// `?? new Date()` fallback that legitimately differs run-to-run on a
+// no-write resume. That reasoning was correct for THAT narrow case but
+// the fix was far too broad: it silently exempted EVERY timestamp field
+// on EVERY call from ever being checked for real content at all -- a
+// trigger changing a genuine, source-carried timestamp from 2020 to 2035
+// would have passed completely unnoticed. Fixed: Date/timestamp values
+// are now normalized to a UTC epoch and compared EXACTLY (to the
+// precision Postgres's own `timestamp`/`timestamptz` columns actually
+// round-trip through node-postgres's Date objects at -- millisecond
+// precision; Postgres itself stores microseconds, but neither this
+// driver nor the JS `Date` type can represent finer than milliseconds, so
+// millisecond-epoch equality IS exact-to-representable-precision, not an
+// arbitrary tolerance). The narrow "generated, no real source value"
+// case is now handled per-field, per-call, via the caller-supplied
+// `exemptFields` option -- see mongo-to-supabase.mjs's per-domain
+// `__generatedFields` (only ever populated when this exact document's
+// source truly had no original value for that field) -- never a blanket
+// exemption for the field's TYPE.
+//
+// item 2: `if (!(key in dbRow)) continue` silently ignored any expected
+// field that did not turn out to be a real column on the target table --
+// e.g. a typo'd column name in a caller's `expectedFields` would simply
+// never be checked, with no error anywhere, defeating the entire point
+// of an exact read-back. Fixed: any key in `expectedFields` that is not
+// a real column in the re-read row is now a hard failure UNLESS it is
+// named in `spec.nonColumnFields` -- an explicit, per-table allowlist for
+// genuine non-column helper fields a caller's `row` object legitimately
+// carries (e.g. payments' `_raw`, or this same round's own
+// `__generatedFields` marker) that were never meant to be compared
+// against a Postgres column at all.
 import { decodeCompositeTargetId } from './composite-target-id.mjs';
+
+function toEpochMillis(value) {
+  if (value instanceof Date) {
+    const t = value.getTime();
+    return Number.isNaN(t) ? null : t;
+  }
+  if (typeof value === 'string') {
+    const t = Date.parse(value);
+    return Number.isNaN(t) ? null : t;
+  }
+  return null;
+}
 
 function normalizeForCompare(value) {
   if (value === undefined || value === null) return null;
-  if (value instanceof Date) return value.toISOString();
   if (typeof value === 'string') {
     const trimmed = value.trim();
     const looksLikeJson = (trimmed.startsWith('{') && trimmed.endsWith('}')) || (trimmed.startsWith('[') && trimmed.endsWith(']'));
@@ -48,29 +79,25 @@ function normalizeForCompare(value) {
 }
 
 /**
- * @param {(string|number|boolean|Date|object|null)[2]} pair [expected, actual]
+ * @param {unknown} expected
+ * @param {unknown} actual
  */
-function fieldsMatch([expected, actual]) {
+function fieldsMatch(expected, actual) {
   // A `timestamp`/`timestamptz` column (pg always returns these as a real
-  // JS Date) is compared by PRESENCE only (both null, or both non-null),
-  // not exact value. Reason, found empirically running this exact check
-  // against the real migration suite: several domains derive a bookkeeping
-  // timestamp with a client-side `doc.createdAt ?? new Date()` fallback
-  // (e.g. system_audit_logs) -- transform() re-runs that fallback fresh on
-  // every invocation, including a resumed run whose upsert() ends up
-  // reusing an already-existing row with ZERO new writes (admin_audit_log
-  // is immutable; reuse-on-resume is a deliberate no-write no-op, see that
-  // domain's own upsert() comment). Comparing THIS run's freshly-generated
-  // "now" against a PRIOR run's already-persisted "now" is not a real
-  // content mismatch -- it is two different, both-legitimate values for a
-  // field this exact call never attempted to (over)write. Exact-value
-  // equality here produced a false positive on every real domain suite
-  // run. A genuinely corrupted timestamp (NULL when one was expected, or
-  // vice versa) is still caught; the specific instant is bookkeeping
-  // metadata, not migrated source content, and is not what this check
-  // exists to protect.
-  if (actual instanceof Date || expected instanceof Date) {
-    return (expected === null || expected === undefined) === (actual === null || actual === undefined);
+  // JS Date) is identified by either side being a Date instance, OR a
+  // string that itself parses as a real timestamp on one side while the
+  // other is a Date -- the common shape this codebase's own domains
+  // produce (an ISO string as `expected`, a Date as `actual`). Compared
+  // EXACTLY at millisecond-epoch precision -- see this file's own header
+  // comment (round 10, item 1) for why "both non-null" alone is wrong.
+  const eitherIsDate = expected instanceof Date || actual instanceof Date;
+  if (eitherIsDate) {
+    if ((expected === null || expected === undefined) !== (actual === null || actual === undefined)) return false;
+    if (expected === null || expected === undefined) return true; // both null
+    const expectedMs = toEpochMillis(expected);
+    const actualMs = toEpochMillis(actual);
+    if (expectedMs === null || actualMs === null) return false; // one side didn't even parse as a real timestamp -- a genuine mismatch
+    return expectedMs === actualMs;
   }
   return normalizeForCompare(expected) === normalizeForCompare(actual);
 }
@@ -82,13 +109,24 @@ function fieldsMatch([expected, actual]) {
  * failure through their own existing markFailed()/error-reporting path.
  *
  * @param {import('pg').ClientBase} pgClient
- * @param {{table: string, pkColumn?: string, composite?: string[]}} spec
+ * @param {{table: string, pkColumn?: string, composite?: string[], nonColumnFields?: string[]}} spec
+ *   `nonColumnFields` (round 10, item 2): an explicit, per-table allowlist
+ *   of `expectedFields` keys that are NOT real Postgres columns on this
+ *   table -- e.g. a caller-side helper/marker field. Any OTHER expected
+ *   key that isn't a real column on the re-read row is a hard failure.
  * @param {string} targetId - plain id/pkColumn value, or an
  *   encodeCompositeTargetId()-encoded composite identity.
  * @param {Record<string, unknown>} expectedFields - column name -> the
  *   value this migration itself intended to persist there.
+ * @param {{exemptFields?: string[]}} [options] - `exemptFields` (round 10,
+ *   item 1): field names to skip the VALUE comparison for on THIS call
+ *   only -- the column must still exist on the row (still subject to the
+ *   nonColumnFields check above). Populate this ONLY when the source
+ *   document genuinely carried no original value for that specific field
+ *   this specific time (a real generated-fallback, not a blanket
+ *   "it's a timestamp" exemption).
  */
-export async function verifyReadBack(pgClient, spec, targetId, expectedFields) {
+export async function verifyReadBack(pgClient, spec, targetId, expectedFields, { exemptFields = [] } = {}) {
   let whereSql, params;
   if (spec.composite) {
     let parts;
@@ -109,10 +147,17 @@ export async function verifyReadBack(pgClient, spec, targetId, expectedFields) {
     return { ok: false, reason: `read-back: no row found in ${spec.table} for the just-written target (target_id=${targetId}) -- it is gone, or was never really there` };
   }
   const dbRow = rows[0];
+  const nonColumnFields = new Set(spec.nonColumnFields ?? []);
+  const exempt = new Set(exemptFields);
   const mismatches = [];
   for (const [key, expectedValue] of Object.entries(expectedFields)) {
-    if (!(key in dbRow)) continue; // not a real column on this table -- nothing to compare
-    if (!fieldsMatch([expectedValue, dbRow[key]])) {
+    if (nonColumnFields.has(key)) continue; // explicitly declared non-column helper field -- never a real column, never compared
+    if (!(key in dbRow)) {
+      mismatches.push(`${key} (expected field is not a real column on ${spec.table}, and is not declared in spec.nonColumnFields -- likely a typo)`);
+      continue;
+    }
+    if (exempt.has(key)) continue; // this exact call declared this field a genuine generated-fallback with no source value -- column presence already implied by the row existing at all
+    if (!fieldsMatch(expectedValue, dbRow[key])) {
       mismatches.push(`${key} (expected ${JSON.stringify(expectedValue)}, found ${JSON.stringify(dbRow[key])})`);
     }
   }

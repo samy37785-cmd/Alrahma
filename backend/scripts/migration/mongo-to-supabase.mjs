@@ -429,7 +429,15 @@ const DOMAINS = {
     },
     validate(row) {
       if (!row.title || !row.slug || !row.content) throw new Error('blogs row missing title/slug/content');
-      if (row.published && !row.published_at) row.published_at = new Date().toISOString();
+      // PR #70 review round 10, item 1: this generated fallback (no
+      // source publishedAt, but published=true) is marked explicitly so
+      // read-back exempts ONLY this field, ONLY on a call where it was
+      // genuinely generated -- never a blanket "timestamps aren't
+      // checked" exemption. See lib/read-back-verify.mjs's own header.
+      if (row.published && !row.published_at) {
+        row.published_at = new Date().toISOString();
+        row.__generatedFields = [...(row.__generatedFields ?? []), 'published_at'];
+      }
     },
     async upsert(client, sourceId, row) {
       const r = await client.query(
@@ -608,6 +616,9 @@ const DOMAINS = {
         user_id: await resolveProfileId(ctx.pgClient, ctx.userEmailMap, doc.user),
         course_id: resolveCoursePgId(doc.course),
         added_at: doc.addedAt ?? new Date(),
+        // Round 10, item 1: per-field generated-fallback marker -- see
+        // lib/read-back-verify.mjs's own header comment.
+        __generatedFields: doc.addedAt == null ? ['added_at'] : [],
       };
     },
     validate() {},
@@ -638,6 +649,7 @@ const DOMAINS = {
         total_verses: doc.totalVerses ?? 0,
         memorized_verses: JSON.stringify(doc.memorizedVerses ?? []),
         last_revised: doc.lastRevised ?? new Date(),
+        __generatedFields: doc.lastRevised == null ? ['last_revised'] : [],
       };
     },
     validate(row) {
@@ -678,6 +690,7 @@ const DOMAINS = {
         notes: doc.notes || null,
         issued_at: doc.issuedAt ?? new Date(),
         revoked: !!doc.revoked,
+        __generatedFields: doc.issuedAt == null ? ['issued_at'] : [],
       };
     },
     validate(row) {
@@ -797,6 +810,7 @@ const DOMAINS = {
         course_id: resolveCoursePgId(doc.course),
         completed: JSON.stringify(doc.completed ?? []),
         last_activity: doc.lastActivity ?? new Date(),
+        __generatedFields: doc.lastActivity == null ? ['last_activity'] : [],
       };
     },
     validate() {},
@@ -868,6 +882,7 @@ const DOMAINS = {
         body: doc.body,
         read_at: doc.readAt ?? null,
         created_at: doc.createdAt ?? new Date(),
+        __generatedFields: doc.createdAt == null ? ['created_at'] : [],
       };
     },
     validate(row) {
@@ -902,6 +917,7 @@ const DOMAINS = {
         teacher_id: await resolveProfileId(ctx.pgClient, ctx.userEmailMap, doc.teacher),
         course_id: doc.course ? resolveCoursePgId(doc.course) : null,
         record_date: doc.date ?? new Date(),
+        __generatedFields: doc.date == null ? ['record_date'] : [],
         grade: doc.grade ?? null,
         grade_label: doc.gradeLabel || null,
         attendance: ['present', 'absent', 'late', 'excused'].includes(doc.attendance) ? doc.attendance : 'unmarked',
@@ -1285,6 +1301,7 @@ const DOMAINS = {
         coupon_id: resolveCouponPgId(doc.coupon),
         user_id: await resolveProfileId(ctx.pgClient, ctx.userEmailMap, doc.user),
         used_at: doc.usedAt ?? new Date(),
+        __generatedFields: doc.usedAt == null ? ['used_at'] : [],
       };
     },
     validate() {},
@@ -1334,6 +1351,10 @@ const DOMAINS = {
         admin_note: doc.adminNote || null,
         created_at: doc.createdAt ?? new Date(),
         updated_at: doc.updatedAt ?? new Date(),
+        __generatedFields: [
+          ...(doc.createdAt == null ? ['created_at'] : []),
+          ...(doc.updatedAt == null ? ['updated_at'] : []),
+        ],
       };
     },
     validate(row) {
@@ -1439,6 +1460,7 @@ const DOMAINS = {
         read: !!doc.read,
         meta: doc.data ? JSON.stringify(doc.data) : null,
         created_at: doc.createdAt ?? new Date(),
+        __generatedFields: doc.createdAt == null ? ['created_at'] : [],
       };
     },
     validate(row) {
@@ -1494,6 +1516,7 @@ const DOMAINS = {
         after: doc.after ? JSON.stringify(doc.after) : null,
         severity: doc.severity,
         created_at: doc.createdAt ?? new Date(),
+        __generatedFields: doc.createdAt == null ? ['created_at'] : [],
       };
     },
     validate(row) {
@@ -1558,33 +1581,44 @@ const DOMAINS = {
 // THIS tool created or touched, nothing else. table/pk describe how to turn
 // a recorded pgId back into a DELETE statement; composite keys (":"-joined)
 // need their own delete shape since there's no single `id` column to match.
+// PR #70 review round 10, item 2: `nonColumnFields` on a spec entry below
+// is the explicit, per-table allowlist lib/read-back-verify.mjs's
+// verifyReadBack() now REQUIRES for any `expectedFields` key that is not
+// a real column on that table -- a typo'd/nonexistent column name is now
+// a hard read-back failure everywhere else, on purpose (see that file's
+// own header). `__generatedFields` is this round's own per-document
+// generated-timestamp marker (item 1); `_raw` is payments' own
+// pre-existing helper field (payments' domain logic itself is
+// deliberately NOT touched this round -- deferred, see DEFERRED_DOMAIN_
+// REASONS in production-import-orchestrator.mjs -- this is only the
+// generic read-back plumbing every domain shares).
 const ROLLBACK_SPEC = {
   trial_requests:  { table: 'trial_requests' },
   subscribers:     { table: 'subscribers' },
-  blogs:           { table: 'blogs' },
+  blogs:           { table: 'blogs', nonColumnFields: ['__generatedFields'] },
   courses:         { table: 'courses' },
   contact_messages:{ table: 'contact_messages' },
   system_config:   { table: 'system_config', pkColumn: 'key' },
-  wishlists:       { table: 'wishlists', composite: ['user_id', 'course_id'] },
-  hifz_progress:   { table: 'hifz_progress', composite: ['user_id', 'chapter_id'] },
-  certificates:    { table: 'certificates' },
+  wishlists:       { table: 'wishlists', composite: ['user_id', 'course_id'], nonColumnFields: ['__generatedFields'] },
+  hifz_progress:   { table: 'hifz_progress', composite: ['user_id', 'chapter_id'], nonColumnFields: ['__generatedFields'] },
+  certificates:    { table: 'certificates', nonColumnFields: ['__generatedFields'] },
   reviews:         { table: 'reviews' },
   referrals:       { table: 'referrals' },
-  course_progress: { table: 'course_progress', composite: ['user_id', 'course_id'] },
+  course_progress: { table: 'course_progress', composite: ['user_id', 'course_id'], nonColumnFields: ['__generatedFields'] },
   live_classes:    { table: 'live_classes' },
-  messages:        { table: 'messages' },
-  student_records: { table: 'student_records' },
+  messages:        { table: 'messages', nonColumnFields: ['__generatedFields'] },
+  student_records: { table: 'student_records', nonColumnFields: ['__generatedFields'] },
   // payments is ALSO immutable by design (forbid_payment_delete(),
   // 0001_functions_triggers.sql) — same treatment as invoices/
   // admin_audit_log below.
-  payments:                  { table: 'payments', immutable: true },
+  payments:                  { table: 'payments', immutable: true, nonColumnFields: ['_raw'] },
   enrollments:               { table: 'enrollments' },
   quran_bookmarks:           { table: 'quran_bookmarks', composite: ['user_id', 'verse_key'] },
   quran_reading_progress:    { table: 'quran_reading_progress', pkColumn: 'user_id' },
   quran_memorization_stats:  { table: 'quran_memorization_stats', pkColumn: 'user_id' },
   coupons:                   { table: 'coupons' },
-  coupon_redemptions:        { table: 'coupon_redemptions', composite: ['coupon_id', 'user_id'] },
-  manual_payments:           { table: 'manual_payments' },
+  coupon_redemptions:        { table: 'coupon_redemptions', composite: ['coupon_id', 'user_id'], nonColumnFields: ['__generatedFields'] },
+  manual_payments:           { table: 'manual_payments', nonColumnFields: ['__generatedFields'] },
   document_counters:         { table: 'document_counters', composite: ['scope', 'year'] },
   // Review round 3: this entry was missing entirely -- discovered while
   // proving item 4's kill-window-3 resume test for notifications (with
@@ -1598,7 +1632,7 @@ const ROLLBACK_SPEC = {
   // the checkpoint-deleted variant caught it. notifications has no
   // forbid_*_mutation() trigger (unlike admin_audit_log) and no
   // composite/non-`id` primary key, so this is the plain, default shape.
-  notifications: { table: 'notifications' },
+  notifications: { table: 'notifications', nonColumnFields: ['__generatedFields'] },
   // invoices/admin_audit_log are immutable BY DESIGN — forbid_invoice_
   // mutation() / forbid_audit_log_mutation() (0001_functions_triggers.sql,
   // 0013_admin_rbac.sql) block UPDATE/DELETE for every role, service_role
@@ -1607,7 +1641,7 @@ const ROLLBACK_SPEC = {
   // not a gap in this tool. rollbackDomain() below reports this
   // explicitly rather than attempting a DELETE that would only ever fail.
   invoices:           { table: 'invoices', immutable: true },
-  system_audit_logs:  { table: 'admin_audit_log', immutable: true },
+  system_audit_logs:  { table: 'admin_audit_log', immutable: true, nonColumnFields: ['__generatedFields'] },
 };
 
 async function rollbackDomain(domainName, { pgClient }) {
@@ -1983,7 +2017,15 @@ async function migrateDomain(domainName, { dryRun, resetCheckpoint, pgClient }) 
       // by the time this runs, anything) is treated exactly like any
       // other real failure: markFailed(), never markReconciled(), and
       // this document counts toward `failed` (a non-zero exit).
-      const readBack = await verifyReadBack(pgClient, spec, pgId, row);
+      //
+      // Round 10, item 1: `row.__generatedFields`, when a domain's own
+      // transform()/validate() set it, names EXACTLY the fields THIS
+      // document's source genuinely had no original value for (a real
+      // `?? new Date()` fallback fired) -- passed as `exemptFields` so
+      // read-back skips ONLY those fields' VALUE comparison, never a
+      // blanket per-TYPE exemption for every timestamp. A field the
+      // source DID carry a real value for is always compared exactly.
+      const readBack = await verifyReadBack(pgClient, spec, pgId, row, { exemptFields: row.__generatedFields ?? [] });
       if (!readBack.ok) throw new Error(readBack.reason);
 
       await markReconciled(pgClient, ledgerId);

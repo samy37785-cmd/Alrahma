@@ -742,6 +742,48 @@ export async function verifyNoUnrecordedData(pgClient) {
     }
   }
 
+  // PR #70 review round 10, item 3: a direct, independent check on
+  // auth.users itself -- the `profiles` iteration above only ever counts
+  // EXISTING profiles rows with no matching ledger entry; an auth.users
+  // row with NO profiles row at all (a genuine orphan -- the DB trigger
+  // that is supposed to create one synchronously never ran, or its
+  // profiles row was deleted out-of-band while auth.users survived;
+  // profiles.id REFERENCES auth.users(id), never the other direction, so
+  // nothing in the schema itself prevents this) was previously invisible
+  // to this preflight entirely, since a query that only ever iterates
+  // `public.profiles` can never even see a row that has none. Checked
+  // here directly against auth.users, covering both an orphan (no
+  // profiles row) and an unrecorded one (a profiles row exists but is
+  // not ledger-attributed -- redundant with the profiles-table check
+  // above by construction, kept anyway as a genuinely independent,
+  // defense-in-depth verification of the same fact from the other side of
+  // the relationship) -- excluding only the fully-verified migration
+  // seed-admin identity, same exemption as the profiles check above.
+  const { rows: authOrphanRows } = await pgClient.query(
+    `select count(*)::int as n
+       from auth.users u
+      where not (u.id = $1 and u.email = $2)
+        and (
+          not exists (select 1 from public.profiles p where p.id = u.id)
+          or not exists (
+            select 1 from public.migration_source_ledger l
+            where l.target_table = 'profiles'
+              and l.source_system = 'mongodb'
+              and l.source_database = $3
+              and btrim(l.source_collection) <> ''
+              and btrim(l.source_document_id) <> ''
+              and l.source_content_hash ~ '^[0-9a-f]{64}$'
+              and l.status in ('created', 'reconciled', 'failed')
+              and l.target_id is not null
+              and l.target_id = u.id::text
+          )
+        )`,
+    [MIGRATION_SEED_ADMIN_ID, MIGRATION_SEED_ADMIN_EMAIL, SOURCE_DATABASE]
+  );
+  if (authOrphanRows[0].n > 0) {
+    problems.push(`auth.users: ${authOrphanRows[0].n} row(s) orphaned (no profiles row) or not attributable to this migration, and not the migration-seed admin identity`);
+  }
+
   if (problems.length > 0) {
     fail(`target already contains data this tooling did not record:\n  - ${problems.join('\n  - ')}`);
   }

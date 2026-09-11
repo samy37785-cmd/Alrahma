@@ -43,6 +43,7 @@ import mongoose from 'mongoose';
 import pg from 'pg';
 import { runCommand } from '../../../lib/db/test/orchestrator-lib.mjs';
 import { decodeCompositeTargetId } from './lib/composite-target-id.mjs';
+import { verifyReadBack } from './lib/read-back-verify.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, '..', '..', '..');
@@ -421,6 +422,45 @@ async function main() {
   });
 
   // =====================================================================
+  // PR #70 review round 10, item 2: verifyReadBack() used to silently
+  // `continue` past any `expectedFields` key that was not a real column
+  // on the re-read row (`if (!(key in dbRow)) continue`) -- a typo'd
+  // column name in a caller's expected fields was simply never checked
+  // at all, with no error anywhere, defeating the entire point of an
+  // exact read-back. Proven directly against verifyReadBack() itself,
+  // against a REAL Postgres row, with a genuinely misspelled column name
+  // that is not declared in spec.nonColumnFields.
+  // =====================================================================
+
+  await test('review round 10, item 2: verifyReadBack fails closed on a typo\'d expected-field name that is not a real column and not in spec.nonColumnFields', async () => {
+    await resetAll();
+    const sourceId = await insertTrialRequest(pgPool, 1);
+    const fwd = runMigrateCLI(['--domain=trial_requests']);
+    assert.equal(fwd.code, 0, fwd.stderr);
+    const row = await ledgerRow(sourceId);
+
+    const result = await verifyReadBack(pgPool, { table: 'trial_requests' }, row.target_id, {
+      name: 'Test 1',
+      // Genuine typo: the real column is `status`, not `statuss`. No
+      // nonColumnFields declared for this call, so this must fail, not
+      // be silently skipped.
+      statuss: 'new',
+    });
+    assert.equal(result.ok, false, 'a typo\'d expected field name must fail read-back, never be silently ignored');
+    assert.match(result.reason, /statuss/);
+    assert.match(result.reason, /not a real column/);
+
+    // Sanity/contrast: the SAME typo'd key, when explicitly declared in
+    // spec.nonColumnFields, is correctly treated as a real, intentional
+    // non-column helper field and never flagged.
+    const allowlisted = await verifyReadBack(
+      pgPool, { table: 'trial_requests', nonColumnFields: ['statuss'] }, row.target_id,
+      { name: 'Test 1', statuss: 'new' }
+    );
+    assert.equal(allowlisted.ok, true, 'a field explicitly declared in spec.nonColumnFields must never be required to exist as a column');
+  });
+
+  // =====================================================================
   // Item 2: rollback atomicity + ledger-as-source-of-truth.
   // =====================================================================
 
@@ -791,6 +831,131 @@ async function main() {
     const r = await pgPool.query(`SELECT count(*) FROM ${table}`);
     return Number(r.rows[0].count);
   }
+
+  // =====================================================================
+  // PR #70 review round 10, item 4: composite decoder arity. Rollback's
+  // composite branch destructures `const [a, b] = decodeCompositeTargetId
+  // (pgId)` -- before this round's fix, a target_id with THREE (or more)
+  // decoded parts decoded SUCCESSFULLY (the old check only required "at
+  // least 2"), and the destructure silently kept only the first two,
+  // dropping the rest with no error. rollbackDomain() would then issue
+  // `DELETE ... WHERE col0=a AND col1=b` using only 2 of the real 3 (or
+  // more) values -- for today's 2-column composite tables this happened
+  // to still target the "right" row by coincidence, but it was never a
+  // real guarantee, and a malformed/tampered/future 3-part value could
+  // have matched and deleted a row that only shares 2 of 3 true key
+  // values with the intended target. Proven here: a hand-crafted 3-part
+  // target_id must reject BEFORE any DELETE (target row) or ledger
+  // mutation -- both survive completely untouched.
+  // =====================================================================
+
+  await test('review round 10, item 4: rollback on a target_id with THREE decoded parts rejects BEFORE any DELETE or ledger mutation -- never silently drops a real row using only 2 of 3 components', async () => {
+    await resetQuranBookmarksState();
+    const { profileId } = await seedQuranUserPrereqs();
+    const verseKey = '2:255';
+    // A REAL quran_bookmarks row -- this is what must survive completely
+    // untouched; with the old ">=2" decode this row's own (user_id,
+    // verse_key) would be exactly what a truncated 3-part target_id's
+    // first two components resolve to, making it a real deletion target.
+    await pgPool.query(
+      `INSERT INTO quran_bookmarks (user_id, verse_key, chapter_id, verse_num) VALUES ($1,$2,2,255)`,
+      [profileId, verseKey]
+    );
+    // A hand-crafted, malformed ledger row: a THREE-part composite
+    // target_id -- this codec's own encodeCompositeTargetId() can never
+    // produce one (see lib/composite-target-id.test.mjs's own arity
+    // tests); this simulates a tampered/corrupted value reaching
+    // rollback regardless of how it got there. No local checkpoint entry
+    // exists for this domain (resetQuranBookmarksState() deletes it), so
+    // rollbackDomain() uses the DB-side ledger as its source of truth --
+    // the exact path that decodes target_id.
+    const sourceId = 'malformed-three-part-target';
+    await pgPool.query(
+      `INSERT INTO migration_source_ledger
+         (source_system, source_database, source_collection, source_document_id, source_content_hash,
+          target_table, target_id, status, migrated_at)
+       VALUES ('mongodb', 'al-rahma', 'quran_bookmarks', $1, $2, 'quran_bookmarks', $3, 'reconciled', now())`,
+      [sourceId, 'a'.repeat(64), JSON.stringify([profileId, verseKey, 'extra-third-part'])]
+    );
+
+    const rb = runMigrateCLI(['--domain=quran_bookmarks', '--rollback']);
+    assert.equal(rb.code, 1, 'a malformed composite target_id must be reported as a genuine rollback failure, never silent success');
+    assert.match(rb.stdout, /1 FAILED/);
+
+    const stillThere = await pgPool.query('SELECT 1 FROM quran_bookmarks WHERE user_id=$1 AND verse_key=$2', [profileId, verseKey]);
+    assert.equal(
+      stillThere.rowCount, 1,
+      'CRITICAL: the real row must survive completely untouched -- a malformed 3-part target_id must never be silently truncated into a real 2-part DELETE'
+    );
+    const ledgerStillThere = await pgPool.query(`SELECT target_id FROM migration_source_ledger WHERE source_document_id=$1`, [sourceId]);
+    assert.equal(ledgerStillThere.rowCount, 1, 'the ledger row must also survive -- never mutated ahead of a confirmed, successful target deletion');
+  });
+
+  // =====================================================================
+  // PR #70 review round 10, item 1: exact timestamp read-back. Round 9's
+  // comparator treated any two non-null Date values as a match ("presence
+  // only") -- a trigger silently changing a REAL, source-carried
+  // timestamp would have passed completely unnoticed. Proven here against
+  // notifications.created_at, seeded with a REAL source createdAt (so
+  // __generatedFields is empty and no exemption applies) -- a trigger
+  // that rewrites it from 2020 to 2035 must be caught by exact,
+  // millisecond-epoch comparison.
+  // =====================================================================
+
+  async function insertNotificationDocWithCreatedAt(recipientMongoId, seq, createdAt) {
+    const res = await mongoose.connection.collection('notifications').insertOne({
+      recipient: recipientMongoId, type: 'admin_announcement', title: `Notice ${seq}`, createdAt,
+    });
+    return String(res.insertedId);
+  }
+
+  await test('review round 10, item 1: a trigger that changes a REAL (non-generated) timestamp from 2020 to 2035 is caught by exact read-back -- never marked reconciled, exits non-zero', async () => {
+    await resetPlainInsertDomainsState();
+    const recipientMongoId = await seedNotificationPrereqs();
+    const sourceId = await insertNotificationDocWithCreatedAt(recipientMongoId, 1, new Date('2020-01-01T00:00:00Z'));
+
+    await pgPool.query(`
+      CREATE OR REPLACE FUNCTION test_mutate_notification_created_at() RETURNS trigger AS $$
+      BEGIN
+        NEW.created_at := '2035-06-15T00:00:00Z'::timestamptz;
+        RETURN NEW;
+      END;
+      $$ LANGUAGE plpgsql;
+    `);
+    await pgPool.query(`
+      CREATE TRIGGER test_mutate_notification_created_at_trigger
+      BEFORE INSERT ON notifications
+      FOR EACH ROW EXECUTE FUNCTION test_mutate_notification_created_at();
+    `);
+    try {
+      const fwd = runMigrateCLI(['--domain=notifications']);
+      assert.equal(fwd.code, 1, 'a real timestamp corruption (2020 -> 2035) must make the whole run exit non-zero');
+      assert.match(fwd.stdout, /failed=1/);
+
+      const row = await domainLedgerRow('notifications', sourceId);
+      assert.notEqual(row.status, 'reconciled', 'must never be marked reconciled when a real, source-carried timestamp was silently rewritten');
+      assert.equal(row.status, 'failed');
+      assert.ok(row.target_id, 'the row itself was really written -- only its created_at CONTENT was wrong');
+
+      const persisted = await pgPool.query('SELECT created_at FROM notifications WHERE id = $1', [row.target_id]);
+      assert.equal(new Date(persisted.rows[0].created_at).getUTCFullYear(), 2035, 'sanity: the trigger really did rewrite the year');
+    } finally {
+      await pgPool.query('DROP TRIGGER IF EXISTS test_mutate_notification_created_at_trigger ON notifications');
+      await pgPool.query('DROP FUNCTION IF EXISTS test_mutate_notification_created_at()');
+    }
+
+    // With the trigger gone, resume reuses the ledger-verified existing
+    // row (still really there, only wrong content) and overwrites
+    // created_at back to the correct 2020 value -- proving the earlier
+    // failure really was the trigger, not a wider regression.
+    const resumed = runMigrateCLI(['--domain=notifications']);
+    assert.equal(resumed.code, 0, resumed.stderr);
+    assert.equal(await domainTotalRows('notifications'), 1, 'resume must reuse the same row, never insert a duplicate');
+    const finalRow = await domainLedgerRow('notifications', sourceId);
+    assert.equal(finalRow.status, 'reconciled');
+    const finalPersisted = await pgPool.query('SELECT created_at FROM notifications WHERE id = $1', [finalRow.target_id]);
+    assert.equal(new Date(finalPersisted.rows[0].created_at).getUTCFullYear(), 2020, 'resume must correct the content back to the real source value');
+  });
 
   await test('an immutable domain (invoices) still refuses rollback outright, with `failed` staying 0', async () => {
     const rb = runMigrateCLI(['--domain=invoices', '--rollback']);

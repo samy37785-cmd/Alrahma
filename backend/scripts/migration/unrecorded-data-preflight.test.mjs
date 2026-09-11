@@ -472,6 +472,35 @@ async function main() {
     }
   });
 
+  // PR #70 review round 10, item 3: verifyNoUnrecordedData()'s `profiles`
+  // check only ever iterates EXISTING rows in `public.profiles` looking
+  // for a missing ledger entry -- an auth.users row with NO profiles row
+  // AT ALL (a genuine orphan: the trigger that is supposed to create one
+  // synchronously never ran, or its row was deleted out-of-band while
+  // auth.users survived; profiles.id REFERENCES auth.users(id), never the
+  // reverse, so the schema itself does not prevent this) was previously
+  // invisible to this preflight entirely -- a query that only ever
+  // iterates `public.profiles` can never even see a row that has none.
+  await test('round 10, item 3: an auth.users row with NO profiles row at all (a genuine orphan) fails closed -- the profiles-only check can never even see it', async () => {
+    const client = await pgPool.connect();
+    const id = crypto.randomUUID();
+    try {
+      await insertAuthUser(id, 'orphan-no-profile@example.invalid', {});
+      await client.query('DELETE FROM profiles WHERE id = $1', [id]);
+      const profileCheck = await client.query('SELECT 1 FROM profiles WHERE id = $1', [id]);
+      assert.equal(profileCheck.rowCount, 0, 'sanity: the profiles row really is gone -- auth.users is now a genuine orphan');
+
+      await assert.rejects(
+        () => verifyNoUnrecordedData(client),
+        /auth\.users: 1 row\(s\) orphaned \(no profiles row\) or not attributable/,
+        'an auth.users row with no profiles row at all must fail closed'
+      );
+    } finally {
+      await deleteAuthUser(id);
+      client.release();
+    }
+  });
+
   await test('round 6: an unknown subscription owned by a ledger-attributed profile still fails; its own ledger is required', async () => {
     const client = await pgPool.connect();
     const taggedId = crypto.randomUUID();

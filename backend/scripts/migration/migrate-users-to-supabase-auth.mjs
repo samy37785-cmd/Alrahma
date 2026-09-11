@@ -225,11 +225,54 @@ const ADMIN_ROLE_MAP = { 'super-admin': 'super-admin', admin: 'admin', editor: '
  *              this stage's own local rehearsal to be how both real
  *              admin accounts are actually marked in the source data)
  */
+// PR #70 review round 10, item 3: applyPersona() used to return only
+// {isAdmin, isTeacher} -- neither migrateOneUser() nor migrateOneAdmin()
+// ever independently re-read a single profiles column this function
+// wrote before calling markReconciled(). Several of those columns are
+// COALESCE'd (only overwritten when the source carries a real value;
+// otherwise the column's PRE-EXISTING value survives unchanged) -- an
+// exact read-back must honor that same semantics precisely, not just
+// compare against `mongoUser`'s raw fields (which would be wrong for
+// every coalesce-preserved column on a resume/update where the source
+// value is absent). Fixed: read each coalesced column's value BEFORE the
+// UPDATE, then compute exactly what COALESCE itself would produce --
+// the incoming value when non-null, otherwise the prior value -- and
+// return it as `expectedProfileFields` for the caller to read back
+// against. The UPDATE's own `rowCount` is also checked here now: 0 rows
+// affected (profileId deleted/never existed) is a fail-closed error, not
+// a silent no-op.
 async function applyPersona(pgClient, profileId, mongoUser) {
   const isAdmin = mongoUser.role === 'admin';
   const isTeacher = mongoUser.role === 'teacher';
 
-  await pgClient.query(
+  const priorRes = await pgClient.query(
+    `SELECT family_name, specialization, bio, gender, languages, subjects, parent_link_code,
+            xp, level, streak, last_study_date, badges, referral_code
+       FROM profiles WHERE id = $1`,
+    [profileId]
+  );
+  if (priorRes.rows.length === 0) {
+    throw new Error(`applyPersona: no profiles row exists for id=${profileId} -- cannot apply persona to a target that does not exist`);
+  }
+  const prior = priorRes.rows[0];
+
+  const incoming = {
+    family_name: mongoUser.familyName || null,
+    specialization: mongoUser.specialization || null,
+    bio: mongoUser.bio || null,
+    gender: mongoUser.gender || null,
+    languages: mongoUser.languages ? JSON.stringify(mongoUser.languages) : null,
+    subjects: mongoUser.subjects ? JSON.stringify(mongoUser.subjects) : null,
+    parent_link_code: mongoUser.parentLinkCode || null,
+    xp: mongoUser.xp ?? null,
+    level: mongoUser.level ?? null,
+    streak: mongoUser.streak ?? null,
+    last_study_date: mongoUser.lastStudyDate ?? null,
+    badges: mongoUser.badges ? JSON.stringify(mongoUser.badges) : null,
+    referral_code: mongoUser.referralCode || null,
+  };
+
+  const updateResult = await pgClient.query(
     `UPDATE profiles SET
        name = $2, role = $3, is_teacher = $4,
        family_name = coalesce($5, family_name),
@@ -251,32 +294,73 @@ async function applyPersona(pgClient, profileId, mongoUser) {
       mongoUser.name || null,
       isAdmin ? 'admin' : 'user',
       isTeacher,
-      mongoUser.familyName || null,
-      mongoUser.specialization || null,
-      mongoUser.bio || null,
-      mongoUser.gender || null,
-      mongoUser.languages ? JSON.stringify(mongoUser.languages) : null,
-      mongoUser.subjects ? JSON.stringify(mongoUser.subjects) : null,
-      mongoUser.parentLinkCode || null,
-      mongoUser.xp ?? null,
-      mongoUser.level ?? null,
-      mongoUser.streak ?? null,
-      mongoUser.lastStudyDate ?? null,
-      mongoUser.badges ? JSON.stringify(mongoUser.badges) : null,
-      mongoUser.referralCode || null,
+      incoming.family_name,
+      incoming.specialization,
+      incoming.bio,
+      incoming.gender,
+      incoming.languages,
+      incoming.subjects,
+      incoming.parent_link_code,
+      incoming.xp,
+      incoming.level,
+      incoming.streak,
+      incoming.last_study_date,
+      incoming.badges,
+      incoming.referral_code,
     ]
   );
+  if (updateResult.rowCount !== 1) {
+    throw new Error(`applyPersona: UPDATE profiles affected ${updateResult.rowCount} row(s) for id=${profileId}, expected exactly 1`);
+  }
 
+  // Mirror COALESCE(incoming, existing) exactly: the incoming value wins
+  // only when it is genuinely non-null; otherwise the row's PRIOR value
+  // (read above, before this UPDATE) is what the column must still hold.
+  const expectedProfileFields = {
+    id: profileId,
+    name: mongoUser.name || null,
+    role: isAdmin ? 'admin' : 'user',
+    is_teacher: isTeacher,
+  };
+  for (const [col, incomingVal] of Object.entries(incoming)) {
+    expectedProfileFields[col] = incomingVal !== null ? incomingVal : (prior[col] ?? null);
+  }
+
+  let expectedAdminRoleFields = null;
   if (isAdmin) {
-    await pgClient.query(
+    const roleResult = await pgClient.query(
       `INSERT INTO admin_role_assignments (user_id, role) VALUES ($1, 'admin')
        ON CONFLICT (user_id) DO UPDATE SET role = 'admin'`,
       [profileId]
     );
+    if (roleResult.rowCount !== 1) {
+      throw new Error(`applyPersona: admin_role_assignments upsert affected ${roleResult.rowCount} row(s) for user_id=${profileId}, expected exactly 1`);
+    }
+    expectedAdminRoleFields = { user_id: profileId, role: 'admin' };
   }
 
-  return { isAdmin, isTeacher };
+  return { isAdmin, isTeacher, expectedProfileFields, expectedAdminRoleFields };
 }
+
+// PR #70 review round 10, item 3: admin_role_assignments has no
+// independent Mongo source document of its own -- it is a deterministic
+// CHILD PROJECTION of the SAME users/adminusers document already
+// ledgered under target_table='profiles' (its row is `{user_id: role}`,
+// derived 1:1 from that same document's `role` field, never written from
+// anywhere else in this script). Giving it its own separate
+// migration_source_ledger entry would be a second, redundant source of
+// truth for a fact the profiles ledger entry already fully determines --
+// so rather than a second independent ledger target, its provenance is
+// this precise, exact read-back (verifyReadBack() call sites below,
+// tables 'admin_role_assignments'/user_id-keyed) run unconditionally
+// before EVERY markReconciled() that could have written to it, exactly
+// like every other field this migration writes. This is the "documented,
+// precisely-verified child projection" alternative the review explicitly
+// allows instead of an independent ledger target with its own
+// bidirectional preflight.
+const PROFILE_READBACK_SPEC = { table: 'profiles' };
+const ADMIN_ROLE_READBACK_SPEC = { table: 'admin_role_assignments', pkColumn: 'user_id' };
+const AUTH_USER_READBACK_SPEC = { table: 'auth.users' };
 
 export async function migrateOneUser(supabaseAdmin, pgClient, mongoUser, { execute }) {
   const email = String(mongoUser.email).toLowerCase().trim();
@@ -405,8 +489,51 @@ export async function migrateOneUser(supabaseAdmin, pgClient, mongoUser, { execu
   // Resumable regardless of branch above: applyPersona() is a plain
   // UPDATE, safe to re-run against an already-migrated profile.
   if (!ledger.target_id) await markCreated(pgClient, ledgerId, profileId);
-  const persona = await applyPersona(pgClient, profileId, mongoUser);
+  // applyPersona() throws on a genuine integrity violation (the UPDATE
+  // affected 0/2+ rows, or the profiles row does not exist at all) --
+  // caught here, never left to propagate out of this function and crash
+  // the WHOLE batch over one document, consistent with every other
+  // failure mode in this file (createUser()'s own try/catch above,
+  // computeExitFailure()'s per-document error reporting elsewhere).
+  let persona;
+  try {
+    persona = await applyPersona(pgClient, profileId, mongoUser);
+  } catch (err) {
+    await markFailed(pgClient, ledgerId, err.message).catch(() => {});
+    return { status: 'error', message: err.message };
+  }
   await markCreated(pgClient, ledgerId, profileId);
+
+  // PR #70 review round 10, item 3: exact, independent read-back across
+  // every table this function (directly or via applyPersona()) wrote to
+  // or depends on, BEFORE markReconciled() -- never assumed correct just
+  // because no exception was thrown. A resumed run (profileId found by
+  // email, no fresh createUser() this invocation) is checked exactly the
+  // same way: raw_app_meta_data.migration_correlation_id is verified
+  // unconditionally here, not only in the branch-specific foreign-account
+  // gate above (which only runs when ledger.target_id was still null).
+  const authReadBack = await verifyReadBack(pgClient, AUTH_USER_READBACK_SPEC, profileId, {
+    id: profileId,
+    email,
+    raw_app_meta_data: { migration_correlation_id: correlationId },
+  });
+  if (!authReadBack.ok) {
+    await markFailed(pgClient, ledgerId, authReadBack.reason).catch(() => {});
+    return { status: 'error', message: authReadBack.reason };
+  }
+  const profileReadBack = await verifyReadBack(pgClient, PROFILE_READBACK_SPEC, profileId, persona.expectedProfileFields);
+  if (!profileReadBack.ok) {
+    await markFailed(pgClient, ledgerId, profileReadBack.reason).catch(() => {});
+    return { status: 'error', message: profileReadBack.reason };
+  }
+  if (persona.isAdmin) {
+    const roleReadBack = await verifyReadBack(pgClient, ADMIN_ROLE_READBACK_SPEC, profileId, persona.expectedAdminRoleFields);
+    if (!roleReadBack.ok) {
+      await markFailed(pgClient, ledgerId, roleReadBack.reason).catch(() => {});
+      return { status: 'error', message: roleReadBack.reason };
+    }
+  }
+
   await markReconciled(pgClient, ledgerId);
   return { status, id: profileId, persona };
 }
@@ -487,13 +614,48 @@ export async function migrateOneAdmin(supabaseAdmin, pgClient, mongoAdmin, { exe
   }
 
   if (!ledger.target_id) await markCreated(pgClient, ledgerId, userId);
-  await pgClient.query(`UPDATE profiles SET name = $2, role = 'admin' WHERE id = $1`, [userId, mongoAdmin.name || null]);
-  await pgClient.query(
+  const profileUpdate = await pgClient.query(`UPDATE profiles SET name = $2, role = 'admin' WHERE id = $1`, [userId, mongoAdmin.name || null]);
+  if (profileUpdate.rowCount !== 1) {
+    const reason = `UPDATE profiles affected ${profileUpdate.rowCount} row(s) for id=${userId}, expected exactly 1`;
+    await markFailed(pgClient, ledgerId, reason).catch(() => {});
+    return { status: 'error', message: reason };
+  }
+  const roleUpsert = await pgClient.query(
     `INSERT INTO admin_role_assignments (user_id, role) VALUES ($1, $2)
      ON CONFLICT (user_id) DO UPDATE SET role = $2`,
     [userId, mappedRole]
   );
+  if (roleUpsert.rowCount !== 1) {
+    const reason = `admin_role_assignments upsert affected ${roleUpsert.rowCount} row(s) for user_id=${userId}, expected exactly 1`;
+    await markFailed(pgClient, ledgerId, reason).catch(() => {});
+    return { status: 'error', message: reason };
+  }
   await markCreated(pgClient, ledgerId, userId);
+
+  // PR #70 review round 10, item 3: same exact, independent read-back
+  // discipline as migrateOneUser() -- see that function's own comment.
+  const authReadBack = await verifyReadBack(pgClient, AUTH_USER_READBACK_SPEC, userId, {
+    id: userId,
+    email,
+    raw_app_meta_data: { migration_correlation_id: correlationId },
+  });
+  if (!authReadBack.ok) {
+    await markFailed(pgClient, ledgerId, authReadBack.reason).catch(() => {});
+    return { status: 'error', message: authReadBack.reason };
+  }
+  const profileReadBack = await verifyReadBack(pgClient, PROFILE_READBACK_SPEC, userId, {
+    id: userId, name: mongoAdmin.name || null, role: 'admin',
+  });
+  if (!profileReadBack.ok) {
+    await markFailed(pgClient, ledgerId, profileReadBack.reason).catch(() => {});
+    return { status: 'error', message: profileReadBack.reason };
+  }
+  const roleReadBack = await verifyReadBack(pgClient, ADMIN_ROLE_READBACK_SPEC, userId, { user_id: userId, role: mappedRole });
+  if (!roleReadBack.ok) {
+    await markFailed(pgClient, ledgerId, roleReadBack.reason).catch(() => {});
+    return { status: 'error', message: roleReadBack.reason };
+  }
+
   await markReconciled(pgClient, ledgerId);
 
   return { status: existingRow ? 'role_assigned_existing_account' : 'created', id: userId, role: mappedRole };
@@ -711,6 +873,17 @@ async function applyTeacherLink(pgClient, { studentMongoId, studentProfileId, te
     throw err;
   }
 
+  // PR #70 review round 10, item 5: this WHERE clause names BOTH real
+  // columns this write touches (studentProfileId identifies the row,
+  // teacherProfileId IS the entire content being verified) -- unlike a
+  // domain table with separate identity and content columns, there is no
+  // additional field a trigger could silently corrupt here that this
+  // check would miss. This bespoke SELECT is therefore already a
+  // complete, exact read-back for this specific table's shape, not a
+  // weaker "existence only" stand-in for the shared verifyReadBack() --
+  // kept bespoke rather than switched to verifyReadBack() because there
+  // is no separate "identity" vs. "content" split here for that shared
+  // function's generic column-list comparison to add anything over.
   const verify = await pgClient.query('SELECT 1 FROM profiles WHERE id = $1 AND teacher_id = $2', [studentProfileId, teacherProfileId]);
   if (verify.rows.length === 0) {
     await markFailed(pgClient, ledgerId, 'post-commit read-back verification failed for teacher_id link');
@@ -791,6 +964,10 @@ async function applyParentChildLink(pgClient, { parentMongoId, childMongoId, par
     throw err;
   }
 
+  // PR #70 review round 10, item 5: same reasoning as applyTeacherLink()'s
+  // own comment -- (parent_id, student_id) is the table's ENTIRE real
+  // content, not just its identity, so this WHERE clause is already a
+  // complete, exact read-back for this table's shape.
   const verify = await pgClient.query(
     'SELECT 1 FROM parent_student_links WHERE parent_id = $1 AND student_id = $2', [parentProfileId, childProfileId]
   );

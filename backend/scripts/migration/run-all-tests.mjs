@@ -26,6 +26,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const TEST_FILES = [
   'lib/cli-args.test.mjs',
   'lib/composite-target-id.test.mjs',
+  'lib/markreconciled-coverage.test.mjs',
   'mongo-to-supabase-cli.test.mjs',
   'migrate-users-to-supabase-auth.test.mjs',
   'unrecorded-data-preflight.test.mjs',

@@ -502,6 +502,21 @@ async function main() {
     return r.rows[0].id;
   }
   async function addProfileLedger(sourceDoc, profileId, sourceCollection = 'users') {
+    // Round 10, item 3: this helper simulates a profile that a PRIOR run of
+    // this migration already fully created and reconciled. A real prior run
+    // can only have reached that state by first calling createUser() with
+    // app_metadata.migration_correlation_id set (see migrateOneUser()/
+    // migrateOneAdmin()) -- so a fixture that skips this would model a
+    // combination (reconciled ledger row + auth.users row with no
+    // correlation id) that can never actually occur, and would incorrectly
+    // trip the new unconditional auth.users read-back this round adds
+    // before every markReconciled(). Keep the fixture's auth.users row
+    // consistent with what a real prior run would have written.
+    const correlationId = correlationIdFor({ sourceCollection, sourceDocumentId: sourceDoc._id, sourceValue: sourceDoc });
+    await pgPool.query(
+      `UPDATE auth.users SET raw_app_meta_data = $2::jsonb WHERE id = $1`,
+      [profileId, JSON.stringify({ migration_correlation_id: correlationId })]
+    );
     await pgPool.query(
       `INSERT INTO migration_source_ledger
          (source_system, source_database, source_collection, source_document_id, source_content_hash,
@@ -1315,6 +1330,234 @@ async function main() {
       assert.equal(createUserCalls, 0);
       const adminAssignment = await client.query('SELECT count(*)::int AS n FROM admin_role_assignments WHERE user_id = $1', [foreignId]);
       assert.equal(adminAssignment.rows[0].n, 0, 'the forged-via-user-metadata account must never be granted an admin role assignment');
+    } finally {
+      client.release();
+    }
+  });
+
+  // -------------------------------------------------------------------
+  // PR #70 review round 10, item 3: exact read-back for migrateOneUser()/
+  // migrateOneAdmin(), proven with REAL Postgres triggers (not mocks) --
+  // a profile changed by a trigger, a trigger that vetoes the UPDATE
+  // entirely (RETURN NULL), a wrong/missing admin role, and a wrong
+  // correlation ID reaching AFTER the early foreign-account gate (which
+  // only fires when ledger.target_id is still null) via a genuine resume.
+  // Every case must mark the ledger 'failed' and never reach
+  // markReconciled().
+  // -------------------------------------------------------------------
+
+  async function seedResumableUserLedger(client, mongoUser, realId) {
+    await client.query(
+      `INSERT INTO migration_source_ledger
+         (source_system, source_database, source_collection, source_document_id, source_content_hash,
+          target_table, target_id, status, migrated_at)
+       VALUES ('mongodb', 'al-rahma', 'users', $1, $2, 'profiles', NULL, 'planned', now())`,
+      [String(mongoUser._id), contentHashOf(mongoUser)]
+    );
+    const correlationId = correlationIdFor({ sourceCollection: 'users', sourceDocumentId: mongoUser._id, sourceValue: mongoUser });
+    await client.query(
+      'INSERT INTO auth.users (id, email, raw_app_meta_data) VALUES ($1, $2, $3::jsonb)',
+      [realId, mongoUser.email, JSON.stringify({ migration_correlation_id: correlationId })]
+    );
+    return correlationId;
+  }
+
+  await test('round 10, item 3: a trigger that silently rewrites `profiles.name` is caught by exact read-back -- never reconciled, reported as error', async () => {
+    await resetAll();
+    const realId = crypto.randomUUID();
+    const mongoUser = { _id: new mongoose.Types.ObjectId(), email: 'profile-tamper@example.invalid', role: 'student', name: 'Real Migrated Name' };
+    const client = await pgPool.connect();
+    try {
+      await seedResumableUserLedger(client, mongoUser, realId);
+      await client.query(`
+        CREATE OR REPLACE FUNCTION test_tamper_profile_name() RETURNS trigger AS $$
+        BEGIN NEW.name := 'TAMPERED-BY-TRIGGER'; RETURN NEW; END;
+        $$ LANGUAGE plpgsql;
+      `);
+      await client.query(`
+        CREATE TRIGGER test_tamper_profile_name_trigger
+        BEFORE UPDATE ON profiles
+        FOR EACH ROW EXECUTE FUNCTION test_tamper_profile_name();
+      `);
+      try {
+        const supabaseAdmin = fakeSupabaseAdmin(async () => ({ data: { user: { id: crypto.randomUUID() } }, error: null }));
+        const result = await migrateOneUser(supabaseAdmin, client, mongoUser, { execute: true });
+        assert.equal(result.status, 'error', 'a read-back content mismatch on profiles must be reported as an error, never a silent success');
+        assert.match(result.message, /does not match what this migration just wrote/);
+        assert.match(result.message, /name/);
+
+        const ledger = await findLedgerEntry(client, {
+          sourceDatabase: 'al-rahma', sourceCollection: 'users', sourceDocumentId: String(mongoUser._id), targetTable: 'profiles',
+        });
+        assert.equal(ledger.status, 'failed', 'must never be marked reconciled when profiles content does not match what was written');
+      } finally {
+        await client.query('DROP TRIGGER IF EXISTS test_tamper_profile_name_trigger ON profiles');
+        await client.query('DROP FUNCTION IF EXISTS test_tamper_profile_name()');
+      }
+    } finally {
+      client.release();
+    }
+  });
+
+  await test('round 10, item 3: a trigger that RETURNs NULL (vetoing the profiles UPDATE entirely) is caught by rowCount, not silently treated as success', async () => {
+    await resetAll();
+    const realId = crypto.randomUUID();
+    const mongoUser = { _id: new mongoose.Types.ObjectId(), email: 'profile-veto@example.invalid', role: 'student', name: 'Real Migrated Name' };
+    const client = await pgPool.connect();
+    try {
+      await seedResumableUserLedger(client, mongoUser, realId);
+      // A BEFORE UPDATE trigger returning NULL is a legal Postgres way to
+      // silently veto an UPDATE for that row -- the statement reports
+      // rowCount=0 for it, with no exception raised anywhere. Only an
+      // explicit rowCount check (applyPersona()'s own, added this round)
+      // can tell this apart from "the update genuinely applied".
+      await client.query(`
+        CREATE OR REPLACE FUNCTION test_veto_profile_update() RETURNS trigger AS $$
+        BEGIN RETURN NULL; END;
+        $$ LANGUAGE plpgsql;
+      `);
+      await client.query(`
+        CREATE TRIGGER test_veto_profile_update_trigger
+        BEFORE UPDATE ON profiles
+        FOR EACH ROW EXECUTE FUNCTION test_veto_profile_update();
+      `);
+      try {
+        const supabaseAdmin = fakeSupabaseAdmin(async () => ({ data: { user: { id: crypto.randomUUID() } }, error: null }));
+        const result = await migrateOneUser(supabaseAdmin, client, mongoUser, { execute: true });
+        assert.equal(result.status, 'error', 'a vetoed UPDATE (rowCount=0) must never be treated as a silent success');
+        assert.match(result.message, /affected 0 row/);
+
+        const ledger = await findLedgerEntry(client, {
+          sourceDatabase: 'al-rahma', sourceCollection: 'users', sourceDocumentId: String(mongoUser._id), targetTable: 'profiles',
+        });
+        assert.equal(ledger.status, 'failed');
+      } finally {
+        await client.query('DROP TRIGGER IF EXISTS test_veto_profile_update_trigger ON profiles');
+        await client.query('DROP FUNCTION IF EXISTS test_veto_profile_update()');
+      }
+    } finally {
+      client.release();
+    }
+  });
+
+  await test('round 10, item 3: a trigger that rewrites admin_role_assignments.role to a WRONG (but valid) role is caught by exact read-back', async () => {
+    await resetAll();
+    const realId = crypto.randomUUID();
+    const mongoUser = { _id: new mongoose.Types.ObjectId(), email: 'admin-role-tamper@example.invalid', role: 'admin', name: 'Admin Person' };
+    const client = await pgPool.connect();
+    try {
+      await seedResumableUserLedger(client, mongoUser, realId);
+      // A syntactically valid admin_role value ('viewer'), just the WRONG
+      // one -- proves read-back's CONTENT comparison, not an enum/CHECK
+      // constraint violation that would fail before read-back is reached.
+      await client.query(`
+        CREATE OR REPLACE FUNCTION test_tamper_admin_role() RETURNS trigger AS $$
+        BEGIN NEW.role := 'viewer'; RETURN NEW; END;
+        $$ LANGUAGE plpgsql;
+      `);
+      await client.query(`
+        CREATE TRIGGER test_tamper_admin_role_trigger
+        BEFORE INSERT ON admin_role_assignments
+        FOR EACH ROW EXECUTE FUNCTION test_tamper_admin_role();
+      `);
+      try {
+        const supabaseAdmin = fakeSupabaseAdmin(async () => ({ data: { user: { id: crypto.randomUUID() } }, error: null }));
+        const result = await migrateOneUser(supabaseAdmin, client, mongoUser, { execute: true });
+        assert.equal(result.status, 'error');
+        assert.match(result.message, /does not match what this migration just wrote/);
+        assert.match(result.message, /role/);
+
+        const ledger = await findLedgerEntry(client, {
+          sourceDatabase: 'al-rahma', sourceCollection: 'users', sourceDocumentId: String(mongoUser._id), targetTable: 'profiles',
+        });
+        assert.equal(ledger.status, 'failed');
+      } finally {
+        await client.query('DROP TRIGGER IF EXISTS test_tamper_admin_role_trigger ON admin_role_assignments');
+        await client.query('DROP FUNCTION IF EXISTS test_tamper_admin_role()');
+      }
+    } finally {
+      client.release();
+    }
+  });
+
+  await test('round 10, item 3: a trigger that DELETES admin_role_assignments right after insert (missing role) is caught -- "no row found"', async () => {
+    await resetAll();
+    const realId = crypto.randomUUID();
+    const mongoUser = { _id: new mongoose.Types.ObjectId(), email: 'admin-role-missing@example.invalid', role: 'admin', name: 'Admin Person' };
+    const client = await pgPool.connect();
+    try {
+      await seedResumableUserLedger(client, mongoUser, realId);
+      await client.query(`
+        CREATE OR REPLACE FUNCTION test_self_delete_admin_role() RETURNS trigger AS $$
+        BEGIN DELETE FROM admin_role_assignments WHERE user_id = NEW.user_id; RETURN NEW; END;
+        $$ LANGUAGE plpgsql;
+      `);
+      await client.query(`
+        CREATE TRIGGER test_self_delete_admin_role_trigger
+        AFTER INSERT ON admin_role_assignments
+        FOR EACH ROW EXECUTE FUNCTION test_self_delete_admin_role();
+      `);
+      try {
+        const supabaseAdmin = fakeSupabaseAdmin(async () => ({ data: { user: { id: crypto.randomUUID() } }, error: null }));
+        const result = await migrateOneUser(supabaseAdmin, client, mongoUser, { execute: true });
+        assert.equal(result.status, 'error');
+        assert.match(result.message, /no row found/);
+
+        const ledger = await findLedgerEntry(client, {
+          sourceDatabase: 'al-rahma', sourceCollection: 'users', sourceDocumentId: String(mongoUser._id), targetTable: 'profiles',
+        });
+        assert.equal(ledger.status, 'failed');
+      } finally {
+        await client.query('DROP TRIGGER IF EXISTS test_self_delete_admin_role_trigger ON admin_role_assignments');
+        await client.query('DROP FUNCTION IF EXISTS test_self_delete_admin_role()');
+      }
+    } finally {
+      client.release();
+    }
+  });
+
+  await test('round 10, item 3: a WRONG correlation ID reaching AFTER the early foreign-account gate (a genuine ledger.target_id resume) is still caught by the unconditional exact read-back', async () => {
+    // The existing "foreign account, same email" gate only ever runs
+    // `if (!ledger.target_id && profileId)` -- a genuine resume (this
+    // exact source document's OWN prior ledger row already recorded this
+    // target_id) skips it entirely. This proves the round-10 exact
+    // read-back (which runs unconditionally, every time, right before
+    // markReconciled()) is a REAL, independent second layer -- not just
+    // the same check run twice -- by tampering raw_app_meta_data AFTER
+    // the ledger already points at this exact profile.
+    await resetAll();
+    const realId = crypto.randomUUID();
+    const mongoUser = { _id: new mongoose.Types.ObjectId(), email: 'resumed-then-tampered-correlation@example.invalid', role: 'student', name: 'Real Migrated Name' };
+    const client = await pgPool.connect();
+    try {
+      await client.query('INSERT INTO auth.users (id, email, raw_app_meta_data) VALUES ($1, $2, $3::jsonb)', [
+        realId, mongoUser.email, JSON.stringify({ migration_correlation_id: 'this-was-the-correct-id-once' }),
+      ]);
+      // A ledger row that ALREADY points at this exact profile (a genuine
+      // resume, status='created' -- crashed before reconciliation last
+      // time) -- ledger.target_id is non-null, so the early gate is
+      // skipped entirely for this call.
+      await client.query(
+        `INSERT INTO migration_source_ledger
+           (source_system, source_database, source_collection, source_document_id, source_content_hash,
+            target_table, target_id, status, migrated_at)
+         VALUES ('mongodb', 'al-rahma', 'users', $1, $2, 'profiles', $3, 'created', now())`,
+        [String(mongoUser._id), contentHashOf(mongoUser), realId]
+      );
+      // Now the account's raw_app_meta_data no longer matches what THIS
+      // run computes for this exact document (simulates any mechanism --
+      // manual tampering, a bug elsewhere -- that changed it between the
+      // crash and this resume).
+      const supabaseAdmin = fakeSupabaseAdmin(async () => ({ data: { user: { id: crypto.randomUUID() } }, error: null }));
+      const result = await migrateOneUser(supabaseAdmin, client, mongoUser, { execute: true });
+      assert.equal(result.status, 'error', 'a wrong correlation ID must be caught even on a genuine-looking resume, by the unconditional exact read-back');
+      assert.match(result.message, /does not match what this migration just wrote/);
+      assert.match(result.message, /raw_app_meta_data/);
+
+      const ledger = await findLedgerEntry(client, {
+        sourceDatabase: 'al-rahma', sourceCollection: 'users', sourceDocumentId: String(mongoUser._id), targetTable: 'profiles',
+      });
+      assert.equal(ledger.status, 'failed');
     } finally {
       client.release();
     }

@@ -400,7 +400,7 @@ export async function migrateOneUser(supabaseAdmin, pgClient, mongoUser, { execu
         pgClient, ledgerId,
         `an auth.users account with email ${email} already exists but its migration_correlation_id does not match ` +
         `this source document's expected identity -- refusing to link, read, or modify a foreign/external account`
-      );
+      ).catch(() => {});
       return {
         status: 'blocked_foreign_account_same_email',
         message: `auth.users account for ${email} exists but is not provably this migration's own account ` +
@@ -453,12 +453,12 @@ export async function migrateOneUser(supabaseAdmin, pgClient, mongoUser, { execu
         app_metadata: { migration_correlation_id: correlationId },
       });
     } catch (thrown) {
-      await markFailed(pgClient, ledgerId, `createUser() threw (ambiguous outcome, possible network timeout): ${thrown.message}`);
+      await markFailed(pgClient, ledgerId, `createUser() threw (ambiguous outcome, possible network timeout): ${thrown.message}`).catch(() => {});
       return { status: 'error', message: `createUser() threw (ambiguous outcome, possible network timeout): ${thrown.message}` };
     }
     const { data, error } = createResult;
     if (error) {
-      await markFailed(pgClient, ledgerId, error.message);
+      await markFailed(pgClient, ledgerId, error.message).catch(() => {});
       return { status: 'error', message: error.message };
     }
     profileId = data.user.id;
@@ -573,7 +573,7 @@ export async function migrateOneAdmin(supabaseAdmin, pgClient, mongoAdmin, { exe
         pgClient, ledgerId,
         `an auth.users account with email ${email} already exists but its migration_correlation_id does not match ` +
         `this source document's expected identity -- refusing to link, read, or modify a foreign/external account`
-      );
+      ).catch(() => {});
       return {
         status: 'blocked_foreign_account_same_email',
         message: `auth.users account for ${email} exists but is not provably this migration's own account ` +
@@ -600,12 +600,12 @@ export async function migrateOneAdmin(supabaseAdmin, pgClient, mongoAdmin, { exe
         app_metadata: { migration_correlation_id: correlationId },
       });
     } catch (thrown) {
-      await markFailed(pgClient, ledgerId, `createUser() threw (ambiguous outcome, possible network timeout): ${thrown.message}`);
+      await markFailed(pgClient, ledgerId, `createUser() threw (ambiguous outcome, possible network timeout): ${thrown.message}`).catch(() => {});
       return { status: 'error', message: `createUser() threw (ambiguous outcome, possible network timeout): ${thrown.message}` };
     }
     const { data, error } = createResult;
     if (error) {
-      await markFailed(pgClient, ledgerId, error.message);
+      await markFailed(pgClient, ledgerId, error.message).catch(() => {});
       return { status: 'error', message: error.message };
     }
     userId = data.user.id;
@@ -813,7 +813,42 @@ async function applyTeacherLink(pgClient, { studentMongoId, studentProfileId, te
   if (prior && prior.source_content_hash !== contentHash) {
     throw new Error('teacher_id link source content hash differs from its existing migration_source_ledger entry');
   }
-  if (prior?.target_id === targetId && prior.status === 'reconciled') return; // already done -- resume-safe no-op
+  // PR #70 review round 12, item 1: this used to return success here
+  // purely because the LEDGER said 'reconciled' and this run's own
+  // computed targetId happened to match it -- neither fact says anything
+  // about whether profiles.teacher_id STILL actually holds that value
+  // right now. Something entirely outside this migration (a trigger, a
+  // manual DBA edit, an admin UI action) could have changed it since the
+  // last time this function verified it, and this resume path would
+  // silently report success anyway, forever. Fixed: an exact live
+  // read-back, through the same verifyThenReconcile() every other
+  // reconciliation in this file goes through -- never a bespoke inline
+  // check that the structural coverage test (lib/markreconciled-
+  // coverage.test.mjs) couldn't recognize. Deliberately NOT falling
+  // through to the write path below on a mismatch: this is a pure
+  // re-verification, not a repair -- silently re-applying teacherProfileId
+  // over whatever the row now actually holds would be exactly the "auto-
+  // repair"/"silent overwrite" this review explicitly forbids. A mismatch
+  // fails closed: markFailed(), thrown, non-zero exit, no write attempted.
+  if (prior?.target_id === targetId && prior.status === 'reconciled') {
+    const reconcileResult = await verifyThenReconcile(pgClient, prior.id, [
+      async () => {
+        const verify = await pgClient.query('SELECT 1 FROM profiles WHERE id = $1 AND teacher_id = $2', [studentProfileId, teacherProfileId]);
+        return verify.rows.length > 0
+          ? { ok: true }
+          : {
+              ok: false,
+              reason: `previously reconciled teacher_id link for profiles.id=${studentProfileId} no longer matches the live row ` +
+                '(out-of-band drift since the last reconciliation) -- refusing to silently re-apply or overwrite it',
+            };
+      },
+    ]);
+    if (!reconcileResult.ok) {
+      await markFailed(pgClient, prior.id, reconcileResult.reason).catch(() => {});
+      throw new Error(reconcileResult.reason);
+    }
+    return;
+  }
   // A prior ledger row for THIS EXACT source document already recorded
   // this exact target -- a legitimate resume (e.g. a crash after COMMIT
   // but before markReconciled), never "external data that merely agrees".
@@ -916,7 +951,38 @@ async function applyParentChildLink(pgClient, { parentMongoId, childMongoId, par
   if (prior && prior.source_content_hash !== contentHash) {
     throw new Error('parent_student_links source content hash differs from its existing migration_source_ledger entry');
   }
-  if (prior?.target_id === targetId && prior.status === 'reconciled') return; // already done -- resume-safe no-op
+  // PR #70 review round 12, item 1: same fix as applyTeacherLink()'s own
+  // identical bug -- see that function's header comment for the full
+  // rationale. A ledger row saying 'reconciled' proves nothing about
+  // whether the real (parent_id, student_id) row still exists right now;
+  // it could have been deleted out-of-band (an admin unlinking a family,
+  // a cascading delete from an unrelated cleanup) since the last time
+  // this function actually checked. Fixed: a live read-back through
+  // verifyThenReconcile(), never a bespoke inline check. No re-INSERT is
+  // ever attempted here on a mismatch -- that would be silently
+  // resurrecting a link an operator or another process may have
+  // deliberately removed, exactly the "auto-repair" this review forbids.
+  if (prior?.target_id === targetId && prior.status === 'reconciled') {
+    const reconcileResult = await verifyThenReconcile(pgClient, prior.id, [
+      async () => {
+        const verify = await pgClient.query(
+          'SELECT 1 FROM parent_student_links WHERE parent_id = $1 AND student_id = $2', [parentProfileId, childProfileId]
+        );
+        return verify.rows.length > 0
+          ? { ok: true }
+          : {
+              ok: false,
+              reason: `previously reconciled parent_student_links row (parent=${parentProfileId}, student=${childProfileId}) no ` +
+                'longer exists (out-of-band drift since the last reconciliation) -- refusing to silently re-create it',
+            };
+      },
+    ]);
+    if (!reconcileResult.ok) {
+      await markFailed(pgClient, prior.id, reconcileResult.reason).catch(() => {});
+      throw new Error(reconcileResult.reason);
+    }
+    return;
+  }
   // A prior ledger row for THIS EXACT source document already recorded
   // this exact target -- a legitimate resume, not "external data".
   const resumeTargetId = prior?.target_id === targetId ? targetId : null;
@@ -1321,7 +1387,41 @@ export async function migrateSubscription(pgClient, profileId, mongoUser, planSl
       };
     }
     resumeTargetId = priorLedger.target_id;
+    // PR #70 review round 12, item 1: this used to return success purely
+    // because the ledger said 'reconciled' and a real row still exists at
+    // that id -- neither fact says the row's CONTENT still matches what
+    // this migration itself wrote. Something else could have changed
+    // plan_id/status/period dates/etc. out of band since the last
+    // reconciliation. Fixed: the exact same field-by-field live read-back
+    // the fresh-write path below performs, through the same
+    // verifyThenReconcile(). A mismatch never triggers a re-write here --
+    // silently overwriting drifted subscription state (billing status,
+    // provider ids) would be a real, dangerous "auto-repair"; it fails
+    // closed instead, exactly like every other integrity mismatch in this
+    // file.
     if (priorLedger.status === 'reconciled') {
+      const reconcileResult = await verifyThenReconcile(pgClient, priorLedger.id, [
+        {
+          spec: { table: 'subscriptions' }, targetId: resumeTargetId,
+          expectedFields: {
+            id: resumeTargetId,
+            user_id: profileId,
+            plan_id: planId,
+            provider: sub.provider || 'manual',
+            provider_customer_id: sub.stripeCustomerId || null,
+            provider_subscription_id: sub.stripeSubscriptionId || null,
+            status: derived.status,
+            current_period_start: sub.activeSince || null,
+            current_period_end: sub.validUntil || null,
+            cancel_at_period_end: !!sub.cancelAtPeriodEnd,
+            renewal_reminder_sent_for: sub.renewalReminderSentFor || null,
+          },
+        },
+      ]);
+      if (!reconcileResult.ok) {
+        await markFailed(pgClient, priorLedger.id, reconcileResult.reason).catch(() => {});
+        return { status: 'FAIL', reason: reconcileResult.reason };
+      }
       return { status: 'migrated', resumed: true, planSlug: slug, derivedStatus: derived.status, reason: derived.reason };
     }
     // status is 'created' (crashed between the write and reconciliation)
@@ -1431,7 +1531,7 @@ export async function migrateSubscription(pgClient, profileId, mongoUser, planSl
     // OUR OWN ledger already recorded that exact row (handled via
     // resumeTargetId above) -- reaching here means it did not, so this is
     // unknown/unrelated data this migration must never silently claim.
-    await markFailed(pgClient, ledgerId, 'a conflicting active subscription exists for this user and is not attributable to this migration');
+    await markFailed(pgClient, ledgerId, 'a conflicting active subscription exists for this user and is not attributable to this migration').catch(() => {});
     return {
       status: 'FAIL',
       reason: 'a conflicting active subscription already exists for this user and is not attributable to this migration ' +

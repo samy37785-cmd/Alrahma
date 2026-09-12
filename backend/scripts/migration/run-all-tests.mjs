@@ -27,6 +27,7 @@ const TEST_FILES = [
   'lib/cli-args.test.mjs',
   'lib/composite-target-id.test.mjs',
   'lib/markreconciled-coverage.test.mjs',
+  'lib/reconcile.test.mjs',
   'mongo-to-supabase-cli.test.mjs',
   'migrate-users-to-supabase-auth.test.mjs',
   'unrecorded-data-preflight.test.mjs',

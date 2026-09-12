@@ -41,6 +41,26 @@
 // below: the `skippedUnchanged += 1` line itself must be preceded by a
 // verifyReadBack() call within a narrow window, distinct from and IN
 // ADDITION TO the whole-file zero-markReconciled invariant.
+//
+// PR #70 review round 12, item 3 -- round 11 closed the ONE reconciled
+// fast path in mongo-to-supabase.mjs, but the review correctly found
+// THREE more of the exact same bug class in migrate-users-to-supabase-
+// auth.mjs (applyTeacherLink/applyParentChildLink/migrateSubscription),
+// completely unguarded by every check in this file: each returned success
+// the instant `prior.status === 'reconciled'` matched, with NO live
+// read-back at all -- not even the "existence-only" check round 11 closed
+// elsewhere. Fixed at the call sites (round 12, item 1) by routing every
+// one of them through verifyThenReconcile() too. Guarded here, generically
+// and across BOTH production files, by scanning for the underlying code
+// SHAPE that caused all four bugs (round 11's mongo-to-supabase.mjs one
+// included) instead of only re-checking the specific lines already fixed:
+// every `status === 'reconciled'` condition, anywhere in either file, must
+// have a verifyThenReconcile(/verifyReadBack( call within a tight window
+// immediately after it, with no bare `return`/`continue` reaching an
+// early exit before that call ever runs. A future contributor adding a
+// FIFTH such fast path -- to either file, not just these two -- without
+// wiring in a real live check fails this test immediately, on the shape
+// of the code, not on a hardcoded reference to today's specific lines.
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -104,7 +124,12 @@ test('mongo-to-supabase.mjs: markReconciled() is never called directly -- only t
 
 test('migrate-users-to-supabase-auth.mjs: markReconciled() is never called directly -- only through verifyThenReconcile()', () => {
   assertZeroDirectMarkReconciled('migrate-users-to-supabase-auth.mjs');
-  assertExactVerifyThenReconcileCount('migrate-users-to-supabase-auth.mjs', 5);
+  // Round 12: 5 -> 8. applyTeacherLink/applyParentChildLink/
+  // migrateSubscription each gained ONE additional call site -- the
+  // reconciled-fast-path live re-verification fixed in item 1 (each
+  // function already had one call site for its fresh-write path; this
+  // round added a second, structurally identical one for the resume path).
+  assertExactVerifyThenReconcileCount('migrate-users-to-supabase-auth.mjs', 8);
 });
 
 test('lib/reconcile.mjs: exactly one real markReconciled() call exists -- the shared function\'s own contract has not silently regressed', () => {
@@ -145,6 +170,72 @@ test('mongo-to-supabase.mjs: the reconciled fast-path skip is preceded by a real
     'a `continue` sits between the fast-path\'s verifyReadBack() call and its `skippedUnchanged += 1` -- the skip must ' +
     'only be reachable through the successful branch of that check'
   );
+});
+
+// ---------------------------------------------------------------------
+// Round 12, item 3 -- generic, shape-based coverage across BOTH
+// production files: every `status === 'reconciled'` fast-path condition
+// must be followed, within a tight window, by a real live check
+// (verifyThenReconcile( or verifyReadBack() before any bare return/
+// continue can reach an early "success" exit. See this file's own header
+// for the full rationale (this replaces re-checking only today's four
+// known lines with a check on the underlying code shape itself).
+// ---------------------------------------------------------------------
+
+function assertReconciledStatusChecksAreVerified(relativePath, expectedCount, { window = 20 } = {}) {
+  const lines = readLines(relativePath);
+  const conditionPattern = /status\s*===\s*'reconciled'/;
+  const verifyPattern = /\b(verifyThenReconcile|verifyReadBack)\(/;
+
+  const matchIndices = [];
+  lines.forEach((line, idx) => {
+    const trimmed = line.trim();
+    if (trimmed.startsWith('//') || trimmed.startsWith('*')) return;
+    if (conditionPattern.test(trimmed)) matchIndices.push(idx);
+  });
+
+  assert.equal(
+    matchIndices.length, expectedCount,
+    `${relativePath} now has ${matchIndices.length} occurrence(s) of a "status === 'reconciled'" fast-path condition, expected exactly ` +
+    `${expectedCount} -- a NEW occurrence must be independently re-verified against the live target before it is allowed to return/continue ` +
+    'as success (PR #70 round 12, item 1/3); once you have confirmed the new occurrence genuinely does that, update this expected count'
+  );
+
+  for (const idx of matchIndices) {
+    const windowLines = lines.slice(idx, idx + window);
+    const windowText = windowLines.join('\n');
+    assert.match(
+      windowText, verifyPattern,
+      `${relativePath}:${idx + 1} has a "status === 'reconciled'" fast-path condition with no verifyThenReconcile(/verifyReadBack( call ` +
+      `within the following ${window} lines -- this looks like a NEW, unprotected reconciled-fast-path that would return/continue as ` +
+      'success purely from ledger status, exactly the bug class PR #70 round 12, item 1 closed -- add a live read-back through ' +
+      'verifyThenReconcile() (or verifyReadBack() directly, matching mongo-to-supabase.mjs\'s own generic-domain-loop fast path) before ' +
+      'trusting it'
+    );
+    // The live check must be reachable ONLY through this branch actually
+    // running it -- a bare return/continue sitting between the condition
+    // and the verify call would let the fast path exit as "success"
+    // without the check ever executing, exactly like this round's three
+    // original bugs (the check existed in the FUNCTION, just after an
+    // early, unconditional `return`).
+    const verifyOffset = windowLines.findIndex((line) => verifyPattern.test(line));
+    const beforeVerify = windowLines.slice(1, verifyOffset === -1 ? undefined : verifyOffset);
+    assert.ok(
+      !beforeVerify.some((line) => /^\s*(return\b[^;]*;?|continue\s*;?)\s*$/.test(line)),
+      `${relativePath}:${idx + 1} has a bare return/continue between the "status === 'reconciled'" condition and its verification call -- ` +
+      'the fast path can reach success without the live check ever running'
+    );
+  }
+}
+
+test('migrate-users-to-supabase-auth.mjs: every reconciled-ledger-status fast path independently re-verifies the live target before trusting it', () => {
+  // Round 12, item 1: applyTeacherLink, applyParentChildLink, migrateSubscription.
+  assertReconciledStatusChecksAreVerified('migrate-users-to-supabase-auth.mjs', 3);
+});
+
+test('mongo-to-supabase.mjs: every reconciled-ledger-status fast path independently re-verifies the live target before trusting it', () => {
+  // Round 11, item 2: the generic domain loop's own resume fast path.
+  assertReconciledStatusChecksAreVerified('mongo-to-supabase.mjs', 1);
 });
 
 const failed = results.filter((r) => !r.pass);

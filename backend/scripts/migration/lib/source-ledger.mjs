@@ -49,23 +49,49 @@ export async function markPlanned(pgClient, { sourceDatabase, sourceCollection, 
   return r.rows[0].id;
 }
 
+// PR #70 review round 12, item 2 -- these three functions are the ONLY
+// way any ledger row's status ever legitimately changes. Before this
+// round, none of them checked how many rows their own UPDATE actually
+// affected: a stale/wrong ledgerId (a bug elsewhere, a row deleted
+// concurrently/out-of-band, a caller accidentally passing an id from a
+// different ledger row entirely) produced a silent 0-row UPDATE that
+// looked exactly like success -- the caller had no way to tell "the
+// transition genuinely happened" from "nothing happened at all". Fixed:
+// each now asserts rowCount === 1 and throws a clear, specific error
+// otherwise. This is what makes lib/reconcile.mjs's verifyThenReconcile()
+// able to prove "every check passed AND the ledger row was actually
+// reconciled" instead of just the former -- see that module's own
+// handling of this throw.
+function assertExactlyOneRowAffected(fnName, ledgerId, rowCount) {
+  if (rowCount !== 1) {
+    throw new Error(
+      `${fnName}(): UPDATE affected ${rowCount} row(s) for ledgerId=${ledgerId}, expected exactly 1 -- the ledger row ` +
+      'does not exist (deleted concurrently, never existed, or an invalid id was passed); refusing to treat this as a ' +
+      'successful ledger transition'
+    );
+  }
+}
+
 /** Records successful creation of the target row(s) — 'created', not yet independently reconciled. */
 export async function markCreated(pgClient, ledgerId, targetId) {
-  await pgClient.query(
+  const r = await pgClient.query(
     `UPDATE migration_source_ledger SET status = 'created', target_id = $2, migrated_at = now() WHERE id = $1`,
     [ledgerId, targetId === null || targetId === undefined ? null : String(targetId)]
   );
+  assertExactlyOneRowAffected('markCreated', ledgerId, r.rowCount);
 }
 
 /** Records that a target row was independently re-verified to exist and match — the final, trusted state. */
 export async function markReconciled(pgClient, ledgerId) {
-  await pgClient.query(`UPDATE migration_source_ledger SET status = 'reconciled' WHERE id = $1`, [ledgerId]);
+  const r = await pgClient.query(`UPDATE migration_source_ledger SET status = 'reconciled' WHERE id = $1`, [ledgerId]);
+  assertExactlyOneRowAffected('markReconciled', ledgerId, r.rowCount);
 }
 
 /** Records a genuine, surfaced failure — never a silent skip. */
 export async function markFailed(pgClient, ledgerId, reason) {
-  await pgClient.query(
+  const r = await pgClient.query(
     `UPDATE migration_source_ledger SET status = 'failed', error_reason = $2 WHERE id = $1`,
     [ledgerId, String(reason).slice(0, 2000)]
   );
+  assertExactlyOneRowAffected('markFailed', ledgerId, r.rowCount);
 }

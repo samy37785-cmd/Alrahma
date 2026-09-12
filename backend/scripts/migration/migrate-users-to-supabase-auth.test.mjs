@@ -1709,6 +1709,67 @@ async function main() {
   });
 
   // -------------------------------------------------------------------
+  // PR #70 review round 12, item 1 (scenario C) -- migrateSubscription()'s
+  // OWN reconciled-fast-path (`if (priorLedger.status === 'reconciled')`)
+  // used to return `{status: 'migrated', resumed: true}` purely because
+  // the ledger said so, with NO live read-back at all -- unlike the round
+  // 9 test right above, which only ever exercises the FRESH-reconciliation
+  // path (a ledger row starting at 'created', never 'reconciled'). This
+  // proves the SECOND call, after the ledger already says 'reconciled',
+  // still independently re-verifies real subscription content.
+  // -------------------------------------------------------------------
+
+  await test('round 12, item 1: a subscription that DRIFTED OUT OF BAND after being reconciled is detected on a resumed rerun -- never silently re-reported as migrated', async () => {
+    await resetAll();
+    const email = 'drift-subscription@example.invalid';
+    const sourceDoc = {
+      _id: new mongoose.Types.ObjectId(), email, role: 'student',
+      subscription: { plan: 'Starter', status: 'active', validUntil: '2099-01-01T00:00:00.000Z' },
+    };
+    const profileId = await seedExistingProfile(email);
+    const planId = await seedPlan();
+    const client = await pgPool.connect();
+    try {
+      const result1 = await migrateSubscription(client, profileId, sourceDoc, new Map([['Starter', planId]]));
+      assert.equal(result1.status, 'migrated');
+      assert.equal(result1.resumed, false);
+
+      const ledgerBefore = await pgPool.query(
+        `SELECT status, target_id FROM migration_source_ledger WHERE target_table = 'subscriptions' AND source_document_id = $1`,
+        [String(sourceDoc._id)]
+      );
+      assert.equal(ledgerBefore.rows[0].status, 'reconciled', 'sanity: the first call must have genuinely reconciled it');
+      const subscriptionId = ledgerBefore.rows[0].target_id;
+
+      // Simulate an out-of-band mutation -- a trigger, a manual billing-ops
+      // edit, a different process entirely -- changing real subscription
+      // content AFTER this migration already reconciled it. Chosen field
+      // (cancel_at_period_end) has no transition-trigger constraints, so
+      // this isolates read-back's own content check from unrelated
+      // subscription-lifecycle trigger behavior.
+      await pgPool.query(`UPDATE subscriptions SET cancel_at_period_end = true WHERE id = $1`, [subscriptionId]);
+
+      const result2 = await migrateSubscription(client, profileId, sourceDoc, new Map([['Starter', planId]]));
+      assert.equal(result2.status, 'FAIL', 'd1fb542 wrongly returned status=migrated here on the resumed call -- the fix must detect the drift and fail closed');
+      assert.match(result2.reason, /does not match what this migration just wrote/);
+      assert.match(result2.reason, /cancel_at_period_end/);
+
+      const ledgerAfter = await pgPool.query(
+        `SELECT status FROM migration_source_ledger WHERE target_table = 'subscriptions' AND source_document_id = $1`,
+        [String(sourceDoc._id)]
+      );
+      assert.equal(ledgerAfter.rows[0].status, 'failed', 'must be marked failed, never left as reconciled with unverified drifted content');
+
+      // No auto-repair: the drifted value must remain untouched, never
+      // silently overwritten back to what this migration itself expects.
+      const persisted = await pgPool.query('SELECT cancel_at_period_end FROM subscriptions WHERE id = $1', [subscriptionId]);
+      assert.equal(persisted.rows[0].cancel_at_period_end, true, 'must never silently repair/overwrite the drifted value');
+    } finally {
+      client.release();
+    }
+  });
+
+  // -------------------------------------------------------------------
   // Item 6: relationship provenance -- via the real CLI (--execute),
   // profiles pre-seeded directly so no real GoTrue call is ever reached.
   // -------------------------------------------------------------------
@@ -1914,6 +1975,94 @@ async function main() {
       [String(studentDoc._id)]
     );
     assert.equal(ledgerCount.rows[0].n, 1, 're-running must never create a second ledger row for the same relationship');
+  });
+
+  // -------------------------------------------------------------------
+  // PR #70 review round 12, item 1 (scenarios A and B) -- applyTeacherLink()
+  // and applyParentChildLink() each had a reconciled-fast-path
+  // (`if (prior?.target_id === targetId && prior.status === 'reconciled')
+  // return;`) that returned success purely from LEDGER status, with NO
+  // live read-back at all -- unlike the idempotent-resume test right
+  // above, which never mutates anything between the two runs and so never
+  // actually exercises whether the resume path independently re-verifies
+  // anything. These two prove a REAL out-of-band mutation between the two
+  // runs is detected, never silently re-reported as success.
+  // -------------------------------------------------------------------
+
+  await test('round 12, item 1 (scenario A): a teacher_id link that DRIFTED OUT OF BAND after being reconciled is detected on rerun -- never silently re-reported as success', async () => {
+    await resetAll();
+    const teacherEmail = 'rel-teacher-drift@example.invalid';
+    const studentEmail = 'rel-student-drift@example.invalid';
+    const otherTeacherEmail = 'rel-teacher-drift-other@example.invalid';
+    const teacherDoc = { _id: new mongoose.Types.ObjectId(), email: teacherEmail, role: 'teacher' };
+    const studentDoc = { _id: new mongoose.Types.ObjectId(), email: studentEmail, role: 'student', teacher: teacherDoc._id };
+    await mongoose.connection.collection('users').insertMany([teacherDoc, studentDoc]);
+    for (const doc of [teacherDoc, studentDoc]) {
+      const id = await seedExistingProfile(doc.email);
+      await addProfileLedger(doc, id);
+    }
+    const otherTeacherId = await seedExistingProfile(otherTeacherEmail);
+
+    const run1 = runUserMigrationCLI(['--execute']);
+    assert.equal(run1.code, 0, run1.stderr);
+    assert.equal(run1.report.relationships.teacherLinksResolved, 1);
+
+    const studentRow = await pgPool.query('SELECT id, teacher_id FROM profiles WHERE email = $1', [studentEmail]);
+    const studentProfileId = studentRow.rows[0].id;
+    assert.ok(studentRow.rows[0].teacher_id, 'sanity: the first run must have genuinely written teacher_id');
+
+    // Simulate an out-of-band mutation -- a trigger, a manual DBA edit, an
+    // admin UI action -- completely outside this migration's own control,
+    // while the ledger row itself is left behind still saying 'reconciled'.
+    await pgPool.query('UPDATE profiles SET teacher_id = $2 WHERE id = $1', [studentProfileId, otherTeacherId]);
+
+    const run2 = runUserMigrationCLI(['--execute']);
+    assert.notEqual(run2.code, 0, 'd1fb542 wrongly returned success here -- the fix must detect the drift and fail the run closed');
+    assert.equal(run2.report.relationships.writeErrors.length, 1);
+    assert.match(run2.report.relationships.writeErrors[0].message, /out-of-band drift/);
+
+    // No auto-repair: the drifted value must remain untouched, never
+    // silently overwritten back to this migration's own expected value.
+    const after = await pgPool.query('SELECT teacher_id FROM profiles WHERE id = $1', [studentProfileId]);
+    assert.equal(after.rows[0].teacher_id, otherTeacherId, 'must never silently repair/overwrite the drifted value');
+  });
+
+  await test('round 12, item 1 (scenario B): a parent_student_links row DELETED out of band after being reconciled is detected on rerun -- never silently re-reported as success', async () => {
+    await resetAll();
+    const parentEmail = 'rel-parent-drift@example.invalid';
+    const childEmail = 'rel-child-drift@example.invalid';
+    const childDoc = { _id: new mongoose.Types.ObjectId(), email: childEmail, role: 'student' };
+    const parentDoc = { _id: new mongoose.Types.ObjectId(), email: parentEmail, role: 'parent', children: [childDoc._id] };
+    await mongoose.connection.collection('users').insertMany([childDoc, parentDoc]);
+    for (const doc of [childDoc, parentDoc]) {
+      const id = await seedExistingProfile(doc.email);
+      await addProfileLedger(doc, id);
+    }
+
+    const run1 = runUserMigrationCLI(['--execute']);
+    assert.equal(run1.code, 0, run1.stderr);
+    assert.equal(run1.report.relationships.parentLinksResolved, 1);
+
+    const parentRow = await pgPool.query('SELECT id FROM profiles WHERE email = $1', [parentEmail]);
+    const childRow = await pgPool.query('SELECT id FROM profiles WHERE email = $1', [childEmail]);
+    const parentProfileId = parentRow.rows[0].id;
+    const childProfileId = childRow.rows[0].id;
+    const before = await pgPool.query('SELECT count(*)::int AS n FROM parent_student_links WHERE parent_id = $1 AND student_id = $2', [parentProfileId, childProfileId]);
+    assert.equal(before.rows[0].n, 1, 'sanity: the first run must have genuinely created the link');
+
+    // Simulate an out-of-band deletion -- an admin unlinking a family, a
+    // cascading cleanup from something unrelated -- while the ledger row
+    // itself is left behind, still saying 'reconciled'.
+    await pgPool.query('DELETE FROM parent_student_links WHERE parent_id = $1 AND student_id = $2', [parentProfileId, childProfileId]);
+
+    const run2 = runUserMigrationCLI(['--execute']);
+    assert.notEqual(run2.code, 0, 'd1fb542 wrongly returned success here -- the fix must detect the missing row and fail the run closed');
+    assert.equal(run2.report.relationships.writeErrors.length, 1);
+    assert.match(run2.report.relationships.writeErrors[0].message, /no longer exists/);
+
+    // No auto-repair: the deleted link must never be silently re-created.
+    const after = await pgPool.query('SELECT count(*)::int AS n FROM parent_student_links WHERE parent_id = $1 AND student_id = $2', [parentProfileId, childProfileId]);
+    assert.equal(after.rows[0].n, 0, 'must never silently re-create the deleted link');
   });
 
   await test('relationship provenance: crash AFTER the teacher_id write, BEFORE markCreated rolls back the whole transaction', async () => {

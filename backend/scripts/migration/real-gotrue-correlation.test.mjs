@@ -81,6 +81,23 @@ function assertLocalHost(uri, label) {
   }
 }
 
+// `supabase start`'s OWN stdout format is not something to parse --
+// confirmed to vary between environments (a single JSON status line
+// locally on one run, a human-readable box-drawing table with no JSON at
+// all when this exact same file ran in real GitHub Actions CI). The only
+// stable, documented, explicitly-flagged machine-readable output this CLI
+// offers is `status -o env` (also what ops/stage2f-authtest's own README
+// tells a human operator to run) -- used here instead of ever trying to
+// guess at `start`'s own format.
+function parseEnvOutput(stdout) {
+  const env = {};
+  for (const line of stdout.split('\n')) {
+    const m = line.match(/^([A-Z_][A-Z0-9_]*)="((?:[^"\\]|\\.)*)"\s*$/);
+    if (m) env[m[1]] = m[2].replace(/\\"/g, '"').replace(/\\\\/g, '\\');
+  }
+  return env;
+}
+
 function startStack() {
   const stopFirst = runSupabaseCli(['stop', '--no-backup']); // best-effort; fine if nothing was running
   void stopFirst;
@@ -88,17 +105,17 @@ function startStack() {
   if (start.status !== 0) {
     throw new Error(`supabase start failed (exit ${start.status}): ${start.stderr}\n${start.stdout}`);
   }
-  // The CLI prints one JSON status object on its own line among its other
-  // (non-JSON) log lines -- find the last line that parses as JSON.
-  const jsonLine = start.stdout.split('\n').reverse().find((line) => {
-    const trimmed = line.trim();
-    return trimmed.startsWith('{') && trimmed.endsWith('}');
-  });
-  if (!jsonLine) throw new Error(`supabase start produced no parseable JSON status line:\n${start.stdout}`);
-  const status = JSON.parse(jsonLine);
-  assertLocalHost(status.DB_URL, 'DB_URL');
-  assertLocalHost(status.API_URL, 'API_URL');
-  return { dbUrl: status.DB_URL, apiUrl: status.API_URL, serviceRoleKey: status.SERVICE_ROLE_KEY };
+  const statusRun = runSupabaseCli(['status', '-o', 'env'], { timeout: 60_000 });
+  if (statusRun.status !== 0) {
+    throw new Error(`supabase status -o env failed (exit ${statusRun.status}): ${statusRun.stderr}\n${statusRun.stdout}`);
+  }
+  const env = parseEnvOutput(statusRun.stdout);
+  if (!env.DB_URL || !env.API_URL || !env.SERVICE_ROLE_KEY) {
+    throw new Error(`supabase status -o env did not produce the expected DB_URL/API_URL/SERVICE_ROLE_KEY keys:\n${statusRun.stdout}`);
+  }
+  assertLocalHost(env.DB_URL, 'DB_URL');
+  assertLocalHost(env.API_URL, 'API_URL');
+  return { dbUrl: env.DB_URL, apiUrl: env.API_URL, serviceRoleKey: env.SERVICE_ROLE_KEY };
 }
 
 function applyRepoSchema(dbUrl) {

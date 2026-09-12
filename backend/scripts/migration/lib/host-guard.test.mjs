@@ -27,7 +27,13 @@ test('isLocalHost: localhost and 127.0.0.1 are local', () => {
 
 test('isLocalHost: anything else is not local', () => {
   assert.equal(isLocalHost('postgresql://user:pass@db.example.com:5432/db'), false);
-  assert.equal(isLocalHost('postgresql://user:pass@aws-0-us-east-1.pooler.supabase.com:5432/db'), false);
+  // Deliberately no userinfo (no "user:pass@") on this one -- a literal
+  // "<word>:<word>@...supabase" substring unconditionally trips this
+  // repo's own diff-level secret scanner (by design, with no
+  // fake/test/placeholder exception, unlike the SUPABASE_SERVICE_ROLE_KEY
+  // heuristic), and isLocalHost() only ever inspects the hostname, so no
+  // userinfo is needed to exercise this branch.
+  assert.equal(isLocalHost('postgresql://aws-0-us-east-1.pooler.supabase.com:5432/db'), false);
 });
 
 test('assertLocalHostOrProductionAuthorized: localhost always passes, regardless of authorization (even null)', () => {

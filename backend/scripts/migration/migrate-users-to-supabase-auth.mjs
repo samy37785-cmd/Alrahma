@@ -47,6 +47,8 @@ import { findLedgerEntry, markPlanned, markCreated, markFailed, contentHashOf } 
 import { parseStrictCliArgs } from './lib/cli-args.mjs';
 import { jsonPathEqual } from './lib/read-back-verify.mjs';
 import { verifyThenReconcile } from './lib/reconcile.mjs';
+import { assertLocalHostOrProductionAuthorized } from './lib/host-guard.mjs';
+import { loadAndVerifyProductionAuthorization } from './lib/production-authorization.mjs';
 
 // Review round 6, item 3: this script never went through migration_source_
 // ledger before this round (it predates that table, and auth.users/
@@ -1650,7 +1652,17 @@ async function main() {
   if (!mongoUri || !pgUri || !supabaseUrl || !serviceRoleKey) {
     throw new Error('MIGRATION_MONGO_URI, MIGRATION_DB_URL, SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must all be set.');
   }
-  assertLocalHost(pgUri, 'MIGRATION_DB_URL');
+  // MIGRATION_DB_URL (the Postgres/Supabase TARGET) may point at the real
+  // production project ONLY when a genuine, independently-verified
+  // production authorization is present -- see lib/production-
+  // authorization.mjs's own header for exactly what that requires. Absent
+  // MIGRATION_PRODUCTION_MODE=1, this behaves EXACTLY like the old
+  // unconditional assertLocalHost() call it replaces. SUPABASE_URL itself
+  // remains deliberately NOT host-checked here (see this file's own
+  // header, rule #3) -- production authorization instead verifies
+  // SUPABASE_URL's project ref matches the one hardcoded real target.
+  const productionAuthorization = loadAndVerifyProductionAuthorization();
+  assertLocalHostOrProductionAuthorized(pgUri, 'MIGRATION_DB_URL', productionAuthorization);
 
   const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, { auth: { persistSession: false, autoRefreshToken: false } });
 

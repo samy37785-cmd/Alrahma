@@ -144,6 +144,8 @@ import { throwIfFaultStage } from './lib/fault-injection.mjs';
 import { parseStrictCliArgs } from './lib/cli-args.mjs';
 import { encodeCompositeTargetId, decodeCompositeTargetId } from './lib/composite-target-id.mjs';
 import { verifyReadBack } from './lib/read-back-verify.mjs';
+import { assertLocalHostOrProductionAuthorized } from './lib/host-guard.mjs';
+import { loadAndVerifyProductionAuthorization } from './lib/production-authorization.mjs';
 
 // Stage 2J-B, PR #70 review round 8, item 1 -- this script's own CLI was
 // still parsed by hand (a generic --key=value splitter, `v ?? true`) even
@@ -2108,8 +2110,20 @@ async function main() {
   if (!mongoUri || !pgUri) {
     throw new Error('MIGRATION_MONGO_URI and MIGRATION_DB_URL must both be set (local-only).');
   }
+  // MIGRATION_MONGO_URI stays unconditionally local-only -- every stage of
+  // this engagement's own operating plan requires the Mongo SOURCE to
+  // always be a local, disposable, restored-from-backup copy, never the
+  // real Atlas cluster directly (see this file's own header). Production
+  // Enablement never touches this check.
   assertLocalHost(mongoUri, 'MIGRATION_MONGO_URI');
-  assertLocalHost(pgUri, 'MIGRATION_DB_URL');
+  // MIGRATION_DB_URL (the Postgres/Supabase TARGET) may point at the real
+  // production project ONLY when a genuine, independently-verified
+  // production authorization is present -- see lib/production-
+  // authorization.mjs's own header for exactly what that requires. Absent
+  // MIGRATION_PRODUCTION_MODE=1, this behaves EXACTLY like the old
+  // unconditional assertLocalHost() call it replaces.
+  const productionAuthorization = loadAndVerifyProductionAuthorization();
+  assertLocalHostOrProductionAuthorized(pgUri, 'MIGRATION_DB_URL', productionAuthorization);
 
   const requestedAll = args.domain === 'all' || !args.domain;
   const requestedRaw = requestedAll ? Object.keys(DOMAINS) : [args.domain];

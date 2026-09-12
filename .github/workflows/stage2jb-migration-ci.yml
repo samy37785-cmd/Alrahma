@@ -1,0 +1,189 @@
+name: Stage 2J-B migration verification
+
+# PR #70 review round 7, item 8. What this workflow does NOT do, by
+# construction:
+#   - It never references a repository secret, an environment secret, or
+#     any credential of any kind -- there is no `secrets:` usage anywhere
+#     below. Every check runs against disposable, ephemeral Docker
+#     containers created and destroyed inside this job, or against pure
+#     in-memory/local-file logic.
+#   - It never touches Atlas, Supabase Production (project
+#     difzynyphojgisrfvrkd), or Render -- nothing in this repository's
+#     migration tooling CAN reach them without real credentials, and none
+#     are ever supplied here.
+#   - It never runs `production-import-orchestrator.mjs --execute` (or
+#     any other real-write production code path) against anything but the
+#     disposable local Postgres/Mongo containers the test files themselves
+#     start and tear down.
+#
+# This is the ONLY place `npm run test:migration` runs in CI -- the plain
+# `npm test` step below runs backend/tests/**/*.test.js only, a
+# structurally disjoint glob from backend/scripts/migration/*.test.mjs, so
+# a green `npm test` here (or anywhere) has never meant, and still does
+# not mean, "the migration tests ran".
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [feat/stage-2j-b-lossless-data-migration]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: stage2jb-migration-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Explicitly documented absence: no MIGRATION_MONGO_URI, MIGRATION_DB_URL,
+  # SUPABASE_URL, or SUPABASE_SERVICE_ROLE_KEY is set at the workflow level.
+  # Every test file that needs them sets its OWN localhost/disposable-
+  # container value internally and asserts a localhost/127.0.0.1 host
+  # before ever using it (see migrate-users-to-supabase-auth.mjs's and
+  # mongo-to-supabase.mjs's own assertLocalHost()).
+  CI: 'true'
+
+jobs:
+  verify:
+    name: Full verification (lint, tests, migration suite, build)
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout (full history, for git diff --check against main)
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+
+      # Round 8 follow-up -- a real, confirmed bug found via the ACTUAL
+      # Vercel deployment status on this PR (which failed on every round-8
+      # commit, silently, since Vercel isn't a required check): this repo's
+      # committed pnpm-lock.yaml has always been written by pnpm@10 (see
+      # ba1ed6a, "regenerate pnpm-lock.yaml with pnpm@10 to restore
+      # workspace overrides" -- Vercel's own build uses pnpm@10.x). This
+      # workflow pinned pnpm@9.15.9 instead (the only pnpm on PATH in the
+      # dev sandbox that wrote round 8's changes), which cannot read a
+      # pnpm@10-written lockfile's "overrides" section under
+      # --frozen-lockfile (ERR_PNPM_LOCKFILE_CONFIG_MISMATCH) -- verified
+      # directly against a clean checkout of the lockfile as committed
+      # before this fix. Round 8's own pnpm-lock.yaml "fix" for item 4
+      # regenerated the lockfile with pnpm@9.15.9 to make THIS workflow's
+      # frozen-lockfile check pass, which silently dropped the overrides
+      # block again and broke Vercel's real build in exactly the way
+      # ba1ed6a had already fixed once. Corrected by pinning pnpm@10 here
+      # (matching Vercel and the lockfile's actual origin) instead of
+      # further modifying the lockfile; pnpm-lock.yaml is restored to
+      # byte-identical to the last commit with a passing Vercel deploy.
+      - name: Set up pnpm
+        uses: pnpm/action-setup@a15d269cd4658e1107c09f1fabf4cbd7bd1f308a # v4.4.0
+        with:
+          version: 10.34.5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22'
+          cache: pnpm
+
+      - name: Install workspace dependencies
+        run: pnpm install --frozen-lockfile
+
+      # PR #70 review round 9, item 6 -- root package.json now pins
+      # "packageManager": "pnpm@10.34.5" (matching this workflow's own
+      # explicit pnpm/action-setup version above, and Vercel's real
+      # toolchain). `--frozen-lockfile` above already IS the strongest
+      # possible live proof that pnpm-lock.yaml's committed overrides
+      # match pnpm-workspace.yaml under this exact pnpm version --
+      # frozen-lockfile mode refuses to run at all on any mismatch
+      # (ERR_PNPM_LOCKFILE_CONFIG_MISMATCH, the exact failure this
+      # engagement hit and root-caused this round). This step is
+      # belt-and-suspenders: an explicit, independent check that the
+      # lockfile file itself was not modified as a side effect (frozen
+      # mode should never touch it) and that the overrides section is
+      # still physically present in what got committed.
+      - name: Verify pnpm-lock.yaml is untouched by the frozen install and still carries the workspace overrides
+        run: |
+          git diff --exit-code -- pnpm-lock.yaml
+          grep -q '^overrides:' pnpm-lock.yaml
+
+      # PR #70 review round 8, item 4 -- a real, confirmed bug: `backend/`
+      # is its own npm-managed package (backend/package-lock.json), NOT a
+      # member of pnpm-workspace.yaml's `packages:` list (only
+      # artifacts/*, lib/*, lib/integrations/*, scripts are). The
+      # `pnpm install --frozen-lockfile` step above NEVER installs
+      # backend/node_modules -- yet every backend step below runs `npm
+      # run ...` with `working-directory: backend`. On a genuinely clean
+      # checkout (every real CI run; no committed node_modules) this left
+      # `npm run lint`/`npm test`/`npm run test:migration` with nothing
+      # to invoke, since npm's own module resolution + package.json
+      # `scripts` require backend's OWN `npm ci` first. This step was
+      # simply missing. Uses `npm ci` (not `npm install`) specifically so
+      # a lockfile that drifted from package.json fails the build loudly
+      # here, rather than silently installing something different than
+      # what's committed.
+      - name: Backend npm ci (backend/package-lock.json -- a separate npm package, not part of the pnpm workspace)
+        working-directory: backend
+        run: npm ci
+
+      - name: git diff --check (no trailing whitespace / unresolved conflict markers vs. main)
+        run: |
+          git fetch origin main --depth=1 || git fetch origin main
+          git diff --check origin/main...HEAD
+
+      - name: Secret scan on the diff vs. main
+        run: |
+          git fetch origin main --depth=1 || git fetch origin main
+          git diff origin/main...HEAD > /tmp/pr.diff
+          # PR #70 review round 8, item 4 -- a real, currently-live bug
+          # found running this exact step for real (not by inspection):
+          # this branch's own test fixtures assign an obviously-fake
+          # placeholder string to SUPABASE_SERVICE_ROLE_KEY (e.g.
+          # 'fake-service-role-key-for-test', introduced back in round
+          # 4/5, well before this workflow existed) -- a real service
+          # role key is ALWAYS a JWT (caught unconditionally by the
+          # eyJhbGciOi... pattern in pass 1 below), so the separate
+          # SUPABASE_SERVICE_ROLE_KEY=<quoted string> heuristic only
+          # exists to catch a non-JWT-shaped placeholder that still LOOKS
+          # like a real credential -- it was never meant to flag a string
+          # that says "fake"/"test" right in its own value. Split into
+          # two passes so the unambiguous secret SHAPES (AWS keys, PEM
+          # headers, JWTs, sk- API keys, real Postgres/Supabase
+          # connection strings) remain an absolute hard fail with no
+          # exceptions, while the SUPABASE_SERVICE_ROLE_KEY heuristic
+          # specifically ignores lines that are self-evidently test
+          # placeholders.
+          if grep -inE \
+            "AKIA[0-9A-Z]{16}|BEGIN (RSA|EC|OPENSSH|PGP) PRIVATE KEY|eyJhbGciOi[A-Za-z0-9_.-]{20,}|sk-[a-zA-Z0-9]{20,}|postgres(ql)?://[^ '\"]+:[^ '\"@]+@[^ '\"]*supabase" \
+            /tmp/pr.diff; then
+            echo "::error::Potential secret detected in the diff -- failing the build."
+            exit 1
+          fi
+          if grep -inE "SUPABASE_SERVICE_ROLE_KEY[[:space:]]*[:=][[:space:]]*['\"][^'\"]" /tmp/pr.diff \
+            | grep -viE "fake|test|mock|dummy|placeholder|example|not-a-real"; then
+            echo "::error::Potential secret detected in the diff -- failing the build."
+            exit 1
+          fi
+          echo "Secret scan: clean."
+
+      - name: Backend lint
+        working-directory: backend
+        run: npm run lint
+
+      - name: Backend tests (backend/tests/**/*.test.js only -- never the migration suite)
+        working-directory: backend
+        run: npm test
+
+      - name: Migration targeted tests (disposable Docker Mongo/Postgres only, no real credentials)
+        working-directory: backend
+        run: npm run test:migration
+
+      - name: lib/db test:db (disposable Docker Postgres only)
+        working-directory: lib/db
+        run: npm run test:db
+
+      - name: Frontend vitest
+        working-directory: artifacts/al-rahma-academy
+        run: npx vitest run
+
+      - name: Root typecheck + build
+        run: pnpm run build

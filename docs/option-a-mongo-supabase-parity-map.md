@@ -1,11 +1,21 @@
 # Mongo → Supabase Parity Map (Stage 2E)
 
+> ⚠️ **Historical document — schema state described below is `0000`–`0011`, as of Stage
+> 2E.** The branch has since progressed to migration `0022` and a complete, reviewed,
+> 27-domain lossless migration tool (Stage 2J-B, PR #70) — this document is **not**
+> re-updated as later stages land, and its "20 tables" / `0000`–`0011` scope below no
+> longer reflects the current schema. For the current, actively-maintained state of the
+> Mongo→Supabase effort (what schema state exists, what has and has not migrated, what
+> has NOT happened), see **[`docs/current-project-status.md`](current-project-status.md)**
+> instead. This file is kept as-is for its own historical record of the Stage 2E gap
+> analysis; do not treat its schema-version references as current.
+
 Status: **NOT at 100% parity.** This document is the authoritative gap inventory behind
 the Stage 2E Supabase adapter work in `backend/data/`. It compares the live MongoDB
 backend (`backend/models/*.js`, confirmed live on Render as of commit `acbce80`)
 against the Postgres/Supabase schema in `lib/db/drizzle/0000`–`0011` (20 tables,
 **never applied to the real Supabase project `difzynyphojgisrfvrkd`** — local/rehearsal
-only).
+only) **as they stood at Stage 2E** — see the banner above for the current schema state.
 
 ## Coverage summary
 
@@ -165,6 +175,15 @@ column. Postgres's `seo_title`/`seo_description` flat columns map to Mongo's nes
 `seo.{metaTitle,metaDescription}` (missing `canonicalUrl` counterpart). Author fields
 match (`author_name/author_role/author_image` ↔ `author.{name,role,image}`).
 Slug/title/excerpt/body↔content/tags/published/views/publishedAt all match cleanly.
+
+**Stage 2J-B update**: these 4 gaps were closed by decision, not by schema
+growth — see `docs/stage-2j-b-lossless-mapping-contract.md` §13. The
+migration tool now fails closed: any Mongo blog document that actually
+carries a non-empty value in `category`/`readTime`/`coverImage`/
+`seo.canonicalUrl` is rejected with a named reason rather than silently
+dropped (`backend/scripts/migration/mongo-to-supabase.mjs`'s `blogs`
+domain). 0 real Mongo blog documents exist today, so this path is
+currently exercised only via synthetic fixtures, not real data.
 
 ### 11–12. TrialRequest / Subscriber
 

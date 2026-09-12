@@ -138,7 +138,7 @@ found conflating them was a real, misleading gap. Each cell is
 | 5 | `enrollments` | ⊘ ✓ ⊘ ⊘ | ✗ ✓ ✗ ✗ | ✗ ✓ ✗ ✗ | ✓ ✓ ✗ ✗ | ✓✓✓✓ | ✓✓✓✓ |
 | 6 | `plans` | ✓³ ⊘ ⊘ ⊘ | ✓³ ⊘ ⊘ ⊘ | ✓³ ⊘ ⊘ ⊘ | ✓ ⊘ ⊘ ⊘ | ✓ ⊘(RPC⁴) ⊘(RPC⁴) ⊘ | ✓ ✓(RPC-path only) ✓(trigger⁴) ✓(convention⁴) |
 | 7 | `subscriptions` | ⊘⊘⊘⊘ | ✓ ⊘ ⊘(RPC⁵) ⊘ | ✗ ⊘ ⊘ ⊘ | ✗ ⊘ ⊘ ⊘ | ✓ ⊘(RPC⁶) ⊘ ⊘ | ✓ ✓(RPC-path only) ✓(trigger⁷) ✓(convention) |
-| 8 | `payments` | ⊘⊘⊘⊘ | ✓⊘⊘⊘ | ✗⊘⊘⊘ | ✗⊘⊘⊘ | ✓ ⊘(RPC⁸) ⊘ ⊘ | ✓ ✓ ✓(trigger⁹) ✗(trigger) |
+| 8 | `payments` | ⊘⊘⊘⊘ | ✓⊘⊘⊘¹⁸ | ✗⊘⊘⊘ | ✗⊘⊘⊘ | ✓ ⊘(RPC⁸) ⊘ ⊘ | ✓ ✓ ✓(trigger⁹) ✗(trigger) |
 | 9 | `provider_events` | ⊘⊘⊘⊘ | ✗⊘⊘⊘ | ✗⊘⊘⊘ | ✗⊘⊘⊘ | ✓⊘⊘⊘ | ✓ ✓ ✓¹⁰ ✓(convention) |
 | 10 | `manual_payments` | ⊘⊘⊘⊘ | ✓✓⊘⊘ | ✗✓⊘⊘ | ✗✓⊘⊘ | ✓ ✓ ⊘(RPC¹¹) ⊘ | ✓✓✓(convention)✓(convention) |
 | 11 | `invoices` | ⊘⊘⊘⊘ | ✓✗⊘⊘ | ✗✗⊘⊘ | ✗✗⊘⊘ | ✓ ⊘(RPC¹²) ⊘ ⊘ | ✓ ✓(trigger¹²) ✗(trigger¹³) ✗(trigger¹³) |
@@ -151,6 +151,8 @@ found conflating them was a real, misleading gap. Each cell is
 | 18 | `notifications` | ⊘⊘⊘⊘ | ✓✗⊘(RPC¹⁶)✓ | ✗✗⊘✗ | ✗✗⊘✗ | ✓✓⊘(RPC¹⁶)⊘¹⁷ | ✓✓✓✓ |
 | 19 | `notification_preferences` | ⊘⊘⊘⊘ | ✓✓✓⊘ | ✗✗✗⊘ | ✓✗✗⊘ | ✓✗✗⊘ | ✓✓✓(convention)✓(convention) |
 | 20 | `admin_audit_log` | ⊘⊘⊘⊘ | ✗⊘⊘⊘ | ✗⊘⊘⊘ | ✗⊘⊘⊘ | ✓ ⊘(RPC-internal) ⊘ ⊘ | ✓ ✓(convention) ✗(trigger) ✗(trigger) |
+| 21 | `migration_source_ledger`¹⁹ | ⊘⊘⊘⊘ | ⊘⊘⊘⊘ | ⊘⊘⊘⊘ | ⊘⊘⊘⊘ | ⊘⊘⊘⊘ | ✓✓✓✓ |
+| 22 | `payment_source_snapshots`¹⁹ | ⊘⊘⊘⊘ | ⊘⊘⊘⊘ | ⊘⊘⊘⊘ | ⊘⊘⊘⊘ | ⊘⊘⊘⊘ | ✓✓✓✓ |
 
 ## Notes
 
@@ -383,6 +385,33 @@ found conflating them was a real, misleading gap. Each cell is
     admin calling it on another user's notification also affects 0 rows.
 17. `notifications` admin AAL2 `DELETE`: no admin delete policy exists —
     only the owner's own dismiss path.
+18. **`payments.user_id` — nullable since Stage 2J-B / `0022_lossless_
+    migration_support.sql`.** A "guest" charge (no linked account —
+    e.g. a lossless-migrated Mongo payment that never had a `userId`)
+    is a real, first-class row with `user_id IS NULL`, never a fake
+    `profiles` row. `payments_select_own_or_admin_aal2`'s existing
+    `user_id = auth.uid() OR is_admin_aal2()` needed no policy text
+    change: `NULL = auth.uid()` is `NULL` (never `TRUE`) for every real
+    session, so a guest charge is already invisible to `anon` and every
+    `authenticated` user (owner and other alike — there is no owner),
+    and reachable only via `is_admin_aal2()`, exactly like row 8's
+    existing `user (other)` cell. Re-verified directly (not just
+    inferred from the existing policy text) in
+    `rls-full-matrix.local.test.mjs`.
+19. **`migration_source_ledger`/`payment_source_snapshots` — Stage 2J-B /
+    `0022_lossless_migration_support.sql`.** Both tables are pure
+    migration-tooling bookkeeping (import provenance/idempotency ledger;
+    a migrated payment's original raw gateway payload) — never end-user-
+    or even admin-UI-facing. `REVOKE ALL ... FROM PUBLIC, anon,
+    authenticated, service_role` then `GRANT ALL ... TO service_role`
+    only: `anon`/`authenticated` (owner, other, AAL1 admin, and AAL2
+    admin alike — admin sessions are still Postgres role `authenticated`)
+    are denied at the `GRANT` layer for every operation, before RLS is
+    even evaluated. RLS is enabled with **no policy at all** on either
+    table; `service_role` reaches them only because Supabase's
+    `service_role` Postgres role itself carries `BYPASSRLS` (see
+    "Roles" above) — the explicit `GRANT ALL` is what supplies the base
+    privilege BYPASSRLS alone does not.
 
 ## Fencing contract — provider_events (Round 3, Section B)
 

@@ -1,4 +1,5 @@
-import { index, jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { check, index, jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { profiles } from "./profiles";
 
 /**
@@ -31,11 +32,16 @@ export const adminAuditLog = pgTable(
     before: jsonb("before"),
     after: jsonb("after"),
     correlationId: text("correlation_id"),
+    // Added by 0014_close_partial_gaps_schema.sql (raw SQL, not
+    // originally mirrored here — backfilled by Stage 2J-B). Matches the
+    // old Mongo SystemAuditLog.severity enum exactly.
+    severity: text("severity").notNull().default("info"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
     // Baseline remediation: was missing — "this admin's own action
     // history" is an expected RLS-scoped query.
     index("admin_audit_log_actor_admin_id_idx").on(t.actorAdminId),
+    check("admin_audit_log_severity_allowlist", sql`${t.severity} IN ('info','warning','critical')`),
   ],
 );

@@ -100,9 +100,15 @@ drop table if exists public.invoices cascade;
 drop table if exists public.live_classes cascade;
 drop table if exists public.manual_payments cascade;
 drop table if exists public.messages cascade;
+-- Stage 2J-B / 0022_lossless_migration_support.sql — added after this
+-- file's own documented drift lesson (see the module header above): a
+-- new migration's new tables must be added here too, or a rollback run
+-- leaves them behind.
+drop table if exists public.migration_source_ledger cascade;
 drop table if exists public.notification_preferences cascade;
 drop table if exists public.notifications cascade;
 drop table if exists public.parent_student_links cascade;
+drop table if exists public.payment_source_snapshots cascade;
 drop table if exists public.payments cascade;
 drop table if exists public.plans cascade;
 drop table if exists public.profiles cascade;

@@ -102,6 +102,21 @@ import { MIGRATION_SEED_ADMIN_ID, MIGRATION_SEED_ADMIN_EMAIL } from './lib/admin
 import { parseApprovedDispositions } from './migrate-users-to-supabase-auth.mjs';
 import { parseStrictCliArgs } from './lib/cli-args.mjs';
 import { encodeCompositeTargetId } from './lib/composite-target-id.mjs';
+import {
+  TARGET_SUPABASE_REF,
+  computeConfirmToken,
+  verifyApprovalManifest,
+  verifyFreshBackup,
+} from './lib/production-approval.mjs';
+import { loadAndVerifyProductionAuthorization } from './lib/production-authorization.mjs';
+import { assertLocalHostOrProductionAuthorized } from './lib/host-guard.mjs';
+
+// Production Enablement -- these four now live in lib/production-
+// approval.mjs (shared with the two worker scripts' own independent
+// production-authorization check, see that module's own header) and are
+// re-exported here unchanged so this file's own existing callers/tests
+// need no changes at all.
+export { TARGET_SUPABASE_REF, computeConfirmToken, verifyApprovalManifest, verifyFreshBackup };
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, '..', '..', '..');
@@ -110,7 +125,6 @@ const OUT_DIR = path.join(__dirname, 'out');
 // Hardcoded, not read from any CLI flag or env var — exactly what Part G
 // requires: this orchestrator can only ever target ONE project and ONE
 // source database, ever, no matter what an operator passes it.
-export const TARGET_SUPABASE_REF = 'difzynyphojgisrfvrkd';
 export const SOURCE_DATABASE = 'al-rahma';
 
 // A fixed, arbitrary 63-bit key for the shared advisory lock (Postgres
@@ -350,10 +364,6 @@ export function computeDomainWorkerPlan({ deferDomains = [] } = {}) {
   };
 }
 
-function sha256File(filePath) {
-  return crypto.createHash('sha256').update(fs.readFileSync(filePath)).digest('hex');
-}
-
 // Review round 6, item 2: "--approved-dispositions is unreachable through
 // the production orchestrator" -- migrate-users-to-supabase-auth.mjs
 // supported the flag, but this file neither parsed nor forwarded it, so
@@ -428,72 +438,10 @@ function currentGitSha() {
   return execFileSync('git', ['rev-parse', 'HEAD'], { cwd: REPO_ROOT, encoding: 'utf8' }).trim();
 }
 
-// ---------------------------------------------------------------------
-// Approval Manifest — the ONLY thing that can turn --plan into --execute.
-// ---------------------------------------------------------------------
-
-export function computeConfirmToken({ projectRef, gitSha, backupHash }) {
-  return crypto.createHash('sha256').update(`${projectRef}:${gitSha}:${backupHash}`).digest('hex');
-}
-
-/**
- * A valid manifest proves three things happened together, deliberately,
- * for THIS exact run: (1) it targets the one real project ref, (2) it was
- * approved against the exact commit actually checked out right now — not
- * some other commit's reviewed code silently running against a later
- * change, and (3) a specific backup's hash was known and approved,
- * so nobody can swap in a different (or no) backup after approval.
- */
-export function verifyApprovalManifest(manifest, { gitSha, backupHash }) {
-  if (!manifest || typeof manifest !== 'object') fail('approval manifest is missing or not an object');
-  const required = ['projectRef', 'gitSha', 'backupHash', 'confirmToken', 'approvedBy', 'approvedAt'];
-  for (const field of required) {
-    if (!manifest[field]) fail(`approval manifest missing required field "${field}"`);
-  }
-  if (manifest.projectRef !== TARGET_SUPABASE_REF) {
-    fail(`approval manifest projectRef "${manifest.projectRef}" does not match the hardcoded target "${TARGET_SUPABASE_REF}"`);
-  }
-  if (manifest.gitSha !== gitSha) {
-    fail(`approval manifest was approved for git SHA ${manifest.gitSha}, but HEAD is currently ${gitSha} — re-approve against the exact commit being run`);
-  }
-  if (manifest.backupHash !== backupHash) {
-    fail(`approval manifest backupHash does not match the backup actually present — a different or newer backup exists than what was approved`);
-  }
-  const expectedToken = computeConfirmToken({ projectRef: manifest.projectRef, gitSha: manifest.gitSha, backupHash: manifest.backupHash });
-  if (manifest.confirmToken !== expectedToken) {
-    fail('approval manifest confirmToken does not match sha256(projectRef:gitSha:backupHash) — manifest is malformed or was hand-edited');
-  }
-  return true;
-}
-
-// ---------------------------------------------------------------------
-// Fresh-backup verification.
-// ---------------------------------------------------------------------
-
-/**
- * `backupManifestPath` points at a small JSON sidecar (produced by
- * whatever this project's backup step writes, NOT re-derived here):
- * { filePath, sha256, createdAt }. This function re-hashes the actual
- * file (never trusts the sidecar's own claimed hash alone) and checks
- * recency.
- */
-export function verifyFreshBackup(backupManifestPath, { maxAgeHours = 24 } = {}) {
-  if (!fs.existsSync(backupManifestPath)) fail(`no backup manifest at ${backupManifestPath} — a fresh Mongo backup must exist before any real import`);
-  const sidecar = JSON.parse(fs.readFileSync(backupManifestPath, 'utf8'));
-  for (const field of ['filePath', 'sha256', 'createdAt']) {
-    if (!sidecar[field]) fail(`backup manifest missing required field "${field}"`);
-  }
-  if (!fs.existsSync(sidecar.filePath)) fail(`backup manifest references ${sidecar.filePath}, which does not exist`);
-  const actualHash = sha256File(sidecar.filePath);
-  if (actualHash !== sidecar.sha256) {
-    fail(`backup file at ${sidecar.filePath} does not match its manifest's recorded sha256 — it was modified or replaced after the manifest was written`);
-  }
-  const ageHours = (Date.now() - new Date(sidecar.createdAt).getTime()) / 3_600_000;
-  if (!(ageHours >= 0) || ageHours > maxAgeHours) {
-    fail(`backup at ${sidecar.filePath} is ${ageHours.toFixed(1)}h old (or has an invalid createdAt) — max allowed is ${maxAgeHours}h`);
-  }
-  return { filePath: sidecar.filePath, sha256: actualHash, ageHours };
-}
+// Approval-manifest verification, confirm-token computation, and fresh-
+// backup verification now live in lib/production-approval.mjs (imported
+// and re-exported at the top of this file) — shared with the two worker
+// scripts' own independent production-authorization check.
 
 // ---------------------------------------------------------------------
 // Schema fingerprint + migration journal verification.
@@ -1334,6 +1282,19 @@ async function main() {
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!pgUri) fail('MIGRATION_DB_URL must be set (no secret is ever accepted as a CLI argument)');
   if (execute && (!supabaseUrl || !serviceRoleKey)) fail('--execute requires SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY to be set');
+
+  // Production Enablement: this orchestrator's OWN direct Postgres
+  // connection previously had NO host guard at all -- only the two worker
+  // scripts it spawns ever asserted localhost. That left this file able to
+  // read (in --plan) or, worse, drive (in --execute) a real, non-local
+  // Postgres target completely unchecked. Closed the same way as both
+  // worker scripts: unconditionally local-only unless a genuine,
+  // independently-verified production authorization is presented. This
+  // check runs for BOTH --plan and --execute (--plan legitimately needs to
+  // read the real target's real schema/ledger state to plan against it;
+  // "read-only" is not the same as "safe to point anywhere").
+  const productionAuthorization = loadAndVerifyProductionAuthorization();
+  assertLocalHostOrProductionAuthorized(pgUri, 'MIGRATION_DB_URL', productionAuthorization);
 
   const pool = new pg.Pool({ connectionString: pgUri });
   const pgClient = await pool.connect();

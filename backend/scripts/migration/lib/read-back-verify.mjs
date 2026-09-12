@@ -46,6 +46,33 @@
 // carries (e.g. payments' `_raw`, or this same round's own
 // `__generatedFields` marker) that were never meant to be compared
 // against a Postgres column at all.
+//
+// PR #70 review round 11 -- two further real gaps:
+//
+// item 4: object/JSONB comparison went through a bare `JSON.stringify`,
+// making equality sensitive to key ORDER -- a column re-read with the
+// exact same semantic content but its keys serialized in a different
+// order (Postgres's own jsonb storage does not preserve source key
+// order; neither does re-deriving the same object client-side in a
+// different construction order) would be reported as a mismatch. Fixed:
+// `canonicalizeForCompare()` recursively sorts object keys before
+// stringifying (order must never matter for an object) while leaving
+// array element order untouched (order DOES matter for an array) -- a
+// genuine nested value change is still caught exactly as before.
+//
+// item 1: real GoTrue's `raw_app_meta_data` is not fully owned by this
+// migration -- GoTrue itself adds `provider`/`providers` (and possibly
+// more, depending on version/config) the moment a real `createUser()`
+// call actually runs. Comparing the WHOLE object against
+// `{migration_correlation_id: X}` -- correct against every mocked/hand-
+// seeded test fixture so far, but never proven against a real GoTrue --
+// would fail on every real account. Fixed: `jsonPathEqual(path, value)`
+// lets a caller assert exactly one JSON path within a column's value
+// while leaving every other key free to be anything (GoTrue-owned or
+// not) -- used for `raw_app_meta_data.migration_correlation_id`
+// specifically, never for a whole-object comparison of that column.
+// Missing/null/wrong at that exact path is still a hard failure, same as
+// any other mismatch.
 import { decodeCompositeTargetId } from './composite-target-id.mjs';
 
 function toEpochMillis(value) {
@@ -60,6 +87,24 @@ function toEpochMillis(value) {
   return null;
 }
 
+// PR #70 review round 11, item 4: recursively sorts object keys (order
+// must never matter for a plain object/JSONB value) while leaving array
+// element order untouched (order DOES matter for an array). Dates are
+// normalized to their ISO string so a Date reachable inside a JSON value
+// compares consistently regardless of which side produced it.
+function canonicalizeForCompare(value) {
+  if (value instanceof Date) return value.toISOString();
+  if (value === null || value === undefined) return null;
+  if (Array.isArray(value)) return value.map(canonicalizeForCompare);
+  if (typeof value === 'object') {
+    const sortedKeys = Object.keys(value).sort();
+    const out = {};
+    for (const key of sortedKeys) out[key] = canonicalizeForCompare(value[key]);
+    return out;
+  }
+  return value;
+}
+
 function normalizeForCompare(value) {
   if (value === undefined || value === null) return null;
   if (typeof value === 'string') {
@@ -67,14 +112,14 @@ function normalizeForCompare(value) {
     const looksLikeJson = (trimmed.startsWith('{') && trimmed.endsWith('}')) || (trimmed.startsWith('[') && trimmed.endsWith(']'));
     if (looksLikeJson) {
       try {
-        return JSON.stringify(JSON.parse(trimmed));
+        return JSON.stringify(canonicalizeForCompare(JSON.parse(trimmed)));
       } catch {
         return value;
       }
     }
     return value;
   }
-  if (typeof value === 'object') return JSON.stringify(value);
+  if (typeof value === 'object') return JSON.stringify(canonicalizeForCompare(value));
   return String(value);
 }
 
@@ -100,6 +145,38 @@ function fieldsMatch(expected, actual) {
     return expectedMs === actualMs;
   }
   return normalizeForCompare(expected) === normalizeForCompare(actual);
+}
+
+// PR #70 review round 11, item 1 -- a caller-declared marker that asserts
+// exactly one JSON path within a column's value, ignoring every other key
+// that column's value might carry. Use this ONLY for a genuinely partial-
+// ownership column (this migration owns a specific key within it, not the
+// whole value) -- e.g. GoTrue's `raw_app_meta_data`, which real GoTrue
+// itself populates with `provider`/`providers` alongside whatever this
+// migration writes. Never use it in place of a real whole-value
+// comparison for a column this migration fully owns.
+export class JsonPathEqual {
+  constructor(path, value) {
+    if (!Array.isArray(path) || path.length === 0 || !path.every((p) => typeof p === 'string')) {
+      throw new Error('jsonPathEqual(path, value): path must be a non-empty array of string keys');
+    }
+    this.path = path;
+    this.value = value;
+  }
+}
+
+/** @param {string[]} path @param {unknown} value */
+export function jsonPathEqual(path, value) {
+  return new JsonPathEqual(path, value);
+}
+
+function getAtPath(obj, path) {
+  let cur = obj;
+  for (const segment of path) {
+    if (cur === null || cur === undefined || typeof cur !== 'object') return undefined;
+    cur = cur[segment];
+  }
+  return cur;
 }
 
 /**
@@ -157,6 +234,21 @@ export async function verifyReadBack(pgClient, spec, targetId, expectedFields, {
       continue;
     }
     if (exempt.has(key)) continue; // this exact call declared this field a genuine generated-fallback with no source value -- column presence already implied by the row existing at all
+    if (expectedValue instanceof JsonPathEqual) {
+      // Round 11, item 1: only this exact JSON path within the column's
+      // value is required to match -- missing/null/wrong at that path is
+      // still a hard failure, but every OTHER key the column's value
+      // carries (e.g. GoTrue's own `provider`/`providers`) is left
+      // untouched and unchecked, deliberately.
+      const actualAtPath = getAtPath(dbRow[key], expectedValue.path);
+      if (!fieldsMatch(expectedValue.value, actualAtPath)) {
+        mismatches.push(
+          `${key}.${expectedValue.path.join('.')} (expected ${JSON.stringify(expectedValue.value)}, found ${JSON.stringify(actualAtPath)} ` +
+          `within ${key} -- only this exact path is required to match; other keys in ${key} are allowed to differ)`
+        );
+      }
+      continue;
+    }
     if (!fieldsMatch(expectedValue, dbRow[key])) {
       mismatches.push(`${key} (expected ${JSON.stringify(expectedValue)}, found ${JSON.stringify(dbRow[key])})`);
     }

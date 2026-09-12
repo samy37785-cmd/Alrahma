@@ -43,9 +43,10 @@ import { createClient } from '@supabase/supabase-js';
 import { resolvePlanSlug, seedCanonicalPlans } from './lib/plan-catalog.mjs';
 import { withImpersonatedAdmin, ensureMigrationSeedAdmin } from './lib/admin-rpc.mjs';
 import { throwIfFaultStage } from './lib/fault-injection.mjs';
-import { findLedgerEntry, markPlanned, markCreated, markReconciled, markFailed, contentHashOf } from './lib/source-ledger.mjs';
+import { findLedgerEntry, markPlanned, markCreated, markFailed, contentHashOf } from './lib/source-ledger.mjs';
 import { parseStrictCliArgs } from './lib/cli-args.mjs';
-import { verifyReadBack } from './lib/read-back-verify.mjs';
+import { jsonPathEqual } from './lib/read-back-verify.mjs';
+import { verifyThenReconcile } from './lib/reconcile.mjs';
 
 // Review round 6, item 3: this script never went through migration_source_
 // ledger before this round (it predates that table, and auth.users/
@@ -512,29 +513,28 @@ export async function migrateOneUser(supabaseAdmin, pgClient, mongoUser, { execu
   // same way: raw_app_meta_data.migration_correlation_id is verified
   // unconditionally here, not only in the branch-specific foreign-account
   // gate above (which only runs when ledger.target_id was still null).
-  const authReadBack = await verifyReadBack(pgClient, AUTH_USER_READBACK_SPEC, profileId, {
-    id: profileId,
-    email,
-    raw_app_meta_data: { migration_correlation_id: correlationId },
-  });
-  if (!authReadBack.ok) {
-    await markFailed(pgClient, ledgerId, authReadBack.reason).catch(() => {});
-    return { status: 'error', message: authReadBack.reason };
+  // Round 11, item 1: real GoTrue owns other keys in raw_app_meta_data
+  // too (provider/providers, at minimum) -- only the exact JSON path this
+  // migration itself is responsible for is verified here, never the
+  // whole object (see jsonPathEqual()'s own header comment).
+  //
+  // Round 11: all three checks (and the eventual markReconciled()) now
+  // run through the shared verifyThenReconcile() (lib/reconcile.mjs) --
+  // markReconciled() is no longer called directly anywhere in this file.
+  const reconcileResult = await verifyThenReconcile(pgClient, ledgerId, [
+    {
+      spec: AUTH_USER_READBACK_SPEC, targetId: profileId,
+      expectedFields: { id: profileId, email, raw_app_meta_data: jsonPathEqual(['migration_correlation_id'], correlationId) },
+    },
+    { spec: PROFILE_READBACK_SPEC, targetId: profileId, expectedFields: persona.expectedProfileFields },
+    ...(persona.isAdmin
+      ? [{ spec: ADMIN_ROLE_READBACK_SPEC, targetId: profileId, expectedFields: persona.expectedAdminRoleFields }]
+      : []),
+  ]);
+  if (!reconcileResult.ok) {
+    await markFailed(pgClient, ledgerId, reconcileResult.reason).catch(() => {});
+    return { status: 'error', message: reconcileResult.reason };
   }
-  const profileReadBack = await verifyReadBack(pgClient, PROFILE_READBACK_SPEC, profileId, persona.expectedProfileFields);
-  if (!profileReadBack.ok) {
-    await markFailed(pgClient, ledgerId, profileReadBack.reason).catch(() => {});
-    return { status: 'error', message: profileReadBack.reason };
-  }
-  if (persona.isAdmin) {
-    const roleReadBack = await verifyReadBack(pgClient, ADMIN_ROLE_READBACK_SPEC, profileId, persona.expectedAdminRoleFields);
-    if (!roleReadBack.ok) {
-      await markFailed(pgClient, ledgerId, roleReadBack.reason).catch(() => {});
-      return { status: 'error', message: roleReadBack.reason };
-    }
-  }
-
-  await markReconciled(pgClient, ledgerId);
   return { status, id: profileId, persona };
 }
 
@@ -634,29 +634,21 @@ export async function migrateOneAdmin(supabaseAdmin, pgClient, mongoAdmin, { exe
 
   // PR #70 review round 10, item 3: same exact, independent read-back
   // discipline as migrateOneUser() -- see that function's own comment.
-  const authReadBack = await verifyReadBack(pgClient, AUTH_USER_READBACK_SPEC, userId, {
-    id: userId,
-    email,
-    raw_app_meta_data: { migration_correlation_id: correlationId },
-  });
-  if (!authReadBack.ok) {
-    await markFailed(pgClient, ledgerId, authReadBack.reason).catch(() => {});
-    return { status: 'error', message: authReadBack.reason };
+  // Round 11, item 1: same real-GoTrue-owned-keys path scoping too.
+  // Round 11: routed through the shared verifyThenReconcile() (lib/
+  // reconcile.mjs) -- see mongo-to-supabase.mjs's own comment on it.
+  const reconcileResult = await verifyThenReconcile(pgClient, ledgerId, [
+    {
+      spec: AUTH_USER_READBACK_SPEC, targetId: userId,
+      expectedFields: { id: userId, email, raw_app_meta_data: jsonPathEqual(['migration_correlation_id'], correlationId) },
+    },
+    { spec: PROFILE_READBACK_SPEC, targetId: userId, expectedFields: { id: userId, name: mongoAdmin.name || null, role: 'admin' } },
+    { spec: ADMIN_ROLE_READBACK_SPEC, targetId: userId, expectedFields: { user_id: userId, role: mappedRole } },
+  ]);
+  if (!reconcileResult.ok) {
+    await markFailed(pgClient, ledgerId, reconcileResult.reason).catch(() => {});
+    return { status: 'error', message: reconcileResult.reason };
   }
-  const profileReadBack = await verifyReadBack(pgClient, PROFILE_READBACK_SPEC, userId, {
-    id: userId, name: mongoAdmin.name || null, role: 'admin',
-  });
-  if (!profileReadBack.ok) {
-    await markFailed(pgClient, ledgerId, profileReadBack.reason).catch(() => {});
-    return { status: 'error', message: profileReadBack.reason };
-  }
-  const roleReadBack = await verifyReadBack(pgClient, ADMIN_ROLE_READBACK_SPEC, userId, { user_id: userId, role: mappedRole });
-  if (!roleReadBack.ok) {
-    await markFailed(pgClient, ledgerId, roleReadBack.reason).catch(() => {});
-    return { status: 'error', message: roleReadBack.reason };
-  }
-
-  await markReconciled(pgClient, ledgerId);
 
   return { status: existingRow ? 'role_assigned_existing_account' : 'created', id: userId, role: mappedRole };
 }
@@ -884,12 +876,22 @@ async function applyTeacherLink(pgClient, { studentMongoId, studentProfileId, te
   // kept bespoke rather than switched to verifyReadBack() because there
   // is no separate "identity" vs. "content" split here for that shared
   // function's generic column-list comparison to add anything over.
-  const verify = await pgClient.query('SELECT 1 FROM profiles WHERE id = $1 AND teacher_id = $2', [studentProfileId, teacherProfileId]);
-  if (verify.rows.length === 0) {
-    await markFailed(pgClient, ledgerId, 'post-commit read-back verification failed for teacher_id link');
-    throw new Error('post-commit read-back verification failed for teacher_id link');
+  //
+  // Round 11: this bespoke check is now passed to verifyThenReconcile()
+  // (lib/reconcile.mjs) as a plain check function -- markReconciled() is
+  // no longer called directly anywhere in this file.
+  const reconcileResult = await verifyThenReconcile(pgClient, ledgerId, [
+    async () => {
+      const verify = await pgClient.query('SELECT 1 FROM profiles WHERE id = $1 AND teacher_id = $2', [studentProfileId, teacherProfileId]);
+      return verify.rows.length > 0
+        ? { ok: true }
+        : { ok: false, reason: 'post-commit read-back verification failed for teacher_id link' };
+    },
+  ]);
+  if (!reconcileResult.ok) {
+    await markFailed(pgClient, ledgerId, reconcileResult.reason).catch(() => {});
+    throw new Error(reconcileResult.reason);
   }
-  await markReconciled(pgClient, ledgerId);
 }
 
 /**
@@ -968,14 +970,23 @@ async function applyParentChildLink(pgClient, { parentMongoId, childMongoId, par
   // own comment -- (parent_id, student_id) is the table's ENTIRE real
   // content, not just its identity, so this WHERE clause is already a
   // complete, exact read-back for this table's shape.
-  const verify = await pgClient.query(
-    'SELECT 1 FROM parent_student_links WHERE parent_id = $1 AND student_id = $2', [parentProfileId, childProfileId]
-  );
-  if (verify.rows.length === 0) {
-    await markFailed(pgClient, ledgerId, 'post-commit read-back verification failed for parent_student_links');
-    throw new Error('post-commit read-back verification failed for parent_student_links');
+  //
+  // Round 11: routed through verifyThenReconcile() (lib/reconcile.mjs) --
+  // markReconciled() is no longer called directly anywhere in this file.
+  const reconcileResult = await verifyThenReconcile(pgClient, ledgerId, [
+    async () => {
+      const verify = await pgClient.query(
+        'SELECT 1 FROM parent_student_links WHERE parent_id = $1 AND student_id = $2', [parentProfileId, childProfileId]
+      );
+      return verify.rows.length > 0
+        ? { ok: true }
+        : { ok: false, reason: 'post-commit read-back verification failed for parent_student_links' };
+    },
+  ]);
+  if (!reconcileResult.ok) {
+    await markFailed(pgClient, ledgerId, reconcileResult.reason).catch(() => {});
+    throw new Error(reconcileResult.reason);
   }
-  await markReconciled(pgClient, ledgerId);
 }
 
 // ---------------------------------------------------------------------
@@ -1442,24 +1453,30 @@ export async function migrateSubscription(pgClient, profileId, mongoUser, planSl
   // passed completely unnoticed. Strengthened to compare every field
   // this INSERT itself set, via the same shared comparator
   // mongo-to-supabase.mjs's generic domain loop now uses.
-  const readBack = await verifyReadBack(pgClient, { table: 'subscriptions' }, targetId, {
-    id: targetId,
-    user_id: profileId,
-    plan_id: planId,
-    provider: sub.provider || 'manual',
-    provider_customer_id: sub.stripeCustomerId || null,
-    provider_subscription_id: sub.stripeSubscriptionId || null,
-    status: derived.status,
-    current_period_start: sub.activeSince || null,
-    current_period_end: sub.validUntil || null,
-    cancel_at_period_end: !!sub.cancelAtPeriodEnd,
-    renewal_reminder_sent_for: sub.renewalReminderSentFor || null,
-  });
-  if (!readBack.ok) {
-    await markFailed(pgClient, ledgerId, readBack.reason).catch(() => {});
-    return { status: 'FAIL', reason: readBack.reason };
+  // Round 11: routed through verifyThenReconcile() (lib/reconcile.mjs) --
+  // markReconciled() is no longer called directly anywhere in this file.
+  const reconcileResult = await verifyThenReconcile(pgClient, ledgerId, [
+    {
+      spec: { table: 'subscriptions' }, targetId,
+      expectedFields: {
+        id: targetId,
+        user_id: profileId,
+        plan_id: planId,
+        provider: sub.provider || 'manual',
+        provider_customer_id: sub.stripeCustomerId || null,
+        provider_subscription_id: sub.stripeSubscriptionId || null,
+        status: derived.status,
+        current_period_start: sub.activeSince || null,
+        current_period_end: sub.validUntil || null,
+        cancel_at_period_end: !!sub.cancelAtPeriodEnd,
+        renewal_reminder_sent_for: sub.renewalReminderSentFor || null,
+      },
+    },
+  ]);
+  if (!reconcileResult.ok) {
+    await markFailed(pgClient, ledgerId, reconcileResult.reason).catch(() => {});
+    return { status: 'FAIL', reason: reconcileResult.reason };
   }
-  await markReconciled(pgClient, ledgerId);
   return { status: 'migrated', resumed: !!resumeTargetId, planSlug: slug, derivedStatus: derived.status, reason: derived.reason };
 }
 

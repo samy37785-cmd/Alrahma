@@ -132,11 +132,12 @@
 //      dry-run preflight even happened -- see that file's own changelog.
 import pg from 'pg';
 import mongoose from 'mongoose';
-import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { findLedgerEntry, markPlanned, markCreated, markReconciled, markFailed, contentHashOf } from './lib/source-ledger.mjs';
+import { findLedgerEntry, markPlanned, markCreated, markFailed, contentHashOf } from './lib/source-ledger.mjs';
+import { stableContentHash } from './lib/canonical-hash.mjs';
+import { verifyThenReconcile } from './lib/reconcile.mjs';
 import { resolvePlanSlug, seedCanonicalPlans } from './lib/plan-catalog.mjs';
 import { withImpersonatedAdmin, withImpersonatedAdminContext, ensureMigrationSeedAdmin } from './lib/admin-rpc.mjs';
 import { throwIfFaultStage } from './lib/fault-injection.mjs';
@@ -204,8 +205,16 @@ function assertLocalHost(connectionString, label) {
   }
 }
 
+// PR #70 review round 11, item 3: the local checkpoint's own display hash
+// now shares the exact same canonical, generated-field-excluding
+// representation as the DB ledger's `fullHash` below (lib/canonical-hash.mjs)
+// -- purely for consistency between the two; this value is never compared
+// against anything (informational bookkeeping only), but there is no reason
+// for it to be derived differently, or to remain sensitive to a generated
+// fallback's inherently unstable value, when the ledger hash right next to
+// it is not.
 function hashOf(obj) {
-  return crypto.createHash('sha256').update(JSON.stringify(obj)).digest('hex').slice(0, 16);
+  return stableContentHash(obj).slice(0, 16);
 }
 
 function loadCheckpoint(domain) {
@@ -1892,9 +1901,35 @@ async function migrateDomain(domainName, { dryRun, resetCheckpoint, pgClient }) 
           existing.status === 'reconciled' &&
           resumeTargetId
         ) {
-          skippedUnchanged += 1;
-          checkpoint[sourceId] = { pgId: resumeTargetId, hash: contentHash, migratedAt: new Date().toISOString() };
-          continue;
+          // PR #70 review round 11, item 2: "reconciled" + "the target row
+          // still exists" was, until now, treated as sufficient proof the
+          // target's CONTENT still matches what this migration itself
+          // wrote -- it is not. The target row's existence says nothing
+          // about whether something else (a trigger, a manual edit, a
+          // different process entirely) mutated one of its columns out of
+          // band since the last time this migration verified it. Every
+          // OTHER path to markReconciled() in this file already requires a
+          // real, content-comparing verifyReadBack() first (round 9/10,
+          // item 5/1/2) -- this fast path was the one place a document
+          // could still be silently re-reported as "unchanged" without
+          // that same check. Fixed: the exact same exact read-back a fresh
+          // write gets, before this document is allowed to be skipped.
+          const fastPathReadBack = await verifyReadBack(pgClient, spec, resumeTargetId, row, { exemptFields: row.__generatedFields ?? [] });
+          if (fastPathReadBack.ok) {
+            skippedUnchanged += 1;
+            checkpoint[sourceId] = { pgId: resumeTargetId, hash: contentHash, migratedAt: new Date().toISOString() };
+            continue;
+          }
+          // Content has drifted out of band since this was last reconciled
+          // -- never silently skip, never re-report as unchanged/
+          // reconciled. Fails this document exactly like any other real
+          // read-back failure (never auto-"fixed" by silently re-writing
+          // it): mark the EXISTING ledger row failed, count it in
+          // `failed`, non-zero exit -- an operator must look at this, the
+          // same discipline this file already applies to every other
+          // integrity mismatch it detects.
+          ledgerId = existing.id;
+          throw new Error(fastPathReadBack.reason);
         }
       }
 
@@ -2025,10 +2060,14 @@ async function migrateDomain(domainName, { dryRun, resetCheckpoint, pgClient }) 
       // read-back skips ONLY those fields' VALUE comparison, never a
       // blanket per-TYPE exemption for every timestamp. A field the
       // source DID carry a real value for is always compared exactly.
-      const readBack = await verifyReadBack(pgClient, spec, pgId, row, { exemptFields: row.__generatedFields ?? [] });
-      if (!readBack.ok) throw new Error(readBack.reason);
-
-      await markReconciled(pgClient, ledgerId);
+      //
+      // Round 11: routed through the shared verifyThenReconcile() (lib/
+      // reconcile.mjs) -- markReconciled() is no longer called directly
+      // anywhere in this file; see that module's own header for why.
+      const reconcileResult = await verifyThenReconcile(pgClient, ledgerId, [
+        { spec, targetId: pgId, expectedFields: row, options: { exemptFields: row.__generatedFields ?? [] } },
+      ]);
+      if (!reconcileResult.ok) throw new Error(reconcileResult.reason);
       imported += 1;
     } catch (err) {
       failed += 1;

@@ -35,6 +35,11 @@ const TEST_FILES = [
   'resume-rollback-integrity.test.mjs',
   'invoice-atomicity.test.mjs',
   'seed-admin-atomicity.test.mjs',
+  // Real, disposable Supabase-CLI stack (real Postgres + real GoTrue +
+  // Kong) -- deliberately last: by far the slowest file here (a full
+  // multi-container stack start/stop), so every fast/cheap file's own
+  // regression is visible first.
+  'real-gotrue-correlation.test.mjs',
 ];
 
 let overallFailed = false;

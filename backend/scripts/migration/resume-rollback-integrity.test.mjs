@@ -307,6 +307,53 @@ async function main() {
   });
 
   // =====================================================================
+  // PR #70 review round 11, item 2 -- the reconciled-fast-path skip
+  // (`source_content_hash === fullHash && status === 'reconciled' &&
+  // resumeTargetId`) was, until this round, the ONE place a document
+  // could be re-reported as "unchanged" purely on the strength of the
+  // target row's EXISTENCE (verifyTargetRowExists() above only checks
+  // `SELECT 1 ... LIMIT 1`) -- never its actual content. Unlike the
+  // out-of-band DELETE case just above (caught by existence alone), a
+  // row that still exists but had one of its own content columns mutated
+  // out of band (a manual DBA UPDATE, an application bug, anything
+  // outside this migration's control) sailed straight through the old
+  // fast path with no check at all. This is the exact case this round's
+  // fix (an unconditional verifyReadBack() before the fast-path skip)
+  // closes.
+  // =====================================================================
+
+  await test('review round 11, item 2: a reconciled row content-mutated out of band (target row still exists, source unchanged) is caught by the reconciled fast path -- never re-reported as unchanged, exits non-zero', async () => {
+    await resetAll();
+    const sourceId = await insertTrialRequest(pgPool, 1);
+    const r1 = runMigrateCLI(['--domain=trial_requests']);
+    assert.equal(r1.code, 0, r1.stderr);
+    const row1 = await ledgerRow(sourceId);
+    assert.equal(row1.status, 'reconciled');
+    assert.equal(await totalTargetRows(), 1);
+
+    // The target row still exists (verifyTargetRowExists() would say
+    // "yes") -- but its own content field no longer matches what this
+    // migration wrote. The Mongo source document itself, and therefore
+    // `fullHash`, is completely UNCHANGED: this is exactly the
+    // `source_content_hash === fullHash` fast-path condition that used to
+    // skip with zero verification.
+    await pgPool.query(`UPDATE trial_requests SET status = 'contacted' WHERE id = $1`, [row1.target_id]);
+    deleteLocalCheckpoint();
+
+    const r2 = runMigrateCLI(['--domain=trial_requests']);
+    assert.notEqual(r2.code, 0, 'the rerun must detect the mismatch and exit non-zero, never exit 0 on a silently-tolerated drift');
+    assert.doesNotMatch(r2.stdout, /unchanged=1/, 'must never be reported as unchanged -- the content genuinely does not match anymore');
+    assert.match(r2.stdout, /failed=1/, 'must be reported as a real failure, not silently absorbed');
+    const row2 = await ledgerRow(sourceId);
+    assert.equal(row2.status, 'failed', 'the existing ledger row must be marked failed, never left as (or re-marked) reconciled');
+    // Never silently "fixed" by re-writing over the drift either -- the
+    // row is left exactly as the out-of-band mutation left it, for an
+    // operator to actually look at.
+    const driftedRow = await pgPool.query('SELECT status FROM trial_requests WHERE id = $1', [row1.target_id]);
+    assert.equal(driftedRow.rows[0].status, 'contacted', 'the drifted content is left untouched, not silently overwritten back to the source value');
+  });
+
+  // =====================================================================
   // PR #70 review round 9, item 5: markReconciled() must never run without
   // a real, content-comparing read-back. Round 8's own comment here
   // claimed an "INDEPENDENT re-verification that promotes it to
@@ -458,6 +505,78 @@ async function main() {
       { name: 'Test 1', statuss: 'new' }
     );
     assert.equal(allowlisted.ok, true, 'a field explicitly declared in spec.nonColumnFields must never be required to exist as a column');
+  });
+
+  // =====================================================================
+  // PR #70 review round 11, item 4 -- semantic JSON/JSONB comparison.
+  // normalizeForCompare() used to route an object (or a JSON-text string)
+  // straight through a bare `JSON.stringify`, making equality sensitive
+  // to key ORDER -- a column re-read with the exact same semantic content
+  // but its keys in a different order (which real jsonb storage/re-
+  // derivation can genuinely produce) was reported as a false mismatch.
+  // Fixed via canonicalizeForCompare(): object keys are recursively
+  // sorted before stringifying; array element order is left untouched
+  // (order DOES matter for an array) -- a real nested value change is
+  // still caught exactly as before. Proven here against
+  // quran_reading_progress.resume, a real nested JSONB column.
+  // =====================================================================
+
+  async function resetQuranReadingProgressState() {
+    await pgPool.query('TRUNCATE quran_reading_progress, profiles, auth.users, migration_source_ledger RESTART IDENTITY CASCADE');
+    deleteCheckpointFor('quran_reading_progress');
+    await mongoose.connection.collection('users').deleteMany({});
+    await mongoose.connection.collection('quranreadingprogresses').deleteMany({});
+  }
+
+  await test('review round 11, item 4: quran_reading_progress.resume (nested JSONB) read-back is order-independent for object keys, array order still matters, and a genuine nested value change still fails', async () => {
+    await resetQuranReadingProgressState();
+    const { profileId, mongoUserId } = await seedQuranUserPrereqs();
+    const lastPosition = { chapterId: 2, verseNum: 255, meta: { device: 'ipad', flags: { bookmarked: true, synced: false } } };
+    const res = await mongoose.connection.collection('quranreadingprogresses').insertOne({
+      user: mongoUserId,
+      lastPosition,
+      dailyGoal: { type: 'verses', target: 10 },
+      streak: { current: 3, longest: 5 },
+      history: [{ day: 1 }, { day: 2 }, { day: 3 }],
+    });
+    const sourceId = String(res.insertedId);
+
+    const fwd = runMigrateCLI(['--domain=quran_reading_progress']);
+    assert.equal(fwd.code, 0, fwd.stderr);
+    assert.match(fwd.stdout, /imported=1/);
+    const ledger = await domainLedgerRow('quran_reading_progress', sourceId);
+    assert.equal(ledger.status, 'reconciled', 'sanity: this round\'s own generic-loop read-back (unchanged) already accepted the real row as written');
+
+    // THE FIX, proven directly: an `expected` value whose object keys are
+    // in a DELIBERATELY DIFFERENT order than the source ever used must
+    // still match -- object key order must never matter.
+    const reorderedExpected = JSON.stringify({
+      meta: { flags: { synced: false, bookmarked: true }, device: 'ipad' },
+      verseNum: 255, chapterId: 2,
+    });
+    const readBackReordered = await verifyReadBack(pgPool, { table: 'quran_reading_progress', pkColumn: 'user_id' }, profileId, {
+      resume: reorderedExpected,
+    });
+    assert.equal(readBackReordered.ok, true, readBackReordered.reason);
+
+    // Contrast: a genuine nested value change (not just reordering) must
+    // still be caught -- canonicalization must not widen into "any two
+    // objects with the same shape match".
+    const genuinelyChanged = JSON.stringify({
+      chapterId: 2, verseNum: 255, meta: { device: 'ipad', flags: { bookmarked: false, synced: false } },
+    });
+    const readBackChanged = await verifyReadBack(pgPool, { table: 'quran_reading_progress', pkColumn: 'user_id' }, profileId, {
+      resume: genuinelyChanged,
+    });
+    assert.equal(readBackChanged.ok, false, 'a genuinely different nested value (bookmarked: true -> false) must still be caught');
+
+    // Array order still matters: `history` is an array -- reordering its
+    // own elements IS a real difference and must still fail.
+    const reorderedHistory = JSON.stringify([{ day: 3 }, { day: 2 }, { day: 1 }]);
+    const readBackHistoryReordered = await verifyReadBack(pgPool, { table: 'quran_reading_progress', pkColumn: 'user_id' }, profileId, {
+      history: reorderedHistory,
+    });
+    assert.equal(readBackHistoryReordered.ok, false, 'array ELEMENT order must still matter -- this is not the same array');
   });
 
   // =====================================================================
@@ -749,6 +868,62 @@ async function main() {
       });
     }
   }
+
+  // =====================================================================
+  // PR #70 review round 11, item 3 -- stable content hashes for a
+  // generated-fallback field. `notifications.created_at` uses `doc.
+  // createdAt ?? new Date()` when the source genuinely has no original
+  // value -- before this round's fix, `contentHashOf(row)`/`hashOf(row)`
+  // hashed the TRANSFORMED row directly via a bare `JSON.stringify`, so
+  // this field's fresh `new Date()` value made the hash different on
+  // EVERY run, even when the real Mongo source never changed at all. The
+  // reconciled-fast-path skip (`source_content_hash === fullHash`) could
+  // then never match on a second run: this document would be re-derived
+  // and re-upserted forever, never actually idempotent. Fixed via one
+  // shared, canonical hash (lib/canonical-hash.mjs) that excludes exactly
+  // the field(s) named in the row's own `__generatedFields` from the hash
+  // -- proven here with a REAL two-run migration, not a unit test of the
+  // hash function in isolation.
+  // =====================================================================
+
+  await test('review round 11, item 3: a notification doc with NO source createdAt (generated fallback) produces the SAME ledger content hash on every run, and the second run performs zero target writes', async () => {
+    await resetPlainInsertDomainsState();
+    const recipientMongoId = await seedNotificationPrereqs();
+    const sourceId = await insertNotificationDoc(recipientMongoId, 1); // no createdAt -- exercises the `?? new Date()` fallback
+
+    const r1 = runMigrateCLI(['--domain=notifications']);
+    assert.equal(r1.code, 0, r1.stderr);
+    assert.match(r1.stdout, /imported=1/);
+    const row1 = await domainLedgerRow('notifications', sourceId);
+    assert.equal(row1.status, 'reconciled');
+    const createdAt1 = (await pgPool.query('SELECT created_at FROM notifications WHERE id = $1', [row1.target_id])).rows[0].created_at;
+
+    // A SECOND, entirely fresh forward run (checkpoint intact -- the real,
+    // ordinary "run this again a minute later" scenario, not a crash
+    // resume) against the exact same, unmodified Mongo source document.
+    // Real wall-clock time has advanced, so a fresh `new Date()` computed
+    // during THIS run's transform() would genuinely differ from the
+    // first run's -- the fix must exclude it from the hash regardless.
+    const r2 = runMigrateCLI(['--domain=notifications']);
+    assert.equal(r2.code, 0, r2.stderr);
+    assert.match(r2.stdout, /unchanged=1/, 'THE FIX: with a stable hash, this must be recognized as unchanged, not re-imported');
+    assert.doesNotMatch(r2.stdout, /imported=1/, 'the second run must perform ZERO target writes');
+    assert.equal(await domainTotalRows('notifications'), 1, 'still exactly one row -- no duplicate, no re-insert');
+
+    const row2 = await domainLedgerRow('notifications', sourceId);
+    assert.equal(row2.status, 'reconciled');
+    assert.equal(
+      row2.source_content_hash, row1.source_content_hash,
+      'THE FIX: two transforms of the same source document, missing the same timestamp, must produce the IDENTICAL ledger content hash'
+    );
+    assert.equal(row2.target_id, row1.target_id, 'must still point at the exact same row');
+
+    // The generated value ITSELF must also be left completely untouched
+    // by the (skipped) second run -- proof this is a real no-op, not
+    // "hash matched but we upserted anyway and got lucky".
+    const createdAt2 = (await pgPool.query('SELECT created_at FROM notifications WHERE id = $1', [row1.target_id])).rows[0].created_at;
+    assert.equal(createdAt2.getTime(), createdAt1.getTime(), 'the generated created_at must be the FIRST run\'s value, never silently re-derived/overwritten by an unneeded second write');
+  });
 
   // =====================================================================
   // PR #70 review round 9, item 1: composite target_id encoding. The old

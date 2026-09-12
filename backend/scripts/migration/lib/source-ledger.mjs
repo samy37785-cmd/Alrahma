@@ -6,10 +6,17 @@
 // is deleted). The unique index on (source_system, source_database,
 // source_collection, source_document_id, target_table) is the actual
 // duplicate-import guard; this module is a thin, typed wrapper around it.
-import crypto from 'node:crypto';
+import { stableContentHash } from './canonical-hash.mjs';
 
+// PR #70 review round 11, item 3: delegates to the one shared, canonical
+// hash representation (lib/canonical-hash.mjs) -- object-key-order
+// independent, and excludes a row's own `__generatedFields`-listed values
+// (never present on the raw Mongo source documents this function is most
+// commonly called with, so this is a pure strengthening for those callers:
+// still every genuine field, just no longer sensitive to accidental key
+// reordering).
 export function contentHashOf(row) {
-  return crypto.createHash('sha256').update(JSON.stringify(row)).digest('hex');
+  return stableContentHash(row);
 }
 
 /**

@@ -256,15 +256,20 @@ const EXPECTED_WA_ME_INVENTORY = {
   'pages/FAQ.jsx': { count: 1, classification: 'academy-direct' },
   'pages/RefundPolicy.jsx': { count: 1, classification: 'academy-direct' },
   'pages/TermsOfService.jsx': { count: 2, classification: 'academy-direct' },
+  'utils/whatsapp.js': { count: 1, classification: 'academy-direct' },
   'components/ui/MilestoneCelebration.jsx': { count: 1, classification: 'user-choice-share' },
   'components/ui/ReferralCard.jsx': { count: 1, classification: 'user-choice-share' },
   'components/ui/ShareAchievement.jsx': { count: 1, classification: 'user-choice-share' },
   'pages/tools/VerseOfTheDayPage.jsx': { count: 1, classification: 'user-choice-share' },
 };
 
-const EXPECTED_TOTAL_FILES = 15;
-const EXPECTED_TOTAL_OCCURRENCES = 17;
-const EXPECTED_DIRECT_OCCURRENCES = 13;
+// Booking-First Enrollment added utils/whatsapp.js — buildBookingWhatsappLink(),
+// the single helper that builds the post-booking WhatsApp CTA, resolving the
+// number through site.whatsapp like every other academy-direct occurrence
+// (never a hardcoded literal).
+const EXPECTED_TOTAL_FILES = 16;
+const EXPECTED_TOTAL_OCCURRENCES = 18;
+const EXPECTED_DIRECT_OCCURRENCES = 14;
 const EXPECTED_SHARE_OCCURRENCES = 4;
 
 // Classifies by index math on the raw file text (never a single-line

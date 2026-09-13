@@ -323,7 +323,11 @@ async function resolveProfileId(pgClient, userEmailMap, mongoUserId) {
 
 // --- Domain definitions: export shape (Mongo) -> transform -> import shape (Postgres) ---
 
-const DOMAINS = {
+// Exported (additive — every other export above/below is unaffected) so
+// lib/enrollments-transform.test.mjs can unit-test transform()/validate()
+// directly as pure functions, with no Docker/Mongo/Postgres fixture needed
+// for that part of the lossless contract at all.
+export const DOMAINS = {
   trial_requests: {
     targetTable: "trial_requests",
     async export() {
@@ -1070,7 +1074,16 @@ const DOMAINS = {
       return mongoose.connection.collection('enrollments').find({}).toArray();
     },
     transform(doc) {
-      const statusMap = { pending: 'new', contacted: 'contacted', enrolled: 'enrolled', cancelled: 'cancelled' };
+      // Booking-First Enrollment (models/Enrollment.js) widened the Mongo
+      // enum to add 'awaiting_payment'/'paid' between 'contacted' and
+      // 'enrolled' — 0025_booking_first_enrollment.sql widened the Postgres
+      // CHECK allowlist with the exact same two value names, so both map
+      // straight through with no rename, unlike the pre-existing
+      // pending->'new' rename this map already carried.
+      const statusMap = {
+        pending: 'new', contacted: 'contacted', awaiting_payment: 'awaiting_payment',
+        paid: 'paid', enrolled: 'enrolled', cancelled: 'cancelled',
+      };
       const status = statusMap[doc.status];
       if (!status) throw new Error(`enrollments row has unmapped status "${doc.status}"`);
       return {
@@ -1091,6 +1104,16 @@ const DOMAINS = {
         requested_plan_slug: doc.plan || null,
         status,
         notes: doc.notes ?? null,
+        // Booking-First Enrollment admin/financial bookkeeping fields —
+        // carried through as-is (lossless) so a real migration never drops
+        // a booking reference or a recorded off-site payment.
+        booking_ref: doc.bookingRef || null,
+        agreed_amount: doc.agreedAmount ?? null,
+        currency: doc.currency || null,
+        payment_method_external: doc.paymentMethodExternal || null,
+        paid_at: doc.paidAt || null,
+        renewal_at: doc.renewalAt || null,
+        admin_note: doc.adminNote ?? null,
       };
     },
     validate(row) {
@@ -1099,16 +1122,25 @@ const DOMAINS = {
     async upsert(client, sourceId, row, checkpoint) {
       const existingPgId = checkpoint[sourceId]?.pgId;
       if (existingPgId) {
-        await client.query(`UPDATE enrollments SET status=$1, notes=$2 WHERE id=$3`, [row.status, row.notes, existingPgId]);
+        await client.query(
+          `UPDATE enrollments SET
+             status=$1, notes=$2, booking_ref=$3, agreed_amount=$4, currency=$5,
+             payment_method_external=$6, paid_at=$7, renewal_at=$8, admin_note=$9
+           WHERE id=$10`,
+          [row.status, row.notes, row.booking_ref, row.agreed_amount, row.currency,
+           row.payment_method_external, row.paid_at, row.renewal_at, row.admin_note, existingPgId]
+        );
         return existingPgId;
       }
       const r = await client.query(
         `INSERT INTO enrollments
            (name, email, whatsapp, country, city, timezone, times, subjects, lang, level, age_group, gender_pref,
-            preferred_teacher_key, preferred_teacher_name, requested_plan_slug, status, notes)
-         VALUES ($1,$2,$3,$4,$5,$6,$7::jsonb,$8::jsonb,$9,$10,$11,$12,$13,$14,$15,$16,$17) RETURNING id`,
+            preferred_teacher_key, preferred_teacher_name, requested_plan_slug, status, notes,
+            booking_ref, agreed_amount, currency, payment_method_external, paid_at, renewal_at, admin_note)
+         VALUES ($1,$2,$3,$4,$5,$6,$7::jsonb,$8::jsonb,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24) RETURNING id`,
         [row.name, row.email, row.whatsapp, row.country, row.city, row.timezone, row.times, row.subjects, row.lang, row.level,
-         row.age_group, row.gender_pref, row.preferred_teacher_key, row.preferred_teacher_name, row.requested_plan_slug, row.status, row.notes]
+         row.age_group, row.gender_pref, row.preferred_teacher_key, row.preferred_teacher_name, row.requested_plan_slug, row.status, row.notes,
+         row.booking_ref, row.agreed_amount, row.currency, row.payment_method_external, row.paid_at, row.renewal_at, row.admin_note]
       );
       return r.rows[0].id;
     },

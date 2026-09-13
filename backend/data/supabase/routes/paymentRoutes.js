@@ -1,27 +1,36 @@
-// Mirrors backend/routes/paymentRoutes.js. Stripe/PayPal checkout-session
-// creation, webhook handling, and capture are implemented (test/mock mode
-// only — see stripeController.js/paypalController.js's module comments);
-// manual payments (submit-only; admin review lives at /api/v1/admin/payments)
-// have been implemented since Stage 2E.
+// Booking-First Enrollment — WhatsApp + offline payment, admin activates
+// manually; see docs/current-project-status.md. Mirrors
+// backend/routes/paymentRoutes.js's shutdown exactly: every customer-
+// reachable payment-initiation/execution endpoint returns 410
+// PAYMENTS_DISABLED at the route level, on BOTH backends, since app.js
+// mounts this file instead of the Mongo one whenever DATA_BACKEND=supabase
+// — closing only the Mongo path would leave the Supabase deployment mode
+// fully exploitable. The gateway controllers themselves
+// (createStripeSession, createPaypalOrder, capturePaypalOrder,
+// getManualMethods, submitManualPayment) are untouched here — kept as
+// legacy/deferred code, still exercised by the webhook safety-net paths
+// below and available if this decision is ever reversed.
 import { Router } from 'express';
-import { softProtect } from '../../../middleware/auth.js';
-import { getManualMethods, submitManualPayment } from '../manualPaymentController.js';
-import { createStripeSession, stripeWebhook } from '../stripeController.js';
-import { createPaypalOrder, capturePaypalOrder, paypalWebhook } from '../paypalController.js';
+import { stripeWebhook } from '../stripeController.js';
+import { paypalWebhook } from '../paypalController.js';
+import { paymentsDisabled } from '../../../middleware/paymentsDisabled.js';
 
 const router = Router();
 
-router.get('/manual-methods', getManualMethods);
-router.post('/manual', softProtect, submitManualPayment);
-
 // Webhook must come before any body-parser; raw body is set in app.js
 // exactly like the Mongo path's route (same raw-body middleware wiring is
-// keyed off the path, not the backend).
+// keyed off the path, not the backend). Kept live: it only ever reacts to
+// Stripe's/PayPal's own server-to-server calls for payments that were
+// already created before this change, never something a customer can
+// trigger themselves.
 router.post('/stripe/webhook', stripeWebhook);
-router.post('/stripe', softProtect, createStripeSession);
+router.post('/stripe', paymentsDisabled);
 
 router.post('/paypal/webhook', paypalWebhook);
-router.post('/paypal', softProtect, createPaypalOrder);
-router.post('/paypal/:orderId/capture', capturePaypalOrder);
+router.post('/paypal', paymentsDisabled);
+router.post('/paypal/:orderId/capture', paymentsDisabled);
+
+router.get('/manual-methods', paymentsDisabled);
+router.post('/manual', paymentsDisabled);
 
 export default router;

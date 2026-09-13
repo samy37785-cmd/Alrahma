@@ -188,7 +188,7 @@ test('PATCH /api/v1/admin/referrals/:id/convert: an AdminUser without referrals:
   const referral = await Referral.create({
     referrer: new mongoose.Types.ObjectId(), referee: new mongoose.Types.ObjectId(), code: 'ABCD5678',
   });
-  // 'editor' has courses:read/write and enrollments:read only — no
+  // 'editor' has courses:read/write and enrollments:read/write — no
   // referrals:write (see ROLE_PERMISSIONS in models/AdminUser.js).
   const { agent, csrf, cookieHeader } = await adminUserAgent('editor');
 

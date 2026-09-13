@@ -19,9 +19,13 @@ import { agentWithCsrf } from './helpers/csrf.js';
 // Admin review (listManualPayments/reviewManualPayment) moved from the
 // legacy /api/payments/manual* (protect+adminOnly) to the hardened
 // /api/v1/admin/payments/manual* stack as part of Security Sprint 2 (SEC-3)
-// — see routes/v1/admin/paymentsRoutes.js. submitManualPayment stays public
-// and untouched. Tests the real controller/model/service code (no
-// reimplemented logic).
+// — see routes/v1/admin/paymentsRoutes.js. Tests the real controller/model/
+// service code (no reimplemented logic).
+//
+// submitManualPayment (the public POST /api/payments/manual route) is no
+// longer reachable: Booking-First Enrollment closed it server-side (410
+// PAYMENTS_DISABLED — see payment-checkout.test.js). The controller
+// function itself is untouched/legacy; only its route was disconnected.
 
 const PASSWORD = 'Str0ngP@ssw0rd!';
 
@@ -45,57 +49,9 @@ async function makeStudent(email) {
 }
 
 // ---------------------------------------------------------------------------
-// submitManualPayment — validation + success (student-facing, public route)
-// ---------------------------------------------------------------------------
-
-test('submitManualPayment: rejects an unknown plan with 400', async () => {
-  const { agent, csrf } = await agentWithCsrf(app);
-  const res = await agent
-    .post('/api/payments/manual')
-    .set(csrf)
-    .send({ plan: 'NotAPlan', method: 'bank', customer: { email: 'x@example.com', name: 'X' } });
-
-  assert.equal(res.status, 400);
-});
-
-test('submitManualPayment: rejects a request missing the required "method" field with 400', async () => {
-  const { agent, csrf } = await agentWithCsrf(app);
-  const res = await agent
-    .post('/api/payments/manual')
-    .set(csrf)
-    .send({ plan: 'Starter', customer: { email: 'x@example.com', name: 'X' } });
-
-  assert.equal(res.status, 400);
-});
-
-test('submitManualPayment: creates a pending record priced from the server-side plan config, ignoring any client-supplied amount', async () => {
-  const { agent, csrf } = await agentWithCsrf(app);
-  const plan = getPlan('Standard');
-
-  const res = await agent
-    .post('/api/payments/manual')
-    .set(csrf)
-    // Tampered amount/currency in the request body must be ignored — the
-    // server must always price from config/plans.js.
-    .send({
-      plan: 'Standard',
-      method: 'bank',
-      amount: 1,
-      currency: 'USD',
-      customer: { email: 'buyer@example.com', name: 'Buyer' },
-      reference: 'REF123',
-    });
-
-  assert.equal(res.status, 201);
-  assert.ok(res.body.id);
-
-  const record = await ManualPayment.findById(res.body.id);
-  assert.equal(record.status, 'pending');
-  assert.equal(record.amount, plan.amount);
-  assert.equal(record.currency, plan.currency);
-  assert.equal(record.reference, 'REF123');
-});
-
+// submitManualPayment (POST /api/payments/manual) — now 410 PAYMENTS_DISABLED.
+// Covered by payment-checkout.test.js, alongside every other disabled
+// customer-facing payment route, so it isn't duplicated here.
 // ---------------------------------------------------------------------------
 // listManualPayments — authorization (MFA-protected admin API)
 // ---------------------------------------------------------------------------
@@ -106,7 +62,7 @@ test('listManualPayments: unauthenticated request is rejected with 401', async (
 });
 
 test('listManualPayments: an authenticated admin without payments:read is rejected with 403', async () => {
-  // 'editor' has courses:read/write and enrollments:read only — no
+  // 'editor' has courses:read/write and enrollments:read/write — no
   // payments:read (see ROLE_PERMISSIONS in models/AdminUser.js).
   const { agent, csrf, cookieHeader } = await makeAdminAgent('editor');
   const res = await agent.get('/api/v1/admin/payments/manual').set({ ...csrf, Cookie: cookieHeader });

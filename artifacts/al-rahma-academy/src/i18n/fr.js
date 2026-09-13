@@ -223,7 +223,7 @@ const fr = {
     "perMonth": "/ mois",
     "off": "% de réduction",
     "sessions": "séances/mois",
-    "getStarted": "Commencer",
+    "getStarted": "Réserver ce plan",
     "mostPopular": "Le plus populaire",
     "sub": "Plans mensuels abordables facturés par étudiant. Résiliez à tout moment.",
     "youSave": "Vous économisez",
@@ -233,7 +233,7 @@ const fr = {
     "refundTitle": "Fenêtre de remboursement de 24 jours",
     "refundSub": "Pas entièrement satisfait ? Vous pouvez demander un remboursement dans les 24 jours suivant le paiement.",
     "comparisonNote": `Le plan ${cmp.top.name} vous offre ${cmp.multiplier}× le temps de cours hebdomadaire de ${cmp.base.name} — ${cmp.top.sessionsPerWeek} cours par semaine au lieu de ${cmp.base.sessionsPerWeek}.`,
-    "securePayment": "Les modes de paiement sont affichés au moment du paiement",
+    "securePayment": "Nous confirmerons le prix final sur WhatsApp",
     "cancelAnytime": "Annulez à tout moment",
     "azharCertified": "Enseignants certifiés Al-Azhar",
     "familiesServed": "Leçons dispensées dans le monde entier",
@@ -697,25 +697,11 @@ const fr = {
         "attendance": "Présence"
       }
     },
-    "payment": {
+    "paymentDeprecated": {
       "backToSite": "← Retour au site",
-      "backToPricing": "Retour aux tarifs",
-      "capturing": {
-        "title": "Confirmation de votre paiement…",
-        "sub": "Veuillez patienter un moment."
-      },
-      "paid": {
-        "title": "Paiement Réussi !",
-        "sub": "Merci — votre abonnement est confirmé. Nous vous contacterons bientôt."
-      },
-      "failed": {
-        "title": "Paiement non confirmé",
-        "sub": "Si vous avez été débité, contactez-nous et nous réglerons cela immédiatement."
-      },
-      "cancelled": {
-        "title": "Paiement Annulé",
-        "sub": "Aucun débit n'a été effectué. Vous pouvez choisir un plan et réessayer."
-      }
+      "title": "Le paiement en ligne n'est plus utilisé ici",
+      "sub": "Nous confirmons désormais les réservations et le paiement sur WhatsApp. Envoyez une demande de réservation et notre équipe vous contactera pour organiser le paiement.",
+      "cta": "Aller à la réservation"
     },
     "forgotPwd": {
       "title": "Mot de passe oublié ?",
@@ -823,16 +809,20 @@ const fr = {
       "summaryTeacher": "Enseignant",
       "summaryPlan": "Formule",
       "summaryLang": "Langue",
-      "confirmPay": "Confirmer et passer au paiement →"
+      "confirmBooking": "Confirmer la demande de réservation →"
     },
     "success": {
       "icon": "🎉",
       "title": "Bienvenue à l'Académie Al-Rahma !",
       "blessing": "بارك الله فيك",
       "blessingSub": "Qu'Allah bénisse votre parcours d'apprentissage",
-      "thankYouPre": "Votre inscription a bien été reçue, ",
-      "thankYouPost": ". Notre équipe vous contactera pour confirmer votre planning.",
+      "thankYouPre": "Votre demande de réservation a bien été reçue, ",
+      "thankYouPost": ". Notre équipe vous contactera sur WhatsApp pour confirmer votre planning et le paiement.",
       "emailNote": "Une confirmation a été envoyée à votre adresse email.",
+      "bookingRefLabel": "Votre numéro de référence de réservation",
+      "whatsappCta": "Écrivez-nous sur WhatsApp",
+      "whatsappNote": "Envoyez le message prérempli pour que nous confirmions votre planning et organisions le paiement.",
+      "whatsappTemplate": "Bonjour, je viens d'envoyer une demande de réservation sur Al-Rahma Academy.\nNom : {name}\nFormule : {plan}\nRéférence de réservation : {ref}",
       "backHome": "Retour à l'accueil",
       "goToDashboard": "Aller au tableau de bord",
       "nextTitle": "Ce qui se passe ensuite",
@@ -852,6 +842,7 @@ const fr = {
       "emailRequired": "L'adresse email est obligatoire.",
       "emailInvalid": "Veuillez entrer une adresse email valide.",
       "phoneInvalid": "Veuillez saisir un numéro de téléphone valide (par exemple : +33 6 12 34 56 78).",
+      "whatsappRequired": "Un numéro WhatsApp est requis pour que nous puissions vous contacter et organiser votre réservation.",
       "subjectRequired": "Veuillez sélectionner au moins une matière.",
       "teacherRequired": "Veuillez choisir un enseignant.",
       "submitFailed": "Échec de l'envoi. Veuillez réessayer."
@@ -964,6 +955,7 @@ const fr = {
   "billing": {
     "bar": "Al-Rahma · Facturation",
     "backToSite": "← Retour au site",
+    "upgradePlan": "Réserver un plan",
     "heading": "Factures et paiements",
     "sub": "Toutes vos factures mensuelles — cliquez sur une ligne pour voir les détails.",
     "discountNotice": "Une réduction de 25% est appliquée à toutes vos factures. Les prix originaux sont barrés.",
@@ -979,40 +971,38 @@ const fr = {
     "clickHint": "Cliquez sur une ligne pour ouvrir une facture imprimable avec tous les détails.",
     "paidStatus": "✓ Payé"
   },
-  "checkout": {
-    "secureCheckout": "🔒 Paiement sécurisé",
-    "planSuffix": "Plan",
-    "perMonth": "/ mois",
-    "offApplied": "% DE RÉDUCTION appliqué",
-    "fullName": "Nom complet",
-    "email": "Email",
-    "mobile": "Mobile",
-    "optional": "optionnel",
-    "cardPayment": "💳 Paiement par carte",
-    "international": "🌍 International — En Ligne",
-    "manualBank": "🏦 Banque et virement manuel",
-    "transferDetails": "Détails du virement",
-    "reference": "Numéro de Référence / Confirmation",
-    "refPlaceholder": "ex. MTCN, ID de transaction, réf. de virement…",
-    "processing": "Traitement en cours…",
-    "submitRequest": "Envoyer la demande de paiement",
-    "completePayment": "Finaliser le paiement",
-    "verifyNote": "Nous vérifierons votre virement dans les 24 heures et activerons votre plan.",
-    "secureNote": "Les détails de la carte sont saisis sur la page sécurisée de la passerelle. Résiliez à tout moment.",
-    "successMsg": "✅ Demande de paiement reçue ! Nous vérifierons et activerons votre plan dans les 24 heures. Vérifiez votre email pour la confirmation.",
+  "adminBookings": {
+    "title": "Réservations ({new} nouvelles / {total} au total)",
+    "searchPlaceholder": "Rechercher par nom, e-mail ou référence de réservation…",
+    "colBookingRef": "Réf. réservation",
+    "colName": "Nom",
+    "colWhatsapp": "WhatsApp",
+    "colPlan": "Formule",
+    "colStatus": "Statut",
+    "colAmount": "Montant convenu",
+    "colDate": "Date",
+    "colDetails": "Détails",
+    "statusPending": "Nouvelle",
+    "statusContacted": "Contactée",
+    "statusAwaitingPayment": "En attente de paiement",
+    "statusPaid": "Payée",
+    "statusEnrolled": "Activée",
+    "statusCancelled": "Annulée",
+    "edit": "Modifier",
     "close": "Fermer",
-    "backToOptions": "← Retour aux options de paiement",
-    "startFailed": "Impossible de démarrer le paiement. Veuillez réessayer.",
-    "paymentFailed": "Échec du paiement. Veuillez réessayer.",
-    "submitFailed": "Échec de l'envoi. Veuillez réessayer.",
-    "recurringNote": "Renouvellement automatique mensuel — annulable à tout moment.",
-    "couponLabel": "Code promo",
-    "couponPlaceholder": "ex. WELCOME10",
-    "couponApply": "Appliquer",
-    "couponApplied": "Coupon appliqué",
-    "couponRemove": "Retirer",
-    "couponDiscountLine": "Remise coupon",
-    "couponLoginFirst": "Veuillez vous connecter pour utiliser un code promo."
+    "save": "Enregistrer",
+    "saving": "Enregistrement…",
+    "fieldAgreedAmount": "Montant convenu",
+    "fieldCurrency": "Devise",
+    "fieldPaymentMethod": "Moyen de paiement externe",
+    "placeholderPaymentMethod": "Virement, espèces…",
+    "fieldPaidOn": "Payé le",
+    "fieldRenewsOn": "Renouvelle le",
+    "fieldAdminNote": "Note admin / référence",
+    "placeholderAdminNote": "Référence ou note interne",
+    "emptyState": "Aucune demande de réservation pour l'instant.",
+    "errorStatusUpdate": "Échec de la mise à jour du statut",
+    "errorSaveDetails": "Échec de l'enregistrement des détails de la réservation"
   },
   "errors": {
     "crashed": "Une erreur s'est produite",

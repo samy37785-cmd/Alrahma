@@ -2,10 +2,9 @@
 import { useSearchParams } from 'react-router-dom';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
-import CheckoutModal from '../components/ui/CheckoutModal';
 import useSEO from '../hooks/useSEO';
 import { submitEnrollment } from '../api/enrollmentApi';
-import { TEACHERS } from '../data';
+import { TEACHERS, plans } from '../data';
 import { useLang } from '../context/LangContext';
 import { PLAN_TEXT } from '../i18n/content';
 import { Progress, Step1, Step2, Step3, Step4, Success } from '../components/features/enrollment/EnrollWizard';
@@ -22,7 +21,7 @@ const BLANK = {
 export default function Enroll() {
   useSEO({
     title: 'Book Free Trial Lessons — Enroll at Al-Rahma Academy',
-    description: 'One free one-to-one Quran trial lesson — no payment, no commitment. Choose your subjects, pick an Al-Azhar certified tutor, and start learning today. 24-day refund window on all plans.',
+    description: 'One free one-to-one Quran trial lesson — no payment, no commitment. Choose your subjects, pick an Al-Azhar certified tutor, and book your plan — we\'ll confirm your schedule and payment with you on WhatsApp.',
     keywords: 'free quran trial lesson, online quran enrollment, book quran lesson, quran class booking',
   });
 
@@ -33,15 +32,18 @@ export default function Enroll() {
   const [form, setForm] = useState(() => {
     const tid = Number(searchParams.get('teacher'));
     const found = tid ? TEACHERS.find((t) => t.id === tid) : null;
+    const planName = searchParams.get('plan');
+    const foundPlan = planName ? plans.find((p) => p.name === planName) : null;
     return {
       ...BLANK,
       ...(found ? { teacherId: found.id, teacherName: found.nameEn } : {}),
+      ...(foundPlan ? { plan: foundPlan } : {}),
     };
   });
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState('');
-  const [checkoutPlan, setCheckoutPlan] = useState(null);
+  const [bookingRef, setBookingRef] = useState('');
 
   const set = (key, valOrFn) =>
     setForm((prev) => ({
@@ -58,7 +60,8 @@ export default function Enroll() {
       if (!form.name.trim()) { setError(v.nameRequired); return false; }
       if (!form.email.trim()) { setError(v.emailRequired); return false; }
       if (!EMAIL_RE.test(form.email.trim())) { setError(v.emailInvalid); return false; }
-      if (form.whatsapp && !PHONE_RE.test(form.whatsapp.trim())) {
+      if (!form.whatsapp.trim()) { setError(v.whatsappRequired); return false; }
+      if (!PHONE_RE.test(form.whatsapp.trim())) {
         setError(v.phoneInvalid); return false;
       }
     }
@@ -74,22 +77,24 @@ export default function Enroll() {
   const next = () => { if (validate()) setStep((s) => Math.min(s + 1, 4)); };
   const back = () => { setError(''); setStep((s) => Math.max(s - 1, 1)); };
 
-  const handlePayNow = async () => {
-    if (!form.plan) return;
+  const handleSubmitBooking = async () => {
+    // Guards against a double-click (or a fast double-tap on mobile)
+    // creating two booking requests: loading is already true for the
+    // duration of the in-flight request, so a re-entrant call here is a
+    // no-op instead of firing a second POST. The button is also visually
+    // disabled while loading (see Step4's `disabled={loading}` below), but
+    // this guard doesn't rely on the DOM disabled state alone.
+    if (!form.plan || loading) return;
     setLoading(true);
     try {
-      await submitEnrollment({ ...form, plan: form.plan.name });
-      setCheckoutPlan(form.plan);
+      const res = await submitEnrollment({ ...form, plan: form.plan.name });
+      setBookingRef(res?.bookingRef || '');
+      setDone(true);
     } catch {
       setError(e.validation.submitFailed);
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleCheckoutClose = () => {
-    setCheckoutPlan(null);
-    setDone(true);
   };
 
   return (
@@ -98,7 +103,7 @@ export default function Enroll() {
       <main id="main-content" className="enroll__page">
         <div className="enroll__container">
           {done ? (
-            <Success name={form.name} />
+            <Success name={form.name} plan={form.plan} bookingRef={bookingRef} />
           ) : (
             <>
               {/* ── Emotional header ── */}
@@ -114,7 +119,7 @@ export default function Enroll() {
                 {step === 1 && <Step1 form={form} set={set} />}
                 {step === 2 && <Step2 form={form} set={set} />}
                 {step === 3 && <Step3 form={form} set={set} />}
-                {step === 4 && <Step4 form={form} set={set} onPayNow={handlePayNow} />}
+                {step === 4 && <Step4 form={form} set={set} onSubmitBooking={handleSubmitBooking} submitting={loading} />}
 
                 {error && <p className="enroll__error">{error}</p>}
 
@@ -135,8 +140,6 @@ export default function Enroll() {
         </div>
       </main>
       <Footer />
-
-      <CheckoutModal plan={checkoutPlan} onClose={handleCheckoutClose} />
     </>
   );
 }

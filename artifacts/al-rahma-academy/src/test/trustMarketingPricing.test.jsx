@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { BrowserRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { LangProvider } from '../context/LangContext';
@@ -73,7 +74,7 @@ describe('Pricing no longer shows artificial urgency (spec §5)', () => {
 });
 
 describe('Pricing plans/prices/CTA still work (spec §5 regression guard)', () => {
-  it('renders every real plan name, price and a working "Get Started" CTA', () => {
+  it('renders every real plan name, price and a working booking CTA', () => {
     const { container } = renderWithLang(<Pricing />);
     // Some plans' originalPrice happens to equal another plan's price
     // (e.g. Huffaz's €112 struck-through original == Ijazah's €112 price),
@@ -86,8 +87,22 @@ describe('Pricing plans/prices/CTA still work (spec §5 regression guard)', () =
     for (const plan of plans) {
       expect(screen.getByText(plan.name)).toBeInTheDocument();
     }
-    const ctaButtons = screen.getAllByRole('button', { name: /get started|commencer|inizia|empezar|ابدأ|starten|jetzt/i });
+    // Booking-First Enrollment: the CTA now reads "Book This Plan" (and its
+    // per-language equivalent) instead of "Get Started" — see i18n's
+    // pricing.getStarted key across en/ar/de/es/fr/it.
+    const ctaButtons = screen.getAllByRole('button', { name: /book|réserver|prenota|reservar|احجز/i });
     expect(ctaButtons.length).toBeGreaterThanOrEqual(plans.length);
+  });
+
+  it('no longer renders an in-app checkout modal when a plan CTA is clicked', async () => {
+    const { container } = renderWithLang(<Pricing />);
+    const [firstCta] = screen.getAllByRole('button', { name: /book|réserver|prenota|reservar|احجز/i });
+    await userEvent.click(firstCta);
+    // CheckoutModal (Stripe/PayPal/manual payment UI) was removed in favour
+    // of the booking-first flow — clicking a plan's CTA now navigates to
+    // /enroll instead of opening a modal.
+    expect(container.querySelector('.modal__card.checkout')).toBeNull();
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 
   it('keeps the owner-confirmed 24-day refund window copy', () => {

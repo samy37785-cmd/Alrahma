@@ -167,10 +167,14 @@ export default function App({ basename = '' }) {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
 
-          {/* ── Enroll & Payments ── */}
+          {/* ── Enroll & Booking ──
+              /payment/success and /payment/cancel are legacy Stripe/PayPal
+              redirect targets from the removed in-app checkout — kept
+              mounted (old links must not 404) but now just point to a
+              deprecated-payment notice; see PaymentResult.jsx. */}
           <Route path="/enroll" element={<Enroll />} />
           <Route path="/payment/success" element={<PaymentResult />} />
-          <Route path="/payment/cancel" element={<PaymentResult cancelled />} />
+          <Route path="/payment/cancel" element={<PaymentResult />} />
 
           {/* ── Dashboards (protected) ── */}
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />

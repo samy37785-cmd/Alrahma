@@ -35,7 +35,13 @@ export const ROLE_PERMISSIONS = {
   ],
   'editor': [
     'courses:read','courses:write',
-    'enrollments:read',
+    // Booking-First Enrollment: an editor can run the Bookings tab's
+    // day-to-day pipeline (pending -> contacted -> cancelled, notes) but
+    // still cannot touch agreedAmount/currency/paymentMethodExternal/
+    // paidAt/renewalAt — those additionally require 'payments:write'
+    // (admin/super-admin only), enforced in routes/v1/admin/
+    // enrollmentsRoutes.js's requireFinancialPermissionIfTouched.
+    'enrollments:read','enrollments:write',
   ],
   'viewer': [
     'users:read','courses:read','payments:read',

@@ -203,8 +203,9 @@ export function enrollmentAdminEmail(d) {
   const times    = (d.times    || []).map(esc).join(', ') || '—';
   const lang     = LANG_LABELS[d.lang] || esc(d.lang);
   return base(`
-    <h2 style="color:#0b6e4f;margin-top:0;">📋 New Enrollment Request</h2>
+    <h2 style="color:#0b6e4f;margin-top:0;">📋 New Booking Request</h2>
     <table style="width:100%;border-collapse:collapse;font-size:14px;">
+      ${d.bookingRef ? `<tr style="background:#f0f8f4;"><td style="padding:10px 14px;font-weight:700;width:40%;">Booking Ref</td><td style="padding:10px 14px;font-family:monospace;">${esc(d.bookingRef)}</td></tr>` : ''}
       <tr style="background:#f0f8f4;"><td style="padding:10px 14px;font-weight:700;width:40%;">Name</td><td style="padding:10px 14px;">${esc(d.name)}</td></tr>
       <tr><td style="padding:10px 14px;font-weight:700;">Email</td><td style="padding:10px 14px;"><a href="mailto:${esc(d.email)}">${esc(d.email)}</a></td></tr>
       <tr style="background:#f0f8f4;"><td style="padding:10px 14px;font-weight:700;">WhatsApp</td><td style="padding:10px 14px;">${esc(d.whatsapp)}</td></tr>
@@ -224,12 +225,13 @@ export function enrollmentAdminEmail(d) {
 }
 
 // ── Enrollment: student confirmation ─────────────────────────────────────
-export function enrollmentStudentEmail({ name, teacherName, plan }) {
+export function enrollmentStudentEmail({ name, teacherName, plan, bookingRef }) {
   return base(`
     <h2 style="color:#0b6e4f;margin-top:0;">Thank you, ${esc(name)}! 🎉</h2>
     <p style="font-size:15px;line-height:1.7;color:#444;">
-      We have received your enrollment request and one of our team members will be in touch within <strong>24 hours</strong> to confirm your schedule.
+      We have received your booking request and one of our team members will be in touch on WhatsApp within <strong>24 hours</strong> to confirm your schedule and payment.
     </p>
+    ${bookingRef ? `<p style="font-size:14px;color:#444;">Booking reference: <strong style="font-family:monospace;">${esc(bookingRef)}</strong></p>` : ''}
     ${teacherName ? `<p style="font-size:14px;color:#444;">Your chosen teacher: <strong>${esc(teacherName)}</strong></p>` : ''}
     ${plan ? `<p style="font-size:14px;color:#444;">Chosen plan: <strong>${esc(plan)}</strong></p>` : ''}
     <p style="font-size:15px;color:#444;">Meanwhile, feel free to reply to this email with any questions.</p>

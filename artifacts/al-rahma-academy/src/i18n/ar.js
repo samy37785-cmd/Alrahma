@@ -223,7 +223,7 @@ const ar = {
     "perMonth": "/ شهر",
     "off": "% خصم",
     "sessions": "حصة/شهر",
-    "getStarted": "ابدأ الآن",
+    "getStarted": "احجز هذه الخطة",
     "mostPopular": "الأكثر طلباً",
     "sub": "خطط شهرية بأسعار معقولة لكل طالب. إلغاء في أي وقت.",
     "youSave": "توفّر",
@@ -233,7 +233,7 @@ const ar = {
     "refundTitle": "نافذة استرداد 24 يومًا",
     "refundSub": "غير راضٍ عن اشتراكك؟ يمكنك طلب استرداد المبلغ خلال 24 يومًا من تاريخ الدفع.",
     "comparisonNote": `تمنحك خطة ${cmp.top.arabicName || cmp.top.name} ${cmp.multiplier} أضعاف وقت الحصص الأسبوعي مقارنةً بخطة ${cmp.base.arabicName || cmp.base.name} — ${cmp.top.sessionsPerWeek} حصص أسبوعيًا بدلاً من ${cmp.base.sessionsPerWeek}.`,
-    "securePayment": "طرق الدفع تظهر عند إتمام الطلب",
+    "securePayment": "سنؤكد السعر النهائي عبر واتساب",
     "cancelAnytime": "إلغاء في أي وقت",
     "azharCertified": "معلمون معتمدون من الأزهر",
     "familiesServed": "دروس مُقدَّمة حول العالم",
@@ -697,25 +697,11 @@ const ar = {
         "attendance": "الحضور"
       }
     },
-    "payment": {
+    "paymentDeprecated": {
       "backToSite": "← العودة إلى الموقع",
-      "backToPricing": "العودة إلى الأسعار",
-      "capturing": {
-        "title": "جاري تأكيد دفعتك…",
-        "sub": "يرجى الانتظار لحظة."
-      },
-      "paid": {
-        "title": "تمّت الدفعة بنجاح!",
-        "sub": "شكراً لك — تم تأكيد اشتراكك. سنتواصل معك قريباً."
-      },
-      "failed": {
-        "title": "لم يتم تأكيد الدفعة",
-        "sub": "إذا تم خصم مبلغ، يرجى التواصل معنا وسنحل الأمر فوراً."
-      },
-      "cancelled": {
-        "title": "تم إلغاء الدفعة",
-        "sub": "لم يتم خصم أي مبلغ. يمكنك اختيار خطة والمحاولة مرة أخرى في أي وقت."
-      }
+      "title": "لم يعد الدفع الإلكتروني متاحًا هنا",
+      "sub": "أصبحنا نؤكد الحجز والدفع عبر واتساب. أرسل طلب حجز وسيتواصل معك فريقنا لترتيب الدفع.",
+      "cta": "الذهاب إلى صفحة الحجز"
     },
     "forgotPwd": {
       "title": "هل نسيت كلمة المرور؟",
@@ -823,16 +809,20 @@ const ar = {
       "summaryTeacher": "المعلم",
       "summaryPlan": "الخطة",
       "summaryLang": "اللغة",
-      "confirmPay": "تأكيد والمتابعة للدفع →"
+      "confirmBooking": "تأكيد طلب الحجز →"
     },
     "success": {
       "icon": "🎉",
       "title": "أهلاً وسهلاً في أكاديمية الرحمة!",
       "blessing": "بارك الله فيك",
       "blessingSub": "بارك الله في رحلتك التعليمية",
-      "thankYouPre": "تم استلام تسجيلك، ",
-      "thankYouPost": ". سيتواصل معك فريقنا لتأكيد جدولك.",
+      "thankYouPre": "تم استلام طلب حجزك، ",
+      "thankYouPost": ". سيتواصل معك فريقنا عبر واتساب لتأكيد جدولك والدفع.",
       "emailNote": "تم إرسال رسالة تأكيد إلى بريدك الإلكتروني.",
+      "bookingRefLabel": "رقم مرجع حجزك",
+      "whatsappCta": "راسلنا عبر واتساب",
+      "whatsappNote": "أرسل الرسالة المجهزة مسبقًا لنؤكد جدولك ونرتّب الدفع.",
+      "whatsappTemplate": "مرحبًا، لقد أرسلت للتو طلب حجز في أكاديمية الرحمة.\nالاسم: {name}\nالخطة: {plan}\nرقم مرجع الحجز: {ref}",
       "backHome": "العودة إلى الرئيسية",
       "goToDashboard": "الذهاب إلى لوحة التحكم",
       "nextTitle": "ماذا يحدث بعد ذلك",
@@ -852,6 +842,7 @@ const ar = {
       "emailRequired": "البريد الإلكتروني مطلوب.",
       "emailInvalid": "يرجى إدخال بريد إلكتروني صحيح.",
       "phoneInvalid": "يرجى إدخال رقم هاتف صحيح (مثال: +20 100 000 0000).",
+      "whatsappRequired": "رقم واتساب مطلوب حتى نتمكن من التواصل معك لترتيب حجزك.",
       "subjectRequired": "يرجى اختيار مادة واحدة على الأقل.",
       "teacherRequired": "يرجى اختيار معلم.",
       "submitFailed": "فشل الإرسال. يرجى المحاولة مجدداً."
@@ -964,6 +955,7 @@ const ar = {
   "billing": {
     "bar": "الرحمة · الفواتير",
     "backToSite": "← العودة إلى الموقع",
+    "upgradePlan": "احجز خطة",
     "heading": "الفواتير والمدفوعات",
     "sub": "جميع فواتيرك الشهرية — انقر على أي صف لعرض التفاصيل الكاملة.",
     "discountNotice": "يُطبَّق خصم ٢٥٪ على جميع فواتيرك. الأسعار الأصلية معروضة مشطوبة.",
@@ -979,40 +971,38 @@ const ar = {
     "clickHint": "انقر على أي صف لفتح فاتورة قابلة للطباعة بالتفاصيل الكاملة.",
     "paidStatus": "✓ مدفوع"
   },
-  "checkout": {
-    "secureCheckout": "🔒 دفع آمن",
-    "planSuffix": "خطة",
-    "perMonth": "/ شهر",
-    "offApplied": "٪ خصم مطبّق",
-    "fullName": "الاسم الكامل",
-    "email": "البريد الإلكتروني",
-    "mobile": "الجوال",
-    "optional": "اختياري",
-    "cardPayment": "💳 الدفع بالبطاقة",
-    "international": "🌍 دولي — عبر الإنترنت",
-    "manualBank": "🏦 تحويل بنكي يدوي",
-    "transferDetails": "تفاصيل التحويل",
-    "reference": "رقم المرجع / التأكيد",
-    "refPlaceholder": "مثال: رقم MTCN، رقم المعاملة، مرجع التحويل…",
-    "processing": "جاري المعالجة…",
-    "submitRequest": "إرسال طلب الدفع",
-    "completePayment": "إتمام الدفع",
-    "verifyNote": "سنتحقق من تحويلك خلال ٢٤ ساعة ونفعّل خطتك.",
-    "secureNote": "تُدخَل بيانات البطاقة على صفحة البوابة الآمنة. يمكن الإلغاء في أي وقت.",
-    "successMsg": "✅ تم استلام طلب الدفع! سنتحقق ونفعّل خطتك خلال ٢٤ ساعة. تحقق من بريدك الإلكتروني.",
+  "adminBookings": {
+    "title": "الحجوزات ({new} جديد / {total} إجمالي)",
+    "searchPlaceholder": "ابحث بالاسم أو البريد الإلكتروني أو رقم الحجز…",
+    "colBookingRef": "رقم الحجز",
+    "colName": "الاسم",
+    "colWhatsapp": "واتساب",
+    "colPlan": "الخطة",
+    "colStatus": "الحالة",
+    "colAmount": "المبلغ المتفق عليه",
+    "colDate": "التاريخ",
+    "colDetails": "التفاصيل",
+    "statusPending": "جديد",
+    "statusContacted": "تم التواصل",
+    "statusAwaitingPayment": "بانتظار الدفع",
+    "statusPaid": "تم الدفع",
+    "statusEnrolled": "تم التفعيل",
+    "statusCancelled": "ملغي",
+    "edit": "تعديل",
     "close": "إغلاق",
-    "backToOptions": "→ العودة إلى خيارات الدفع",
-    "startFailed": "تعذّر بدء الدفع. يرجى المحاولة مرة أخرى.",
-    "paymentFailed": "فشلت عملية الدفع. يرجى المحاولة مجدداً.",
-    "submitFailed": "فشل الإرسال. يرجى المحاولة مرة أخرى.",
-    "recurringNote": "يتجدد تلقائياً كل شهر — يمكنك الإلغاء في أي وقت.",
-    "couponLabel": "كود الخصم",
-    "couponPlaceholder": "مثال: WELCOME10",
-    "couponApply": "تطبيق",
-    "couponApplied": "تم تطبيق الكوبون",
-    "couponRemove": "إزالة",
-    "couponDiscountLine": "خصم الكوبون",
-    "couponLoginFirst": "يرجى تسجيل الدخول لاستخدام كود الخصم."
+    "save": "حفظ",
+    "saving": "جارٍ الحفظ…",
+    "fieldAgreedAmount": "المبلغ المتفق عليه",
+    "fieldCurrency": "العملة",
+    "fieldPaymentMethod": "وسيلة الدفع الخارجية",
+    "placeholderPaymentMethod": "تحويل بنكي، نقدًا…",
+    "fieldPaidOn": "تاريخ الدفع",
+    "fieldRenewsOn": "تاريخ التجديد",
+    "fieldAdminNote": "ملاحظة الإدارة / المرجع",
+    "placeholderAdminNote": "مرجع أو ملاحظة داخلية",
+    "emptyState": "لا توجد طلبات حجز حتى الآن.",
+    "errorStatusUpdate": "فشل تحديث الحالة",
+    "errorSaveDetails": "فشل حفظ تفاصيل الحجز"
   },
   "errors": {
     "crashed": "حدث خطأ",

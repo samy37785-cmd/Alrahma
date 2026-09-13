@@ -223,7 +223,7 @@ const en = {
     "perMonth": "/ month",
     "off": "% off",
     "sessions": "sessions/month",
-    "getStarted": "Get Started",
+    "getStarted": "Book This Plan",
     "mostPopular": "Most popular",
     "sub": "Affordable monthly plans billed per student. Cancel anytime.",
     "youSave": "You save",
@@ -233,7 +233,7 @@ const en = {
     "refundTitle": "24-Day Refund Window",
     "refundSub": "Not fully satisfied? You may request a refund within 24 days of your payment.",
     "comparisonNote": `The ${cmp.top.name} plan gives you ${cmp.multiplier}× the weekly lesson time of ${cmp.base.name} — ${cmp.top.sessionsPerWeek} classes a week instead of ${cmp.base.sessionsPerWeek}.`,
-    "securePayment": "Payment methods shown at checkout",
+    "securePayment": "We'll confirm final pricing on WhatsApp",
     "cancelAnytime": "Cancel anytime",
     "azharCertified": "Al-Azhar certified tutors",
     "familiesServed": "Lessons delivered worldwide",
@@ -697,25 +697,11 @@ const en = {
         "attendance": "Attendance"
       }
     },
-    "payment": {
+    "paymentDeprecated": {
       "backToSite": "← Back to site",
-      "backToPricing": "Back to pricing",
-      "capturing": {
-        "title": "Confirming your payment…",
-        "sub": "Please wait a moment."
-      },
-      "paid": {
-        "title": "Payment Successful!",
-        "sub": "Thank you — your subscription is confirmed. We'll be in touch shortly."
-      },
-      "failed": {
-        "title": "Payment could not be confirmed",
-        "sub": "If you were charged, please contact us and we'll sort it out right away."
-      },
-      "cancelled": {
-        "title": "Payment Cancelled",
-        "sub": "No charge was made. You can choose a plan and try again anytime."
-      }
+      "title": "Online payment is no longer used here",
+      "sub": "We now confirm bookings and payment over WhatsApp. Submit a booking request and our team will contact you to arrange payment.",
+      "cta": "Go to Booking"
     },
     "forgotPwd": {
       "title": "Forgot your password?",
@@ -823,16 +809,20 @@ const en = {
       "summaryTeacher": "Tutor",
       "summaryPlan": "Plan",
       "summaryLang": "Language",
-      "confirmPay": "Confirm & Proceed to Payment →"
+      "confirmBooking": "Confirm Booking Request →"
     },
     "success": {
       "icon": "🎉",
       "title": "Welcome to Al-Rahma Academy!",
       "blessing": "بارك الله فيك",
       "blessingSub": "May Allah bless your learning journey",
-      "thankYouPre": "Your enrollment has been received, ",
-      "thankYouPost": ". Our team will contact you to confirm your schedule.",
+      "thankYouPre": "Your booking request has been received, ",
+      "thankYouPost": ". Our team will contact you on WhatsApp to confirm your schedule and payment.",
       "emailNote": "A confirmation has been sent to your email.",
+      "bookingRefLabel": "Your booking reference",
+      "whatsappCta": "Message us on WhatsApp",
+      "whatsappNote": "Send us the pre-filled message so we can confirm your schedule and arrange payment.",
+      "whatsappTemplate": "Hi, I just submitted a booking request on Al-Rahma Academy.\nName: {name}\nPlan: {plan}\nBooking ref: {ref}",
       "backHome": "Back to Home",
       "goToDashboard": "Go to Dashboard",
       "nextTitle": "What happens next",
@@ -852,6 +842,7 @@ const en = {
       "emailRequired": "Email address is required.",
       "emailInvalid": "Please enter a valid email address.",
       "phoneInvalid": "Please enter a valid phone number (e.g. +44 7700 900000).",
+      "whatsappRequired": "A WhatsApp number is required so we can contact you to arrange your booking.",
       "subjectRequired": "Please select at least one subject.",
       "teacherRequired": "Please choose a tutor.",
       "submitFailed": "Failed to submit. Please try again."
@@ -964,6 +955,7 @@ const en = {
   "billing": {
     "bar": "Al-Rahma · Billing",
     "backToSite": "← Back to site",
+    "upgradePlan": "Book a Plan",
     "heading": "Invoices & Billing",
     "sub": "All your monthly invoices — click any row to see full details.",
     "discountNotice": "A 25% discount is applied to all your invoices. Original prices shown with strikethrough.",
@@ -979,40 +971,38 @@ const en = {
     "clickHint": "Click any invoice row to open a printable invoice with full details.",
     "paidStatus": "✓ Paid"
   },
-  "checkout": {
-    "secureCheckout": "🔒 Secure Checkout",
-    "planSuffix": "Plan",
-    "perMonth": "/ month",
-    "offApplied": "% OFF applied",
-    "fullName": "Full Name",
-    "email": "Email",
-    "mobile": "Mobile",
-    "optional": "optional",
-    "cardPayment": "💳 Card Payment",
-    "international": "🌍 International — Online",
-    "manualBank": "🏦 Manual Bank & Transfer",
-    "transferDetails": "Transfer details",
-    "reference": "Reference / Confirmation Number",
-    "refPlaceholder": "e.g. MTCN, transaction ID, transfer ref…",
-    "processing": "Processing…",
-    "submitRequest": "Submit Payment Request",
-    "completePayment": "Complete Payment",
-    "verifyNote": "We will verify your transfer within 24 hours and activate your plan.",
-    "secureNote": "Card details are entered on the gateway's secure page. Cancel anytime.",
-    "successMsg": "✅ Payment request received! We will verify and activate your plan within 24 hours. Check your email for confirmation.",
+  "adminBookings": {
+    "title": "Bookings ({new} new / {total} total)",
+    "searchPlaceholder": "Search by name, email or booking ref…",
+    "colBookingRef": "Booking Ref",
+    "colName": "Name",
+    "colWhatsapp": "WhatsApp",
+    "colPlan": "Plan",
+    "colStatus": "Status",
+    "colAmount": "Agreed Amount",
+    "colDate": "Date",
+    "colDetails": "Details",
+    "statusPending": "New",
+    "statusContacted": "Contacted",
+    "statusAwaitingPayment": "Awaiting payment",
+    "statusPaid": "Paid",
+    "statusEnrolled": "Activated",
+    "statusCancelled": "Cancelled",
+    "edit": "Edit",
     "close": "Close",
-    "backToOptions": "← Back to payment options",
-    "startFailed": "Could not start the payment. Please try again.",
-    "paymentFailed": "Payment failed. Please try again.",
-    "submitFailed": "Submission failed. Please try again.",
-    "recurringNote": "Auto-renews every month — you can cancel anytime.",
-    "couponLabel": "Coupon code",
-    "couponPlaceholder": "e.g. WELCOME10",
-    "couponApply": "Apply",
-    "couponApplied": "Coupon applied",
-    "couponRemove": "Remove",
-    "couponDiscountLine": "Coupon discount",
-    "couponLoginFirst": "Please log in to use a coupon code."
+    "save": "Save",
+    "saving": "Saving…",
+    "fieldAgreedAmount": "Agreed amount",
+    "fieldCurrency": "Currency",
+    "fieldPaymentMethod": "External payment method",
+    "placeholderPaymentMethod": "Bank transfer, cash…",
+    "fieldPaidOn": "Paid on",
+    "fieldRenewsOn": "Renews on",
+    "fieldAdminNote": "Admin note / reference",
+    "placeholderAdminNote": "Reference or internal note",
+    "emptyState": "No booking requests yet.",
+    "errorStatusUpdate": "Failed to update status",
+    "errorSaveDetails": "Failed to save booking details"
   },
   "errors": {
     "crashed": "Something went wrong",

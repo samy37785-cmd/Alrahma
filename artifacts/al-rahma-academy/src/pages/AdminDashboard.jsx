@@ -4,18 +4,20 @@ import { Link } from 'react-router-dom';
 import {
   LayoutDashboard, Users, BookOpen, CreditCard, Target,
   Mail, Settings, TrendingUp, BarChart3, Activity, CheckCircle,
-  RefreshCw, Download, CalendarDays, Star, Users2, AlertCircle,
+  RefreshCw, Download, CalendarDays, Star, Users2, AlertCircle, CalendarCheck,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getCourses } from '../api/courseApi';
 import { getManualPayments } from '../api/paymentApi';
 import { getUsers } from '../api/adminApi';
 import { getTrials, getSubscribers } from '../api/contentApi';
+import { getEnrollments } from '../api/enrollmentApi';
 import { getAdminReviews } from '../api/reviewApi';
 import { getAdminPosts, getAdminComments } from '../api/communityApi';
 import AdminCoursesTab    from '../components/features/admin/AdminCoursesTab';
 import AdminTrialsTab     from '../components/features/admin/AdminTrialsTab';
 import AdminPaymentsTab   from '../components/features/admin/AdminPaymentsTab';
+import AdminBookingsTab   from '../components/features/admin/AdminBookingsTab';
 import AdminNewsletterTab from '../components/features/admin/AdminNewsletterTab';
 import AdminUsersTab      from '../components/features/admin/AdminUsersTab';
 import AdminClassesTab   from '../components/features/admin/AdminClassesTab';
@@ -156,6 +158,7 @@ const TABS = [
   { key: 'overview',    label: 'Overview',    Icon: LayoutDashboard },
   { key: 'users',       label: 'Users',       Icon: Users },
   { key: 'courses',     label: 'Courses',     Icon: BookOpen },
+  { key: 'bookings',    label: 'Bookings',    Icon: CalendarCheck },
   { key: 'payments',    label: 'Payments',    Icon: CreditCard },
   { key: 'trials',      label: 'Trials',      Icon: Target },
   { key: 'newsletter',  label: 'Newsletter',  Icon: Mail },
@@ -180,6 +183,7 @@ export default function AdminDashboard() {
   const { data: reviewsRes, isLoading: l7, isError: e6 }       = useQuery({ queryKey: ['admin', 'reviews'],     queryFn: getAdminReviews,                     staleTime: 60000  });
   const { data: communityPostsRes, isLoading: l8, isError: e7 }    = useQuery({ queryKey: ['admin', 'community-posts'],    queryFn: getAdminPosts,    staleTime: 60000  });
   const { data: communityCommentsRes, isLoading: l9, isError: e8 } = useQuery({ queryKey: ['admin', 'community-comments'], queryFn: getAdminComments, staleTime: 60000  });
+  const { data: bookingsRes, isLoading: l10, isError: e9 }         = useQuery({ queryKey: ['admin', 'bookings'],  queryFn: getEnrollments,                      staleTime: 30000  });
 
   // Surfaces a failed data load (most commonly a 403 for an AdminUser role
   // that lacks the relevant RBAC permission — e.g. 'editor' lacks
@@ -188,7 +192,7 @@ export default function AdminDashboard() {
   // indistinguishable from a genuinely empty account.
   const failedSections = [
     e1 && 'courses', e2 && 'trial requests', e3 && 'payments', e4 && 'newsletter subscribers', e5 && 'users', e6 && 'reviews',
-    e7 && 'community posts', e8 && 'community comments',
+    e7 && 'community posts', e8 && 'community comments', e9 && 'bookings',
   ].filter(Boolean);
   const loadErrorMessage = failedSections.length
     ? `Failed to load: ${failedSections.join(', ')}. You may not have permission to view this data, or there was a network error.`
@@ -204,10 +208,17 @@ export default function AdminDashboard() {
   const communityPostsTotal = communityPostsRes?.total ?? communityPosts.length;
   const communityComments      = communityCommentsRes?.comments ?? [];
   const communityCommentsTotal = communityCommentsRes?.total ?? communityComments.length;
+  const bookings      = bookingsRes?.data ?? bookingsRes ?? [];
+  const bookingsTotal = bookingsRes?.total ?? bookings.length;
 
-  const loading = l1 || l2 || l3 || l4 || l5 || l7 || l8 || l9;
+  const loading = l1 || l2 || l3 || l4 || l5 || l7 || l8 || l9 || l10;
 
   const setCourses  = (updater) => queryClient.setQueryData(['admin', 'courses'],    updater);
+  const setBookings = (updater) => queryClient.setQueryData(['admin', 'bookings'], (old) => {
+    const prev = old?.data ?? old ?? [];
+    const next = typeof updater === 'function' ? updater(prev) : updater;
+    return old?.data !== undefined ? { ...old, data: next } : next;
+  });
   const setManualPays = (updater) => queryClient.setQueryData(['admin', 'payments'], (old) => {
     const prev = old?.data ?? old ?? [];
     const next = typeof updater === 'function' ? updater(prev) : updater;
@@ -248,6 +259,7 @@ export default function AdminDashboard() {
 
   /* Tab badge counts */
   const tabBadge = (key) => {
+    if (key === 'bookings')  return bookings.filter((b) => b.status === 'pending').length;
     if (key === 'payments')  return pendingPayments.length;
     if (key === 'trials')    return trials.filter((t) => t.status === 'pending').length;
     if (key === 'community') return communityPosts.filter((p) => p.status === 'pending').length + communityComments.filter((c) => c.status === 'pending').length;
@@ -584,6 +596,26 @@ export default function AdminDashboard() {
           <div style={{ padding: 18 }}>
             <AdminCoursesTab courses={courses} onCoursesChange={setCourses} onError={setError} />
           </div>
+        </div>
+      </div>
+
+      {/* ── BOOKINGS TAB ───────────────────────────────────────────── */}
+      <div id="tabpanel-bookings" role="tabpanel" aria-labelledby="tab-bookings" hidden={activeTab !== 'bookings'}>
+        <div className="ds-card" style={{ padding: 0, overflow: 'hidden' }}>
+          <div style={{ padding: '16px 18px', borderBottom: '1px solid var(--border-default)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <h2 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+              Booking Requests
+            </h2>
+            {bookings.filter((b) => b.status === 'pending').length > 0 && (
+              <span className="ds-badge ds-badge--yellow">{bookings.filter((b) => b.status === 'pending').length} new</span>
+            )}
+          </div>
+          <AdminBookingsTab
+            bookings={bookings}
+            bookingsTotal={bookingsTotal}
+            onBookingsChange={setBookings}
+            onError={setError}
+          />
         </div>
       </div>
 

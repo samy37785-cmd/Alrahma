@@ -1,10 +1,13 @@
 import { test, before, beforeEach, after } from 'node:test';
 import assert from 'node:assert/strict';
+import crypto from 'crypto';
 import speakeasy from 'speakeasy';
 import request from 'supertest';
 import app from '../app.js';
 import AdminUser from '../models/AdminUser.js';
 import RefreshToken from '../models/RefreshToken.js';
+import TokenFamily from '../models/TokenFamily.js';
+import { hashToken } from '../utils/hashToken.js';
 import { setupTestDb, clearTestDb, teardownTestDb } from './helpers/db.js';
 import { agentWithCsrf } from './helpers/csrf.js';
 
@@ -36,7 +39,13 @@ async function makeAdmin(overrides = {}) {
 
 function cookieValue(res, name) {
   const setCookie = res.headers['set-cookie'] || [];
-  const match = setCookie.map(String).find((c) => c.startsWith(`${name}=`));
+  // A response can legitimately carry TWO Set-Cookie headers for the same
+  // name — a real value on its current Path plus an empty/expiring
+  // directive clearing a legacy Path (see clearLegacyRefreshCookie(),
+  // utils/adminAuthTokens.js) — so `name=;` (an empty value) is explicitly
+  // excluded here: that is always the clearing directive, never a real
+  // value a test would want to extract.
+  const match = setCookie.map(String).find((c) => c.startsWith(`${name}=`) && !c.startsWith(`${name}=;`));
   return match ? match.split(';')[0].split('=')[1] : null;
 }
 
@@ -146,6 +155,121 @@ test('refresh token rotation: the old token stops working, and re-presenting it 
     .set({ ...csrf, Cookie: `admin_rt=${newRefresh}; csrf_token=${csrf['x-csrf-token']}` })
     .send();
   assert.equal(afterRevocation.status, 401);
+});
+
+test('concurrent refresh requests presenting the SAME valid refresh token: exactly one succeeds, the other is treated as reuse and revokes the family (closes a real TOCTOU race — see controllers/adminAuthController.js)', async () => {
+  const admin = await makeAdmin();
+
+  // Mints a valid refresh token directly in the DB, the same way
+  // controllers/adminAuthController.js's issueRefreshToken() does — avoids
+  // spending this file's shared, tightly-budgeted /login rate-limit quota
+  // (5 req/15min, shared across every test in this file since node --test
+  // runs a file's tests in one process/one in-memory limiter) on a login
+  // flow this test isn't actually exercising.
+  const rawRefresh = crypto.randomBytes(48).toString('hex');
+  const family = crypto.randomUUID();
+  await RefreshToken.create({
+    tokenHash: hashToken(rawRefresh),
+    adminId:   admin._id,
+    family,
+    expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+  });
+
+  const { csrf } = await agentWithCsrf(app);
+  const cookieHeader = `admin_rt=${rawRefresh}; csrf_token=${csrf['x-csrf-token']}`;
+
+  // Two truly concurrent requests presenting the exact same not-yet-used
+  // token — fired together, not awaited sequentially, so both reach the
+  // atomic claim step before either's write could be observed by the other.
+  const [first, second] = await Promise.all([
+    request(app).post('/api/v1/admin/auth/refresh').set({ ...csrf, Cookie: cookieHeader }).send(),
+    request(app).post('/api/v1/admin/auth/refresh').set({ ...csrf, Cookie: cookieHeader }).send(),
+  ]);
+
+  const statuses = [first.status, second.status].sort();
+  assert.deepEqual(statuses, [200, 401], 'exactly one racer must win (200) and the other must be rejected (401)');
+
+  const loser = first.status === 401 ? first : second;
+  assert.equal(loser.body.code, 'TOKEN_REUSE');
+
+  // The loser's rejection must have revoked the whole family — including
+  // the winner's freshly-issued token, matching this endpoint's existing
+  // "reuse means the device is compromised, log everywhere out" policy.
+  const winner = first.status === 200 ? first : second;
+  const winnerNewToken = cookieValue(winner, 'admin_rt');
+  const afterRevocation = await request(app)
+    .post('/api/v1/admin/auth/refresh')
+    .set({ ...csrf, Cookie: `admin_rt=${winnerNewToken}; csrf_token=${csrf['x-csrf-token']}` })
+    .send();
+  assert.equal(afterRevocation.status, 401);
+
+  const tokenFamily = await RefreshToken.find({ adminId: admin._id });
+  assert.ok(tokenFamily.every((t) => t.revoked === true), 'every token in the family must end up revoked');
+});
+
+// The Promise.all test above exercises real HTTP-level concurrency, but
+// which of {the loser's family-wide sweep, the winner's new-token insert}
+// actually completes first on the real DB connection is up to Node's I/O
+// scheduler — running it N times raises confidence but never proves the fix
+// handles BOTH orderings. This test removes that dependency entirely by
+// driving the exact same sequence of DB operations
+// controllers/adminAuthController.js's issueRefreshToken() and the
+// refresh-endpoint's reuse branch perform, in each order explicitly, so
+// both interleavings the real race could produce are deterministically
+// reproduced every single run.
+test('refresh-token reuse sweep vs. concurrent new-token issuance: whichever of the two DB operation sequences runs first, the newly-issued token still ends up revoked (deterministic reproduction of both possible interleavings)', async () => {
+  const admin = await makeAdmin();
+
+  async function loserSweep(family) {
+    await TokenFamily.updateOne(
+      { family },
+      { $set: { revoked: true, revokedAt: new Date() } },
+      { upsert: true },
+    );
+    await RefreshToken.updateMany({ family }, { revoked: true });
+  }
+
+  // Mirrors issueRefreshToken()'s exact sequence: insert the new token,
+  // THEN check the family flag and self-revoke if it's already set.
+  async function winnerIssue(family) {
+    const raw       = crypto.randomBytes(48).toString('hex');
+    const tokenHash = hashToken(raw);
+    await RefreshToken.create({
+      tokenHash,
+      adminId:   admin._id,
+      family,
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+    });
+    const familyDoc = await TokenFamily.findOne({ family }).lean();
+    if (familyDoc?.revoked) {
+      await RefreshToken.updateOne({ tokenHash }, { $set: { revoked: true } });
+    }
+    return tokenHash;
+  }
+
+  async function runScenario(order) {
+    const family = crypto.randomUUID();
+    await TokenFamily.create({ family, adminId: admin._id });
+
+    let winnerTokenHash;
+    if (order === 'sweep-completes-before-issue') {
+      await loserSweep(family);
+      winnerTokenHash = await winnerIssue(family);
+    } else {
+      winnerTokenHash = await winnerIssue(family);
+      await loserSweep(family);
+    }
+
+    const winnerDoc = await RefreshToken.findOne({ tokenHash: winnerTokenHash });
+    assert.equal(
+      winnerDoc.revoked,
+      true,
+      `winner's freshly-issued token must end up revoked when the sweep runs "${order}"`,
+    );
+  }
+
+  await runScenario('sweep-completes-before-issue');
+  await runScenario('issue-completes-before-sweep');
 });
 
 test('logout revokes the refresh token family', async () => {

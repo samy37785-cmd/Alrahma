@@ -36,7 +36,7 @@ export default function DashboardLayout({ children }) {
   const { user, logout } = useAuth();
   // isAdmin is proven exclusively by the real AdminUser + MFA session, never
   // by the regular account's own `role` field. See src/utils/accountRoles.js.
-  const { isAdmin } = useAdminAuth();
+  const { isAdmin, logout: adminLogout } = useAdminAuth();
   const { lang } = useLang();
   const dashboardCopy = getExperienceText(lang).dashboard;
   const { shell, sections, items: itemLabels, roles } = dashboardCopy;
@@ -147,8 +147,47 @@ export default function DashboardLayout({ children }) {
     return () => document.removeEventListener('mousedown', handler);
   }, [userMenu, notifOpen]);
 
-  const handleLogout = () => {
+  // Auth hardening security batch: this shell is shared between the regular
+  // customer dashboard AND AdminDashboard.jsx (see AdminDashboard.jsx's own
+  // <DashboardLayout> usage). handleLogout used to call ONLY the regular
+  // useAuth().logout() unconditionally — on an admin session, clicking
+  // "Log out" here actually called POST /api/auth/logout (the regular
+  // customer session, which may not even exist for an operator who only
+  // ever authenticated as AdminUser) while the real admin_at/admin_rt
+  // cookies were left completely untouched: the admin stayed fully logged
+  // in, silently, behind what looked like a working logout button. Found
+  // by actually driving this button in a real browser (Chrome DevTools
+  // verification) and watching the Network panel — POST /api/auth/logout
+  // fired, cookies were never cleared, and a subsequent
+  // POST /api/v1/admin/auth/refresh still succeeded afterward. Fixed by
+  // branching on isAdmin (the same real, fail-closed signal used
+  // everywhere else in this app to distinguish the two sessions) and
+  // calling the correct one. window.location.assign (full reload), not
+  // client-side navigate, for the admin branch — matches adminHttp.js's
+  // own clearSessionAndRedirect() convention for admin sign-out, ensuring
+  // every in-memory admin cache/state is actually wiped, not just routed
+  // away from.
+  const handleLogout = async () => {
     setUserMenu(false);
+    if (isAdmin) {
+      // Review follow-up: the previous version fired adminLogout() (a
+      // POST to /api/v1/admin/auth/logout) and immediately navigated away
+      // without waiting for it. In a real browser that's a race between
+      // the logout request and the full-page navigation it triggers —
+      // navigating away can abort the still-in-flight request before the
+      // server clears the admin_at/admin_rt cookies, leaving the session
+      // alive despite the redirect to /admin/login. Awaiting it first (and
+      // redirecting in `finally`, so a failed/rejected logout still lands
+      // the operator on the login screen rather than stranding them on the
+      // dashboard) makes "logout completed" and "redirect happened" a real
+      // sequence instead of a race.
+      try {
+        await adminLogout();
+      } finally {
+        window.location.assign('/admin/login');
+      }
+      return;
+    }
     logout();
     // Not navigate('/') - see localePath.js's goHome() comment: under a
     // non-English basename that produces "/fr" with no trailing slash.

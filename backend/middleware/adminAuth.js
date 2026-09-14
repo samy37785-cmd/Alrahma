@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import AdminUser from '../models/AdminUser.js';
+import logger from '../config/logger.js';
 import { isSupabaseBackend } from '../config/dataBackend.js';
 import { loadAdminById, hasVerifiedMfaFactor, getAdminPermissions } from '../data/supabase/loadAdmin.js';
 import { SUPABASE_AT_COOKIE, isVerifiedAal2 } from '../data/supabase/supabaseSessionCookie.js';
@@ -119,5 +120,113 @@ export const verifyAccessToken = asyncHandler(async function verifyAccessToken(r
     // than per requirePermissions() call.
     req.adminPermissions = await getAdminPermissions(loaded.admin.id, loaded.admin.role);
   }
+  next();
+});
+
+// Review follow-up: an earlier version of identifyAdminForLogout() below
+// trusted an expired-but-signature-valid admin_at UNCONDITIONALLY, for
+// however long its signature stayed valid — effectively forever, since
+// this codebase never rotates ADMIN_JWT_ACCESS_SECRET on its own. That
+// meant a JWT an admin's browser discarded weeks or months ago (recovered
+// from a disk image, an old log line, browser history, wherever) could
+// still be replayed against /logout to revoke every one of that admin's
+// CURRENT sessions, indefinitely into the future — using nothing but a
+// credential that should have been worthless the moment it expired. A
+// short, bounded grace window keeps the real, legitimate case this exists
+// for (admin_at quietly lapsing while an admin's tab sits idle for a few
+// minutes before they click logout — see identifyAdminForLogout()'s own
+// comment) working, while refusing to trust anything older than that for
+// an action (revoke every session) this destructive. Chosen at 2 minutes
+// past admin_at's own 15-minute `exp`: generous enough for real network/
+// processing latency and a bit of clock skew, nowhere near long enough for
+// a genuinely stale, previously-discarded token to still work.
+const LOGOUT_EXPIRED_TOKEN_GRACE_SECONDS = 2 * 60;
+
+/**
+ * Review follow-up: /logout used to sit behind verifyAccessToken like every
+ * other protected route, which is correct for privileged actions but wrong
+ * for logout specifically — once admin_at (15 min) lapsed, verifyAccessToken
+ * returned a flat 401 before the request ever reached the controller, so
+ * there was no way left to trigger a real server-side logout at all. An
+ * admin_rt-based revoke (see controllers/adminAuthController.js's logout())
+ * existed the whole time but was unreachable behind this gate.
+ *
+ * This middleware never rejects the request — logout must always be
+ * reachable. It resolves req.adminId/req.adminUser best-effort, including
+ * from a token whose signature is still valid but whose `exp` has already
+ * passed (`ignoreExpiration: true` below) — but ONLY within
+ * LOGOUT_EXPIRED_TOKEN_GRACE_SECONDS of that `exp` (see its own comment for
+ * why an unbounded version of this is a real vulnerability, not just a
+ * theoretical one). Leaves req.adminId/req.adminUser unset (never a 401)
+ * when the cookie is missing, malformed, signed with the wrong secret,
+ * belongs to a pre-auth (`stage`) token that was never a completed session,
+ * or is expired well past the grace window — the route's own admin_rt-based
+ * identity (now reachable here too, see utils/adminAuthTokens.js's
+ * refreshCookieOptions()) or a plain nothing-to-revoke/clear-cookies-anyway
+ * no-op takes over in that case.
+ */
+export const identifyAdminForLogout = asyncHandler(async function identifyAdminForLogout(req, res, next) {
+  const token = req.cookies?.[ACCESS_TOKEN_COOKIE];
+  if (!token) return next();
+
+  let decoded;
+  try {
+    decoded = jwt.verify(token, process.env.ADMIN_JWT_ACCESS_SECRET, { algorithms: ['HS256'] });
+  } catch (err) {
+    if (err.name !== 'TokenExpiredError') return next(); // invalid/malformed/wrong secret: proceed anonymously
+    try {
+      decoded = jwt.verify(token, process.env.ADMIN_JWT_ACCESS_SECRET, {
+        algorithms: ['HS256'],
+        ignoreExpiration: true,
+      });
+    } catch {
+      return next();
+    }
+    // Bound how long "expired" is tolerated for logout identification — see
+    // LOGOUT_EXPIRED_TOKEN_GRACE_SECONDS's own comment. `exp` is a standard
+    // JWT claim (seconds since epoch); jwt.verify() still validates/decodes
+    // it normally with ignoreExpiration — that option only skips the
+    // rejection, not the claim itself.
+    if (typeof decoded.exp === 'number' && Date.now() / 1000 - decoded.exp > LOGOUT_EXPIRED_TOKEN_GRACE_SECONDS) {
+      return next();
+    }
+  }
+
+  if (decoded.stage) return next(); // pre-auth (MFA-incomplete) token never identifies a real session
+
+  // Review follow-up: this used to call loadAdminForBackend() unguarded —
+  // fine for verifyAccessToken() above (a genuine DB/lookup failure SHOULD
+  // 500 an ordinary protected route via asyncHandler's next(err)), but wrong
+  // here. identifyAdminForLogout() exists specifically so /logout stays
+  // reachable no matter what (see this function's own opening comment); an
+  // AdminUser.findById()/loadAdminById() throw (Mongo unreachable, a
+  // dropped connection mid-request, Postgres unreachable) used to propagate
+  // straight through asyncHandler to the central error handler, which
+  // responded before the request ever reached the logout controller at
+  // all — an admin hitting logout during exactly the kind of outage that
+  // makes "am I still logged in" matter most would get a 500 and keep every
+  // cookie in their browser. This lookup is now best-effort: any failure is
+  // logged and treated the same as "no admin found" (req.adminId/
+  // req.adminUser simply stay unset), and the request always reaches the
+  // controller, which clears this app's own cookies unconditionally
+  // (controllers/adminAuthController.js and data/supabase/
+  // adminAuthController.js's logout() both do this in a `finally`) and, for
+  // the Mongo path, still identifies the session by admin_rt when admin_id
+  // lookup fails here. This does not widen what any OTHER route accepts —
+  // verifyAccessToken() (used by every route this middleware is not) is
+  // untouched and still fails closed on a lookup error.
+  let loaded;
+  try {
+    loaded = await loadAdminForBackend(decoded.id);
+  } catch (err) {
+    logger.error('identifyAdminForLogout: admin lookup failed — proceeding without an identified admin so /logout still runs', {
+      error: err.message,
+    });
+    return next();
+  }
+  if (!loaded) return next();
+
+  req.adminUser = loaded.admin;
+  req.adminId   = isSupabaseBackend() ? loaded.admin.id : loaded.admin._id;
   next();
 });

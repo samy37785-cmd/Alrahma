@@ -6,7 +6,14 @@
  *
  * OpenAPI spec version: 0.1.0
  */
+import type { AdminCoupon } from "./adminCoupon";
 
-export interface HealthStatus {
-  status: string;
+/**
+ * Deliberately NOT the AdminPaginatedListResponse `{ data, ... }` shape — see GET /v1/admin/coupons's own description.
+ */
+export interface AdminCouponListResponse {
+  coupons: AdminCoupon[];
+  total: number;
+  page: number;
+  pages: number;
 }

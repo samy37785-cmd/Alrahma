@@ -7,6 +7,15 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface HealthStatus {
-  status: string;
+export interface AdminCreateLiveClassRequest {
+  /** Optional — omit entirely for an admin-scheduled class with no teacher identity to assign. */
+  teacher?: string | null;
+  student: string;
+  title: string;
+  /** ISO 8601 date-time */
+  startsAt: string;
+  /** Minutes, 5-240. Defaults to 30. */
+  durationMin?: number;
+  meetingUrl?: string | null;
+  notes?: string | null;
 }

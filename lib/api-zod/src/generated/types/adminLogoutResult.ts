@@ -7,6 +7,8 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface HealthStatus {
-  status: string;
+export interface AdminLogoutResult {
+  message: string;
+  /** DATA_BACKEND=supabase only. Present (and true) only when the upstream GoTrue revocation call failed — this app's own cookies are cleared either way, so this is purely an observability signal, not an indication the request itself failed (it still returns 200). */
+  upstreamRevocationFailed?: boolean;
 }

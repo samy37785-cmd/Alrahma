@@ -7,6 +7,13 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface HealthStatus {
-  status: string;
-}
+/**
+ * Stable machine-readable error code, present on the specific failure modes that need one
+ */
+export type AuthErrorCode = (typeof AuthErrorCode)[keyof typeof AuthErrorCode];
+
+export const AuthErrorCode = {
+  MFA_REQUIRED: "MFA_REQUIRED",
+  TOKEN_EXPIRED: "TOKEN_EXPIRED",
+  TOKEN_REUSE: "TOKEN_REUSE",
+} as const;

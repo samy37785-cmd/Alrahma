@@ -6,7 +6,10 @@
  *
  * OpenAPI spec version: 0.1.0
  */
+import type { AuthErrorCode } from "./authErrorCode";
 
-export interface HealthStatus {
-  status: string;
+export interface AuthError {
+  message: string;
+  /** Stable machine-readable error code, present on the specific failure modes that need one */
+  code?: AuthErrorCode;
 }

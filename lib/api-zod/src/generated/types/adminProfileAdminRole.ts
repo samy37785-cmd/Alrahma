@@ -7,6 +7,12 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface HealthStatus {
-  status: string;
-}
+export type AdminProfileAdminRole =
+  (typeof AdminProfileAdminRole)[keyof typeof AdminProfileAdminRole];
+
+export const AdminProfileAdminRole = {
+  "super-admin": "super-admin",
+  admin: "admin",
+  editor: "editor",
+  viewer: "viewer",
+} as const;

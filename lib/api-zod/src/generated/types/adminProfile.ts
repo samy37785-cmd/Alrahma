@@ -6,7 +6,9 @@
  *
  * OpenAPI spec version: 0.1.0
  */
+import type { AdminProfileAdmin } from "./adminProfileAdmin";
 
-export interface HealthStatus {
-  status: string;
+export interface AdminProfile {
+  message?: string;
+  admin?: AdminProfileAdmin;
 }

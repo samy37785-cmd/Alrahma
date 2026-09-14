@@ -7,6 +7,10 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface HealthStatus {
-  status: string;
-}
+export type AdminLoginStageResultStage =
+  (typeof AdminLoginStageResultStage)[keyof typeof AdminLoginStageResultStage];
+
+export const AdminLoginStageResultStage = {
+  mfa: "mfa",
+  mfa_setup: "mfa_setup",
+} as const;

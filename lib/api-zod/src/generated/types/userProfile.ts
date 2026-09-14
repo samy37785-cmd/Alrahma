@@ -7,6 +7,12 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface HealthStatus {
-  status: string;
+/**
+ * A regular user. `role` is always normalized to `"user"` on the frontend contract; the raw storage-layer value here is legacy and never admin-granting.
+ */
+export interface UserProfile {
+  _id: string;
+  name: string;
+  email: string;
+  role?: string;
 }

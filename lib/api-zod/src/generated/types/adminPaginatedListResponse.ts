@@ -7,6 +7,12 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface HealthStatus {
-  status: string;
+/**
+ * Standard /v1/admin/* list envelope (utils/pagination.js's sendPaginated()) — used by every admin list endpoint under both the default MongoDB backend and DATA_BACKEND=supabase alike.
+ */
+export interface AdminPaginatedListResponse {
+  data: unknown[];
+  total: number;
+  page: number;
+  pages: number;
 }

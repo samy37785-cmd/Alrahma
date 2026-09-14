@@ -7,6 +7,17 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface HealthStatus {
-  status: string;
+export interface AdminLiveClass {
+  _id?: string;
+  /** Populated {name,email} object under Mongo; a raw teacher id (or null) under Supabase. */
+  teacher?: unknown | null;
+  student?: unknown | null;
+  title?: string;
+  startsAt?: string;
+  durationMin?: number;
+  meetingUrl?: string | null;
+  notes?: string | null;
+  status?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }

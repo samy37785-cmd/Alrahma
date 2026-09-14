@@ -6,7 +6,11 @@
  *
  * OpenAPI spec version: 0.1.0
  */
+import type { AdminForbiddenErrorCode } from "./adminForbiddenErrorCode";
 
-export interface HealthStatus {
-  status: string;
+export interface AdminForbiddenError {
+  message: string;
+  code?: AdminForbiddenErrorCode;
+  /** Present when the 403 is an RBAC permission failure (requirePermissions) — the permission(s) that were missing */
+  required?: string[];
 }

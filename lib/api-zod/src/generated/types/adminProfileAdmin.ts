@@ -6,7 +6,12 @@
  *
  * OpenAPI spec version: 0.1.0
  */
+import type { AdminProfileAdminRole } from "./adminProfileAdminRole";
 
-export interface HealthStatus {
-  status: string;
-}
+export type AdminProfileAdmin = {
+  id?: string;
+  name?: string;
+  email?: string;
+  role?: AdminProfileAdminRole;
+  permissions?: string[];
+};

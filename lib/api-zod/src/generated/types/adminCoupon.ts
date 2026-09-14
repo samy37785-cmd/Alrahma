@@ -7,6 +7,15 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface HealthStatus {
-  status: string;
+export interface AdminCoupon {
+  _id?: string;
+  code?: string;
+  description?: string;
+  discountType?: string;
+  discountValue?: number;
+  maxUses?: number | null;
+  applicablePlans?: string[];
+  minOrderAmount?: number;
+  validUntil?: string | null;
+  active?: boolean;
 }

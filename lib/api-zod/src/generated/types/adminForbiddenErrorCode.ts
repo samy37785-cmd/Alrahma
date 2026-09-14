@@ -7,6 +7,9 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface HealthStatus {
-  status: string;
-}
+export type AdminForbiddenErrorCode =
+  (typeof AdminForbiddenErrorCode)[keyof typeof AdminForbiddenErrorCode];
+
+export const AdminForbiddenErrorCode = {
+  MFA_REQUIRED: "MFA_REQUIRED",
+} as const;

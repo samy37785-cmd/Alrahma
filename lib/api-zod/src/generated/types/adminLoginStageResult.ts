@@ -6,7 +6,9 @@
  *
  * OpenAPI spec version: 0.1.0
  */
+import type { AdminLoginStageResultStage } from "./adminLoginStageResultStage";
 
-export interface HealthStatus {
-  status: string;
+export interface AdminLoginStageResult {
+  message?: string;
+  stage?: AdminLoginStageResultStage;
 }

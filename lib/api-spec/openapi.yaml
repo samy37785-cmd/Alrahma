@@ -3,13 +3,27 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: >
+    API specification. Auth model: regular users and admins are two
+    separate systems (see docs/user-admin-auth-contract.md). Regular-user
+    sessions are an httpOnly `token` cookie (utils/authCookie.js); admin
+    sessions are a separate httpOnly `admin_at`/`admin_rt` cookie pair,
+    reached only through password + TOTP MFA (middleware/adminAuth.js).
+    Neither session's JWT is ever returned in a response body — only as an
+    httpOnly cookie. Every mutating request additionally requires a CSRF
+    token: a readable `csrf_token` cookie (issued by `GET /csrf` or any
+    prior response) echoed back as the `X-CSRF-Token` header
+    (middleware/csrf.js).
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Regular-user authentication (httpOnly `token` cookie)
+  - name: admin-auth
+    description: Admin authentication — password + TOTP MFA (httpOnly `admin_at`/`admin_rt` cookies)
 paths:
   /healthz:
     get:
@@ -24,13 +38,710 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /csrf:
+    get:
+      operationId: getCsrfToken
+      tags: [auth]
+      summary: Issue a CSRF cookie
+      description: >
+        DB-free, safe-method endpoint that sets a readable `csrf_token`
+        cookie. Call this once before the first mutating request in a
+        session (e.g. right after page load) — mutating requests without a
+        matching `X-CSRF-Token` header are rejected with 403.
+      responses:
+        "200":
+          description: CSRF cookie issued
+          headers:
+            Set-Cookie:
+              description: |
+                csrf_token=<token>; Path=/; SameSite=Strict[; Secure] — readable
+                by JavaScript (not httpOnly), so the frontend can echo it back.
+              schema: { type: string }
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: { ok: { type: boolean } }
+
+  /auth/register:
+    post:
+      operationId: registerUser
+      tags: [auth]
+      summary: Register a new regular-user account
+      description: >
+        Public sign-up. Any `role`/`accountType` field sent by the client
+        is ignored entirely — every account is created as a plain regular
+        user. Public registration can never create an `admin`, `parent`,
+        or `teacher` account; `admin` status is reachable only through the
+        separate AdminUser + MFA system, never through this endpoint or
+        any value in this request body.
+      security: [{ csrfHeader: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RegisterUserRequest" }
+      responses:
+        "201":
+          description: Account created; `token` session cookie set (httpOnly, no JWT in the body)
+          headers:
+            Set-Cookie: { $ref: "#/components/headers/RegularSessionCookie" }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UserProfile" }
+        "409":
+          description: An account with that email already exists
+        "422":
+          description: Validation failed (missing/malformed name, email, or password)
+
+  /auth/login:
+    post:
+      operationId: loginUser
+      tags: [auth]
+      summary: Log in
+      security: [{ csrfHeader: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LoginUserRequest" }
+      responses:
+        "200":
+          description: Logged in; `token` session cookie set
+          headers:
+            Set-Cookie: { $ref: "#/components/headers/RegularSessionCookie" }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UserProfile" }
+        "401":
+          description: Invalid email or password
+        "403":
+          description: Missing/invalid CSRF token
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CsrfError" }
+
+  /auth/logout:
+    post:
+      operationId: logoutUser
+      tags: [auth]
+      summary: Log out — clears the regular-session cookie
+      security: [{ regularSessionCookie: [], csrfHeader: [] }]
+      responses:
+        "200": { description: Logged out }
+        "403":
+          description: Missing/invalid CSRF token
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CsrfError" }
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get the current regular user
+      security: [{ regularSessionCookie: [] }]
+      responses:
+        "200":
+          description: Current user profile
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UserProfile" }
+        "401":
+          description: Not authenticated (no/invalid/expired `token` cookie)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AuthError" }
+
+  /v1/admin/auth/login:
+    post:
+      operationId: adminLogin
+      tags: [admin-auth]
+      summary: Admin — password check (stage 1 of 2)
+      description: >
+        Verifies email + password only. Never itself grants access to
+        `/v1/admin/*` — the response's `stage` field is `"mfa"` (MFA
+        already enabled — call `/v1/admin/auth/mfa/verify` next) or
+        `"mfa_setup"` (first login — call `/v1/admin/auth/mfa/setup` then
+        `/mfa/confirm`). A short-lived, pre-auth `admin_at` cookie is set
+        either way; it carries no usable access until a TOTP step also
+        succeeds — middleware/adminAuth.js explicitly rejects any pre-auth
+        (`stage` present) token on every protected route with 403
+        `MFA_REQUIRED`.
+      security: [{ csrfHeader: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AdminLoginRequest" }
+      responses:
+        "200":
+          description: Password verified; proceed to the indicated MFA stage
+          headers:
+            Set-Cookie: { $ref: "#/components/headers/AdminPreAuthCookie" }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminLoginStageResult" }
+        "401": { description: Invalid email or password }
+        "403":
+          description: Missing/invalid CSRF token
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CsrfError" }
+        "429": { description: Rate-limited (tight admin-specific budget) }
+
+  /v1/admin/auth/mfa/verify:
+    post:
+      operationId: adminMfaVerify
+      tags: [admin-auth]
+      summary: Admin — TOTP verification (stage 2, MFA already enabled)
+      security: [{ csrfHeader: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AdminMfaVerifyRequest" }
+      responses:
+        "200":
+          description: >
+            Full, MFA-cleared admin session established — a real `admin_at`
+            + `admin_rt` cookie pair is set. No JWT is ever present in this
+            or any other response body.
+          headers:
+            Set-Cookie: { $ref: "#/components/headers/AdminSessionCookies" }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminProfile" }
+        "401":
+          description: Wrong TOTP code
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AuthError" }
+
+  /v1/admin/auth/refresh:
+    post:
+      operationId: adminRefresh
+      tags: [admin-auth]
+      summary: Rotate the admin refresh token
+      description: >
+        Path-restricted cookie — the browser only ever sends `admin_rt` on
+        this route and `POST /v1/admin/auth/logout`, nowhere else under
+        `/v1/admin`. One-time use: presenting an already-rotated or revoked
+        token is treated as reuse/theft and revokes every token in that
+        session's family, even under concurrent/racing requests for the
+        same token (only one concurrent presentation of a given token can
+        ever win). A caller still holding an `admin_rt` set before the
+        Path above was widened from `/v1/admin/auth/refresh` (its own,
+        narrower former scope) is still accepted here — that older Path is
+        a strict subset of the current one — and this response migrates it:
+        an explicit clearing `Set-Cookie` for the old Path accompanies the
+        new one, so the two never coexist.
+      security: [{ csrfHeader: [] }]
+      responses:
+        "200":
+          description: New `admin_at` + `admin_rt` cookie pair issued
+          headers:
+            Set-Cookie: { $ref: "#/components/headers/AdminSessionCookies" }
+        "401":
+          description: Missing, expired, or reused/revoked refresh token
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AuthError" }
+
+  /v1/admin/auth/logout:
+    post:
+      operationId: adminLogout
+      tags: [admin-auth]
+      summary: Admin logout — revokes every session for this admin and clears cookies
+      description: >
+        Reachable even when `admin_at` has already expired — this is the
+        one admin route that does not require a still-valid access token,
+        since an idle/expired session must always be able to trigger a real
+        server-side logout — and even when MongoDB itself is unreachable
+        (under the default backend): the route is exempted from this API's
+        usual DB-connectivity gate, and every DB-backed step inside it is
+        independently best-effort, so cookies are always cleared locally
+        regardless of what did or didn't succeed above. Under the default
+        MongoDB backend, identifies the admin either via `admin_rt`
+        (Path=`/v1/admin/auth`, so it DOES reach this route — its stored
+        refresh-token record is the most authoritative proof of session
+        ownership available) or, when that is absent, via `admin_at` even
+        if its `exp` has already passed — but only within a short, bounded
+        grace window past that `exp` (2 minutes): an admin_at expired
+        further back than that identifies no one, so a credential an
+        admin's browser discarded long ago can never be replayed to revoke
+        sessions created afterward. This admin-identification step itself
+        (an `AdminUser.findById` / `loadAdminById` lookup, depending on
+        backend) is also best-effort: a lookup failure (a dropped DB
+        connection mid-request, not just an already-down DB) is logged and
+        treated the same as "no admin identified", never as a reason to 500
+        before the request reaches this route's own cookie-clearing at all.
+        Either way every refresh-token family for that admin is revoked, not
+        just one session's. Also migrates a pre-Path-widening `admin_rt`
+        exactly like `POST /v1/admin/auth/refresh` does — see that
+        operation's own description.
+
+
+        Under DATA_BACKEND=supabase, revokes via GoTrue instead: `admin_sat`
+        (the raw GoTrue access token, Path=`/v1/admin`) is tried first when
+        present, and — since it shares `admin_at`'s own short window and may
+        equally well have expired by the time this runs — falls back to
+        redeeming `admin_rt` (a real GoTrue refresh token) for a fresh
+        access token purely to revoke with, when `admin_sat` is missing or
+        GoTrue rejects it. That redemption call goes straight to GoTrue's
+        own `/token?grant_type=refresh_token` REST endpoint (not through a
+        supabase-js client) specifically so it can be bounded by a real,
+        `AbortController`-driven timeout — the in-flight network request is
+        actually cancelled when the timeout fires, not merely abandoned
+        behind a `Promise.race`. Both this call and the `admin_sat` revoke
+        call share the same bound: `ADMIN_GOTRUE_LOGOUT_TIMEOUT_MS` (default
+        5000ms). The fresh access token this redemption yields is used ONLY
+        to call GoTrue's revoke endpoint — it (and its paired refresh token)
+        is never cookied back to the caller; a client asking to log out must
+        never receive a freshly-live session in the same response that
+        claims to have ended it.
+
+
+        Failure classification for the `admin_rt` redemption call is
+        deliberately narrow: it is read as "nothing left to revoke" (no
+        failure) ONLY when GoTrue's own response explicitly confirms the
+        refresh token itself is dead — an `invalid_grant`-shaped 400/401
+        (GoTrue has used both an `{error, error_description}` and a newer
+        `{error_code, msg}` shape for this across versions; both are
+        recognized). A network error, a timed-out request, an HTTP 5xx, or
+        any response GoTrue was reachable enough to send but that doesn't
+        match that explicit shape are all treated as genuine, unclassified
+        failures — never silently reported as a successful logout.
+
+
+        When BOTH credentials are tried, a failed `admin_sat` attempt is
+        never erased by what `admin_rt` separately reports: it is superseded
+        ONLY when the `admin_rt` fallback goes on to perform an actual,
+        successful GoTrue revocation (a genuine self-heal). If `admin_sat`
+        failed and `admin_rt` merely turns out to be its own separate
+        "nothing left to revoke" (the explicit `invalid_grant` case above),
+        that does NOT retroactively turn the `admin_sat` failure into a
+        success — an admin_sat-tied GoTrue session this call could not
+        reach is a real, unresolved failure regardless of admin_rt's
+        unrelated state, and is reported as such (`upstreamRevocationFailed:
+        true`, logged, and audited). This distinction only matters when
+        `admin_sat` was actually attempted and failed; when it was absent
+        entirely, an explicitly-dead `admin_rt` is still read the same way
+        as always — nothing was ever there to revoke.
+
+
+        Under DATA_BACKEND=supabase specifically: the GoTrue revocation
+        call always uses `scope=global`, which signs the admin out of
+        EVERY device/session GoTrue has for that account, not just the one
+        this request came from. It does NOT invalidate the `admin_sat`
+        access-token JWT already issued to this browser — like any
+        stateless JWT it stays cryptographically valid until its own
+        `exp` (15 minutes) regardless of this call's outcome; revocation
+        only prevents that session from ever being refreshed again. A
+        failed upstream revocation, by the classification above, never
+        fails this request or leaves this app's own cookies uncleared —
+        cookie-clearing runs unconditionally in a `finally` block covering
+        the whole revoke-and-audit sequence, so it still runs even given a
+        genuinely unforeseen error along the way, not just the specific
+        failure modes anticipated above. Every failure is instead logged
+        and, when the caller's admin identity is known, audited, and the
+        response body carries `upstreamRevocationFailed: true` so a caller
+        that cares can observe it. The same "always clear cookies locally"
+        guarantee applies to an audit-log write failure and to a DB/lookup
+        failure, on either backend — every one of them is logged, never
+        allowed to block the response.
+      security: [{ csrfHeader: [] }]
+      responses:
+        "200":
+          description: Logged out; entire refresh-token family (or GoTrue session) revoked
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminLogoutResult" }
+        "403":
+          description: Missing/invalid CSRF token
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CsrfError" }
+
+  # Every route under /v1/admin requires BOTH a fully MFA-cleared admin_at
+  # session (verifyAccessToken) AND the specific RBAC permission that route
+  # declares (requirePermissions(...) — see models/AdminUser.js's
+  # ROLE_PERMISSIONS). A regular user's `token` session cookie is never
+  # accepted here, under any circumstance, including a regular User document
+  # whose `role` field is literally "admin" — that field has no bearing on
+  # this API at all. The paths below are real, literal routes (not a
+  # templated placeholder) covering each shape this tree uses; the full
+  # resource list (courses, payments, blog, contact, certificates,
+  # referrals, reviews, system, subscribers, …) lives in
+  # routes/v1/admin/index.js and follows the same two response shapes shown
+  # here: a paginated list envelope, or a single-resource object.
+  /v1/admin/users:
+    get:
+      operationId: adminListUsers
+      tags: [admin-auth]
+      summary: Admin — list users (requires users:read)
+      security: [{ adminSessionCookie: [] }]
+      responses:
+        "200":
+          description: Paginated user list
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminPaginatedListResponse" }
+        "401":
+          description: No/invalid/expired admin_at cookie, or MFA_REQUIRED
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AuthError" }
+        "403":
+          description: Missing the users:read RBAC permission
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminForbiddenError" }
+
+  /v1/admin/live-classes:
+    get:
+      operationId: adminListLiveClasses
+      tags: [admin-auth]
+      summary: Admin — list live classes (any admin session; no extra permission)
+      description: >
+        Returns the standard `{ data, total, page, pages }` envelope under
+        BOTH the default MongoDB backend and DATA_BACKEND=supabase —
+        unified deliberately (a prior version returned a bare array under
+        MongoDB only, crashing the admin frontend's list rendering under
+        Supabase mode).
+      security: [{ adminSessionCookie: [] }]
+      responses:
+        "200":
+          description: Paginated live-class list
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminPaginatedListResponse" }
+        "401":
+          description: No/invalid/expired admin_at cookie, or MFA_REQUIRED
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AuthError" }
+    post:
+      operationId: adminCreateLiveClass
+      tags: [admin-auth]
+      summary: Admin — schedule a live class (requires live_classes:write)
+      description: >
+        `teacher` is optional under both backends — an admin-scheduled
+        class has no regular-user teacher identity to assign (AdminUser/
+        the admin session is architecturally separate from User/profiles).
+        Omitting it stores `teacher: null` (Mongo) / `teacher_id: NULL`
+        (Postgres — see lib/db/drizzle/0026_live_classes_nullable_teacher.sql).
+      security: [{ adminSessionCookie: [], csrfHeader: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AdminCreateLiveClassRequest" }
+      responses:
+        "201":
+          description: Class created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminLiveClass" }
+        "400": { description: "Missing/invalid fields: student, title, and startsAt are required; startsAt must be a valid date" }
+        "401":
+          description: No/invalid/expired admin_at cookie, or MFA_REQUIRED
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AuthError" }
+        "403":
+          description: Missing the live_classes:write RBAC permission, or a missing/invalid CSRF token
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminForbiddenError" }
+
+  /v1/admin/trials:
+    get:
+      operationId: adminListTrials
+      tags: [admin-auth]
+      summary: Admin — list trial bookings (requires users:read)
+      description: >
+        MongoDB-backend only as of this writing — under
+        DATA_BACKEND=supabase this returns `501 NOT_IMPLEMENTED_FOR_BACKEND`
+        (no Postgres adapter exists yet for this resource;
+        middleware/backendNotImplemented.js), never a silent hang or an
+        unrelated 500.
+      security: [{ adminSessionCookie: [] }]
+      responses:
+        "200":
+          description: Trial-booking list (bare array — legacy shape, unchanged from before this route's migration)
+        "401":
+          description: No/invalid/expired admin_at cookie, or MFA_REQUIRED
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AuthError" }
+        "501":
+          description: DATA_BACKEND=supabase — no adapter implemented for this resource yet
+
+  /v1/admin/coupons:
+    get:
+      operationId: adminListCoupons
+      tags: [admin-auth]
+      summary: Admin — list coupons (requires coupons:write)
+      description: >
+        Review follow-up: this does NOT use the standard
+        AdminPaginatedListResponse `{ data, ... }` envelope every other
+        admin list endpoint on this page uses. Both backends'
+        listCoupons() (controllers/couponController.js and
+        data/supabase/admin/couponsAdminController.js) predate that
+        convention and already agree with each other on a `{ coupons, ... }`
+        key instead — documented as it actually behaves rather than forced
+        to match a shape neither implementation returns.
+      security: [{ adminSessionCookie: [] }]
+      responses:
+        "200":
+          description: Coupon list
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminCouponListResponse" }
+        "401":
+          description: No/invalid/expired admin_at cookie, or MFA_REQUIRED
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AuthError" }
+        "403":
+          description: Missing the coupons:write RBAC permission
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminForbiddenError" }
+
+  /v1/admin/invoices:
+    get:
+      operationId: adminListInvoices
+      tags: [admin-auth]
+      summary: Admin — list invoices (requires payments:read)
+      description: >
+        The canonical admin invoice listing. `GET /invoices/admin` (the
+        old, regular-session-gated location) no longer exists; it now
+        returns `410 ADMIN_ROUTE_MOVED` unconditionally, pointing here.
+      security: [{ adminSessionCookie: [] }]
+      responses:
+        "200":
+          description: Invoice list
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminPaginatedListResponse" }
+        "401":
+          description: No/invalid/expired admin_at cookie, or MFA_REQUIRED
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AuthError" }
+        "403":
+          description: Missing the payments:read RBAC permission
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminForbiddenError" }
+
 components:
+  securitySchemes:
+    regularSessionCookie:
+      type: apiKey
+      in: cookie
+      name: token
+      description: httpOnly, SameSite=Lax[, Secure in production]. Never readable by JavaScript, never present in any response body.
+    adminSessionCookie:
+      type: apiKey
+      in: cookie
+      name: admin_at
+      description: >
+        httpOnly, SameSite=Strict[, Secure in production], Path=/api/v1/admin,
+        15-minute lifetime. Paired with a separate `admin_rt` cookie,
+        Path=/api/v1/admin/auth (covers login/mfa/refresh/logout — never any
+        other admin route), 7-day lifetime. Neither cookie's value is ever
+        present in a response body. `POST /v1/admin/auth/logout` is the one
+        route that does NOT require a still-valid (non-expired) `admin_at` —
+        see that operation's own description.
+    csrfHeader:
+      type: apiKey
+      in: header
+      name: X-CSRF-Token
+      description: Required on every mutating (non-GET/HEAD/OPTIONS) request; must match the readable `csrf_token` cookie (double-submit pattern).
+  headers:
+    RegularSessionCookie:
+      description: >
+        token=<jwt>; HttpOnly; SameSite=Lax[; Secure] — never exposed to
+        JavaScript, never repeated in the response body. Lax (not Strict,
+        unlike the admin cookies below) so a top-level navigation from an
+        external link/email still carries the session — see
+        utils/authCookie.js's authCookieOptions().
+      schema: { type: string }
+    AdminPreAuthCookie:
+      description: admin_at=<pre-auth jwt>; HttpOnly; SameSite=Strict[; Secure]; Path=/api/v1/admin — carries a `stage` claim; rejected by every protected admin route until MFA completes.
+      schema: { type: string }
+    AdminSessionCookies:
+      description: admin_at (Path=/api/v1/admin) and admin_rt (Path=/api/v1/admin/auth) — both HttpOnly, SameSite=Strict[, Secure]. Never present in any response body.
+      schema: { type: string }
   schemas:
     HealthStatus:
       type: object
       properties:
-        status:
+        status: { type: string }
+      required: [status]
+    RegisterUserRequest:
+      type: object
+      description: >
+        No `role`/`accountType` field exists on this contract at all — the
+        backend ignores any such field if a caller sends one anyway (see
+        controllers/authController.js's register()).
+      required: [name, email, password]
+      properties:
+        name: { type: string }
+        email: { type: string }
+        password: { type: string, minLength: 8 }
+    LoginUserRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string }
+        password: { type: string }
+    AdminLoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string }
+        password: { type: string }
+    AdminLoginStageResult:
+      type: object
+      properties:
+        message: { type: string }
+        stage: { type: string, enum: [mfa, mfa_setup] }
+    AdminMfaVerifyRequest:
+      type: object
+      required: [token]
+      properties:
+        token: { type: string, description: 6-digit TOTP code }
+    UserProfile:
+      type: object
+      description: A regular user. `role` is always normalized to `"user"` on the frontend contract; the raw storage-layer value here is legacy and never admin-granting.
+      properties:
+        _id: { type: string }
+        name: { type: string }
+        email: { type: string }
+        role: { type: string }
+      required: [_id, name, email]
+    AdminProfile:
+      type: object
+      properties:
+        message: { type: string }
+        admin:
+          type: object
+          properties:
+            id: { type: string }
+            name: { type: string }
+            email: { type: string }
+            role: { type: string, enum: [super-admin, admin, editor, viewer] }
+            permissions:
+              type: array
+              items: { type: string }
+    AuthError:
+      type: object
+      properties:
+        message: { type: string }
+        code:
           type: string
-      required:
-        - status
-
+          description: Stable machine-readable error code, present on the specific failure modes that need one
+          enum: [MFA_REQUIRED, TOKEN_EXPIRED, TOKEN_REUSE]
+      required: [message]
+    AdminForbiddenError:
+      type: object
+      properties:
+        message: { type: string }
+        code: { type: string, enum: [MFA_REQUIRED] }
+        required: { type: array, items: { type: string }, description: "Present when the 403 is an RBAC permission failure (requirePermissions) — the permission(s) that were missing" }
+      required: [message]
+    CsrfError:
+      type: object
+      properties:
+        message: { type: string }
+      required: [message]
+    AdminLogoutResult:
+      type: object
+      properties:
+        message: { type: string }
+        upstreamRevocationFailed:
+          type: boolean
+          description: >
+            DATA_BACKEND=supabase only. Present (and true) only when the
+            upstream GoTrue revocation call failed — this app's own
+            cookies are cleared either way, so this is purely an
+            observability signal, not an indication the request itself
+            failed (it still returns 200).
+      required: [message]
+    AdminCreateLiveClassRequest:
+      type: object
+      required: [student, title, startsAt]
+      properties:
+        teacher:
+          type: string
+          nullable: true
+          description: Optional — omit entirely for an admin-scheduled class with no teacher identity to assign.
+        student:     { type: string }
+        title:       { type: string }
+        startsAt:    { type: string, description: ISO 8601 date-time }
+        durationMin: { type: number, description: "Minutes, 5-240. Defaults to 30." }
+        meetingUrl:  { type: string, nullable: true }
+        notes:       { type: string, nullable: true }
+    AdminLiveClass:
+      type: object
+      properties:
+        _id:         { type: string }
+        teacher:     { nullable: true, description: "Populated {name,email} object under Mongo; a raw teacher id (or null) under Supabase." }
+        student:     { nullable: true }
+        title:       { type: string }
+        startsAt:    { type: string }
+        durationMin: { type: number }
+        meetingUrl:  { type: string, nullable: true }
+        notes:       { type: string, nullable: true }
+        status:      { type: string }
+        createdAt:   { type: string }
+        updatedAt:   { type: string }
+    AdminCoupon:
+      type: object
+      properties:
+        _id:            { type: string }
+        code:           { type: string }
+        description:    { type: string }
+        discountType:   { type: string }
+        discountValue:  { type: number }
+        maxUses:        { type: number, nullable: true }
+        applicablePlans: { type: array, items: { type: string } }
+        minOrderAmount: { type: number }
+        validUntil:     { type: string, nullable: true }
+        active:         { type: boolean }
+    AdminCouponListResponse:
+      type: object
+      description: >
+        Deliberately NOT the AdminPaginatedListResponse `{ data, ... }`
+        shape — see GET /v1/admin/coupons's own description.
+      properties:
+        coupons: { type: array, items: { $ref: "#/components/schemas/AdminCoupon" } }
+        total:   { type: number }
+        page:    { type: number }
+        pages:   { type: number }
+      required: [coupons, total, page, pages]
+    AdminPaginatedListResponse:
+      type: object
+      description: >
+        Standard /v1/admin/* list envelope (utils/pagination.js's
+        sendPaginated()) — used by every admin list endpoint under both the
+        default MongoDB backend and DATA_BACKEND=supabase alike.
+      properties:
+        data:
+          type: array
+          items: {}
+        # `number`, not `integer` — the installed zod version (3.x) codegens
+        # OpenAPI `integer` as the zod-v4-only `z.int()` helper, which does
+        # not exist on this project's zod, the same class of version
+        # mismatch already worked around elsewhere in this spec (see the
+        # removed `format: email` history). These are always whole numbers
+        # in practice; the schema just can't say so via `integer` yet.
+        total: { type: number }
+        page: { type: number }
+        pages: { type: number }
+      required: [data, total, page, pages]

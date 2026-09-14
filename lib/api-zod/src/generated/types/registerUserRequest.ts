@@ -7,6 +7,12 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface HealthStatus {
-  status: string;
+/**
+ * No `role`/`accountType` field exists on this contract at all — the backend ignores any such field if a caller sends one anyway (see controllers/authController.js's register()).
+ */
+export interface RegisterUserRequest {
+  name: string;
+  email: string;
+  /** @minLength 8 */
+  password: string;
 }

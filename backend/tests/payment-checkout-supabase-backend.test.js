@@ -153,9 +153,34 @@ test('DATA_BACKEND=supabase: PayPal webhook stays mounted and live — rejects a
   assert.equal(res.status, 400);
 });
 
-test('DATA_BACKEND=supabase: coupon admin listing route is still mounted (401/403 for an unauthenticated caller, never 410 — historical/admin functionality is not closed)', async () => {
+// Updated by the auth hardening security batch: GET /api/coupons
+// (protect+adminOnly, keyed off a regular customer session) was itself
+// closed under Supabase mode too — the same class of gap this batch fixed
+// on the Mongo side. Admin listing now lives at /api/v1/admin/coupons
+// (data/supabase/admin/couponsAdminController.js's listCoupons), reachable
+// only with a real AdminUser session — never 410 (it's not a payment
+// route), never a live regular-session-reachable admin listing either.
+test('DATA_BACKEND=supabase: legacy GET /api/coupons admin listing route no longer exists (404, not 410 — historical/admin functionality was migrated, not payment-disabled)', async () => {
   const { agent } = await agentWithCsrf();
   const res = await agent.get('/api/coupons');
   assert.notEqual(res.status, 410);
-  assert.ok([401, 403].includes(res.status), `expected 401/403 for an unauthenticated admin-only route, got ${res.status}`);
+  assert.equal(res.status, 404);
+});
+
+test('DATA_BACKEND=supabase: GET /api/v1/admin/coupons (the real replacement) rejects an unauthenticated caller with 401', async () => {
+  const { agent } = await agentWithCsrf();
+  const res = await agent.get('/api/v1/admin/coupons');
+  assert.equal(res.status, 401);
+});
+
+// Review follow-up: same fix as the Mongo mirror (routes/invoiceRoutes.js) —
+// data/supabase/routes/invoiceRoutes.js previously had no explicit /admin
+// route either, so "admin" fell through to GET /:id and would have hit a
+// Postgres invalid-UUID cast error (or similar) instead of a clean,
+// deliberate response for a stale client still hitting the old admin URL.
+test('DATA_BACKEND=supabase: legacy GET /api/invoices/admin returns an explicit 410, never a cast-error-shaped 500', async () => {
+  const { agent } = await agentWithCsrf();
+  const res = await agent.get('/api/invoices/admin');
+  assert.equal(res.status, 410);
+  assert.equal(res.body.error, 'ADMIN_ROUTE_MOVED');
 });

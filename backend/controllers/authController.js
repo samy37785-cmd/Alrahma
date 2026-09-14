@@ -43,12 +43,31 @@ export const loginValidation = [
 export const register = asyncHandler(async (req, res) => {
   if (handleValidationErrors(req, res)) return;
 
-  const { name, password, role } = req.body;
+  const { name, password } = req.body;
   const email = normEmail(req.body.email);
 
-  // Public sign-up may only create a student or a parent account.
-  // Teacher/admin accounts are created by an admin.
-  const safeRole = role === 'parent' ? 'parent' : 'student';
+  // Security batch (auth hardening): public registration MUST NOT be able to
+  // elevate or otherwise choose its own account type. Any `role`/`accountType`
+  // the client sends is read here only to be discarded — never passed to
+  // User.create(). This used to accept `role: 'parent'` from the client
+  // (`role === 'parent' ? 'parent' : 'student'`), which meant a public
+  // registration payload could actually mint a `parent` account; `admin`/
+  // `teacher` were already unreachable this way, but `parent` was a real,
+  // live self-elevation path. It is closed now: every public account is
+  // created with the storage-layer role `'student'`, unconditionally.
+  //
+  // Storage name vs. public contract: `User.role`'s DB values remain
+  // `student`/`teacher`/`parent`/`admin` (models/User.js) — that enum is
+  // unchanged here since widening/renaming it would be a schema migration
+  // this fix does not need. But every public-facing contract (this endpoint,
+  // the frontend's `src/utils/accountRoles.js`, docs/user-admin-auth-
+  // contract.md) treats every non-admin account as a single generic `user`.
+  // `'student'` is that contract's one storage-layer representative — not a
+  // real "you are a student" claim — exactly as `teacher`/`parent` account
+  // types are already retired product-side (see the auth contract doc's
+  // target-contract §2). `admin` is never reachable from this endpoint at
+  // all, under any input, matching the target contract's rule that admin is
+  // proven exclusively by a real `AdminUser` + MFA session.
 
   const exists = await User.findOne({ email }).lean();
   if (exists) {
@@ -56,7 +75,7 @@ export const register = asyncHandler(async (req, res) => {
     throw new Error('An account with that email already exists. Try signing in instead.');
   }
 
-  const user = await User.create({ name, email, password, role: safeRole });
+  const user = await User.create({ name, email, password, role: 'student' });
   sendAuth(res, user, 201);
 });
 

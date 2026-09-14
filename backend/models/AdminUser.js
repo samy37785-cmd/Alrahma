@@ -19,6 +19,19 @@ export const ALL_PERMISSIONS = [
   // viewer split existed for these resources before the migration).
   'blog:write','coupons:write','contact:write',
   'certificates:write','referrals:write','reviews:write',
+  // Auth hardening security batch: closes the remaining legacy
+  // protect+adminOnly/staffOnly admin-data-read and live-class-mutation
+  // endpoints (see backend/routes/{trialRoutes,subscriberRoutes,hifzRoutes,
+  // progressRoutes,liveClassRoutes}.js and the new v1/admin routers) —
+  // these previously had NO RBAC permission at all, only a regular-session
+  // `User.role === 'admin'` check, which is exactly the defect this batch
+  // closes. `certificates:read` is new (certificates:write already existed
+  // for issue/revoke); the hifz/progress/trials/subscribers admin reads
+  // reuse the existing, already-broad `users:read` instead of minting a
+  // narrow permission per resource. `live_classes:write` mirrors the
+  // Supabase admin adapter's identical permission name (data/supabase/
+  // admin/adminRoutes.js) so both backends share one RBAC vocabulary.
+  'certificates:read','live_classes:write',
 ];
 
 // Default permissions bundled with each role
@@ -32,6 +45,7 @@ export const ROLE_PERMISSIONS = {
     'audit:read',
     'blog:write','coupons:write','contact:write',
     'certificates:write','referrals:write','reviews:write',
+    'certificates:read','live_classes:write',
   ],
   'editor': [
     'courses:read','courses:write',
@@ -45,7 +59,7 @@ export const ROLE_PERMISSIONS = {
   ],
   'viewer': [
     'users:read','courses:read','payments:read',
-    'enrollments:read','audit:read',
+    'enrollments:read','audit:read','certificates:read',
   ],
 };
 

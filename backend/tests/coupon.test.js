@@ -176,14 +176,18 @@ test('createCoupon: a duplicate code is rejected with 409 (unique index)', async
   assert.equal(res.status, 409);
 });
 
-test('listCoupons: returns real, previously-created coupons (legacy read route, unaffected by the mutation migration)', async () => {
+test('listCoupons: returns real, previously-created coupons — migrated to /api/v1/admin/coupons by the auth hardening security batch (the legacy GET /api/coupons, protect+adminOnly, no longer exists)', async () => {
   await Coupon.create({ code: 'LIST1', discountType: 'percent', discountValue: 10 });
   await Coupon.create({ code: 'LIST2', discountType: 'fixed', discountValue: 5 });
 
-  const { agent, csrf } = await makeAdminAgent();
-  const res = await agent.get('/api/coupons').set(csrf);
+  const { agent, csrf, cookieHeader } = await adminUserAgent();
+  const res = await agent.get('/api/v1/admin/coupons').set({ ...csrf, Cookie: cookieHeader });
   assert.equal(res.status, 200);
   assert.equal(res.body.total, 2);
+
+  const legacy = await makeAdminAgent();
+  const gone = await legacy.agent.get('/api/coupons').set(legacy.csrf);
+  assert.equal(gone.status, 404);
 });
 
 test('deleteCoupon: removes the real document', async () => {

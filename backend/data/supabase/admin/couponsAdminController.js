@@ -7,8 +7,39 @@ import { asyncHandler } from '../../../utils/asyncHandler.js';
 import { handleValidationErrors } from '../../../utils/validationHelper.js';
 import { withUserContext } from '../client.js';
 import { auditAdminAction } from '../adminAuditLog.js';
+import { parsePagination } from '../../../utils/pagination.js';
 
 export { couponValidation, couponUpdateValidation } from '../../../controllers/couponController.js';
+
+// Auth hardening security batch: the admin listing used to live only at
+// GET /api/coupons (data/supabase/routes/couponRoutes.js's legacy
+// protect+adminOnly path, keyed off a regular customer session whose
+// `role`/`account_role` claim said 'admin' — not the real hardened
+// AdminUser + MFA session). Migrated here, into the real admin pipeline;
+// req.adminUser.id is a real Supabase Auth uid under DATA_BACKEND=supabase
+// (see data/supabase/adminAuthController.js), so the same
+// withUserContext()-scoped query works unchanged, just no longer reachable
+// via a regular customer session at all.
+// @route GET /api/v1/admin/coupons
+export const listCoupons = async (req, res) => {
+  const { page, limit, skip } = parsePagination(req.query, { defaultLimit: 100, maxLimit: 200 });
+
+  const { coupons, total } = await withUserContext(req.adminUser.id, async (client) => {
+    const listRes = await client.query(
+      `SELECT c.*, COUNT(cr.user_id)::int AS used_count
+         FROM coupons c
+         LEFT JOIN coupon_redemptions cr ON cr.coupon_id = c.id
+        GROUP BY c.id
+        ORDER BY c.code
+        LIMIT $1 OFFSET $2`,
+      [limit, skip]
+    );
+    const totalRes = await client.query('SELECT count(*)::int AS count FROM coupons');
+    return { coupons: listRes.rows, total: totalRes.rows[0].count };
+  });
+
+  res.json({ coupons: coupons.map(toJson), total, page, pages: Math.ceil(total / limit) });
+};
 
 function toJson(row) {
   return {

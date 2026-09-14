@@ -5,7 +5,14 @@ import mongoose from 'mongoose';
 // each viewer's local timezone, so no timezone is stored on the row.
 const liveClassSchema = new mongoose.Schema(
   {
-    teacher:     { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    // Optional: a class scheduled by a real AdminUser (via the hardened
+    // /api/v1/admin/live-classes stack, not a regular User session) has no
+    // natural regular-User "teacher" to attribute — AdminUser is a
+    // separate collection/model entirely (see docs/user-admin-auth-
+    // contract.md). Every existing consumer already renders this
+    // defensively (`c.teacher?.name || '—'`), so relaxing this from
+    // required is backward-compatible with every prior document.
+    teacher:     { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: false, default: null },
     student:     { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     title:       { type: String, required: true, trim: true },
     startsAt:    { type: Date, required: true },

@@ -35,20 +35,27 @@ pnpm run check:published-migrations  # just the 4 filesystem checksum assertions
 
 Suites, in the order the orchestrator runs them:
 
-- `test/schema.local.test.mjs` — 68 real-SQL assertions (schema, constraints, functions/triggers)
-- `test/rls.local.test.mjs` — 76 real-SQL assertions (specific findings: bypass closure, forgery prevention, AAL boundaries, concurrency, webhook lease + fencing, subscription/invoice/refund RPCs, Booking-First Enrollment's submit_enrollment_booking() RPC)
+- `test/schema.local.test.mjs` — 69 real-SQL assertions (schema, constraints, functions/triggers)
+- `test/rls.local.test.mjs` — 80 real-SQL assertions (specific findings: bypass closure, forgery prevention, AAL boundaries, concurrency, webhook lease + fencing, subscription/invoice/refund RPCs, Booking-First Enrollment's submit_enrollment_booking() RPC, 0026's live_classes nullable-teacher admin/student/non-admin/FK coverage)
 - `test/rls-full-matrix.local.test.mjs` — 70 real-SQL assertions (systematic per-table sweep of docs/rls-matrix.md, incl. plan versioning + invoice issuance sweeps)
 - `test/acl.local.test.mjs` — 20 real-SQL assertions (direct has_table_privilege/has_column_privilege/has_function_privilege checks — proves the GRANT matrix directly, not by inference)
 - `test/upgrade-scenario.local.test.mjs` — 9 real-SQL assertions (self-contained — see below; applies 0000-0003, injects legacy drift, then applies the rest and proves it's cleaned up)
 
-**247 real-SQL/filesystem assertions total: 4 checksum + 68 schema + 76
+**252 real-SQL/filesystem assertions total: 4 checksum + 69 schema + 80
 targeted RLS + 70 full RLS matrix + 20 ACL + 9 upgrade.** (Stage 2J-B /
 0022_lossless_migration_support.sql raised the total from 230 to 241:
 +1 schema, +9 full RLS matrix, +1 ACL. Booking-First Enrollment's 0025
 migration then raised it from 241 to 247: +5 targeted RLS —
 submit_enrollment_booking() RPC coverage — and +1 ACL — one test
 covering all 7 new admin/financial columns having no anon INSERT grant.
-See each migration's own tests for what every new assertion covers.) Neither
+STOP GATE C / 0026_live_classes_nullable_teacher.sql then raised it from
+247 to 252: +1 schema (teacher_id genuinely nullable at the
+information_schema level) and +4 targeted RLS (AAL2 admin insert with
+teacher_id = NULL; the assigned student can still read that row; an
+ordinary non-admin cannot insert a teacherless class; a real teacher_id
+still works and stays FK-enforced) — real disposable-Postgres assertions,
+not a mocked controller test. See each migration's own tests for what
+every new assertion covers.) Neither
 `test:db` nor `check:published-migrations` is wired into any CI pipeline
 yet — this repo has no `.github/workflows` at all today; whenever one is
 added, `test:db` (or at minimum `check:published-migrations`) belongs in
@@ -66,7 +73,7 @@ isn't freshly created and torn down every time.
 ### Proving the orchestrator's own gating logic actually works
 
 `node test/orchestrator-failure-propagation.test.mjs` is a Docker/DB-free
-safe self-test — **not counted in the 247** — that proves, by really
+safe self-test — **not counted in the 252** — that proves, by really
 spawning deliberately-failing/succeeding throwaway child scripts and
 checking the result (never by reading the code and assuming), three
 things about the orchestrator itself:
@@ -79,7 +86,7 @@ things about the orchestrator itself:
    every way a result could look accidentally-fine but not actually be:
    a missing required suite, a duplicated one, one with no readable
    summary, one reporting the wrong total, or one silently skipped —
-   and correctly passes for the one genuinely-correct 247/247 shape.
+   and correctly passes for the one genuinely-correct 252/252 shape.
 3. Cleanup failure alone fails an otherwise-perfect run, cleanup always
    runs (even if the test run itself crashed), and the evidence-writing
    step only ever runs after cleanup has fully completed and been folded
@@ -105,8 +112,8 @@ suite and its own exact expected total up front — `evaluateAssertionContract()
 following hold:
 
 - `published-migrations-checksum` = exactly 4/4
-- `schema.local.test.mjs` = exactly 68/68
-- `rls.local.test.mjs` = exactly 76/76
+- `schema.local.test.mjs` = exactly 69/69
+- `rls.local.test.mjs` = exactly 80/80
 - `rls-full-matrix.local.test.mjs` = exactly 70/70
 - `acl.local.test.mjs` = exactly 20/20
 - `upgrade-scenario.local.test.mjs` = exactly 9/9
@@ -114,7 +121,7 @@ following hold:
   and produced a readable `N/M passed.` summary
 - no step outside this list produced its own summary line (an
   unaccounted-for suite can't silently inflate a sum)
-- the resulting aggregate = exactly **247/247**
+- the resulting aggregate = exactly **252/252**
 
 `start-disposable-postgres` and the two `run-migrations` steps are
 deliberately **not** part of this contract — they carry no assertion
@@ -124,7 +131,7 @@ DB suite even runs (`runPipeline()`'s ordinary fail-fast behavior).
 **"Green evidence" (a run that `--write-evidence` is willing to write
 `last-run-output.txt` from) means, precisely:**
 
-1. the exact assertion contract above is satisfied (247/247, not a naive
+1. the exact assertion contract above is satisfied (252/252, not a naive
    sum);
 2. every step's own exit code was 0, and no step was skipped;
 3. cleanup was run AND independently verified — the disposable
@@ -206,17 +213,17 @@ isolated were exactly the two that stayed green.
 The fix is `test/orchestrate-db-tests.mjs` (a fresh, uniquely-named,
 disposable container every run — see above), not any change to
 migrations or RLS SQL. Verified empirically, not assumed: the full
-230-assertion suite (the contract's total at Stage 0 — now 247 after
-Stage 2J-B and Booking-First Enrollment's 0025 migration, see above) was
-run twice, each on its own independently fresh disposable database (Run
-A, Run B), and both reached 230/230. See
+230-assertion suite (the contract's total at Stage 0 — now 252 after
+Stage 2J-B, Booking-First Enrollment's 0025 migration, and STOP GATE C's
+0026 migration, see above) was run twice, each on its own independently
+fresh disposable database (Run A, Run B), and both reached 230/230. See
 the Stage 0 chat report for both runs' full output.
 
 **Previously recorded failure vs. current verified clean run:** any
 `last-run-output.txt` you're looking at was regenerated by
 `orchestrate-db-tests.mjs --write-evidence`, which refuses to write the
 file at all unless that specific run satisfied the exact assertion
-contract above (247/247, not a naive sum), every step's own exit code
+contract above (252/252, not a naive sum), every step's own exit code
 was 0 with nothing skipped, AND cleanup was independently verified (see
 "Cleanup is verified, and gates evidence" above) — so the file, if
 present and tracked, always reflects a run that was independently

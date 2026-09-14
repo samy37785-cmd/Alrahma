@@ -13,7 +13,7 @@ import AdminClassesTab from '../components/features/admin/AdminClassesTab';
 // current data), and the copy reads "Participant", never "Student".
 
 vi.mock('../api/classApi', () => ({
-  getClasses:  vi.fn(),
+  getAdminClasses: vi.fn(),
   createClass: vi.fn(),
   deleteClass: vi.fn(),
 }));
@@ -42,7 +42,7 @@ function renderTab(users = USERS, overrides = {}) {
 describe('AdminClassesTab (Stage 2C Final Corrective: no role-based eligibility)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    classApi.getClasses.mockResolvedValue([]);
+    classApi.getAdminClasses.mockResolvedValue([]);
   });
 
   it('the scheduling picker offers every user regardless of role - "student"/"teacher"/undefined all included', async () => {

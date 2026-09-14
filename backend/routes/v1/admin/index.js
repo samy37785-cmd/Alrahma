@@ -25,6 +25,7 @@ import systemRoutes       from './systemRoutes.js';
 import invoicesRoutes     from './invoicesRoutes.js';
 import trialsRoutes       from './trialsRoutes.js';
 import subscribersRoutes  from './subscribersRoutes.js';
+import liveClassesRoutes  from './liveClassesRoutes.js';
 import {
   coursesRouter as supabaseCoursesRoutes,
   liveClassesRouter as supabaseLiveClassesRoutes,
@@ -101,7 +102,11 @@ router.use(maintenanceGuard);
 // mode," which directly contradicted those two lines below it.
 router.use('/users',        isSupabaseBackend() ? supabaseUsersAdminRoutes : usersRoutes);
 router.use('/courses',      isSupabaseBackend() ? supabaseCoursesRoutes : coursesRoutes);
-router.use('/live-classes', isSupabaseBackend() ? supabaseLiveClassesRoutes : (_req, res) => res.status(404).json({ message: 'Not found' }));
+// Auth hardening security batch: Mongo mode now has a real implementation
+// (routes/v1/admin/liveClassesRoutes.js) — closes the gap where
+// AdminClassesTab.jsx fell back to the legacy staffOnly /api/classes
+// mutation routes because this 404'd for every non-Supabase deployment.
+router.use('/live-classes', isSupabaseBackend() ? supabaseLiveClassesRoutes : liveClassesRoutes);
 router.use('/enrollments',  isSupabaseBackend() ? supabaseEnrollmentsAdminRoutes : enrollmentsRoutes);
 router.use('/payments',     isSupabaseBackend() ? supabasePaymentsAdminRoutes : paymentsRoutes);
 router.use('/blog',         isSupabaseBackend() ? supabaseBlogAdminRoutes : blogRoutes);

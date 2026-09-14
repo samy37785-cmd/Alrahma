@@ -5,21 +5,18 @@
 // (410 PAYMENTS_DISABLED) on the Supabase backend too, since app.js mounts
 // this file instead of the Mongo one whenever DATA_BACKEND=supabase — the
 // real validateCoupon controller stays in couponController.js, untouched,
-// as legacy/deferred code. Admin listing stays live (historical/admin
-// functionality, not a customer payment-initiation path).
+// as legacy/deferred code.
+//
+// Auth hardening security batch: the admin listing that used to live here
+// (GET /, protect+adminOnly — a regular customer session whose `role`/
+// `account_role` claim said 'admin', not the real hardened AdminUser + MFA
+// session) is removed. Admin listing + mutations now live at
+// /api/v1/admin/coupons (see data/supabase/admin/couponsAdminRoutes.js).
 import { Router } from 'express';
-import { protect, adminOnly } from '../../../middleware/auth.js';
-import { listCoupons } from '../couponController.js';
 import { paymentsDisabled } from '../../../middleware/paymentsDisabled.js';
 
 const router = Router();
 
 router.post('/validate', paymentsDisabled);
-
-router.get('/', protect, adminOnly, listCoupons);
-
-// Admin mutations (create/update/delete) live at /api/v1/admin/coupons
-// under the Mongo path (MFA + RBAC + audit-logged) and are out of scope
-// for this adapter entirely — see couponController.js's module comment.
 
 export default router;

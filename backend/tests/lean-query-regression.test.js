@@ -6,6 +6,8 @@ import User from '../models/User.js';
 import Course from '../models/Course.js';
 import Certificate from '../models/Certificate.js';
 import Message from '../models/Message.js';
+import AdminUser from '../models/AdminUser.js';
+import { signAccessToken } from '../utils/adminAuthTokens.js';
 import { setupTestDb, clearTestDb, teardownTestDb } from './helpers/db.js';
 import { agentWithCsrf } from './helpers/csrf.js';
 
@@ -26,13 +28,19 @@ before(async () => { await setupTestDb(); }, { timeout: 60_000 });
 after(async () => { await teardownTestDb(); });
 beforeEach(async () => { await clearTestDb(); });
 
-async function makeAdminAgent() {
+// A real AdminUser + MFA-cleared session — required for the migrated
+// GET /api/v1/admin/certificates (see routes/v1/admin/certificatesRoutes.js,
+// migrated off the legacy protect+adminOnly GET /api/certificates by the
+// auth hardening security batch).
+async function makeAdminUserAgent() {
   const { agent, csrf } = await agentWithCsrf(app);
-  const email = `admin${Date.now()}${Math.random()}@example.com`;
-  await User.create({ name: 'Admin', email, password: PASSWORD, role: 'admin' });
-  const login = await agent.post('/api/auth/login').set(csrf).send({ email, password: PASSWORD });
-  assert.equal(login.status, 200);
-  return { agent, csrf };
+  const admin = await AdminUser.create({
+    name: 'Admin', email: `admin-user-${Date.now()}${Math.random()}@example.com`,
+    password: 'Sup3r-Str0ng-Pass!', role: 'admin',
+  });
+  const token = signAccessToken(admin._id, admin.role, true);
+  const cookieHeader = `admin_at=${token}; csrf_token=${csrf['x-csrf-token']}`;
+  return { agent, csrf, cookieHeader };
 }
 
 // ---------------------------------------------------------------------------
@@ -58,7 +66,7 @@ test('GET /api/courses: returns the real published course with correct field typ
 
 test('certificates: issue -> list (admin) -> mine (student), populated course field intact under lean', async () => {
   const course = await Course.create({ title: 'Hifz Program', description: 'x', published: true });
-  const { agent: adminAgent, csrf: adminCsrf } = await makeAdminAgent();
+  const { agent: adminAgent, csrf: adminCsrf, cookieHeader } = await makeAdminUserAgent();
   const { agent: studentAgent, csrf: studentCsrf } = await agentWithCsrf(app);
   const studentEmail = `cert-student-${Date.now()}@example.com`;
   await studentAgent.post('/api/auth/register').set(studentCsrf).send({ name: 'Student', email: studentEmail, password: PASSWORD });
@@ -66,7 +74,9 @@ test('certificates: issue -> list (admin) -> mine (student), populated course fi
 
   await Certificate.create({ user: student._id, studentName: student.name, title: 'Ijazah', type: 'ijazah', course: course._id });
 
-  const listRes = await adminAgent.get('/api/certificates').set(adminCsrf);
+  // Migrated off the legacy protect+adminOnly GET /api/certificates (auth
+  // hardening security batch) — now requires a real AdminUser session.
+  const listRes = await adminAgent.get('/api/v1/admin/certificates').set({ ...adminCsrf, Cookie: cookieHeader });
   assert.equal(listRes.status, 200);
   assert.equal(listRes.body.length, 1);
   assert.equal(listRes.body[0].course.title, 'Hifz Program'); // populate survives .lean()

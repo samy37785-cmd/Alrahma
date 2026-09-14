@@ -5,6 +5,8 @@ import {
   listTeachers, adminCreateUser, updateUserRole,
   assignTeacher, setFamilyName, updateUserSubscription,
 } from '../../../controllers/userAdminController.js';
+import { getUserHifz } from '../../../controllers/hifzController.js';
+import { getUserProgress } from '../../../controllers/progressController.js';
 import { requirePermissions } from '../../../middleware/rbac.js';
 import { asyncHandler } from '../../../utils/asyncHandler.js';
 
@@ -51,6 +53,24 @@ router.patch('/:id/role',         requirePermissions('users:write'), asyncHandle
 router.patch('/:id/subscription', requirePermissions('users:write'), asyncHandler(updateUserSubscription));
 router.patch('/:id/teacher',      requirePermissions('users:write'), asyncHandler(assignTeacher));
 router.patch('/:id/family',       requirePermissions('users:write'), asyncHandler(setFamilyName));
+
+// Auth hardening security batch: these two used to live only at
+// GET /api/hifz/user/:userId and GET /api/progress/user/:userId
+// (routes/hifzRoutes.js, routes/progressRoutes.js), gated by the legacy
+// protect+adminOnly stack — reachable with nothing but a regular User
+// session whose `role` field said 'admin'. AdminProgressModal.jsx (the
+// real admin SPA) was calling both via the plain `http` client, a genuine
+// live gap. Migrated here, as sub-paths of the user they report on
+// (matching this router's own /:id/role, /:id/teacher convention); the
+// legacy GET routes were removed from their original files.
+router.get('/:id/hifz',     requirePermissions('users:read'), asyncHandler((req, res, next) => {
+  req.params.userId = req.params.id;
+  return getUserHifz(req, res, next);
+}));
+router.get('/:id/progress', requirePermissions('users:read'), asyncHandler((req, res, next) => {
+  req.params.userId = req.params.id;
+  return getUserProgress(req, res, next);
+}));
 
 router.get('/',    requirePermissions('users:read'),   asyncHandler(users.list));
 router.get('/:id', requirePermissions('users:read'),   asyncHandler(users.getOne));

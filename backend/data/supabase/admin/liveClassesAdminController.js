@@ -28,20 +28,31 @@ function toJson(row) {
   };
 }
 
-// @route GET /api/v1/admin/live-classes
+// @route GET /api/v1/admin/live-classes  (optional ?upcoming=1, same
+//        semantics as the Mongo-mode adminListClasses: starts_at in the
+//        future AND status != 'cancelled')
 export const list = asyncHandler(async (req, res) => {
   const { page, limit } = {
     page: Math.max(1, parseInt(req.query.page) || 1),
     limit: Math.min(500, Math.max(1, parseInt(req.query.limit) || 50)),
   };
   const skip = (page - 1) * limit;
+  // Review follow-up: ?upcoming=1 was silently ignored here (the Mongo-mode
+  // controller supports it) — matches its filter exactly:
+  // startsAt >= now() AND status != 'cancelled'. Applied to BOTH the data
+  // query and the count query deliberately: applying it only to one would
+  // leave `total`/`pages` describing the wrong (unfiltered) result set.
+  // No user input is interpolated into the SQL string itself — `upcoming`
+  // only toggles between two fixed, hardcoded WHERE clauses.
+  const upcoming  = Boolean(req.query.upcoming);
+  const whereSql  = upcoming ? `WHERE starts_at >= now() AND status != 'cancelled'` : '';
 
   const { rows, total } = await withUserContext(req.adminUser.id, async (client) => {
     const dataRes = await client.query(
-      `SELECT * FROM live_classes ORDER BY starts_at DESC LIMIT $1 OFFSET $2`,
+      `SELECT * FROM live_classes ${whereSql} ORDER BY starts_at DESC LIMIT $1 OFFSET $2`,
       [limit, skip]
     );
-    const countRes = await client.query(`SELECT count(*)::int AS n FROM live_classes`);
+    const countRes = await client.query(`SELECT count(*)::int AS n FROM live_classes ${whereSql}`);
     return { rows: dataRes.rows, total: countRes.rows[0].n };
   }, { aal: req.adminAal });
 
@@ -51,8 +62,19 @@ export const list = asyncHandler(async (req, res) => {
 // @route POST /api/v1/admin/live-classes
 export const create = asyncHandler(async (req, res) => {
   const { teacher, student, title, startsAt, durationMin, meetingUrl, notes } = req.body;
-  if (!teacher || !student || !title || !startsAt) {
-    return res.status(400).json({ message: 'teacher, student, title and startsAt are required' });
+  // Review follow-up: `teacher` is now optional, matching the Mongo-mode
+  // contract (models/LiveClass.js's `teacher` field is required:false,
+  // default:null) and its one real frontend consumer,
+  // AdminClassesTab.jsx/classApi.js's createClass(), which never sends a
+  // `teacher` field at all -- an admin-scheduled class has no regular-user
+  // teacher identity to assign (AdminUser and User/profiles are separate
+  // identities). live_classes.teacher_id was NOT NULL at the database
+  // layer until lib/db/drizzle/0026_live_classes_nullable_teacher.sql,
+  // relaxed specifically for this; every real admin-created class would
+  // otherwise fail on the DB's own constraint regardless of what this
+  // application-layer check allowed through.
+  if (!student || !title || !startsAt) {
+    return res.status(400).json({ message: 'student, title and startsAt are required' });
   }
   const when = new Date(startsAt);
   if (Number.isNaN(when.getTime())) return res.status(400).json({ message: 'startsAt is not a valid date' });
@@ -64,7 +86,7 @@ export const create = asyncHandler(async (req, res) => {
         `INSERT INTO live_classes (teacher_id, student_id, title, starts_at, duration_min, meeting_url, notes)
          VALUES ($1, $2, $3, $4, $5, $6, $7)
          RETURNING *`,
-        [teacher, student, title, when, durationMin || 30, meetingUrl || null, notes || null]
+        [teacher ?? null, student, title, when, durationMin || 30, meetingUrl || null, notes || null]
       );
       return r.rows[0];
     }, { aal: req.adminAal });

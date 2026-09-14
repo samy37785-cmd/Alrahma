@@ -1,0 +1,29 @@
+-- Auth-hardening review follow-up: AdminClassesTab.jsx (the one real
+-- frontend consumer of POST /v1/admin/live-classes) never sends a
+-- `teacher` field — an admin-scheduled class has no regular-user teacher
+-- identity to assign, the same "AdminUser and User/profiles are separate
+-- identities" reasoning already established and tested for the Mongo-mode
+-- equivalent (backend/models/LiveClass.js's `teacher` field was made
+-- optional/nullable, required:false, default:null, in the auth-hardening
+-- batch; see backend/tests/auth-hardening-security-batch.test.js's
+-- assertion that an admin-scheduled class has teacher:null). Under
+-- DATA_BACKEND=supabase, live_classes.teacher_id was still NOT NULL at the
+-- database layer, so every real admin-created class would fail on the DB's
+-- own constraint regardless of what application-layer validation allowed
+-- through — this closes that gap for the Postgres/Supabase path too,
+-- unifying the contract the same direction Mongo already went, rather than
+-- inventing a teacher-picker UI/contract Mongo doesn't have.
+--
+-- Purely additive/relaxing: dropping a NOT NULL constraint needs no
+-- backfill (every existing row already has a real, non-null teacher_id). A
+-- foreign key constraint already permits NULL values without violating the
+-- FK, so live_classes_teacher_id_profiles_id_fk needs no change. The RLS
+-- policies in 0015_new_domains_rls.sql (live_classes_select_participant_or_
+-- admin, live_classes_insert_teacher_or_admin, live_classes_update_owner_
+-- or_admin, live_classes_delete_owner_or_admin) all already have an
+-- `OR public.is_admin()/is_admin_aal2()` branch that does not depend on
+-- teacher_id, so a NULL teacher_id row is still correctly readable/
+-- writable by an admin and by its assigned student, and simply never
+-- matches "teacher_id = auth.uid()" for anyone (there is no teacher to
+-- match) — no RLS change needed.
+ALTER TABLE "live_classes" ALTER COLUMN "teacher_id" DROP NOT NULL;--> statement-breakpoint

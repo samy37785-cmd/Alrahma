@@ -1,15 +1,17 @@
 import { Router } from 'express';
-import { protect, adminOnly } from '../middleware/auth.js';
-import { getMyCertificates, listCertificates } from '../controllers/certificateController.js';
+import { protect } from '../middleware/auth.js';
+import { getMyCertificates } from '../controllers/certificateController.js';
 
 const router = Router();
 
 // Student: my certificates
 router.get('/mine', protect, getMyCertificates);
 
-router.get('/', protect, adminOnly, listCertificates);
-
-// Admin mutations (issue/revoke) now live at /api/v1/admin/certificates
-// (MFA + RBAC + audit-logged — see routes/v1/admin/certificatesRoutes.js).
+// Auth hardening security batch: the admin listing that used to live here
+// (GET /, protect+adminOnly) is removed — AdminProgressModal.jsx (the real,
+// MFA-gated admin SPA) is its only consumer and now calls
+// GET /api/v1/admin/certificates instead (see routes/v1/admin/
+// certificatesRoutes.js). Admin mutations (issue/revoke) already lived
+// there (MFA + RBAC + audit-logged).
 
 export default router;

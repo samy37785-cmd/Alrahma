@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { CalendarDays, Trash2, X, Video } from 'lucide-react';
-import { getClasses, createClass, deleteClass } from '../../../api/classApi';
+import { getAdminClasses, createClass, deleteClass } from '../../../api/classApi';
 
 const EMPTY = { student: '', title: '', startsAt: '', durationMin: 30, meetingUrl: '' };
 
@@ -35,7 +35,7 @@ export default function AdminClassesTab({ users = [], onError }) {
 
   const { data: classes = [], isLoading } = useQuery({
     queryKey: ['admin', 'classes', filter],
-    queryFn: () => getClasses(filter === 'upcoming' ? { upcoming: 1 } : {}),
+    queryFn: () => getAdminClasses(filter === 'upcoming' ? { upcoming: 1 } : {}),
     staleTime: 60000,
   });
 

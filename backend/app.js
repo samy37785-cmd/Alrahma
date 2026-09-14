@@ -210,6 +210,23 @@ app.use('/api', apiLimiter);
 // a DB hiccup.
 app.get('/api/csrf', (_req, res) => res.json({ ok: true }));
 
+// Review follow-up: admin logout must be able to clear this app's own
+// cookies locally even when MongoDB itself is unreachable — an admin stuck
+// looking "logged in" in their own browser during a real DB outage is
+// exactly the kind of failure a security-critical logout path must not
+// have. This gate used to 503 every /api/* request (including this one)
+// before it ever reached a controller whenever connectDB() failed, which
+// meant a DB outage silently defeated logout entirely: no route, no
+// controller, no cookie-clearing code ever ran at all. Exempting this one
+// path lets the request continue to controllers/adminAuthController.js's
+// logout(), which itself still ATTEMPTS every DB-backed revoke (best-effort,
+// each wrapped in its own try/catch — never assumes the database is healthy
+// just because this gate let the request through) but always clears cookies
+// in a `finally`, DB up or down. Still opportunistically calls connectDB()
+// below so a genuinely healthy database still gets a real revoke — this
+// only removes the hard 503 for this one route, not the attempt itself.
+const DB_INDEPENDENT_PATHS = new Set(['/api/v1/admin/auth/logout']);
+
 // Ensure DB is connected on every request (cached after first call). Under
 // DATA_BACKEND=supabase there is no MongoDB connection to wait on — every
 // matched-domain route already opens its own Postgres connection via
@@ -220,6 +237,10 @@ app.get('/api/csrf', (_req, res) => res.json({ ok: true }));
 // every /api/* request 503'ing on a MongoDB connection this mode doesn't use.
 app.use(async (req, res, next) => {
   if (isSupabaseBackend()) return next();
+  if (DB_INDEPENDENT_PATHS.has(req.path)) {
+    try { await connectDB(); } catch { /* handled inside the route itself — see DB_INDEPENDENT_PATHS' own comment */ }
+    return next();
+  }
   try {
     await connectDB();
     next();

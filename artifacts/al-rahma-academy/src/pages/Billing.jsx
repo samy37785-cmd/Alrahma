@@ -1,6 +1,5 @@
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { homeHref } from '../utils/localePath';
 import { useInvoices } from '../hooks/useBilling';
 import InvoiceModal from '../components/ui/InvoiceModal';
 import CancelSurvey from '../components/ui/CancelSurvey';
@@ -43,9 +42,9 @@ export default function Billing() {
           <h1 className="ds-page-hd__title">{b.heading}</h1>
           <p className="ds-page-hd__sub">{b.sub}</p>
         </div>
-        <a href={homeHref('pricing')} className="btn btn--green btn--sm" style={{ borderRadius: 9, alignSelf: 'flex-start' }}>
-          Upgrade Plan
-        </a>
+        <Link to="/enroll" className="btn btn--green btn--sm" style={{ borderRadius: 9, alignSelf: 'flex-start' }}>
+          {b.upgradePlan}
+        </Link>
       </div>
 
       {/* KPI row */}

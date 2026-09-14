@@ -9,16 +9,18 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 //
 // Mocks only the api/ network boundary (same convention as useBilling.test.jsx)
 // plus every child tab component and DashboardLayout — AdminDashboard mounts
-// all nine tabs simultaneously (hidden divs, not conditional mounting), so
+// every tab simultaneously (hidden divs, not conditional mounting), so
 // rendering their real implementations here would make this test heavy and
 // brittle for behaviour this file isn't about. (Stage 2B: the Staff tab was
 // removed along with AdminStaffTab.jsx - see
-// docs/legacy-role-dashboard-pruning.md.)
+// docs/legacy-role-dashboard-pruning.md. Booking-First Enrollment added the
+// Bookings tab, backed by api/enrollmentApi.js's getEnrollments.)
 
 vi.mock('../api/courseApi', () => ({ getCourses: vi.fn() }));
 vi.mock('../api/paymentApi', () => ({ getManualPayments: vi.fn() }));
 vi.mock('../api/adminApi', () => ({ getUsers: vi.fn() }));
 vi.mock('../api/contentApi', () => ({ getTrials: vi.fn(), getSubscribers: vi.fn() }));
+vi.mock('../api/enrollmentApi', () => ({ getEnrollments: vi.fn(), updateEnrollment: vi.fn() }));
 vi.mock('../api/reviewApi', () => ({ getAdminReviews: vi.fn() }));
 vi.mock('../api/communityApi', () => ({ getAdminPosts: vi.fn(), getAdminComments: vi.fn() }));
 
@@ -29,6 +31,7 @@ vi.mock('../components/layout/DashboardLayout', () => ({
 vi.mock('../components/features/admin/AdminCoursesTab', () => ({ default: () => <div /> }));
 vi.mock('../components/features/admin/AdminTrialsTab', () => ({ default: () => <div /> }));
 vi.mock('../components/features/admin/AdminPaymentsTab', () => ({ default: () => <div /> }));
+vi.mock('../components/features/admin/AdminBookingsTab', () => ({ default: () => <div /> }));
 vi.mock('../components/features/admin/AdminNewsletterTab', () => ({ default: () => <div /> }));
 vi.mock('../components/features/admin/AdminUsersTab', () => ({ default: () => <div /> }));
 vi.mock('../components/features/admin/AdminClassesTab', () => ({ default: () => <div /> }));
@@ -40,6 +43,7 @@ import { getCourses } from '../api/courseApi';
 import { getManualPayments } from '../api/paymentApi';
 import { getUsers } from '../api/adminApi';
 import { getTrials, getSubscribers } from '../api/contentApi';
+import { getEnrollments } from '../api/enrollmentApi';
 import { getAdminReviews } from '../api/reviewApi';
 import { getAdminPosts, getAdminComments } from '../api/communityApi';
 import AdminDashboard from '../pages/AdminDashboard';
@@ -59,6 +63,7 @@ function mockAllSucceed() {
   getUsers.mockResolvedValue({ data: [], total: 0 });
   getTrials.mockResolvedValue([]);
   getSubscribers.mockResolvedValue([]);
+  getEnrollments.mockResolvedValue({ data: [], total: 0 });
   getAdminReviews.mockResolvedValue({ reviews: [], total: 0 });
   getAdminPosts.mockResolvedValue({ posts: [], total: 0 });
   getAdminComments.mockResolvedValue({ comments: [], total: 0 });
@@ -126,6 +131,7 @@ describe('AdminDashboard KPIs no longer depend on account roles', () => {
     });
     getTrials.mockResolvedValue([]);
     getSubscribers.mockResolvedValue([]);
+    getEnrollments.mockResolvedValue({ data: [], total: 0 });
     getAdminReviews.mockResolvedValue({ reviews: [], total: 0 });
     getAdminPosts.mockResolvedValue({ posts: [], total: 0 });
     getAdminComments.mockResolvedValue({ comments: [], total: 0 });
@@ -182,6 +188,7 @@ describe('AdminDashboard: the unproven conversion-rate metric is gone', () => {
     getUsers.mockResolvedValue({ data: [], total: 0 });
     getTrials.mockResolvedValue([{ _id: 't1' }, { _id: 't2' }, { _id: 't3' }, { _id: 't4' }]);
     getSubscribers.mockResolvedValue([]);
+    getEnrollments.mockResolvedValue({ data: [], total: 0 });
     getAdminReviews.mockResolvedValue({ reviews: [], total: 0 });
     getAdminPosts.mockResolvedValue({ posts: [], total: 0 });
     getAdminComments.mockResolvedValue({ comments: [], total: 0 });

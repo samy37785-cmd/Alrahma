@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useLang } from '../../../context/LangContext';
 import { goHome } from '../../../utils/localePath';
+import { buildBookingWhatsappLink } from '../../../utils/whatsapp';
 import { TEACHERS, plans } from '../../../data';
 import { PLAN_TEXT, pick } from '../../../i18n/content';
 /* ── Static data ────────────────────────────────────────────────── */
@@ -283,7 +284,7 @@ export function Step3({ form, set }) {
 }
 
 /* ── Step 4: Choose Plan ─────────────────────────────────────────── */
-export function Step4({ form, set, onPayNow }) {
+export function Step4({ form, set, onSubmitBooking, submitting }) {
   const { t, lang } = useLang();
   const s = t.enroll.step4;
   const planText = pick(PLAN_TEXT, lang);
@@ -331,8 +332,15 @@ export function Step4({ form, set, onPayNow }) {
             <div className="enroll__summary-row"><span>{s.summaryPlan}</span><strong>{selectedName} — {form.plan.price}{t.pricing.perMonth}</strong></div>
             {form.lang && <div className="enroll__summary-row"><span>{s.summaryLang}</span><strong>{LANG_NAMES[form.lang]}</strong></div>}
           </div>
-          <button type="button" className="btn btn--gold btn--block" style={{marginTop:'16px'}} onClick={onPayNow}>
-            {s.confirmPay}
+          <button
+            type="button"
+            className="btn btn--gold btn--block"
+            style={{marginTop:'16px'}}
+            onClick={onSubmitBooking}
+            disabled={submitting}
+            aria-busy={submitting || undefined}
+          >
+            {submitting ? t.enroll.nav.submitting : s.confirmBooking}
           </button>
         </div>
       )}
@@ -356,11 +364,19 @@ const CONFETTI_PIECES = [
   { color: '#1a9e72', delay: 0.38, left: '72%',  size: 8,  shape: 'circle' },
 ];
 
-export function Success({ name }) {
+export function Success({ name, plan, bookingRef }) {
   const navigate = useNavigate();
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const s = t.enroll.success;
   const steps = s.nextSteps || [];
+  const planText = pick(PLAN_TEXT, lang);
+  const planIdx = plan ? plans.findIndex((p) => p.name === plan.name) : -1;
+  const planName = planIdx >= 0 ? (planText[planIdx]?.name || plan.name) : '';
+  const whatsappMessage = (s.whatsappTemplate || '')
+    .replace('{name}', name || '')
+    .replace('{plan}', planName)
+    .replace('{ref}', bookingRef || '');
+  const whatsappHref = buildBookingWhatsappLink({ name, plan: planName, bookingRef, message: whatsappMessage });
 
   return (
     <div className="enroll__success">
@@ -398,6 +414,23 @@ export function Success({ name }) {
       <h2 className="enroll__success-title">{s.title}</h2>
       <p className="enroll__success-intro">{s.thankYouPre}<strong>{name}</strong>{s.thankYouPost}</p>
       <p className="enroll__success-email">{s.emailNote}</p>
+
+      {bookingRef && (
+        <div className="enroll__booking-ref">
+          <span>{s.bookingRefLabel}</span>
+          <strong>{bookingRef}</strong>
+        </div>
+      )}
+
+      <a
+        href={whatsappHref}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="btn btn--green btn--lg enroll__whatsapp-cta"
+      >
+        {s.whatsappCta}
+      </a>
+      <p className="enroll__success-whatsapp-note">{s.whatsappNote}</p>
 
       {/* What happens next */}
       {steps.length > 0 && (

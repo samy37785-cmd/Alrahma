@@ -1,51 +1,25 @@
-import { useEffect, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
-import { homeHref } from '../utils/localePath';
+import { Link } from 'react-router-dom';
 import PageBar from '../components/layout/PageBar';
-import { capturePaypalPayment } from '../api/paymentApi';
 import { useLang } from '../context/LangContext';
 
-export default function PaymentResult({ cancelled = false }) {
+// Booking-First Enrollment: this project no longer runs in-app checkout, so
+// /payment/success and /payment/cancel (old Stripe/PayPal redirect targets)
+// no longer capture or finalise anything. The routes stay mounted — old
+// shared/bookmarked links must not 404 — but now show a clear message and a
+// safe path back into the booking flow instead of any payment UI.
+export default function PaymentResult() {
   const { t } = useLang();
-  const pm = t.authPg.payment;
-  const [params] = useSearchParams();
-  const paypalToken = params.get('token');       // PayPal appends ?token=<orderId>
-  const stripeSession = params.get('session_id'); // Stripe appends ?session_id=<id>
-  const [state, setState] = useState(cancelled ? 'cancelled' : 'capturing');
-
-  useEffect(() => {
-    if (cancelled) return;
-
-    // Stripe: the browser only reaches success_url after a completed checkout.
-    // Fulfilment (invoice + enrolment) is handled server-side by the webhook.
-    if (stripeSession) {
-      setState('paid');
-      return;
-    }
-
-    // PayPal: capture the approved order to finalise the payment.
-    if (paypalToken) {
-      capturePaypalPayment(paypalToken)
-        .then((res) => setState(res.status === 'COMPLETED' ? 'paid' : 'failed'))
-        .catch(() => setState('failed'));
-      return;
-    }
-
-    setState('failed');
-  }, [cancelled, paypalToken, stripeSession]);
-
-  const ICONS = { capturing: '⏳', paid: '✅', failed: '⚠️', cancelled: '↩️' };
-  const view = pm[state];
+  const pm = t.authPg.paymentDeprecated;
 
   return (
     <div className="legal">
       <PageBar to="/" label={pm.backToSite} />
 
       <main className="container legal__main payment-result">
-        <div className="payment-result__icon">{ICONS[state]}</div>
-        <h1>{view.title}</h1>
-        <p className="payment-result__sub">{view.sub}</p>
-        <a href={homeHref('pricing')} className="btn btn--gold">{pm.backToPricing}</a>
+        <div className="payment-result__icon">ℹ️</div>
+        <h1>{pm.title}</h1>
+        <p className="payment-result__sub">{pm.sub}</p>
+        <Link to="/enroll" className="btn btn--gold">{pm.cta}</Link>
       </main>
     </div>
   );

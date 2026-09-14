@@ -176,6 +176,13 @@
       "when": 1788912002000,
       "tag": "0024_ledger_failed_attribution_policy",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1788912003000,
+      "tag": "0025_booking_first_enrollment",
+      "breakpoints": true
     }
   ]
 }

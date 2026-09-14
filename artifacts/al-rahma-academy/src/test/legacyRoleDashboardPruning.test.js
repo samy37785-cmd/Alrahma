@@ -66,11 +66,11 @@ describe('/teacher and /parent are legacy-compatibility redirects, not role dash
 });
 
 describe('AdminDashboard shell and its surviving tabs are intact', () => {
-  it('AdminDashboard.jsx still registers exactly the 9 surviving tabs (staff removed, none of the others touched)', () => {
+  it('AdminDashboard.jsx still registers exactly the 10 surviving tabs (staff removed, Bookings added by Booking-First Enrollment, none of the others touched)', () => {
     const source = read('pages/AdminDashboard.jsx');
     const tabKeys = [...source.matchAll(/key:\s*'([a-z]+)'/g)].map((m) => m[1]);
     expect(tabKeys).toEqual([
-      'overview', 'users', 'courses', 'payments', 'trials',
+      'overview', 'users', 'courses', 'bookings', 'payments', 'trials',
       'newsletter', 'classes', 'reviews', 'community',
     ]);
   });

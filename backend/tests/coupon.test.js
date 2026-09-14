@@ -19,9 +19,14 @@ import { agentWithCsrf } from './helpers/csrf.js';
 //
 // Coupon mutations (create/update/delete) moved to /api/v1/admin/coupons
 // (MFA + RBAC + audit-logged) as part of the B1 legacy-route migration;
-// listing (GET /api/coupons) and validation (POST /api/coupons/validate)
-// stayed on the legacy router — see routes/v1/admin/couponsRoutes.js and
-// routes/couponRoutes.js.
+// listing (GET /api/coupons) stayed on the legacy router — see
+// routes/v1/admin/couponsRoutes.js and routes/couponRoutes.js.
+//
+// POST /api/coupons/validate — the checkout coupon-code field it backed —
+// is now 410 PAYMENTS_DISABLED (Booking-First Enrollment closed every
+// customer-reachable payment/checkout entry point server-side; see
+// payment-checkout.test.js). The real validateCoupon controller is
+// untouched/legacy; only its route was disconnected.
 //
 // "Update behavior" (PATCH /api/v1/admin/coupons/:id — validation,
 // mass-assignment protection, partial updates) is already covered by
@@ -131,96 +136,18 @@ test('Coupon.calculateDiscount(): returns 0 for an invalid (inactive) coupon', a
 });
 
 // ---------------------------------------------------------------------------
-// POST /api/coupons/validate — real controller + real model, end-to-end
+// POST /api/coupons/validate — now 410 PAYMENTS_DISABLED (see file header).
+// The Coupon model's own isValid()/calculateDiscount() logic above is
+// unaffected and still fully covered.
 // ---------------------------------------------------------------------------
 
-test('validateCoupon: a valid, active coupon returns its discount info', async () => {
+test('validateCoupon route: always returns 410 PAYMENTS_DISABLED regardless of whether the code exists', async () => {
   await Coupon.create({ code: 'SUMMER25', discountType: 'percent', discountValue: 25, description: 'Summer sale' });
   const { agent, csrf } = await agentWithCsrf(app);
-  const email = `student-coupon-${Date.now()}@example.com`;
-  await agent.post('/api/auth/register').set(csrf).send({ name: 'Student', email, password: PASSWORD });
 
   const res = await agent.post('/api/coupons/validate').set(csrf).send({ code: 'SUMMER25' });
-  assert.equal(res.status, 200);
-  assert.equal(res.body.valid, true);
-  assert.equal(res.body.discountType, 'percent');
-  assert.equal(res.body.discountValue, 25);
-  assert.equal(res.body.description, 'Summer sale');
-});
-
-test('validateCoupon: the code lookup is case-insensitive (input is uppercased before matching)', async () => {
-  await Coupon.create({ code: 'MIXEDCASE', discountType: 'fixed', discountValue: 5 });
-  const { agent, csrf } = await agentWithCsrf(app);
-  const email = `student-coupon2-${Date.now()}@example.com`;
-  await agent.post('/api/auth/register').set(csrf).send({ name: 'Student', email, password: PASSWORD });
-
-  const res = await agent.post('/api/coupons/validate').set(csrf).send({ code: 'mixedcase' });
-  assert.equal(res.status, 200);
-  assert.equal(res.body.code, 'MIXEDCASE');
-});
-
-test('validateCoupon: an unknown code returns 404', async () => {
-  const { agent, csrf } = await agentWithCsrf(app);
-  const email = `student-coupon3-${Date.now()}@example.com`;
-  await agent.post('/api/auth/register').set(csrf).send({ name: 'Student', email, password: PASSWORD });
-
-  const res = await agent.post('/api/coupons/validate').set(csrf).send({ code: 'DOESNOTEXIST' });
-  assert.equal(res.status, 404);
-});
-
-test('validateCoupon: an expired coupon returns 400', async () => {
-  await Coupon.create({
-    code: 'EXPIREDNOW', discountType: 'percent', discountValue: 10,
-    validUntil: new Date(Date.now() - 1000),
-  });
-  const { agent, csrf } = await agentWithCsrf(app);
-  const email = `student-coupon4-${Date.now()}@example.com`;
-  await agent.post('/api/auth/register').set(csrf).send({ name: 'Student', email, password: PASSWORD });
-
-  const res = await agent.post('/api/coupons/validate').set(csrf).send({ code: 'EXPIREDNOW' });
-  assert.equal(res.status, 400);
-});
-
-test('validateCoupon: an inactive coupon returns 400', async () => {
-  await Coupon.create({ code: 'TURNEDOFF', discountType: 'percent', discountValue: 10, active: false });
-  const { agent, csrf } = await agentWithCsrf(app);
-  const email = `student-coupon5-${Date.now()}@example.com`;
-  await agent.post('/api/auth/register').set(csrf).send({ name: 'Student', email, password: PASSWORD });
-
-  const res = await agent.post('/api/coupons/validate').set(csrf).send({ code: 'TURNEDOFF' });
-  assert.equal(res.status, 400);
-});
-
-test('validateCoupon: a coupon already used by this user returns 400', async () => {
-  const { agent, csrf } = await agentWithCsrf(app);
-  const email = `student-coupon6-${Date.now()}@example.com`;
-  await agent.post('/api/auth/register').set(csrf).send({ name: 'Student', email, password: PASSWORD });
-  const user = await User.findOne({ email });
-
-  await Coupon.create({
-    code: 'ALREADYUSED', discountType: 'percent', discountValue: 10,
-    usedBy: [{ user: user._id }],
-  });
-
-  const res = await agent.post('/api/coupons/validate').set(csrf).send({ code: 'ALREADYUSED' });
-  assert.equal(res.status, 400);
-  assert.match(res.body.message, /already used/i);
-});
-
-test('validateCoupon: a coupon used by a DIFFERENT user is still valid for this user', async () => {
-  const otherUser = await User.create({ name: 'Other', email: 'other-user@example.com', password: PASSWORD });
-  await Coupon.create({
-    code: 'USEDBYOTHER', discountType: 'percent', discountValue: 10,
-    usedBy: [{ user: otherUser._id }],
-  });
-
-  const { agent, csrf } = await agentWithCsrf(app);
-  const email = `student-coupon7-${Date.now()}@example.com`;
-  await agent.post('/api/auth/register').set(csrf).send({ name: 'Student', email, password: PASSWORD });
-
-  const res = await agent.post('/api/coupons/validate').set(csrf).send({ code: 'USEDBYOTHER' });
-  assert.equal(res.status, 200);
-  assert.equal(res.body.valid, true);
+  assert.equal(res.status, 410);
+  assert.equal(res.body.error, 'PAYMENTS_DISABLED');
 });
 
 // ---------------------------------------------------------------------------
@@ -259,7 +186,7 @@ test('listCoupons: returns real, previously-created coupons (legacy read route, 
   assert.equal(res.body.total, 2);
 });
 
-test('deleteCoupon: removes the real document — a subsequent validate returns 404', async () => {
+test('deleteCoupon: removes the real document', async () => {
   const coupon = await Coupon.create({ code: 'TODELETE', discountType: 'percent', discountValue: 10 });
   const { agent, csrf, cookieHeader } = await adminUserAgent();
 
@@ -268,11 +195,6 @@ test('deleteCoupon: removes the real document — a subsequent validate returns 
 
   const gone = await Coupon.findById(coupon._id);
   assert.equal(gone, null);
-
-  const studentAgent = await agentWithCsrf(app);
-  await studentAgent.agent.post('/api/auth/register').set(studentAgent.csrf).send({ name: 'S', email: `after-delete-${Date.now()}@example.com`, password: PASSWORD });
-  const validateRes = await studentAgent.agent.post('/api/coupons/validate').set(studentAgent.csrf).send({ code: 'TODELETE' });
-  assert.equal(validateRes.status, 404);
 });
 
 test('legacy POST/PATCH/DELETE /api/coupons* admin mutation routes no longer exist (404)', async () => {

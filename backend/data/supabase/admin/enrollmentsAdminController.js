@@ -8,6 +8,7 @@
 import { asyncHandler } from '../../../utils/asyncHandler.js';
 import { withUserContext } from '../client.js';
 import { auditAdminAction } from '../adminAuditLog.js';
+import { buildAdminUpdatePatch } from '../../../utils/enrollmentValidation.js';
 
 function parsePagination(query) {
   const page = Math.max(1, parseInt(query.page) || 1);
@@ -35,6 +36,13 @@ function toJson(row) {
     plan: row.requested_plan_slug,
     status: row.status,
     notes: row.notes,
+    bookingRef: row.booking_ref,
+    agreedAmount: row.agreed_amount,
+    currency: row.currency,
+    paymentMethodExternal: row.payment_method_external,
+    paidAt: row.paid_at,
+    renewalAt: row.renewal_at,
+    adminNote: row.admin_note,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -111,24 +119,52 @@ export const create = asyncHandler(async (req, res) => {
   res.status(201).json(toJson(row));
 });
 
+// JS field -> DB column, for the dynamic SET clause below. Kept as an
+// explicit map (not a naive camelCase->snake_case transform) so it can
+// never silently pick up an unintended column if a new JS-side field name
+// happens to transform into a real column that was never meant to be
+// admin-PUT-able.
+const UPDATE_FIELD_TO_COLUMN = {
+  name: 'name', email: 'email', whatsapp: 'whatsapp', country: 'country', city: 'city',
+  timezone: 'timezone', notes: 'notes', status: 'status', adminNote: 'admin_note',
+  agreedAmount: 'agreed_amount', currency: 'currency',
+  paymentMethodExternal: 'payment_method_external', paidAt: 'paid_at', renewalAt: 'renewal_at',
+};
+
 // @route PUT /api/v1/admin/enrollments/:id
 export const update = asyncHandler(async (req, res) => {
-  const d = req.body;
+  // The previous COALESCE($n, col)-style UPDATE could never distinguish "a
+  // field the caller didn't mention" from "a field the caller explicitly
+  // wants cleared to null" — both arrive as a SQL NULL parameter, so a
+  // deliberate clear of e.g. adminNote/paymentMethodExternal was silently
+  // impossible. This version fetches the existing row first (also needed
+  // for buildAdminUpdatePatch's enrolled/agreedAmount cross-field rule —
+  // same shared allowlist+validation used by the Mongo backend's admin
+  // route, see utils/enrollmentValidation.js) and builds the SET clause
+  // only from keys actually present in the sanitized patch, so an explicit
+  // `null` really does clear the column while an omitted key truly leaves
+  // it untouched.
+  const existing = await withUserContext(req.adminUser.id, async (client) => {
+    const r = await client.query('SELECT * FROM enrollments WHERE id = $1', [req.params.id]);
+    return r.rows[0];
+  }, { aal: req.adminAal });
+  if (!existing) return res.status(404).json({ message: 'Enrollment not found' });
+
+  const { patch, error } = buildAdminUpdatePatch(req.body, toJson(existing));
+  if (error) return res.status(422).json({ message: error });
+
+  const keys = Object.keys(patch);
+  if (keys.length === 0) return res.json(toJson(existing));
+
+  const setClauses = keys.map((key, i) => `${UPDATE_FIELD_TO_COLUMN[key]} = $${i + 2}`);
+  const values = keys.map((key) => patch[key]);
+
   let row;
   try {
     row = await withUserContext(req.adminUser.id, async (client) => {
       const r = await client.query(
-        `UPDATE enrollments SET
-           name = COALESCE($2, name),
-           email = COALESCE($3, email),
-           whatsapp = COALESCE($4, whatsapp),
-           country = COALESCE($5, country),
-           city = COALESCE($6, city),
-           status = COALESCE($7, status),
-           notes = COALESCE($8, notes)
-         WHERE id = $1
-         RETURNING *`,
-        [req.params.id, d.name ?? null, d.email ?? null, d.whatsapp ?? null, d.country ?? null, d.city ?? null, d.status ?? null, d.notes ?? null]
+        `UPDATE enrollments SET ${setClauses.join(', ')} WHERE id = $1 RETURNING *`,
+        [req.params.id, ...values]
       );
       return r.rows[0];
     }, { aal: req.adminAal });

@@ -30,6 +30,7 @@ const TEST_FILES = [
   'lib/reconcile.test.mjs',
   'lib/production-authorization.test.mjs',
   'lib/host-guard.test.mjs',
+  'lib/enrollments-transform.test.mjs',
   'mongo-to-supabase-cli.test.mjs',
   'migrate-users-to-supabase-auth.test.mjs',
   'unrecorded-data-preflight.test.mjs',

@@ -3,7 +3,10 @@ import adminHttp from './adminHttp';
 
 export const submitEnrollment = (data)     => http.post('/enrollments', data).then((r) => r.data);
 export const getMyEnrollment  = ()         => http.get('/enrollments/mine').then((r) => r.data);
-export const getEnrollments   = ()         => http.get('/enrollments').then((r) => r.data);
-// Migrated to the hardened admin API (MFA + RBAC + audit-logged); note the
-// verb change from PATCH to PUT, matching the generic v1 admin CRUD update.
+// Admin "Bookings" tab (AdminBookingsTab.jsx) reads/writes the hardened
+// admin API (MFA + RBAC + audit-logged) — same generic v1 admin CRUD stack
+// used for payments/users, not the legacy protect+adminOnly /api/enrollments
+// list (routes/enrollmentRoutes.js, still mounted but no longer called from
+// the frontend).
+export const getEnrollments   = ()         => adminHttp.get('/v1/admin/enrollments').then((r) => r.data);
 export const updateEnrollment = (id, data) => adminHttp.put(`/v1/admin/enrollments/${id}`, data).then((r) => r.data);

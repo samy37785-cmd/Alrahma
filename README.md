@@ -6,11 +6,18 @@ This README describes the **current architecture and how to run/test it**. For t
 
 ## Architecture (current)
 
-- **Backend** (`backend/`): Node.js + Express REST API, backed by **MongoDB** (Mongoose) as the production datastore. Auth, payments (Stripe), courses, enrollments, subscriptions, admin, etc. all live here today.
+- **Backend** (`backend/`): Node.js + Express REST API, backed by **MongoDB** (Mongoose) as the production datastore. Auth, courses, enrollments/bookings, subscriptions, admin, etc. all live here today. Stripe/PayPal/manual-payment gateway code still exists (see "Enrollment & payments model" below) but is no longer reachable from the customer-facing frontend.
 - **Frontend** (`artifacts/al-rahma-academy/`): React + Vite single-page app (Tailwind, React Router/wouter, React Query).
-- **`lib/db/`**: A Postgres/Supabase schema (Drizzle ORM migrations `0000`–`0022`), RLS/ACL policies, and RPCs — built and tested as **Stage 2J-B**'s target schema for a future Mongo→Supabase migration. This schema is fully built and tested locally; it is **not** the backend's live datastore today (see status doc).
-- **`backend/scripts/migration/`**: The Mongo→Supabase migration tooling itself (lossless per-domain transforms, a DB-side `migration_source_ledger` for idempotency/provenance, fault-injection-tested crash recovery, and a production-import orchestrator with approval-manifest/backup/signups-off preflight gates). Reviewed across multiple rounds on PR #70; **never yet run against Supabase Production**.
+- **`lib/db/`**: A Postgres/Supabase schema (Drizzle ORM migrations `0000`–`0025`), RLS/ACL policies, and RPCs — built and tested as **Stage 2J-B/2J-C**'s target schema for a future Mongo→Supabase migration. This schema is fully built and tested locally; it is **not** the backend's live datastore today (see status doc).
+- **`backend/scripts/migration/`**: The Mongo→Supabase migration tooling itself (lossless per-domain transforms, a DB-side `migration_source_ledger` for idempotency/provenance, fault-injection-tested crash recovery, and a production-import orchestrator with approval-manifest/backup/signups-off preflight gates, plus a closed-by-default Production Enablement gate from Stage 2J-C). Reviewed across multiple rounds on PR #70 and PR #71 (both merged to `main`); **never yet run against Supabase Production**.
 - Workspace is managed with **pnpm** (see `pnpm-workspace.yaml`): `artifacts/*`, `lib/*`, `lib/integrations/*`, `scripts`.
+
+## Enrollment & payments model (Booking-First Enrollment)
+
+There is **no in-app online payment** anywhere in the customer-facing frontend: a student picks a plan, submits a booking request (name, WhatsApp, country, timezone, availability, plan, notes), gets a booking reference and a pre-filled WhatsApp link, and pays off-site — an admin then activates their subscription manually from the admin dashboard. No card, bank, or account credential is ever collected by this site.
+
+- Booking requests reuse the pre-existing `Enrollment` model/API (`POST /api/enrollments`, admin CRUD at `/api/v1/admin/enrollments`) rather than a new resource, with additive fields (`bookingRef`, `agreedAmount`, `currency`, `paymentMethodExternal`, `paidAt`, `renewalAt`, `adminNote`) and two extra status values (`awaiting_payment`, `paid`).
+- The Stripe/PayPal/manual-payment gateway integrations, routes, models, and all historical `Payment`/`Invoice`/`ManualPayment` records are **untouched and still legacy/deferred** — nothing here deletes or migrates them; the admin manual-payment review tab still works for historical records. See `docs/current-project-status.md` §5 for the full writeup.
 
 ## Run
 
@@ -37,4 +44,4 @@ The backend and frontend deploy through this project's existing hosting configur
 
 ## Mongo → Supabase migration status
 
-**See [`docs/current-project-status.md`](docs/current-project-status.md) for the authoritative, current answer.** In one line: MongoDB remains the production source of truth; the Supabase schema and migration tooling are built and locally rehearsal-tested but **no production import or cutover has occurred**; `payments` is explicitly deferred (real records use an unsupported gateway); PR #70 tracks this work and is not yet approved for merge.
+**See [`docs/current-project-status.md`](docs/current-project-status.md) for the authoritative, current answer.** In one line: MongoDB remains the production source of truth; the Supabase schema and migration tooling are built and locally rehearsal-tested but **no production import or cutover has occurred**; `payments` is explicitly deferred (real records use an unsupported gateway, and is now additionally out of scope of the customer-facing app after Booking-First Enrollment); PR #70 and PR #71 are both merged to `main`.

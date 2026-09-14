@@ -122,16 +122,6 @@ export const INVOICE_TEXT = {
   fr: { locale: 'fr-FR', invoice: 'Facture', date: 'Date', period: 'Période', subscription: 'Abonnement', planWord: 'Forfait', monthlyRate: 'Tarif mensuel', discount: 'Remise', off: 'REMISE', totalPaid: 'Total payé', paid: '✓ Payé', thankYou: 'Merci d\'apprendre avec Al-Rahma Academy. Qu\'Allah bénisse votre parcours.', print: '🖨 Imprimer / Enregistrer en PDF' },
 };
 
-/* ── Checkout payment-method subtitles (keyed by method subKey) ── */
-export const CHECKOUT_SUBS = {
-  en: { cardSub: 'Secure card payment', intlSub: 'For international students' },
-  ar: { cardSub: 'دفع آمن بالبطاقة', intlSub: 'للطلاب الدوليين' },
-  it: { cardSub: 'Pagamento sicuro con carta', intlSub: 'Per studenti internazionali' },
-  es: { cardSub: 'Pago seguro con tarjeta', intlSub: 'Para estudiantes internacionales' },
-  de: { cardSub: 'Sichere Kartenzahlung', intlSub: 'Für internationale Schüler' },
-  fr: { cardSub: 'Paiement par carte sécurisé', intlSub: 'Pour les étudiants internationaux' },
-};
-
 /* ── Small shared UI strings (modals, floating buttons) ── */
 export const UI_TEXT = {
   en: { close: 'Close', chooseResource: 'Choose how you’d like to start learning:', whatsapp: 'Chat on WhatsApp' },

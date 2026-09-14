@@ -26,9 +26,28 @@ const enrollmentSchema = new Schema({
   // Step 4 — Chosen plan
   plan: String,
 
-  // Admin
-  status: { type: String, enum: ['pending', 'contacted', 'enrolled', 'cancelled'], default: 'pending' },
+  // Booking-first model (payment happens off-site, over WhatsApp) — this
+  // reference is shown to the student right after submission and embedded
+  // in the pre-filled WhatsApp message so admin and student can both refer
+  // to the same request unambiguously.
+  bookingRef: { type: String, unique: true, sparse: true, index: true },
+
+  // Admin — status values kept superset-compatible with pre-existing prod
+  // documents ('pending'/'enrolled' predate the booking-first model and
+  // still mean "new"/"activated"; 'awaiting_payment'/'paid' are new
+  // intermediate states). No data migration needed — this is additive.
+  status: { type: String, enum: ['pending', 'contacted', 'awaiting_payment', 'paid', 'enrolled', 'cancelled'], default: 'pending' },
   notes:  { type: String, default: '' },
+
+  // Admin-only financial bookkeeping for the offline payment the student
+  // arranges over WhatsApp — never a payment gateway, never card/account
+  // data. Distinct from the customer-facing `notes` field above.
+  agreedAmount:          { type: Number },
+  currency:              { type: String, trim: true },
+  paymentMethodExternal: { type: String, trim: true },
+  paidAt:                { type: Date },
+  renewalAt:             { type: Date },
+  adminNote:             { type: String, default: '' },
 }, { timestamps: true });
 
 // ── Query indexes ─────────────────────────────────────────────────────────────

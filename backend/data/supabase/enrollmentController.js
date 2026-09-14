@@ -9,6 +9,7 @@
 // Supabase path.
 import { asyncHandler } from '../../utils/asyncHandler.js';
 import { parsePagination, sendPaginated } from '../../utils/pagination.js';
+import { pickPublicBookingFields, normalizeWhatsapp } from '../../utils/enrollmentValidation.js';
 import { withAnonContext, withUserContext } from './client.js';
 
 // Field renames vs. Mongo (docs/option-a-mongo-supabase-parity-map.md,
@@ -36,6 +37,13 @@ function mapRow(row) {
     plan: row.requested_plan_slug,
     status: row.status,
     notes: row.notes,
+    bookingRef: row.booking_ref,
+    agreedAmount: row.agreed_amount,
+    currency: row.currency,
+    paymentMethodExternal: row.payment_method_external,
+    paidAt: row.paid_at,
+    renewalAt: row.renewal_at,
+    adminNote: row.admin_note,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -44,44 +52,43 @@ function mapRow(row) {
 // @route  POST /api/enrollments
 // @access Public
 export const createEnrollment = asyncHandler(async (req, res) => {
-  const data = req.body;
+  // Mass-assignment fix, same allowlist as the Mongo controller (see
+  // utils/enrollmentValidation.js): only customer-facing fields are ever
+  // read from the request body. Booking-First Enrollment also requires a
+  // real WhatsApp number (the only contact channel this flow uses).
+  const data = pickPublicBookingFields(req.body);
   if (!data.name || !data.email) {
     res.status(400);
     throw new Error('Name and email are required');
   }
+  const whatsapp = normalizeWhatsapp(data.whatsapp);
+  if (!whatsapp) {
+    res.status(400);
+    throw new Error('A valid WhatsApp number is required so we can contact you to arrange your booking');
+  }
 
-  // enrollments_insert_public (0002_rls.sql) grants INSERT on exactly the
-  // guest-submittable columns below (id/created_at/updated_at are
-  // deliberately excluded from that grant — Postgres defaults handle them,
-  // per 0002_rls.sql's own privilege-reconciliation comment about not
-  // letting a guest backdate created_at), and its WITH CHECK forces
-  // status = 'new'; `status` is therefore omitted here.
-  //
-  // REAL GAP — same root cause as trial_requests/subscribers: no RETURNING
-  // clause, because anon/authenticated have no SELECT grant on `enrollments`
-  // at all (only this column-restricted INSERT — 0002_rls.sql /
-  // 0004_privilege_reconciliation.sql), and Postgres privilege-checks
-  // RETURNING like a SELECT. The Mongo response includes the saved
-  // document's `_id` (`res.status(201).json({ message, id: enrollment._id
-  // })`) — that id genuinely cannot be recovered here under RLS as designed
-  // (the anon-insert column grant also excludes `id`, so a client-generated
-  // id isn't an option either). Returned as `id: null` below rather than
-  // faked or fetched via withServiceRole, which would bypass RLS for a case
-  // the schema author didn't carve out for guest submissions.
   const times = Array.isArray(data.times) ? data.times : [];
   const subjects = Array.isArray(data.subjects) ? data.subjects : [];
 
-  await withAnonContext(async (client) => {
-    await client.query(
-      `INSERT INTO enrollments (
-         name, email, whatsapp, country, city, timezone, times, subjects,
-         lang, level, age_group, gender_pref, preferred_teacher_key,
-         preferred_teacher_name, requested_plan_slug, notes
-       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)`,
+  // submit_enrollment_booking() (0025_booking_first_enrollment.sql) is a
+  // narrow SECURITY DEFINER RPC, not a raw table INSERT: anon/authenticated
+  // have no SELECT grant on `enrollments` at all (0002_rls.sql), so a plain
+  // "INSERT ... RETURNING id" (the old approach here, before Booking-First
+  // Enrollment) can never recover the row it just created — Postgres
+  // privilege-checks RETURNING like a SELECT. This RPC bypasses that
+  // entirely by inserting internally (as its owner) and returning ONLY the
+  // generated booking_ref — never a row, never an id, never any other
+  // guest's data — which is exactly what the frontend needs to show the
+  // student and build their WhatsApp message. Its own parameter list is the
+  // allowlist: there is no way to pass status/agreedAmount/currency/
+  // paymentMethodExternal/paidAt/renewalAt/adminNote through it at all.
+  const bookingRef = await withAnonContext(async (client) => {
+    const r = await client.query(
+      `SELECT public.submit_enrollment_booking($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16) AS ref`,
       [
         data.name,
         data.email,
-        data.whatsapp ?? null,
+        whatsapp,
         data.country ?? null,
         data.city ?? null,
         data.timezone ?? null,
@@ -97,9 +104,10 @@ export const createEnrollment = asyncHandler(async (req, res) => {
         data.notes ?? null,
       ]
     );
+    return r.rows[0].ref;
   });
 
-  res.status(201).json({ message: 'Enrollment received', id: null });
+  res.status(201).json({ message: 'Booking request received', id: null, bookingRef });
 });
 
 // @route  GET /api/enrollments/mine
@@ -117,7 +125,9 @@ export const getMyEnrollment = asyncHandler(async (req, res) => {
       `SELECT id, name, email, whatsapp, country, city, timezone, times,
               subjects, lang, level, age_group, gender_pref,
               preferred_teacher_key, preferred_teacher_name,
-              requested_plan_slug, status, notes, created_at, updated_at
+              requested_plan_slug, status, notes, booking_ref, agreed_amount,
+              currency, payment_method_external, paid_at, renewal_at,
+              admin_note, created_at, updated_at
          FROM enrollments
         WHERE email = $1
         ORDER BY created_at DESC
@@ -148,7 +158,9 @@ export const getEnrollments = asyncHandler(async (req, res) => {
       `SELECT id, name, email, whatsapp, country, city, timezone, times,
               subjects, lang, level, age_group, gender_pref,
               preferred_teacher_key, preferred_teacher_name,
-              requested_plan_slug, status, notes, created_at, updated_at
+              requested_plan_slug, status, notes, booking_ref, agreed_amount,
+              currency, payment_method_external, paid_at, renewal_at,
+              admin_note, created_at, updated_at
          FROM enrollments
         ORDER BY created_at DESC
         LIMIT $1 OFFSET $2`,

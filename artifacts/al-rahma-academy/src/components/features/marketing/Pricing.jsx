@@ -1,8 +1,8 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Reveal from '../../ui/Reveal';
 import MobileCarousel from '../../ui/MobileCarousel';
-import CheckoutModal from '../../ui/CheckoutModal';
-import { useLang } from '../../../context/LangContext';
+import { useLang, withLanguage } from '../../../context/LangContext';
 import { plans } from '../../../data';
 import { PLAN_TEXT, pick } from '../../../i18n/content';
 
@@ -62,7 +62,7 @@ const PLAN_ICONS = [
    checkout are unaffected — only the fabricated urgency layer is gone. */
 
 export default function Pricing() {
-  const [selectedPlan, setSelectedPlan] = useState(null);
+  const navigate = useNavigate();
   const [currencyCode, setCurrencyCode] = useState('EUR');
   const { t, lang } = useLang();
   const p = t.pricing;
@@ -154,7 +154,7 @@ export default function Pricing() {
                 <button
                   type="button"
                   className={`btn btn--block ${plan.featured ? 'btn--gold' : 'btn--green'}`}
-                  onClick={() => setSelectedPlan(plan)}
+                  onClick={() => navigate(withLanguage(`/enroll?plan=${encodeURIComponent(plan.name)}`, lang))}
                 >
                   {p.getStarted}
                 </button>
@@ -191,7 +191,7 @@ export default function Pricing() {
       <Reveal className="pricing__trust">
         <div className="pricing__trust-item">
           <svg className="pricing__trust-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-          <span>{p.securePayment || 'Payment methods shown at checkout'}</span>
+          <span>{p.securePayment || "We'll confirm final pricing on WhatsApp"}</span>
         </div>
         <div className="pricing__trust-item">
           <svg className="pricing__trust-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 8 8 12 12 16"/><line x1="16" y1="12" x2="8" y2="12"/></svg>
@@ -213,8 +213,6 @@ export default function Pricing() {
           <span>{p.gdprNote || 'See our Privacy Policy for how your details are handled'}</span>
         </div>
       </Reveal>
-
-      <CheckoutModal plan={selectedPlan} onClose={() => setSelectedPlan(null)} />
     </section>
   );
 }

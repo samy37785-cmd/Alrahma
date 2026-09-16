@@ -40,12 +40,40 @@ export const createReview = asyncHandler(async (req, res) => {
   if (handleValidationErrors(req, res)) return;
 
   const { rating, title, body, teacherId, courseId } = req.body;
+  // XOR: exactly one of teacherId/courseId, never both, never neither — same
+  // guard as the Mongo controller (controllers/reviewController.js). Without
+  // this, a request setting BOTH could smuggle an owned relationship (e.g. a
+  // real course_progress row) alongside an unowned one past whichever
+  // ownership branch happened to run.
+  if (teacherId && courseId) {
+    return res.status(400).json({ message: 'Provide exactly one of teacherId or courseId, not both' });
+  }
   if (!teacherId && !courseId) {
     return res.status(400).json({ message: 'Provide either teacherId or courseId' });
   }
 
+  // Auth hardening security batch: same relationship check as the Mongo
+  // controller (controllers/reviewController.js) — previously any
+  // authenticated student could review any course/teacher id. req.user.teacher
+  // (loaded by data/supabase/loadUser.js's loadUserById from profiles.teacher_id)
+  // is checked directly, no extra query needed; course_progress is the only
+  // relational signal linking a student to a specific course (Enrollment has
+  // no course reference under the booking-first schema, on either backend).
+  if (teacherId && String(req.user.teacher ?? '') !== String(teacherId)) {
+    return res.status(403).json({ message: 'You can only review your assigned teacher' });
+  }
+
   try {
     const row = await withUserContext(req.user._id, async (client) => {
+      if (courseId) {
+        const cp = await client.query('SELECT 1 FROM course_progress WHERE user_id = $1 AND course_id = $2', [req.user._id, courseId]);
+        if (!cp.rows[0]) {
+          const err = new Error('You can only review a course you have engaged with');
+          err.status = 403;
+          throw err;
+        }
+      }
+
       const existing = await client.query(
         teacherId
           ? 'SELECT id FROM reviews WHERE student_id = $1 AND teacher_id = $2'
@@ -68,6 +96,7 @@ export const createReview = asyncHandler(async (req, res) => {
     res.status(201).json({ review: { ...toJson(row), student: { _id: req.user._id, name: req.user.name } } });
   } catch (err) {
     if (err.status === 409) return res.status(409).json({ message: err.message });
+    if (err.status === 403) return res.status(403).json({ message: err.message });
     throw err;
   }
 });

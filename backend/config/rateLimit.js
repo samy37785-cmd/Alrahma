@@ -97,3 +97,28 @@ export const enrollmentLimiter = limiter({
   message: 'Too many enrollment requests — please try again later.',
   prefix: 'rl:enrollment:',
 });
+
+// Auth hardening security batch: trials and contact both trigger an
+// outbound email to an attacker-supplied address on every successful POST
+// (see controllers/trialController.js, contactController.js) — the same
+// abuse shape enrollmentLimiter above already exists for, so they get the
+// same 5/15min budget. Newsletter never sends email but still writes a DB
+// row per request; a slightly higher budget accommodates legitimate
+// retry/typo-correction without meaningfully weakening abuse protection.
+export const trialLimiter = limiter({
+  max: 5,
+  message: 'Too many trial requests — please try again later.',
+  prefix: 'rl:trial:',
+});
+
+export const contactLimiter = limiter({
+  max: 5,
+  message: 'Too many contact requests — please try again later.',
+  prefix: 'rl:contact:',
+});
+
+export const newsletterLimiter = limiter({
+  max: 10,
+  message: 'Too many newsletter signup attempts — please try again later.',
+  prefix: 'rl:newsletter:',
+});

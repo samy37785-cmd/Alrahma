@@ -243,6 +243,17 @@ export const updateUserSubscription = asyncHandler(async (req, res) => {
 const UPDATABLE = ['name', 'email', 'familyName', 'specialization', 'bio', 'gender', 'languages', 'subjects'];
 const COLUMN_MAP = { familyName: 'family_name' };
 
+// KNOWN GAP (auth hardening security batch parity check): the Mongo-mode
+// equivalent (routes/v1/admin/usersRoutes.js) supports filtering by
+// subscriptionStatus/subscriptionPlan (mapped internally to the nested
+// User.subscription.status/.plan fields). This backend has no `subscription`
+// concept on `profiles` at all (see this file's own module comment on the
+// documented role-model differences) — subscription state lives in a
+// separate table this controller does not otherwise touch, so adding that
+// filter here would require joining against it, a real schema investigation
+// beyond this pass's scope. Not a security defect (there is no dotted-field
+// filter here to be silently dead the way the Mongo one was) — documented as
+// a feature-parity gap instead of guessed at.
 export const list = asyncHandler(async (req, res) => {
   const { page, limit, skip } = parsePagination(req.query);
   const q = req.query.q;

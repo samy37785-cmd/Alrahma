@@ -31,7 +31,16 @@ const users = createCRUDController(User, {
   defaultLimit:   50,
   maxLimit:       500,
   searchFields:   ['name', 'email'],
-  allowedFilters: ['role', 'subscription.status', 'subscription.plan'],
+  // subscription.status/subscription.plan use { param, field } mapping (see
+  // crudController.js's allowedFilters handling) — a dotted wire-level
+  // query param would be stripped by sanitizeMongo.js (mounted globally on
+  // this router) before this filter ever saw it, silently making the
+  // filter dead. Auth hardening security batch.
+  allowedFilters: [
+    'role',
+    { param: 'subscriptionStatus', field: 'subscription.status' },
+    { param: 'subscriptionPlan',   field: 'subscription.plan' },
+  ],
   populateFields: ['teacher'],
   sortable:       ['createdAt', 'updatedAt', 'name', 'email'],
   updateMiddleware: async (body) => {

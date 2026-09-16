@@ -18,8 +18,13 @@
 import { asyncHandler } from '../../utils/asyncHandler.js';
 import { applyStreak, todayStr } from '../../utils/streak.js';
 import { withUserContext } from './client.js';
+import { clampNonNegative } from '../../utils/clampNumeric.js';
 
 const HISTORY_LIMIT = 90;
+// Same bounds as controllers/quranProgressController.js (Mongo mode) — kept
+// in sync so a log call is rejected/clamped identically regardless of backend.
+const MAX_VERSES_READ = 6236;
+const MAX_MINUTES_READ = 1440;
 
 function toJson(row, userId) {
   const resume = row?.resume || {};
@@ -140,13 +145,23 @@ export const updateGoal = asyncHandler(async (req, res) => {
 // @body  { versesRead, minutesRead }
 // @access Private
 export const logReading = asyncHandler(async (req, res) => {
-  const versesRead = Number(req.body.versesRead) || 0;
-  const minutesRead = Number(req.body.minutesRead) || 0;
+  const versesRead = clampNonNegative(req.body.versesRead, MAX_VERSES_READ);
+  const minutesRead = clampNonNegative(req.body.minutesRead, MAX_MINUTES_READ);
   const today = todayStr();
 
   const doc = await withUserContext(req.user._id, async (client) => {
+    // Auth hardening security batch (item 6d): FOR UPDATE locks the row (if
+    // it exists) for the rest of this transaction — withUserContext already
+    // runs this callback inside one — so a second concurrent logReading()
+    // call for the same user blocks here until the first's UPDATE commits,
+    // instead of both reading the same pre-update streak/history and one
+    // overwriting the other's result (a real lost update, since this SELECT
+    // -> compute-in-JS -> full-value UPDATE round-trip has no per-row atomic
+    // increment to fall back on the way quran_memorization_stats.logPractice
+    // does). A brand-new row (no existing progress yet) has nothing to lock;
+    // the ON CONFLICT below still serializes that first-insert race.
     const existing = await client.query(
-      'SELECT streak, history FROM quran_reading_progress WHERE user_id = $1',
+      'SELECT streak, history FROM quran_reading_progress WHERE user_id = $1 FOR UPDATE',
       [req.user._id]
     );
     const prevStreak = existing.rows[0]?.streak || 0;

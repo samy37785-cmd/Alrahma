@@ -1,9 +1,10 @@
 import { Router } from 'express';
-import { createTrial } from '../controllers/trialController.js';
+import { createTrial, trialValidation } from '../controllers/trialController.js';
+import { trialLimiter } from '../config/rateLimit.js';
 
 const router = Router();
 
-router.post('/', createTrial); // public: anyone can submit the form
+router.post('/', trialLimiter, trialValidation, createTrial); // public: anyone can submit the form
 
 // Auth hardening security batch: the admin listing that used to live here
 // (GET /, protect+adminOnly) is removed — AdminDashboard.jsx (the real,

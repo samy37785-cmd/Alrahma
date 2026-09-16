@@ -1,8 +1,14 @@
 import QuranReadingProgress from '../models/QuranReadingProgress.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { applyStreak, todayStr } from '../utils/streak.js';
+import { clampNonNegative } from '../utils/clampNumeric.js';
 
 const HISTORY_LIMIT = 90;
+// The Mushaf has 6236 verses total and a day has 1440 minutes — a single
+// log call claiming more than either is obviously bogus/attacker-supplied,
+// not real usage.
+const MAX_VERSES_READ = 6236;
+const MAX_MINUTES_READ = 1440;
 
 async function getOrCreate(userId) {
   return (
@@ -57,21 +63,98 @@ export const updateGoal = asyncHandler(async (req, res) => {
 // @body  { versesRead, minutesRead }
 // @access Private
 export const logReading = asyncHandler(async (req, res) => {
-  const versesRead  = Number(req.body.versesRead)  || 0;
-  const minutesRead = Number(req.body.minutesRead) || 0;
-  const doc = await getOrCreate(req.user._id);
+  const versesRead  = clampNonNegative(req.body.versesRead, MAX_VERSES_READ);
+  const minutesRead = clampNonNegative(req.body.minutesRead, MAX_MINUTES_READ);
   const today = todayStr();
 
-  const entry = doc.history.find((h) => h.date === today);
-  if (entry) {
-    entry.versesRead  += versesRead;
-    entry.minutesRead += minutesRead;
-  } else {
-    doc.history.push({ date: today, versesRead, minutesRead });
+  // Corrective: an earlier two-step approach (try $inc on today's existing
+  // entry, fall back to $push if missing) still had a real race — two
+  // concurrent "first log of the day" calls could each miss the $inc match
+  // and both take the $push branch, producing two same-date history
+  // entries. Replaced with a single MongoDB update PIPELINE (the array form
+  // of the update argument — an aggregation expression, not a classic
+  // update document): the server decides "increment today's entry if it
+  // exists, otherwise append one" as ONE atomic per-document operation.
+  // MongoDB serializes writes to the same document, and each concurrent
+  // call's pipeline is evaluated against whatever the document's state
+  // genuinely is at the moment that call executes (including another
+  // call's just-committed write) — never a stale client-side read — so no
+  // interleaving can produce two entries for the same (user, date).
+  //
+  // Ensuring the doc/schema-defaults exist first (getOrCreate + conditional
+  // save, same pattern as getMyProgress()) keeps this update a plain,
+  // non-upsert findOneAndUpdate — MongoDB does not support mixing
+  // $setOnInsert-style default application with a pipeline update, so
+  // upserting here directly would leave a brand-new document without its
+  // schema defaults (dailyGoal/lastPosition/streak).
+  //
+  // This first-creation step has its own, separate race from the history
+  // race above: two concurrent "very first log ever" requests for the same
+  // user can both run getOrCreate's findOne before either has saved, so
+  // both see isNew===true and both attempt to save a new document. The
+  // schema's unique index on `user` (models/QuranReadingProgress.js) lets
+  // only one of those inserts succeed — without handling that, the loser
+  // would bubble up as an unhandled E11000 duplicate-key error → 500. Since
+  // "someone else just created my singleton" is not actually a failure (the
+  // document we wanted now exists either way), swallow only that specific
+  // error and continue into the atomic pipeline update below.
+  const seed = await getOrCreate(req.user._id);
+  if (seed.isNew) {
+    try {
+      await seed.save();
+    } catch (err) {
+      if (err.code !== 11000) throw err;
+    }
   }
-  if (doc.history.length > HISTORY_LIMIT) {
-    doc.history = doc.history.slice(-HISTORY_LIMIT);
-  }
+
+  const doc = await QuranReadingProgress.findOneAndUpdate(
+    { user: req.user._id },
+    [
+      {
+        $set: {
+          history: {
+            $let: {
+              vars: { existing: { $ifNull: ['$history', []] } },
+              in: {
+                $let: {
+                  vars: { matchIdx: { $indexOfArray: ['$$existing.date', today] } },
+                  in: {
+                    $cond: [
+                      { $gte: ['$$matchIdx', 0] },
+                      {
+                        $map: {
+                          input: '$$existing',
+                          as: 'h',
+                          in: {
+                            $cond: [
+                              { $eq: ['$$h.date', today] },
+                              {
+                                date: '$$h.date',
+                                versesRead: { $add: ['$$h.versesRead', versesRead] },
+                                minutesRead: { $add: ['$$h.minutesRead', minutesRead] },
+                              },
+                              '$$h',
+                            ],
+                          },
+                        },
+                      },
+                      {
+                        $slice: [
+                          { $concatArrays: ['$$existing', [{ date: today, versesRead, minutesRead }]] },
+                          -HISTORY_LIMIT,
+                        ],
+                      },
+                    ],
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    ],
+    { new: true }
+  );
 
   doc.streak = applyStreak(doc.streak, today);
   await doc.save();

@@ -36,12 +36,12 @@ pnpm run check:published-migrations  # just the 4 filesystem checksum assertions
 Suites, in the order the orchestrator runs them:
 
 - `test/schema.local.test.mjs` — 69 real-SQL assertions (schema, constraints, functions/triggers)
-- `test/rls.local.test.mjs` — 80 real-SQL assertions (specific findings: bypass closure, forgery prevention, AAL boundaries, concurrency, webhook lease + fencing, subscription/invoice/refund RPCs, Booking-First Enrollment's submit_enrollment_booking() RPC, 0026's live_classes nullable-teacher admin/student/non-admin/FK coverage)
+- `test/rls.local.test.mjs` — 86 real-SQL assertions (specific findings: bypass closure, forgery prevention, AAL boundaries, concurrency, webhook lease + fencing, subscription/invoice/refund RPCs, Booking-First Enrollment's submit_enrollment_booking() RPC, 0026's live_classes nullable-teacher admin/student/non-admin/FK coverage, 0027's reviews_insert_own course_progress/my_teacher_id() relationship checks)
 - `test/rls-full-matrix.local.test.mjs` — 70 real-SQL assertions (systematic per-table sweep of docs/rls-matrix.md, incl. plan versioning + invoice issuance sweeps)
 - `test/acl.local.test.mjs` — 20 real-SQL assertions (direct has_table_privilege/has_column_privilege/has_function_privilege checks — proves the GRANT matrix directly, not by inference)
 - `test/upgrade-scenario.local.test.mjs` — 9 real-SQL assertions (self-contained — see below; applies 0000-0003, injects legacy drift, then applies the rest and proves it's cleaned up)
 
-**252 real-SQL/filesystem assertions total: 4 checksum + 69 schema + 80
+**258 real-SQL/filesystem assertions total: 4 checksum + 69 schema + 86
 targeted RLS + 70 full RLS matrix + 20 ACL + 9 upgrade.** (Stage 2J-B /
 0022_lossless_migration_support.sql raised the total from 230 to 241:
 +1 schema, +9 full RLS matrix, +1 ACL. Booking-First Enrollment's 0025
@@ -54,8 +54,14 @@ information_schema level) and +4 targeted RLS (AAL2 admin insert with
 teacher_id = NULL; the assigned student can still read that row; an
 ordinary non-admin cannot insert a teacherless class; a real teacher_id
 still works and stays FK-enforced) — real disposable-Postgres assertions,
-not a mocked controller test. See each migration's own tests for what
-every new assertion covers.) Neither
+not a mocked controller test. The auth hardening security batch's
+0027_review_relationship_check.sql then raised it from 252 to 258: +6
+targeted RLS (reviews_insert_own now requires a real course_progress row
+for a course review or a my_teacher_id() match for a teacher review — a
+student with the relationship succeeds, one without it is rejected, and
+setting both course_id and teacher_id together to smuggle an owned
+relationship alongside an unowned one is still rejected). See each
+migration's own tests for what every new assertion covers.) Neither
 `test:db` nor `check:published-migrations` is wired into any CI pipeline
 yet — this repo has no `.github/workflows` at all today; whenever one is
 added, `test:db` (or at minimum `check:published-migrations`) belongs in
@@ -73,7 +79,7 @@ isn't freshly created and torn down every time.
 ### Proving the orchestrator's own gating logic actually works
 
 `node test/orchestrator-failure-propagation.test.mjs` is a Docker/DB-free
-safe self-test — **not counted in the 252** — that proves, by really
+safe self-test — **not counted in the 258** — that proves, by really
 spawning deliberately-failing/succeeding throwaway child scripts and
 checking the result (never by reading the code and assuming), three
 things about the orchestrator itself:
@@ -86,7 +92,7 @@ things about the orchestrator itself:
    every way a result could look accidentally-fine but not actually be:
    a missing required suite, a duplicated one, one with no readable
    summary, one reporting the wrong total, or one silently skipped —
-   and correctly passes for the one genuinely-correct 252/252 shape.
+   and correctly passes for the one genuinely-correct 258/258 shape.
 3. Cleanup failure alone fails an otherwise-perfect run, cleanup always
    runs (even if the test run itself crashed), and the evidence-writing
    step only ever runs after cleanup has fully completed and been folded
@@ -113,7 +119,7 @@ following hold:
 
 - `published-migrations-checksum` = exactly 4/4
 - `schema.local.test.mjs` = exactly 69/69
-- `rls.local.test.mjs` = exactly 80/80
+- `rls.local.test.mjs` = exactly 86/86
 - `rls-full-matrix.local.test.mjs` = exactly 70/70
 - `acl.local.test.mjs` = exactly 20/20
 - `upgrade-scenario.local.test.mjs` = exactly 9/9
@@ -121,7 +127,7 @@ following hold:
   and produced a readable `N/M passed.` summary
 - no step outside this list produced its own summary line (an
   unaccounted-for suite can't silently inflate a sum)
-- the resulting aggregate = exactly **252/252**
+- the resulting aggregate = exactly **258/258**
 
 `start-disposable-postgres` and the two `run-migrations` steps are
 deliberately **not** part of this contract — they carry no assertion
@@ -131,7 +137,7 @@ DB suite even runs (`runPipeline()`'s ordinary fail-fast behavior).
 **"Green evidence" (a run that `--write-evidence` is willing to write
 `last-run-output.txt` from) means, precisely:**
 
-1. the exact assertion contract above is satisfied (252/252, not a naive
+1. the exact assertion contract above is satisfied (258/258, not a naive
    sum);
 2. every step's own exit code was 0, and no step was skipped;
 3. cleanup was run AND independently verified — the disposable
@@ -213,9 +219,10 @@ isolated were exactly the two that stayed green.
 The fix is `test/orchestrate-db-tests.mjs` (a fresh, uniquely-named,
 disposable container every run — see above), not any change to
 migrations or RLS SQL. Verified empirically, not assumed: the full
-230-assertion suite (the contract's total at Stage 0 — now 252 after
-Stage 2J-B, Booking-First Enrollment's 0025 migration, and STOP GATE C's
-0026 migration, see above) was run twice, each on its own independently
+230-assertion suite (the contract's total at Stage 0 — now 258 after
+Stage 2J-B, Booking-First Enrollment's 0025 migration, STOP GATE C's
+0026 migration, and the auth hardening security batch's 0027 migration,
+see above) was run twice, each on its own independently
 fresh disposable database (Run A, Run B), and both reached 230/230. See
 the Stage 0 chat report for both runs' full output.
 

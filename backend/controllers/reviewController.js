@@ -4,6 +4,7 @@ import { handleValidationErrors } from '../utils/validationHelper.js';
 import { parsePagination } from '../utils/pagination.js';
 import { auditFromReq } from '../services/auditService.js';
 import Review from '../models/Review.js';
+import CourseProgress from '../models/CourseProgress.js';
 
 export const reviewValidation = [
   body('rating').isInt({ min: 1, max: 5 }).withMessage('Rating must be 1–5'),
@@ -26,8 +27,33 @@ export const createReview = asyncHandler(async (req, res) => {
 
   const { rating, title, body: reviewBody, teacherId, courseId } = req.body;
 
+  // XOR: exactly one of teacherId/courseId, never both, never neither —
+  // previously only the "neither" half was checked, so a request setting
+  // BOTH could smuggle an owned relationship (e.g. a real CourseProgress
+  // row) alongside an unowned one and slip past whichever branch of the
+  // ownership check below ran first.
+  if (teacherId && courseId) {
+    return res.status(400).json({ message: 'Provide exactly one of teacherId or courseId, not both' });
+  }
   if (!teacherId && !courseId) {
     return res.status(400).json({ message: 'Provide either teacherId or courseId' });
+  }
+
+  // Auth hardening security batch: previously any authenticated student
+  // could review any course/teacher id with no relationship to it at all —
+  // only a duplicate-review check existed. Enrollment cannot be used for
+  // this (the booking-first Enrollment schema has no course/teacher
+  // reference — see models/Enrollment.js); CourseProgress (created via
+  // toggleProgress, itself gated behind an active subscription) is the only
+  // real signal linking a student to a specific course, and User.teacher is
+  // the only signal linking a student to their assigned teacher.
+  if (courseId) {
+    const hasProgress = await CourseProgress.exists({ user: req.user._id, course: courseId });
+    if (!hasProgress) {
+      return res.status(403).json({ message: 'You can only review a course you have engaged with' });
+    }
+  } else if (String(req.user.teacher ?? '') !== String(teacherId)) {
+    return res.status(403).json({ message: 'You can only review your assigned teacher' });
   }
 
   const existing = await Review.findOne({

@@ -15,7 +15,7 @@ export const globalSearch = asyncHandler(async (req, res) => {
   const limit = 5;
 
   const [courses, posts, teachers] = await Promise.all([
-    Course.find({ $or: [{ title: regex }, { description: regex }] })
+    Course.find({ published: true, $or: [{ title: regex }, { description: regex }] })
       .select('title description level')
       .limit(limit)
       .lean(),
@@ -37,7 +37,7 @@ export const searchCourses = asyncHandler(async (req, res) => {
   const level = req.query.level;
   const { page, limit, skip } = parsePagination(req.query, { defaultLimit: 12, maxLimit: 20 });
 
-  const filter = {};
+  const filter = { published: true };
   if (q) {
     const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const regex = new RegExp(escaped, 'i');

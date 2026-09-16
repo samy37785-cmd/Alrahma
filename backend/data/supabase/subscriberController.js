@@ -2,16 +2,20 @@
 // controllers/subscriberController.js — see subscribe()'s comment for one
 // real, unavoidable divergence in the idempotent-insert contract.
 import { asyncHandler } from '../../utils/asyncHandler.js';
+import { handleValidationErrors } from '../../utils/validationHelper.js';
 import { withAnonContext, withUserContext } from './client.js';
+
+// Auth hardening security batch: same validation chain as the Mongo
+// controller (real email-format check) — this route had no validation at
+// all before, only a manual truthy check.
+export { subscribeValidation } from '../../controllers/subscriberController.js';
 
 // @route  POST /api/newsletter
 // @access Public
 export const subscribe = asyncHandler(async (req, res) => {
-  const email = String(req.body.email ?? '').toLowerCase().trim();
-  if (!email) {
-    res.status(400);
-    throw new Error('Email is required');
-  }
+  if (handleValidationErrors(req, res)) return;
+
+  const email = String(req.body.email).toLowerCase().trim();
 
   // The Mongo controller does a findOne-then-create so it can report 200
   // ("Already subscribed") vs. 201 ("Subscribed successfully") accurately.

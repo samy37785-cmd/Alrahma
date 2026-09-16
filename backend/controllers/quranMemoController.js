@@ -1,6 +1,13 @@
 import QuranMemorizationStats from '../models/QuranMemorizationStats.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { applyStreak, todayStr } from '../utils/streak.js';
+import { clampNonNegative } from '../utils/clampNumeric.js';
+
+// A single log call can plausibly cover at most one day's worth of practice
+// and a generous number of recordings — bounds chosen to reject obviously
+// bogus/attacker-supplied values, not to constrain real usage.
+const MAX_PRACTICE_SECONDS = 86400; // 24h
+const MAX_RECORDINGS_COUNT = 1000;
 
 async function getOrCreate(userId) {
   return (
@@ -39,16 +46,30 @@ export const updateMemoGoal = asyncHandler(async (req, res) => {
 // @body  { practiceSeconds, recordingsCount }
 // @access Private
 export const logPractice = asyncHandler(async (req, res) => {
-  const practiceSeconds  = Number(req.body.practiceSeconds)  || 0;
-  const recordingsCount  = Number(req.body.recordingsCount)  || 0;
-  const doc = await getOrCreate(req.user._id);
+  const practiceSeconds = clampNonNegative(req.body.practiceSeconds, MAX_PRACTICE_SECONDS);
+  const recordingsCount = clampNonNegative(req.body.recordingsCount, MAX_RECORDINGS_COUNT);
   const today = todayStr();
 
-  doc.stats.totalRecordings   += recordingsCount;
-  doc.stats.totalPracticeTime += practiceSeconds;
-  doc.stats.lastPracticeDate  = today;
-  doc.streak = applyStreak(doc.streak, today);
+  // Auth hardening security batch (item 6d): the counters are incremented
+  // atomically via findOneAndUpdate's $inc — a real DB-level operation, not
+  // read-modify-write — so concurrent log calls can no longer lose an
+  // update. The streak recomputation below still needs the document's
+  // current lastReadDate to decide same-day/gap/reset, so it stays a
+  // follow-up .save(); only the streak branch (not the counters) remains a
+  // theoretical residual race under heavy concurrency.
+  const doc = await QuranMemorizationStats.findOneAndUpdate(
+    { user: req.user._id },
+    {
+      $inc: {
+        'stats.totalRecordings': recordingsCount,
+        'stats.totalPracticeTime': practiceSeconds,
+      },
+      $set: { 'stats.lastPracticeDate': today },
+    },
+    { upsert: true, new: true, setDefaultsOnInsert: true }
+  );
 
+  doc.streak = applyStreak(doc.streak, today);
   await doc.save();
   res.json(doc);
 });

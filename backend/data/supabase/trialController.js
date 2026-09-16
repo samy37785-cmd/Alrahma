@@ -8,16 +8,20 @@
 // path. There is no functional requirement for notification parity, only
 // for the stored-data/API-contract parity implemented below.
 import { asyncHandler } from '../../utils/asyncHandler.js';
+import { handleValidationErrors } from '../../utils/validationHelper.js';
 import { withAnonContext, withUserContext } from './client.js';
+
+// Auth hardening security batch: same validation chain as the Mongo
+// controller (length caps + real email-format check) — this route had no
+// validation at all before, only a manual truthy check.
+export { trialValidation } from '../../controllers/trialController.js';
 
 // @route  POST /api/trials
 // @access Public
 export const createTrial = asyncHandler(async (req, res) => {
+  if (handleValidationErrors(req, res)) return;
+
   const { name, email, phone, course, message } = req.body;
-  if (!name || !email) {
-    res.status(400);
-    throw new Error('Name and email are required');
-  }
 
   // trial_requests_insert_public (0002_rls.sql) grants INSERT on exactly
   // (name, email, phone, course, message, status) to anon/authenticated, and

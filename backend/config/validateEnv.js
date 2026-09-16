@@ -30,6 +30,14 @@ import { getDataBackend } from './dataBackend.js';
 
 const REQUIRED = [
   'JWT_SECRET',
+];
+
+// Only required when DATA_BACKEND is NOT supabase (the default, mongodb,
+// backend) — under DATA_BACKEND=supabase this app never opens a MongoDB
+// connection (see server.js and app.js's isSupabaseBackend()-gated DB
+// checks), so requiring MONGO_URI there would fail a valid Supabase-only
+// deployment over a variable it will never use.
+const MONGO_REQUIRED = [
   'MONGO_URI',
 ];
 
@@ -68,6 +76,14 @@ export function validateEnv() {
   if (missing.length) {
     logger.error('Server startup aborted — required environment variables are not set', { missing });
     process.exit(1);
+  }
+
+  if (getDataBackend() !== 'supabase') {
+    const mongoMissing = MONGO_REQUIRED.filter((k) => !process.env[k]);
+    if (mongoMissing.length) {
+      logger.error('Server startup aborted — required environment variables are not set', { missing: mongoMissing });
+      process.exit(1);
+    }
   }
 
   if (getDataBackend() === 'supabase') {

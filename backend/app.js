@@ -49,6 +49,7 @@ import { correlationId } from './middleware/correlationId.js';
 import { issueCsrfToken, verifyCsrfToken } from './middleware/csrf.js';
 import logger from './config/logger.js';
 import { isSupabaseBackend } from './config/dataBackend.js';
+import { getTrustProxySetting } from './config/trustProxy.js';
 import supabaseAuthRoutes from './data/supabase/routes/authRoutes.js';
 import supabaseQuranBookmarkRoutes from './data/supabase/routes/quranBookmarkRoutes.js';
 import supabaseQuranProgressRoutes from './data/supabase/routes/quranProgressRoutes.js';
@@ -83,7 +84,8 @@ validateEnv();
 
 const app = express();
 
-app.set('trust proxy', 1);
+// See config/trustProxy.js for why this is not a hardcoded hop count.
+app.set('trust proxy', getTrustProxySetting());
 
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 

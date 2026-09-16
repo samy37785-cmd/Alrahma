@@ -1,15 +1,18 @@
-﻿import Subscriber from '../models/Subscriber.js';
+﻿import { body } from 'express-validator';
+import Subscriber from '../models/Subscriber.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
+import { handleValidationErrors } from '../utils/validationHelper.js';
+
+export const subscribeValidation = [
+  body('email').trim().isEmail().withMessage('Valid email required').normalizeEmail(),
+];
 
 // @route  POST /api/newsletter
 // @access Public
 export const subscribe = asyncHandler(async (req, res) => {
-  const email = String(req.body.email ?? '').toLowerCase().trim();
-  if (!email) {
-    res.status(400);
-    throw new Error('Email is required');
-  }
+  if (handleValidationErrors(req, res)) return;
 
+  const email = String(req.body.email).toLowerCase().trim();
   const existing = await Subscriber.findOne({ email }).lean();
   if (existing) {
     return res.status(200).json({ message: 'Already subscribed' });

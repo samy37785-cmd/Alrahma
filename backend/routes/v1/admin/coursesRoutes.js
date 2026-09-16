@@ -14,7 +14,15 @@ const courses = createCRUDController(Course, {
   defaultLimit:   50,
   maxLimit:       500,
   searchFields:   ['title', 'description'],
-  allowedFilters: ['level', 'language', 'isPublished'],
+  // Auth hardening security batch: 'isPublished' matched zero documents
+  // (the real Mongoose field is 'published' — see models/Course.js), so
+  // ?isPublished=true silently always returned an empty result set rather
+  // than filtering or being ignored. 'language' is removed entirely — no
+  // such field exists anywhere on the Course schema (only an unrelated
+  // User.languages array on teacher profiles), so it matched zero documents
+  // too; adding a real course-language concept is a feature, not a bug fix,
+  // and is out of scope here.
+  allowedFilters: ['level', 'published'],
   sortable:       ['createdAt', 'updatedAt', 'title'],
 });
 

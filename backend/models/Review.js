@@ -53,6 +53,24 @@ reviewSchema.index({ teacher: 1, status: 1 });
 reviewSchema.index({ course: 1, status: 1 });
 reviewSchema.index({ student: 1 });
 
+// Defense-in-depth: controllers/reviewController.js's createReview already
+// rejects a request setting both/neither of teacherId/courseId with a 400
+// before a document is ever built — this exists so the invariant holds at
+// the model layer too, for any current or future write path, not just that
+// one controller.
+reviewSchema.pre('validate', function enforceExactlyOneTarget(next) {
+  const hasTeacher = this.teacher != null;
+  const hasCourse = this.course != null;
+  if (hasTeacher === hasCourse) {
+    this.invalidate(
+      'teacher',
+      'A review must reference exactly one of teacher or course, not both or neither',
+      this.teacher,
+    );
+  }
+  next();
+});
+
 reviewSchema.statics.avgRatingForTeacher = async function (teacherId) {
   const result = await this.aggregate([
     { $match: { teacher: new Types.ObjectId(teacherId), status: 'approved' } },

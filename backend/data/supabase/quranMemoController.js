@@ -22,6 +22,12 @@
 // withUserContext.
 import { asyncHandler } from '../../utils/asyncHandler.js';
 import { withUserContext } from './client.js';
+import { clampNonNegative } from '../../utils/clampNumeric.js';
+
+// Same bounds as controllers/quranMemoController.js (Mongo mode) — kept in
+// sync so a log call is rejected/clamped identically regardless of backend.
+const MAX_PRACTICE_SECONDS = 86400; // 24h
+const MAX_RECORDINGS_COUNT = 1000;
 
 function toJson(row, userId) {
   return {
@@ -102,8 +108,8 @@ export const updateMemoGoal = asyncHandler(async (req, res) => {
 // @body  { practiceSeconds, recordingsCount }
 // @access Private
 export const logPractice = asyncHandler(async (req, res) => {
-  const practiceSeconds = Number(req.body.practiceSeconds) || 0;
-  const recordingsCount = Number(req.body.recordingsCount) || 0;
+  const practiceSeconds = clampNonNegative(req.body.practiceSeconds, MAX_PRACTICE_SECONDS);
+  const recordingsCount = clampNonNegative(req.body.recordingsCount, MAX_RECORDINGS_COUNT);
 
   const doc = await withUserContext(req.user._id, async (client) => {
     // See module comment: streak increments unconditionally on each log call

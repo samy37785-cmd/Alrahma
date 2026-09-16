@@ -52,6 +52,15 @@ test('globalSearch: an unpublished blog post is never matched', async () => {
   assert.equal(res.body.results.posts.length, 0);
 });
 
+test('globalSearch: an unpublished (draft) course is never matched, but a published one still is', async () => {
+  await Course.create({ title: 'Tajweed Draft Course', description: 'x', published: false });
+  await Course.create({ title: 'Tajweed Live Course', description: 'x', published: true });
+  const res = await request(app).get('/api/search').query({ q: 'tajweed' });
+  assert.equal(res.status, 200);
+  assert.equal(res.body.results.courses.length, 1);
+  assert.equal(res.body.results.courses[0].title, 'Tajweed Live Course');
+});
+
 // ---------------------------------------------------------------------------
 // GET /api/search/courses — level filter is the T7-optimized path
 // ---------------------------------------------------------------------------
@@ -65,6 +74,21 @@ test('searchCourses: filtering by level alone (no q) returns only courses of tha
   assert.equal(res.status, 200);
   assert.equal(res.body.total, 2);
   assert.ok(res.body.courses.every((c) => c.level === 'Beginner'));
+});
+
+test('searchCourses: an unpublished (draft) course is never returned, whether searched by q or listed unfiltered', async () => {
+  await Course.create({ title: 'Tajweed Draft Course', description: 'x', published: false });
+  await Course.create({ title: 'Tajweed Live Course', description: 'x', published: true });
+
+  const withQuery = await request(app).get('/api/search/courses').query({ q: 'tajweed' });
+  assert.equal(withQuery.status, 200);
+  assert.equal(withQuery.body.total, 1);
+  assert.equal(withQuery.body.courses[0].title, 'Tajweed Live Course');
+
+  const unfiltered = await request(app).get('/api/search/courses');
+  assert.equal(unfiltered.status, 200);
+  assert.equal(unfiltered.body.total, 1);
+  assert.ok(unfiltered.body.courses.every((c) => c.title !== 'Tajweed Draft Course'));
 });
 
 test('searchCourses: q and level combined narrow correctly together', async () => {

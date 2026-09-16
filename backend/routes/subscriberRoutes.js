@@ -1,9 +1,10 @@
 import { Router } from 'express';
-import { subscribe } from '../controllers/subscriberController.js';
+import { subscribe, subscribeValidation } from '../controllers/subscriberController.js';
+import { newsletterLimiter } from '../config/rateLimit.js';
 
 const router = Router();
 
-router.post('/', subscribe);
+router.post('/', newsletterLimiter, subscribeValidation, subscribe);
 
 // Auth hardening security batch: the admin listing that used to live here
 // (GET /, protect+adminOnly) is removed — AdminDashboard.jsx (the real,

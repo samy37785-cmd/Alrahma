@@ -34,15 +34,31 @@ function parsePagination(query) {
 }
 
 // @route GET /api/v1/admin/courses
+// Auth hardening security batch: this used to ignore every query filter
+// (level/published) unconditionally — the Mongo-mode equivalent
+// (routes/v1/admin/coursesRoutes.js's allowedFilters) supports both; this
+// now matches it for backend parity.
 export const list = asyncHandler(async (req, res) => {
   const { page, limit, skip } = parsePagination(req.query);
 
+  const conditions = [];
+  const params = [];
+  if (req.query.level) {
+    params.push(req.query.level);
+    conditions.push(`level = $${params.length}::course_level`);
+  }
+  if (req.query.published !== undefined) {
+    params.push(req.query.published === 'true');
+    conditions.push(`published = $${params.length}`);
+  }
+  const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+
   const { rows, total } = await withUserContext(req.adminUser.id, async (client) => {
     const dataRes = await client.query(
-      `SELECT * FROM courses ORDER BY created_at DESC LIMIT $1 OFFSET $2`,
-      [limit, skip]
+      `SELECT * FROM courses ${where} ORDER BY created_at DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
+      [...params, limit, skip]
     );
-    const countRes = await client.query(`SELECT count(*)::int AS n FROM courses`);
+    const countRes = await client.query(`SELECT count(*)::int AS n FROM courses ${where}`, params);
     return { rows: dataRes.rows, total: countRes.rows[0].n };
   }, { aal: req.adminAal });
 

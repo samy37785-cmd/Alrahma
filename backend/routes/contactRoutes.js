@@ -1,10 +1,11 @@
 import { Router } from 'express';
 import { submitContact, contactValidation } from '../controllers/contactController.js';
+import { contactLimiter } from '../config/rateLimit.js';
 
 const router = Router();
 
 // Public — anyone can submit a contact message
-router.post('/', contactValidation, submitContact);
+router.post('/', contactLimiter, contactValidation, submitContact);
 
 // Auth hardening security batch: the admin listing that used to live here
 // (GET /, protect+adminOnly) is removed. It had zero live frontend

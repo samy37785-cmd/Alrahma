@@ -45,10 +45,20 @@ export function createCRUDController(Model, options = {}) {
       filter.$or = searchFields.map((f) => ({ [f]: re }));
     }
 
-    // Allowed direct-match filters forwarded from query params
+    // Allowed direct-match filters forwarded from query params. Each entry
+    // is either a plain string (the query param name IS the Mongo field
+    // path) or a { param, field } object mapping a safe, non-dotted query
+    // param name to a dotted Mongo field path (e.g. 'subscription.status') —
+    // needed because middleware/sanitizeMongo.js (mounted globally on
+    // /api/v1/admin/*) strips any dotted req.query KEY as NoSQL-injection
+    // defense, so a nested field can never be filtered via a dotted wire
+    // param; the { param, field } form lets the wire-level name stay
+    // dot-free while still targeting the nested field internally.
     for (const f of allowedFilters) {
-      if (req.query[f] !== undefined) {
-        filter[f] = req.query[f];
+      const param = typeof f === 'string' ? f : f.param;
+      const field = typeof f === 'string' ? f : f.field;
+      if (req.query[param] !== undefined) {
+        filter[field] = req.query[param];
       }
     }
 

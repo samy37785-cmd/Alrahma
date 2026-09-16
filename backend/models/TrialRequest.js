@@ -3,11 +3,17 @@ import mongoose from 'mongoose';
 // Stores submissions from the "Book a Free Trial" form on the React site.
 const trialRequestSchema = new mongoose.Schema(
   {
-    name: { type: String, required: [true, 'Name is required'], trim: true },
-    email: { type: String, required: [true, 'Email is required'], lowercase: true, trim: true },
-    phone: { type: String, trim: true },
-    course: { type: String, trim: true },
-    message: { type: String, trim: true },
+    name: { type: String, required: [true, 'Name is required'], trim: true, maxlength: 100 },
+    email: {
+      type: String,
+      required: [true, 'Email is required'],
+      lowercase: true,
+      trim: true,
+      match: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+    },
+    phone: { type: String, trim: true, maxlength: 30 },
+    course: { type: String, trim: true, maxlength: 200 },
+    message: { type: String, trim: true, maxlength: 3000 },
     status: { type: String, enum: ['new', 'contacted', 'scheduled'], default: 'new' },
   },
   { timestamps: true }

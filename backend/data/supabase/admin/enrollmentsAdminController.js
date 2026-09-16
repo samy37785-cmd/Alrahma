@@ -2,9 +2,12 @@
 // /api/v1/admin/enrollments. enrollments_select_admin/_update_admin_aal2/
 // _delete_admin_aal2 (0002_rls.sql) already exist; enrollments_insert_
 // admin_aal2 (lib/db/drizzle/0018_admin_users_system_and_enrollment_gaps.sql)
-// is new — the public path (enrollments_insert_public) forces status='new'
-// and its GRANT excludes status/id/created_at/updated_at, so an admin
-// authoring a fully-specified record needed a real, separate policy.
+// is new — the public path (enrollments_insert_public) forces
+// status='pending' (0031_enrollment_new_status_to_pending.sql; was 'new'
+// before that corrective migration) and its GRANT excludes status/id/
+// created_at/updated_at, so an admin authoring a fully-specified record
+// needed a real, separate policy. This admin create path's own status
+// default below is 'pending' too, for the same reason.
 import { asyncHandler } from '../../../utils/asyncHandler.js';
 import { withUserContext } from '../client.js';
 import { auditAdminAction } from '../adminAuditLog.js';
@@ -96,7 +99,7 @@ export const create = asyncHandler(async (req, res) => {
            name, email, whatsapp, country, city, timezone, times, subjects, lang, level,
            age_group, gender_pref, preferred_teacher_key, preferred_teacher_name,
            requested_plan_slug, status, notes
-         ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,COALESCE($16,'new'),$17)
+         ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,COALESCE($16,'pending'),$17)
          RETURNING *`,
         [
           d.name, d.email, d.whatsapp ?? null, d.country ?? null, d.city ?? null, d.timezone ?? null,

@@ -11,6 +11,8 @@ Last verified: PR #70 and PR #71 merged to `main`; Postgres/Supabase schema migr
 2. The same RPC checked only `is_admin_aal2()`, not the `enrollments:write` permission Express's own route already requires — a real gap for a `SECURITY DEFINER` RPC reachable directly, bypassing Express. Fixed: `authorize('enrollments:write')` is now checked inside the function too, matching this table's own more recent precedent (`0018_admin_users_system_and_enrollment_gaps.sql`).
 3. No direct-RPC test existed — only a throwaway, unsaved manual script. Fixed: `lib/db/test/rpc-admin-booking-activation.local.test.mjs` (10 assertions against a real local Postgres) now permanently covers the happy path (both slug- and name-matched plan resolution), the new permission check, AAL1/AAL2, double-approve, cancelled booking, no-matching-account, no-matching-plan, and that the old 3-argument signature no longer exists.
 
+Also fixed in the same pass: the booking-notification email now has a real retry/outbox mechanism (not just a log line) — a failed send is queued to `EmailOutbox` (Mongo) / `email_outbox` (Postgres, `0029_email_outbox.sql`), and `GET /api/cron/retry-failed-emails` (same `CRON_SECRET`-gated pattern as the existing `renewal-reminders`/`weekly-parent-reports` jobs) resends it, capped at 5 attempts. `backend/middleware/paymentsRetired.js` — left mounted nowhere by the fixes above — was deleted as dead code rather than left with a stale, actively-false header comment.
+
 ## 1. Where production data actually lives today
 
 - **MongoDB is still the production data source.** The live backend (`backend/`) reads and writes MongoDB via Mongoose, exactly as it always has. Nothing about that has changed.

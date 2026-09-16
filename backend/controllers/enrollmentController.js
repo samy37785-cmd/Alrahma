@@ -2,7 +2,8 @@
 import mongoose from 'mongoose';
 import Enrollment from '../models/Enrollment.js';
 import User from '../models/User.js';
-import { sendMail, ADMIN_EMAIL } from '../config/mailer.js';
+import EmailOutbox from '../models/EmailOutbox.js';
+import { sendMail, BOOKING_NOTIFICATION_RECIPIENTS } from '../config/mailer.js';
 import { enrollmentAdminEmail, enrollmentStudentEmail, bookingApprovedEmail } from '../config/emailTemplates.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { parsePagination, sendPaginated } from '../utils/pagination.js';
@@ -17,6 +18,30 @@ import logger from '../config/logger.js';
 // node:crypto (cryptographically strong), not Math.random() — this value is
 // shown to strangers and used as a lookup key, so it should not be
 // predictable/guessable. Retried on the rare unique-constraint collision.
+// Sends a notification email with a genuine outbox guarantee: the outbox
+// row is written BEFORE sendMail is even attempted (not only in a catch
+// block after a failure), so a mid-send process crash — which no try/catch
+// can ever observe — still leaves the notification queued for
+// retryFailedEmails to pick up; a row is deleted ONLY after sendMail
+// confirms { ok: true }, never assumed from the mere absence of a thrown
+// error (sendMail() never throws — see config/mailer.js's own comment on
+// why an earlier version of this function was silently a no-op on a real
+// SMTP failure).
+async function sendBookingNotification({ to, subject, html, context }) {
+  const outboxDoc = await EmailOutbox.create({ to, subject, html, context });
+  const result = await sendMail({ to, subject, html });
+  if (result.ok) {
+    await EmailOutbox.deleteOne({ _id: outboxDoc._id }).catch((err) =>
+      logger.error('Failed to remove a successfully-sent row from the outbox', { emailOutboxId: outboxDoc._id, message: err.message }));
+  } else {
+    logger.error('Failed to send booking notification email — left queued in the outbox', { to, context, message: result.error });
+    await EmailOutbox.updateOne(
+      { _id: outboxDoc._id },
+      { $set: { lastError: result.error, lastAttemptAt: new Date() }, $inc: { attempts: 1 } },
+    ).catch((err) => logger.error('Failed to record the failed attempt on the outbox row', { emailOutboxId: outboxDoc._id, message: err.message }));
+  }
+}
+
 function generateBookingRef() {
   const day = new Date().toISOString().slice(0, 10).replace(/-/g, '');
   const suffix = randomBytes(3).toString('hex').slice(0, 4).toUpperCase();
@@ -59,27 +84,29 @@ export const createEnrollment = asyncHandler(async (req, res) => {
 
   const enrollment = await createWithBookingRef(data);
 
-  // Admin notification — fire-and-forget (non-critical)
-  const adminEmail = ADMIN_EMAIL();
-  if (adminEmail) {
-    sendMail({
-      to: adminEmail,
+  // Admin notification — sent to every BOOKING_NOTIFICATION_RECIPIENTS entry
+  // (falls back to ADMIN_EMAIL() if unset, loudly — see config/mailer.js).
+  // The booking is already saved, so a failed send must never fail this
+  // request; sendBookingNotification() guarantees the outbox row exists
+  // before delivery is even attempted (see its own comment).
+  const recipients = BOOKING_NOTIFICATION_RECIPIENTS();
+  if (recipients.length > 0) {
+    await sendBookingNotification({
+      to: recipients.join(','),
       subject: `📋 New Booking Request — ${data.name} (${data.teacherName || 'no teacher yet'})`,
       html: enrollmentAdminEmail({ ...data, bookingRef: enrollment.bookingRef }),
+      context: { type: 'booking_admin_notification', bookingRef: enrollment.bookingRef },
     });
   }
 
-  // Student confirmation — await so we know it delivered; failure is logged but
-  // does not roll back the enrollment (it's already saved to the DB).
-  try {
-    await sendMail({
-      to: data.email,
-      subject: 'Your booking request — AL-Rahma Academy',
-      html: enrollmentStudentEmail({ name: data.name, teacherName: data.teacherName, plan: data.plan, bookingRef: enrollment.bookingRef }),
-    });
-  } catch (err) {
-    logger.error('Failed to send enrollment confirmation email', { email: data.email, message: err.message });
-  }
+  // Student confirmation — same outbox guarantee; does not roll back the
+  // enrollment (it's already saved to the DB) either way.
+  await sendBookingNotification({
+    to: data.email,
+    subject: 'Your booking request — AL-Rahma Academy',
+    html: enrollmentStudentEmail({ name: data.name, teacherName: data.teacherName, plan: data.plan, bookingRef: enrollment.bookingRef }),
+    context: { type: 'booking_student_confirmation', bookingRef: enrollment.bookingRef },
+  });
 
   res.status(201).json({ message: 'Booking request received', id: enrollment._id, bookingRef: enrollment.bookingRef });
 });

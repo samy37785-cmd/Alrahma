@@ -1,6 +1,7 @@
 import User from '../models/User.js';
 import CourseProgress from '../models/CourseProgress.js';
 import LiveClass from '../models/LiveClass.js';
+import EmailOutbox from '../models/EmailOutbox.js';
 import { sendMail } from '../config/mailer.js';
 import { subscriptionRenewalReminderEmail, weeklyParentReportEmail } from '../config/emailTemplates.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
@@ -184,4 +185,56 @@ export const sendWeeklyParentReports = asyncHandler(async (_req, res) => {
 
   logger.info('Cron: weekly-parent-reports completed', { parents: parents.length, sent });
   res.json({ ok: true, parents: parents.length, sent });
+});
+
+// Retries queued emails that failed to send synchronously (see
+// models/EmailOutbox.js — currently only the booking admin-notification and
+// student-confirmation emails queue here, controllers/enrollmentController.js).
+// A row is deleted on success; MAX_ATTEMPTS caps how many times a
+// permanently-bad address (or a config problem) gets retried before the row
+// is left in place for a human to look at, rather than deleted or retried
+// forever — its attempts count and lastError are the evidence.
+const MAX_ATTEMPTS = 5;
+
+// @desc   Retry emails queued in EmailOutbox after a synchronous send failed.
+// @route  GET /api/cron/retry-failed-emails
+// @access Cron secret (see cronAuth in routes/cronRoutes.js)
+export const retryFailedEmails = asyncHandler(async (_req, res) => {
+  const queued = await EmailOutbox.find({ attempts: { $lt: MAX_ATTEMPTS } }).sort({ createdAt: 1 }).limit(100);
+
+  let sent = 0;
+  let stillFailing = 0;
+
+  // Corrective revision: sendMail() never throws (see config/mailer.js's own
+  // comment) — this used to rely on a try/catch around the call, which meant
+  // a REAL SMTP failure was silently treated as success (the row was
+  // deleted and counted as `sent` even though nothing was actually
+  // delivered). Now checks the real `{ ok }` result explicitly; a row is
+  // only ever deleted after a confirmed successful send.
+  for (let i = 0; i < queued.length; i += BATCH_SIZE) {
+    const batch = queued.slice(i, i + BATCH_SIZE);
+    const results = await Promise.allSettled(batch.map(async (item) => {
+      const result = await sendMail({ to: item.to, subject: item.subject, html: item.html });
+      if (result.ok) {
+        await EmailOutbox.deleteOne({ _id: item._id });
+        sent++;
+      } else {
+        await EmailOutbox.updateOne(
+          { _id: item._id },
+          { $inc: { attempts: 1 }, $set: { lastError: result.error, lastAttemptAt: new Date() } }
+        );
+        stillFailing++;
+        throw new Error(result.error);
+      }
+    }));
+
+    results.forEach((r, idx) => {
+      if (r.status === 'rejected') {
+        logger.error('Retry of queued email failed', { emailOutboxId: batch[idx]._id, message: r.reason?.message });
+      }
+    });
+  }
+
+  logger.info('Cron: retry-failed-emails completed', { candidates: queued.length, sent, stillFailing });
+  res.json({ ok: true, candidates: queued.length, sent, stillFailing });
 });

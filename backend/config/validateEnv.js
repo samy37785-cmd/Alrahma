@@ -170,4 +170,22 @@ export function validateEnv() {
   if (absent.length) {
     logger.warn('Recommended environment variables not set — some features will be disabled', { absent });
   }
+
+  // Corrective revision: an independent review found the booking admin-
+  // notification email (controllers/enrollmentController.js) could silently
+  // run in production on a single ADMIN_EMAIL fallback forever if
+  // BOOKING_NOTIFICATION_RECIPIENTS was simply never set — the function
+  // itself now also logs a warning every time that fallback is actually
+  // used (config/mailer.js's BOOKING_NOTIFICATION_RECIPIENTS()), but that
+  // only fires on the first booking. This is the startup-time signal, same
+  // severity/pattern as ADMIN_IP_WHITELIST above, so a production
+  // deployment missing it shows up immediately in the deploy log rather
+  // than only being discoverable after the fact.
+  if (process.env.NODE_ENV === 'production' && !process.env.BOOKING_NOTIFICATION_RECIPIENTS) {
+    logger.error(
+      'BOOKING_NOTIFICATION_RECIPIENTS is not set in production — booking notifications will fall back to a ' +
+      'single ADMIN_EMAIL recipient instead of the full admin list. Set BOOKING_NOTIFICATION_RECIPIENTS=' +
+      'email1,email2 explicitly.',
+    );
+  }
 }

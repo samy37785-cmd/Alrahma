@@ -36,7 +36,10 @@ export const enrollments = pgTable(
     preferredTeacherKey: text("preferred_teacher_key"),
     preferredTeacherName: text("preferred_teacher_name"),
     requestedPlanSlug: text("requested_plan_slug"),
-    status: text("status").notNull().default("new"),
+    // Canonical default is 'pending' (0031_enrollment_new_status_to_pending
+    // .sql) — was 'new' before that corrective migration; matches Mongo's
+    // models/Enrollment.js, which has always defaulted to 'pending'.
+    status: text("status").notNull().default("pending"),
     notes: text("notes"),
     // Booking-First Enrollment (backend/models/Enrollment.js's Mongo
     // counterpart — see that model's own comment for the full rationale).
@@ -84,9 +87,15 @@ export const enrollments = pgTable(
     // student and the booking being activated ('enrolled') — same additive,
     // zero-data-migration reasoning as models/Enrollment.js's own enum
     // widening (existing rows already use one of the original 5 values).
+    // Further widened by 0030_enrollment_status_reconciliation.sql to also
+    // accept 'pending'/'approved' (reconciling with the JS-side
+    // ENROLLMENT_STATUSES allowlist), and 'new' stays listed here as a
+    // legacy-readable value even though 0031_enrollment_new_status_to_
+    // pending.sql migrated every existing 'new' row to 'pending' and no
+    // write path can produce 'new' any more.
     check(
       "enrollments_status_allowlist",
-      sql`${t.status} IN ('new','contacted','scheduled','awaiting_payment','paid','enrolled','cancelled')`,
+      sql`${t.status} IN ('new','contacted','scheduled','awaiting_payment','paid','pending','approved','enrolled','cancelled')`,
     ),
     check("enrollments_agreed_amount_non_negative", sql`${t.agreedAmount} IS NULL OR ${t.agreedAmount} >= 0`),
     check("enrollments_currency_format", sql`${t.currency} IS NULL OR ${t.currency} ~ '^[A-Z]{3}$'`),

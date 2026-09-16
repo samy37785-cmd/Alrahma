@@ -396,12 +396,14 @@ async function main() {
     const csrfRes = await agent.get('/api/blog');
     const csrfToken = (csrfRes.headers['set-cookie'] || []).map(String).find((c) => c.startsWith('csrf_token=')).split(';')[0].split('=')[1];
     const res = await agent.post('/api/enrollments').set('x-csrf-token', csrfToken).send({ name: 'x', email: 'x@test.local', status: 'enrolled' });
-    // enrollments_insert_public's WITH CHECK still forces status='new' for a
-    // guest submission; the new enrollments_insert_admin_aal2 policy only
-    // ever widens access for an AAL2 admin, never for anon/authenticated.
+    // enrollments_insert_public's WITH CHECK still forces status='pending'
+    // (0031_enrollment_new_status_to_pending.sql — was 'new' before that
+    // corrective migration) for a guest submission; the new
+    // enrollments_insert_admin_aal2 policy only ever widens access for an
+    // AAL2 admin, never for anon/authenticated.
     assert.equal(res.status, 201, JSON.stringify(res.body));
     const check1 = await pool.query('SELECT status FROM enrollments WHERE email = $1', ['x@test.local']);
-    assert.equal(check1.rows[0].status, 'new');
+    assert.equal(check1.rows[0].status, 'pending');
   });
   await check('admin can update and delete the enrollment', async () => {
     const { agent, csrfHeaders } = await adminAgent(superAdmin);

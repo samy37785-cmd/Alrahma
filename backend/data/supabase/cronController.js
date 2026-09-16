@@ -181,3 +181,55 @@ export const sendWeeklyParentReports = asyncHandler(async (_req, res) => {
   logger.info('Cron: weekly-parent-reports completed', { parents: parents.length, sent });
   res.json({ ok: true, parents: parents.length, sent });
 });
+
+// Supabase-mode equivalent of controllers/cronController.js's
+// retryFailedEmails — same email_outbox table, MAX_ATTEMPTS cap, and
+// GET /api/cron/retry-failed-emails route (see that file's own comment).
+const MAX_ATTEMPTS = 5;
+
+// @route GET /api/cron/retry-failed-emails
+export const retryFailedEmails = asyncHandler(async (_req, res) => {
+  const queued = await withServiceRole(async (client) => {
+    const r = await client.query(
+      `SELECT id, to_addresses, subject, html FROM email_outbox WHERE attempts < $1 ORDER BY created_at ASC LIMIT 100`,
+      [MAX_ATTEMPTS]
+    );
+    return r.rows;
+  });
+
+  let sent = 0;
+  let stillFailing = 0;
+
+  // Corrective revision: sendMail() never throws (see config/mailer.js's own
+  // comment) — this used to rely on a try/catch around the call, which meant
+  // a REAL SMTP failure was silently treated as success (the row was
+  // deleted and counted as `sent` even though nothing was actually
+  // delivered). Now checks the real `{ ok }` result explicitly; a row is
+  // only ever deleted after a confirmed successful send.
+  for (let i = 0; i < queued.length; i += BATCH_SIZE) {
+    const batch = queued.slice(i, i + BATCH_SIZE);
+    const results = await Promise.allSettled(batch.map(async (item) => {
+      const result = await sendMail({ to: item.to_addresses, subject: item.subject, html: item.html });
+      if (result.ok) {
+        await withServiceRole((client) => client.query(`DELETE FROM email_outbox WHERE id = $1`, [item.id]));
+        sent++;
+      } else {
+        await withServiceRole((client) => client.query(
+          `UPDATE email_outbox SET attempts = attempts + 1, last_error = $2, last_attempt_at = now() WHERE id = $1`,
+          [item.id, result.error]
+        ));
+        stillFailing++;
+        throw new Error(result.error);
+      }
+    }));
+
+    results.forEach((r, idx) => {
+      if (r.status === 'rejected') {
+        logger.error('Retry of queued email failed', { emailOutboxId: batch[idx].id, message: r.reason?.message });
+      }
+    });
+  }
+
+  logger.info('Cron: retry-failed-emails completed', { candidates: queued.length, sent, stillFailing });
+  res.json({ ok: true, candidates: queued.length, sent, stillFailing });
+});

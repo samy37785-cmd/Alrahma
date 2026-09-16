@@ -2,7 +2,7 @@
 // route shapes) — only the controller implementation differs.
 import { Router } from 'express';
 import crypto from 'crypto';
-import { sendRenewalReminders, sendWeeklyParentReports } from '../cronController.js';
+import { sendRenewalReminders, sendWeeklyParentReports, retryFailedEmails } from '../cronController.js';
 
 function safeEqual(a, b) {
   const ba = Buffer.from(String(a ?? ''));
@@ -28,5 +28,6 @@ const router = Router();
 
 router.get('/renewal-reminders', cronAuth, sendRenewalReminders);
 router.get('/weekly-parent-reports', cronAuth, sendWeeklyParentReports);
+router.get('/retry-failed-emails', cronAuth, retryFailedEmails);
 
 export default router;

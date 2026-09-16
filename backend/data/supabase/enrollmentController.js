@@ -3,14 +3,19 @@
 // comment: admin mutations moved to /api/v1/admin/enrollments, MFA + RBAC +
 // audit-logged) and is out of scope here regardless of backend.
 //
-// Email notifications (config/mailer.js's sendMail calls in the Mongo
-// controller — admin notification + student confirmation) are intentionally
-// NOT reproduced here: email delivery is unchanged/deferred for the
-// Supabase path.
+// Booking admin-notification email (BOOKING_NOTIFICATION_RECIPIENTS) is
+// sent below, built entirely from the already-validated request body — no
+// extra Postgres read needed. The student-confirmation email the Mongo
+// controller also sends is NOT reproduced here (out of scope of this
+// correction; email delivery for that half stays deferred for the Supabase
+// path).
 import { asyncHandler } from '../../utils/asyncHandler.js';
 import { parsePagination, sendPaginated } from '../../utils/pagination.js';
 import { pickPublicBookingFields, normalizeWhatsapp } from '../../utils/enrollmentValidation.js';
-import { withAnonContext, withUserContext } from './client.js';
+import { withAnonContext, withUserContext, withServiceRole } from './client.js';
+import { sendMail, BOOKING_NOTIFICATION_RECIPIENTS } from '../../config/mailer.js';
+import { enrollmentAdminEmail } from '../../config/emailTemplates.js';
+import logger from '../../config/logger.js';
 
 // Field renames vs. Mongo (docs/option-a-mongo-supabase-parity-map.md,
 // "Enrollment" section): teacherId/teacherName -> preferred_teacher_key/
@@ -106,6 +111,42 @@ export const createEnrollment = asyncHandler(async (req, res) => {
     );
     return r.rows[0].ref;
   });
+
+  // The booking is already committed via the RPC above, so a failed send
+  // must never fail this request. Corrective revision: sendMail() never
+  // throws (see config/mailer.js's own comment on why an earlier version of
+  // this code, which relied on a try/catch around the call, silently never
+  // queued anything to the outbox on a real SMTP failure) — the outbox row
+  // is now written BEFORE delivery is even attempted, and deleted only
+  // after sendMail confirms { ok: true }, so a mid-send process crash also
+  // can't lose the notification.
+  const recipients = BOOKING_NOTIFICATION_RECIPIENTS();
+  if (recipients.length > 0) {
+    const to = recipients.join(',');
+    const subject = `📋 New Booking Request — ${data.name} (${data.teacherName || 'no teacher yet'})`;
+    const html = enrollmentAdminEmail({ ...data, whatsapp, bookingRef });
+    const context = { type: 'booking_admin_notification', bookingRef };
+
+    const outboxRow = await withServiceRole(async (client) => {
+      const r = await client.query(
+        `INSERT INTO email_outbox (to_addresses, subject, html, context) VALUES ($1, $2, $3, $4) RETURNING id`,
+        [to, subject, html, JSON.stringify(context)]
+      );
+      return r.rows[0];
+    });
+
+    const result = await sendMail({ to, subject, html });
+    if (result.ok) {
+      await withServiceRole((client) => client.query(`DELETE FROM email_outbox WHERE id = $1`, [outboxRow.id]))
+        .catch((err) => logger.error('Failed to remove a successfully-sent row from the outbox', { emailOutboxId: outboxRow.id, message: err.message }));
+    } else {
+      logger.error('Failed to send booking admin notification — left queued in the outbox', { recipients, message: result.error });
+      await withServiceRole((client) => client.query(
+        `UPDATE email_outbox SET attempts = attempts + 1, last_error = $2, last_attempt_at = now() WHERE id = $1`,
+        [outboxRow.id, result.error]
+      )).catch((err) => logger.error('Failed to record the failed attempt on the outbox row', { emailOutboxId: outboxRow.id, message: err.message }));
+    }
+  }
 
   res.status(201).json({ message: 'Booking request received', id: null, bookingRef });
 });

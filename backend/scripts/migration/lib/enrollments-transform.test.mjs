@@ -51,15 +51,15 @@ const BASE_DOC = {
   status: 'pending',
 };
 
-test('transform(): every one of the 5 pre-existing statuses still maps correctly (regression guard)', () => {
-  const map = { pending: 'new', contacted: 'contacted', enrolled: 'enrolled', cancelled: 'cancelled' };
+test('transform(): every pre-existing status still maps correctly (regression guard) — straight through, no rename, since 0031_enrollment_new_status_to_pending.sql made Postgres canonical "pending" too', () => {
+  const map = { pending: 'pending', approved: 'approved', contacted: 'contacted', enrolled: 'enrolled', cancelled: 'cancelled' };
   for (const [mongoStatus, pgStatus] of Object.entries(map)) {
     const row = transform({ ...BASE_DOC, status: mongoStatus });
     assert.equal(row.status, pgStatus, `status "${mongoStatus}" should map to "${pgStatus}"`);
   }
 });
 
-test('transform(): the two new Booking-First Enrollment statuses map straight through (no rename, unlike pending->new)', () => {
+test('transform(): the two new Booking-First Enrollment statuses map straight through (no rename — same as every status now)', () => {
   assert.equal(transform({ ...BASE_DOC, status: 'awaiting_payment' }).status, 'awaiting_payment');
   assert.equal(transform({ ...BASE_DOC, status: 'paid' }).status, 'paid');
 });

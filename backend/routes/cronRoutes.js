@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import crypto from 'crypto';
-import { sendRenewalReminders, sendWeeklyParentReports } from '../controllers/cronController.js';
+import { sendRenewalReminders, sendWeeklyParentReports, retryFailedEmails } from '../controllers/cronController.js';
 
 // Constant-time string comparison — avoids leaking the secret through response
 // timing. Returns false on length mismatch without timing-comparing.
@@ -34,5 +34,6 @@ const router = Router();
 
 router.get('/renewal-reminders', cronAuth, sendRenewalReminders);
 router.get('/weekly-parent-reports', cronAuth, sendWeeklyParentReports);
+router.get('/retry-failed-emails', cronAuth, retryFailedEmails);
 
 export default router;

@@ -13,13 +13,21 @@ import { updateUserSubscription } from '../../../api/adminApi';
 // definition, a regular user account - GET /v1/admin/users never returns
 // an AdminUser, which is an entirely separate system (AdminAuthContext) -
 // so there is nothing left for a role-ish column to meaningfully show.
+//
+// Scope correction (see docs/current-project-status.md): the Plan/Status/
+// Valid Until columns and the +30d/Activate/Deactivate buttons are back —
+// PATCH /v1/admin/users/:id/subscription is manual, non-gateway admin
+// activation/renewal/deactivation, not an online card-gateway feature. A
+// booking's own approval action (AdminBookingsTab.jsx's "Approve &
+// Activate") also activates a subscription end to end; this table stays as
+// a direct admin override independent of the booking flow.
 export default function AdminUsersTab({ users, usersTotal, onOpenReport, onUsersChange, onError }) {
   const [userSearch, setUserSearch] = useState('');
 
   const handleSubscription = async (userId, action, plan) => {
     try {
       const updated = await updateUserSubscription(userId, { action, plan });
-      onUsersChange((prev) => prev.map((u) => u._id === userId ? { ...u, subscription: updated.subscription } : u));
+      onUsersChange((prev) => prev.map((u) => (u._id === userId ? { ...u, subscription: updated.subscription } : u)));
     } catch (err) {
       onError(err.response?.data?.message || 'Action failed');
     }

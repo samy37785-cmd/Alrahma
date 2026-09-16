@@ -14,32 +14,32 @@ import supabaseAuthRoutes from '../../../data/supabase/routes/adminAuthRoutes.js
 import usersRoutes        from './usersRoutes.js';
 import coursesRoutes      from './coursesRoutes.js';
 import enrollmentsRoutes  from './enrollmentsRoutes.js';
-import paymentsRoutes     from './paymentsRoutes.js';
 import blogRoutes         from './blogRoutes.js';
-import couponsRoutes      from './couponsRoutes.js';
 import contactRoutes      from './contactRoutes.js';
 import certificatesRoutes from './certificatesRoutes.js';
 import referralsRoutes    from './referralsRoutes.js';
 import reviewsRoutes      from './reviewsRoutes.js';
 import systemRoutes       from './systemRoutes.js';
-import invoicesRoutes     from './invoicesRoutes.js';
 import trialsRoutes       from './trialsRoutes.js';
 import subscribersRoutes  from './subscribersRoutes.js';
 import liveClassesRoutes  from './liveClassesRoutes.js';
+import paymentsRoutes     from './paymentsRoutes.js';
+import couponsRoutes      from './couponsRoutes.js';
+import invoicesRoutes     from './invoicesRoutes.js';
 import {
   coursesRouter as supabaseCoursesRoutes,
   liveClassesRouter as supabaseLiveClassesRoutes,
   certificatesRouter as supabaseCertificatesRoutes,
   reviewsRouter as supabaseReviewsRoutes,
 } from '../../../data/supabase/admin/adminRoutes.js';
-import supabasePaymentsAdminRoutes from '../../../data/supabase/admin/paymentsAdminRoutes.js';
 import supabaseUsersAdminRoutes from '../../../data/supabase/admin/usersAdminRoutes.js';
 import supabaseEnrollmentsAdminRoutes from '../../../data/supabase/admin/enrollmentsAdminRoutes.js';
 import supabaseBlogAdminRoutes from '../../../data/supabase/admin/blogAdminRoutes.js';
-import supabaseCouponsAdminRoutes from '../../../data/supabase/admin/couponsAdminRoutes.js';
 import supabaseContactAdminRoutes from '../../../data/supabase/admin/contactAdminRoutes.js';
 import supabaseReferralsAdminRoutes from '../../../data/supabase/admin/referralsAdminRoutes.js';
 import supabaseSystemAdminRoutes from '../../../data/supabase/admin/systemAdminRoutes.js';
+import supabasePaymentsAdminRoutes from '../../../data/supabase/admin/paymentsAdminRoutes.js';
+import supabaseCouponsAdminRoutes from '../../../data/supabase/admin/couponsAdminRoutes.js';
 import supabaseInvoicesAdminRoutes from '../../../data/supabase/admin/invoicesAdminRoutes.js';
 
 const router = Router();
@@ -108,6 +108,11 @@ router.use('/courses',      isSupabaseBackend() ? supabaseCoursesRoutes : course
 // mutation routes because this 404'd for every non-Supabase deployment.
 router.use('/live-classes', isSupabaseBackend() ? supabaseLiveClassesRoutes : liveClassesRoutes);
 router.use('/enrollments',  isSupabaseBackend() ? supabaseEnrollmentsAdminRoutes : enrollmentsRoutes);
+// Scope correction (see docs/current-project-status.md): admin payments/
+// manual-payment review, coupons (plan-price discount codes) and invoices
+// (archival billing records) are not an online card-gateway feature — all
+// three are restored live, on both backends, same isSupabaseBackend()
+// branch shape as every other subrouter here.
 router.use('/payments',     isSupabaseBackend() ? supabasePaymentsAdminRoutes : paymentsRoutes);
 router.use('/blog',         isSupabaseBackend() ? supabaseBlogAdminRoutes : blogRoutes);
 router.use('/coupons',      isSupabaseBackend() ? supabaseCouponsAdminRoutes : couponsRoutes);
@@ -116,13 +121,6 @@ router.use('/certificates', isSupabaseBackend() ? supabaseCertificatesRoutes : c
 router.use('/referrals',    isSupabaseBackend() ? supabaseReferralsAdminRoutes : referralsRoutes);
 router.use('/reviews',      isSupabaseBackend() ? supabaseReviewsRoutes : reviewsRoutes);
 router.use('/system',       isSupabaseBackend() ? supabaseSystemAdminRoutes : systemRoutes);
-// Real fix for the admin-invoices architecture gap (Al-Rahma Final
-// Corrections): the canonical admin invoice list now lives here, behind the
-// real AAL2-capable admin router, instead of only under the customer-session
-// GET /api/invoices/admin (routes/invoiceRoutes.js / data/supabase/routes/
-// invoiceRoutes.js — kept mounted for compatibility, but see
-// data/supabase/invoiceController.js's getAdminInvoices for what it now
-// does under supabase mode instead of silently failing).
 router.use('/invoices',     isSupabaseBackend() ? supabaseInvoicesAdminRoutes : invoicesRoutes);
 // Auth hardening security batch: real replacements for the legacy
 // protect+adminOnly GET /api/trials and GET /api/newsletter. No Supabase

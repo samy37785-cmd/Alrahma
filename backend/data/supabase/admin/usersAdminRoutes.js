@@ -12,6 +12,13 @@ router.get('/teachers', requirePermissions('users:read'), asyncHandler(users.lis
 router.post('/',        requirePermissions('users:write'), asyncHandler(users.adminCreateUser));
 
 router.patch('/:id/role',         requirePermissions('users:write'), asyncHandler(users.updateUserRole));
+// Scope correction (see docs/current-project-status.md): mirrors
+// routes/v1/admin/usersRoutes.js's own restoration of this route exactly —
+// manual, non-gateway admin subscription activation/renewal/deactivation is
+// not an online card-gateway feature. See usersAdminController.js's own
+// comment for this backend's stricter, deliberately-unbypassed activation
+// evidence requirement (an approved manual_payments row) vs. Mongo's
+// freer admin grant.
 router.patch('/:id/subscription', requirePermissions('users:write'), asyncHandler(users.updateUserSubscription));
 router.patch('/:id/teacher',      requirePermissions('users:write'), asyncHandler(users.assignTeacher));
 router.patch('/:id/family',       requirePermissions('users:write'), asyncHandler(users.setFamilyName));

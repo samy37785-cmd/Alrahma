@@ -1,10 +1,9 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { homeHref } from '../utils/localePath';
 import { useQuery, useQueries } from '@tanstack/react-query';
 import {
-  Flame, TrendingUp, CalendarDays, Clock, Play, BookOpen, BarChart2,
-  MessageSquare, Book, CreditCard, MessageCircle, Landmark, Zap,
+  Flame, TrendingUp, CalendarDays, Play, BookOpen, BarChart2,
+  MessageSquare, Book, MessageCircle, Landmark, Zap,
   GraduationCap, Trophy, Star, Target, Moon, ListChecks, PenLine, Sparkles,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -39,31 +38,6 @@ import HifzProgressCard from '../components/features/dashboard/HifzProgressCard'
 import { TutorReviewWidget } from '../components/features/dashboard/TutorReviewWidget';
 
 /* ── helpers ──────────────────────────────────────────────────── */
-const SESSIONS_BY_PLAN = {
-  // New Islamic plan names
-  noorani: 2, 'نوراني': 2,
-  huffaz: 3, 'حفاظ': 3, 'حُفَّاظ': 3,
-  ijazah: 4, 'إجازة': 4,
-  // Legacy names kept for existing subscriptions
-  starter: 2, base: 2, debutant: 2, einstieg: 2, inicial: 2, 'البداية': 2,
-  standard: 3, القياسية: 3,
-  premium: 4, المميزة: 4,
-};
-
-function sessionsFromPlan(plan) {
-  if (!plan) return '—';
-  const key = plan.toLowerCase().trim();
-  for (const [k, v] of Object.entries(SESSIONS_BY_PLAN)) {
-    if (key.includes(k)) return v;
-  }
-  return '—';
-}
-
-function daysLeft(validUntil) {
-  if (!validUntil) return null;
-  return Math.ceil((new Date(validUntil) - Date.now()) / 86400000);
-}
-
 function greeting(d) {
   const h = new Date().getHours();
   if (h < 5)  return d.greetingNight;
@@ -90,10 +64,12 @@ export default function Dashboard() {
 
   const { me, enrollment, courses, loading, error, refetch } = useDashboardData(!!user);
 
-  const sub     = me?.subscription ?? user?.subscription ?? null;
-  const isActive = sub?.status === 'active';
-  const days     = daysLeft(sub?.validUntil);
-  const sessions = sessionsFromPlan(sub?.plan);
+  // Booking status for this dashboard's own KPI card — a booking reaching
+  // 'enrolled' is what the admin's "Approve & Activate" action sets once it
+  // has also activated User.subscription (the real content/progress access
+  // guard is hasActiveSubscription(), not this flag — see
+  // docs/current-project-status.md).
+  const isEnrolled = enrollment?.status === 'enrolled';
 
   /* Fetch progress for ALL enrolled courses */
   const progressQueries = useQueries({
@@ -167,13 +143,9 @@ export default function Dashboard() {
     ? `Completed ${firstCourse?.title || 'my course'} — 100% done!`
     : `Reached ${overallPct}% in ${firstCourse?.title || 'my Quran course'}`;
 
-  /* KPI stat count-up — plain numbers only; sessionsNum falls back to 0 when
-     sessionsFromPlan() returns the '—' placeholder (no active plan), and the
-     JSX below renders that raw placeholder instead of the animated count. */
-  const sessionsNum   = typeof sessions === 'number' ? sessions : 0;
+  /* KPI stat count-up — plain numbers only. */
   const streakCount   = useCountUp(streak, 1000, !loading);
   const progressCount = useCountUp(overallPct, 1000, !loading);
-  const sessionsCount = useCountUp(sessionsNum, 1000, !loading);
   const xpCount        = useCountUp(me?.xp ?? 0, 1000, !loading);
 
   if (loading) {
@@ -184,7 +156,6 @@ export default function Dashboard() {
     );
   }
 
-  const daysWarn = days !== null && days <= 7 && days > 0;
   return (
     <DashboardLayout>
       {/* ── Milestone celebration toast ──────────────────── */}
@@ -215,16 +186,15 @@ export default function Dashboard() {
             {streak > 0 && <span className="ds-streak-badge">{streak} Day Streak</span>}
           </h1>
           <p className="ds-page-hd__sub">
-            {isActive
-              ? `${sub?.plan} plan · expires ${new Date(sub?.validUntil).toLocaleDateString('en-GB', { day: 'numeric', month: 'long' })}`
-              : 'Your subscription is inactive — renew to continue learning.'}
+            {isEnrolled
+              ? 'You are enrolled — happy learning!'
+              : enrollment
+                ? 'Your booking request is being reviewed by our team.'
+                : 'Submit a booking request and our team will review and confirm it.'}
           </p>
         </div>
         <div className="ds-page-hd__actions">
-          {!isActive && (
-            <a href={homeHref('pricing')} className="btn btn--green btn--sm">Renew Plan</a>
-          )}
-          {!enrollment && isActive && (
+          {!enrollment && (
             <Link to="/enroll" className="btn btn--green btn--sm">Enroll Now</Link>
           )}
           <Link to="/courses" className="btn btn--ghost btn--sm">
@@ -256,30 +226,15 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* ── Expired banner ──────────────────────────────────── */}
-      {!isActive && (
+      {/* ── Booking under review banner ──────────────────────── */}
+      {enrollment && !isEnrolled && enrollment.status !== 'cancelled' && (
         <div style={{
           display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px',
-          background: 'var(--color-danger-surface)', border: '1px solid var(--color-danger-border)',
-          borderRadius: 10, marginBottom: 18, fontSize: '0.875rem', color: 'var(--color-danger-text)',
-        }}>
-          <span>⚠</span>
-          <span style={{ flex: 1 }}>Your subscription has expired. Your learning progress is saved.</span>
-          <a href={homeHref('pricing')} className="btn btn--sm" style={{ background: 'var(--color-danger)', color: '#fff', borderRadius: 6, padding: '5px 12px', fontSize: '0.78rem', fontWeight: 700 }}>
-            Renew
-          </a>
-        </div>
-      )}
-
-      {/* ── Days warning ────────────────────────────────────── */}
-      {isActive && daysWarn && (
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px',
           background: 'var(--color-warning-surface)', border: '1px solid var(--color-warning-border)',
-          borderRadius: 10, marginBottom: 18, fontSize: '0.82rem', color: 'var(--color-warning-text)',
+          borderRadius: 10, marginBottom: 18, fontSize: '0.875rem', color: 'var(--color-warning-text)',
         }}>
-          ⏰ Your plan expires in <strong>{days} day{days !== 1 ? 's' : ''}</strong> — renew to keep learning uninterrupted.
-          <a href={homeHref('pricing')} style={{ marginLeft: 'auto', fontWeight: 700, color: 'var(--color-warning-text)', textDecoration: 'underline' }}>Renew</a>
+          <span>ℹ</span>
+          <span style={{ flex: 1 }}>Your booking request is being reviewed by our team — no payment is needed. We'll be in touch soon.</span>
         </div>
       )}
 
@@ -379,15 +334,20 @@ export default function Dashboard() {
           </div>
         </div>
 
+        {/* This used to be "Weekly Sessions" (derived from a paid plan) —
+            replaced by the booking's own status, since the dashboard has
+            no per-plan session-count data to derive that from. */}
         <div className="ds-stat">
           <div className="ds-stat__top">
             <div className="ds-stat__icon ds-stat__icon--blue">
               <CalendarDays size={18} aria-hidden="true" />
             </div>
           </div>
-          <div className="ds-stat__value">{typeof sessions === 'number' ? sessionsCount : sessions}</div>
-          <div className="ds-stat__label">Weekly Sessions</div>
-          <div className="ds-stat__sub">{sub?.plan || 'No active plan'}</div>
+          <div className="ds-stat__value" style={{ fontSize: '1.1rem' }}>
+            {isEnrolled ? 'Enrolled' : enrollment ? 'Under Review' : 'Not Booked'}
+          </div>
+          <div className="ds-stat__label">Booking Status</div>
+          <div className="ds-stat__sub">{enrollment?.plan || 'Submit a booking to get started'}</div>
         </div>
 
         {/* XP / level stat */}
@@ -405,33 +365,6 @@ export default function Dashboard() {
           <div className="ds-stat__sub">Level {me?.level ?? 1} · {20 - ((me?.xp ?? 0) % 20)} XP to next</div>
         </div>
 
-        <div className="ds-stat">
-          <div className="ds-stat__top">
-            <div className={`ds-stat__icon${days !== null && days <= 7 ? ' ds-stat__icon--red' : ' ds-stat__icon--green'}`}>
-              <Clock size={18} aria-hidden="true" />
-            </div>
-            {days !== null && days <= 7 && days > 0 && (
-              <span className="ds-stat__trend ds-stat__trend--down">Renew soon</span>
-            )}
-          </div>
-          {isActive ? (
-            <>
-              <div className="ds-stat__value" style={{ fontSize: days !== null && days > 30 ? '1.1rem' : undefined }}>
-                {days !== null ? (days > 30 ? 'Active' : Math.max(days, 0)) : '—'}
-              </div>
-              <div className="ds-stat__label">{days !== null && days > 30 ? 'Plan Status' : 'Days Left'}</div>
-              <div className="ds-stat__sub">
-                {days !== null ? `${sub?.plan} · renews ${new Date(sub?.validUntil).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}` : sub?.plan}
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="ds-stat__value" style={{ fontSize: '1rem', color: 'var(--color-danger)' }}>Inactive</div>
-              <div className="ds-stat__label">Plan Status</div>
-              <div className="ds-stat__sub">Renew to continue learning</div>
-            </>
-          )}
-        </div>
       </div>
 
       {/* ── Badges ──────────────────────────────────────────── */}
@@ -464,8 +397,8 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* ── Getting Started onboarding (new users with no enrollment) ── */}
-      {isActive && !enrollment && courses.length === 0 && (
+      {/* ── Getting Started onboarding (new users with no booking yet) ── */}
+      {!enrollment && courses.length === 0 && (
         <div className="ds-card" style={{ marginBottom: 20, overflow: 'hidden' }}>
           <div style={{
             background: 'linear-gradient(135deg, var(--color-primary) 0%, #1a9e72 100%)',
@@ -589,7 +522,7 @@ export default function Dashboard() {
           )}
 
           {/* My Courses */}
-          {isActive && courses.length > 0 && (
+          {isEnrolled && courses.length > 0 && (
             <div className="ds-card">
               <div className="ds-card__hd">
                 <h2 className="ds-card__title">
@@ -605,7 +538,7 @@ export default function Dashboard() {
           )}
 
           {/* Empty state: no courses */}
-          {isActive && courses.length === 0 && (
+          {isEnrolled && courses.length === 0 && (
             <div className="ds-card">
               <div className="ds-empty">
                 <div className="ds-empty__icon">📚</div>
@@ -865,10 +798,6 @@ export default function Dashboard() {
                 <Link to="/tools/quran-reader" className="ds-quick-action">
                   <span className="ds-quick-action__icon"><Book size={16} aria-hidden="true" /></span>
                   <span className="ds-quick-action__label">Quran</span>
-                </Link>
-                <Link to="/billing" className="ds-quick-action">
-                  <span className="ds-quick-action__icon"><CreditCard size={16} aria-hidden="true" /></span>
-                  <span className="ds-quick-action__label">{dashboardCopy.items.billing}</span>
                 </Link>
                 <Link to="/calendar" className="ds-quick-action">
                   <span className="ds-quick-action__icon"><CalendarDays size={16} aria-hidden="true" /></span>

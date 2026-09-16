@@ -112,16 +112,6 @@ export const VALUES_TEXT = {
    until real, permission-cleared student reviews are collected and wired
    to a genuine data source. ── */
 
-/* ── Printable invoice modal labels ── */
-export const INVOICE_TEXT = {
-  en: { locale: 'en-GB', invoice: 'Invoice', date: 'Date', period: 'Period', subscription: 'Subscription', planWord: 'Plan', monthlyRate: 'Monthly rate', discount: 'Discount', off: 'OFF', totalPaid: 'Total paid', paid: '✓ Paid', thankYou: 'Thank you for learning with Al-Rahma Academy. May Allah bless your journey.', print: '🖨 Print / Save as PDF' },
-  ar: { locale: 'ar-EG', invoice: 'فاتورة', date: 'التاريخ', period: 'الفترة', subscription: 'اشتراك', planWord: 'باقة', monthlyRate: 'السعر الشهري', discount: 'الخصم', off: 'خصم', totalPaid: 'الإجمالي المدفوع', paid: '✓ مدفوع', thankYou: 'شكراً لتعلّمك مع أكاديمية الرحمة. بارك الله في رحلتك.', print: '🖨 طباعة / حفظ PDF' },
-  it: { locale: 'it-IT', invoice: 'Fattura', date: 'Data', period: 'Periodo', subscription: 'Abbonamento', planWord: 'Piano', monthlyRate: 'Tariffa mensile', discount: 'Sconto', off: 'SCONTO', totalPaid: 'Totale pagato', paid: '✓ Pagato', thankYou: 'Grazie per aver studiato con Al-Rahma Academy. Che Allah benedica il tuo percorso.', print: '🖨 Stampa / Salva come PDF' },
-  es: { locale: 'es-ES', invoice: 'Factura', date: 'Fecha', period: 'Período', subscription: 'Suscripción', planWord: 'Plan', monthlyRate: 'Tarifa mensual', discount: 'Descuento', off: 'DESC.', totalPaid: 'Total pagado', paid: '✓ Pagado', thankYou: 'Gracias por aprender con Al-Rahma Academy. Que Allah bendiga tu camino.', print: '🖨 Imprimir / Guardar como PDF' },
-  de: { locale: 'de-DE', invoice: 'Rechnung', date: 'Datum', period: 'Zeitraum', subscription: 'Abonnement', planWord: 'Tarif', monthlyRate: 'Monatlicher Preis', discount: 'Rabatt', off: 'RABATT', totalPaid: 'Insgesamt bezahlt', paid: '✓ Bezahlt', thankYou: 'Danke, dass Sie mit der Al-Rahma Academy lernen. Möge Allah Ihren Weg segnen.', print: '🖨 Drucken / Als PDF speichern' },
-  fr: { locale: 'fr-FR', invoice: 'Facture', date: 'Date', period: 'Période', subscription: 'Abonnement', planWord: 'Forfait', monthlyRate: 'Tarif mensuel', discount: 'Remise', off: 'REMISE', totalPaid: 'Total payé', paid: '✓ Payé', thankYou: 'Merci d\'apprendre avec Al-Rahma Academy. Qu\'Allah bénisse votre parcours.', print: '🖨 Imprimer / Enregistrer en PDF' },
-};
-
 /* ── Small shared UI strings (modals, floating buttons) ── */
 export const UI_TEXT = {
   en: { close: 'Close', chooseResource: 'Choose how you’d like to start learning:', whatsapp: 'Chat on WhatsApp' },

@@ -32,22 +32,33 @@ const enrollmentSchema = new Schema({
   // to the same request unambiguously.
   bookingRef: { type: String, unique: true, sparse: true, index: true },
 
-  // Admin — status values kept superset-compatible with pre-existing prod
-  // documents ('pending'/'enrolled' predate the booking-first model and
-  // still mean "new"/"activated"; 'awaiting_payment'/'paid' are new
-  // intermediate states). No data migration needed — this is additive.
-  status: { type: String, enum: ['pending', 'contacted', 'awaiting_payment', 'paid', 'enrolled', 'cancelled'], default: 'pending' },
+  // Scope correction (see docs/current-project-status.md): registration is
+  // a booking request; reaching 'enrolled' via the admin's "Approve &
+  // Activate" action (controllers/enrollmentController.js's
+  // approveEnrollment) is what activates the student's paid subscription
+  // and generates an invoice — never a card-gateway charge. Canonical,
+  // writable-going-forward values are 'pending'/'approved'/'enrolled'/
+  // 'cancelled' (utils/enrollmentValidation.js's ENROLLMENT_STATUSES is the
+  // enforced allowlist for every write). 'contacted'/'awaiting_payment'/
+  // 'paid' predate this design (an earlier offline-payment-bookkeeping
+  // scheme) and stay in the enum ONLY so pre-existing Mongo documents
+  // carrying one of those values remain readable/re-saveable — migration-
+  // safe, not a feature: no API can newly set them.
+  status: { type: String, enum: ['pending', 'approved', 'contacted', 'awaiting_payment', 'paid', 'enrolled', 'cancelled'], default: 'pending' },
   notes:  { type: String, default: '' },
+  adminNote: { type: String, default: '' },
 
-  // Admin-only financial bookkeeping for the offline payment the student
-  // arranges over WhatsApp — never a payment gateway, never card/account
-  // data. Distinct from the customer-facing `notes` field above.
+  // Historical, admin-only offline-payment bookkeeping fields from the
+  // retired payments product. No API (public or admin) may write to these
+  // any more — see utils/enrollmentValidation.js's ADMIN_UPDATABLE_FIELDS,
+  // which excludes them. Left on the schema, unvalidated/unenforced, purely
+  // so pre-existing documents that already have values here keep loading
+  // exactly as stored; never delete this data per product decision.
   agreedAmount:          { type: Number },
   currency:              { type: String, trim: true },
   paymentMethodExternal: { type: String, trim: true },
   paidAt:                { type: Date },
   renewalAt:             { type: Date },
-  adminNote:             { type: String, default: '' },
 }, { timestamps: true });
 
 // ── Query indexes ─────────────────────────────────────────────────────────────

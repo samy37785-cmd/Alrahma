@@ -250,7 +250,6 @@ const EXPECTED_WA_ME_INVENTORY = {
   'components/features/marketing/TrustBar.jsx': { count: 1, classification: 'academy-direct' },
   'components/layout/dashboardNav.js': { count: 1, classification: 'academy-direct' },
   'components/layout/Footer.jsx': { count: 1, classification: 'academy-direct' },
-  'components/ui/CancelSurvey.jsx': { count: 1, classification: 'academy-direct' },
   'components/ui/WhatsappFab.jsx': { count: 1, classification: 'academy-direct' },
   'pages/Dashboard.jsx': { count: 1, classification: 'academy-direct' },
   'pages/FAQ.jsx': { count: 1, classification: 'academy-direct' },
@@ -267,9 +266,15 @@ const EXPECTED_WA_ME_INVENTORY = {
 // the single helper that builds the post-booking WhatsApp CTA, resolving the
 // number through site.whatsapp like every other academy-direct occurrence
 // (never a hardcoded literal).
-const EXPECTED_TOTAL_FILES = 16;
-const EXPECTED_TOTAL_OCCURRENCES = 18;
-const EXPECTED_DIRECT_OCCURRENCES = 14;
+// components/ui/CancelSurvey.jsx (its wa.me/ occurrence was academy-direct)
+// was deleted along with the rest of the checkout-era billing UI — inventory
+// updated to match. Not restored by the later scope correction (see
+// docs/current-project-status.md): that correction restored the manual/
+// offline payment and subscription-activation machinery, not this specific
+// survey component, which had no live consumer either way.
+const EXPECTED_TOTAL_FILES = 15;
+const EXPECTED_TOTAL_OCCURRENCES = 17;
+const EXPECTED_DIRECT_OCCURRENCES = 13;
 const EXPECTED_SHARE_OCCURRENCES = 4;
 
 // Classifies by index math on the raw file text (never a single-line

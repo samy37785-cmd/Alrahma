@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { homeHref } from '../utils/localePath';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext';
 import { getMe } from '../api/authApi';
 import { getCourses, getMyCertificates } from '../api/courseApi';
+import { getMyEnrollment } from '../api/enrollmentApi';
 import { COURSE_KEYS } from '../hooks/useCourses';
 import { useLang } from '../context/LangContext';
 import DashboardLayout from '../components/layout/DashboardLayout';
@@ -75,7 +75,16 @@ export default function Profile() {
     staleTime: 1000 * 60 * 5,
   });
 
-  const subscription = me?.subscription ?? user?.subscription ?? null;
+  const { data: enrollment = null } = useQuery({
+    queryKey: ['profile', 'enrollment'],
+    queryFn:  () => getMyEnrollment().catch(() => null),
+    staleTime: 1000 * 60 * 5,
+  });
+  // Booking status for the "My Plan" card below — a booking reaching
+  // 'enrolled' is what the admin's "Approve & Activate" action sets once it
+  // has also activated User.subscription (see hasActiveSubscription(),
+  // which — not this flag — is the real content/progress access guard).
+  const isEnrolled = enrollment?.status === 'enrolled';
 
   const [info, setInfo] = useState({ name: user?.name || '', email: user?.email || '' });
   const [pass, setPass] = useState({ currentPassword: '', newPassword: '', confirm: '' });
@@ -147,7 +156,7 @@ export default function Profile() {
         <div>
           <div className="ds-page-hd__eyebrow"><span>👤</span> Account</div>
           <h1 className="ds-page-hd__title">{pg.myAccount}</h1>
-          <p className="ds-page-hd__sub">Manage your profile, password, and subscription.</p>
+          <p className="ds-page-hd__sub">Manage your profile and password.</p>
         </div>
       </div>
 
@@ -166,9 +175,6 @@ export default function Profile() {
             <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: 6 }}>{user?.email}</div>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
               <span className="ds-badge ds-badge--green">{roleLabel}</span>
-              {subscription?.status === 'active' && (
-                <span className="ds-badge ds-badge--gold">{subscription.plan}</span>
-              )}
             </div>
           </div>
         </div>
@@ -290,7 +296,7 @@ export default function Profile() {
           </div>
 
           {/* Courses */}
-          {subscription?.status === 'active' && courses.length > 0 && (
+          {isEnrolled && courses.length > 0 && (
             <div className="ds-card">
               <div className="ds-card__hd">
                 <span className="ds-card__title"><span className="ds-card__title-icon">📚</span> {pg.myCourses}</span>
@@ -336,43 +342,30 @@ export default function Profile() {
         {/* Right sidebar */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
 
-          {/* Subscription */}
+          {/* My Plan — scope correction (see docs/current-project-status.md):
+              a light, non-billing status card (plan name + booking status),
+              sourced from the same enrollment query already used above for
+              isEnrolled. No "View Invoices"/"View Plans" billing-style
+              links — just a status readout. */}
           <div className="ds-card">
             <div className="ds-card__hd">
-              <span className="ds-card__title"><span className="ds-card__title-icon">💳</span> {pg.mySubscription}</span>
+              <span className="ds-card__title"><span className="ds-card__title-icon">🎯</span> My Plan</span>
             </div>
-            <div className="ds-card__body">
-              {subscription?.status === 'active' ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', background: 'var(--color-success-surface)', borderRadius: 9, border: '1px solid var(--color-success-border)' }}>
-                    <span style={{ fontSize: '0.78rem', color: 'var(--color-success-text)', fontWeight: 600 }}>Status</span>
-                    <span className="ds-badge ds-badge--green">Active ✓</span>
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                    <div style={{ padding: '10px 12px', background: 'var(--bg-page)', borderRadius: 9, border: '1px solid var(--border-default)' }}>
-                      <div style={{ fontSize: '0.68rem', color: 'var(--text-secondary)', marginBottom: 2 }}>PLAN</div>
-                      <div style={{ fontWeight: 800, color: 'var(--text-brand)', fontSize: '0.9rem' }}>{subscription.plan}</div>
-                    </div>
-                    <div style={{ padding: '10px 12px', background: 'var(--bg-page)', borderRadius: 9, border: '1px solid var(--border-default)' }}>
-                      <div style={{ fontSize: '0.68rem', color: 'var(--text-secondary)', marginBottom: 2 }}>EXPIRES</div>
-                      <div style={{ fontWeight: 700, fontSize: '0.82rem', color: 'var(--text-primary)' }}>
-                        {new Date(subscription.validUntil).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-                      </div>
-                    </div>
-                  </div>
-                  <Link to="/billing" className="btn btn--ghost" style={{ width: '100%', justifyContent: 'center', borderRadius: 9, fontSize: '0.82rem' }}>
-                    {pg.viewInvoices}
-                  </Link>
-                </div>
-              ) : (
-                <div>
-                  <div style={{ padding: '10px 14px', background: 'var(--color-warning-surface)', borderRadius: 9, border: '1px solid var(--color-warning-border)', marginBottom: 12, fontSize: '0.82rem', color: 'var(--color-warning-text)' }}>
-                    ⚠ {pg.noSub}
-                  </div>
-                  <a href={homeHref('pricing')} className="btn btn--green" style={{ width: '100%', justifyContent: 'center', borderRadius: 9, fontSize: '0.855rem' }}>
-                    {pg.viewPlans}
-                  </a>
-                </div>
+            <div className="ds-card__body" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
+                <span style={{ color: 'var(--text-secondary)' }}>Plan</span>
+                <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{enrollment?.plan || '—'}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.85rem' }}>
+                <span style={{ color: 'var(--text-secondary)' }}>Status</span>
+                <span className={`ds-badge ${isEnrolled ? 'ds-badge--green' : 'ds-badge--gray'}`}>
+                  {isEnrolled ? 'Enrolled' : enrollment ? 'Under Review' : 'Not Booked'}
+                </span>
+              </div>
+              {!enrollment && (
+                <Link to="/enroll" className="btn btn--green btn--sm" style={{ borderRadius: 7, fontSize: '0.78rem', marginTop: 8, textAlign: 'center' }}>
+                  Submit a Booking
+                </Link>
               )}
             </div>
           </div>
@@ -386,10 +379,6 @@ export default function Profile() {
               <Link to="/dashboard" className="ds-quick-action">
                 <span className="ds-quick-action__icon">◧</span>
                 <span className="ds-quick-action__label">Dashboard</span>
-              </Link>
-              <Link to="/billing" className="ds-quick-action">
-                <span className="ds-quick-action__icon">💳</span>
-                <span className="ds-quick-action__label">Billing</span>
               </Link>
               <Link to="/messages" className="ds-quick-action">
                 <span className="ds-quick-action__icon">✉</span>

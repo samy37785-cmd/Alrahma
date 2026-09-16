@@ -16,6 +16,11 @@ function parsePagination(query) {
   return { page, limit, skip: (page - 1) * limit };
 }
 
+// Historical offline-payment-bookkeeping columns (agreed_amount/currency/
+// payment_method_external/paid_at/renewal_at) still exist on this table for
+// old rows (never dropped/migrated away by app code), but this admin API
+// never surfaces them — status/adminNote plus the booking's own fields are
+// all a caller of this API can read or write here.
 function toJson(row) {
   return {
     _id: row.id,
@@ -37,11 +42,6 @@ function toJson(row) {
     status: row.status,
     notes: row.notes,
     bookingRef: row.booking_ref,
-    agreedAmount: row.agreed_amount,
-    currency: row.currency,
-    paymentMethodExternal: row.payment_method_external,
-    paidAt: row.paid_at,
-    renewalAt: row.renewal_at,
     adminNote: row.admin_note,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -127,8 +127,6 @@ export const create = asyncHandler(async (req, res) => {
 const UPDATE_FIELD_TO_COLUMN = {
   name: 'name', email: 'email', whatsapp: 'whatsapp', country: 'country', city: 'city',
   timezone: 'timezone', notes: 'notes', status: 'status', adminNote: 'admin_note',
-  agreedAmount: 'agreed_amount', currency: 'currency',
-  paymentMethodExternal: 'payment_method_external', paidAt: 'paid_at', renewalAt: 'renewal_at',
 };
 
 // @route PUT /api/v1/admin/enrollments/:id
@@ -136,21 +134,19 @@ export const update = asyncHandler(async (req, res) => {
   // The previous COALESCE($n, col)-style UPDATE could never distinguish "a
   // field the caller didn't mention" from "a field the caller explicitly
   // wants cleared to null" — both arrive as a SQL NULL parameter, so a
-  // deliberate clear of e.g. adminNote/paymentMethodExternal was silently
-  // impossible. This version fetches the existing row first (also needed
-  // for buildAdminUpdatePatch's enrolled/agreedAmount cross-field rule —
-  // same shared allowlist+validation used by the Mongo backend's admin
-  // route, see utils/enrollmentValidation.js) and builds the SET clause
-  // only from keys actually present in the sanitized patch, so an explicit
-  // `null` really does clear the column while an omitted key truly leaves
-  // it untouched.
+  // deliberate clear of e.g. adminNote was silently impossible. This
+  // version fetches the existing row first and builds the SET clause only
+  // from keys actually present in the sanitized patch (same shared
+  // allowlist+validation used by the Mongo backend's admin route, see
+  // utils/enrollmentValidation.js), so an explicit `null` really does clear
+  // the column while an omitted key truly leaves it untouched.
   const existing = await withUserContext(req.adminUser.id, async (client) => {
     const r = await client.query('SELECT * FROM enrollments WHERE id = $1', [req.params.id]);
     return r.rows[0];
   }, { aal: req.adminAal });
   if (!existing) return res.status(404).json({ message: 'Enrollment not found' });
 
-  const { patch, error } = buildAdminUpdatePatch(req.body, toJson(existing));
+  const { patch, error } = buildAdminUpdatePatch(req.body);
   if (error) return res.status(422).json({ message: error });
 
   const keys = Object.keys(patch);
@@ -178,6 +174,67 @@ export const update = asyncHandler(async (req, res) => {
   if (!row) return res.status(404).json({ message: 'Enrollment not found' });
   await auditAdminAction({ adminId: req.adminUser.id, action: 'enrollment.update', resourceType: 'enrollments', resourceId: row.id, after: row });
   res.json(toJson(row));
+});
+
+// Scope correction (see docs/current-project-status.md; mirrors backend's
+// controllers/enrollmentController.js's Mongo-side approveEnrollment): the
+// one admin action that links a booking to a registered account and
+// activates their subscription/content access. Under DATA_BACKEND=supabase
+// this calls the admin_activate_subscription_from_enrollment() RPC
+// (lib/db/drizzle/0028_admin_booking_activation.sql), which resolves the
+// plan to activate FROM THE BOOKING ITSELF (enrollments.requested_plan_slug
+// matched against plans.slug/name) — there is no planId for this endpoint
+// to accept or require; the frontend's "Approve & Activate" button calls
+// this with no body, exactly like the Mongo side. The RPC internally
+// creates an admin-attested manual_payments row and then calls the
+// existing, unmodified admin_activate_manual_subscription() — see that
+// migration's own comment for why activation stays evidence-based (a real
+// manual_payments row) rather than a free-form grant like Mongo's.
+//
+// @route PATCH /api/v1/admin/enrollments/:id/approve
+// @body { currentPeriodEnd? }
+export const approve = asyncHandler(async (req, res) => {
+  const { currentPeriodEnd } = req.body;
+  // enforce_subscription_transition() requires an active subscription to
+  // have a future current_period_end — mirrors Mongo's own default here
+  // (validUntil = now + 30 days) rather than passing null through.
+  const periodEnd = currentPeriodEnd ? new Date(currentPeriodEnd) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+
+  let subscription;
+  try {
+    subscription = await withUserContext(req.adminUser.id, async (client) => {
+      const r = await client.query(
+        'SELECT * FROM admin_activate_subscription_from_enrollment($1, $2)',
+        [req.params.id, periodEnd]
+      );
+      return r.rows[0];
+    }, { aal: req.adminAal });
+  } catch (err) {
+    if (/not an AAL2-verified admin/.test(err.message)) return res.status(403).json({ message: 'AAL2 verification required' });
+    if (/lacks the enrollments:write permission/.test(err.message)) return res.status(403).json({ message: 'Insufficient permissions' });
+    if (/not a booking awaiting approval/.test(err.message)) return res.status(409).json({ message: err.message });
+    if (/no registered account found/.test(err.message)) return res.status(422).json({ message: err.message });
+    if (/has no requested_plan_slug on record/.test(err.message)) return res.status(422).json({ message: err.message });
+    if (/no active plan matches the booking's requested plan/.test(err.message)) return res.status(422).json({ message: err.message });
+    if (err.code === '42501' || /insufficient_privilege/i.test(err.message)) return res.status(403).json({ message: 'Insufficient permissions' });
+    throw err;
+  }
+
+  const enrollmentRow = await withUserContext(req.adminUser.id, async (client) => {
+    const r = await client.query('SELECT * FROM enrollments WHERE id = $1', [req.params.id]);
+    return r.rows[0];
+  }, { aal: req.adminAal });
+
+  await auditAdminAction({
+    adminId: req.adminUser.id, action: 'enrollment.approve', resourceType: 'enrollments',
+    resourceId: req.params.id, after: { status: 'enrolled', subscriptionId: subscription.id },
+  });
+
+  res.json({
+    message: 'Booking approved and subscription activated',
+    enrollment: toJson(enrollmentRow),
+    subscription: { status: subscription.status, planId: subscription.plan_id, currentPeriodEnd: subscription.current_period_end },
+  });
 });
 
 // @route DELETE /api/v1/admin/enrollments/:id

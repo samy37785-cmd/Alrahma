@@ -431,99 +431,6 @@
   white-space: nowrap;
 }
 
-/* ── CancelSurvey modal ────────────────────────────────────────────── */
-.cancel-survey {
-  position: fixed; inset: 0; z-index: 9100;
-  display: flex; align-items: center; justify-content: center;
-  padding: 16px;
-}
-
-.cancel-survey__backdrop {
-  position: absolute; inset: 0;
-  background: rgba(0,0,0,.5);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-}
-
-.cancel-survey__card {
-  position: relative; z-index: 1;
-  background: var(--bg-surface);
-  border-radius: 18px; padding: 28px;
-  max-width: 420px; width: 100%;
-  box-shadow: 0 20px 60px rgba(0,0,0,.2);
-  animation: share-pop 0.25s cubic-bezier(.34,1.56,.64,1) both;
-}
-
-.cancel-survey__x {
-  position: absolute; top: 14px; right: 14px;
-  background: none; border: none; font-size: 1.5rem;
-  color: var(--text-secondary); cursor: pointer; line-height: 1;
-}
-.cancel-survey__x:hover { color: var(--text-primary); }
-
-.cancel-survey__offer-icon { font-size: 2.5rem; text-align: center; margin-bottom: 12px; }
-
-.cancel-survey__title {
-  font-size: 1.2rem; font-weight: 800;
-  color: var(--text-primary); margin: 0 0 8px; text-align: center;
-}
-
-.cancel-survey__sub {
-  font-size: 0.85rem; color: var(--text-secondary);
-  margin: 0 0 18px; text-align: center; line-height: 1.5;
-}
-
-.cancel-survey__offer-text {
-  font-size: 0.88rem; color: var(--text-primary);
-  margin: 0 0 20px; text-align: center; line-height: 1.6;
-  background: var(--bg-surface-raised);
-  border-radius: 10px; padding: 14px;
-}
-
-.cancel-survey__reasons {
-  display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px;
-}
-
-.cancel-survey__reason {
-  display: flex; align-items: center; gap: 10px;
-  padding: 10px 14px; border-radius: 10px;
-  border: 1.5px solid var(--border-default);
-  font-size: 0.85rem; color: var(--text-primary);
-  cursor: pointer; transition: border-color 0.15s, background 0.15s;
-}
-.cancel-survey__reason:hover { border-color: var(--color-primary, #0b6e4f); background: var(--bg-surface-hover); }
-.cancel-survey__reason.selected { border-color: var(--color-primary, #0b6e4f); background: var(--color-primary-surface, #f0fdf4); }
-.cancel-survey__radio { accent-color: var(--color-primary, #0b6e4f); flex-shrink: 0; }
-
-.cancel-survey__other {
-  width: 100%; padding: 10px 12px;
-  border: 1px solid var(--border-default); border-radius: 8px;
-  background: var(--bg-surface-raised); color: var(--text-primary);
-  font-size: 0.85rem; resize: vertical;
-  font-family: inherit;
-}
-
-.cancel-survey__actions {
-  display: flex; flex-direction: column; gap: 10px;
-}
-
-.cancel-survey__skip {
-  background: none; border: none; cursor: pointer;
-  font-size: 0.8rem; color: var(--text-secondary);
-  text-decoration: underline; text-align: center;
-  padding: 4px;
-}
-.cancel-survey__skip:hover { color: var(--text-primary); }
-
-.cancel-survey__danger {
-  background: none; border: 1px solid var(--color-danger, #dc2626);
-  color: var(--color-danger, #dc2626);
-  border-radius: 8px; padding: 10px 16px;
-  font-size: 0.85rem; font-weight: 600; cursor: pointer;
-  transition: background 0.15s;
-}
-.cancel-survey__danger:hover { background: var(--color-danger-surface, #fef2f2); }
-
 /* ── Dark mode overrides ───────────────────────────────────────────── */
 html.dark .trust { background: var(--bg-page); }
 html.dark .trust__card,
@@ -563,15 +470,6 @@ html.dark .refund-hero h1 { color: #4ade80; }
 html.dark .refund-hero__sub { color: #86efac; }
 html.dark .refund-contact { background: var(--bg-surface-raised); border-color: var(--border-default); }
 
-html.dark .cancel-survey__card { background: var(--bg-surface-raised); }
-html.dark .cancel-survey__reason { border-color: var(--border-default); }
-html.dark .cancel-survey__reason:hover,
-html.dark .cancel-survey__reason.selected { background: rgba(11,110,79,.15); border-color: #4ade80; }
-html.dark .cancel-survey__other { background: var(--bg-surface); border-color: var(--border-default); color: var(--text-primary); }
-html.dark .cancel-survey__offer-text { background: rgba(255,255,255,.05); }
-html.dark .cancel-survey__danger { border-color: #f87171; color: #f87171; }
-html.dark .cancel-survey__danger:hover { background: rgba(239,68,68,.1); }
-
 /* ── Responsive ────────────────────────────────────────────────────── */
 @media (max-width: 900px) {
   .trust__grid { grid-template-columns: repeat(2, 1fr); }
@@ -585,7 +483,6 @@ html.dark .cancel-survey__danger:hover { background: rgba(239,68,68,.1); }
   .qap { bottom: 90px; right: 12px; }
   .qap__label { display: none; }
   .referral-card { flex-direction: column; }
-  .cancel-survey__card { padding: 20px 16px; }
   .legal-page { padding: 40px 0 60px; }
   .legal-page__inner h1 { font-size: 1.5rem; }
 }

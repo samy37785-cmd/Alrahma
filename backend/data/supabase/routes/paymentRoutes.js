@@ -1,36 +1,24 @@
-// Booking-First Enrollment — WhatsApp + offline payment, admin activates
-// manually; see docs/current-project-status.md. Mirrors
-// backend/routes/paymentRoutes.js's shutdown exactly: every customer-
-// reachable payment-initiation/execution endpoint returns 410
-// PAYMENTS_DISABLED at the route level, on BOTH backends, since app.js
-// mounts this file instead of the Mongo one whenever DATA_BACKEND=supabase
-// — closing only the Mongo path would leave the Supabase deployment mode
-// fully exploitable. The gateway controllers themselves
-// (createStripeSession, createPaypalOrder, capturePaypalOrder,
-// getManualMethods, submitManualPayment) are untouched here — kept as
-// legacy/deferred code, still exercised by the webhook safety-net paths
-// below and available if this decision is ever reversed.
+// Scope correction (see docs/current-project-status.md): mirrors
+// backend/routes/paymentRoutes.js exactly. Only online card-gateway
+// execution (Stripe, PayPal's real Orders-API checkout/capture/webhook —
+// data/supabase/paypalController.js) stays closed; manual/offline payment
+// submission is restored, since app.js mounts this file instead of the
+// Mongo one whenever DATA_BACKEND=supabase.
 import { Router } from 'express';
-import { stripeWebhook } from '../stripeController.js';
-import { paypalWebhook } from '../paypalController.js';
-import { paymentsDisabled } from '../../../middleware/paymentsDisabled.js';
+import { cardPaymentsDisabled } from '../../../middleware/cardPaymentsDisabled.js';
+import { getManualMethods, submitManualPayment } from '../manualPaymentController.js';
+import { asyncHandler } from '../../../utils/asyncHandler.js';
 
 const router = Router();
 
-// Webhook must come before any body-parser; raw body is set in app.js
-// exactly like the Mongo path's route (same raw-body middleware wiring is
-// keyed off the path, not the backend). Kept live: it only ever reacts to
-// Stripe's/PayPal's own server-to-server calls for payments that were
-// already created before this change, never something a customer can
-// trigger themselves.
-router.post('/stripe/webhook', stripeWebhook);
-router.post('/stripe', paymentsDisabled);
+router.post('/stripe/webhook', cardPaymentsDisabled);
+router.post('/stripe', cardPaymentsDisabled);
 
-router.post('/paypal/webhook', paypalWebhook);
-router.post('/paypal', paymentsDisabled);
-router.post('/paypal/:orderId/capture', paymentsDisabled);
+router.post('/paypal/webhook', cardPaymentsDisabled);
+router.post('/paypal', cardPaymentsDisabled);
+router.post('/paypal/:orderId/capture', cardPaymentsDisabled);
 
-router.get('/manual-methods', paymentsDisabled);
-router.post('/manual', paymentsDisabled);
+router.get('/manual-methods', getManualMethods);
+router.post('/manual', asyncHandler(submitManualPayment));
 
 export default router;

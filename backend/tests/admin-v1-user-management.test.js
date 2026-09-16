@@ -144,17 +144,10 @@ test('PATCH /api/v1/admin/users/:id/role: a regular admin-role AdminUser can sti
   assert.equal(res.body.role, 'student');
 });
 
-test('PATCH /api/v1/admin/users/:id/subscription activates a subscription', async () => {
-  const { agent, csrf, cookieHeader } = await adminAgent();
-  const student = await makeUser();
-
-  const res = await agent.patch(`/api/v1/admin/users/${student._id}/subscription`).set({ ...csrf, Cookie: cookieHeader })
-    .send({ action: 'activate', plan: 'Pro' });
-
-  assert.equal(res.status, 200);
-  assert.equal(res.body.subscription.status, 'active');
-  assert.equal(res.body.subscription.plan, 'Pro');
-});
+// PATCH /:id/subscription (admin-driven manual subscription activation —
+// only online card/gateway payment is cancelled, see
+// docs/current-project-status.md) is covered by tests/payments-retired.test.js,
+// not here.
 
 test('PATCH /api/v1/admin/users/:id/teacher assigns a teacher and rejects a non-teacher target', async () => {
   const { agent, csrf, cookieHeader } = await adminAgent();

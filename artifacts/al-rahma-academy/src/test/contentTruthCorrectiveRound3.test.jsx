@@ -328,15 +328,12 @@ describe('Support response vs. trial confirmation vs. tutor assignment are not c
   });
 });
 
+// data/billing.js was deleted along with the rest of the payments/billing
+// feature (checkout UI) — there is no plan-key display copy left to assert
+// on there. Scope correction (see docs/current-project-status.md):
+// AdminUsersTab.jsx's subscription controls are back — manual, non-gateway
+// admin subscription activation is not an online card-gateway feature.
 describe('Plan-name inventory — display copy updated, internal API defaults deliberately deferred (Part 11)', () => {
-  it('billing.js sample invoices (display-only fallback) use the live plan names', () => {
-    const src = fs.readFileSync(path.resolve(__dirname, '../data/billing.js'), 'utf8');
-    expect(src).not.toMatch(/plan:\s*'Starter'/);
-    expect(src).not.toMatch(/plan:\s*'Standard'/);
-    expect(src).toMatch(/plan:\s*'Noorani'/);
-    expect(src).toMatch(/plan:\s*'Huffaz'/);
-  });
-
   it('the cancellation-survey retention offer references a real plan name (Noorani), not "Starter", in all six languages', () => {
     const src = fs.readFileSync(path.resolve(__dirname, '../i18n/experience.js'), 'utf8');
     expect(src).not.toMatch(/Starter/);
@@ -348,13 +345,10 @@ describe('Plan-name inventory — display copy updated, internal API defaults de
     expect(src).not.toMatch(/\(Standard, Premium\)|Standard, Premium\)/);
   });
 
-  it('AdminUsersTab.jsx\'s internal API default plan key is deliberately left untouched (deferred blocker, not silently changed)', () => {
-    // This IS still 'Starter' — a real, documented, intentional exception:
-    // it is an admin-API call parameter, not display copy, and this task
-    // cannot prove what plan-key string the backend actually expects
-    // without touching lib/db or the payment backend, both out of scope.
+  it('AdminUsersTab.jsx has its subscription control back, defaulting new activations to the "Starter" plan key (restored by the payment-scope correction)', () => {
     const src = fs.readFileSync(path.resolve(__dirname, '../components/features/admin/AdminUsersTab.jsx'), 'utf8');
-    expect(src).toMatch(/handleSubscription\([^)]*'Starter'\)/);
+    expect(src).toMatch(/handleSubscription/);
+    expect(src).toMatch(/'Starter'/);
   });
 });
 

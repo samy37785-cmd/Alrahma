@@ -241,6 +241,22 @@ export function enrollmentStudentEmail({ name, teacherName, plan, bookingRef }) 
   `);
 }
 
+// ── Enrollment: booking approved / subscription activated ────────────────
+export function bookingApprovedEmail({ name, plan }) {
+  return base(`
+    <h2 style="margin:0 0 8px;color:#0b6e4f;">Your booking is approved! 🎉</h2>
+    <p style="color:#555;font-size:15px;line-height:1.7;">
+      Congratulations <strong>${esc(name)}</strong>! Your booking for the <strong>${esc(plan)}</strong> plan has been reviewed and approved, and your account is now active.
+    </p>
+    <p style="color:#555;font-size:15px;line-height:1.7;">
+      A teacher will reach out on WhatsApp to schedule your first session.
+    </p>
+    <div style="margin-top:24px;">
+      <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}/dashboard" style="background:#0b6e4f;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-size:14px;display:inline-block;">Go to My Dashboard</a>
+    </div>
+  `);
+}
+
 // ── Admin: contact form notification ─────────────────────────────────────
 export function contactAdminEmail({ name, email, phone, subject, message }) {
   return base(`

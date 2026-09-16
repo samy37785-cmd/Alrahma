@@ -21,11 +21,20 @@ import { getDataBackend } from './dataBackend.js';
  * instead of failing silently at the first admin login attempt.
  *
  * RECOMMENDED vars: absence is logged as a warning. The service can start
- * without them but specific features (payments, cron, email) will be
- * disabled or degrade — this is an accepted, working design for these,
- * confirmed by how each is actually consumed (e.g. the mailer no-ops if
- * unconfigured, the cron route fails closed with 503 if CRON_SECRET is
- * unset).
+ * without them but specific features (cron, email) will be disabled or
+ * degrade — this is an accepted, working design for these, confirmed by how
+ * each is actually consumed (e.g. the mailer no-ops if unconfigured, the
+ * cron route fails closed with 503 if CRON_SECRET is unset).
+ *
+ * Scope correction (see docs/current-project-status.md): only online CARD
+ * payment (Stripe/PayPal checkout/capture/webhooks) is cancelled — those
+ * routes are a fixed 410 regardless of what's set in the environment, so no
+ * card-gateway secret (Stripe/PayPal keys, webhook secrets) is validated
+ * here any more. Manual/offline payment bookkeeping, coupons, invoices, and
+ * admin subscription activation are live again and never depended on a
+ * gateway credential either way. This validator does not read or require
+ * any of them; it does not, and never did, touch their actual values in
+ * Render/Vercel.
  */
 
 const REQUIRED = [
@@ -47,8 +56,6 @@ const ADMIN_CRITICAL = [
 ];
 
 const RECOMMENDED = [
-  'STRIPE_SECRET_KEY',
-  'STRIPE_WEBHOOK_SECRET',
   'CRON_SECRET',
   'SMTP_USER',
   'SMTP_PASS',

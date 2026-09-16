@@ -108,30 +108,56 @@ async function makeBooking(overrides = {}) {
   return Enrollment.create({ ...BOOKING_PAYLOAD, bookingRef: `AR-TEST-${Date.now()}${Math.random()}`, ...overrides });
 }
 
-test('PUT /api/v1/admin/enrollments/:id (existing generic CRUD) updates booking status and admin financial fields', async () => {
+test('PUT /api/v1/admin/enrollments/:id (existing generic CRUD) updates booking status and adminNote — non-financial only', async () => {
   const booking = await makeBooking();
 
   const { agent: adminA, csrf: adminCsrf, cookieHeader } = await adminAgent('admin');
   const res = await adminA
     .put(`/api/v1/admin/enrollments/${booking._id}`)
     .set({ ...adminCsrf, Cookie: cookieHeader })
+    .send({ status: 'approved', adminNote: 'Confirmed via WhatsApp' });
+
+  assert.equal(res.status, 200);
+  assert.equal(res.body.status, 'approved');
+  assert.equal(res.body.adminNote, 'Confirmed via WhatsApp');
+
+  const saved = await Enrollment.findById(booking._id).lean();
+  assert.equal(saved.status, 'approved');
+  assert.equal(saved.adminNote, 'Confirmed via WhatsApp');
+});
+
+// Scope correction (see docs/current-project-status.md): the booking
+// endpoint itself never writes a financial field, regardless of what else
+// is or isn't cancelled elsewhere. Sending one is not an error (422/403) —
+// it is simply never applied, exactly like any other field not in
+// ADMIN_UPDATABLE_FIELDS (utils/enrollmentValidation.js).
+test('PUT .../:id: legacy financial fields sent in the body are silently ignored — not saved, not returned, no error', async () => {
+  const booking = await makeBooking();
+  const { agent, csrf, cookieHeader } = await adminAgent('admin');
+  const res = await agent
+    .put(`/api/v1/admin/enrollments/${booking._id}`)
+    .set({ ...csrf, Cookie: cookieHeader })
     .send({
-      status: 'paid',
+      status: 'approved',
       agreedAmount: 49,
       currency: 'EUR',
       paymentMethodExternal: 'bank transfer',
       paidAt: new Date().toISOString(),
-      adminNote: 'Confirmed via WhatsApp',
+      renewalAt: new Date().toISOString(),
     });
 
   assert.equal(res.status, 200);
-  assert.equal(res.body.status, 'paid');
-  assert.equal(res.body.agreedAmount, 49);
-  assert.equal(res.body.paymentMethodExternal, 'bank transfer');
+  assert.equal(res.body.agreedAmount, undefined, 'excludeFields must strip this from the response even if a prior value existed');
+  assert.equal(res.body.currency, undefined);
+  assert.equal(res.body.paymentMethodExternal, undefined);
+  assert.equal(res.body.paidAt, undefined);
+  assert.equal(res.body.renewalAt, undefined);
 
   const saved = await Enrollment.findById(booking._id).lean();
-  assert.equal(saved.status, 'paid');
-  assert.equal(saved.adminNote, 'Confirmed via WhatsApp');
+  assert.equal(saved.agreedAmount, undefined, 'the financial field must never have been written');
+  assert.equal(saved.currency, undefined);
+  assert.equal(saved.paymentMethodExternal, undefined);
+  assert.equal(saved.paidAt, undefined);
 });
 
 test('PUT /api/v1/admin/enrollments/:id is forbidden for a viewer (no enrollments:write)', async () => {
@@ -169,58 +195,76 @@ test('PUT .../:id rejects an invalid status value with 422', async () => {
   assert.equal(res.status, 422);
 });
 
-test('PUT .../:id rejects a negative agreedAmount with 422', async () => {
+// The legacy 'paid'/'awaiting_payment'/'contacted' status values (from an
+// earlier offline-payment-bookkeeping design) are no longer accepted on a
+// NEW write (see utils/enrollmentValidation.js's ENROLLMENT_STATUSES) —
+// only pending/approved/enrolled/cancelled. Historical rows already
+// carrying one of the legacy values stay readable (see models/
+// Enrollment.js) and, on Postgres, stay valid at the database level too
+// (lib/db/drizzle/0030_enrollment_status_reconciliation.sql) — this is
+// purely about what a NEW admin write may set.
+test('PUT .../:id rejects the retired status value "paid" with 422 — it is no longer a writable status', async () => {
   const booking = await makeBooking();
   const { agent, csrf, cookieHeader } = await adminAgent('admin');
-  const res = await agent.put(`/api/v1/admin/enrollments/${booking._id}`).set({ ...csrf, Cookie: cookieHeader }).send({ agreedAmount: -10 });
+  const res = await agent.put(`/api/v1/admin/enrollments/${booking._id}`).set({ ...csrf, Cookie: cookieHeader }).send({ status: 'paid' });
   assert.equal(res.status, 422);
 });
 
-test('PUT .../:id rejects a non-ISO currency code with 422', async () => {
+test('PUT .../:id accepts the canonical non-financial status "approved"', async () => {
   const booking = await makeBooking();
   const { agent, csrf, cookieHeader } = await adminAgent('admin');
-  const res = await agent.put(`/api/v1/admin/enrollments/${booking._id}`).set({ ...csrf, Cookie: cookieHeader }).send({ currency: 'euros' });
-  assert.equal(res.status, 422);
-});
-
-test('PUT .../:id lowercases and accepts a valid 3-letter currency code', async () => {
-  const booking = await makeBooking();
-  const { agent, csrf, cookieHeader } = await adminAgent('admin');
-  const res = await agent.put(`/api/v1/admin/enrollments/${booking._id}`).set({ ...csrf, Cookie: cookieHeader }).send({ currency: 'eur' });
+  const res = await agent.put(`/api/v1/admin/enrollments/${booking._id}`).set({ ...csrf, Cookie: cookieHeader }).send({ status: 'approved' });
   assert.equal(res.status, 200);
-  assert.equal(res.body.currency, 'EUR');
+  assert.equal(res.body.status, 'approved');
 });
 
-test('PUT .../:id rejects an invalid paidAt date with 422', async () => {
-  const booking = await makeBooking();
-  const { agent, csrf, cookieHeader } = await adminAgent('admin');
-  const res = await agent.put(`/api/v1/admin/enrollments/${booking._id}`).set({ ...csrf, Cookie: cookieHeader }).send({ paidAt: 'not-a-date' });
-  assert.equal(res.status, 422);
-});
-
-test('PUT .../:id refuses to mark a booking enrolled with no agreedAmount on record', async () => {
+test('PUT .../:id allows marking a booking enrolled directly — no financial precondition any more', async () => {
   const booking = await makeBooking();
   const { agent, csrf, cookieHeader } = await adminAgent('admin');
   const res = await agent.put(`/api/v1/admin/enrollments/${booking._id}`).set({ ...csrf, Cookie: cookieHeader }).send({ status: 'enrolled' });
-  assert.equal(res.status, 422);
-
-  const saved = await Enrollment.findById(booking._id).lean();
-  assert.equal(saved.status, 'pending', 'the invalid transition must not have been applied');
-});
-
-test('PUT .../:id allows marking a booking enrolled when agreedAmount is set in the same request', async () => {
-  const booking = await makeBooking();
-  const { agent, csrf, cookieHeader } = await adminAgent('admin');
-  const res = await agent.put(`/api/v1/admin/enrollments/${booking._id}`).set({ ...csrf, Cookie: cookieHeader }).send({ status: 'enrolled', agreedAmount: 79 });
   assert.equal(res.status, 200);
   assert.equal(res.body.status, 'enrolled');
 });
 
-test('PUT .../:id allows marking a booking enrolled when agreedAmount was already recorded earlier', async () => {
-  const booking = await makeBooking({ agreedAmount: 79 });
+// ---------------------------------------------------------------------------
+// Migration-safe handling of pre-existing Mongo data (retired statuses)
+// ---------------------------------------------------------------------------
+
+test('migration-safe: a pre-existing document with a retired status ("awaiting_payment") is still readable via GET, unmodified', async () => {
+  const booking = await makeBooking({ status: 'awaiting_payment', agreedAmount: 49, currency: 'EUR' });
   const { agent, csrf, cookieHeader } = await adminAgent('admin');
-  const res = await agent.put(`/api/v1/admin/enrollments/${booking._id}`).set({ ...csrf, Cookie: cookieHeader }).send({ status: 'enrolled' });
+
+  const res = await agent.get(`/api/v1/admin/enrollments/${booking._id}`).set({ ...csrf, Cookie: cookieHeader });
   assert.equal(res.status, 200);
+  assert.equal(res.body.status, 'awaiting_payment', 'historical status value must be preserved, not silently migrated');
+  assert.equal(res.body.agreedAmount, undefined, 'still excluded from the response even though the underlying document has it');
+
+  const raw = await Enrollment.findById(booking._id).lean();
+  assert.equal(raw.status, 'awaiting_payment');
+  assert.equal(raw.agreedAmount, 49, 'the historical value in Mongo itself must be untouched');
+});
+
+test('migration-safe: an admin can transition a legacy-status document ("contacted") to a canonical status ("approved")', async () => {
+  const booking = await makeBooking({ status: 'contacted' });
+  const { agent, csrf, cookieHeader } = await adminAgent('admin');
+
+  const res = await agent.put(`/api/v1/admin/enrollments/${booking._id}`).set({ ...csrf, Cookie: cookieHeader }).send({ status: 'approved' });
+  assert.equal(res.status, 200);
+  assert.equal(res.body.status, 'approved');
+
+  const saved = await Enrollment.findById(booking._id).lean();
+  assert.equal(saved.status, 'approved');
+});
+
+test('migration-safe: GET /api/v1/admin/enrollments list still includes a document carrying a retired status ("paid"), without crashing', async () => {
+  await makeBooking({ status: 'paid', agreedAmount: 79 });
+  const { agent, csrf, cookieHeader } = await adminAgent('admin');
+
+  const res = await agent.get('/api/v1/admin/enrollments').set({ ...csrf, Cookie: cookieHeader });
+  assert.equal(res.status, 200);
+  assert.equal(res.body.data.length, 1);
+  assert.equal(res.body.data[0].status, 'paid');
+  assert.equal(res.body.data[0].agreedAmount, undefined);
 });
 
 test('PUT .../:id explicit null clears an optional field (adminNote) rather than leaving it unreachable', async () => {
@@ -236,7 +280,7 @@ test('PUT .../:id explicit null clears an optional field (adminNote) rather than
 test('PUT .../:id omitting a field leaves it untouched (distinct from sending it as null)', async () => {
   const booking = await makeBooking({ adminNote: 'keep me' });
   const { agent, csrf, cookieHeader } = await adminAgent('admin');
-  const res = await agent.put(`/api/v1/admin/enrollments/${booking._id}`).set({ ...csrf, Cookie: cookieHeader }).send({ status: 'contacted' });
+  const res = await agent.put(`/api/v1/admin/enrollments/${booking._id}`).set({ ...csrf, Cookie: cookieHeader }).send({ status: 'approved' });
   assert.equal(res.status, 200);
 
   const saved = await Enrollment.findById(booking._id).lean();
@@ -244,26 +288,27 @@ test('PUT .../:id omitting a field leaves it untouched (distinct from sending it
 });
 
 // ---------------------------------------------------------------------------
-// Admin PUT — financial fields require payments:write on top of
-// enrollments:write ('editor' has the latter but not the former; see
-// ROLE_PERMISSIONS in models/AdminUser.js).
+// This endpoint has no financial-field permission split — enrollments:write
+// is the only permission it checks (the old payments:write-on-top-of-
+// enrollments:write gate existed only to guard the financial fields this
+// endpoint no longer writes at all; that gate was removed along with them).
 // ---------------------------------------------------------------------------
 
-test('PUT .../:id: an editor (enrollments:write, no payments:write) is forbidden from setting agreedAmount', async () => {
+test('PUT .../:id: an editor (enrollments:write only) sending a legacy financial field gets 200 with the field silently dropped, not 403', async () => {
   const booking = await makeBooking();
   const { agent, csrf, cookieHeader } = await adminAgent('editor');
   const res = await agent.put(`/api/v1/admin/enrollments/${booking._id}`).set({ ...csrf, Cookie: cookieHeader }).send({ agreedAmount: 49 });
-  assert.equal(res.status, 403);
-  assert.deepEqual(res.body.required, ['payments:write']);
+  assert.equal(res.status, 200);
+  assert.equal(res.body.agreedAmount, undefined);
 
   const saved = await Enrollment.findById(booking._id).lean();
-  assert.equal(saved.agreedAmount, undefined, 'the forbidden write must not have been applied');
+  assert.equal(saved.agreedAmount, undefined, 'no financial field is ever written, regardless of role');
 });
 
-test('PUT .../:id: an editor CAN still change non-financial fields like status/notes', async () => {
+test('PUT .../:id: an editor CAN change non-financial fields like status/notes', async () => {
   const booking = await makeBooking();
   const { agent, csrf, cookieHeader } = await adminAgent('editor');
-  const res = await agent.put(`/api/v1/admin/enrollments/${booking._id}`).set({ ...csrf, Cookie: cookieHeader }).send({ status: 'contacted' });
+  const res = await agent.put(`/api/v1/admin/enrollments/${booking._id}`).set({ ...csrf, Cookie: cookieHeader }).send({ status: 'approved' });
   assert.equal(res.status, 200);
-  assert.equal(res.body.status, 'contacted');
+  assert.equal(res.body.status, 'approved');
 });

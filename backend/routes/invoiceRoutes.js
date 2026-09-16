@@ -1,30 +1,20 @@
 import { Router } from 'express';
-import { protect } from '../middleware/auth.js';
 import { getMyInvoices, getInvoice } from '../controllers/invoiceController.js';
+import { protect } from '../middleware/auth.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
 
 const router = Router();
 
-// Auth hardening security batch: the admin listing that used to live here
-// (GET /admin, protect+adminOnly, zero live frontend consumer — see
-// routes/v1/admin/invoicesRoutes.js's own header comment) is removed.
-// Admin invoice listing lives at /api/v1/admin/invoices (MFA + RBAC).
-//
-// Review follow-up: removing that route outright let GET /admin fall
-// through to the '/:id' route below instead, with id='admin' — an invalid
-// ObjectId, so Invoice.findOne({ _id: 'admin', ... }) threw a Mongoose
-// CastError before ever reaching getInvoice()'s own 404 check, surfacing as
-// an opaque 500 to any stale client (bookmark, cached SPA bundle) still
-// hitting the old admin URL. An explicit route wins the match over the
-// param route (Express tries routes in registration order) and returns a
-// clean, deliberate response instead — same "old client fails predictably"
-// spirit as middleware/paymentsDisabled.js.
-router.get('/admin', (req, res) => {
-  res.status(410).json({
-    error:   'ADMIN_ROUTE_MOVED',
-    message: 'Admin invoice listing has moved to /api/v1/admin/invoices (requires a real AdminUser session with MFA).',
-  });
-});
-router.get('/',      protect, getMyInvoices);               // student: own invoices
-router.get('/:id',   protect, getInvoice);                  // student: one invoice
+// Scope correction (see docs/current-project-status.md): invoices are
+// archival billing records (created by manual-payment approval / booking
+// activation), not an online card-gateway feature — the customer's own
+// invoices stay live here. The legacy GET /admin listing (protect+adminOnly,
+// reachable with nothing but a regular User session whose `role` field said
+// 'admin') is deliberately NOT restored — same "Auth hardening security
+// batch" reasoning already applied to routes/enrollmentRoutes.js: the real,
+// hardened admin listing lives at /api/v1/admin/invoices (MFA + RBAC +
+// audit-logged — see routes/v1/admin/invoicesRoutes.js).
+router.get('/',    protect, asyncHandler(getMyInvoices));
+router.get('/:id', protect, asyncHandler(getInvoice));
 
 export default router;

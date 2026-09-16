@@ -1,16 +1,18 @@
-// Shared allowlists/validation for Enrollment ("booking request" under
-// Booking-First Enrollment). Kept in one place so "what a customer may set"
-// and "what an admin may set" are each defined exactly once, and reused by
-// both the Mongo admin route (routes/v1/admin/enrollmentsRoutes.js) and the
-// Supabase admin route (data/supabase/admin/enrollmentsAdminController.js)
-// so the two backends enforce identical rules.
+// Shared allowlists/validation for Enrollment ("booking request" — No
+// Payments Product, final decision, see docs/current-project-status.md).
+// Kept in one place so "what a customer may set" and "what an admin may
+// set" are each defined exactly once, and reused by both the Mongo admin
+// route (routes/v1/admin/enrollmentsRoutes.js) and the Supabase admin route
+// (data/supabase/admin/enrollmentsAdminController.js) so the two backends
+// enforce identical rules.
 
 // Fields a guest submitting a booking request may set. Deliberately
-// excludes bookingRef/status/agreedAmount/currency/paymentMethodExternal/
-// paidAt/renewalAt/adminNote — those are either server-generated or
-// admin-only, and must never be assignable from an unauthenticated request
-// body (previously `Enrollment.create({ ...data, bookingRef: ... })` passed
-// the whole request body straight into Mongoose — a mass-assignment gap).
+// excludes bookingRef/status/adminNote — those are either server-generated
+// or admin-only, and must never be assignable from an unauthenticated
+// request body (previously `Enrollment.create({ ...data, bookingRef: ... })`
+// passed the whole request body straight into Mongoose — a mass-assignment
+// gap). No financial field (amount/currency/paidAt/paymentMethod/etc.) has
+// ever been, or will ever be, in this list — there is no payment system.
 export const PUBLIC_BOOKING_FIELDS = [
   'name', 'email', 'whatsapp', 'country', 'city', 'timezone',
   'times', 'subjects', 'lang', 'level', 'ageGroup', 'genderPref',
@@ -39,21 +41,24 @@ export function normalizeWhatsapp(raw) {
   return WHATSAPP_DIGITS_RE.test(stripped) ? stripped : null;
 }
 
-export const ENROLLMENT_STATUSES = ['pending', 'contacted', 'awaiting_payment', 'paid', 'enrolled', 'cancelled'];
-
-// Admin-only bookkeeping fields — never a payment gateway, never card/
-// account data (see models/Enrollment.js). Edits touching any of these
-// require the extra `payments:write` permission on top of the base
-// `enrollments:write` (enforced at the route layer), mirroring the same
-// extra-permission boundary already used for ManualPayment review.
-export const FINANCIAL_FIELDS = ['agreedAmount', 'currency', 'paymentMethodExternal', 'paidAt', 'renewalAt'];
+// The only statuses a NEW write (public submission or admin update) may
+// ever set — non-financial and unambiguous: pending (just booked) →
+// approved (admin has reviewed it) → enrolled (admin activated the
+// student, non-financially) → cancelled. Deliberately does NOT include the
+// pre-existing-prod values 'contacted'/'awaiting_payment'/'paid' — those
+// were part of the earlier offline-payment-bookkeeping design and are
+// retired along with the rest of the payments product (see
+// docs/current-project-status.md). Historical documents already carrying
+// one of those values are left untouched in Mongo (never deleted/migrated)
+// and remain readable — see models/Enrollment.js's schema-level enum,
+// which stays a superset of this list for exactly that reason — they are
+// just no longer a value any API can newly set.
+export const ENROLLMENT_STATUSES = ['pending', 'approved', 'enrolled', 'cancelled'];
 
 const ADMIN_UPDATABLE_FIELDS = [
   'name', 'email', 'whatsapp', 'country', 'city', 'timezone', 'notes',
-  'status', 'adminNote', ...FINANCIAL_FIELDS,
+  'status', 'adminNote',
 ];
-
-const CURRENCY_RE = /^[A-Z]{3}$/;
 
 /**
  * Validates + allowlists an admin PUT payload for Enrollment.
@@ -62,17 +67,13 @@ const CURRENCY_RE = /^[A-Z]{3}$/;
  *
  * A field explicitly sent as `null` clears it; a field simply omitted from
  * the body is left untouched — `undefined` is not overloaded to mean both,
- * so an admin can deliberately blank out e.g. adminNote or
- * paymentMethodExternal instead of that being unreachable.
- *
- * `currentDoc` (plain object with at least `agreedAmount`) is used for one
- * cross-field rule: a booking cannot be marked 'enrolled' (i.e. the
- * student's account actually activated) with no agreedAmount on record —
- * either already stored or being set in this same request — since that
- * would leave an activated subscription with no bookkeeping trail of what
- * was agreed.
+ * so an admin can deliberately blank out e.g. adminNote instead of that
+ * being unreachable. No financial field is in ADMIN_UPDATABLE_FIELDS above,
+ * so no request body can ever write one through this endpoint, regardless
+ * of what it sends — this function is the single allowlist both backends'
+ * admin update routes go through.
  */
-export function buildAdminUpdatePatch(body = {}, currentDoc = {}) {
+export function buildAdminUpdatePatch(body = {}) {
   const patch = {};
   for (const key of ADMIN_UPDATABLE_FIELDS) {
     if (body[key] === undefined) continue;
@@ -82,32 +83,6 @@ export function buildAdminUpdatePatch(body = {}, currentDoc = {}) {
   if (patch.status !== undefined) {
     if (patch.status === null || !ENROLLMENT_STATUSES.includes(patch.status)) {
       return { error: `status must be one of: ${ENROLLMENT_STATUSES.join(', ')}` };
-    }
-    if (patch.status === 'enrolled') {
-      const finalAmount = patch.agreedAmount !== undefined ? patch.agreedAmount : currentDoc.agreedAmount;
-      if (finalAmount === undefined || finalAmount === null) {
-        return { error: 'Cannot mark a booking enrolled without recording an agreedAmount first' };
-      }
-    }
-  }
-
-  if (patch.agreedAmount !== undefined && patch.agreedAmount !== null) {
-    const n = Number(patch.agreedAmount);
-    if (!Number.isFinite(n) || n < 0) return { error: 'agreedAmount must be a number >= 0' };
-    patch.agreedAmount = n;
-  }
-
-  if (patch.currency !== undefined && patch.currency !== null) {
-    const c = String(patch.currency).trim().toUpperCase();
-    if (!CURRENCY_RE.test(c)) return { error: 'currency must be a 3-letter ISO code (e.g. EUR)' };
-    patch.currency = c;
-  }
-
-  for (const dateField of ['paidAt', 'renewalAt']) {
-    if (patch[dateField] !== undefined && patch[dateField] !== null) {
-      const d = new Date(patch[dateField]);
-      if (Number.isNaN(d.getTime())) return { error: `${dateField} must be a valid date` };
-      patch[dateField] = d;
     }
   }
 

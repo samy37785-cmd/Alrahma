@@ -16,5 +16,11 @@ import adminHttp from './adminHttp';
 //     the now-removed `u.role === 'student'` check, with zero
 //     documentation anywhere and zero other consumer that ever read the
 //     field back.
-export const getUsers               = ()                  => adminHttp.get('/v1/admin/users').then((r) => r.data);
-export const updateUserSubscription = (id, data)          => adminHttp.patch(`/v1/admin/users/${id}/subscription`, data).then((r) => r.data);
+//
+export const getUsers = () => adminHttp.get('/v1/admin/users').then((r) => r.data);
+
+// Scope correction (see docs/current-project-status.md): manual, non-
+// gateway admin subscription activation/renewal/deactivation is restored —
+// PATCH /v1/admin/users/:id/subscription is live again. `data` is
+// `{ action: 'activate' | 'renew' | 'deactivate', plan? }`.
+export const updateUserSubscription = (id, data) => adminHttp.patch(`/v1/admin/users/${id}/subscription`, data).then((r) => r.data);

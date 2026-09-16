@@ -15,7 +15,6 @@ const STATIC_ITEMS = [
   { group: 'navigation', icon: '◧', label: 'dashboard', to: '/dashboard', role: 'user' },
   { group: 'navigation', icon: '◧', label: 'adminDashboard', to: '/admin', role: 'admin' },
   { group: 'navigation', icon: '✉', label: 'messages', to: '/messages' },
-  { group: 'navigation', icon: '💳', label: 'billing', to: '/billing' },
   { group: 'navigation', icon: '👤', label: 'profile', to: '/profile' },
   { group: 'tools', icon: '📖', label: 'quranReader', to: '/tools/quran-reader' },
   { group: 'tools', icon: '🕌', label: 'prayerTimes', to: '/tools/prayer-times' },

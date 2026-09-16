@@ -77,13 +77,21 @@ async function makeAdminAgent(role = 'admin') {
 // used both to confirm the legacy path is gone (404) and to drive the
 // generic 401/403/200 matrix below. `body` is only used for the mutating
 // entries; GETs ignore it.
+// Scope correction (see docs/current-project-status.md): only online CARD/
+// gateway payment is cancelled — GET /api/v1/admin/coupons is live again
+// with real RBAC (coupons:write), so it belongs back in this
+// 401/403/200-by-permission matrix (it had been temporarily pulled out
+// while it was a blanket 410 for any authenticated admin, a different
+// shape than every other entry here). The legacy GET /api/coupons route
+// never had an admin GET at all (only POST /validate remains there — see
+// routes/couponRoutes.js) so the 404 check below still holds unchanged.
 const MIGRATED = [
   { method: 'get',    legacy: '/api/trials',              admin: '/api/v1/admin/trials',            perm: 'users:read' },
   { method: 'get',    legacy: '/api/newsletter',           admin: '/api/v1/admin/subscribers',       perm: 'users:read' },
   { method: 'get',    legacy: '/api/certificates',         admin: '/api/v1/admin/certificates',      perm: 'certificates:read' },
   { method: 'get',    legacy: '/api/enrollments',          admin: '/api/v1/admin/enrollments',       perm: 'enrollments:read' },
-  { method: 'get',    legacy: '/api/coupons',              admin: '/api/v1/admin/coupons',           perm: 'coupons:write' },
   { method: 'get',    legacy: '/api/contact',              admin: '/api/v1/admin/contact',           perm: 'contact:write' },
+  { method: 'get',    legacy: '/api/coupons',              admin: '/api/v1/admin/coupons',           perm: 'coupons:write' },
 ];
 
 test('every legacy admin-only GET route removed by this batch no longer exists (404), for unauthenticated, regular-student, and role-spoofed-admin callers alike', async () => {
@@ -126,30 +134,14 @@ test('the core property this batch closes: a regular User document with role="ad
   assert.equal(usersRes.status, 401);
 });
 
-test('GET /api/v1/admin/invoices requires a real AdminUser session with payments:read; the legacy GET /api/invoices/admin path returns an explicit 410, never a CastError-shaped 500 or an admin listing', async () => {
-  const { agent: anon, csrf: anonCsrf } = await agentWithCsrf(app);
-  assert.equal((await anon.get('/api/v1/admin/invoices').set(anonCsrf)).status, 401);
-
-  const student = await makeStudentAgent();
-  // Review follow-up: before routes/invoiceRoutes.js gained an explicit
-  // GET /admin handler, "admin" fell through to GET /:id and
-  // Invoice.findOne({ _id: 'admin', ... }) threw a Mongoose CastError
-  // (invalid ObjectId) before ever reaching getInvoice()'s own 404 check —
-  // an opaque 500, not a deliberate response. A dedicated route now
-  // shadows :id for this exact literal path and returns a clean 410.
-  const shadowed = await student.agent.get('/api/invoices/admin').set(student.csrf);
-  assert.equal(shadowed.status, 410, 'the legacy route must return an explicit 410, not a CastError-shaped 500');
-  assert.equal(shadowed.body.error, 'ADMIN_ROUTE_MOVED');
-
-  // Anonymous callers get the exact same explicit response — this route
-  // needs no auth check of its own; it never touches the database at all.
-  const shadowedAnon = await anon.get('/api/invoices/admin').set(anonCsrf);
-  assert.equal(shadowedAnon.status, 410);
-
-  const { agent, csrf, cookieHeader } = await makeAdminAgent('admin');
-  const ok = await agent.get('/api/v1/admin/invoices').set({ ...csrf, Cookie: cookieHeader });
-  assert.equal(ok.status, 200);
-});
+// Scope correction (see docs/current-project-status.md): GET /api/v1/admin/
+// invoices is live again (payments:read), covered separately by
+// tests/payments-retired.test.js's ADMIN_RESTORED_ROUTES — not added to the
+// MIGRATED matrix above since 'viewer' already holds payments:read (no 403
+// case to assert here, unlike coupons:write/contact:write). The legacy
+// GET /api/invoices/admin shadow route stays deliberately un-restored (a
+// real, pre-existing Mongo authorization gap — see routes/invoiceRoutes.js's
+// own comment), not a payments-scope retirement.
 
 test('every migrated admin GET route rejects a real AdminUser session that lacks the required permission (403), and allows one that has it (200)', async () => {
   const forbidden = await makeAdminAgent('viewer'); // viewer lacks coupons:write/contact:write

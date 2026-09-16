@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import app from '../app.js';
 import AdminUser from '../models/AdminUser.js';
 import SystemAuditLog from '../models/SystemAuditLog.js';
+import ManualPayment from '../models/ManualPayment.js';
 import { signAccessToken } from '../utils/adminAuthTokens.js';
 import { setupTestDb, clearTestDb, teardownTestDb } from './helpers/db.js';
 import { agentWithCsrf } from './helpers/csrf.js';
@@ -141,7 +142,54 @@ test('toggleMaintenanceMode: is forbidden for admin/editor/viewer roles (super-a
 // POST /api/v1/admin/system/financial-freeze — super-admin only
 // ---------------------------------------------------------------------------
 
-test('toggleFinancialFreeze: a super-admin can enable it, and a regular admin approving a manual payment is then blocked (real end-to-end side effect via financialGuard)', async () => {
+// Scope correction (see docs/current-project-status.md): only online CARD/
+// gateway payment is cancelled — manual/offline payment bookkeeping stays
+// supported (tests/payments-retired.test.js), so financialGuard's real
+// consumer, PATCH /api/v1/admin/payments/manual/:id (routes/v1/admin/
+// paymentsRoutes.js), is live again. The end-to-end test below was missing
+// after that route's earlier retirement/restoration cycle — added back so
+// this file actually proves financialGuard blocks the real mutation, not
+// just that the toggle endpoint itself flips a flag.
+test('financialGuard: PATCH /api/v1/admin/payments/manual/:id is blocked (423) while frozen, for a non-super-admin', async () => {
+  const superAdmin = await adminAgent('super-admin');
+  const freeze = await superAdmin.agent.post('/api/v1/admin/system/financial-freeze')
+    .set({ ...superAdmin.csrf, Cookie: superAdmin.cookieHeader }).send({ enable: true });
+  assert.equal(freeze.status, 200);
+
+  const record = await ManualPayment.create({
+    plan: 'Starter', amount: 100, currency: 'USD', method: 'wu',
+    customer: { name: 'Test Student', email: 'student@example.com' },
+    reference: 'REF123', status: 'pending',
+  });
+
+  const { agent, csrf, cookieHeader } = await adminAgent('admin');
+  const blocked = await agent.patch(`/api/v1/admin/payments/manual/${record._id}`)
+    .set({ ...csrf, Cookie: cookieHeader }).send({ status: 'approved' });
+  assert.equal(blocked.status, 423);
+  assert.equal(blocked.body.code, 'FINANCIALS_FROZEN');
+
+  const untouched = await ManualPayment.findById(record._id).lean();
+  assert.equal(untouched.status, 'pending', 'the record must not have been mutated while frozen');
+});
+
+test('financialGuard: a super-admin CAN still review a manual payment while financials are frozen', async () => {
+  const superAdmin = await adminAgent('super-admin');
+  const freeze = await superAdmin.agent.post('/api/v1/admin/system/financial-freeze')
+    .set({ ...superAdmin.csrf, Cookie: superAdmin.cookieHeader }).send({ enable: true });
+  assert.equal(freeze.status, 200);
+
+  const record = await ManualPayment.create({
+    plan: 'Starter', amount: 100, currency: 'USD', method: 'wu',
+    customer: { name: 'Test Student', email: 'student@example.com' },
+    reference: 'REF456', status: 'pending',
+  });
+
+  const allowed = await superAdmin.agent.patch(`/api/v1/admin/payments/manual/${record._id}`)
+    .set({ ...superAdmin.csrf, Cookie: superAdmin.cookieHeader }).send({ status: 'rejected', adminNote: 'no proof provided' });
+  assert.equal(allowed.status, 200, JSON.stringify(allowed.body));
+});
+
+test('toggleFinancialFreeze: a super-admin can enable it and it is reflected in /status', async () => {
   const { agent, csrf, cookieHeader } = await adminAgent('super-admin');
 
   const toggle = await agent.post('/api/v1/admin/system/financial-freeze').set({ ...csrf, Cookie: cookieHeader }).send({ enable: true });
@@ -150,12 +198,6 @@ test('toggleFinancialFreeze: a super-admin can enable it, and a regular admin ap
 
   const status = await agent.get('/api/v1/admin/system/status').set({ ...csrf, Cookie: cookieHeader });
   assert.equal(status.body.financialsFrozen, true);
-
-  const { agent: regularAgent, csrf: regularCsrf, cookieHeader: regularCookie } = await adminAgent('admin');
-  const blocked = await regularAgent.patch('/api/v1/admin/payments/manual/000000000000000000000000')
-    .set({ ...regularCsrf, Cookie: regularCookie }).send({ status: 'approved' });
-  assert.equal(blocked.status, 423);
-  assert.equal(blocked.body.code, 'FINANCIALS_FROZEN');
 });
 
 test('toggleFinancialFreeze: writes a critical audit log entry', async () => {

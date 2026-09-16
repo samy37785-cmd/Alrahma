@@ -64,14 +64,17 @@ describe('BrandIcon — accessible name defaults to meaningful, opts into decora
     expect(img.getAttribute('aria-hidden')).toBe('true');
   });
 
-  it('every real consumer in this app (BrandLockup, DashboardLayout sidebar, InvoiceModal, Brand.jsx) passes alt="" since each renders the name as adjacent visible text — verified by grepping their source, not just this component in isolation', async () => {
+  // InvoiceModal.jsx was deleted along with the rest of the checkout-era
+  // billing UI, so it's dropped from this consumer list. Invoices are a
+  // live backend resource again (see docs/current-project-status.md) but
+  // have no restored frontend viewer component as of this correction.
+  it('every real consumer in this app (BrandLockup, DashboardLayout sidebar, Brand.jsx) passes alt="" since each renders the name as adjacent visible text — verified by grepping their source, not just this component in isolation', async () => {
     const { readFileSync } = await import('node:fs');
     const path = await import('node:path');
     const root = path.resolve(import.meta.dirname, '..', 'components');
     const files = [
       ['ui/BrandLockup.jsx', /<BrandIcon[^>]*\balt=""/],
       ['layout/DashboardLayout.jsx', /<BrandIcon[^>]*\balt=""/],
-      ['ui/InvoiceModal.jsx', /<BrandIcon[^>]*\balt=""/],
       ['layout/Brand.jsx', /<BrandIcon[^>]*\balt=""/],
     ];
     for (const [rel, pattern] of files) {

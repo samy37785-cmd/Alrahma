@@ -18,7 +18,7 @@ import {
   BookOpenIcon, StarIcon, ScrollIcon, MosqueIcon, AlphabetIcon,
   BeadsIcon, LibraryIcon, CompassIcon, CalendarIcon, HandIcon, VerseIcon,
   EditIcon, MessageIcon, AboutIcon, TeacherIcon, LockIcon,
-  HomeIcon, CardIcon, SettingsIcon, ShieldIcon, LogoutIcon,
+  HomeIcon, SettingsIcon, ShieldIcon, LogoutIcon,
   MoonIcon, SunIconOutline, ChevronDownIcon, BellIcon, SearchIcon,
 } from "../ui/Icons";
 import { getUnreadCount } from "../../api/messageApi";
@@ -226,10 +226,6 @@ export default function Header() {
                     </span>
                     <span>{n.dashboard}</span>
                   </Link>
-                  <Link to={localizedTo("/billing")} className="nav__mobile-account-link" onClick={closeAll}>
-                    <span className="nav__mobile-account-icon"><CardIcon size={ICON_SIZE} /></span>
-                    <span>{n.invoices}</span>
-                  </Link>
                 </div>
               </>
             )}
@@ -360,12 +356,6 @@ export default function Header() {
                           {isAdmin ? <ShieldIcon size={ICON_SIZE} /> : <HomeIcon size={ICON_SIZE} />}
                         </span>
                         {n.dashboard}
-                      </Link>
-                    </li>
-                    <li role="none">
-                      <Link to={localizedTo("/billing")} className="nav__dropdown-item" onClick={closeAll} role="menuitem">
-                        <span className="nav__dropdown-item-icon" aria-hidden="true"><CardIcon size={ICON_SIZE} /></span>
-                        {n.invoices}
                       </Link>
                     </li>
                     <li role="none">

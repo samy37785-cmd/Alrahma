@@ -18,6 +18,12 @@ import { parsePagination, sendPaginated } from '../utils/pagination.js';
  *   createMiddleware  — optional transform of req.body before Model.create
  *   updateMiddleware  — optional transform of req.body before doc.save
  *   sensitiveSelect   — additional fields to .select('+field') when needed
+ *   excludeFields {string[]} — fields never returned by list/getOne (e.g.
+ *                              retired-feature data still on the schema for
+ *                              historical documents, but that the current
+ *                              app must never surface) — applied via
+ *                              .select('-field -field ...'), read-only, does
+ *                              not affect create/update.
  */
 export function createCRUDController(Model, options = {}) {
   const {
@@ -30,7 +36,9 @@ export function createCRUDController(Model, options = {}) {
     sortable       = ['createdAt', 'updatedAt'],
     createMiddleware = null,
     updateMiddleware = null,
+    excludeFields  = [],
   } = options;
+  const excludeSelect = excludeFields.map((f) => `-${f}`).join(' ');
 
   // ── LIST ──────────────────────────────────────────────────────────────────
   async function list(req, res) {
@@ -73,6 +81,7 @@ export function createCRUDController(Model, options = {}) {
       .skip(skip)
       .limit(limit)
       .lean();
+    if (excludeSelect) query = query.select(excludeSelect);
 
     for (const f of populateFields) query = query.populate(f);
 
@@ -88,6 +97,7 @@ export function createCRUDController(Model, options = {}) {
     }
 
     let query = Model.findById(req.params.id).lean();
+    if (excludeSelect) query = query.select(excludeSelect);
     for (const f of populateFields) query = query.populate(f);
     const doc = await query.exec();
 

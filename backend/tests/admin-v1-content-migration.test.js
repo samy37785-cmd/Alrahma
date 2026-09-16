@@ -242,9 +242,9 @@ test('PUT /api/v1/admin/enrollments/:id still works after removing the legacy du
   const enrollment = await Enrollment.create({ name: 'Student', email: 'enroll2@example.com' });
   const { agent, csrf, cookieHeader } = await adminUserAgent();
   const res = await agent.put(`/api/v1/admin/enrollments/${enrollment._id}`).set({ ...csrf, Cookie: cookieHeader })
-    .send({ status: 'contacted' });
+    .send({ status: 'approved' });
   assert.equal(res.status, 200);
-  assert.equal(res.body.status, 'contacted');
+  assert.equal(res.body.status, 'approved');
 });
 
 // ---------------------------------------------------------------------------

@@ -1,25 +1,25 @@
-// Mirrors backend/routes/invoiceRoutes.js exactly.
-//
-// Auth hardening security batch: GET /admin (protect+adminOnly) removed —
-// same fix as the Mongo file. Admin invoice listing lives at
-// /api/v1/admin/invoices (data/supabase/admin/invoicesAdminRoutes.js).
+// Scope correction (see docs/current-project-status.md): mirrors
+// backend/routes/invoiceRoutes.js exactly - invoices are archival billing
+// records, not an online card-gateway feature, so the customer's own
+// invoices stay live under DATA_BACKEND=supabase too. GET /admin stays
+// mounted to getAdminInvoices, which - unlike the Mongo controller of the
+// same name - never touches the database: it always returns a structured
+// 400 pointing callers at the real /api/v1/admin/invoices endpoint (no AAL2
+// concept exists under this customer-session router), so restoring it here
+// reopens no data-leak risk. Mongo's equivalent GET /admin route is NOT
+// restored (see routes/invoiceRoutes.js) because its controller has no
+// internal auth check at all and previously relied on route-level
+// protect+adminOnly that the "Auth hardening security batch" deliberately
+// removed - an asymmetry that is intentional, not an oversight.
 import { Router } from 'express';
+import { getAdminInvoices, getMyInvoices, getInvoice } from '../invoiceController.js';
 import { protect } from '../../../middleware/auth.js';
-import { getMyInvoices, getInvoice } from '../invoiceController.js';
+import { asyncHandler } from '../../../utils/asyncHandler.js';
 
 const router = Router();
 
-// Review follow-up: same fix as the Mongo file — without an explicit route,
-// GET /admin used to fall through to '/:id' with id='admin', which is not a
-// valid UUID, surfacing as an opaque 500 instead of a clean, deliberate
-// response for a stale client still hitting the old admin URL.
-router.get('/admin', (req, res) => {
-  res.status(410).json({
-    error:   'ADMIN_ROUTE_MOVED',
-    message: 'Admin invoice listing has moved to /api/v1/admin/invoices (requires a real AdminUser session with MFA).',
-  });
-});
-router.get('/', protect, getMyInvoices);
-router.get('/:id', protect, getInvoice);
+router.get('/admin', asyncHandler(getAdminInvoices));
+router.get('/',    protect, asyncHandler(getMyInvoices));
+router.get('/:id', protect, asyncHandler(getInvoice));
 
 export default router;

@@ -2,22 +2,26 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-// Production Polish Sprint: coverage for the new RBAC-aware error-surfacing
+// Production Polish Sprint: coverage for the RBAC-aware error-surfacing
 // banner (a failed admin data query — most commonly a 403 for a role lacking
 // the relevant RBAC permission — must render a visible banner instead of the
-// silent "0 users/0 payments" an empty-array fallback would otherwise show).
+// silent "0 users/0 bookings" an empty-array fallback would otherwise show).
 //
-// Mocks only the api/ network boundary (same convention as useBilling.test.jsx)
-// plus every child tab component and DashboardLayout — AdminDashboard mounts
-// every tab simultaneously (hidden divs, not conditional mounting), so
-// rendering their real implementations here would make this test heavy and
-// brittle for behaviour this file isn't about. (Stage 2B: the Staff tab was
-// removed along with AdminStaffTab.jsx - see
-// docs/legacy-role-dashboard-pruning.md. Booking-First Enrollment added the
-// Bookings tab, backed by api/enrollmentApi.js's getEnrollments.)
+// Mocks only the api/ network boundary plus every child tab component and
+// DashboardLayout — AdminDashboard mounts every tab simultaneously (hidden
+// divs, not conditional mounting), so rendering their real implementations
+// here would make this test heavy and brittle for behaviour this file isn't
+// about.
+//
+// AdminPaymentsTab and the payments query/tab (a checkout-era transaction
+// view) are gone entirely, along with the online card-gateway checkout it
+// showed. Booking-derived KPIs (pending/enrolled counts from
+// api/enrollmentApi.js's getEnrollments) replaced the old subscription- and
+// manual-payment-derived ones on this dashboard — manual/offline payment
+// bookkeeping and subscription activation are otherwise live again (see
+// docs/current-project-status.md).
 
 vi.mock('../api/courseApi', () => ({ getCourses: vi.fn() }));
-vi.mock('../api/paymentApi', () => ({ getManualPayments: vi.fn() }));
 vi.mock('../api/adminApi', () => ({ getUsers: vi.fn() }));
 vi.mock('../api/contentApi', () => ({ getTrials: vi.fn(), getSubscribers: vi.fn() }));
 vi.mock('../api/enrollmentApi', () => ({ getEnrollments: vi.fn(), updateEnrollment: vi.fn() }));
@@ -30,7 +34,6 @@ vi.mock('../components/layout/DashboardLayout', () => ({
 }));
 vi.mock('../components/features/admin/AdminCoursesTab', () => ({ default: () => <div /> }));
 vi.mock('../components/features/admin/AdminTrialsTab', () => ({ default: () => <div /> }));
-vi.mock('../components/features/admin/AdminPaymentsTab', () => ({ default: () => <div /> }));
 vi.mock('../components/features/admin/AdminBookingsTab', () => ({ default: () => <div /> }));
 vi.mock('../components/features/admin/AdminNewsletterTab', () => ({ default: () => <div /> }));
 vi.mock('../components/features/admin/AdminUsersTab', () => ({ default: () => <div /> }));
@@ -40,7 +43,6 @@ vi.mock('../components/features/admin/AdminProgressModal', () => ({ default: () 
 vi.mock('../components/features/admin/AdminCommunityTab', () => ({ default: () => <div /> }));
 
 import { getCourses } from '../api/courseApi';
-import { getManualPayments } from '../api/paymentApi';
 import { getUsers } from '../api/adminApi';
 import { getTrials, getSubscribers } from '../api/contentApi';
 import { getEnrollments } from '../api/enrollmentApi';
@@ -59,7 +61,6 @@ function renderDashboard() {
 
 function mockAllSucceed() {
   getCourses.mockResolvedValue([]);
-  getManualPayments.mockResolvedValue({ data: [], total: 0 });
   getUsers.mockResolvedValue({ data: [], total: 0 });
   getTrials.mockResolvedValue([]);
   getSubscribers.mockResolvedValue([]);
@@ -100,51 +101,59 @@ describe('AdminDashboard — RBAC-aware load-error banner', () => {
   it('multiple failed queries are all named in the banner, in query-declaration order', async () => {
     mockAllSucceed();
     getCourses.mockRejectedValue(new Error('Forbidden'));
-    getManualPayments.mockRejectedValue(new Error('Forbidden'));
+    getEnrollments.mockRejectedValue(new Error('Forbidden'));
     renderDashboard();
 
-    await waitFor(() => expect(screen.getByText(/Failed to load: courses, payments/)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText(/Failed to load: courses, bookings/)).toBeInTheDocument());
   });
 });
 
 // Stage 2C Final Corrective (see docs/user-admin-auth-contract.md): the
 // KPIs used to be computed from `users.filter(u => u.role === 'student')`
 // and a separate `listTeachers()` call - both deleted. This proves the
-// replacement KPIs are computed from real product fields (subscription
-// status) regardless of whatever a legacy `role` value says, and that the
-// old "Active Students"/"Teachers" labels and the "Teachers list" card are
-// gone for good.
-describe('AdminDashboard KPIs no longer depend on account roles', () => {
+// old "Active Students"/"Teachers" labels and the "Teachers list" card
+// stay gone for good.
+//
+// These specific dashboard KPIs derive from booking data (Enrollment.status),
+// not User.subscription — a deliberate choice for this dashboard's cards,
+// not because User.subscription is unused: it's a real, admin-set field
+// again via booking approval (see docs/current-project-status.md).
+describe('AdminDashboard KPIs no longer depend on account roles or payment/subscription state', () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it('"Active Subscribers" counts by subscription.status, ignoring whatever the legacy role field says', async () => {
+  it('"Enrolled Students" counts bookings by status === "enrolled", ignoring role and subscription fields entirely', async () => {
     getCourses.mockResolvedValue([]);
-    getManualPayments.mockResolvedValue({ data: [], total: 0 });
     getUsers.mockResolvedValue({
       data: [
         { _id: '1', name: 'A', role: 'teacher', subscription: { status: 'active' } },
         { _id: '2', name: 'B', role: 'student', subscription: { status: 'active' } },
-        { _id: '3', name: 'C', role: 'admin', subscription: { status: 'inactive' } },
-        { _id: '4', name: 'D', role: undefined, subscription: null },
       ],
-      total: 4,
+      total: 2,
     });
     getTrials.mockResolvedValue([]);
     getSubscribers.mockResolvedValue([]);
-    getEnrollments.mockResolvedValue({ data: [], total: 0 });
+    getEnrollments.mockResolvedValue({
+      data: [
+        { _id: 'e1', status: 'enrolled' },
+        { _id: 'e2', status: 'enrolled' },
+        { _id: 'e3', status: 'pending' },
+        { _id: 'e4', status: 'cancelled' },
+      ],
+      total: 4,
+    });
     getAdminReviews.mockResolvedValue({ reviews: [], total: 0 });
     getAdminPosts.mockResolvedValue({ posts: [], total: 0 });
     getAdminComments.mockResolvedValue({ comments: [], total: 0 });
     renderDashboard();
 
-    await waitFor(() => expect(screen.getByText('Active Subscribers')).toBeInTheDocument());
-    // 2 of the 4 users have subscription.status === 'active' - independent
-    // of the fact that one is 'teacher' and one is 'student'.
+    await waitFor(() => expect(screen.getByText('Enrolled Students')).toBeInTheDocument());
+    // 2 of the 4 bookings have status === 'enrolled' - independent of the
+    // user accounts' role/subscription fields mocked above.
     const kpiValues = screen.getAllByText('2');
     expect(kpiValues.length).toBeGreaterThan(0);
   });
 
-  it('never renders the old "Active Students"/"Teachers" labels or a "Teachers list" card', async () => {
+  it('never renders the old "Active Students"/"Teachers"/"Active Subscribers" labels or a "Teachers list" card', async () => {
     mockAllSucceed();
     renderDashboard();
 
@@ -152,6 +161,18 @@ describe('AdminDashboard KPIs no longer depend on account roles', () => {
     expect(screen.queryByText('Active Students')).not.toBeInTheDocument();
     expect(screen.queryByText(/^Teachers/)).not.toBeInTheDocument();
     expect(screen.queryByText(/teachers yet/)).not.toBeInTheDocument();
+    expect(screen.queryByText('Active Subscribers')).not.toBeInTheDocument();
+  });
+
+  it('never renders a Payments tab, a "Manual Payments" heading, or any payment KPI/chart', async () => {
+    mockAllSucceed();
+    renderDashboard();
+
+    await waitFor(() => expect(screen.getByRole('tablist')).toBeInTheDocument());
+    expect(screen.queryByRole('tab', { name: /payments/i })).not.toBeInTheDocument();
+    expect(screen.queryByText('Manual Payments')).not.toBeInTheDocument();
+    expect(screen.queryByText(/Payment Approvals/)).not.toBeInTheDocument();
+    expect(screen.queryByText('Pending Payments')).not.toBeInTheDocument();
   });
 });
 
@@ -160,9 +181,14 @@ describe('AdminDashboard KPIs no longer depend on account roles', () => {
 // trials.length` - two unrelated groups from unrelated time periods, with
 // no cohort/linkage proving a given subscriber actually came from a given
 // trial. The ratio could exceed 100% and was materially misleading. It is
-// deleted outright (no invented linkage) and replaced with a direct,
-// unambiguous single-group count already proven honest elsewhere on this
-// page: pending manual payments awaiting admin review.
+// deleted outright (no invented linkage).
+//
+// Its direct-count replacement ("pending manual payments awaiting admin
+// review") was itself retired when this dashboard's KPIs moved to booking
+// data — "Pending Bookings" (a plain count of Enrollment.status ===
+// 'pending') is the current honest, single-group metric in its place; this
+// is a dashboard-metric choice, not a claim that manual payment review is
+// unavailable (see docs/current-project-status.md).
 describe('AdminDashboard: the unproven conversion-rate metric is gone', () => {
   beforeEach(() => vi.clearAllMocks());
 
@@ -175,31 +201,30 @@ describe('AdminDashboard: the unproven conversion-rate metric is gone', () => {
     expect(screen.queryByText(/Trials\s*→\s*Active/)).not.toBeInTheDocument();
   });
 
-  it('renders "Pending Payments" as a direct count of payments with status "pending", not a derived percentage', async () => {
+  it('renders "Pending Bookings" as a direct count of bookings with status "pending", not a derived percentage', async () => {
     getCourses.mockResolvedValue([]);
-    getManualPayments.mockResolvedValue({
-      data: [
-        { _id: 'p1', status: 'pending' },
-        { _id: 'p2', status: 'pending' },
-        { _id: 'p3', status: 'approved' },
-      ],
-      total: 3,
-    });
     getUsers.mockResolvedValue({ data: [], total: 0 });
     getTrials.mockResolvedValue([{ _id: 't1' }, { _id: 't2' }, { _id: 't3' }, { _id: 't4' }]);
     getSubscribers.mockResolvedValue([]);
-    getEnrollments.mockResolvedValue({ data: [], total: 0 });
+    getEnrollments.mockResolvedValue({
+      data: [
+        { _id: 'e1', status: 'pending' },
+        { _id: 'e2', status: 'pending' },
+        { _id: 'e3', status: 'enrolled' },
+      ],
+      total: 3,
+    });
     getAdminReviews.mockResolvedValue({ reviews: [], total: 0 });
     getAdminPosts.mockResolvedValue({ posts: [], total: 0 });
     getAdminComments.mockResolvedValue({ comments: [], total: 0 });
     renderDashboard();
 
-    await waitFor(() => expect(screen.getByText('Pending Payments')).toBeInTheDocument());
-    // 2 pending payments - a plain count, unrelated to the 4 trials mocked
+    await waitFor(() => expect(screen.getByText('Pending Bookings')).toBeInTheDocument());
+    // 2 pending bookings - a plain count, unrelated to the 4 trials mocked
     // above (which, under the old formula, would have produced a 50% ratio
     // that no longer exists anywhere on the page).
     expect(screen.getByText('Awaiting admin review')).toBeInTheDocument();
-    const label = screen.getByText('Pending Payments');
+    const label = screen.getByText('Pending Bookings');
     const card = label.closest('.ds-stat');
     expect(card.querySelector('.ds-stat__value').textContent).toBe('2');
   });

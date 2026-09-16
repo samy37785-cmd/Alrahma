@@ -3,7 +3,6 @@ import assert from 'node:assert/strict';
 import app from '../app.js';
 import User from '../models/User.js';
 import AdminUser from '../models/AdminUser.js';
-import Coupon from '../models/Coupon.js';
 import Blog from '../models/Blog.js';
 import Review from '../models/Review.js';
 import ContactMessage from '../models/ContactMessage.js';
@@ -11,18 +10,19 @@ import { signAccessToken } from '../utils/adminAuthTokens.js';
 import { setupTestDb, clearTestDb, teardownTestDb } from './helpers/db.js';
 import { agentWithCsrf } from './helpers/csrf.js';
 
-// Coverage for T8: coupon/blog/review/contact PATCH ("update") endpoints
-// previously had no validation at all (or, for coupon/blog, forwarded raw
-// req.body straight into Mongoose with no field allowlist — a
-// mass-assignment gap letting a PATCH set system-managed fields like
-// Coupon.usedCount/usedBy or Blog.views). These tests prove: (1) malformed
-// values are now rejected the same way create already rejected them, (2)
-// system-managed fields can no longer be set via PATCH, and (3) legitimate
-// partial updates still work exactly as before.
+// Coverage for T8: blog/review/contact PATCH ("update") endpoints previously
+// had no validation at all (or, for blog, forwarded raw req.body straight
+// into Mongoose with no field allowlist — a mass-assignment gap letting a
+// PATCH set system-managed fields like Blog.views). These tests prove: (1)
+// malformed values are now rejected the same way create already rejected
+// them, (2) system-managed fields can no longer be set via PATCH, and (3)
+// legitimate partial updates still work exactly as before.
 //
-// All four PATCH endpoints below moved to /api/v1/admin/{coupons,blog,
-// reviews,contact} (MFA + RBAC + audit-logged) as part of the B1
-// legacy-route migration — see routes/v1/admin/.
+// All three PATCH endpoints below moved to /api/v1/admin/{blog,reviews,
+// contact} (MFA + RBAC + audit-logged) as part of the B1 legacy-route
+// migration — see routes/v1/admin/. (The coupon PATCH endpoint that used to
+// be covered here was retired along with the rest of the payments product —
+// see docs/current-project-status.md and tests/payments-retired.test.js.)
 
 const PASSWORD = 'Str0ngP@ssw0rd!';
 
@@ -40,55 +40,6 @@ async function adminUserAgent(role = 'admin') {
   const cookieHeader = `admin_at=${token}; csrf_token=${csrf['x-csrf-token']}`;
   return { agent, csrf, cookieHeader };
 }
-
-// --------------------------------------------------------------------------
-// Coupon
-// --------------------------------------------------------------------------
-
-test('updateCoupon: rejects an invalid discountType with 422', async () => {
-  const { agent, csrf, cookieHeader } = await adminUserAgent();
-  const coupon = await Coupon.create({ code: 'SAVE10', discountType: 'percent', discountValue: 10 });
-
-  const res = await agent.patch(`/api/v1/admin/coupons/${coupon._id}`).set({ ...csrf, Cookie: cookieHeader }).send({ discountType: 'bogus' });
-  assert.equal(res.status, 422);
-});
-
-test('updateCoupon: rejects a malformed code with 422', async () => {
-  const { agent, csrf, cookieHeader } = await adminUserAgent();
-  const coupon = await Coupon.create({ code: 'SAVE10', discountType: 'percent', discountValue: 10 });
-
-  const res = await agent.patch(`/api/v1/admin/coupons/${coupon._id}`).set({ ...csrf, Cookie: cookieHeader }).send({ code: 'a' }); // too short, matches /^[A-Z0-9_-]{3,30}$/
-  assert.equal(res.status, 422);
-});
-
-test('updateCoupon: cannot set usedCount or usedBy directly (mass-assignment fix)', async () => {
-  const { agent, csrf, cookieHeader } = await adminUserAgent();
-  const student = await User.create({ name: 'Student', email: 'coupon-student@example.com', password: PASSWORD });
-  const coupon = await Coupon.create({ code: 'SAVE10', discountType: 'percent', discountValue: 10 });
-
-  const res = await agent.patch(`/api/v1/admin/coupons/${coupon._id}`).set({ ...csrf, Cookie: cookieHeader }).send({
-    usedCount: 999,
-    usedBy: [{ user: student._id }],
-    active: false, // a legitimate field, sent alongside — should still apply
-  });
-
-  assert.equal(res.status, 200);
-  const updated = await Coupon.findById(coupon._id);
-  assert.equal(updated.usedCount, 0, 'usedCount must not be settable via PATCH');
-  assert.equal(updated.usedBy.length, 0, 'usedBy must not be settable via PATCH');
-  assert.equal(updated.active, false, 'legitimate fields in the same request must still apply');
-});
-
-test('updateCoupon: a legitimate partial update changes only the given field', async () => {
-  const { agent, csrf, cookieHeader } = await adminUserAgent();
-  const coupon = await Coupon.create({ code: 'SAVE10', discountType: 'percent', discountValue: 10, description: 'Original' });
-
-  const res = await agent.patch(`/api/v1/admin/coupons/${coupon._id}`).set({ ...csrf, Cookie: cookieHeader }).send({ active: false });
-  assert.equal(res.status, 200);
-  assert.equal(res.body.coupon.active, false);
-  assert.equal(res.body.coupon.description, 'Original');
-  assert.equal(res.body.coupon.code, 'SAVE10');
-});
 
 // --------------------------------------------------------------------------
 // Blog

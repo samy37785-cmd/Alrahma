@@ -2,13 +2,12 @@ import { useState, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import {
-  LayoutDashboard, Users, BookOpen, CreditCard, Target,
+  LayoutDashboard, Users, BookOpen, Target,
   Mail, Settings, TrendingUp, BarChart3, Activity, CheckCircle,
   RefreshCw, Download, CalendarDays, Star, Users2, AlertCircle, CalendarCheck,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getCourses } from '../api/courseApi';
-import { getManualPayments } from '../api/paymentApi';
 import { getUsers } from '../api/adminApi';
 import { getTrials, getSubscribers } from '../api/contentApi';
 import { getEnrollments } from '../api/enrollmentApi';
@@ -16,7 +15,6 @@ import { getAdminReviews } from '../api/reviewApi';
 import { getAdminPosts, getAdminComments } from '../api/communityApi';
 import AdminCoursesTab    from '../components/features/admin/AdminCoursesTab';
 import AdminTrialsTab     from '../components/features/admin/AdminTrialsTab';
-import AdminPaymentsTab   from '../components/features/admin/AdminPaymentsTab';
 import AdminBookingsTab   from '../components/features/admin/AdminBookingsTab';
 import AdminNewsletterTab from '../components/features/admin/AdminNewsletterTab';
 import AdminUsersTab      from '../components/features/admin/AdminUsersTab';
@@ -25,7 +23,7 @@ import AdminReviewsTab   from '../components/features/admin/AdminReviewsTab';
 import AdminCommunityTab from '../components/features/admin/AdminCommunityTab';
 import AdminProgressModal from '../components/features/admin/AdminProgressModal';
 import DashboardLayout    from '../components/layout/DashboardLayout';
-import { DsBarChart, DsAreaChart, DsChartEmpty } from '../components/ui/DsChart';
+import { DsAreaChart, DsChartEmpty } from '../components/ui/DsChart';
 
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
@@ -39,32 +37,8 @@ function buildMonthBars(items, months, valueKey, filterFn) {
         && pd.getMonth() === d.getMonth()
         && (filterFn ? filterFn(item) : true);
     }).length;
-    return { label: MONTHS[d.getMonth()], Payments: count, Users: count };
+    return { label: MONTHS[d.getMonth()], Users: count };
   });
-}
-
-function RevenueChart({ pays }) {
-  const data = useMemo(() => buildMonthBars(
-    pays, 6, 'createdAt', (p) => p.status === 'approved', null
-  ).map((d) => ({ label: d.label, Payments: d.Payments })), [pays]);
-
-  const total = data.reduce((s, d) => s + d.Payments, 0);
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      {total === 0
-        ? <DsChartEmpty height={120} message="No approved payments yet" />
-        : <DsBarChart
-            data={data}
-            bars={[{ key: 'Payments', label: 'Approved Payments', color: '#0b6e4f' }]}
-            height={140}
-            showGrid
-          />
-      }
-      <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
-        Approved payments last 6 months · {total} total
-      </div>
-    </div>
-  );
 }
 
 function UserGrowthChart({ users }) {
@@ -93,11 +67,11 @@ function UserGrowthChart({ users }) {
 
 function FeedIcon({ type }) {
   if (type === 'user')    return <Users size={14} aria-hidden="true" />;
-  if (type === 'payment') return <CreditCard size={14} aria-hidden="true" />;
+  if (type === 'booking') return <CalendarCheck size={14} aria-hidden="true" />;
   return <Target size={14} aria-hidden="true" />;
 }
 
-function ActivityFeed({ users, pays, trials }) {
+function ActivityFeed({ users, bookings, trials }) {
   const events = [
     ...users.slice(0, 5).map((u) => ({
       id: u._id, type: 'user',
@@ -106,11 +80,11 @@ function ActivityFeed({ users, pays, trials }) {
       time: u.createdAt,
       color: 'ds-badge--blue',
     })),
-    ...pays.filter((p) => p.status === 'pending').slice(0, 4).map((p) => ({
-      id: p._id, type: 'payment',
-      title: `Payment pending — ${p.plan || ''}`,
-      desc: `${p.name || p.userEmail || ''}`,
-      time: p.createdAt || p.date,
+    ...bookings.filter((b) => b.status === 'pending').slice(0, 4).map((b) => ({
+      id: b._id, type: 'booking',
+      title: `Booking pending — ${b.plan || ''}`,
+      desc: `${b.name || b.email || ''}`,
+      time: b.createdAt,
       color: 'ds-badge--yellow',
     })),
     ...trials.slice(0, 3).map((t) => ({
@@ -159,7 +133,6 @@ const TABS = [
   { key: 'users',       label: 'Users',       Icon: Users },
   { key: 'courses',     label: 'Courses',     Icon: BookOpen },
   { key: 'bookings',    label: 'Bookings',    Icon: CalendarCheck },
-  { key: 'payments',    label: 'Payments',    Icon: CreditCard },
   { key: 'trials',      label: 'Trials',      Icon: Target },
   { key: 'newsletter',  label: 'Newsletter',  Icon: Mail },
   { key: 'classes',     label: 'Classes',     Icon: CalendarDays },
@@ -177,7 +150,6 @@ export default function AdminDashboard() {
 
   const { data: courses = [], isLoading: l1, isError: e1 }     = useQuery({ queryKey: ['admin', 'courses'],     queryFn: getCourses,                          staleTime: 120000 });
   const { data: trials = [], isLoading: l2, isError: e2 }      = useQuery({ queryKey: ['admin', 'trials'],      queryFn: getTrials,                           staleTime: 60000  });
-  const { data: paysRes, isLoading: l3, isError: e3 }          = useQuery({ queryKey: ['admin', 'payments'],    queryFn: getManualPayments,                   staleTime: 30000  });
   const { data: subscribers = [], isLoading: l4, isError: e4 } = useQuery({ queryKey: ['admin', 'newsletter'],  queryFn: getSubscribers,                      staleTime: 300000 });
   const { data: usersRes, isLoading: l5, isError: e5 }         = useQuery({ queryKey: ['admin', 'users'],       queryFn: getUsers,                            staleTime: 60000  });
   const { data: reviewsRes, isLoading: l7, isError: e6 }       = useQuery({ queryKey: ['admin', 'reviews'],     queryFn: getAdminReviews,                     staleTime: 60000  });
@@ -191,15 +163,13 @@ export default function AdminDashboard() {
   // payments" an empty-array fallback would otherwise show, which looked
   // indistinguishable from a genuinely empty account.
   const failedSections = [
-    e1 && 'courses', e2 && 'trial requests', e3 && 'payments', e4 && 'newsletter subscribers', e5 && 'users', e6 && 'reviews',
+    e1 && 'courses', e2 && 'trial requests', e4 && 'newsletter subscribers', e5 && 'users', e6 && 'reviews',
     e7 && 'community posts', e8 && 'community comments', e9 && 'bookings',
   ].filter(Boolean);
   const loadErrorMessage = failedSections.length
     ? `Failed to load: ${failedSections.join(', ')}. You may not have permission to view this data, or there was a network error.`
     : '';
 
-  const manualPays      = paysRes?.data ?? paysRes ?? [];
-  const manualPaysTotal = paysRes?.total ?? manualPays.length;
   const users           = usersRes?.data ?? usersRes ?? [];
   const usersTotal      = usersRes?.total ?? users.length;
   const reviews         = reviewsRes?.reviews ?? [];
@@ -211,15 +181,10 @@ export default function AdminDashboard() {
   const bookings      = bookingsRes?.data ?? bookingsRes ?? [];
   const bookingsTotal = bookingsRes?.total ?? bookings.length;
 
-  const loading = l1 || l2 || l3 || l4 || l5 || l7 || l8 || l9 || l10;
+  const loading = l1 || l2 || l4 || l5 || l7 || l8 || l9 || l10;
 
   const setCourses  = (updater) => queryClient.setQueryData(['admin', 'courses'],    updater);
   const setBookings = (updater) => queryClient.setQueryData(['admin', 'bookings'], (old) => {
-    const prev = old?.data ?? old ?? [];
-    const next = typeof updater === 'function' ? updater(prev) : updater;
-    return old?.data !== undefined ? { ...old, data: next } : next;
-  });
-  const setManualPays = (updater) => queryClient.setQueryData(['admin', 'payments'], (old) => {
     const prev = old?.data ?? old ?? [];
     const next = typeof updater === 'function' ? updater(prev) : updater;
     return old?.data !== undefined ? { ...old, data: next } : next;
@@ -250,17 +215,16 @@ export default function AdminDashboard() {
     setError('');
   };
 
-  /* KPIs - Stage 2C Final Corrective (see docs/user-admin-auth-contract.md):
-     no account-role concept exists any more, so these are derived from
-     real product fields every user account actually has (subscription
-     status), not from a legacy `role` field that could say anything. */
-  const activeSubscribers = users.filter((u) => u.subscription?.status === 'active');
-  const pendingPayments   = manualPays.filter((p) => p.status === 'pending');
+  /* Booking KPIs are derived from the booking list's own status field
+     (Enrollment.status), not User.subscription.status — the two are
+     related but distinct: a booking reaching 'enrolled' is what triggers
+     subscription activation, not the other way around. */
+  const pendingBookings = bookings.filter((b) => b.status === 'pending');
+  const enrolledBookings = bookings.filter((b) => b.status === 'enrolled');
 
   /* Tab badge counts */
   const tabBadge = (key) => {
-    if (key === 'bookings')  return bookings.filter((b) => b.status === 'pending').length;
-    if (key === 'payments')  return pendingPayments.length;
+    if (key === 'bookings')  return pendingBookings.length;
     if (key === 'trials')    return trials.filter((t) => t.status === 'pending').length;
     if (key === 'community') return communityPosts.filter((p) => p.status === 'pending').length + communityComments.filter((c) => c.status === 'pending').length;
     return 0;
@@ -296,7 +260,7 @@ export default function AdminDashboard() {
           <div className="ds-page-hd__eyebrow"><Settings size={12} aria-hidden="true" /> Admin Console</div>
           <h1 className="ds-page-hd__title">Platform Overview</h1>
           <p className="ds-page-hd__sub">
-            {usersTotal} total users · {activeSubscribers.length} active subscribers · {pendingPayments.length} pending payments
+            {usersTotal} total users · {pendingBookings.length} pending bookings · {enrolledBookings.length} enrolled
           </p>
         </div>
         <div className="ds-page-hd__actions">
@@ -389,7 +353,7 @@ export default function AdminDashboard() {
               </div>
               <div className="ds-stat__value">{usersTotal}</div>
               <div className="ds-stat__label">Total Users</div>
-              <div className="ds-stat__sub">{activeSubscribers.length} active subscribers</div>
+              <div className="ds-stat__sub">{enrolledBookings.length} enrolled via booking</div>
             </div>
 
             <div className="ds-stat">
@@ -397,27 +361,27 @@ export default function AdminDashboard() {
                 <div className="ds-stat__icon ds-stat__icon--green">
                   <CheckCircle size={18} aria-hidden="true" />
                 </div>
-                <span className="ds-stat__trend ds-stat__trend--up">Active</span>
+                <span className="ds-stat__trend ds-stat__trend--up">Enrolled</span>
               </div>
-              <div className="ds-stat__value">{activeSubscribers.length}</div>
-              <div className="ds-stat__label">Active Subscribers</div>
+              <div className="ds-stat__value">{enrolledBookings.length}</div>
+              <div className="ds-stat__label">Enrolled Students</div>
               <div className="ds-stat__sub">
-                {usersTotal > 0 ? Math.round((activeSubscribers.length / usersTotal) * 100) : 0}% of all users
+                {bookingsTotal > 0 ? Math.round((enrolledBookings.length / bookingsTotal) * 100) : 0}% of all bookings
               </div>
             </div>
 
             <div className="ds-stat">
               <div className="ds-stat__top">
                 <div className="ds-stat__icon ds-stat__icon--gold">
-                  <CreditCard size={18} aria-hidden="true" />
+                  <CalendarCheck size={18} aria-hidden="true" />
                 </div>
-                {pendingPayments.length > 0 && (
-                  <span className="ds-stat__trend ds-stat__trend--down">{pendingPayments.length} pending</span>
+                {pendingBookings.length > 0 && (
+                  <span className="ds-stat__trend ds-stat__trend--down">{pendingBookings.length} pending</span>
                 )}
               </div>
-              <div className="ds-stat__value">{manualPaysTotal}</div>
-              <div className="ds-stat__label">Payments</div>
-              <div className="ds-stat__sub">{pendingPayments.length} need review</div>
+              <div className="ds-stat__value">{bookingsTotal}</div>
+              <div className="ds-stat__label">Bookings</div>
+              <div className="ds-stat__sub">{pendingBookings.length} need review</div>
             </div>
 
             <div className="ds-stat">
@@ -437,8 +401,8 @@ export default function AdminDashboard() {
                   <AlertCircle size={18} aria-hidden="true" />
                 </div>
               </div>
-              <div className="ds-stat__value">{pendingPayments.length}</div>
-              <div className="ds-stat__label">Pending Payments</div>
+              <div className="ds-stat__value">{pendingBookings.length}</div>
+              <div className="ds-stat__label">Pending Bookings</div>
               <div className="ds-stat__sub">Awaiting admin review</div>
             </div>
 
@@ -457,18 +421,6 @@ export default function AdminDashboard() {
           {/* Charts + Activity */}
           <div className="ds-grid ds-grid-main-side">
             <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-
-              {/* Revenue trend */}
-              <div className="ds-card">
-                <div className="ds-card__hd">
-                  <span className="ds-card__title">
-                    <span className="ds-card__title-icon"><CreditCard size={14} aria-hidden="true" /></span> Payment Approvals — Last 6 Months
-                  </span>
-                </div>
-                <div className="ds-card__body">
-                  <RevenueChart pays={manualPays} />
-                </div>
-              </div>
 
               {/* User growth */}
               <div className="ds-card">
@@ -529,7 +481,7 @@ export default function AdminDashboard() {
                   </span>
                 </div>
                 <div className="ds-card__body">
-                  <ActivityFeed users={users} pays={manualPays} trials={trials} />
+                  <ActivityFeed users={users} bookings={bookings} trials={trials} />
                 </div>
               </div>
 
@@ -543,7 +495,7 @@ export default function AdminDashboard() {
                 <div className="ds-card__body">
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                     {[
-                      { Icon: CreditCard, label: `Review Payments (${pendingPayments.length})`, tab: 'payments', badge: pendingPayments.length > 0 },
+                      { Icon: CalendarCheck, label: `Review Bookings (${pendingBookings.length})`, tab: 'bookings', badge: pendingBookings.length > 0 },
                       { Icon: Target,     label: `Trial Requests (${trials.length})`, tab: 'trials' },
                       { Icon: Users,      label: 'Manage Users', tab: 'users' },
                       { Icon: BookOpen,   label: 'Manage Courses', tab: 'courses' },
@@ -614,26 +566,6 @@ export default function AdminDashboard() {
             bookings={bookings}
             bookingsTotal={bookingsTotal}
             onBookingsChange={setBookings}
-            onError={setError}
-          />
-        </div>
-      </div>
-
-      {/* ── PAYMENTS TAB ───────────────────────────────────────────── */}
-      <div id="tabpanel-payments" role="tabpanel" aria-labelledby="tab-payments" hidden={activeTab !== 'payments'}>
-        <div className="ds-card" style={{ padding: 0, overflow: 'hidden' }}>
-          <div style={{ padding: '16px 18px', borderBottom: '1px solid var(--border-default)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <h2 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-              Manual Payments
-            </h2>
-            {pendingPayments.length > 0 && (
-              <span className="ds-badge ds-badge--yellow">{pendingPayments.length} pending</span>
-            )}
-          </div>
-          <AdminPaymentsTab
-            manualPays={manualPays}
-            manualPaysTotal={manualPaysTotal}
-            onManualPaysChange={setManualPays}
             onError={setError}
           />
         </div>

@@ -5,7 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { getUnreadCount } from '../../api/messageApi';
 import { getUnreadNotifs } from '../../api/notificationApi';
 import {
-  LayoutDashboard, MessageSquare, Users, BookOpen, CreditCard, Target,
+  LayoutDashboard, MessageSquare, Users, BookOpen, Target,
   UserCog, Book, User, ExternalLink, Menu, Search, Bell, Sun, Moon,
   GraduationCap, LogOut, Calendar, ClipboardList, Flame,
   X, ChevronLeft, ChevronRight, BarChart3, Home, Shield, Landmark,
@@ -421,16 +421,6 @@ export default function DashboardLayout({ children }) {
                   >
                     <User size={14} aria-hidden="true" /> {shell.profile}
                   </Link>
-                  {!isAdmin && (
-                    <Link
-                      to="/billing"
-                      className="ds-dropdown__item"
-                      onClick={() => setUserMenu(false)}
-                      role="menuitem"
-                    >
-                      <CreditCard size={14} aria-hidden="true" /> {shell.billing}
-                    </Link>
-                  )}
                   <div className="ds-dropdown__divider" />
                   <button
                     className="ds-dropdown__item ds-dropdown__item--danger"

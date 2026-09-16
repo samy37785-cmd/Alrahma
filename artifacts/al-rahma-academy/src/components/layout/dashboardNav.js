@@ -1,6 +1,6 @@
 import { site } from '../../data/site';
 import {
-  LayoutDashboard, MessageSquare, Users, BookOpen, CreditCard, Target, UserCog, Book, User, ExternalLink, Calendar, Heart, Sparkles, Users2, MessageCircle,
+  LayoutDashboard, MessageSquare, Users, BookOpen, CalendarCheck, Target, UserCog, Book, User, ExternalLink, Calendar, Heart, Sparkles, Users2, MessageCircle,
 } from 'lucide-react';
 
 // Stage 2A (see docs/user-admin-auth-contract.md): the product has exactly
@@ -16,7 +16,7 @@ export function navFor(isAdmin, unreadCount) {
     { section: 'management' },
     { to: '/admin#users',    icon: Users,      labelKey: 'users' },
     { to: '/admin#courses',  icon: BookOpen,   labelKey: 'courses' },
-    { to: '/admin#payments', icon: CreditCard, labelKey: 'payments' },
+    { to: '/admin#bookings', icon: CalendarCheck, labelKey: 'bookings' },
     { to: '/admin#trials',   icon: Target,     labelKey: 'trials' },
     { to: '/admin#staff',    icon: UserCog,    labelKey: 'staff' },
     { section: 'community' },
@@ -38,16 +38,20 @@ export function navFor(isAdmin, unreadCount) {
     { to: '/community', icon: Users2,        labelKey: 'community' },
     { section: 'account' },
     { to: '/profile', icon: User,        labelKey: 'profile' },
-    { to: '/billing', icon: CreditCard,  labelKey: 'billing' },
     { section: 'help' },
     { to: `https://wa.me/${site.whatsapp}`, icon: MessageCircle, labelKey: 'whatsappSupport', external: true },
     { to: '/',                              icon: ExternalLink,  labelKey: 'viewSite',        external: true },
   ];
 }
 
+// This used to show "{plan} plan" for a user with an active subscription —
+// simplified to a generic label for every non-admin account. Unrelated to
+// the scope correction (see docs/current-project-status.md): User.subscription
+// is a real, admin-set field again (booking approval), this is just a
+// display-simplification choice that was never revisited.
 export function roleLabel(user, isAdmin, roles) {
   if (isAdmin) return roles.administrator;
-  return user?.subscription?.plan ? roles.plan(user.subscription.plan) : roles.student;
+  return roles.student;
 }
 
 export function bottomNavFor(isAdmin, unreadCount) {

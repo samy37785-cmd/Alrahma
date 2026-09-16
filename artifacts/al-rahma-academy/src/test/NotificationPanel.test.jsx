@@ -113,7 +113,7 @@ describe('NotificationPanel', () => {
 
   it('clicking an unread notification marks it read via the API and navigates to its link', async () => {
     getMyNotifications.mockResolvedValue({
-      notifications: [baseNotif({ _id: 'n1', link: '/billing' })],
+      notifications: [baseNotif({ _id: 'n1', link: '/dashboard' })],
       total: 1,
       unreadCount: 1,
     });
@@ -125,7 +125,7 @@ describe('NotificationPanel', () => {
     await userEvent.click(item);
 
     expect(markNotifRead.mock.calls[0][0]).toBe('n1');
-    expect(mockNavigate).toHaveBeenCalledWith('/billing');
+    expect(mockNavigate).toHaveBeenCalledWith('/dashboard');
     expect(onClose).toHaveBeenCalled();
   });
 

@@ -110,6 +110,15 @@ export const createEnrollment = asyncHandler(async (req, res) => {
   res.status(201).json({ message: 'Booking request received', id: null, bookingRef });
 });
 
+// Scope correction (see docs/current-project-status.md): only online CARD/
+// gateway payment is cancelled — plans, coupons, manual/offline payment
+// bookkeeping, invoices, subscriptions, and bookings all stay supported.
+// The booking journey itself still never accepts or displays payment-
+// shaped data. This SELECT deliberately omits agreed_amount/currency/
+// payment_method_external/paid_at/renewal_at — historical rows may still
+// carry them (never deleted), but a student must never see them, even on
+// their own old booking. Do not widen this query to `SELECT *`.
+//
 // @route  GET /api/enrollments/mine
 // @access Student (own enrollment, matched by email)
 export const getMyEnrollment = asyncHandler(async (req, res) => {
@@ -125,9 +134,8 @@ export const getMyEnrollment = asyncHandler(async (req, res) => {
       `SELECT id, name, email, whatsapp, country, city, timezone, times,
               subjects, lang, level, age_group, gender_pref,
               preferred_teacher_key, preferred_teacher_name,
-              requested_plan_slug, status, notes, booking_ref, agreed_amount,
-              currency, payment_method_external, paid_at, renewal_at,
-              admin_note, created_at, updated_at
+              requested_plan_slug, status, notes, booking_ref, admin_note,
+              created_at, updated_at
          FROM enrollments
         WHERE email = $1
         ORDER BY created_at DESC

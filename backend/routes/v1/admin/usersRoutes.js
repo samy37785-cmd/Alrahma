@@ -59,6 +59,14 @@ router.get('/teachers', requirePermissions('users:read'),  asyncHandler(listTeac
 router.post('/',        requirePermissions('users:write'), asyncHandler(adminCreateUser));
 
 router.patch('/:id/role',         requirePermissions('users:write'), asyncHandler(updateUserRole));
+// Scope correction (see docs/current-project-status.md): this lets an admin
+// set User.subscription (plan/status/activeSince/validUntil) directly —
+// manual, non-gateway admin activation/renewal/deactivation, not an online
+// card-gateway feature. A booking's own approval action (PUT/PATCH
+// /api/v1/admin/enrollments/:id) also activates a subscription end-to-end
+// (see enrollmentController.js's approveEnrollment) — this endpoint stays
+// live alongside it for direct/manual admin overrides (e.g. renewing or
+// deactivating a student outside the booking flow).
 router.patch('/:id/subscription', requirePermissions('users:write'), asyncHandler(updateUserSubscription));
 router.patch('/:id/teacher',      requirePermissions('users:write'), asyncHandler(assignTeacher));
 router.patch('/:id/family',       requirePermissions('users:write'), asyncHandler(setFamilyName));

@@ -66,19 +66,26 @@ describe('/teacher and /parent are legacy-compatibility redirects, not role dash
 });
 
 describe('AdminDashboard shell and its surviving tabs are intact', () => {
-  it('AdminDashboard.jsx still registers exactly the 10 surviving tabs (staff removed, Bookings added by Booking-First Enrollment, none of the others touched)', () => {
+  // The 'payments' tab and AdminPaymentsTab (a checkout-era transaction
+  // view) were removed along with the rest of the card-checkout UI —
+  // updated to match, 9 tabs now. Manual/offline payment review and
+  // subscription activation are live again (see
+  // docs/current-project-status.md) but have no dedicated admin-dashboard
+  // tab UI of their own — AdminBookingsTab's "Approve & Activate" action
+  // and AdminUsersTab's subscription controls are the current surfaces.
+  it('AdminDashboard.jsx still registers exactly the 9 surviving tabs (staff removed, Bookings added by Booking-First Enrollment, payments tab removed with the card-checkout UI)', () => {
     const source = read('pages/AdminDashboard.jsx');
     const tabKeys = [...source.matchAll(/key:\s*'([a-z]+)'/g)].map((m) => m[1]);
     expect(tabKeys).toEqual([
-      'overview', 'users', 'courses', 'bookings', 'payments', 'trials',
+      'overview', 'users', 'courses', 'bookings', 'trials',
       'newsletter', 'classes', 'reviews', 'community',
     ]);
   });
 
-  it('AdminUsersTab, AdminPaymentsTab, AdminTrialsTab, AdminNewsletterTab are still imported (not touched by this pruning)', () => {
+  it('AdminUsersTab, AdminTrialsTab, AdminNewsletterTab are still imported (not touched by this pruning); AdminPaymentsTab is not (removed with the card-checkout UI)', () => {
     const source = read('pages/AdminDashboard.jsx');
     expect(source).toMatch(/import AdminUsersTab/);
-    expect(source).toMatch(/import AdminPaymentsTab/);
+    expect(source).not.toMatch(/import AdminPaymentsTab/);
     expect(source).toMatch(/import AdminTrialsTab/);
     expect(source).toMatch(/import AdminNewsletterTab/);
   });

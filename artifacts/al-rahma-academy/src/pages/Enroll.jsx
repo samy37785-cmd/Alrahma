@@ -21,7 +21,7 @@ const BLANK = {
 export default function Enroll() {
   useSEO({
     title: 'Book Free Trial Lessons — Enroll at Al-Rahma Academy',
-    description: 'One free one-to-one Quran trial lesson — no payment, no commitment. Choose your subjects, pick an Al-Azhar certified tutor, and book your plan — we\'ll confirm your schedule and payment with you on WhatsApp.',
+    description: 'One free one-to-one Quran trial lesson — no payment, no commitment. Choose your subjects, pick an Al-Azhar certified tutor, and submit a booking request — our team will review it and confirm your schedule with you on WhatsApp.',
     keywords: 'free quran trial lesson, online quran enrollment, book quran lesson, quran class booking',
   });
 

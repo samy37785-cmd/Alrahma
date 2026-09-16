@@ -6,15 +6,18 @@ import { LangProvider } from '../context/LangContext';
 import { pathFor } from '../utils/localePath';
 import { LANGS } from '../i18n';
 
-// Booking-First Enrollment: admin tracking tab for booking requests. Backed
-// by the pre-existing, RBAC-protected generic CRUD at
-// /api/v1/admin/enrollments (updateEnrollment in api/enrollmentApi.js) — no
-// new backend route was added for this feature. This is administrative
-// bookkeeping only (agreed amount/currency/external method/dates/note),
-// never a payment gateway; it must never collect card or account data.
+// Admin tracking tab for booking requests. Backed by the pre-existing,
+// RBAC-protected generic CRUD at /api/v1/admin/enrollments (updateEnrollment
+// in api/enrollmentApi.js). Status (pending/approved/enrolled/cancelled)
+// and an adminNote — no price, payment, card, or checkout field exists
+// anywhere in this component or the requests it sends. Scope correction
+// (see docs/current-project-status.md): "Approve & Activate"
+// (approveEnrollment) is the one admin action that links a booking to its
+// registered account and activates their subscription/content access.
 
 vi.mock('../api/enrollmentApi', () => ({
   updateEnrollment: vi.fn(),
+  approveEnrollment: vi.fn(),
 }));
 
 import * as enrollmentApi from '../api/enrollmentApi';
@@ -66,42 +69,82 @@ describe('AdminBookingsTab', () => {
     expect(screen.getByText('Huffaz')).toBeInTheDocument();
   });
 
-  it('changing the status select calls updateEnrollment with the new status', async () => {
-    const user = userEvent.setup();
-    enrollmentApi.updateEnrollment.mockResolvedValue({ ...BOOKING, status: 'contacted' });
+  it('there is no "Agreed Amount" (or any financial) column', () => {
     renderTab();
-
-    await user.selectOptions(screen.getByDisplayValue('New'), 'contacted');
-
-    expect(enrollmentApi.updateEnrollment).toHaveBeenCalledWith('b1', { status: 'contacted' });
+    expect(screen.queryByText('Agreed Amount')).not.toBeInTheDocument();
   });
 
-  it('the six booking statuses are all offered', () => {
+  it('changing the status select calls updateEnrollment with the new status', async () => {
+    const user = userEvent.setup();
+    enrollmentApi.updateEnrollment.mockResolvedValue({ ...BOOKING, status: 'approved' });
+    renderTab();
+
+    await user.selectOptions(screen.getByDisplayValue('New'), 'approved');
+
+    expect(enrollmentApi.updateEnrollment).toHaveBeenCalledWith('b1', { status: 'approved' });
+  });
+
+  it('exactly the four canonical, non-financial statuses are offered for a booking already at a canonical status', () => {
     renderTab();
     const select = screen.getByDisplayValue('New');
     const options = Array.from(select.querySelectorAll('option')).map((o) => o.value);
-    expect(options).toEqual(['pending', 'contacted', 'awaiting_payment', 'paid', 'enrolled', 'cancelled']);
+    expect(options).toEqual(['pending', 'approved', 'enrolled', 'cancelled']);
   });
 
-  it('opening the financial-details editor and saving calls updateEnrollment with the entered fields, never a card/account field', async () => {
+  it('migration-safe: a booking carrying a retired status ("awaiting_payment") still renders correctly, with that value as an extra option alongside the four canonical ones', () => {
+    renderTab([{ ...BOOKING, status: 'awaiting_payment' }]);
+    const select = screen.getByRole('combobox');
+    expect(select.value).toBe('awaiting_payment');
+    const options = Array.from(select.querySelectorAll('option')).map((o) => o.value);
+    expect(options).toEqual(['awaiting_payment', 'pending', 'approved', 'enrolled', 'cancelled']);
+  });
+
+  it('opening the note editor and saving calls updateEnrollment with only adminNote — no financial field exists to send', async () => {
     const user = userEvent.setup();
-    enrollmentApi.updateEnrollment.mockResolvedValue({ ...BOOKING, agreedAmount: 49, currency: 'EUR' });
+    enrollmentApi.updateEnrollment.mockResolvedValue({ ...BOOKING, adminNote: 'Confirmed via WhatsApp' });
     renderTab();
 
     await user.click(screen.getByRole('button', { name: 'Edit' }));
-    await user.type(screen.getByLabelText(/Agreed amount/i), '49');
-    await user.type(screen.getByLabelText(/Currency/i), 'EUR');
-    await user.type(screen.getByLabelText(/External payment method/i), 'Bank transfer');
+    expect(screen.queryByLabelText(/Agreed amount/i)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/Currency/i)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/External payment method/i)).not.toBeInTheDocument();
+
+    await user.type(screen.getByLabelText(/Admin note/i), 'Confirmed via WhatsApp');
     await user.click(screen.getByRole('button', { name: 'Save' }));
 
-    expect(enrollmentApi.updateEnrollment).toHaveBeenCalledWith('b1', expect.objectContaining({
-      agreedAmount: 49,
-      currency: 'EUR',
-      paymentMethodExternal: 'Bank transfer',
-    }));
-    const [, patch] = enrollmentApi.updateEnrollment.mock.calls[0];
-    expect(patch).not.toHaveProperty('cardNumber');
-    expect(patch).not.toHaveProperty('cvv');
+    expect(enrollmentApi.updateEnrollment).toHaveBeenCalledWith('b1', { adminNote: 'Confirmed via WhatsApp' });
+  });
+
+  it('shows "Approve & Activate" for a pending booking, and clicking it calls approveEnrollment and applies the returned enrollment', async () => {
+    const user = userEvent.setup();
+    enrollmentApi.approveEnrollment.mockResolvedValue({
+      message: 'Booking approved and subscription activated',
+      enrollment: { ...BOOKING, status: 'enrolled' },
+      user: { _id: 'u1', subscription: { status: 'active', plan: 'Huffaz' } },
+    });
+    const onBookingsChange = vi.fn();
+    renderTab([BOOKING], { onBookingsChange });
+
+    await user.click(screen.getByRole('button', { name: 'Approve & Activate' }));
+
+    expect(enrollmentApi.approveEnrollment).toHaveBeenCalledWith('b1');
+    expect(onBookingsChange).toHaveBeenCalled();
+  });
+
+  it('does NOT show "Approve & Activate" for an already-enrolled or cancelled booking', () => {
+    renderTab([{ ...BOOKING, status: 'enrolled' }]);
+    expect(screen.queryByRole('button', { name: 'Approve & Activate' })).not.toBeInTheDocument();
+  });
+
+  it('a failed approval calls onError with the server message and does not change local state', async () => {
+    const user = userEvent.setup();
+    enrollmentApi.approveEnrollment.mockRejectedValue({ response: { data: { message: 'No registered account found' } } });
+    const onError = vi.fn();
+    renderTab([BOOKING], { onError });
+
+    await user.click(screen.getByRole('button', { name: 'Approve & Activate' }));
+
+    expect(onError).toHaveBeenCalledWith('No registered account found');
   });
 
   it('the empty-state row is shown when there are no bookings', () => {

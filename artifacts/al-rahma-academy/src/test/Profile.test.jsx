@@ -11,8 +11,14 @@ import Profile from '../pages/Profile';
 // dedicated test coverage before that stage. This file proves the parent-
 // child link-code removal behaviorally, not just by source-grep:
 //   - Profile still renders and still exposes its generic account features
-//     (personal info, password change, subscription) with no link-code
-//     section left in the DOM;
+//     (personal info, password change) with no link-code section left in
+//     the DOM. The old checkout-era "My Subscription" card (status/plan/
+//     expiry, "View Invoices", "View Plans") stays removed — a later scope
+//     correction (see docs/current-project-status.md) added a simpler,
+//     non-billing "My Plan" booking-status card back (plan name +
+//     Enrolled/Under Review/Not Booked + a "Submit a Booking" link), which
+//     uses none of the old card's specific text and so doesn't trip the
+//     absence assertions below.
 //   - getMyLinkCode is not merely unused - it no longer exists as an
 //     authApi export at all, so a real (not mocked-away) import of it would
 //     have failed at module-collection time, which it did not.
@@ -68,7 +74,19 @@ describe('Profile (Stage 2C: parent-child link code removed)', () => {
     expect(() => renderProfile()).not.toThrow();
     expect(await screen.findByText('My Account')).toBeInTheDocument();
     expect(screen.getByText('Personal Information')).toBeInTheDocument();
-    expect(screen.getByText('My Subscription')).toBeInTheDocument();
+  });
+
+  // The old checkout-era "My Subscription" card (status/plan/expiry, "View
+  // Invoices", "View Plans") stays gone — see the file header comment above
+  // for the non-billing "My Plan" card added back since this test was
+  // written, which uses none of these strings.
+  it('renders no "My Subscription" card, no billing link, no plan/status/expiry text', async () => {
+    renderProfile();
+    await screen.findByText('My Account');
+    expect(screen.queryByText('My Subscription')).not.toBeInTheDocument();
+    expect(screen.queryByText('View Invoices')).not.toBeInTheDocument();
+    expect(screen.queryByText('View Plans')).not.toBeInTheDocument();
+    expect(screen.queryByText('Billing')).not.toBeInTheDocument();
   });
 
   it('renders no link-code section, no reveal/copy button, no <code> element', async () => {

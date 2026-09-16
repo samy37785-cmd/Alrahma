@@ -30,7 +30,6 @@ const Privacy            = lazy(() => import('./pages/Privacy'));
 const TermsOfService     = lazy(() => import('./pages/TermsOfService'));
 const RefundPolicy       = lazy(() => import('./pages/RefundPolicy'));
 const PaymentResult      = lazy(() => import('./pages/PaymentResult'));
-const Billing            = lazy(() => import('./pages/Billing'));
 const Wishlist           = lazy(() => import('./pages/Wishlist'));
 const AiTutor             = lazy(() => import('./pages/AiTutor'));
 const Community            = lazy(() => import('./pages/Community'));
@@ -168,17 +167,20 @@ export default function App({ basename = '' }) {
           <Route path="/reset-password" element={<ResetPassword />} />
 
           {/* ── Enroll & Booking ──
-              /payment/success and /payment/cancel are legacy Stripe/PayPal
-              redirect targets from the removed in-app checkout — kept
-              mounted (old links must not 404) but now just point to a
-              deprecated-payment notice; see PaymentResult.jsx. */}
+              Scope correction (see docs/current-project-status.md): only
+              online card-gateway payment is cancelled. /payment/success,
+              /payment/cancel (legacy Stripe/PayPal redirect targets), and
+              /billing (the removed checkout Billing page) are all kept
+              mounted — old shared/bookmarked links must not 404 — pointing
+              at PaymentResult.jsx's explanatory booking notice instead of a
+              checkout flow. */}
           <Route path="/enroll" element={<Enroll />} />
           <Route path="/payment/success" element={<PaymentResult />} />
           <Route path="/payment/cancel" element={<PaymentResult />} />
+          <Route path="/billing" element={<PaymentResult />} />
 
           {/* ── Dashboards (protected) ── */}
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-          <Route path="/billing" element={<ProtectedRoute><Billing /></ProtectedRoute>} />
           <Route path="/wishlist" element={<ProtectedRoute><Wishlist /></ProtectedRoute>} />
           <Route path="/ai-tutor" element={<ProtectedRoute><AiTutor /></ProtectedRoute>} />
           <Route path="/community" element={<ProtectedRoute><Community /></ProtectedRoute>} />

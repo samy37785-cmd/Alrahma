@@ -16,10 +16,12 @@ import { agentWithCsrf } from './helpers/csrf.js';
 // everywhere else. These tests lock that contract in across all of its call
 // sites.
 //
-// couponController.createCoupon and blogController.createPost are now
-// reached via /api/v1/admin/{coupons,blog} (MFA + RBAC) rather than the
-// legacy /api/coupons and /api/blog admin routes — see the B1 legacy-route
-// migration in routes/v1/admin/.
+// blogController.createPost is now reached via /api/v1/admin/blog (MFA +
+// RBAC) rather than the legacy /api/blog admin route — see the B1
+// legacy-route migration in routes/v1/admin/. (couponController.createCoupon
+// used to be covered here too; that endpoint was retired along with the
+// rest of the payments product — see docs/current-project-status.md and
+// tests/payments-retired.test.js.)
 
 const PASSWORD = 'Str0ngP@ssw0rd!';
 
@@ -45,12 +47,6 @@ function assertMessageShape(res) {
   assert.equal(res.body.errors, undefined, 'the old { errors: [...] } shape must not appear alongside { message }');
 }
 
-test('couponController.createCoupon: express-validator failure returns { message }, not { errors }', async () => {
-  const { agent, csrf, cookieHeader } = await adminUserAgent();
-  const res = await agent.post('/api/v1/admin/coupons').set({ ...csrf, Cookie: cookieHeader }).send({}); // missing every required field
-  assertMessageShape(res);
-});
-
 test('blogController.createPost: express-validator failure returns { message }, not { errors }', async () => {
   const { agent, csrf, cookieHeader } = await adminUserAgent();
   const res = await agent.post('/api/v1/admin/blog').set({ ...csrf, Cookie: cookieHeader }).send({});
@@ -74,7 +70,7 @@ test('contactController.submitContact: express-validator failure returns { messa
 
 test('combines multiple field errors into one readable message', async () => {
   const { agent, csrf, cookieHeader } = await adminUserAgent();
-  const res = await agent.post('/api/v1/admin/coupons').set({ ...csrf, Cookie: cookieHeader }).send({ discountType: 'bogus' }); // multiple violations: code missing, discountValue missing, discountType invalid
+  const res = await agent.post('/api/v1/admin/blog').set({ ...csrf, Cookie: cookieHeader }).send({ slug: 'Not Valid Slug!' }); // multiple violations: title/excerpt/body/author.name missing, slug malformed
   assertMessageShape(res);
   assert.ok(res.body.message.includes(','), 'multiple validation failures should be joined into one message');
 });

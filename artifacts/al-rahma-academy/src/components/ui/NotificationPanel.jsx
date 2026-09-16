@@ -16,13 +16,18 @@ function timeAgo(dateStr, copy) {
   return copy.daysAgo(Math.floor(h / 24));
 }
 
-// Mirrors models/Notification.js's TYPES enum.
+// Mirrors models/Notification.js's TYPES enum. payment_received/
+// payment_failed are dropped — only the online card-gateway checkout flow
+// that used to emit them (Stripe/PayPal webhooks) is retired 410 now (see
+// docs/current-project-status.md); coupon_received is dropped too, but was
+// never emitted by coupon validation itself (validateCoupon is a stateless
+// check, live again) — it belonged to a purchase-with-coupon checkout flow
+// that no longer exists. subscription_renewed/subscription_expiring stay
+// (the renewal-reminder cron job is unrelated and still runs).
 const ICON_MAP = {
   class_scheduled:        '📅',
   class_cancelled:        '🚫',
   class_reminder:         '⏰',
-  payment_received:       '💳',
-  payment_failed:         '⚠️',
   subscription_renewed:   '🔄',
   subscription_expiring:  '⏳',
   message_received:       '✉',
@@ -30,7 +35,6 @@ const ICON_MAP = {
   enrollment_rejected:    '❌',
   certificate_issued:     '🎓',
   admin_announcement:     '📢',
-  coupon_received:        '🎁',
   review_approved:        '⭐',
   default:                '🔔',
 };

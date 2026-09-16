@@ -128,10 +128,6 @@ app.use(
   })
 );
 
-// Stripe webhook must receive the raw body for signature verification.
-// Register this route BEFORE the JSON body-parser middleware.
-app.use('/api/payments/stripe/webhook', express.raw({ type: 'application/json' }));
-
 app.use(correlationId);   // assign x-request-id to every request (tracing)
 app.use(express.json({ limit: '100kb' }));
 app.use(express.urlencoded({ extended: true, limit: '100kb' }));

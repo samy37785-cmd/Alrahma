@@ -103,45 +103,20 @@ export function validateEnv() {
       process.exit(1);
     }
 
-    // Auth hardening security batch — documented blocker (task item 6):
-    // under DATA_BACKEND=supabase, a regular user's password change/reset
-    // (data/supabase/authController.js's updateMe()/resetPassword()) does
-    // NOT invalidate that user's other already-issued `token` session
-    // cookies. Mongo mode closes this via a `tokenVersion` column bumped
-    // on every password change and checked on every request
-    // (middleware/auth.js's protect()); the Postgres `profiles` schema
-    // (lib/db/drizzle/) has no equivalent column, and adding one correctly
-    // (a new hand-written migration, updated RLS/ACL, updated Drizzle
-    // schema, updated loadUser.js, updated every JWT-issuing/verifying
-    // call site, updated lib/db's exact-assertion-count test contract) is
-    // a real schema/migration decision this fix does not make unilaterally
-    // — see docs/current-project-status.md and lib/db/test/README.md for
-    // why that contract is deliberately strict and reviewed, not something
-    // to silently extend here. Until it is closed for real, a stolen or
-    // leaked regular-user session token under Supabase mode survives a
-    // password change/reset — a real security regression versus Mongo
-    // mode. This gate fails the SAME way SUPABASE_REQUIRED does (loud,
-    // process.exit(1), closed-by-default) specifically when the operator
-    // has ALSO set NODE_ENV=production, so an accidental real cutover to
-    // Supabase in production cannot happen silently while this gap stands.
-    // Local/CI/rehearsal runs (NODE_ENV !== 'production') are never
-    // affected — this is not a general Supabase-mode block, only a
-    // production one. An operator who has read this and independently
-    // accepted the risk (e.g. behind their own compensating control) can
-    // override explicitly and auditably via
-    // SUPABASE_SESSION_INVALIDATION_GAP_ACKNOWLEDGED=true — omitted by
-    // default, never set by any script in this repo.
-    if (
-      process.env.NODE_ENV === 'production' &&
-      process.env.SUPABASE_SESSION_INVALIDATION_GAP_ACKNOWLEDGED !== 'true'
-    ) {
-      logger.error(
-        'Server startup aborted — DATA_BACKEND=supabase in production is blocked: regular-user sessions are not invalidated on password change/reset under this backend (no tokenVersion equivalent in the Postgres schema). ' +
-        'This is a real, documented security gap, not a false-positive check. ' +
-        'Set SUPABASE_SESSION_INVALIDATION_GAP_ACKNOWLEDGED=true only after this gap is actually closed, or after an informed, explicit decision to accept the risk.'
-      );
-      process.exit(1);
-    }
+    // Full production cutover: the gap this gate used to block on is
+    // closed for real (0033_profiles_token_version.sql) — profiles.
+    // token_version is bumped by the owner-only bump_token_version() RPC
+    // from data/supabase/authController.js's updateMe()/resetPassword() on
+    // every real password change/reset, and data/supabase/loadUser.js now
+    // reads the real column instead of hardcoding tokenVersion: 0 —
+    // middleware/auth.js's protect() therefore rejects a stale session's
+    // token exactly the same way it always has under Mongo, with no
+    // backend-specific code path. Verified end-to-end against a real local
+    // GoTrue instance (backend/scripts/migration/rehearsal-password-reset-
+    // e2e.mjs — a stale pre-reset/pre-update session is proven rejected
+    // 401, not just asserted). The former SUPABASE_SESSION_INVALIDATION_
+    // GAP_ACKNOWLEDGED bypass flag is removed entirely, not left as a
+    // now-pointless no-op — there is nothing left to acknowledge.
   }
 
   const adminMissing = ADMIN_CRITICAL.filter((k) => !process.env[k]);

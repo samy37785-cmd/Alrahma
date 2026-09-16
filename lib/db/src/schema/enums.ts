@@ -11,10 +11,15 @@ import { pgEnum } from "drizzle-orm/pg-core";
  * (see profiles.ts's trigger comment) — never via signup or client RPC. */
 export const accountRoleEnum = pgEnum("account_role", ["user", "admin"]);
 
+// 'paymob' added by 0032_payment_gateway_add_paymob.sql — a retired,
+// earlier card gateway this product used before Stripe/PayPal; 15 real
+// historical payments records carry it and are migrated as-is, never
+// silently rewritten to another gateway (see that migration's comment).
 export const paymentGatewayEnum = pgEnum("payment_gateway", [
   "stripe",
   "paypal",
   "manual",
+  "paymob",
 ]);
 
 /** A `payments` row is either the charge itself or a refund of one —

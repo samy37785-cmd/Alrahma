@@ -8,8 +8,10 @@
 // Known gaps vs. the Mongo controller (see docs/option-a-mongo-supabase-
 // parity-map.md and data/supabase/loadUser.js's module comment): role is
 // always 'user' or 'admin' (no student/teacher/parent distinction), no
-// gamification/teacher-linking/referral fields, and password changes don't
-// invalidate other existing sessions (no tokenVersion column).
+// gamification/teacher-linking/referral fields. Password changes DO
+// invalidate other existing sessions now (0033_profiles_token_version.sql):
+// updateMe() and resetPassword() below both call the owner-only
+// bump_token_version() RPC whenever a password is actually changed.
 import { asyncHandler } from '../../utils/asyncHandler.js';
 import { handleValidationErrors } from '../../utils/validationHelper.js';
 import { AUTH_COOKIE, authCookieOptions, sendAuth } from '../../utils/authCookie.js';
@@ -171,6 +173,13 @@ export const updateMe = asyncHandler(async (req, res) => {
     if (name) {
       await client.query('SELECT update_own_profile_name($1)', [name]);
     }
+    // Mirrors the Mongo controller's `user.tokenVersion++` on a real
+    // password change (controllers/authController.js) — every session
+    // token issued before this point stops verifying (middleware/auth.js's
+    // protect(), via the `v` claim / tokenVersion comparison).
+    if (newPassword) {
+      await client.query('SELECT bump_token_version()');
+    }
     const r = await client.query('SELECT id, email, name, role FROM profiles WHERE id = $1', [
       req.user._id,
     ]);
@@ -254,6 +263,16 @@ export const resetPassword = asyncHandler(async (req, res) => {
     res.status(updateError.status || 400);
     throw new Error(updateError.message);
   }
+
+  // Mirrors the Mongo controller's `user.tokenVersion++` on a real password
+  // reset (controllers/authController.js) — every session token issued
+  // before this point (this app's own `token` cookie JWT, never GoTrue's
+  // own session) stops verifying (middleware/auth.js's protect()). Scoped
+  // to the just-verified recovery session's own user id — never a
+  // caller-supplied one.
+  await withUserContext(verified.user.id, async (client) => {
+    await client.query('SELECT bump_token_version()');
+  });
 
   // Best-effort: end the recovery session itself so it can't be reused for
   // anything else (updateUser already consumed the one-time token; this

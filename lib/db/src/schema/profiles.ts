@@ -71,6 +71,12 @@ export const profiles = pgTable(
     // Purely relational, not a `role` value (see admin_set_teacher_flag()'s
     // own doc comment, 0018) — set exclusively via that RPC.
     isTeacher: boolean("is_teacher").notNull().default(false),
+    // -- 0033_profiles_token_version.sql --
+    // Mirrors models/User.js's tokenVersion: bumped (only via the owner-
+    // only bump_token_version() RPC, never a raw UPDATE) on password
+    // change/reset so previously-issued session JWTs stop verifying — see
+    // middleware/auth.js's protect() and utils/authCookie.js's `v` claim.
+    tokenVersion: integer("token_version").notNull().default(0),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },

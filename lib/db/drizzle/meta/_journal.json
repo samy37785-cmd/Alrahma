@@ -225,6 +225,20 @@
       "when": 1788912009000,
       "tag": "0031_enrollment_new_status_to_pending",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1788912010000,
+      "tag": "0032_payment_gateway_add_paymob",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1788912011000,
+      "tag": "0033_profiles_token_version",
+      "breakpoints": true
     }
   ]
 }

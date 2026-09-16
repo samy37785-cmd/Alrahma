@@ -1,0 +1,31 @@
+-- Full production cutover, Phase 1 item 2: the real production Mongo
+-- `payments` collection carries 15 historical records with
+-- `gateway: "paymob"` (Paymob was an earlier, since-retired card gateway
+-- for this product, distinct from the current Stripe/PayPal integration
+-- and from the later online-card-payment shutdown). backend/scripts/
+-- migration/mongo-to-supabase.mjs's payments-domain transform() has always
+-- hard-rejected any gateway not in ('stripe','paypal') — see that file's
+-- own header-comment note ("... 'failed=15' for all 15 real payment
+-- records (gateway 'paymob') ...") documenting this as a known, previously
+-- -deferred gap, not a bug nobody noticed. This migration closes it at the
+-- schema level; mongo-to-supabase.mjs's transform() is updated in the same
+-- change to accept 'paymob' and pass it through UNCHANGED (never silently
+-- rewritten to stripe/paypal/manual — these are genuinely different
+-- gateways, and doing so would fabricate payment history that never
+-- happened on the stated gateway).
+--
+-- Purely additive: `payment_gateway` already exists as a Postgres native
+-- ENUM (0000_init_20_table_baseline.sql: 'stripe','paypal','manual').
+-- `ALTER TYPE ... ADD VALUE` appends one more label without touching any
+-- existing row, any existing label, or any other migration file. No data
+-- UPDATE is needed or performed here — the 15 real paymob rows do not
+-- exist in Postgres yet at all; this migration only makes the target
+-- column able to accept the value once the (separately reviewed, already
+-- fixed) migration tooling writes them.
+--
+-- Postgres restriction (informational, not a workaround): a value added by
+-- ALTER TYPE ... ADD VALUE cannot be used in the SAME transaction that
+-- added it. This migration only adds the label; the actual paymob rows are
+-- written by a later, separate mongo-to-supabase.mjs process/transaction,
+-- so this restriction never applies here.
+ALTER TYPE "public"."payment_gateway" ADD VALUE IF NOT EXISTS 'paymob';

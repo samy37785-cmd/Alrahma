@@ -61,18 +61,28 @@
 //      domain's documents genuinely failed transform/validate (only an
 //      uncaught top-level exception set a non-zero exit) -- confirmed for
 //      real: --domain=payments against the actual dump reported
-//      "failed=15" for all 15 real payment records (gateway "paymob" is
-//      not supported by this adapter) yet exited 0, which would have let
-//      a caller checking only the exit code (exactly what
+//      "failed=15" for all 15 real payment records (gateway "paymob" was
+//      not supported by this adapter at the time) yet exited 0, which
+//      would have let a caller checking only the exit code (exactly what
 //      production-import-orchestrator.mjs does) silently treat total data
 //      loss as success. Any domain with failed > 0 now sets a non-zero
 //      exit code.
+//
+//      Corrective revision (full production cutover): the underlying
+//      "gateway 'paymob' not supported" cause of that failed=15 is now
+//      fixed for real -- 0032_payment_gateway_add_paymob.sql widens the
+//      payment_gateway enum, and this file's payments-domain transform()
+//      now accepts and passes 'paymob' through unchanged (never rewritten
+//      to stripe/paypal/manual). Payments is no longer expected to fail or
+//      need deferral; item 3's non-zero-exit-on-failure behavior stays as
+//      a general safety net, not a paymob-specific workaround.
 //   4. New --exclude-domain=<name>[,<name>...] (valid only with
 //      --domain=all) lets a caller run "every domain except N" without
-//      enumerating every other domain by hand -- used by the production
-//      orchestrator's explicit DEFERRED_DOMAINS policy (payments is
-//      DEFERRED_BY_PRODUCT_DECISION this round: not migrated, not
-//      modified, original Mongo data untouched).
+//      enumerating every other domain by hand. production-import-
+//      orchestrator.mjs's own --defer-domains is a separate, later,
+//      explicit-operator-only mechanism (see that file) -- it does NOT
+//      defer anything unless an operator passes it explicitly; no domain
+//      is deferred automatically by either tool.
 //
 // Review round 3 (PR #70, second review pass -- four further fixes, all
 // found by re-reading round 2's own new code, not by inspection alone):
@@ -138,7 +148,7 @@ import { fileURLToPath } from 'node:url';
 import { findLedgerEntry, markPlanned, markCreated, markFailed, contentHashOf } from './lib/source-ledger.mjs';
 import { stableContentHash } from './lib/canonical-hash.mjs';
 import { verifyThenReconcile } from './lib/reconcile.mjs';
-import { resolvePlanSlug, seedCanonicalPlans } from './lib/plan-catalog.mjs';
+import { resolvePlanSlug, seedCanonicalPlans, planSlugToIdForDryRun } from './lib/plan-catalog.mjs';
 import { withImpersonatedAdmin, withImpersonatedAdminContext, ensureMigrationSeedAdmin } from './lib/admin-rpc.mjs';
 import { throwIfFaultStage } from './lib/fault-injection.mjs';
 import { parseStrictCliArgs } from './lib/cli-args.mjs';
@@ -986,7 +996,13 @@ export const DOMAINS = {
       const status = statusMap[doc.status];
       if (!status) throw new Error(`payments row has unmapped status "${doc.status}" — not pending/paid/failed`);
 
-      if (!['stripe', 'paypal'].includes(doc.gateway)) {
+      // 'paymob' (0032_payment_gateway_add_paymob.sql): a retired, earlier
+      // card gateway this product used before Stripe/PayPal — 15 real
+      // historical records carry it. Passed through unchanged below
+      // (`gateway: doc.gateway`), never rewritten to stripe/paypal/manual —
+      // that would fabricate payment history that never happened on the
+      // stated gateway.
+      if (!['stripe', 'paypal', 'paymob'].includes(doc.gateway)) {
         throw new Error(`payments row has unsupported gateway "${doc.gateway}"`);
       }
       if (String(doc.currency ?? 'EUR') !== 'EUR') {
@@ -1078,10 +1094,22 @@ export const DOMAINS = {
       // enum to add 'awaiting_payment'/'paid' between 'contacted' and
       // 'enrolled' — 0025_booking_first_enrollment.sql widened the Postgres
       // CHECK allowlist with the exact same two value names, so both map
-      // straight through with no rename, unlike the pre-existing
-      // pending->'new' rename this map already carried.
+      // straight through with no rename.
+      //
+      // Corrective revision (0031_enrollment_new_status_to_pending.sql):
+      // this map used to rename Mongo's 'pending' to Postgres's 'new' —
+      // that was true of the OLD submit_enrollment_booking() RPC, but
+      // 'new' was always Postgres-only; no Mongo Enrollment document has
+      // ever carried that value (models/Enrollment.js's enum has never
+      // included 'new'). Postgres's canonical vocabulary is now 'pending'
+      // too, so this is a straight-through map, no rename — matching every
+      // other status name here. Also fixed a separate, real gap this same
+      // review found: 'approved' (a genuine Mongo enum value — see
+      // models/Enrollment.js) had no entry at all, so migrating any real
+      // Enrollment document sitting in that state would have thrown
+      // "unmapped status" and aborted the whole domain migration.
       const statusMap = {
-        pending: 'new', contacted: 'contacted', awaiting_payment: 'awaiting_payment',
+        pending: 'pending', approved: 'approved', contacted: 'contacted', awaiting_payment: 'awaiting_payment',
         paid: 'paid', enrolled: 'enrolled', cancelled: 'cancelled',
       };
       const status = statusMap[doc.status];
@@ -1876,7 +1904,11 @@ async function migrateDomain(domainName, { dryRun, resetCheckpoint, pgClient }) 
   const ctx = { pgClient, userEmailMap: domain.needsUserMap ? await loadUserEmailMap() : null };
   if (domain.needsPlanCatalog) {
     if (!dryRun) await ensureMigrationSeedAdmin(pgClient);
-    ctx.planSlugToId = dryRun ? null : await seedCanonicalPlans(pgClient, { withImpersonatedAdmin });
+    // Corrective fix: dry-run used to pass null here, making every
+    // plan-bearing row an unconditional false-negative failure regardless
+    // of whether it would actually resolve under --execute (see
+    // planSlugToIdForDryRun()'s own comment). Read-only, never writes.
+    ctx.planSlugToId = dryRun ? await planSlugToIdForDryRun(pgClient) : await seedCanonicalPlans(pgClient, { withImpersonatedAdmin });
     ctx.resolvePlanSlug = resolvePlanSlug;
   }
 

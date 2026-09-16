@@ -317,24 +317,24 @@ async function countGhostLedgerComposite(pgClient, table, spec) {
 // default-exclusion list -- it is purely an optional canned-reason
 // lookup, used ONLY to make the saga log more informative when an
 // operator happens to defer a domain this file already has a reason on
-// file for (currently: payments, real records use gateway "paymob",
-// unsupported by mongo-to-supabase.mjs's payments adapter). Deferring any
-// OTHER domain works identically, just without a canned reason.
+// file for. Deferring any domain works identically, with or without a
+// canned reason.
 //
 // Without --defer-domains at all, runImport() below ALWAYS preflights the
 // full, unmodified domain set with a real --dry-run BEFORE any --execute
 // write is attempted (see runImport()'s own comment) -- so a domain that
-// would genuinely fail (payments, today) fails the WHOLE run closed
-// before a single row is written anywhere, rather than 26 domains
-// succeeding and only the last one silently or belatedly failing. This is
-// what makes "fail closed before writes" a real, general property that
-// does not depend on payments being named anywhere in this file at all.
-const DEFERRED_DOMAIN_REASONS = {
-  payments:
-    'real records use gateway "paymob", not supported by mongo-to-supabase.mjs\'s ' +
-    'payments adapter (stripe/paypal only). Not migrated, not modified; original ' +
-    'Mongo data untouched.',
-};
+// would genuinely fail fails the WHOLE run closed before a single row is
+// written anywhere, rather than 26 domains succeeding and only the last
+// one silently or belatedly failing. This is what makes "fail closed
+// before writes" a real, general property that does not depend on any
+// specific domain being named in this file at all.
+// Full production cutover: payments' former canned reason here ("gateway
+// 'paymob' not supported") is removed -- 0032_payment_gateway_add_paymob
+// .sql + mongo-to-supabase.mjs's payments-domain transform() fix (see that
+// file's own changelog) mean payments has no known reason to be deferred
+// any more. This map is intentionally empty; a real reason is added back
+// only if a genuinely new, documented blocker is found for some domain.
+const DEFERRED_DOMAIN_REASONS = {};
 
 function fail(msg) {
   throw new Error(`[orchestrator] ${msg}`);

@@ -7,17 +7,22 @@ import { fileURLToPath } from 'node:url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const backendRoot = path.join(__dirname, '..');
 
-// Auth hardening security batch, task item 6: under DATA_BACKEND=supabase,
-// a regular user's password change/reset does not invalidate that user's
-// other already-issued session cookies (no tokenVersion equivalent in the
-// Postgres schema — see middleware/auth.js's own comment and
-// config/validateEnv.js's new gate). Closing this for real is a schema/
-// migration decision out of this batch's unilateral scope (see
-// validateEnv.js's comment for why), so instead this proves the documented
-// BLOCKER actually blocks: config/validateEnv() must refuse to let the
-// process start with DATA_BACKEND=supabase in NODE_ENV=production unless
-// explicitly acknowledged, so an accidental real Supabase production
-// cutover cannot happen silently while this gap stands.
+// Full production cutover: the gap this gate used to block on — under
+// DATA_BACKEND=supabase, a password change/reset did not invalidate a
+// user's other already-issued session cookies (no tokenVersion equivalent
+// in the Postgres schema) — is closed for real
+// (0033_profiles_token_version.sql: profiles.token_version, bumped by the
+// owner-only bump_token_version() RPC from data/supabase/authController.js
+// 's updateMe()/resetPassword(), read by data/supabase/loadUser.js instead
+// of the old hardcoded tokenVersion: 0). The real, end-to-end proof that a
+// stale session is actually rejected after a password change/reset lives
+// in backend/scripts/migration/rehearsal-password-reset-e2e.mjs (needs a
+// real local GoTrue instance, so it isn't part of this fast unit suite).
+// This file now proves the NEGATIVE: the former hard production gate
+// (config/validateEnv.js's SUPABASE_SESSION_INVALIDATION_GAP_ACKNOWLEDGED
+// check) is gone — DATA_BACKEND=supabase in NODE_ENV=production is no
+// longer blocked by this specific, now-fixed gap, with no acknowledgment
+// flag required or recognized.
 //
 // validateEnv() calls process.exit(1) on failure — cannot be called
 // in-process here without killing the test runner, so this spawns a real
@@ -52,31 +57,24 @@ function runValidateEnv(env) {
   });
 }
 
-test('DATA_BACKEND=supabase + NODE_ENV=production, unacknowledged: process exits non-zero (blocked)', () => {
+test('DATA_BACKEND=supabase + NODE_ENV=production: no longer blocked — the session-invalidation gap this gate existed for is closed', () => {
   const res = runValidateEnv({ DATA_BACKEND: 'supabase', NODE_ENV: 'production' });
-  assert.notEqual(res.status, 0, 'expected a non-zero exit code (blocked)');
-  assert.doesNotMatch(res.stdout, /SURVIVED/);
-});
-
-test('DATA_BACKEND=supabase + NODE_ENV=production, explicitly acknowledged: process survives validateEnv()', () => {
-  const res = runValidateEnv({
-    DATA_BACKEND: 'supabase',
-    NODE_ENV: 'production',
-    SUPABASE_SESSION_INVALIDATION_GAP_ACKNOWLEDGED: 'true',
-  });
   assert.equal(res.status, 0);
   assert.match(res.stdout, /SURVIVED/);
 });
 
-test('DATA_BACKEND=supabase + NODE_ENV!=production (local/dev/test/CI): never blocked, acknowledgment not required', () => {
-  for (const nodeEnv of ['development', 'test', undefined]) {
-    const res = runValidateEnv({ DATA_BACKEND: 'supabase', ...(nodeEnv ? { NODE_ENV: nodeEnv } : {}) });
-    assert.equal(res.status, 0, `NODE_ENV=${nodeEnv} must not be blocked`);
-    assert.match(res.stdout, /SURVIVED/);
-  }
+test('the former SUPABASE_SESSION_INVALIDATION_GAP_ACKNOWLEDGED bypass flag has no effect either way — nothing left to acknowledge', () => {
+  const withFlag = runValidateEnv({
+    DATA_BACKEND: 'supabase',
+    NODE_ENV: 'production',
+    SUPABASE_SESSION_INVALIDATION_GAP_ACKNOWLEDGED: 'true',
+  });
+  const withoutFlag = runValidateEnv({ DATA_BACKEND: 'supabase', NODE_ENV: 'production' });
+  assert.equal(withFlag.status, 0);
+  assert.equal(withoutFlag.status, 0);
 });
 
-test('DATA_BACKEND=mongodb (the default/production backend) is never affected by this gate, in any NODE_ENV', () => {
+test('DATA_BACKEND=mongodb (the default/production backend) was never affected by this gate, in any NODE_ENV', () => {
   const res = runValidateEnv({ DATA_BACKEND: 'mongodb', NODE_ENV: 'production' });
   assert.equal(res.status, 0);
   assert.match(res.stdout, /SURVIVED/);

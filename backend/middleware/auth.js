@@ -3,10 +3,9 @@ import User from '../models/User.js';
 import { isSupabaseBackend } from '../config/dataBackend.js';
 import { loadUserById } from '../data/supabase/loadUser.js';
 
-// DATA_BACKEND=supabase has no tokenVersion column (see data/supabase/
-// loadUser.js) — sessions aren't invalidated on password change under that
-// backend, so the version check is skipped rather than compared against a
-// value that doesn't exist.
+// DATA_BACKEND=supabase reads a real profiles.token_version column now
+// (0033_profiles_token_version.sql, see data/supabase/loadUser.js) — the
+// tokenVersion check below applies identically to both backends.
 async function findUserById(id) {
   if (isSupabaseBackend()) return loadUserById(id);
   return User.findById(id).select('-password');
@@ -40,9 +39,8 @@ async function _loadUser(req, res) {
       res.status(401).json({ message: 'User no longer exists' });
       return null;
     }
-    // Reject tokens issued before a password change (tokenVersion mismatch).
-    // Always matches under supabase mode (see findUserById) since there's no
-    // tokenVersion column to compare against there.
+    // Reject tokens issued before a password change (tokenVersion
+    // mismatch) — enforced identically under both backends.
     if ((decoded.v ?? 0) !== (user.tokenVersion ?? 0)) {
       res.status(401).json({ message: 'Session expired — please log in again' });
       return null;

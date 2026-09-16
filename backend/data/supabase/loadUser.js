@@ -21,10 +21,14 @@
 //     (Supabase Auth's identity linking replaces it entirely; a Google-
 //     authenticated account's own auth.users id is the identity, there is
 //     nothing further to expose).
-//   - tokenVersion has no Postgres column, so a supabase-mode account's
-//     existing sessions are NOT invalidated on password change/reset the way
-//     Mongo's are. protect()/softProtect() skip the version check entirely
-//     for supabase-backed tokens (see middleware/auth.js).
+//   - tokenVersion parity closed (0033_profiles_token_version.sql):
+//     profiles.token_version is bumped by the owner-only bump_token_
+//     version() RPC from authController.js's updateMe()/resetPassword() on
+//     every real password change/reset, and read below like every other
+//     column — protect()'s existing, backend-agnostic `decoded.v !==
+//     user.tokenVersion` check (middleware/auth.js) now actually enforces
+//     session invalidation under this backend too, with no changes needed
+//     there.
 import { withUserContext } from './client.js';
 
 // Same logic as models/User.js's hasActiveSubscription() instance method,
@@ -46,7 +50,7 @@ export async function loadUserById(id) {
     const profileRes = await client.query(
       `SELECT id, email, name, role, referral_code, xp, level, streak, last_study_date,
               badges, teacher_id, parent_link_code, family_name, specialization, bio,
-              gender, languages, subjects
+              gender, languages, subjects, token_version
          FROM profiles WHERE id = $1`,
       [id]
     );
@@ -97,7 +101,7 @@ export async function loadUserById(id) {
       subjects: profile.subjects ?? [],
       googleId: null,
       referralCode: profile.referral_code,
-      tokenVersion: 0,
+      tokenVersion: profile.token_version,
     };
     // Bound method so existing call sites (req.user.hasActiveSubscription())
     // keep working unchanged under this backend too.

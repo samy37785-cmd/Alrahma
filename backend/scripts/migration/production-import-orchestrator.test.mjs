@@ -155,13 +155,20 @@ async function main() {
     assert.deepEqual(deferred, []);
   });
 
-  await test('computeDomainWorkerPlan defers exactly the domain(s) the operator names, with a canned reason for a known one', () => {
+  // Full production cutover: payments' former canned reason (gateway
+  // "paymob" unsupported) is gone -- 0032_payment_gateway_add_paymob.sql +
+  // mongo-to-supabase.mjs's transform() fix closed that gap for real, so
+  // DEFERRED_DOMAIN_REASONS is now intentionally empty and 'payments'
+  // behaves exactly like any other domain: deferrable if an operator ever
+  // explicitly names it, but with no canned reason on file, since there is
+  // no longer a known reason to defer it.
+  await test('computeDomainWorkerPlan defers exactly the domain(s) the operator names, with no canned reason for payments any more', () => {
     const result = computeDomainWorkerPlan({ deferDomains: ['payments'] });
     assert.equal(result.excludeArg, 'payments');
     assert.equal(result.deferred.length, 1);
     assert.equal(result.deferred[0].domain, 'payments');
     assert.match(result.deferred[0].reason, /DEFERRED_BY_OPERATOR/);
-    assert.match(result.deferred[0].reason, /paymob/);
+    assert.match(result.deferred[0].reason, /no canned reason on file/);
   });
 
   await test('computeDomainWorkerPlan can defer a domain with no canned reason on file, without rejecting it', () => {

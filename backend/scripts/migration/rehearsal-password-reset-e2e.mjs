@@ -142,6 +142,20 @@ async function main() {
   check('garbage token rejected with 400', badRes.status === 400);
   check('garbage-token error message is generic (no stack/detail leak)', badRes.body?.message === 'Reset link is invalid or has expired');
 
+  // --- Session-invalidation baseline (0033_profiles_token_version.sql):
+  // capture a REAL, currently-working session cookie from BEFORE the reset,
+  // by logging in with the still-current old password — this is the exact
+  // stale token an attacker who stole a cookie before the legitimate
+  // owner's reset would be holding. ---
+  const { agent: staleAgent, csrfToken: staleCsrf } = await csrfAgent(app);
+  const staleLoginRes = await staleAgent
+    .post('/api/auth/login')
+    .set('x-csrf-token', staleCsrf)
+    .send({ email, password: oldPassword });
+  check('pre-reset login (to capture a stale session) succeeds (200)', staleLoginRes.status === 200);
+  const preResetMeRes = await staleAgent.get('/api/auth/me');
+  check('sanity: the pre-reset session works on a protected route BEFORE the reset', preResetMeRes.status === 200);
+
   // --- Real reset with the real token ---
   const { agent: rpAgent, csrfToken: rpCsrf } = await csrfAgent(app);
   const rpRes = await rpAgent
@@ -149,6 +163,14 @@ async function main() {
     .set('x-csrf-token', rpCsrf)
     .send({ token, password: newPassword });
   check('reset-password with the real recovery token succeeds (200)', rpRes.status === 200);
+
+  // --- THE FIX: the stale, pre-reset session cookie must now be rejected —
+  // this is the real, previously-missing Supabase-mode behavior
+  // (backend/config/validateEnv.js's SUPABASE_SESSION_INVALIDATION_GAP_
+  // ACKNOWLEDGED gate existed because this used to silently keep working). ---
+  const staleMeRes = await staleAgent.get('/api/auth/me');
+  check('THE FIX: the stale pre-reset session is rejected (401) after the password reset', staleMeRes.status === 401);
+  check('THE FIX: the rejection reason is a real tokenVersion mismatch, not an unrelated auth failure', staleMeRes.body?.message === 'Session expired — please log in again');
 
   // --- Old password now rejected ---
   const { agent: oldLoginAgent, csrfToken: oldCsrf } = await csrfAgent(app);
@@ -184,6 +206,38 @@ async function main() {
     .set('x-csrf-token', finalCsrf)
     .send({ email, password: newPassword });
   check('post-replay-attempt, the legitimate new password still works', finalRes.status === 200);
+
+  // --- Session-invalidation via PUT /api/auth/me (updateMe()'s own
+  // password-change path, separate code path from reset-password above —
+  // both call bump_token_version(), both must be proven independently). A
+  // SEPARATE session, captured before this change, is the one checked
+  // afterward — isolates "does changing a password invalidate OTHER
+  // sessions" from any self-invalidation nuance of the session that made
+  // the change itself. ---
+  const finalPassword = 'FinalPassw0rd!999';
+  const { agent: otherSessionAgent, csrfToken: otherCsrf } = await csrfAgent(app);
+  const otherLoginRes = await otherSessionAgent
+    .post('/api/auth/login')
+    .set('x-csrf-token', otherCsrf)
+    .send({ email, password: newPassword });
+  check('a second, independent session logs in successfully before the updateMe() change', otherLoginRes.status === 200);
+  const preUpdateMeRes = await otherSessionAgent.get('/api/auth/me');
+  check('sanity: the second session works BEFORE the updateMe() password change', preUpdateMeRes.status === 200);
+
+  const { agent: updateAgent, csrfToken: updateCsrf } = await csrfAgent(app);
+  const updateLoginRes = await updateAgent
+    .post('/api/auth/login')
+    .set('x-csrf-token', updateCsrf)
+    .send({ email, password: newPassword });
+  check('a third session (the one performing the change) logs in successfully', updateLoginRes.status === 200);
+  const updateMeRes = await updateAgent
+    .put('/api/auth/me')
+    .set('x-csrf-token', updateCsrf)
+    .send({ currentPassword: newPassword, newPassword: finalPassword });
+  check('PUT /api/auth/me with a valid currentPassword changes the password (200)', updateMeRes.status === 200);
+
+  const postUpdateMeRes = await otherSessionAgent.get('/api/auth/me');
+  check('THE FIX (updateMe path): the OTHER, independent session is rejected (401) after the password change via PUT /api/auth/me', postUpdateMeRes.status === 401);
 
   await pool.end();
 

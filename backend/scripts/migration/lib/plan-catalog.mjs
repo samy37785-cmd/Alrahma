@@ -24,6 +24,37 @@ export function resolvePlanSlug(mongoPlanName) {
 }
 
 /**
+ * Full production cutover fix: a real dry-run preflight against a target
+ * where the canonical plans have not been seeded yet used to ALWAYS report
+ * every plan-bearing payments/enrollments row as failed ("does not resolve
+ * to a known plan slug") — dry-run passed `null` for the whole
+ * planSlugToId map (never running the real, write-performing
+ * seedCanonicalPlans()), and `null?.has(slug)` is always falsy, so the
+ * check `!ctx.planSlugToId?.has(slug)` was unconditionally true regardless
+ * of whether the plan would actually resolve once --execute's own
+ * seedCanonicalPlans() ran. This made dry-run a false-negative preflight
+ * for these two domains specifically — the one thing production-import-
+ * orchestrator.mjs's whole "fail closed via a real --dry-run BEFORE any
+ * --execute write" design depends on being accurate.
+ *
+ * Read-only: never writes. For each canonical plan, uses the real active
+ * row's id if one already exists (harmless SELECT), or a synthetic
+ * placeholder UUID otherwise — dry-run only logs `wouldMigrate`/`would
+ * upsert` messages with this id, it is never persisted, so a placeholder
+ * is exactly as informative as a real one for what dry-run needs to prove:
+ * "this row's plan WILL resolve once seedCanonicalPlans() actually runs
+ * under --execute."
+ */
+export async function planSlugToIdForDryRun(pgClient) {
+  const slugToId = new Map();
+  for (const plan of CANONICAL_PLANS) {
+    const existing = await pgClient.query('SELECT id FROM plans WHERE slug = $1 AND active = true', [plan.slug]);
+    slugToId.set(plan.slug, existing.rows[0]?.id ?? `00000000-0000-4000-8000-dryrun00000${CANONICAL_PLANS.indexOf(plan)}`);
+  }
+  return slugToId;
+}
+
+/**
  * Seeds the canonical plan catalog via the real create_plan_version() RPC
  * (the only INSERT path plans.ts's RLS allows) — deterministic and
  * idempotent: a plan whose slug already has an active row is left alone.

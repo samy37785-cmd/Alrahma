@@ -1,9 +1,20 @@
-// Admin-router (DATA_BACKEND=supabase) controller for certificate issuance/
-// revocation. issue_certificate()/revoke_certificate() (lib/db/drizzle/
-// 0015_new_domains_rls.sql) already enforce is_admin_aal2() +
-// authorize('certificates:write') AND write their own admin_audit_log row —
-// this controller is a thin HTTP wrapper, matching routes/v1/admin/
-// certificatesRoutes.js's contract (POST / , DELETE /:id).
+// Admin-router (DATA_BACKEND=supabase) controller for certificate
+// listing/issuance/revocation. issue_certificate()/revoke_certificate()
+// (lib/db/drizzle/0015_new_domains_rls.sql) already enforce
+// is_admin_aal2() + authorize('certificates:write') AND write their own
+// admin_audit_log row — the mutation wrappers below are thin HTTP
+// wrappers, matching routes/v1/admin/certificatesRoutes.js's contract
+// (GET /, POST /, DELETE /:id).
+//
+// Production-readiness audit follow-up (2026-09-17): `list` is new. GET
+// /api/v1/admin/certificates was previously unreachable under
+// DATA_BACKEND=supabase at all (certificatesRouter in adminRoutes.js only
+// had POST/DELETE) — a real, live gap: AdminProgressModal.jsx's
+// listCertificates(userId) is a real active consumer of this exact route.
+// certificates_select_own_non_revoked_or_admin (0015_new_domains_rls.sql)
+// already grants admin SELECT (is_admin(), AAL1, no new migration needed)
+// — this was a missing adapter, not a missing DB capability, same shape as
+// the trials/subscribers gap closed earlier in this same pass.
 import { asyncHandler } from '../../../utils/asyncHandler.js';
 import { withUserContext } from '../client.js';
 
@@ -15,14 +26,38 @@ function toJson(row) {
     studentName: row.student_name,
     type: row.type,
     title: row.title,
-    course: row.course_id,
+    course: row.course_id ? { _id: row.course_id, title: row.course_title } : null,
     issuedBy: row.issued_by,
     grade: row.grade,
     notes: row.notes,
     issuedAt: row.issued_at,
     revoked: row.revoked,
+    createdAt: row.created_at,
   };
 }
+
+// @route GET /api/v1/admin/certificates?userId=...
+// Mirrors controllers/certificateController.js's listCertificates exactly:
+// admin sees every certificate (including revoked), optionally scoped to
+// one student.
+export const list = asyncHandler(async (req, res) => {
+  const rows = await withUserContext(req.adminUser.id, async (client) => {
+    const r = req.query.userId
+      ? await client.query(
+          `SELECT c.*, co.title AS course_title FROM certificates c
+             LEFT JOIN courses co ON co.id = c.course_id
+            WHERE c.user_id = $1 ORDER BY c.issued_at DESC`,
+          [req.query.userId]
+        )
+      : await client.query(
+          `SELECT c.*, co.title AS course_title FROM certificates c
+             LEFT JOIN courses co ON co.id = c.course_id
+            ORDER BY c.issued_at DESC`
+        );
+    return r.rows;
+  });
+  res.json(rows.map(toJson));
+});
 
 // @route POST /api/v1/admin/certificates
 export const issueCertificate = asyncHandler(async (req, res) => {

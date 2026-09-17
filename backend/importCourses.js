@@ -1,10 +1,18 @@
-// Imports courses into MongoDB using the frontend's data.js as the single
-// source of truth. Clears existing courses first to avoid duplicates.
-// Run with:  npm run import:courses
+// Imports courses into MongoDB using the frontend's marketing course data as
+// the single source of truth. Clears existing courses first to avoid
+// duplicates. Run with:  npm run import:courses
+//
+// Production-readiness audit follow-up (2026-09-17): the import path this
+// pointed at (../src/data.js) hasn't existed since the frontend moved under
+// artifacts/al-rahma-academy — this would have thrown ERR_MODULE_NOT_FOUND
+// if actually run. Fixed to point at the real current source. Unmounted
+// standalone dev-tooling script (no live route ever imports this file), so
+// this was never a runtime/security exposure — only a broken `npm run
+// import:courses` invocation.
 import dotenv from 'dotenv';
 import connectDB from './config/db.js';
 import Course from './models/Course.js';
-import { courses as siteCourses } from '../src/data.js';
+import { courses as siteCourses } from '../artifacts/al-rahma-academy/src/data/marketing/courses.js';
 
 dotenv.config();
 

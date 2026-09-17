@@ -24,6 +24,7 @@ import AdminCommunityTab from '../components/features/admin/AdminCommunityTab';
 import AdminProgressModal from '../components/features/admin/AdminProgressModal';
 import DashboardLayout    from '../components/layout/DashboardLayout';
 import { DsAreaChart, DsChartEmpty } from '../components/ui/DsChart';
+import { FEATURES } from '../config/featureFlags';
 
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
@@ -137,7 +138,9 @@ const TABS = [
   { key: 'newsletter',  label: 'Newsletter',  Icon: Mail },
   { key: 'classes',     label: 'Classes',     Icon: CalendarDays },
   { key: 'reviews',     label: 'Reviews',     Icon: Star },
-  { key: 'community',   label: 'Community',   Icon: Users2 },
+  // Production-readiness audit follow-up (2026-09-17): no backend exists
+  // for community moderation on either data backend — see featureFlags.js.
+  ...(FEATURES.community ? [{ key: 'community', label: 'Community', Icon: Users2 }] : []),
 ];
 
 export default function AdminDashboard() {
@@ -153,8 +156,8 @@ export default function AdminDashboard() {
   const { data: subscribers = [], isLoading: l4, isError: e4 } = useQuery({ queryKey: ['admin', 'newsletter'],  queryFn: getSubscribers,                      staleTime: 300000 });
   const { data: usersRes, isLoading: l5, isError: e5 }         = useQuery({ queryKey: ['admin', 'users'],       queryFn: getUsers,                            staleTime: 60000  });
   const { data: reviewsRes, isLoading: l7, isError: e6 }       = useQuery({ queryKey: ['admin', 'reviews'],     queryFn: getAdminReviews,                     staleTime: 60000  });
-  const { data: communityPostsRes, isLoading: l8, isError: e7 }    = useQuery({ queryKey: ['admin', 'community-posts'],    queryFn: getAdminPosts,    staleTime: 60000  });
-  const { data: communityCommentsRes, isLoading: l9, isError: e8 } = useQuery({ queryKey: ['admin', 'community-comments'], queryFn: getAdminComments, staleTime: 60000  });
+  const { data: communityPostsRes, isLoading: l8, isError: e7 }    = useQuery({ queryKey: ['admin', 'community-posts'],    queryFn: getAdminPosts,    staleTime: 60000, enabled: FEATURES.community  });
+  const { data: communityCommentsRes, isLoading: l9, isError: e8 } = useQuery({ queryKey: ['admin', 'community-comments'], queryFn: getAdminComments, staleTime: 60000, enabled: FEATURES.community  });
   const { data: bookingsRes, isLoading: l10, isError: e9 }         = useQuery({ queryKey: ['admin', 'bookings'],  queryFn: getEnrollments,                      staleTime: 30000  });
 
   // Surfaces a failed data load (most commonly a 403 for an AdminUser role

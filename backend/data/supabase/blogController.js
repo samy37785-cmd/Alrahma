@@ -76,6 +76,20 @@ export const listPosts = asyncHandler(async (req, res) => {
 // @route  GET /api/blog/:slug
 // @access Public
 export const getPost = asyncHandler(async (req, res) => {
+  // Production-readiness audit follow-up (2026-09-17): the view-count
+  // increment gap this function used to document is closed via
+  // increment_blog_view() (lib/db/drizzle/0034_blog_view_increment.sql) —
+  // a narrowly-scoped SECURITY DEFINER RPC granted to anon that does
+  // exactly one thing (increment views by 1 on a published post matched by
+  // slug) and returns only the new count, never bypassing RLS the way
+  // withServiceRole() would have. Matches controllers/blogController.js's
+  // atomic findOneAndUpdate($inc) semantics: called first, so the response
+  // always reflects the count including this very read, same as Mongo.
+  const newViews = await withAnonContext(async (client) => {
+    const r = await client.query('SELECT public.increment_blog_view($1) AS views', [req.params.slug]);
+    return r.rows[0]?.views ?? null;
+  });
+
   const post = await withAnonContext(async (client) => {
     const r = await client.query(
       `SELECT id, title, slug, content, excerpt, category, tags, author_name,
@@ -89,18 +103,8 @@ export const getPost = asyncHandler(async (req, res) => {
   });
 
   if (!post) return res.status(404).json({ message: 'Post not found' });
+  if (newViews !== null) post.views = newViews;
 
-  // KNOWN GAP: the Mongo controller increments `views` on every read
-  // (findOneAndUpdate with $inc). That cannot be reproduced here: anon's
-  // only grant on `blogs` is SELECT (0002_rls.sql /
-  // 0004_privilege_reconciliation.sql: `grant select on public.plans,
-  // public.blogs, public.testimonials to anon`) — there is no UPDATE grant
-  // to anon at all, and this isn't an admin/AAL2 action either (it's a
-  // public visitor action). There is therefore no RLS-legitimate way for
-  // this request to increment the counter. Reaching for withServiceRole
-  // here would bypass RLS for a public visitor action the schema author did
-  // not grant — exactly what client.js's module comment warns against — so
-  // the view count is simply not incremented under DATA_BACKEND=supabase.
   res.json({
     post: {
       _id: post.id,

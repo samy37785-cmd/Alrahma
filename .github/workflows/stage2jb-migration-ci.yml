@@ -173,6 +173,27 @@ jobs:
         working-directory: backend
         run: npm test
 
+      # Production-readiness audit follow-up (2026-09-17): the plain `npm
+      # test` step above runs this file too, but every test in it is
+      # skip-gated behind LIVE_CLASSES_PG_INTEGRATION=1 (same opt-in
+      # convention as tests/contract/supabase-adapter.contract.test.js) so a
+      # plain checkout without Docker still gets a fast, green `npm test`.
+      # That means the ONE thing actually proving the Supabase live-classes
+      # authorization boundary against real Postgres (not a mocked client)
+      # was reachable locally but never actually exercised anywhere
+      # automated -- exactly the kind of gap that lets a real regression
+      # back in unnoticed. This step runs it for real: a genuine disposable
+      # Postgres container (ubuntu-latest ships Docker already), the real
+      # lib/db/drizzle schema, the real Express app, real HTTP requests. No
+      # secret of any kind is used or required -- the container's own
+      # Postgres password is randomly generated inside the test file itself
+      # and never leaves localhost.
+      - name: Live Classes Supabase authorization -- real Postgres integration test (Docker)
+        working-directory: backend
+        env:
+          LIVE_CLASSES_PG_INTEGRATION: '1'
+        run: node --test tests/supabase-live-classes-real-integration.test.js
+
       - name: Migration targeted tests (disposable Docker Mongo/Postgres only, no real credentials)
         working-directory: backend
         run: npm run test:migration

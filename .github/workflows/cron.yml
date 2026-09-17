@@ -1,0 +1,104 @@
+name: Scheduled backend jobs
+
+# Production-readiness audit follow-up (2026-09-17): backend/routes/
+# cronRoutes.js (and its Supabase mirror) has always implemented and
+# CRON_SECRET-protected three jobs — renewal reminders, weekly parent
+# reports, and retry-failed-emails (the email-outbox retry mechanism
+# createEnrollment's booking-notification path relies on) — but nothing in
+# this repository ever actually triggered them on a schedule in production.
+# A stale comment in .migration-backup/render.yaml claimed this exact file
+# already existed; it did not. This is that file, created for real.
+#
+# What this workflow does NOT do, by construction:
+#   - It never runs against anything but the already-deployed backend's
+#     public HTTPS URL (secrets.CRON_BASE_URL) — no build, no deploy, no
+#     database access, no repository code executes here at all beyond a
+#     plain `curl`.
+#   - It never prints CRON_SECRET. The bearer token is passed to curl via
+#     a shell variable sourced from `secrets.CRON_SECRET` and is also
+#     registered with `::add-mask::` so even an accidental echo would be
+#     redacted in the log; curl runs with `-sS` (silent but show errors),
+#     never `-v`/`--trace`, so the Authorization header itself is never
+#     logged.
+#   - It fails loudly (job failure, not a silently-skipped step) if
+#     CRON_BASE_URL or CRON_SECRET is not configured as a repository
+#     secret — see the "secrets configured" guard step below.
+#   - It never triggers on push/pull_request — schedule and
+#     workflow_dispatch (manual run) only.
+on:
+  schedule:
+    # Renewal reminders — daily at 09:00 UTC.
+    - cron: '0 9 * * *'
+    # Weekly parent reports — Sundays at 08:00 UTC.
+    - cron: '0 8 * * 0'
+    # Email-outbox retry — every 15 minutes. This is the job the
+    # production-readiness audit specifically flagged: a failed admin
+    # booking-notification email (backend/models/EmailOutbox.js) stays
+    # failed indefinitely without a real, frequent retry trigger.
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+    inputs:
+      job:
+        description: 'Which job to run manually (defaults to all three)'
+        type: choice
+        options: [all, renewal-reminders, weekly-parent-reports, retry-failed-emails]
+        default: all
+
+permissions:
+  contents: read
+
+concurrency:
+  group: scheduled-backend-jobs
+  cancel-in-progress: false
+
+jobs:
+  run:
+    name: Call scheduled cron endpoint(s)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Verify required secrets are configured (fail loudly, not silently)
+        run: |
+          if [ -z "${{ secrets.CRON_BASE_URL }}" ]; then
+            echo "::error::CRON_BASE_URL repository secret is not configured — this workflow cannot run without the deployed backend's base URL."
+            exit 1
+          fi
+          if [ -z "${{ secrets.CRON_SECRET }}" ]; then
+            echo "::error::CRON_SECRET repository secret is not configured — it must match the backend's own CRON_SECRET env var."
+            exit 1
+          fi
+
+      # Registers the secret as a masked value up front, defense-in-depth
+      # against it ever appearing in a later step's output.
+      - name: Mask secret
+        run: echo "::add-mask::${{ secrets.CRON_SECRET }}"
+
+      - name: renewal-reminders
+        if: github.event.schedule == '0 9 * * *' || github.event.inputs.job == 'all' || github.event.inputs.job == 'renewal-reminders'
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          CRON_BASE_URL: ${{ secrets.CRON_BASE_URL }}
+        run: |
+          curl -sS -f -X GET "$CRON_BASE_URL/api/cron/renewal-reminders" \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            -o /dev/null -w 'HTTP %{http_code}\n'
+
+      - name: weekly-parent-reports
+        if: github.event.schedule == '0 8 * * 0' || github.event.inputs.job == 'all' || github.event.inputs.job == 'weekly-parent-reports'
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          CRON_BASE_URL: ${{ secrets.CRON_BASE_URL }}
+        run: |
+          curl -sS -f -X GET "$CRON_BASE_URL/api/cron/weekly-parent-reports" \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            -o /dev/null -w 'HTTP %{http_code}\n'
+
+      - name: retry-failed-emails
+        if: github.event.schedule == '*/15 * * * *' || github.event.inputs.job == 'all' || github.event.inputs.job == 'retry-failed-emails'
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          CRON_BASE_URL: ${{ secrets.CRON_BASE_URL }}
+        run: |
+          curl -sS -f -X GET "$CRON_BASE_URL/api/cron/retry-failed-emails" \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            -o /dev/null -w 'HTTP %{http_code}\n'

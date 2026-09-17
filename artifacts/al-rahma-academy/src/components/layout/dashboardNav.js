@@ -1,4 +1,5 @@
 import { site } from '../../data/site';
+import { FEATURES } from '../../config/featureFlags';
 import {
   LayoutDashboard, MessageSquare, Users, BookOpen, CalendarCheck, Target, UserCog, Book, User, ExternalLink, Calendar, Heart, Sparkles, Users2, MessageCircle,
 } from 'lucide-react';
@@ -30,12 +31,12 @@ export function navFor(isAdmin, unreadCount) {
     { to: '/dashboard', icon: LayoutDashboard, labelKey: 'dashboard', end: true },
     { section: 'learning' },
     { to: '/tools/quran-reader', icon: Book,        labelKey: 'quranReader' },
-    { to: '/ai-tutor',           icon: Sparkles,      labelKey: 'aiTutor' },
+    ...(FEATURES.aiTutor ? [{ to: '/ai-tutor', icon: Sparkles, labelKey: 'aiTutor' }] : []),
     { to: '/calendar',           icon: Calendar,     labelKey: 'mySchedule' },
     { to: '/wishlist',           icon: Heart,         labelKey: 'wishlist' },
     { section: 'community' },
     { to: '/messages',  icon: MessageSquare, labelKey: 'messages',  badge: unreadCount || 0 },
-    { to: '/community', icon: Users2,        labelKey: 'community' },
+    ...(FEATURES.community ? [{ to: '/community', icon: Users2, labelKey: 'community' }] : []),
     { section: 'account' },
     { to: '/profile', icon: User,        labelKey: 'profile' },
     { section: 'help' },

@@ -1,11 +1,15 @@
 // Updates the `resources` field of existing course documents IN PLACE,
-// matching by title, using the links defined in the frontend's data.js.
-// Nothing is deleted — only the resources array is set.
+// matching by title, using the links defined in the frontend's marketing
+// course data. Nothing is deleted — only the resources array is set.
 // Run with:  npm run update:resources
+//
+// Production-readiness audit follow-up (2026-09-17): same broken import
+// path as importCourses.js (see its header comment) — fixed to point at
+// the real current source.
 import dotenv from 'dotenv';
 import connectDB from './config/db.js';
 import Course from './models/Course.js';
-import { courses as siteCourses } from '../src/data.js';
+import { courses as siteCourses } from '../artifacts/al-rahma-academy/src/data/marketing/courses.js';
 
 dotenv.config();
 

@@ -7,7 +7,6 @@ import { sanitizeMongo }     from '../../../middleware/sanitizeMongo.js';
 import { verifyAccessToken } from '../../../middleware/adminAuth.js';
 import { maintenanceGuard }  from '../../../middleware/maintenanceGuard.js';
 import { isSupabaseBackend } from '../../../config/dataBackend.js';
-import { backendNotImplemented } from '../../../middleware/backendNotImplemented.js';
 
 import authRoutes         from './authRoutes.js';
 import supabaseAuthRoutes from '../../../data/supabase/routes/adminAuthRoutes.js';
@@ -41,6 +40,8 @@ import supabaseSystemAdminRoutes from '../../../data/supabase/admin/systemAdminR
 import supabasePaymentsAdminRoutes from '../../../data/supabase/admin/paymentsAdminRoutes.js';
 import supabaseCouponsAdminRoutes from '../../../data/supabase/admin/couponsAdminRoutes.js';
 import supabaseInvoicesAdminRoutes from '../../../data/supabase/admin/invoicesAdminRoutes.js';
+import supabaseTrialsAdminRoutes from '../../../data/supabase/admin/trialsAdminRoutes.js';
+import supabaseSubscribersAdminRoutes from '../../../data/supabase/admin/subscribersAdminRoutes.js';
 
 const router = Router();
 
@@ -94,12 +95,7 @@ router.use(maintenanceGuard);
 // Al-Rahma Final Corrections (Part A): every admin subrouter below through
 // /invoices has a real DATA_BACKEND=supabase implementation (see
 // data/supabase/admin/) — branched exactly like the customer-facing app.js
-// router branches each domain. /trials and /subscribers, mounted further
-// down, are the two documented exceptions — Mongo-only for now, with an
-// explicit 501 under supabase mode (see their own comment below) rather
-// than a silent implementation gap. Review follow-up: this comment
-// previously claimed "zero admin subrouters are Mongo-only under supabase
-// mode," which directly contradicted those two lines below it.
+// router branches each domain.
 router.use('/users',        isSupabaseBackend() ? supabaseUsersAdminRoutes : usersRoutes);
 router.use('/courses',      isSupabaseBackend() ? supabaseCoursesRoutes : coursesRoutes);
 // Auth hardening security batch: Mongo mode now has a real implementation
@@ -123,13 +119,16 @@ router.use('/reviews',      isSupabaseBackend() ? supabaseReviewsRoutes : review
 router.use('/system',       isSupabaseBackend() ? supabaseSystemAdminRoutes : systemRoutes);
 router.use('/invoices',     isSupabaseBackend() ? supabaseInvoicesAdminRoutes : invoicesRoutes);
 // Auth hardening security batch: real replacements for the legacy
-// protect+adminOnly GET /api/trials and GET /api/newsletter. No Supabase
-// (Postgres) adapter exists yet for either domain — mounting the Mongoose-
-// backed routers unconditionally would silently hang under
-// DATA_BACKEND=supabase (see backendNotImplemented.js), so that mode gets an
-// explicit 501 instead until a real adapter is built, same branching shape
-// as every other subrouter here.
-router.use('/trials',       isSupabaseBackend() ? backendNotImplemented('Admin trials listing') : trialsRoutes);
-router.use('/subscribers',  isSupabaseBackend() ? backendNotImplemented('Admin subscribers listing') : subscribersRoutes);
+// protect+adminOnly GET /api/trials and GET /api/newsletter.
+// Production-readiness audit follow-up (2026-09-17): these two used to be
+// the only Mongo-only admin subrouters (explicit 501 under
+// DATA_BACKEND=supabase, via backendNotImplemented.js) — trial_requests_
+// select_admin/subscribers_select_admin (lib/db/drizzle/0002_rls.sql)
+// already granted exactly the read needed, so this was a missing adapter,
+// not a missing DB capability. Real Supabase adapters now exist (see
+// data/supabase/admin/trialsAdminController.js/subscribersAdminController.js),
+// same branching shape as every other subrouter here.
+router.use('/trials',       isSupabaseBackend() ? supabaseTrialsAdminRoutes : trialsRoutes);
+router.use('/subscribers',  isSupabaseBackend() ? supabaseSubscribersAdminRoutes : subscribersRoutes);
 
 export default router;

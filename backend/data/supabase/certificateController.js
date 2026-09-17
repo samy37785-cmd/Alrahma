@@ -1,11 +1,15 @@
-// DATA_BACKEND=supabase controller for certificates — the read-only
-// student/admin listing endpoints only (mirrors routes/certificateRoutes.js
-// exactly: GET /mine, GET / [admin]). Issuance/revocation are admin
-// mutations gated by is_admin_aal2() + authorize('certificates:write') via
-// the issue_certificate()/revoke_certificate() RPCs (lib/db/drizzle/
-// 0015_new_domains_rls.sql) — no admin-router adapter wires them up yet, a
-// documented gap (same shape as courses/reviews/referrals/contact admin
-// mutations, all customer-router-only in this adapter set so far).
+// DATA_BACKEND=supabase controller for certificates — the customer-facing
+// self-service read only (GET /mine). Admin listing/issuance/revocation
+// all live at /api/v1/admin/certificates (see data/supabase/admin/
+// certificatesAdminController.js, mounted through adminRoutes.js's
+// certificatesRouter -> routes/v1/admin/index.js).
+// Production-readiness audit follow-up (2026-09-17): this file used to
+// also export an admin listCertificates() that no route ever actually
+// mounted (a real, live gap — GET /api/v1/admin/certificates 404'd under
+// DATA_BACKEND=supabase, and AdminProgressModal.jsx is a real active
+// consumer of it). Moved into certificatesAdminController.js (using the
+// real req.adminUser.id admin context, not this file's req.user._id) and
+// wired up for real, rather than left here unreachable.
 import { asyncHandler } from '../../utils/asyncHandler.js';
 import { withUserContext } from './client.js';
 
@@ -27,31 +31,16 @@ function toJson(row) {
   };
 }
 
-const SELECT_WITH_COURSE = `
-  SELECT c.*, co.title AS course_title
-    FROM certificates c
-    LEFT JOIN courses co ON co.id = c.course_id`;
-
 // @route GET /api/certificates/mine
 // @access Private
 export const getMyCertificates = asyncHandler(async (req, res) => {
   const rows = await withUserContext(req.user._id, async (client) => {
     const r = await client.query(
-      `${SELECT_WITH_COURSE} WHERE c.user_id = $1 AND c.revoked = false ORDER BY c.issued_at DESC`,
+      `SELECT c.*, co.title AS course_title FROM certificates c
+         LEFT JOIN courses co ON co.id = c.course_id
+        WHERE c.user_id = $1 AND c.revoked = false ORDER BY c.issued_at DESC`,
       [req.user._id]
     );
-    return r.rows;
-  });
-  res.json(rows.map(toJson));
-});
-
-// @route GET /api/certificates?userId=...
-// @access Admin
-export const listCertificates = asyncHandler(async (req, res) => {
-  const rows = await withUserContext(req.user._id, async (client) => {
-    const r = req.query.userId
-      ? await client.query(`${SELECT_WITH_COURSE} WHERE c.user_id = $1 ORDER BY c.issued_at DESC`, [req.query.userId])
-      : await client.query(`${SELECT_WITH_COURSE} ORDER BY c.issued_at DESC`);
     return r.rows;
   });
   res.json(rows.map(toJson));

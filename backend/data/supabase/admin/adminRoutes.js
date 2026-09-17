@@ -30,6 +30,7 @@ liveClassesRouter.patch('/:id', requirePermissions('live_classes:write'), asyncH
 liveClassesRouter.delete('/:id', requirePermissions('live_classes:write'), asyncHandler(liveClasses.remove));
 
 export const certificatesRouter = Router();
+certificatesRouter.get('/', requirePermissions('certificates:read'), asyncHandler(certificates.list));
 certificatesRouter.post('/', requirePermissions('certificates:write'), asyncHandler(certificates.issueCertificate));
 certificatesRouter.delete('/:id', requirePermissions('certificates:write'), asyncHandler(certificates.revokeCertificate));
 

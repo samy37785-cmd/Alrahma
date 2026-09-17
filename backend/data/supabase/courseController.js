@@ -1,10 +1,12 @@
 // DATA_BACKEND=supabase controller for courses. Mirrors
 // controllers/courseController.js's routes/response shapes for the public/
-// student-facing endpoints. Admin mutations (create/update/delete) are out
-// of scope here — see routes/v1/admin/coursesRoutes.js — a documented gap
-// under DATA_BACKEND=supabase for now (delete_course_cascade() and the
-// courses:write-gated RLS policies exist in the schema; no admin adapter
-// controller/routes wire them up yet).
+// student-facing endpoints. Admin mutations (create/update/delete) live in
+// data/supabase/admin/coursesAdminController.js instead (mounted via
+// data/supabase/admin/adminRoutes.js -> routes/v1/admin/index.js), not
+// here — this file is the public/student-facing read side only.
+// Production-readiness audit follow-up (2026-09-17): corrected a stale
+// comment that used to claim admin CRUD had no adapter wired up yet; it
+// does, and has for a while.
 //
 // courses.modules/resources are stored as single jsonb columns (see
 // lib/db/drizzle/0012_new_domains_baseline.sql's design-choice comment) —

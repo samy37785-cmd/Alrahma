@@ -1,8 +1,11 @@
 // DATA_BACKEND=supabase controller for reviews. Mirrors
 // controllers/reviewController.js's routes/response shapes for
 // createReview/getTeacherReviews/getCourseReviews. moderateReview is an
-// admin mutation gated by is_admin_aal2() + authorize('reviews:write') — no
-// admin-router adapter wires it up yet (documented gap).
+// admin mutation gated by is_admin_aal2() + authorize('reviews:write'),
+// wired up via data/supabase/admin/reviewsAdminController.js (mounted
+// through data/supabase/admin/adminRoutes.js -> routes/v1/admin/index.js).
+// Production-readiness audit follow-up (2026-09-17): corrected a stale
+// comment that used to claim no admin-router adapter existed yet; it does.
 import { asyncHandler } from '../../utils/asyncHandler.js';
 import { handleValidationErrors } from '../../utils/validationHelper.js';
 import { parsePagination } from '../../utils/pagination.js';

@@ -20,6 +20,26 @@
 // adapter, not through this endpoint — unlike the Mongo path, where a
 // logged-in admin's own session (role:'admin') was sufficient. Left
 // undone rather than papered over with a false AAL2 claim.
+//
+// Correction (2026-09-17): updateClass/deleteClass used to also send
+// `req.user.role === 'admin'` as an OR-condition in their own WHERE clause,
+// alongside the real teacher_id check. That SQL branch can never actually
+// succeed — RLS's live_classes_update_owner_or_admin/_delete_owner_or_admin
+// (0015_new_domains_rls.sql) independently require is_admin_aal2(), which
+// this withUserContext() call never sets, so an admin's request is excluded
+// by RLS regardless of what the app-layer WHERE clause allows through. The
+// controller already handled the resulting 0-row case correctly (a clean
+// 404, never a false success), but the dead branch itself was misleading —
+// it read as though admin mutation were supported here when it structurally
+// is not. Removed; the only mutation path through this customer-facing
+// route is the class's real owning teacher, matching the paragraph above.
+// Proven against real Postgres (not just RLS in isolation) in
+// tests/supabase-live-classes-real-integration.test.js — an admin's
+// PATCH/DELETE is rejected 404 exactly like any other non-owner's. Full
+// admin management of live classes remains the "not-yet-built admin-router
+// adapter" this comment already flagged — building that (AAL2-gated,
+// mounted under /api/v1/admin/*) is a separate, larger piece of work, not
+// done here.
 import { asyncHandler } from '../../utils/asyncHandler.js';
 import { withUserContext } from './client.js';
 
@@ -114,12 +134,11 @@ export const updateClass = asyncHandler(async (req, res) => {
          meeting_url = COALESCE($6, meeting_url),
          notes = COALESCE($7, notes),
          status = COALESCE($8, status)
-       WHERE id = $1 AND (teacher_id = $2 OR $9)
+       WHERE id = $1 AND teacher_id = $2
        RETURNING *`,
       [
         req.params.id, req.user._id, title ?? null, when ?? null,
         durationMin ?? null, meetingUrl ?? null, notes ?? null, status ?? null,
-        req.user.role === 'admin',
       ]
     );
     return r.rows[0];
@@ -137,8 +156,8 @@ export const updateClass = asyncHandler(async (req, res) => {
 export const deleteClass = asyncHandler(async (req, res) => {
   const row = await withUserContext(req.user._id, async (client) => {
     const r = await client.query(
-      'DELETE FROM live_classes WHERE id = $1 AND (teacher_id = $2 OR $3) RETURNING id',
-      [req.params.id, req.user._id, req.user.role === 'admin']
+      'DELETE FROM live_classes WHERE id = $1 AND teacher_id = $2 RETURNING id',
+      [req.params.id, req.user._id]
     );
     return r.rows[0];
   });

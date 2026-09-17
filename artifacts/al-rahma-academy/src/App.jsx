@@ -14,6 +14,7 @@ import Analytics from './components/ui/Analytics';
 import ErrorBoundary from './components/ui/ErrorBoundary';
 import ContentGuard from './components/ui/ContentGuard';
 import LiveChat from './components/ui/LiveChat';
+import { FEATURES } from './config/featureFlags';
 
 // Route-level code splitting
 const Home               = lazy(() => import('./pages/Home'));
@@ -182,8 +183,13 @@ export default function App({ basename = '' }) {
           {/* ── Dashboards (protected) ── */}
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/wishlist" element={<ProtectedRoute><Wishlist /></ProtectedRoute>} />
-          <Route path="/ai-tutor" element={<ProtectedRoute><AiTutor /></ProtectedRoute>} />
-          <Route path="/community" element={<ProtectedRoute><Community /></ProtectedRoute>} />
+          {/* Production-readiness audit follow-up (2026-09-17): no backend
+              exists for either feature on any data backend (see
+              config/featureFlags.js) — direct URL access renders NotFound
+              instead of a page that would just error against a nonexistent
+              API, matching the already-unlinked nav (dashboardNav.js). */}
+          <Route path="/ai-tutor" element={FEATURES.aiTutor ? <ProtectedRoute><AiTutor /></ProtectedRoute> : <NotFound />} />
+          <Route path="/community" element={FEATURES.community ? <ProtectedRoute><Community /></ProtectedRoute> : <NotFound />} />
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
           {/* /admin/login must be reachable by an unauthenticated visitor -

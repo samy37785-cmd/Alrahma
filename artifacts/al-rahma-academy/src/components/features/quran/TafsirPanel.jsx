@@ -4,9 +4,24 @@ import { TAFASEER } from '../../../data/quranLangs';
 
 const ALLOWED_TAGS = new Set(['p','br','strong','em','b','i','u','span','div','sup','sub','ul','ol','li','blockquote','h3','h4']);
 
-function sanitizeHtml(html) {
-  const root = document.createElement('div');
-  root.innerHTML = html;
+// Production-readiness audit follow-up (2026-09-17): `text` here is
+// third-party tafsir HTML fetched from an external API (api/quran.js's
+// getVerseTafsir), not first-party content — a hand-rolled sanitizer that
+// builds on a live (even if detached) element via `.innerHTML =` was a real
+// residual risk: some resource-bearing disallowed tags (img/svg-image/etc.)
+// can start loading and fire an onerror/onload handler as soon as the
+// content attribute is parsed, and only strictly-synchronous cleanup before
+// the browser dispatches that (queued) event would prevent it — a subtle,
+// hard-to-fully-guarantee timing assumption, not a robust guarantee.
+// Switched to DOMParser().parseFromString(), which per spec produces an
+// inert document with no browsing context — it does not execute scripts and
+// does not fetch external resources at all, so there is no such window.
+// Still no external dependency added (no DOMPurify) — same allowlist logic
+// as before, just parsed into a document that can never load anything.
+export function sanitizeHtml(html) {
+  const doc = new DOMParser().parseFromString(`<div>${html}</div>`, 'text/html');
+  const root = doc.body.firstElementChild;
+  if (!root) return '';
   (function clean(node) {
     [...node.childNodes].forEach((child) => {
       if (child.nodeType === Node.ELEMENT_NODE) {

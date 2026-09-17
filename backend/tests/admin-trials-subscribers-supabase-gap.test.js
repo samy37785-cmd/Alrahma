@@ -1,31 +1,28 @@
 import { test, before } from 'node:test';
 import assert from 'node:assert/strict';
 
-// Review follow-up: GET /v1/admin/trials and GET /v1/admin/subscribers
-// (routes/v1/admin/trialsRoutes.js, subscribersRoutes.js) are Mongoose-
-// backed and were previously mounted unconditionally, regardless of
-// DATA_BACKEND. Under DATA_BACKEND=supabase, app.js deliberately never
-// calls connectDB() (Postgres is the real datastore in that mode) — a
-// Mongoose query against a connection that will never open sits buffering
-// until it times out, then fails with an opaque 500 that gives no hint the
-// real issue is "this admin feature has no Supabase adapter." These two
-// resources now get an explicit 501 under supabase mode instead
-// (middleware/backendNotImplemented.js), same branching shape as every
-// other admin subrouter in routes/v1/admin/index.js.
+// Production-readiness audit follow-up (2026-09-17): this file used to
+// prove GET /v1/admin/trials and GET /v1/admin/subscribers were an
+// explicit 501 under DATA_BACKEND=supabase (a real, acknowledged gap at
+// the time — see git history for the old version of this file). That gap
+// is now closed: trial_requests_select_admin/subscribers_select_admin
+// (lib/db/drizzle/0002_rls.sql) already granted exactly the read needed
+// (is_admin(), AAL1, no new migration), so real adapters were added —
+// data/supabase/admin/trialsAdminController.js/subscribersAdminController.js,
+// mounted via trialsAdminRoutes.js/subscribersAdminRoutes.js. This file is
+// rewritten in place (not deleted) to prove the fix, using the exact same
+// router-introspection technique the old version used to prove the gap.
 //
 // This can't be proven with a normal authenticated HTTP round trip: under
 // DATA_BACKEND=supabase, verifyAccessToken's admin lookup
 // (data/supabase/loadAdmin.js) requires a real Postgres connection, which
-// this suite deliberately never makes (no real database, per this batch's
-// constraints). Instead, this imports the real admin router module with
-// DATA_BACKEND=supabase actually set (so the isSupabaseBackend() ternaries
-// in routes/v1/admin/index.js really evaluate the supabase branch, not
-// just read as if they should), and inspects its Express route table
-// directly: a real sub-router (the Mongo-mode implementation) is an
-// express.Router() instance and therefore exposes its own `.stack`;
-// backendNotImplemented() returns a single terminal handler function with
-// no `.stack` at all — a structural fact about what got mounted, not an
-// assumption about it.
+// this suite deliberately never makes (no real database). Instead, this
+// imports the real admin router module with DATA_BACKEND=supabase actually
+// set (so the isSupabaseBackend() ternaries in routes/v1/admin/index.js
+// really evaluate the supabase branch), and inspects its Express route
+// table directly: a real sub-router (an express.Router() instance) exposes
+// its own `.stack`; the old backendNotImplemented() stub did not — a
+// structural fact about what got mounted, not an assumption about it.
 let router;
 
 before(async () => {
@@ -56,36 +53,17 @@ function findMountedLayer(pathFragment) {
   return layer;
 }
 
-function callHandler(handler) {
-  const res = {
-    _status: null,
-    _body: null,
-    status(code) { this._status = code; return this; },
-    json(body) { this._body = body; return this; },
-  };
-  handler({}, res);
-  return res;
-}
-
-test('DATA_BACKEND=supabase: /v1/admin/trials is wired to an explicit 501 responder, not the Mongoose-backed router', () => {
+test('DATA_BACKEND=supabase: /v1/admin/trials is a real express.Router() (the Supabase adapter), not a 501 stub', () => {
   const handler = findMountedLayer('trials').handle;
-  assert.equal(typeof handler.stack, 'undefined', 'must not be an express.Router() (the Mongo-mode implementation)');
-
-  const res = callHandler(handler);
-  assert.equal(res._status, 501);
-  assert.equal(res._body.error, 'NOT_IMPLEMENTED_FOR_BACKEND');
+  assert.equal(typeof handler.stack, 'object', 'expected an express.Router() instance');
 });
 
-test('DATA_BACKEND=supabase: /v1/admin/subscribers is wired to an explicit 501 responder, not the Mongoose-backed router', () => {
+test('DATA_BACKEND=supabase: /v1/admin/subscribers is a real express.Router() (the Supabase adapter), not a 501 stub', () => {
   const handler = findMountedLayer('subscribers').handle;
-  assert.equal(typeof handler.stack, 'undefined', 'must not be an express.Router() (the Mongo-mode implementation)');
-
-  const res = callHandler(handler);
-  assert.equal(res._status, 501);
-  assert.equal(res._body.error, 'NOT_IMPLEMENTED_FOR_BACKEND');
+  assert.equal(typeof handler.stack, 'object', 'expected an express.Router() instance');
 });
 
-test('DATA_BACKEND=supabase: /v1/admin/live-classes, by contrast, IS a real router (has its own Supabase adapter — proves the 501 branch above is specific to trials/subscribers, not every admin route under this backend)', () => {
+test('DATA_BACKEND=supabase: /v1/admin/live-classes is likewise a real router (unchanged — sanity check that the assertion technique itself still works)', () => {
   const handler = findMountedLayer('live-classes').handle;
   assert.equal(typeof handler.stack, 'object', 'expected an express.Router() instance');
 });

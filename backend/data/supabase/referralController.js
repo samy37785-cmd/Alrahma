@@ -1,8 +1,11 @@
 // DATA_BACKEND=supabase controller for referrals. Mirrors
 // controllers/referralController.js's routes/response shapes for
 // getMyReferrals/trackReferral. convertReferral is an admin mutation gated
-// by is_admin_aal2() + authorize('referrals:write') — no admin-router
-// adapter wires it up yet (documented gap).
+// by is_admin_aal2() + authorize('referrals:write'), wired up via
+// data/supabase/admin/referralsAdminController.js (mounted through
+// referralsAdminRoutes.js -> routes/v1/admin/index.js).
+// Production-readiness audit follow-up (2026-09-17): corrected a stale
+// comment that used to claim no admin-router adapter existed yet; it does.
 import { asyncHandler } from '../../utils/asyncHandler.js';
 import { withUserContext } from './client.js';
 

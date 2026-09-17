@@ -229,3 +229,23 @@ describe('AdminDashboard: the unproven conversion-rate metric is gone', () => {
     expect(card.querySelector('.ds-stat__value').textContent).toBe('2');
   });
 });
+
+// Production-readiness audit follow-up (2026-09-17): /community has no
+// backend implementation on either data backend (see config/featureFlags.js)
+// — it must not be reachable as a tab, and its two queries must not fire
+// (getAdminPosts/getAdminComments would just error against a nonexistent
+// API), while VITE_ENABLE_UNFINISHED_FEATURES is unset (the default).
+describe('AdminDashboard: the Community tab is closed behind a feature flag that is off by default', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('does not render a Community tab, and never calls getAdminPosts/getAdminComments', async () => {
+    expect(import.meta.env.VITE_ENABLE_UNFINISHED_FEATURES).not.toBe('true');
+    mockAllSucceed();
+    renderDashboard();
+
+    await waitFor(() => expect(screen.getByRole('tablist')).toBeInTheDocument());
+    expect(screen.queryByRole('tab', { name: /community/i })).not.toBeInTheDocument();
+    expect(getAdminPosts).not.toHaveBeenCalled();
+    expect(getAdminComments).not.toHaveBeenCalled();
+  });
+});

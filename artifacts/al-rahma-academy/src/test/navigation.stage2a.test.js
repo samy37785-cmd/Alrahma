@@ -33,6 +33,21 @@ describe('dashboardNav.js has a single (isAdmin, ...) shape - no teacher/parent 
   });
 });
 
+describe('production-readiness audit follow-up (2026-09-17): /community and /ai-tutor have no backend on either data backend, so they must not appear in navigation while their feature flag is off (see config/featureFlags.js)', () => {
+  it('navFor(false, ...) (the non-admin shape) does not link to /community or /ai-tutor when VITE_ENABLE_UNFINISHED_FEATURES is unset (the default/production posture)', () => {
+    expect(import.meta.env.VITE_ENABLE_UNFINISHED_FEATURES).not.toBe('true');
+    const paths = navFor(false, 0).filter((i) => i.to).map((i) => i.to);
+    expect(paths).not.toContain('/community');
+    expect(paths).not.toContain('/ai-tutor');
+  });
+
+  it('bottomNavFor(false, ...) does not link to /community or /ai-tutor either', () => {
+    const paths = bottomNavFor(false, 0).filter((i) => i.to).map((i) => i.to);
+    expect(paths).not.toContain('/community');
+    expect(paths).not.toContain('/ai-tutor');
+  });
+});
+
 describe('isAdmin is sourced from AdminAuthContext, never from the regular account role, across nav-consuming files', () => {
   const NAV_FILES = [
     'components/layout/Header.jsx',

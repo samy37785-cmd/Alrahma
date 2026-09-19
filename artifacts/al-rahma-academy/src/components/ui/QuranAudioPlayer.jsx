@@ -1,9 +1,12 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { useLang } from '../../context/LangContext';
+import { pickLeakedString } from '../../i18n/home/leakedStrings';
 
 const RECITATION_URL =
   'https://cdn.islamic.network/quran/audio/128/ar.alafasy/1.mp3';
 
 export default function QuranAudioPlayer() {
+  const { lang } = useLang();
   const [playing, setPlaying] = useState(false);
   const [loading, setLoading] = useState(false);
   const [dismissed, setDismissed] = useState(false);
@@ -60,7 +63,9 @@ export default function QuranAudioPlayer() {
             <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/>
           </svg>
         )}
-        <span className="qap__label">{playing ? 'Quran playing' : 'Play Quran'}</span>
+        <span className="qap__label">
+          {playing ? pickLeakedString('quranPlayingLabel', lang) : pickLeakedString('playQuranLabel', lang)}
+        </span>
       </button>
       <button
         type="button"

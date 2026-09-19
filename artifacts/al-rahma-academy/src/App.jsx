@@ -13,6 +13,7 @@ import RoutePrefetcher from './components/ui/RoutePrefetcher';
 import Analytics from './components/ui/Analytics';
 import ErrorBoundary from './components/ui/ErrorBoundary';
 import ContentGuard from './components/ui/ContentGuard';
+import TranslationGate from './components/ui/TranslationGate';
 import LiveChat from './components/ui/LiveChat';
 import { FEATURES } from './config/featureFlags';
 
@@ -124,8 +125,8 @@ export default function App({ basename = '' }) {
           <Route path="/courses" element={<CoursesHub />} />
           <Route path="/courses/quran" element={<CoursesQuran />} />
           <Route path="/courses/arabic" element={<CoursesArabic />} />
-          <Route path="/courses/ijazah" element={<CourseIjazah />} />
-          <Route path="/courses/islamic-studies" element={<CourseIslamicStudies />} />
+          <Route path="/courses/ijazah" element={<TranslationGate route="/courses/ijazah"><CourseIjazah /></TranslationGate>} />
+          <Route path="/courses/islamic-studies" element={<TranslationGate route="/courses/islamic-studies"><CourseIslamicStudies /></TranslationGate>} />
           <Route path="/courses/:id" element={<ProtectedRoute><CourseContent /></ProtectedRoute>} />
 
           {/* ── Tools hierarchy ── */}

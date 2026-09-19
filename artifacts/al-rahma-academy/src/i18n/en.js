@@ -347,6 +347,10 @@ const en = {
     "replyBadge": `Reply ≤ ${siteFacts.supportResponseHours}h`
   },
   "teachersPg": {
+    "academy": "Academy",
+    "langAll": "All",
+    "seoTitle": "Al-Azhar Certified Quran Tutors",
+    "seoDescription": `Al-Rahma Academy has ${siteFacts.totalTeachers} teachers on our team — ${siteFacts.featuredTeacherCount} of them are featured here. Every teacher is an Al-Azhar graduate holding a verified Ijazah with a continuous sanad, with identity verified by the academy.`,
     "eyebrow": "Meet some of our instructors",
     "title": "Our Qualified Tutors",
     "sub": "Every tutor at Al-Rahma Academy is a verified graduate of Al-Azhar University, holding an authentic Ijazah with an unbroken chain of narration (Sanad).",
@@ -572,7 +576,10 @@ const en = {
     "heading": "Learn. Understand. Grow.",
     "sub": "Articles on Quran, Tajweed, Arabic and Islamic education — written for non-Arabic speakers in Europe.",
     "backToSite": "Back to site",
-    "readArticle": "Read article →"
+    "readArticle": "Read article →",
+    "allCategories": "All",
+    "noArticles": "No articles in this category yet.",
+    "loadError": "Could not load articles. Please try again."
   },
   "notFound": {
     "title": "Page Not Found",
@@ -1014,11 +1021,11 @@ const en = {
   },
   "hadith": {
     "pageTitle": "Hadith Library",
-    "pageDesc": "Browse & search 13 authentic hadith collections including Sahih Bukhari, Sahih Muslim, Riyad As-Salihin, and more.",
+    "pageDesc": "Browse & search 10 authentic hadith collections including Sahih Al-Bukhari, Sahih Muslim, Sunan Abi Dawud, and more.",
     "badge": "📚 Hadith Library",
     "back": "All Collections",
     "heroTitle": "Islamic Hadith Library",
-    "heroSub": "Browse & search 13 authentic hadith collections — Arabic & English — all hosted right here",
+    "heroSub": "Browse & search 10 authentic hadith collections — Arabic & English — via a documented, open data source",
     "hadiths": "hadiths",
     "hadithSingle": "hadith",
     "courseNote": "These books are studied in our",

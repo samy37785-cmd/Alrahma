@@ -6,6 +6,7 @@ import AlphabetLearner from '../tools/AlphabetLearner';
 import { useTrial } from '../../../context/TrialContext';
 import { useLang } from '../../../context/LangContext';
 import { courses } from '../../../data';
+import { pickLeakedString } from '../../../i18n/home/leakedStrings';
 
 // `popular: true` drives the one "Most Popular" row — a deliberate hierarchy
 // signal (like a highlighted pricing plan) rather than treating all six
@@ -80,7 +81,7 @@ const isAlphabet = (course) =>
 
 export default function Courses() {
   const { startLearning } = useTrial();
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const navigate = useNavigate();
   const [picker, setPicker] = useState(null);
   const [openAlphabet, setOpenAlphabet] = useState(false);
@@ -133,7 +134,7 @@ export default function Courses() {
             <h2>{t.courses.heading}</h2>
           </div>
           <Link to="/courses" className="courses__browse-all">
-            {t.courses.viewAll || 'Browse full curriculum'} <span aria-hidden="true">→</span>
+            {pickLeakedString('browseFullCurriculum', lang)} <span aria-hidden="true">→</span>
           </Link>
         </Reveal>
 
@@ -161,7 +162,9 @@ export default function Courses() {
                   <span className="course-row__title-wrap">
                     <span className="course-row__title">
                       {item.title || c.title}
-                      {meta.popular && <span className="course-row__popular">Most Popular</span>}
+                      {meta.popular && (
+                        <span className="course-row__popular">{pickLeakedString('mostPopularCourseBadge', lang)}</span>
+                      )}
                     </span>
                     <span className="course-row__badges">
                       <span className="course-row__badge">{metaT.level || meta.level}</span>

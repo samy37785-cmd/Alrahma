@@ -18,6 +18,13 @@ const EXPERIENCE_TEXT = {
       choose: 'Choose language',
       select: 'Select language',
     },
+    translationInProgress: {
+      badge: 'Translation in progress',
+      title: 'This page isn’t translated yet',
+      message: 'We’re still working on this page in your language. You can read it in English for now.',
+      viewEnglish: 'View English version',
+      home: 'Back to home',
+    },
     auth: {
       showPassword: 'Show password',
       hidePassword: 'Hide password',
@@ -223,6 +230,7 @@ const EXPERIENCE_TEXT = {
     ui: { home: 'Home', breadcrumb: 'Percorso di navigazione', currentPage: 'Pagina corrente', close: 'Chiudi', noChartData: 'Nessun dato disponibile', loadingChart: 'Caricamento del grafico', previous: 'Precedente', next: 'Successivo', goToReview: (number) => `Vai alla recensione ${number}` },
     notification: { title: 'Notifiche', close: 'Chiudi notifiche', markAllRead: 'Segna tutte come lette', loading: 'Caricamento notifiche…', loadError: 'Impossibile caricare le notifiche.', tryAgain: 'Riprova', caughtUp: 'Hai letto tutto!', empty: 'Nessuna nuova notifica.', loadMore: 'Carica altro', justNow: 'Proprio ora', minutesAgo: (count) => `${count} min fa`, hoursAgo: (count) => `${count} h fa`, daysAgo: (count) => `${count} g fa` },
     language: { choose: 'Scegli la lingua', select: 'Seleziona la lingua' },
+    translationInProgress: { badge: 'Traduzione in corso', title: 'Questa pagina non è ancora tradotta', message: 'Stiamo ancora lavorando su questa pagina nella tua lingua. Per ora puoi leggerla in inglese.', viewEnglish: 'Vedi la versione in inglese', home: 'Torna alla home' },
     auth: { showPassword: 'Mostra password', hidePassword: 'Nascondi password', or: 'oppure', signInWithGoogle: 'Accedi con Google' },
     header: { home: 'Home di Al-Rahma Academy', account: 'Account', editProfile: 'Modifica profilo', myAccount: 'Il mio account', searchPages: 'Cerca pagine e strumenti', searchPrompt: 'Cerca pagine e strumenti…', lightMode: 'Tema chiaro', darkMode: 'Tema scuro', selectLanguage: 'Seleziona la lingua', messages: 'Messaggi', unreadMessages: (count) => `${count} messaggi non letti`, accountMenu: (name) => `Menu account di ${name}`, openNavigation: 'Apri menu di navigazione', closeNavigation: 'Chiudi menu di navigazione' },
     dashboard: {
@@ -244,6 +252,7 @@ const EXPERIENCE_TEXT = {
     ui: { home: 'Inicio', breadcrumb: 'Ruta de navegación', currentPage: 'Página actual', close: 'Cerrar', noChartData: 'Aún no hay datos', loadingChart: 'Cargando gráfico', previous: 'Anterior', next: 'Siguiente', goToReview: (number) => `Ir a la reseña ${number}` },
     notification: { title: 'Notificaciones', close: 'Cerrar notificaciones', markAllRead: 'Marcar todas como leídas', loading: 'Cargando notificaciones…', loadError: 'No se pudieron cargar las notificaciones.', tryAgain: 'Intentar de nuevo', caughtUp: '¡Estás al día!', empty: 'No hay notificaciones nuevas.', loadMore: 'Cargar más', justNow: 'Ahora mismo', minutesAgo: (count) => `Hace ${count} min`, hoursAgo: (count) => `Hace ${count} h`, daysAgo: (count) => `Hace ${count} d` },
     language: { choose: 'Elegir idioma', select: 'Seleccionar idioma' },
+    translationInProgress: { badge: 'Traducción en curso', title: 'Esta página aún no está traducida', message: 'Todavía estamos trabajando en esta página en tu idioma. Por ahora puedes leerla en inglés.', viewEnglish: 'Ver versión en inglés', home: 'Volver al inicio' },
     auth: { showPassword: 'Mostrar contraseña', hidePassword: 'Ocultar contraseña', or: 'o', signInWithGoogle: 'Iniciar sesión con Google' },
     header: { home: 'Inicio de Al-Rahma Academy', account: 'Cuenta', editProfile: 'Editar perfil', myAccount: 'Mi cuenta', searchPages: 'Buscar páginas y herramientas', searchPrompt: 'Buscar páginas y herramientas…', lightMode: 'Modo claro', darkMode: 'Modo oscuro', selectLanguage: 'Seleccionar idioma', messages: 'Mensajes', unreadMessages: (count) => `${count} mensajes sin leer`, accountMenu: (name) => `Menú de cuenta de ${name}`, openNavigation: 'Abrir menú de navegación', closeNavigation: 'Cerrar menú de navegación' },
     dashboard: {
@@ -265,6 +274,7 @@ const EXPERIENCE_TEXT = {
     ui: { home: 'Startseite', breadcrumb: 'Navigationspfad', currentPage: 'Aktuelle Seite', close: 'Schließen', noChartData: 'Noch keine Daten', loadingChart: 'Diagramm wird geladen', previous: 'Zurück', next: 'Weiter', goToReview: (number) => `Zur Bewertung ${number} gehen` },
     notification: { title: 'Benachrichtigungen', close: 'Benachrichtigungen schließen', markAllRead: 'Alle als gelesen markieren', loading: 'Benachrichtigungen werden geladen…', loadError: 'Benachrichtigungen konnten nicht geladen werden.', tryAgain: 'Erneut versuchen', caughtUp: 'Du bist auf dem neuesten Stand!', empty: 'Keine neuen Benachrichtigungen.', loadMore: 'Mehr laden', justNow: 'Gerade eben', minutesAgo: (count) => `vor ${count} Min.`, hoursAgo: (count) => `vor ${count} Std.`, daysAgo: (count) => `vor ${count} T.` },
     language: { choose: 'Sprache auswählen', select: 'Sprache wählen' },
+    translationInProgress: { badge: 'Übersetzung in Arbeit', title: 'Diese Seite ist noch nicht übersetzt', message: 'Wir arbeiten noch an dieser Seite in deiner Sprache. Du kannst sie vorerst auf Englisch lesen.', viewEnglish: 'Englische Version ansehen', home: 'Zurück zur Startseite' },
     auth: { showPassword: 'Passwort anzeigen', hidePassword: 'Passwort verbergen', or: 'oder', signInWithGoogle: 'Mit Google anmelden' },
     header: { home: 'Startseite der Al-Rahma Academy', account: 'Konto', editProfile: 'Profil bearbeiten', myAccount: 'Mein Konto', searchPages: 'Seiten und Werkzeuge durchsuchen', searchPrompt: 'Seiten und Werkzeuge durchsuchen…', lightMode: 'Heller Modus', darkMode: 'Dunkler Modus', selectLanguage: 'Sprache wählen', messages: 'Nachrichten', unreadMessages: (count) => `${count} ungelesene Nachrichten`, accountMenu: (name) => `Kontomenü für ${name}`, openNavigation: 'Navigationsmenü öffnen', closeNavigation: 'Navigationsmenü schließen' },
     dashboard: {
@@ -286,6 +296,7 @@ const EXPERIENCE_TEXT = {
     ui: { home: 'Accueil', breadcrumb: 'Fil d’Ariane', currentPage: 'Page actuelle', close: 'Fermer', noChartData: 'Aucune donnée pour le moment', loadingChart: 'Chargement du graphique', previous: 'Précédent', next: 'Suivant', goToReview: (number) => `Aller à l’avis ${number}` },
     notification: { title: 'Notifications', close: 'Fermer les notifications', markAllRead: 'Tout marquer comme lu', loading: 'Chargement des notifications…', loadError: 'Impossible de charger les notifications.', tryAgain: 'Réessayer', caughtUp: 'Vous êtes à jour !', empty: 'Aucune nouvelle notification.', loadMore: 'Charger plus', justNow: 'À l’instant', minutesAgo: (count) => `il y a ${count} min`, hoursAgo: (count) => `il y a ${count} h`, daysAgo: (count) => `il y a ${count} j` },
     language: { choose: 'Choisir la langue', select: 'Sélectionner la langue' },
+    translationInProgress: { badge: 'Traduction en cours', title: 'Cette page n’est pas encore traduite', message: 'Nous travaillons encore sur cette page dans votre langue. Vous pouvez la lire en anglais pour le moment.', viewEnglish: 'Voir la version anglaise', home: 'Retour à l’accueil' },
     auth: { showPassword: 'Afficher le mot de passe', hidePassword: 'Masquer le mot de passe', or: 'ou', signInWithGoogle: 'Se connecter avec Google' },
     header: { home: 'Accueil d’Al-Rahma Academy', account: 'Compte', editProfile: 'Modifier le profil', myAccount: 'Mon compte', searchPages: 'Rechercher des pages et des outils', searchPrompt: 'Rechercher des pages et des outils…', lightMode: 'Mode clair', darkMode: 'Mode sombre', selectLanguage: 'Sélectionner la langue', messages: 'Messages', unreadMessages: (count) => `${count} messages non lus`, accountMenu: (name) => `Menu du compte de ${name}`, openNavigation: 'Ouvrir le menu de navigation', closeNavigation: 'Fermer le menu de navigation' },
     dashboard: {
@@ -309,6 +320,13 @@ const EXPERIENCE_TEXT = {
     language: {
       choose: 'اختر اللغة',
       select: 'اختيار اللغة',
+    },
+    translationInProgress: {
+      badge: 'الترجمة جارية',
+      title: 'هذه الصفحة لم تُترجم بعد',
+      message: 'ما زلنا نعمل على ترجمة هذه الصفحة إلى لغتك. يمكنك الاطلاع عليها بالإنجليزية حاليًا.',
+      viewEnglish: 'عرض النسخة الإنجليزية',
+      home: 'العودة للرئيسية',
     },
     auth: {
       showPassword: 'إظهار كلمة المرور',

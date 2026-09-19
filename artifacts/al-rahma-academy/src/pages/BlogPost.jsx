@@ -6,6 +6,7 @@ import { CATEGORY_COLORS } from '../data/marketing/blogPosts';
 import { useBlogPost, useBlogPosts } from '../hooks/useBlog';
 import useSEO from '../hooks/useSEO';
 import Breadcrumbs from '../components/ui/Breadcrumbs';
+import { useLang } from '../context/LangContext';
 
 // Minimal markdown renderer: headings, bold, tables, hr, paragraphs.
 function renderMarkdown(text) {
@@ -92,6 +93,7 @@ function parseInline(text) {
 
 export default function BlogPost() {
   const { slug } = useParams();
+  const { t } = useLang();
 
   const { data: post, isLoading, isError } = useBlogPost(slug);
 
@@ -127,7 +129,7 @@ export default function BlogPost() {
   if (isLoading) {
     return (
       <div className="blog-post-page">
-        <PageBar to="/resources/blog" label="← Blog" />
+        <PageBar to="/resources/blog" label={`← ${t.nav.blog}`} />
         <main id="main-content" className="container blog-post__main">
           <p style={{ textAlign: 'center', padding: '4rem 0', color: 'var(--muted)' }}>Loading…</p>
         </main>
@@ -141,9 +143,9 @@ export default function BlogPost() {
 
   return (
     <div className="blog-post-page">
-      <PageBar to="/resources/blog" label="← Blog" />
+      <PageBar to="/resources/blog" label={`← ${t.nav.blog}`} />
 
-      <Breadcrumbs items={[{ label: 'Blog', to: '/resources/blog' }, { label: post.title }]} />
+      <Breadcrumbs items={[{ label: t.nav.blog, to: '/resources/blog' }, { label: post.title }]} />
 
       <main id="main-content" className="container blog-post__main">
         <div className="blog-post__hero">

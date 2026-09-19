@@ -347,6 +347,10 @@ const it = {
     "replyBadge": `Risposta ≤ ${siteFacts.supportResponseHours}h`
   },
   "teachersPg": {
+    "academy": "Accademia",
+    "langAll": "Tutti",
+    "seoTitle": "Insegnanti di Corano Certificati Al-Azhar",
+    "seoDescription": `Al-Rahma Academy conta ${siteFacts.totalTeachers} insegnanti nel nostro team — ${siteFacts.featuredTeacherCount} di loro sono presentati qui. Ogni insegnante è un laureato di Al-Azhar, titolare di un'Ijazah verificata con sanad continuo, con identità verificata dall'accademia.`,
     "eyebrow": "Conosci alcuni dei nostri insegnanti",
     "title": "I nostri insegnanti qualificati",
     "sub": "Ogni insegnante di Al-Rahma Academy è un laureato verificato dell'Università di Al-Azhar e possiede un'autentica Ijazah con una catena di trasmissione (Sanad) ininterrotta.",
@@ -572,7 +576,10 @@ const it = {
     "heading": "Impara. Capisci. Cresci.",
     "sub": "Articoli su Corano, Tajweed, arabo ed educazione islamica — scritti per chi non parla arabo in Europa.",
     "backToSite": "Torna al sito",
-    "readArticle": "Leggi articolo →"
+    "readArticle": "Leggi articolo →",
+    "allCategories": "Tutte",
+    "noArticles": "Nessun articolo in questa categoria per ora.",
+    "loadError": "Impossibile caricare gli articoli. Riprova."
   },
   "notFound": {
     "title": "Pagina Non Trovata",

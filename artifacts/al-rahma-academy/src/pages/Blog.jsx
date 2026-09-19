@@ -57,7 +57,7 @@ export default function Blog() {
     <div className="blog-page">
       <PageBar to="/" label={bl.backToSite} />
 
-      <Breadcrumbs items={[{ label: 'Resources', to: '/resources' }, { label: bl.heading }]} />
+      <Breadcrumbs items={[{ label: t.nav.resources, to: '/resources' }, { label: bl.heading }]} />
 
       <main id="main-content" className="container blog-page__main">
         <div className="blog-page__header">
@@ -73,7 +73,7 @@ export default function Blog() {
         )}
         {isError && (
           <p className="blog-page__empty" style={{ color: 'var(--color-danger)' }}>
-            Could not load articles. Please try again.
+            {bl.loadError}
           </p>
         )}
 
@@ -93,7 +93,7 @@ export default function Blog() {
                   }
                   onClick={() => setActiveCategory(cat)}
                 >
-                  {cat}
+                  {cat === 'All' ? bl.allCategories : cat}
                 </button>
               ))}
             </div>
@@ -131,7 +131,7 @@ export default function Blog() {
             </div>
 
             {filtered.length === 0 && (
-              <p className="blog-page__empty">No articles in this category yet.</p>
+              <p className="blog-page__empty">{bl.noArticles}</p>
             )}
           </>
         )}

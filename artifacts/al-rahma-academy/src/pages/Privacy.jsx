@@ -10,6 +10,7 @@ export default function Privacy() {
     ar: {
         seoTitle: 'سياسة الخصوصية',
         seoDescription: 'اقرأ سياسة خصوصية أكاديمية الرحمة لتعرف كيف نجمع بياناتك الشخصية ونستخدمها ونحميها.',
+        backToSite: 'العودة إلى الموقع',
         academy: 'الأكاديمية',
         title: 'سياسة الخصوصية',
         updated: 'آخر تحديث: يونيو 2026',
@@ -89,7 +90,7 @@ export default function Privacy() {
   useSEO({ title: content.seoTitle, description: content.seoDescription });
   return (
     <div className="legal">
-      <PageBar to="/" />
+      <PageBar to="/" label={content.backToSite} />
 
       <Breadcrumbs items={[{ label: content.academy, to: '/academy' }, { label: content.title }]} />
 

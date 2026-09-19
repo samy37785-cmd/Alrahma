@@ -1,8 +1,17 @@
 import { useState, useRef, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useLang } from '../../context/LangContext';
 import { LANGS, LANG_LABELS } from '../../i18n';
 import { getExperienceText } from '../../i18n/experience';
+import { isPublished } from '../../data/translationStatus';
 
+// Local to this component on purpose: the language picker always shows
+// each language's own NATIVE self-name, regardless of the current UI
+// language -- a visitor scanning for their language reads its native
+// spelling, not a translation of it. A page that needs to display "this
+// content speaks language X" TRANSLATED INTO the visitor's own language
+// (e.g. TeacherProfile.jsx) uses src/i18n/languageNames.js instead, which
+// is a different, unrelated concept -- not this list.
 const LANG_FULL = {
   en: 'English',
   ar: 'العربية',
@@ -19,6 +28,8 @@ const FLAG = {
 export default function LangSwitcher() {
   const { lang, setLang } = useLang();
   const copy = getExperienceText(lang).language;
+  const inProgressBadge = getExperienceText(lang).translationInProgress.badge;
+  const { pathname } = useLocation();
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
@@ -49,19 +60,23 @@ export default function LangSwitcher() {
 
       {open && (
         <ul className="ls__menu" role="listbox" aria-label={copy.select}>
-          {LANGS.map((code) => (
-            <li key={code} role="option" aria-selected={lang === code}>
-              <button
-                type="button"
-                className={`ls__option${lang === code ? ' ls__option--active' : ''}`}
-                onClick={() => select(code)}
-              >
-                <span className="ls__flag">{FLAG[code]}</span>
-                <span className="ls__full">{LANG_FULL[code]}</span>
-                {lang === code && <span className="ls__tick">✓</span>}
-              </button>
-            </li>
-          ))}
+          {LANGS.map((code) => {
+            const published = isPublished(pathname, code);
+            return (
+              <li key={code} role="option" aria-selected={lang === code}>
+                <button
+                  type="button"
+                  className={`ls__option${lang === code ? ' ls__option--active' : ''}`}
+                  onClick={() => select(code)}
+                >
+                  <span className="ls__flag">{FLAG[code]}</span>
+                  <span className="ls__full">{LANG_FULL[code]}</span>
+                  {!published && <span className="ls__badge">{inProgressBadge}</span>}
+                  {lang === code && <span className="ls__tick">✓</span>}
+                </button>
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>

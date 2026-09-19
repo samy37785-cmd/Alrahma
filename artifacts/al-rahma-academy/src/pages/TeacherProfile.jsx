@@ -5,9 +5,9 @@ import useSEO from '../hooks/useSEO';
 import Breadcrumbs from '../components/ui/Breadcrumbs';
 import { TEACHERS, TEACHER_CREDENTIALS } from '../data';
 import { useLang } from '../context/LangContext';
+import { getLanguageName } from '../i18n/languageNames';
 
 const FLAG = { en:'🇬🇧', ar:'🇪🇬', it:'🇮🇹', fr:'🇫🇷', de:'🇩🇪', es:'🇪🇸' };
-const LANG_LABEL = { en:'English', ar:'Arabic', it:'Italian', fr:'French', de:'German', es:'Spanish' };
 
 // Rating, lessons and review counts are real, owner-provided per-teacher
 // figures confirmed 2026-09-02 (Teacher Source of Truth — Final
@@ -67,7 +67,7 @@ export default function TeacherProfile() {
     <>
       <Header />
       <main>
-        <Breadcrumbs items={[{ label: 'Teachers', to: '/academy/teachers' }, { label: teacher.nameEn }]} />
+        <Breadcrumbs items={[{ label: t.nav.teachers, to: '/academy/teachers' }, { label: teacher.nameEn }]} />
         {/* Hero */}
         <section className="tp__hero" style={{ background: grad }}>
           <div className="container tp__hero-inner">
@@ -206,7 +206,7 @@ export default function TeacherProfile() {
                 {teacher.langs.map((l) => (
                   <div key={l} className="tp__lang">
                     <span className="tp__lang-flag">{FLAG[l]}</span>
-                    <span>{LANG_LABEL[l]}</span>
+                    <span>{getLanguageName(l, lang)}</span>
                   </div>
                 ))}
               </div>

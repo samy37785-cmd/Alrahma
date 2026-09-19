@@ -347,6 +347,10 @@ const es = {
     "replyBadge": `Respuesta ≤ ${siteFacts.supportResponseHours}h`
   },
   "teachersPg": {
+    "academy": "Academia",
+    "langAll": "Todos",
+    "seoTitle": "Tutores de Corán certificados por Al-Azhar",
+    "seoDescription": `Al-Rahma Academy cuenta con ${siteFacts.totalTeachers} profesores en nuestro equipo — ${siteFacts.featuredTeacherCount} de ellos aparecen aquí. Cada profesor es graduado de Al-Azhar, posee una iyaza verificada con sanad continuo, y su identidad está verificada por la academia.`,
     "eyebrow": "Conoce a algunos de nuestros tutores",
     "title": "Nuestros tutores cualificados",
     "sub": "Todos los tutores de Al-Rahma Academy son graduados verificados de la Universidad de Al-Azhar y poseen una iyaza auténtica con una cadena de transmisión ininterrumpida (sanad).",
@@ -572,7 +576,10 @@ const es = {
     "heading": "Aprende. Comprende. Crece.",
     "sub": "Artículos sobre Corán, Tajweed, árabe y educación islámica — escritos para hispanohablantes en Europa.",
     "backToSite": "Volver al sitio",
-    "readArticle": "Leer artículo →"
+    "readArticle": "Leer artículo →",
+    "allCategories": "Todas",
+    "noArticles": "Aún no hay artículos en esta categoría.",
+    "loadError": "No se pudieron cargar los artículos. Inténtalo de nuevo."
   },
   "notFound": {
     "title": "Página no encontrada",

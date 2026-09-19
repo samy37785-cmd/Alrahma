@@ -4,8 +4,13 @@ import { goHome } from '../../../utils/localePath';
 import { buildBookingWhatsappLink } from '../../../utils/whatsapp';
 import { TEACHERS, plans } from '../../../data';
 import { PLAN_TEXT, pick } from '../../../i18n/content';
+import { ENROLL_COUNTRY_NAMES_AR } from '../../../i18n/enroll/countries';
 /* ── Static data ────────────────────────────────────────────────── */
-const COUNTRIES = [
+// The exact value submitted to the backend for `form.country` -- never
+// change these strings themselves; ENROLL_COUNTRY_NAMES_AR (imported above)
+// supplies a DISPLAY-only Arabic label per entry, looked up by this same
+// string, so the submitted value is untouched regardless of UI language.
+export const COUNTRIES = [
   'United Kingdom','Italy','France','Germany','Spain','Netherlands',
   'Belgium','Switzerland','Austria','Sweden','Denmark','Norway',
   'United States','Canada','Australia','New Zealand',
@@ -70,7 +75,7 @@ export function Progress({ step }) {
 
 /* ── Step 1: About You ─────────────────────────────────────────── */
 export function Step1({ form, set }) {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const s = t.enroll.step1;
   const toggle = (id) => set('times', (prev) =>
     prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
@@ -94,13 +99,23 @@ export function Step1({ form, set }) {
       <div className="enroll__row">
         <div className="field">
           <label>{s.whatsapp}</label>
-          <input value={form.whatsapp} onChange={(e) => set('whatsapp', e.target.value)} placeholder="+44 7700 900000" />
+          <input
+            value={form.whatsapp}
+            onChange={(e) => set('whatsapp', e.target.value)}
+            placeholder="+44 7700 900000"
+            dir="ltr"
+            style={{ direction: 'ltr' }}
+          />
         </div>
         <div className="field">
           <label>{s.country}</label>
           <select value={form.country} onChange={(e) => set('country', e.target.value)}>
             <option value="">{s.selectCountry}</option>
-            {COUNTRIES.map((c) => <option key={c}>{c}</option>)}
+            {COUNTRIES.map((c) => (
+              <option key={c} value={c}>
+                {lang === 'ar' ? (ENROLL_COUNTRY_NAMES_AR[c] || c) : c}
+              </option>
+            ))}
           </select>
         </div>
       </div>

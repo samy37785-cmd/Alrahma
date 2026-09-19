@@ -347,6 +347,10 @@ const en = {
     "replyBadge": `Reply ≤ ${siteFacts.supportResponseHours}h`
   },
   "teachersPg": {
+    "academy": "Academy",
+    "langAll": "All",
+    "seoTitle": "Al-Azhar Certified Quran Tutors",
+    "seoDescription": `Al-Rahma Academy has ${siteFacts.totalTeachers} teachers on our team — ${siteFacts.featuredTeacherCount} of them are featured here. Every teacher is an Al-Azhar graduate holding a verified Ijazah with a continuous sanad, with identity verified by the academy.`,
     "eyebrow": "Meet some of our instructors",
     "title": "Our Qualified Tutors",
     "sub": "Every tutor at Al-Rahma Academy is a verified graduate of Al-Azhar University, holding an authentic Ijazah with an unbroken chain of narration (Sanad).",

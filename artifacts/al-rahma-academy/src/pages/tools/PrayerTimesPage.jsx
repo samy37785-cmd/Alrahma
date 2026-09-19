@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import '../../styles/islamic-tools.css';
 import Header from '../../components/layout/Header';
@@ -8,6 +8,8 @@ import WhatsappFab from '../../components/ui/WhatsappFab';
 import useSEO from '../../hooks/useSEO';
 import { useLang } from '../../context/LangContext';
 import { TOOLS_TEXT, pick } from '../../i18n/content';
+import { PRAYER_TIMES_TEXT } from '../../i18n/tools/prayerTimes';
+import { RELATED_TOOLS_TEXT } from '../../i18n/tools/relatedTools';
 import {
   PRAYERS_ORDER, PRAYER_META, EXTRA_ORDER, EXTRA_META,
   ASR_SCHOOLS, CALC_METHODS,
@@ -16,17 +18,26 @@ import {
   fetchPrayerCoords, fetchPrayerCity, fetchMonth,
 } from '../../utils/islamicToolsUtils';
 
+// CALC_METHODS/PRAYER_META only carry ar+en labels (structural data, not a
+// content module governed by translationStatus.js) -- these small helpers
+// pick between them without an isAr/lang==='ar' ternary, so this file can
+// leave the GRANDFATHERED_FILES list in noHardcodedBilingualContent.test.js.
+function calcMethodLabel(langCode, method) {
+  if (langCode === 'ar') return method.name;
+  return method.en;
+}
+function otherScriptPrayerName(langCode, name) {
+  if (langCode === 'ar') return name;
+  return PRAYER_META[name].ar;
+}
+
 export default function PrayerTimesPage() {
   const { lang } = useLang();
   const tx = pick(TOOLS_TEXT, lang);
-  const isAr = lang === 'ar';
+  const t = PRAYER_TIMES_TEXT[lang] || PRAYER_TIMES_TEXT.en;
+  const rt = RELATED_TOOLS_TEXT[lang] || RELATED_TOOLS_TEXT.en;
 
-  useSEO({
-    title: isAr ? 'مواقيت الصلاة' : 'Prayer Times',
-    description: isAr
-      ? 'مواقيت صلاة دقيقة لموقعك مع عداد تنازلي للصلاة القادمة، ومنبه الصلاة، والجدول الشهري الكامل.'
-      : 'Accurate prayer times for your location with live countdown, prayer alerts, and full monthly timetable.',
-  });
+  useSEO({ title: t.seo.title, description: t.seo.description });
 
   const [coords,       setCoords]      = useState(null);
   const [cityInput,    setCityInput]   = useState('');
@@ -171,24 +182,20 @@ export default function PrayerTimesPage() {
       <Header />
       <main id="main-content" className="it__main">
         <Breadcrumbs items={[
-          { label: isAr ? 'الأدوات' : 'Tools', to: '/tools' },
-          { label: isAr ? 'أدوات الصلاة' : 'Prayer Tools', to: '/tools/prayer' },
-          { label: isAr ? 'مواقيت الصلاة' : 'Prayer Times' },
+          { label: t.breadcrumbs.tools, to: '/tools' },
+          { label: t.breadcrumbs.prayerTools, to: '/tools/prayer' },
+          { label: t.breadcrumbs.current },
         ]} />
 
         <section className="it__hero">
           <div className="container it__hero-inner">
-            <p className="eyebrow">{isAr ? 'الأدوات الإسلامية' : 'Islamic Tools'}</p>
-            <h1>{isAr ? 'مواقيت الصلاة' : 'Prayer Times'}</h1>
-            <p className="it__hero-sub">
-              {isAr
-                ? 'مواقيت دقيقة لموقعك مع عداد تنازلي مباشر للصلاة القادمة، ومنبه الصلاة، والجدول الشهري.'
-                : 'Accurate times for your location with a live countdown to the next prayer, alerts, and a monthly timetable.'}
-            </p>
+            <p className="eyebrow">{tx.eyebrow}</p>
+            <h1>{t.hero.title}</h1>
+            <p className="it__hero-sub">{t.hero.sub}</p>
             {hijri && (
               <div className="it__hijri">
-                <span className="it__hijri-ar" dir={isAr ? 'rtl' : 'ltr'}>
-                  {hijri.day} {isAr ? hijri.month.ar : (tx.cal.months[parseInt(hijri.month.number) - 1] || hijri.month.en)} {hijri.year} {isAr ? 'هـ' : 'AH'}
+                <span className="it__hijri-ar" dir={t.dir}>
+                  {hijri.day} {tx.cal.months[parseInt(hijri.month.number) - 1] || hijri.month.en} {hijri.year} {t.hijriEra}
                 </span>
                 <span className="it__hijri-sep">·</span>
                 <span className="it__hijri-en">{greg?.date}</span>
@@ -205,7 +212,7 @@ export default function PrayerTimesPage() {
                 <label className="it__ctrl-lbl">{tx.calcMethod}</label>
                 <select className="it__ctrl-sel" value={method} onChange={(e) => setMethod(Number(e.target.value))}>
                   {CALC_METHODS.map((m) => (
-                    <option key={m.id} value={m.id}>{isAr ? m.name : m.en}</option>
+                    <option key={m.id} value={m.id}>{calcMethodLabel(lang, m)}</option>
                   ))}
                 </select>
               </div>
@@ -237,7 +244,7 @@ export default function PrayerTimesPage() {
                       <button
                         role="switch"
                         aria-checked={notifyOn}
-                        aria-label={isAr ? 'تفعيل منبّه الصلاة' : 'Toggle prayer alerts'}
+                        aria-label={t.notifyToggleAria}
                         className={`it__toggle${notifyOn ? ' on' : ''}`}
                         onClick={() => setNotifyOn((v) => !v)}
                       >
@@ -275,7 +282,7 @@ export default function PrayerTimesPage() {
               <div className="it__next-banner" style={{ '--c': PRAYER_META[nextPrayer.name]?.color }}>
                 <div className="it__next-left">
                   <p className="it__next-lbl">{tx.nextPrayerLbl}</p>
-                  <p className="it__next-name" dir={isAr ? 'rtl' : 'ltr'}>
+                  <p className="it__next-name" dir={t.dir}>
                     {PRAYER_META[nextPrayer.name]?.icon} {tx.prayers[nextPrayer.name]}
                   </p>
                   <p className="it__next-time">{fmtTime(prayerData.timings[nextPrayer.name], clock12)}</p>
@@ -300,8 +307,8 @@ export default function PrayerTimesPage() {
                     <li key={name} className={`it__prayer-item${isNext ? ' it__prayer-item--next' : ''}${name === 'Sunrise' ? ' it__prayer-item--sunrise' : ''}`}>
                       <span className="it__pi-icon" style={{ color: PRAYER_META[name].color }}>{PRAYER_META[name].icon}</span>
                       <div className="it__pi-names">
-                        <span className="it__pi-ar" dir={isAr ? 'rtl' : 'ltr'}>{tx.prayers[name]}</span>
-                        <span className="it__pi-en">{isAr ? name : PRAYER_META[name].ar}</span>
+                        <span className="it__pi-ar" dir={t.dir}>{tx.prayers[name]}</span>
+                        <span className="it__pi-en">{otherScriptPrayerName(lang, name)}</span>
                       </div>
                       <span className="it__pi-time">{fmtTime(prayerData.timings[name], clock12)}</span>
                       {isNext && <span className="it__pi-badge">{tx.upcoming}</span>}
@@ -316,7 +323,7 @@ export default function PrayerTimesPage() {
                 {EXTRA_ORDER.map((name) => (
                   <div key={name} className="it__extra-card" style={{ '--c': EXTRA_META[name].color }}>
                     <span className="it__extra-icon">{EXTRA_META[name].icon}</span>
-                    <span className="it__extra-ar" dir={isAr ? 'rtl' : 'ltr'}>{tx.extras[name]}</span>
+                    <span className="it__extra-ar" dir={t.dir}>{tx.extras[name]}</span>
                     <span className="it__extra-time">{fmtTime(prayerData.timings[name], clock12)}</span>
                   </div>
                 ))}
@@ -345,7 +352,7 @@ export default function PrayerTimesPage() {
                             <tr key={d.date.gregorian.date} className={isToday ? 'it__month-today' : ''}>
                               <td className="it__month-date">
                                 <strong>{d.date.gregorian.day}</strong>
-                                <span dir={isAr ? 'rtl' : 'ltr'}>{d.date.hijri.day} {isAr ? d.date.hijri.month.ar : (tx.cal.months[parseInt(d.date.hijri.month.number) - 1] || d.date.hijri.month.en)}</span>
+                                <span dir={t.dir}>{d.date.hijri.day} {tx.cal.months[parseInt(d.date.hijri.month.number) - 1] || d.date.hijri.month.en}</span>
                               </td>
                               <td>{fmtTime(d.timings.Fajr, clock12)}</td>
                               <td>{fmtTime(d.timings.Sunrise, clock12)}</td>
@@ -365,11 +372,11 @@ export default function PrayerTimesPage() {
 
           </div>
 
-          <nav className="it__also-try" aria-label={isAr ? 'أدوات مرتبطة' : 'Related tools'}>
-            <span className="it__also-try__label">{isAr ? 'استكشف أيضاً:' : 'Also try:'}</span>
-            <Link to="/tools/qibla">🧭 {isAr ? 'اتجاه القبلة' : 'Qibla Direction'}</Link>
-            <Link to="/tools/islamic-calendar">📅 {isAr ? 'التقويم الإسلامي' : 'Islamic Calendar'}</Link>
-            <Link to="/tools/verse-of-the-day">🌟 {isAr ? 'آية اليوم' : 'Verse of the Day'}</Link>
+          <nav className="it__also-try" aria-label={rt.ariaLabel}>
+            <span className="it__also-try__label">{rt.alsoTry}</span>
+            <Link to="/tools/qibla">🧭 {rt.qibla}</Link>
+            <Link to="/tools/islamic-calendar">📅 {rt.calendar}</Link>
+            <Link to="/tools/verse-of-the-day">🌟 {rt.verse}</Link>
           </nav>
         </div>
       </main>

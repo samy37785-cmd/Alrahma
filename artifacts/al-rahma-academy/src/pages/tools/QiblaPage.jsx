@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import '../../styles/islamic-tools.css';
 import Header from '../../components/layout/Header';
@@ -8,20 +8,18 @@ import WhatsappFab from '../../components/ui/WhatsappFab';
 import useSEO from '../../hooks/useSEO';
 import { useLang } from '../../context/LangContext';
 import { TOOLS_TEXT, pick } from '../../i18n/content';
+import { QIBLA_TEXT } from '../../i18n/tools/qibla';
+import { RELATED_TOOLS_TEXT } from '../../i18n/tools/relatedTools';
 import QiblaCompass from '../../components/features/tools/QiblaCompass';
 import { qiblaBearing, qiblaDistance, fetchPrayerCity } from '../../utils/islamicToolsUtils';
 
 export default function QiblaPage() {
   const { lang } = useLang();
   const tx = pick(TOOLS_TEXT, lang);
-  const isAr = lang === 'ar';
+  const t = QIBLA_TEXT[lang] || QIBLA_TEXT.en;
+  const rt = RELATED_TOOLS_TEXT[lang] || RELATED_TOOLS_TEXT.en;
 
-  useSEO({
-    title: isAr ? 'اتجاه القبلة' : 'Qibla Direction',
-    description: isAr
-      ? 'اعرف اتجاه القبلة الدقيق من موقعك مع بوصلة حية للهاتف المحمول.'
-      : 'Find the exact Qibla direction from your location with a live compass on mobile.',
-  });
+  useSEO({ title: t.seo.title, description: t.seo.description });
 
   const [bearing,       setBearing]      = useState(null);
   const [distance,      setDistance]     = useState(null);
@@ -90,20 +88,16 @@ export default function QiblaPage() {
       <Header />
       <main id="main-content" className="it__main">
         <Breadcrumbs items={[
-          { label: isAr ? 'الأدوات' : 'Tools', to: '/tools' },
-          { label: isAr ? 'أدوات الصلاة' : 'Prayer Tools', to: '/tools/prayer' },
-          { label: isAr ? 'اتجاه القبلة' : 'Qibla Direction' },
+          { label: t.breadcrumbs.tools, to: '/tools' },
+          { label: t.breadcrumbs.prayerTools, to: '/tools/prayer' },
+          { label: t.breadcrumbs.current },
         ]} />
 
         <section className="it__hero">
           <div className="container it__hero-inner">
-            <p className="eyebrow">{isAr ? 'الأدوات الإسلامية' : 'Islamic Tools'}</p>
-            <h1>{isAr ? 'اتجاه القبلة' : 'Qibla Direction'}</h1>
-            <p className="it__hero-sub">
-              {isAr
-                ? 'اعرف اتجاه الكعبة المشرفة من أي مكان في العالم، مع بوصلة حية على الهاتف المحمول.'
-                : 'Find the direction of the Holy Kaaba from anywhere in the world, with a live compass on mobile.'}
-            </p>
+            <p className="eyebrow">{tx.eyebrow}</p>
+            <h1>{t.hero.title}</h1>
+            <p className="it__hero-sub">{t.hero.sub}</p>
           </div>
         </section>
 
@@ -146,7 +140,7 @@ export default function QiblaPage() {
                       style={{ display: 'block', margin: '1.25rem auto 0', fontSize: '.85rem' }}
                       onClick={() => setShowSearch(true)}
                     >
-                      📍 {isAr ? 'تغيير الموقع' : 'Change location'}
+                      📍 {t.changeLocation}
                     </button>
                   ) : (
                     <form className="it__city-form" onSubmit={searchCity} style={{ marginTop: '1.25rem' }}>
@@ -181,16 +175,16 @@ export default function QiblaPage() {
 
               <div className="it__kaaba-info">
                 <h3>{tx.qibla.kaabaTitle}</h3>
-                <p dir={isAr ? 'rtl' : 'ltr'}>{tx.qibla.kaabaText}</p>
+                <p dir={t.dir}>{tx.qibla.kaabaText}</p>
               </div>
             </div>
           </div>
 
-          <nav className="it__also-try" aria-label={isAr ? 'أدوات مرتبطة' : 'Related tools'}>
-            <span className="it__also-try__label">{isAr ? 'استكشف أيضاً:' : 'Also try:'}</span>
-            <Link to="/tools/prayer-times">🕌 {isAr ? 'مواقيت الصلاة' : 'Prayer Times'}</Link>
-            <Link to="/tools/islamic-calendar">📅 {isAr ? 'التقويم الإسلامي' : 'Islamic Calendar'}</Link>
-            <Link to="/tools/verse-of-the-day">🌟 {isAr ? 'آية اليوم' : 'Verse of the Day'}</Link>
+          <nav className="it__also-try" aria-label={rt.ariaLabel}>
+            <span className="it__also-try__label">{rt.alsoTry}</span>
+            <Link to="/tools/prayer-times">🕌 {rt.prayerTimes}</Link>
+            <Link to="/tools/islamic-calendar">📅 {rt.calendar}</Link>
+            <Link to="/tools/verse-of-the-day">🌟 {rt.verse}</Link>
           </nav>
         </div>
       </main>

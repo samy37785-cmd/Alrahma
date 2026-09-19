@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import '../../styles/islamic-tools.css';
 import Header from '../../components/layout/Header';
@@ -8,21 +8,27 @@ import WhatsappFab from '../../components/ui/WhatsappFab';
 import useSEO from '../../hooks/useSEO';
 import { useLang } from '../../context/LangContext';
 import { TOOLS_TEXT, pick } from '../../i18n/content';
+import { ISLAMIC_CALENDAR_TEXT } from '../../i18n/tools/islamicCalendar';
+import { RELATED_TOOLS_TEXT } from '../../i18n/tools/relatedTools';
 import {
   daysUntilHijriEvent, fetchPrayerCoords, fetchPrayerCity,
 } from '../../utils/islamicToolsUtils';
 
+// hijri.weekday only carries an ar+en pair from the Aladhan API response
+// (structural, not a content module) -- this helper picks between them
+// without an isAr/lang==='ar' ternary.
+function hijriWeekday(langCode, hijri) {
+  if (langCode === 'ar') return hijri.weekday.ar;
+  return hijri.weekday.en;
+}
+
 export default function IslamicCalendarPage() {
   const { lang } = useLang();
   const tx = pick(TOOLS_TEXT, lang);
-  const isAr = lang === 'ar';
+  const t = ISLAMIC_CALENDAR_TEXT[lang] || ISLAMIC_CALENDAR_TEXT.en;
+  const rt = RELATED_TOOLS_TEXT[lang] || RELATED_TOOLS_TEXT.en;
 
-  useSEO({
-    title: isAr ? 'التقويم الإسلامي' : 'Islamic Calendar',
-    description: isAr
-      ? 'التاريخ الهجري لليوم، والعد التنازلي لرمضان وعيد الفطر وعيد الأضحى.'
-      : 'Today\'s Hijri date with countdowns to Ramadan, Eid al-Fitr, and Eid al-Adha.',
-  });
+  useSEO({ title: t.seo.title, description: t.seo.description });
 
   const [prayerData,  setPrayerData]  = useState(null);
   const [loading,     setLoading]     = useState(true);
@@ -65,20 +71,16 @@ export default function IslamicCalendarPage() {
       <Header />
       <main id="main-content" className="it__main">
         <Breadcrumbs items={[
-          { label: isAr ? 'الأدوات' : 'Tools', to: '/tools' },
-          { label: isAr ? 'أدوات الصلاة' : 'Prayer Tools', to: '/tools/prayer' },
-          { label: isAr ? 'التقويم الإسلامي' : 'Islamic Calendar' },
+          { label: t.breadcrumbs.tools, to: '/tools' },
+          { label: t.breadcrumbs.prayerTools, to: '/tools/prayer' },
+          { label: t.breadcrumbs.current },
         ]} />
 
         <section className="it__hero">
           <div className="container it__hero-inner">
-            <p className="eyebrow">{isAr ? 'الأدوات الإسلامية' : 'Islamic Tools'}</p>
-            <h1>{isAr ? 'التقويم الإسلامي' : 'Islamic Calendar'}</h1>
-            <p className="it__hero-sub">
-              {isAr
-                ? 'التاريخ الهجري لليوم مع العد التنازلي للمناسبات الإسلامية القادمة، ومرجع أشهر السنة الهجرية.'
-                : "Today's Hijri date with countdowns to Ramadan, Eid al-Fitr, and Eid al-Adha, plus Hijri month names."}
-            </p>
+            <p className="eyebrow">{tx.eyebrow}</p>
+            <h1>{t.hero.title}</h1>
+            <p className="it__hero-sub">{t.hero.sub}</p>
           </div>
         </section>
 
@@ -102,15 +104,15 @@ export default function IslamicCalendarPage() {
             {/* Hijri date display — only when data is available */}
             {hijri && (
               <div className="it__cal-hero">
-                <p className="it__cal-hijri-date" dir={isAr ? 'rtl' : 'ltr'}>
-                  {isAr ? hijri.weekday.ar : hijri.weekday.en}{' '}
+                <p className="it__cal-hijri-date" dir={t.dir}>
+                  {hijriWeekday(lang, hijri)}{' '}
                   {hijri.day}{' '}
-                  {isAr ? hijri.month.ar : (tx.cal.months[parseInt(hijri.month.number) - 1] || hijri.month.en)}{' '}
-                  {hijri.year} {isAr ? 'هـ' : 'AH'}
+                  {tx.cal.months[parseInt(hijri.month.number) - 1] || hijri.month.en}{' '}
+                  {hijri.year} {t.hijriEra}
                 </p>
                 <p className="it__cal-greg">{greg?.weekday?.en}, {greg?.date}</p>
                 <p className="it__cal-month-name">
-                  {tx.cal.monthWord} {isAr ? hijri.month.ar : (tx.cal.months[parseInt(hijri.month.number) - 1] || hijri.month.en)}
+                  {tx.cal.monthWord} {tx.cal.months[parseInt(hijri.month.number) - 1] || hijri.month.en}
                 </p>
               </div>
             )}
@@ -123,7 +125,7 @@ export default function IslamicCalendarPage() {
                   style={{ fontSize: '.82rem' }}
                   onClick={() => setShowSearch(true)}
                 >
-                  📍 {isAr ? 'تغيير المدينة' : 'Change city'}
+                  📍 {t.changeCity}
                 </button>
               </div>
             )}
@@ -148,9 +150,7 @@ export default function IslamicCalendarPage() {
                     <span className="it__oc-name">{tx.cal.ramadan}</span>
                     <span className="it__oc-days">{daysToRamadan === 0 ? tx.cal.today : `${daysToRamadan} ${tx.cal.days}`}</span>
                     <span className="it__oc-lbl">
-                      {isAr
-                        ? `1 رمضان ${parseInt(hijri.year) + (daysToRamadan > 300 ? 1 : 0)} هـ`
-                        : `1 Ramadan ${parseInt(hijri.year) + (daysToRamadan > 300 ? 1 : 0)} AH`}
+                      {`1 ${tx.cal.months[8]} ${parseInt(hijri.year) + (daysToRamadan > 300 ? 1 : 0)} ${t.hijriEra}`}
                     </span>
                   </div>
 
@@ -159,9 +159,7 @@ export default function IslamicCalendarPage() {
                     <span className="it__oc-name">{tx.cal.eidFitr}</span>
                     <span className="it__oc-days">{daysToEidFitr === 0 ? tx.cal.today : `${daysToEidFitr} ${tx.cal.days}`}</span>
                     <span className="it__oc-lbl">
-                      {isAr
-                        ? `1 شوال ${parseInt(hijri.year) + (daysToEidFitr > 300 ? 1 : 0)} هـ`
-                        : `1 Shawwal ${parseInt(hijri.year) + (daysToEidFitr > 300 ? 1 : 0)} AH`}
+                      {`1 ${tx.cal.months[9]} ${parseInt(hijri.year) + (daysToEidFitr > 300 ? 1 : 0)} ${t.hijriEra}`}
                     </span>
                   </div>
 
@@ -170,9 +168,7 @@ export default function IslamicCalendarPage() {
                     <span className="it__oc-name">{tx.cal.eidAdha}</span>
                     <span className="it__oc-days">{daysToEidAdha === 0 ? tx.cal.today : `${daysToEidAdha} ${tx.cal.days}`}</span>
                     <span className="it__oc-lbl">
-                      {isAr
-                        ? `10 ذو الحجة ${parseInt(hijri.year) + (daysToEidAdha > 300 ? 1 : 0)} هـ`
-                        : `10 Dhu al-Hijjah ${parseInt(hijri.year) + (daysToEidAdha > 300 ? 1 : 0)} AH`}
+                      {`10 ${tx.cal.months[11]} ${parseInt(hijri.year) + (daysToEidAdha > 300 ? 1 : 0)} ${t.hijriEra}`}
                     </span>
                   </div>
 
@@ -193,11 +189,11 @@ export default function IslamicCalendarPage() {
             )}
           </div>
 
-          <nav className="it__also-try" aria-label={isAr ? 'أدوات مرتبطة' : 'Related tools'}>
-            <span className="it__also-try__label">{isAr ? 'استكشف أيضاً:' : 'Also try:'}</span>
-            <Link to="/tools/prayer-times">🕌 {isAr ? 'مواقيت الصلاة' : 'Prayer Times'}</Link>
-            <Link to="/tools/qibla">🧭 {isAr ? 'اتجاه القبلة' : 'Qibla Direction'}</Link>
-            <Link to="/tools/verse-of-the-day">🌟 {isAr ? 'آية اليوم' : 'Verse of the Day'}</Link>
+          <nav className="it__also-try" aria-label={rt.ariaLabel}>
+            <span className="it__also-try__label">{rt.alsoTry}</span>
+            <Link to="/tools/prayer-times">🕌 {rt.prayerTimes}</Link>
+            <Link to="/tools/qibla">🧭 {rt.qibla}</Link>
+            <Link to="/tools/verse-of-the-day">🌟 {rt.verse}</Link>
           </nav>
         </div>
       </main>

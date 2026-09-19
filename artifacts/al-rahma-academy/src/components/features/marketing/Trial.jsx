@@ -5,6 +5,7 @@ import { submitTrial } from '../../../api/contentApi';
 import { useTrial } from '../../../context/TrialContext';
 import { useLang } from '../../../context/LangContext';
 import { limitedTrialSpotsText } from '../../../data/siteFacts';
+import { courseOptionLabel } from '../../../i18n/home/leakedStrings';
 
 const EMPTY = { name: '', email: '', phone: '', course: '', message: '' };
 
@@ -167,7 +168,7 @@ export default function Trial() {
             <select id="course" name="course" value={form.course} onChange={handleChange}>
               <option value="">{tr.placeholders.course}</option>
               {options.map((opt) => (
-                <option key={opt}>{opt}</option>
+                <option key={opt} value={opt}>{courseOptionLabel(opt, lang)}</option>
               ))}
             </select>
           </div>

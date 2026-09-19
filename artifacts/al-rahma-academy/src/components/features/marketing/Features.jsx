@@ -1,6 +1,7 @@
 import Reveal from '../../ui/Reveal';
 import { features } from '../../../data';
 import { useLang } from '../../../context/LangContext';
+import { pickLeakedString } from '../../../i18n/home/leakedStrings';
 
 const GRADS = [
   'linear-gradient(135deg,#d4af37,#f0c040)',  /* gold  — Free Trial */
@@ -68,7 +69,7 @@ const ICONS = [
 ];
 
 export default function Features() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
 
   return (
     <section className="features">
@@ -100,7 +101,7 @@ export default function Features() {
                 <p>{item.text || f.text}</p>
                 {isFeatured && (
                   <a href="#trial" className="feature__link">
-                    Start your free trial <span aria-hidden="true">→</span>
+                    {pickLeakedString('startFreeTrialLink', lang)} <span aria-hidden="true">→</span>
                   </a>
                 )}
               </Reveal>

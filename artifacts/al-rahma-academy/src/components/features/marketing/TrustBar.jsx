@@ -2,34 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import Reveal from '../../ui/Reveal';
 import { useLang } from '../../../context/LangContext';
 import { site } from '../../../data/site';
-
-const COUNTRIES = [
-  { flag: '🇬🇧', name: 'UK' },
-  { flag: '🇩🇪', name: 'Germany' },
-  { flag: '🇫🇷', name: 'France' },
-  { flag: '🇮🇹', name: 'Italy' },
-  { flag: '🇪🇸', name: 'Spain' },
-  { flag: '🇳🇱', name: 'Netherlands' },
-  { flag: '🇺🇸', name: 'USA' },
-  { flag: '🇨🇦', name: 'Canada' },
-  { flag: '🇦🇺', name: 'Australia' },
-  { flag: '🇸🇪', name: 'Sweden' },
-  { flag: '🇳🇴', name: 'Norway' },
-  { flag: '🇧🇪', name: 'Belgium' },
-  { flag: '🇨🇭', name: 'Switzerland' },
-  { flag: '🇦🇹', name: 'Austria' },
-  { flag: '🇩🇰', name: 'Denmark' },
-  { flag: '🇵🇹', name: 'Portugal' },
-  { flag: '🇬🇷', name: 'Greece' },
-  { flag: '🇵🇱', name: 'Poland' },
-  { flag: '🇹🇷', name: 'Turkey' },
-  { flag: '🇸🇦', name: 'Saudi Arabia' },
-  { flag: '🇦🇪', name: 'UAE' },
-  { flag: '🇲🇾', name: 'Malaysia' },
-  { flag: '🇺🇿', name: 'Uzbekistan' },
-  { flag: '🇮🇩', name: 'Indonesia' },
-  { flag: '🇿🇦', name: 'South Africa' },
-];
+import { TRUST_BAR_COUNTRIES } from '../../../data/home/countries';
+import { COUNTRY_NAMES_TEXT } from '../../../i18n/home/countries';
+import { pickLeakedString } from '../../../i18n/home/leakedStrings';
 
 const BADGE_ICONS = ['🔒', '💳', '🎓', '👩‍🏫', '🕐', '📄', '⚡'];
 
@@ -55,10 +30,15 @@ function useIsBusinessHours() {
 export default function TrustBar() {
   const trackRef = useRef(null);
   const waStatus = useIsBusinessHours();
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const tb = t.trustBar;
+  const countryNames = COUNTRY_NAMES_TEXT[lang] || COUNTRY_NAMES_TEXT.en;
 
   // Duplicate flags for seamless infinite scroll
+  const COUNTRIES = TRUST_BAR_COUNTRIES.map((c) => ({
+    ...c,
+    name: countryNames[c.id] ?? COUNTRY_NAMES_TEXT.en[c.id],
+  }));
   const doubled = [...COUNTRIES, ...COUNTRIES];
 
   return (
@@ -84,7 +64,7 @@ export default function TrustBar() {
           </div>
           <div className="trust-bar__divider" aria-hidden="true" />
           <div className="trust-bar__stat">
-            <span className="trust-bar__stat-num">24-day</span>
+            <span className="trust-bar__stat-num">{pickLeakedString('refundWindowStat', lang)}</span>
             <span className="trust-bar__stat-label">{tb.moneyBack}</span>
           </div>
           <div className="trust-bar__divider" aria-hidden="true" />

@@ -1014,11 +1014,11 @@ const it = {
   },
   "hadith": {
     "pageTitle": "Biblioteca degli Hadith",
-    "pageDesc": "Sfoglia e cerca 13 raccolte autentiche di hadith, tra cui Sahih al-Bukhari, Sahih Muslim, Riyad as-Salihin e altre.",
+    "pageDesc": "Sfoglia e cerca 10 raccolte autentiche di hadith, tra cui Sahih al-Bukhari, Sahih Muslim, Sunan Abi Dawud e altre.",
     "badge": "📚 Biblioteca degli Hadith",
     "back": "Tutte le collezioni",
     "heroTitle": "Biblioteca islamica degli Hadith",
-    "heroSub": "Sfoglia e cerca 13 raccolte autentiche di hadith — in arabo e inglese — tutte disponibili qui",
+    "heroSub": "Sfoglia e cerca 10 raccolte autentiche di hadith — in arabo e inglese — tramite una fonte dati aperta e documentata",
     "hadiths": "hadith",
     "hadithSingle": "hadith",
     "courseNote": "Questi libri vengono studiati nel nostro",

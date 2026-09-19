@@ -1014,11 +1014,11 @@ const es = {
   },
   "hadith": {
     "pageTitle": "Biblioteca de hadices",
-    "pageDesc": "Explora y busca en 13 colecciones auténticas de hadices, entre ellas Sahih al-Bujari, Sahih Muslim y Riyad as-Salihin.",
+    "pageDesc": "Explora y busca en 10 colecciones auténticas de hadices, entre ellas Sahih al-Bujari, Sahih Muslim y Sunan Abi Dawud.",
     "badge": "📚 Biblioteca de hadices",
     "back": "Todas las colecciones",
     "heroTitle": "Biblioteca islámica de hadices",
-    "heroSub": "Explora y busca en 13 colecciones auténticas de hadices, en árabe e inglés, disponibles aquí mismo.",
+    "heroSub": "Explora y busca en 10 colecciones auténticas de hadices, en árabe e inglés, a través de una fuente de datos abierta y documentada.",
     "hadiths": "hadices",
     "hadithSingle": "hadiz",
     "courseNote": "Estos libros se estudian en nuestro",

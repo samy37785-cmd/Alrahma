@@ -1014,11 +1014,11 @@ const de = {
   },
   "hadith": {
     "pageTitle": "Hadith-Bibliothek",
-    "pageDesc": "Durchsuche 13 authentische Hadith-Sammlungen, darunter Sahih al-Buchari, Sahih Muslim, Riyad as-Salihin und weitere.",
+    "pageDesc": "Durchsuche 10 authentische Hadith-Sammlungen, darunter Sahih al-Buchari, Sahih Muslim, Sunan Abi Dawud und weitere.",
     "badge": "📚 Hadith-Bibliothek",
     "back": "Alle Sammlungen",
     "heroTitle": "Islamische Hadith-Bibliothek",
-    "heroSub": "Durchsuche 13 authentische Hadith-Sammlungen — auf Arabisch und Englisch — direkt auf dieser Website.",
+    "heroSub": "Durchsuche 10 authentische Hadith-Sammlungen — auf Arabisch und Englisch — über eine dokumentierte, offene Datenquelle.",
     "hadiths": "Hadithe",
     "hadithSingle": "Hadith",
     "courseNote": "Diese Bücher werden in unserem",

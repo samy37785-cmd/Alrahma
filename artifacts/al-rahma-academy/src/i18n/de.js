@@ -347,6 +347,10 @@ const de = {
     "replyBadge": `Antwort ≤ ${siteFacts.supportResponseHours}h`
   },
   "teachersPg": {
+    "academy": "Akademie",
+    "langAll": "Alle",
+    "seoTitle": "Al-Azhar-zertifizierte Koranlehrer",
+    "seoDescription": `Al-Rahma Academy hat ${siteFacts.totalTeachers} Lehrkräfte in unserem Team — ${siteFacts.featuredTeacherCount} von ihnen werden hier vorgestellt. Jede Lehrkraft ist Al-Azhar-Absolvent(in) mit einer verifizierten Ijazah und lückenlosem Sanad, deren Identität von der Akademie geprüft wurde.`,
     "eyebrow": "Lerne einige unserer Lehrkräfte kennen",
     "title": "Unsere qualifizierten Lehrkräfte",
     "sub": "Jede Lehrkraft an der Al-Rahma Academy ist eine geprüfte Absolventin oder ein geprüfter Absolvent der Al-Azhar-Universität und besitzt eine authentische Ijazah mit lückenloser Überlieferungskette (Sanad).",

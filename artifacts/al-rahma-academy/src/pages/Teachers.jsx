@@ -5,7 +5,7 @@ import Footer from '../components/layout/Footer';
 import useSEO from '../hooks/useSEO';
 import Breadcrumbs from '../components/ui/Breadcrumbs';
 import { useLang, withLanguage } from '../context/LangContext';
-import { TEACHERS, TEACHER_CREDENTIALS as CREDENTIALS, siteFacts } from '../data';
+import { TEACHERS, TEACHER_CREDENTIALS as CREDENTIALS } from '../data';
 import { loadArabicFontsNow } from '../utils/loadArabicFonts';
 
 // Every card renders an Arabic name (dir="rtl"); trigger the Amiri swap
@@ -109,7 +109,6 @@ function TeacherCard({ teacher, onEnroll, ui, lang }) {
 export default function Teachers() {
   const { t, lang } = useLang();
   const ui = t.teachersPg;
-  const isAr = lang === 'ar';
 
   // Trust/marketing remediation originally dropped an unsourced "32
   // tutors" figure from both descriptions (see
@@ -117,12 +116,11 @@ export default function Teachers() {
   // corrective rounds later replaced it with the owner-confirmed
   // siteFacts.totalTeachers (30 real, siteFacts.featuredTeacherCount = 11
   // displayed — the local TEACHERS dataset below has grown to 11 profiles,
-  // not the 10 this comment used to say).
+  // not the 10 this comment used to say). ui.seoTitle/ui.seoDescription
+  // (src/i18n/{lang}.js's teachersPg) now carry this text per language.
   useSEO({
-    title: isAr ? 'معلمونا المعتمدون من الأزهر' : 'Al-Azhar Certified Quran Tutors',
-    description: isAr
-      ? `تضم أكاديمية الرحمة ${siteFacts.totalTeachers} معلمًا، ${siteFacts.featuredTeacherCount} منهم معروضون هنا. كل معلم خريج الأزهر ويحمل إجازة بسند متصل، وهويته موثقة لدى الأكاديمية.`
-      : `Al-Rahma Academy has ${siteFacts.totalTeachers} teachers on our team — ${siteFacts.featuredTeacherCount} of them are featured here. Every teacher is an Al-Azhar graduate holding a verified Ijazah with a continuous sanad, with identity verified by the academy.`,
+    title: ui.seoTitle,
+    description: ui.seoDescription,
     keywords: 'al-azhar certified quran tutor, online quran teacher, ijazah tutor, female quran teacher, quran teacher for children',
   });
 
@@ -141,7 +139,7 @@ export default function Teachers() {
   const onEnroll = (id) => navigate(withLanguage(`/enroll?teacher=${id}`, lang));
 
   const langFilters = [
-    { v:'all', l: isAr ? 'الكل' : 'All' },
+    { v:'all', l: ui.langAll },
     { v:'en',  l:'🇬🇧 EN' }, { v:'it', l:'🇮🇹 IT' },
     { v:'fr',  l:'🇫🇷 FR' }, { v:'de', l:'🇩🇪 DE' },
     { v:'es',  l:'🇪🇸 ES' },
@@ -151,7 +149,7 @@ export default function Teachers() {
     <>
       <Header />
       <main id="main-content">
-        <Breadcrumbs items={[{ label: 'Academy', to: '/academy' }, { label: ui.title }]} />
+        <Breadcrumbs items={[{ label: ui.academy, to: '/academy' }, { label: ui.title }]} />
         {/* Hero */}
         <section className="tpg__hero">
           <div className="container tpg__hero-inner">

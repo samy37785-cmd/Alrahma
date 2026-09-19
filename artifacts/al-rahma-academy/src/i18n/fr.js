@@ -347,6 +347,10 @@ const fr = {
     "replyBadge": `Réponse ≤ ${siteFacts.supportResponseHours}h`
   },
   "teachersPg": {
+    "academy": "Académie",
+    "langAll": "Tous",
+    "seoTitle": "Tuteurs de Coran certifiés Al-Azhar",
+    "seoDescription": `Al-Rahma Academy compte ${siteFacts.totalTeachers} enseignants dans notre équipe — ${siteFacts.featuredTeacherCount} d'entre eux sont présentés ici. Chaque enseignant est diplômé d'Al-Azhar, titulaire d'un Ijazah vérifié avec un sanad continu, et son identité est vérifiée par l'académie.`,
     "eyebrow": "Découvrez certains de nos enseignants",
     "title": "Nos enseignants qualifiés",
     "sub": "Chaque enseignant d'Al-Rahma Academy est un diplômé vérifié de l'Université Al-Azhar, titulaire d'un Ijazah authentique avec une chaîne de transmission ininterrompue.",

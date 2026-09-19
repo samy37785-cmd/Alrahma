@@ -347,6 +347,10 @@ const ar = {
     "replyBadge": `ردّ ≤ ${siteFacts.supportResponseHours} س`
   },
   "teachersPg": {
+    "academy": "الأكاديمية",
+    "langAll": "الكل",
+    "seoTitle": "معلمونا المعتمدون من الأزهر",
+    "seoDescription": `تضم أكاديمية الرحمة ${siteFacts.totalTeachers} معلمًا، ${siteFacts.featuredTeacherCount} منهم معروضون هنا. كل معلم خريج الأزهر ويحمل إجازة بسند متصل، وهويته موثقة لدى الأكاديمية.`,
     "eyebrow": "تعرف على بعض معلمينا",
     "title": "معلمونا المؤهلون",
     "sub": "كل معلم في أكاديمية الرحمة خريج موثّق من جامعة الأزهر الشريف، يحمل إجازة أصيلة بسند متصل بالنبي ﷺ.",

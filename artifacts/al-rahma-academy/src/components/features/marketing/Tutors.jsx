@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import Reveal from '../../ui/Reveal';
 import { TEACHERS } from '../../../data';
 import { useLang, withLanguage } from '../../../context/LangContext';
+import { pickLeakedString } from '../../../i18n/home/leakedStrings';
 
 /* Inline SVG icons — Lucide-style, consistent with the rest of the homepage. */
 const STAR_ICON = (
@@ -222,7 +223,7 @@ function SpotlightCard({ teacher }) {
 
       <span className="tc3__spotlight-tag">
         <span aria-hidden="true">{STAR_ICON}</span>
-        Featured Tutor
+        {pickLeakedString('featuredTutorBadge', lang)}
       </span>
 
       <div className="tc3__spotlight-inner">

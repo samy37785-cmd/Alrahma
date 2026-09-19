@@ -6,6 +6,7 @@ import Footer from '../../components/layout/Footer';
 import Breadcrumbs from '../../components/ui/Breadcrumbs';
 import useSEO from '../../hooks/useSEO';
 import { useLang } from '../../context/LangContext';
+import { HIFZ_REVIEW_TEXT } from '../../i18n/tools/hifzReview';
 
 // SM-2 spaced repetition algorithm
 function sm2(card, quality) {
@@ -59,23 +60,22 @@ function getDueCards(cards) {
   return cards.filter((c) => new Date(c.nextReview) <= now);
 }
 
-const QUALITY_LABELS = [
-  { q: 5, label: 'Perfect', color: '#1a9e72' },
-  { q: 4, label: 'Good', color: '#4ade80' },
-  { q: 3, label: 'OK', color: '#d4af37' },
-  { q: 1, label: 'Hard', color: '#f97316' },
-  { q: 0, label: 'Forgot', color: '#c0392b' },
+// Structural: q value + button color. The text label per q is looked up
+// from HIFZ_REVIEW_TEXT.quality[key] by the page, not hardcoded here.
+// Exported so src/test/contentCompleteness.test.js can prove every
+// structural key here has a corresponding text entry, with no orphans.
+export const QUALITY_LEVELS = [
+  { q: 5, key: 'perfect', color: '#1a9e72' },
+  { q: 4, key: 'good', color: '#4ade80' },
+  { q: 3, key: 'ok', color: '#d4af37' },
+  { q: 1, key: 'hard', color: '#f97316' },
+  { q: 0, key: 'forgot', color: '#c0392b' },
 ];
 
 export default function HifzReviewPage() {
   const { lang } = useLang();
-  const isAr = lang === 'ar';
-  useSEO({
-    title: isAr ? 'مراجعة الحفظ بالتكرار المتباعد' : 'Hifz Spaced Repetition',
-    description: isAr
-      ? 'راجع محفوظاتك بنظام التكرار المتباعد SM-2 لتثبيت القرآن الكريم في الذاكرة'
-      : 'Review your Hifz using SM-2 spaced repetition to commit Quran to long-term memory',
-  });
+  const t = HIFZ_REVIEW_TEXT[lang] || HIFZ_REVIEW_TEXT.en;
+  useSEO({ title: t.seo.title, description: t.seo.description });
 
   const [cards, setCards] = useState(loadCards);
   const [session, setSession] = useState(null); // array of cards to review today
@@ -120,20 +120,19 @@ export default function HifzReviewPage() {
 
   // Summary screen
   if (done) {
+    const summary = t.done.summary
+      .replace('{count}', session.length)
+      .replace('{plural}', session.length !== 1 ? 's' : '');
     return (
       <>
         <Header />
         <main id="main-content" style={{ minHeight: '70vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 20px' }}>
           <div className="hifz__done-card">
             <div style={{ fontSize: '3rem' }}>🎉</div>
-            <h2>{isAr ? 'أحسنت! جلسة المراجعة اكتملت' : "Session complete — well done!"}</h2>
-            <p style={{ color: 'var(--muted)' }}>
-              {isAr
-                ? `راجعت ${session.length} آية. ستعود البطاقات في مواعيدها المجدولة.`
-                : `You reviewed ${session.length} verse${session.length !== 1 ? 's' : ''}. Cards will return on their scheduled dates.`}
-            </p>
+            <h2>{t.done.title}</h2>
+            <p style={{ color: 'var(--muted)' }}>{summary}</p>
             <button type="button" className="btn btn--green" onClick={() => setSession(null)}>
-              {isAr ? 'العودة للرئيسية' : 'Back to overview'}
+              {t.done.backToOverview}
             </button>
           </div>
         </main>
@@ -158,13 +157,13 @@ export default function HifzReviewPage() {
             </p>
 
             <div className="hifz__flash-card">
-              <p className="hifz__verse-num">{isAr ? 'الآية' : 'Verse'} {card.verse}</p>
+              <p className="hifz__verse-num">{t.session.verse} {card.verse}</p>
               {revealed
                 ? <p className="hifz__arabic" dir="rtl" lang="ar">{card.arabic}</p>
                 : (
                   <>
                     <p className="hifz__hint">{card.hint}</p>
-                    <p className="hifz__hint-label">{isAr ? '(ابدأ الآية…)' : '(beginning of the verse…)'}</p>
+                    <p className="hifz__hint-label">{t.session.hintLabel}</p>
                   </>
                 )}
             </div>
@@ -175,13 +174,13 @@ export default function HifzReviewPage() {
                 className="btn btn--green btn--block"
                 onClick={() => setRevealed(true)}
               >
-                {isAr ? 'اكشف الآية' : 'Show verse'}
+                {t.session.showVerse}
               </button>
             ) : (
               <div className="hifz__quality-row">
-                <p className="hifz__quality-label">{isAr ? 'كيف كانت إجابتك؟' : 'How did you do?'}</p>
+                <p className="hifz__quality-label">{t.session.qualityLabel}</p>
                 <div className="hifz__quality-btns">
-                  {QUALITY_LABELS.map(({ q, label, color }) => (
+                  {QUALITY_LEVELS.map(({ q, key, color }) => (
                     <button
                       key={q}
                       type="button"
@@ -189,7 +188,7 @@ export default function HifzReviewPage() {
                       style={{ '--q-color': color }}
                       onClick={() => handleQuality(q)}
                     >
-                      {label}
+                      {t.quality[key]}
                     </button>
                   ))}
                 </div>
@@ -203,26 +202,26 @@ export default function HifzReviewPage() {
   }
 
   // Overview / dashboard
+  const startSessionLabel = t.overview.startSession
+    .replace('{count}', due.length)
+    .replace('{plural}', due.length !== 1 ? 's' : '');
+
   return (
     <>
       <Header />
       <main id="main-content">
         <Breadcrumbs
           items={[
-            { label: isAr ? 'الأدوات' : 'Tools', to: '/tools' },
-            { label: isAr ? 'مراجعة الحفظ' : 'Hifz Review' },
+            { label: t.breadcrumbs.tools, to: '/tools' },
+            { label: t.breadcrumbs.current },
           ]}
         />
 
         <section className="hub-hero">
           <div className="container hub-hero__inner">
-            <span className="eyebrow">📚 {isAr ? 'التكرار المتباعد' : 'Spaced Repetition'}</span>
-            <h1>{isAr ? 'مراجعة الحفظ' : 'Hifz Review'}</h1>
-            <p className="hub-hero__sub">
-              {isAr
-                ? 'راجع محفوظاتك بنظام SM-2 لتثبيتها في الذاكرة طويلة المدى'
-                : 'Review your memorisation with the SM-2 algorithm for long-term retention'}
-            </p>
+            <span className="eyebrow">📚 {t.eyebrow}</span>
+            <h1>{t.hero.title}</h1>
+            <p className="hub-hero__sub">{t.hero.sub}</p>
           </div>
         </section>
 
@@ -232,15 +231,15 @@ export default function HifzReviewPage() {
           <div className="hifz__stats-row">
             <div className="hifz__stat-box">
               <strong>{due.length}</strong>
-              <span>{isAr ? 'تستحق المراجعة اليوم' : 'Due today'}</span>
+              <span>{t.overview.dueToday}</span>
             </div>
             <div className="hifz__stat-box">
               <strong>{cards.filter((c) => c.repetitions > 0).length}</strong>
-              <span>{isAr ? 'تمت مراجعتها' : 'Reviewed'}</span>
+              <span>{t.overview.reviewed}</span>
             </div>
             <div className="hifz__stat-box">
               <strong>{cards.length}</strong>
-              <span>{isAr ? 'إجمالي البطاقات' : 'Total cards'}</span>
+              <span>{t.overview.totalCards}</span>
             </div>
           </div>
 
@@ -251,16 +250,12 @@ export default function HifzReviewPage() {
               onClick={startSession}
               style={{ marginBottom: 16 }}
             >
-              {isAr ? `ابدأ المراجعة (${due.length} آية)` : `Start review session (${due.length} card${due.length !== 1 ? 's' : ''})`}
+              {startSessionLabel}
             </button>
           ) : (
             <div className="hifz__done-card" style={{ marginBottom: 24 }}>
               <div style={{ fontSize: '2rem' }}>✅</div>
-              <p>
-                {isAr
-                  ? 'رائع! لا توجد بطاقات مستحقة الآن. عد لاحقاً.'
-                  : "You're all caught up! No cards due right now. Check back later."}
-              </p>
+              <p>{t.overview.allCaughtUp}</p>
             </div>
           )}
 
@@ -271,12 +266,12 @@ export default function HifzReviewPage() {
               return (
                 <div key={c.id} className={`hifz__card-row${isDue ? ' due' : ''}`}>
                   <div>
-                    <p className="hifz__card-surah">{c.surah} · {isAr ? 'آية' : 'v.'}{c.verse}</p>
+                    <p className="hifz__card-surah">{c.surah} · {t.overview.verseAbbrev}{c.verse}</p>
                     <p className="hifz__card-arabic" dir="rtl" lang="ar">{c.arabic.slice(0, 40)}{c.arabic.length > 40 ? '…' : ''}</p>
                   </div>
                   <div className="hifz__card-meta">
                     <span className={`hifz__due-badge${isDue ? ' due' : ''}`}>
-                      {isDue ? (isAr ? 'مستحقة' : 'Due') : `+${c.interval}d`}
+                      {isDue ? t.overview.due : `+${c.interval}d`}
                     </span>
                     <span className="hifz__ease">{c.easeFactor.toFixed(1)}×</span>
                   </div>
@@ -291,7 +286,7 @@ export default function HifzReviewPage() {
             style={{ marginTop: 24, fontSize: '.85rem' }}
             onClick={resetAll}
           >
-            {isAr ? 'إعادة ضبط جميع البطاقات' : 'Reset all cards'}
+            {t.overview.resetAll}
           </button>
         </section>
       </main>

@@ -5,6 +5,7 @@ import Footer from '../../components/layout/Footer';
 import Breadcrumbs from '../../components/ui/Breadcrumbs';
 import useSEO from '../../hooks/useSEO';
 import { useLang } from '../../context/LangContext';
+import { TAJWEED_CHECKER_TEXT } from '../../i18n/tools/tajweedChecker';
 
 // Short practice verses with transliteration
 const VERSES = [
@@ -49,7 +50,7 @@ const VERSES = [
 // Rough Arabic → Latin normalisation for comparison
 function normaliseArabic(str) {
   return str
-    .replace(/[ً-ٰٟ]/g, '') // strip harakat/tashkeel
+    .replace(/[ً-ٰٟ]/g, '') // strip harakat/tashkeel
     .replace(/\s+/g, ' ')
     .trim();
 }
@@ -71,13 +72,8 @@ const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
 
 export default function TajweedCheckerPage() {
   const { lang } = useLang();
-  const isAr = lang === 'ar';
-  useSEO({
-    title: isAr ? 'مدقق التجويد بالذكاء الاصطناعي' : 'AI Tajweed Checker',
-    description: isAr
-      ? 'تدرّب على تلاوة القرآن الكريم واحصل على تقييم فوري بالذكاء الاصطناعي'
-      : 'Practice Quran recitation and get instant AI feedback on your Tajweed',
-  });
+  const t = TAJWEED_CHECKER_TEXT[lang] || TAJWEED_CHECKER_TEXT.en;
+  useSEO({ title: t.seo.title, description: t.seo.description });
 
   const [verseIdx, setVerseIdx] = useState(0);
   const [listening, setListening] = useState(false);
@@ -89,7 +85,7 @@ export default function TajweedCheckerPage() {
 
   const startListening = useCallback(() => {
     if (!SpeechRec) {
-      setError(isAr ? 'المتصفح لا يدعم التعرف على الصوت' : 'Your browser does not support speech recognition. Try Chrome.');
+      setError(t.errors.noSpeechInline);
       return;
     }
     setError('');
@@ -106,7 +102,7 @@ export default function TajweedCheckerPage() {
     rec.onerror = (e) => {
       setListening(false);
       if (e.error !== 'no-speech') {
-        setError(isAr ? 'حدث خطأ في التعرف على الصوت' : `Speech recognition error: ${e.error}`);
+        setError(t.errors.recognitionError.replace('{error}', e.error));
       }
     };
     rec.onresult = (e) => {
@@ -116,16 +112,16 @@ export default function TajweedCheckerPage() {
       setScore(pct);
     };
     rec.start();
-  }, [verse.arabic, isAr]);
+  }, [verse.arabic, t]);
 
   const stopListening = () => { recRef.current?.stop(); setListening(false); };
 
   const scoreColor = score === null ? '' : score >= 80 ? '#1a9e72' : score >= 50 ? '#d4af37' : '#c0392b';
   const scoreFeedback = score === null ? '' : score >= 80
-    ? (isAr ? 'ممتاز! تلاوتك صحيحة.' : 'Excellent! Your recitation matches well.')
+    ? t.feedback.excellent
     : score >= 50
-    ? (isAr ? 'جيد! حاول مرة أخرى لمزيد من الدقة.' : 'Good effort! Try again for better accuracy.')
-    : (isAr ? 'واصل التدريب — استمع للمثال وكرر.' : 'Keep practising — listen carefully and try again.');
+    ? t.feedback.good
+    : t.feedback.keepPractising;
 
   return (
     <>
@@ -133,20 +129,16 @@ export default function TajweedCheckerPage() {
       <main id="main-content">
         <Breadcrumbs
           items={[
-            { label: isAr ? 'الأدوات' : 'Tools', to: '/tools' },
-            { label: isAr ? 'مدقق التجويد' : 'Tajweed Checker' },
+            { label: t.breadcrumbs.tools, to: '/tools' },
+            { label: t.breadcrumbs.current },
           ]}
         />
 
         <section className="hub-hero">
           <div className="container hub-hero__inner">
-            <span className="eyebrow">🎙️ {isAr ? 'الذكاء الاصطناعي' : 'AI-Powered'}</span>
-            <h1>{isAr ? 'مدقق التجويد' : 'Tajweed Checker'}</h1>
-            <p className="hub-hero__sub">
-              {isAr
-                ? 'اقرأ الآية بصوت عالٍ واحصل على تقييم فوري لتلاوتك'
-                : 'Read the verse aloud and get instant feedback on your recitation'}
-            </p>
+            <span className="eyebrow">🎙️ {t.eyebrow}</span>
+            <h1>{t.hero.title}</h1>
+            <p className="hub-hero__sub">{t.hero.sub}</p>
           </div>
         </section>
 
@@ -183,7 +175,7 @@ export default function TajweedCheckerPage() {
                 onClick={startListening}
                 disabled={!SpeechRec}
               >
-                🎙️ {isAr ? 'ابدأ التلاوة' : 'Start Reciting'}
+                🎙️ {t.startReciting}
               </button>
             ) : (
               <button
@@ -192,14 +184,14 @@ export default function TajweedCheckerPage() {
                 onClick={stopListening}
               >
                 <span className="tajweed__pulse" aria-hidden="true" />
-                {isAr ? 'إيقاف' : 'Stop'}
+                {t.stop}
               </button>
             )}
           </div>
 
           {listening && (
             <p className="tajweed__hint" aria-live="polite">
-              🎙️ {isAr ? 'يستمع… اقرأ الآية بصوت واضح' : 'Listening… recite the verse clearly'}
+              🎙️ {t.listeningHint}
             </p>
           )}
 
@@ -208,7 +200,7 @@ export default function TajweedCheckerPage() {
           {/* Result */}
           {transcript && (
             <div className="tajweed__result">
-              <p className="tajweed__label">{isAr ? 'ما سمعته:' : 'What I heard:'}</p>
+              <p className="tajweed__label">{t.whatIHeard}</p>
               <p className="tajweed__heard" dir="rtl" lang="ar">{transcript}</p>
 
               {score !== null && (
@@ -233,7 +225,7 @@ export default function TajweedCheckerPage() {
                     onClick={() => { setTranscript(''); setScore(null); }}
                     style={{ marginTop: 12 }}
                   >
-                    {isAr ? 'حاول مرة أخرى' : 'Try again'}
+                    {t.tryAgain}
                   </button>
                 </>
               )}
@@ -242,9 +234,7 @@ export default function TajweedCheckerPage() {
 
           {!SpeechRec && (
             <p className="tajweed__error" style={{ marginTop: 16 }}>
-              {isAr
-                ? 'التعرف على الصوت غير مدعوم في هذا المتصفح. يُنصح باستخدام Chrome.'
-                : 'Speech recognition is not supported in this browser. Please use Chrome for the best experience.'}
+              {t.errors.noSpeechBanner}
             </p>
           )}
         </section>

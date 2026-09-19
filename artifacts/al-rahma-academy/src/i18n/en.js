@@ -1051,11 +1051,11 @@ const en = {
   },
   "hadith": {
     "pageTitle": "Hadith Library",
-    "pageDesc": "Browse & search 13 authentic hadith collections including Sahih Bukhari, Sahih Muslim, Riyad As-Salihin, and more.",
+    "pageDesc": "Browse & search 10 authentic hadith collections including Sahih Al-Bukhari, Sahih Muslim, Sunan Abi Dawud, and more.",
     "badge": "📚 Hadith Library",
     "back": "All Collections",
     "heroTitle": "Islamic Hadith Library",
-    "heroSub": "Browse & search 13 authentic hadith collections — Arabic & English — all hosted right here",
+    "heroSub": "Browse & search 10 authentic hadith collections — Arabic & English — via a documented, open data source",
     "hadiths": "hadiths",
     "hadithSingle": "hadith",
     "courseNote": "These books are studied in our",

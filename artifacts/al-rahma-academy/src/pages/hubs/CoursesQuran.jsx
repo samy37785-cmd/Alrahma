@@ -5,15 +5,18 @@ import Breadcrumbs from '../../components/ui/Breadcrumbs';
 import WhatsappFab from '../../components/ui/WhatsappFab';
 import { useLang } from '../../context/LangContext';
 import useSEO from '../../hooks/useSEO';
+import { pickCoursesSeo } from '../../i18n/courses/seo';
 
 export default function CoursesQuran() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const h = t.hubs;
   const hq = h.quran;
+  const seo = pickCoursesSeo('quran', lang);
 
   useSEO({
-    title: 'Quran & Tajweed Courses',
-    description: 'Online Quran Reading, Tajweed, and Hifz (memorization) courses with certified Al-Azhar teachers — in 17 languages.',
+    title: seo.title,
+    description: seo.description,
+    keywords: seo.keywords,
   });
 
   return (

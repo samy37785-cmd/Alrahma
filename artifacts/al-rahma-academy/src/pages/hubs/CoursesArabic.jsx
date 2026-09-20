@@ -5,15 +5,18 @@ import Breadcrumbs from '../../components/ui/Breadcrumbs';
 import WhatsappFab from '../../components/ui/WhatsappFab';
 import { useLang } from '../../context/LangContext';
 import useSEO from '../../hooks/useSEO';
+import { pickCoursesSeo } from '../../i18n/courses/seo';
 
 export default function CoursesArabic() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const h = t.hubs;
   const ha = h.arabic;
+  const seo = pickCoursesSeo('arabic', lang);
 
   useSEO({
-    title: 'Arabic Alphabet Course',
-    description: 'Learn the 28 Arabic letters with audio pronunciation and interactive exercises — ideal for beginners starting their Quran journey.',
+    title: seo.title,
+    description: seo.description,
+    keywords: seo.keywords,
   });
 
   return (

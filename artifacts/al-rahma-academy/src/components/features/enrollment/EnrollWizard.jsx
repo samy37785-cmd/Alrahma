@@ -3,14 +3,8 @@ import { goHome } from '../../../utils/localePath';
 import { buildBookingWhatsappLink } from '../../../utils/whatsapp';
 import { TEACHERS, plans } from '../../../data';
 import { PLAN_TEXT, pick } from '../../../i18n/content';
+import { COUNTRIES, countryLabel } from '../../../i18n/enroll/countries';
 /* ── Static data ────────────────────────────────────────────────── */
-const COUNTRIES = [
-  'United Kingdom','Italy','France','Germany','Spain','Netherlands',
-  'Belgium','Switzerland','Austria','Sweden','Denmark','Norway',
-  'United States','Canada','Australia','New Zealand',
-  'Egypt','Saudi Arabia','UAE','Qatar','Kuwait','Jordan','Morocco',
-  'Tunisia','Algeria','Turkey','Other',
-];
 // Time-slot ids + the slot/subSlot key used to read translated labels from t.enroll.step1.slots
 const TIME_SLOTS = [
   { id: 'morning',   key: 'morning',   subKey: 'morningSub'   },
@@ -69,7 +63,7 @@ export function Progress({ step }) {
 
 /* ── Step 1: About You ─────────────────────────────────────────── */
 export function Step1({ form, set }) {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const s = t.enroll.step1;
   const toggle = (id) => set('times', (prev) =>
     prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
@@ -85,21 +79,38 @@ export function Step1({ form, set }) {
           <input value={form.name} onChange={(e) => set('name', e.target.value)} placeholder={s.placeholderName} />
         </div>
         <div className="field">
-          <label>{s.email}</label>
-          <input type="email" value={form.email} onChange={(e) => set('email', e.target.value)} placeholder="you@email.com" />
+          <label htmlFor="enroll-email">{s.email}</label>
+          <input id="enroll-email" type="email" value={form.email} onChange={(e) => set('email', e.target.value)} placeholder="name@example.com" />
         </div>
       </div>
 
       <div className="enroll__row">
         <div className="field">
-          <label>{s.whatsapp}</label>
-          <input value={form.whatsapp} onChange={(e) => set('whatsapp', e.target.value)} placeholder="+44 7700 900000" />
+          <label htmlFor="enroll-whatsapp">{s.whatsapp}</label>
+          {/* dir="ltr" only on this input, not the surrounding form/labels -
+              a phone number typed in the Arabic (RTL) form would otherwise
+              render digit groups in visually reversed order. The inline
+              style is required too: styles/layout/rtl.css's
+              `[dir="rtl"] .field input { direction: rtl; text-align: right; }`
+              is an author CSS rule, which overrides the `dir` HTML
+              attribute's own (much lower-specificity) default styling -
+              confirmed live in the browser (computed direction stayed
+              "rtl" with only the attribute set). An inline style always
+              wins over that class-based rule without touching rtl.css. */}
+          <input
+            id="enroll-whatsapp"
+            dir="ltr"
+            style={{ direction: 'ltr', textAlign: 'left' }}
+            value={form.whatsapp}
+            onChange={(e) => set('whatsapp', e.target.value)}
+            placeholder="+44 7700 900000"
+          />
         </div>
         <div className="field">
-          <label>{s.country}</label>
-          <select value={form.country} onChange={(e) => set('country', e.target.value)}>
+          <label htmlFor="enroll-country">{s.country}</label>
+          <select id="enroll-country" value={form.country} onChange={(e) => set('country', e.target.value)}>
             <option value="">{s.selectCountry}</option>
-            {COUNTRIES.map((c) => <option key={c}>{c}</option>)}
+            {COUNTRIES.map((c) => <option key={c.value} value={c.value}>{countryLabel(c.value, lang)}</option>)}
           </select>
         </div>
       </div>

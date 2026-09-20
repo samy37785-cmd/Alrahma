@@ -51,22 +51,39 @@ const PREVIEW_ORIGIN = `http://127.0.0.1:${PRERENDER_PORT}`;
 // immediately (a title check that can never fail is worse than none).
 const SHELL_TITLE = 'Al-Rahma Academy — Learn Quran Online | Tajweed, Hifz & Arabic';
 
-// preview.kill() on Windows only signals the immediate spawned process —
-// with shell:true that's cmd.exe, not the npx -> node -> vite chain
-// underneath it, so the real preview server (and vite's own child
-// processes) are left running and orphaned, silently holding the port
-// open for the next run. Verified directly on this machine: a plain
-// preview.kill() left a live process tree 4 levels deep. `taskkill /T /F`
-// is the standard Windows mechanism for killing an entire process tree by
-// its root PID; POSIX's preview.kill() already covers the whole
-// process group there, since child_process.spawn does not shell=true
-// re-parent children the same way on POSIX.
+// A plain preview.kill() only signals the immediate spawned process —
+// with shell:true that's cmd.exe on Windows / sh on POSIX, not the
+// npx -> node -> vite chain underneath it, so the real preview server
+// (and vite's own child processes) are left running and orphaned.
+// Verified directly, on both platforms: a plain preview.kill() left a
+// live process tree behind on Windows (4 levels deep, confirmed with
+// Get-CimInstance), and on Linux CI it hung the entire "Root typecheck +
+// build" step indefinitely — the orphaned vite preview process kept the
+// job's stdout pipe open, so the step's own log output froze right after
+// "[prerender] done: 4 pages" and never reported completion. An earlier
+// version of this comment wrongly assumed POSIX's plain .kill() already
+// covered the whole process group; it does not once npx has re-execed
+// into a further child.
+//
+// Fixed on both platforms by giving the child its own process
+// group/console (`detached: true` at spawn) and killing that whole group
+// by PID, rather than just the one process spawn() handed back:
+// - Windows: `taskkill /T /F` — the standard mechanism for killing an
+//   entire process tree by its root PID.
+// - POSIX: `process.kill(-pid, 'SIGKILL')` — spawning detached makes the
+//   child a new process group leader (its pgid equals its pid); signaling
+//   the NEGATIVE of that pid is the standard POSIX way to signal the
+//   whole group at once, not just the one process.
 function killPreview(proc) {
   if (!proc || proc.killed || proc.pid == null) return;
   if (process.platform === 'win32') {
     spawnSync('taskkill', ['/pid', String(proc.pid), '/T', '/F']);
   } else {
-    proc.kill();
+    try {
+      process.kill(-proc.pid, 'SIGKILL');
+    } catch {
+      // Process group already gone — nothing left to kill.
+    }
   }
 }
 
@@ -172,9 +189,17 @@ async function run() {
     // untrusted input in this string (PRERENDER_PORT is this script's own
     // internal default or an explicitly-set build-time env var, never
     // user/network input).
+    //
+    // detached: true -- makes this child (the shell) its own process
+    // group leader, so killPreview() can signal the whole group (shell +
+    // npx + the real vite server) by PID at once. Without this, only the
+    // shell itself receives a kill signal; npx's further child (the
+    // actual `node .../vite.js preview` process) survives, which hung a
+    // real CI run indefinitely by keeping the job's stdout pipe open —
+    // see killPreview()'s own comment for the full story.
     preview = spawn(
       `npx vite preview --config vite.config.ts --host 127.0.0.1 --port ${PRERENDER_PORT} --strictPort`,
-      { cwd: root, stdio: 'inherit', shell: true, env: { ...process.env, PORT: PRERENDER_PORT } },
+      { cwd: root, stdio: 'inherit', shell: true, detached: true, env: { ...process.env, PORT: PRERENDER_PORT } },
     );
 
     await waitForServer(preview, PREVIEW_ORIGIN);

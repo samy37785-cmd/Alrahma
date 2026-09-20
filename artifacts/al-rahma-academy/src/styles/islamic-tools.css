@@ -54,10 +54,10 @@
 .it__toggle.on .it__toggle-knob { left: 25px; }
 
 .it__city-form { flex: 2; min-width: 260px; }
-.it__city-row { display: flex; gap: 8px; }
-.it__city-input { flex: 1; padding: 9px 14px; border: 1.5px solid var(--line); border-radius: 8px; font-size: .9rem; color: var(--ink); background: #fff; }
+.it__city-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.it__city-input { flex: 1 1 140px; min-width: 0; padding: 9px 14px; border: 1.5px solid var(--line); border-radius: 8px; font-size: .9rem; color: var(--ink); background: #fff; }
 .it__city-input:focus { border-color: var(--green); outline: none; }
-.it__city-btn { padding: 9px 18px; border-radius: 8px; background: var(--green); color: #fff; border: none; font-weight: 700; font-size: .9rem; cursor: pointer; transition: .2s; }
+.it__city-btn { flex: 0 0 auto; padding: 9px 18px; border-radius: 8px; background: var(--green); color: #fff; border: none; font-weight: 700; font-size: .9rem; cursor: pointer; transition: .2s; }
 .it__city-btn:hover { background: #0b4a38; }
 .it__err { color: #c0392b; font-size: .83rem; margin: 4px 0 0; }
 

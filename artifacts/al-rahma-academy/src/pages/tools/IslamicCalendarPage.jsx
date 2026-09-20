@@ -91,8 +91,9 @@ export default function IslamicCalendarPage() {
             {!loading && !hijri && (
               <form className="it__city-form" onSubmit={searchCity} style={{ marginBottom: '1.5rem' }}>
                 <div className="it__city-row">
-                  <input className="it__city-input" value={cityInput} autoFocus
-                    onChange={(e) => setCityInput(e.target.value)} placeholder={tx.cityPlaceholder} />
+                  <input id="cal-city-search" name="city" className="it__city-input" value={cityInput} autoFocus
+                    onChange={(e) => setCityInput(e.target.value)} placeholder={tx.cityPlaceholder}
+                    aria-label={tx.cityPlaceholder} />
                   <button className="it__city-btn" type="submit">{tx.search}</button>
                 </div>
                 {error && <p className="it__err">{error}</p>}
@@ -132,8 +133,9 @@ export default function IslamicCalendarPage() {
             {hijri && showSearch && (
               <form className="it__city-form" onSubmit={searchCity} style={{ marginBottom: '1.25rem' }}>
                 <div className="it__city-row">
-                  <input className="it__city-input" value={cityInput} autoFocus
-                    onChange={(e) => setCityInput(e.target.value)} placeholder={tx.cityPlaceholder} />
+                  <input id="cal-city-search" name="city" className="it__city-input" value={cityInput} autoFocus
+                    onChange={(e) => setCityInput(e.target.value)} placeholder={tx.cityPlaceholder}
+                    aria-label={tx.cityPlaceholder} />
                   <button className="it__city-btn" type="submit">{tx.search}</button>
                 </div>
                 {error && <p className="it__err">{error}</p>}

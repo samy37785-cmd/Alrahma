@@ -145,8 +145,9 @@ export default function QiblaPage() {
                   ) : (
                     <form className="it__city-form" onSubmit={searchCity} style={{ marginTop: '1.25rem' }}>
                       <div className="it__city-row">
-                        <input className="it__city-input" value={cityInput}
-                          onChange={(e) => setCityInput(e.target.value)} placeholder={tx.cityPlaceholder} />
+                        <input id="qibla-city-search" name="city" className="it__city-input" value={cityInput}
+                          onChange={(e) => setCityInput(e.target.value)} placeholder={tx.cityPlaceholder}
+                          aria-label={tx.cityPlaceholder} />
                         <button className="it__city-btn" type="submit">{tx.search}</button>
                       </div>
                       {error && <p className="it__err">{error}</p>}
@@ -160,8 +161,9 @@ export default function QiblaPage() {
                 <>
                   <form className="it__city-form" onSubmit={searchCity} style={{ marginBottom: '1.25rem' }}>
                     <div className="it__city-row">
-                      <input className="it__city-input" value={cityInput}
-                        onChange={(e) => setCityInput(e.target.value)} placeholder={tx.cityPlaceholder} autoFocus />
+                      <input id="qibla-city-search" name="city" className="it__city-input" value={cityInput}
+                        onChange={(e) => setCityInput(e.target.value)} placeholder={tx.cityPlaceholder}
+                        aria-label={tx.cityPlaceholder} autoFocus />
                       <button className="it__city-btn" type="submit">{tx.search}</button>
                     </div>
                     {error && <p className="it__err">{error}</p>}

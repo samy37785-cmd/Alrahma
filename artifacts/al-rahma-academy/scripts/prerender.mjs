@@ -31,7 +31,7 @@ import { spawn, spawnSync } from 'node:child_process';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { PRERENDER_MANIFEST, urlPathFor, canonicalUrlFor, outputRelPathFor } from './prerender-routes.mjs';
+import { PRERENDER_MANIFEST, urlPathFor, canonicalUrlFor, outputRelPathFor, hreflangLinksFor } from './prerender-routes.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..');
@@ -135,6 +135,26 @@ function waitForServer(proc, url, timeoutMs = 30000) {
   });
 }
 
+// index.html's static <head> (which every navigated page starts from,
+// prerendered or not) bakes in one fixed hreflang block — en/it/fr, no ar
+// (see index.html's own comment: "omitted until Phase 2 prerenders real
+// /ar/... pages"). That block is now simply wrong on a page this script IS
+// prerendering for real: it/fr point at pages that were never proven real
+// or distinct here, and ar — the one language actually being prerendered —
+// is missing entirely. Fixed here, as a post-process on the captured HTML
+// string (not in useSEO.js or index.html), because those two still serve
+// every OTHER, non-prerendered route, which this pilot has proven nothing
+// about and must not start claiming a hreflang set for.
+const HREFLANG_LINK_RE = /<link\b[^>]*\bhreflang=["'][^"']*["'][^>]*>\s*/gi;
+
+function fixHreflangLinks(html, entry) {
+  const withoutInheritedLinks = html.replace(HREFLANG_LINK_RE, '');
+  const correctLinks = hreflangLinksFor(entry)
+    .map(({ hreflang, href }) => `<link rel="alternate" hreflang="${hreflang}" href="${href}">`)
+    .join('');
+  return withoutInheritedLinks.replace('</head>', `${correctLinks}</head>`);
+}
+
 async function launchBrowser(chromium) {
   if (process.env.VERCEL) {
     const sparticuzChromium = (await import('@sparticuz/chromium')).default;
@@ -218,7 +238,8 @@ async function run() {
         await page.goto(url, { waitUntil: 'load' });
         await waitForHydratedSeo(page, entry);
 
-        const html = await page.content();
+        const rawHtml = await page.content();
+        const html = fixHreflangLinks(rawHtml, entry);
         const outRelPath = outputRelPathFor(entry);
         const outAbsPath = join(distDir, outRelPath);
         await mkdir(dirname(outAbsPath), { recursive: true });

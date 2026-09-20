@@ -52,6 +52,24 @@ export function canonicalUrlFor(entry) {
   return ORIGIN + urlPathFor(entry);
 }
 
+// The exact 3 hreflang alternates a prerendered page must carry: en, ar,
+// and x-default (pointing at the English version, the established
+// convention already used in index.html's own static block). Depends only
+// on entry.route, not entry.locale — the en and ar versions of the same
+// route are reciprocal alternates of each other, so both locale entries
+// for one route share this same set. No it/es/de/fr: this pilot only ever
+// publishes en/ar (see PRERENDER_MANIFEST's own comment above), so those
+// languages have no real alternate page to point to here.
+export function hreflangLinksFor(entry) {
+  const enHref = ORIGIN + pathFor(entry.route, 'en');
+  const arHref = ORIGIN + pathFor(entry.route, 'ar');
+  return [
+    { hreflang: 'en', href: enHref },
+    { hreflang: 'ar', href: arHref },
+    { hreflang: 'x-default', href: enHref },
+  ];
+}
+
 // Where prerender.mjs writes, and prerenderOutput.test.js reads, this
 // entry's static HTML file, relative to the vite build's outDir
 // (dist/public). A directory-style "<path>/index.html" so Vercel's

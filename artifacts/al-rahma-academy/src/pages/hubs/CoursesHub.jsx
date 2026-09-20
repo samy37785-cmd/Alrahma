@@ -5,17 +5,20 @@ import Breadcrumbs from '../../components/ui/Breadcrumbs';
 import WhatsappFab from '../../components/ui/WhatsappFab';
 import { useLang } from '../../context/LangContext';
 import useSEO from '../../hooks/useSEO';
+import { pickCoursesSeo } from '../../i18n/courses/seo';
 
 const CARD_ROUTES = ['/courses/quran', '/courses/quran', '/courses/ijazah', '/courses/islamic-studies', '/courses/arabic', '/enroll'];
 
 export default function CoursesHub() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const h = t.hubs;
   const hc = h.courses;
+  const seo = pickCoursesSeo('hub', lang);
 
   useSEO({
-    title: t.nav.courses,
-    description: 'Explore all online Quran and Islamic courses at Al-Rahma Academy — Tajweed, Hifz, Ijazah, Islamic Studies, Arabic Alphabet, and more.',
+    title: seo.title,
+    description: seo.description,
+    keywords: seo.keywords,
   });
 
   return (

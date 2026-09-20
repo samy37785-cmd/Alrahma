@@ -44,6 +44,12 @@ const SHELL_DESCRIPTION =
 // the body (verified against Hero.jsx/src/i18n/en.js+ar.js's hero.title
 // for Home, and CourseIjazah.jsx's own <h1> for Ijazah) — not the <title>
 // tag, so this proves genuine hydrated body content, not just metadata.
+// expectedEnHref/expectedArHref (added for the hreflang fix, 2026-09-21):
+// the reciprocal en/ar alternates BOTH locale entries of the same route
+// must share — literal strings, not derived via hreflangLinksFor(), for
+// the same reason expectedCanonical is literal above: this file must be
+// able to catch a bug in that helper, not just confirm it agrees with
+// itself.
 const LITERAL_FILES = [
   {
     route: '/',
@@ -51,6 +57,8 @@ const LITERAL_FILES = [
     relPath: 'index.html',
     expectedCanonical: 'https://al-rahmaacademy.com/',
     h1Text: 'Give Your Child the Gift of the Quran',
+    expectedEnHref: 'https://al-rahmaacademy.com/',
+    expectedArHref: 'https://al-rahmaacademy.com/ar/',
   },
   {
     route: '/',
@@ -58,6 +66,8 @@ const LITERAL_FILES = [
     relPath: 'ar/index.html',
     expectedCanonical: 'https://al-rahmaacademy.com/ar/',
     h1Text: 'امنح طفلك هدية القرآن الكريم',
+    expectedEnHref: 'https://al-rahmaacademy.com/',
+    expectedArHref: 'https://al-rahmaacademy.com/ar/',
   },
   {
     route: '/courses/ijazah',
@@ -65,6 +75,8 @@ const LITERAL_FILES = [
     relPath: 'courses/ijazah/index.html',
     expectedCanonical: 'https://al-rahmaacademy.com/courses/ijazah',
     h1Text: 'Quran Ijazah Course',
+    expectedEnHref: 'https://al-rahmaacademy.com/courses/ijazah',
+    expectedArHref: 'https://al-rahmaacademy.com/ar/courses/ijazah',
   },
   {
     route: '/courses/ijazah',
@@ -72,6 +84,8 @@ const LITERAL_FILES = [
     relPath: 'ar/courses/ijazah/index.html',
     expectedCanonical: 'https://al-rahmaacademy.com/ar/courses/ijazah',
     h1Text: 'دورة إجازة القرآن الكريم',
+    expectedEnHref: 'https://al-rahmaacademy.com/courses/ijazah',
+    expectedArHref: 'https://al-rahmaacademy.com/ar/courses/ijazah',
   },
 ];
 
@@ -123,7 +137,7 @@ describe.skipIf(distExists)('Prerender output — dist/public not present (expec
 // above — this reads real files too, so it needs dist/public to exist
 // just as much.
 describe.skipIf(!distExists)('Prerender output — literal dist/public paths (independent of outputRelPathFor)', () => {
-  it.each(LITERAL_FILES)('$relPath: correct raw HTML at the literal path', ({ locale, relPath, expectedCanonical, h1Text }) => {
+  it.each(LITERAL_FILES)('$relPath: correct raw HTML at the literal path', ({ locale, relPath, expectedCanonical, h1Text, expectedEnHref, expectedArHref }) => {
     const filePath = path.join(distDir, relPath);
     expect(existsSync(filePath), `missing prerendered file: ${filePath}`).toBe(true);
 
@@ -149,6 +163,22 @@ describe.skipIf(!distExists)('Prerender output — literal dist/public paths (in
     const heading = document.querySelector('h1');
     expect(heading, 'h1 must exist in body').toBeTruthy();
     expect(heading.textContent.trim(), 'h1 must be the real page-specific heading, not empty/placeholder').toBe(h1Text);
+
+    // hreflang fix (2026-09-21): the static SPA shell's inherited en/it/fr
+    // block (no ar) must be fully replaced by the real, reciprocal en/ar
+    // pair + x-default — nothing else, and nothing missing.
+    const hreflangEls = [...document.querySelectorAll('link[rel="alternate"][hreflang]')];
+    expect(hreflangEls.length, 'exactly 3 hreflang alternates (en, ar, x-default), no more').toBe(3);
+
+    const byHreflang = Object.fromEntries(hreflangEls.map((el) => [el.getAttribute('hreflang'), el.getAttribute('href')]));
+    expect(byHreflang.en, 'hreflang=en must point at the English version of this same page').toBe(expectedEnHref);
+    expect(byHreflang.ar, 'hreflang=ar must point at the Arabic version of this same page').toBe(expectedArHref);
+    expect(byHreflang['x-default'], 'hreflang=x-default must point at the English version').toBe(expectedEnHref);
+
+    expect(byHreflang.it, 'no hreflang=it — it is not a published language').toBeUndefined();
+    expect(byHreflang.fr, 'no hreflang=fr — fr is not a published language').toBeUndefined();
+    expect(byHreflang.es, 'no hreflang=es — es is not a published language').toBeUndefined();
+    expect(byHreflang.de, 'no hreflang=de — de is not a published language').toBeUndefined();
   });
 });
 

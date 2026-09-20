@@ -25,18 +25,16 @@ import DeferredSection from '../components/ui/DeferredSection';
 import WhatsappFab from '../components/ui/WhatsappFab';
 import QuickTrialModal from '../components/ui/QuickTrialModal';
 import ExitIntentPopup from '../components/ui/ExitIntentPopup';
-import { siteFacts } from '../data/siteFacts';
+import { pickHomeSeo } from '../i18n/home/seo';
 
 export default function Home() {
   const [trialOpen, setTrialOpen] = useState(false);
-  const { t } = useLang();
+  const { t, lang } = useLang();
+  const seo = pickHomeSeo(lang);
   useSEO({
-    title: 'Learn the Quran Online — Al-Rahma Academy',
-    // Content Truth Contract (2026-09-02): the "1,200+ families" figure
-    // dropped during trust-marketing remediation is now owner-confirmed —
-    // sourced from siteFacts.js rather than duplicated as a literal here.
-    description: `One-to-one online Quran, Tajweed and Arabic lessons with Al-Azhar certified tutors, trusted by ${siteFacts.totalStudents} students in ${siteFacts.countriesServed} countries. One free trial lesson — no payment needed.`,
-    keywords: 'learn quran online, online quran classes, quran tutor, tajweed lessons, al-azhar tutor, online islamic studies, quran for children, hifz online',
+    title: seo.title,
+    description: seo.description,
+    keywords: seo.keywords,
     // Built from the same t.faq.items array <FAQ /> renders below, so this
     // can never drift from the actual visible questions/answers again.
     schema: buildFaqPageSchema(t.faq.items),

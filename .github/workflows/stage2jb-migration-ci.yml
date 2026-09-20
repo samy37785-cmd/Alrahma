@@ -185,5 +185,30 @@ jobs:
         working-directory: artifacts/al-rahma-academy
         run: npx vitest run
 
+      # SEO Prerender Pilot (2026-09-20): installs the OS-level shared
+      # libraries Playwright's downloaded Chromium needs via --with-deps,
+      # not just the browser binary itself -- ubuntu-latest's exact
+      # preinstalled library set isn't guaranteed across runner image
+      # updates, and this is Playwright's own documented mechanism for
+      # closing that gap deterministically rather than hoping the image
+      # already has them. Placed immediately before the build step that
+      # actually needs it (postbuild runs scripts/prerender.mjs), not
+      # earlier, so the dependency between this step and the build step
+      # stays obvious to anyone reordering steps later.
+      - name: Install Playwright Chromium (for prerender postbuild)
+        working-directory: artifacts/al-rahma-academy
+        run: npx playwright install --with-deps chromium
+
       - name: Root typecheck + build
         run: pnpm run build
+
+      # Runs only after the build above has produced dist/public/ --
+      # scripts/prerender.mjs's postbuild output is what this actually
+      # verifies. src/test/prerenderOutput.test.js skips itself (visibly,
+      # not as a false pass) when run without a prior build, which is
+      # exactly what the earlier "Frontend vitest" step above does every
+      # time -- this step is the only one where it actually executes its
+      # assertions.
+      - name: Prerender output verification (post-build, requires dist/)
+        working-directory: artifacts/al-rahma-academy
+        run: npx vitest run src/test/prerenderOutput.test.js

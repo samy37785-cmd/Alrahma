@@ -264,9 +264,11 @@ export default function PrayerTimesPage() {
               </div>
 
               <form className="it__city-form it__control-item" onSubmit={searchCity}>
-                <label className="it__ctrl-lbl">{tx.changeCity}</label>
+                <label className="it__ctrl-lbl" htmlFor="pt-city-search">{tx.changeCity}</label>
                 <div className="it__city-row">
                   <input
+                    id="pt-city-search"
+                    name="city"
                     className="it__city-input"
                     value={cityInput}
                     onChange={(e) => setCityInput(e.target.value)}

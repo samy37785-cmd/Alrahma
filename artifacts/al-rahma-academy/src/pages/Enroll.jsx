@@ -7,6 +7,7 @@ import { submitEnrollment } from '../api/enrollmentApi';
 import { TEACHERS, plans } from '../data';
 import { useLang } from '../context/LangContext';
 import { PLAN_TEXT } from '../i18n/content';
+import { pickEnrollSeo } from '../i18n/enroll/seo';
 import { Progress, Step1, Step2, Step3, Step4, Success } from '../components/features/enrollment/EnrollWizard';
 
 const BLANK = {
@@ -19,14 +20,15 @@ const BLANK = {
 
 
 export default function Enroll() {
-  useSEO({
-    title: 'Book Free Trial Lessons — Enroll at Al-Rahma Academy',
-    description: 'One free one-to-one Quran trial lesson — no payment, no commitment. Choose your subjects, pick an Al-Azhar certified tutor, and book your plan — we\'ll confirm your schedule and payment with you on WhatsApp.',
-    keywords: 'free quran trial lesson, online quran enrollment, book quran lesson, quran class booking',
-  });
-
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const e = t.enroll;
+  const seo = pickEnrollSeo(lang);
+
+  useSEO({
+    title: seo.title,
+    description: seo.description,
+    keywords: seo.keywords,
+  });
   const [searchParams] = useSearchParams();
   const [step, setStep] = useState(1);
   const [form, setForm] = useState(() => {

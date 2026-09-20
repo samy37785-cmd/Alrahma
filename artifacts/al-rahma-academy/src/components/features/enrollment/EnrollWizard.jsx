@@ -1,4 +1,3 @@
-import { useNavigate } from 'react-router-dom';
 import { useLang } from '../../../context/LangContext';
 import { goHome } from '../../../utils/localePath';
 import { buildBookingWhatsappLink } from '../../../utils/whatsapp';
@@ -365,7 +364,6 @@ const CONFETTI_PIECES = [
 ];
 
 export function Success({ name, plan, bookingRef }) {
-  const navigate = useNavigate();
   const { t, lang } = useLang();
   const s = t.enroll.success;
   const steps = s.nextSteps || [];
@@ -452,12 +450,14 @@ export function Success({ name, plan, bookingRef }) {
       )}
 
       <div className="enroll__success-actions">
-        <button type="button" className="btn btn--green btn--lg" onClick={() => navigate('/dashboard')}>
-          {s.goToDashboard}
-        </button>
         {/* Not navigate('/') - see localePath.js's goHome() comment: under
             a non-English basename that produces "/fr" with no trailing
-            slash. */}
+            slash. A booking request does not create an account or session
+            (see docs/current-project-status.md §5, Booking-First
+            Enrollment), so there is no dashboard for a fresh visitor to go
+            to here - offering one would silently bounce them into a login
+            wall they have no credentials for. WhatsApp (above) and Home
+            are the only honest destinations at this point. */}
         <button type="button" className="btn btn--ghost" onClick={() => goHome()}>
           {s.backHome}
         </button>

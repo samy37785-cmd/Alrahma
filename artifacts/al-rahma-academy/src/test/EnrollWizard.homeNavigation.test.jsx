@@ -62,12 +62,20 @@ describe('EnrollWizard Success "Back Home": safe canonical navigation, not navig
     expect(assign).toHaveBeenCalledWith('/it/');
   });
 
-  it('the "Go to Dashboard" button is unaffected - still a real client-side navigation to /dashboard', async () => {
+  // Post-booking journey fix (2026-09-20): a booking request does not
+  // create an account or session (Booking-First Enrollment, see
+  // docs/current-project-status.md §5), so the "Go to Dashboard" button
+  // that used to sit here silently bounced a fresh, unauthenticated
+  // visitor into ProtectedRoute's /login redirect - a login wall they have
+  // no credentials for. It's removed outright, not replaced with any
+  // login/account gate; WhatsApp and "Back to Home" are the only honest
+  // destinations right after a booking. This replaces the old assertion
+  // that the button existed and worked.
+  it('there is no "Go to Dashboard" button/link left in the success state', async () => {
     stubLocation('/enroll');
-    const user = await renderSuccessAt('/enroll');
-    await user.click(screen.getByRole('button', { name: /go to dashboard/i }));
-    // /dashboard is not the special root case - react-router's navigate()
-    // handles it correctly, so no window.location.assign should occur.
-    expect(window.location.assign).not.toHaveBeenCalled();
+    await renderSuccessAt('/enroll');
+    expect(screen.queryByRole('button', { name: /dashboard/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /dashboard/i })).not.toBeInTheDocument();
+    expect(screen.queryByText(/dashboard/i)).not.toBeInTheDocument();
   });
 });

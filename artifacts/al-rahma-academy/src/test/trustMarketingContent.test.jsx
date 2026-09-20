@@ -191,15 +191,23 @@ describe('synthetic live counter no longer renders (spec §4)', () => {
 });
 
 describe('Home metadata no longer repeats removed unsupported numbers (spec §3)', () => {
-  it('Home.jsx SEO description does not contain the removed "1,200+ families" claim', () => {
-    const homeSrc = fs.readFileSync(
-      path.resolve(__dirname, '../pages/Home.jsx'),
+  // Arabic Home SEO fix (2026-09-20): Home.jsx's inline English `description:`
+  // literal this test used to regex out of pages/Home.jsx was moved into
+  // src/i18n/home/seo.js's HOME_SEO_TEXT (per-language, en+ar) so the page
+  // can pass a real Arabic description on /ar/ instead of leaking English.
+  // The guard's intent (never let the removed "1,200+ families" figure
+  // reappear) still holds — it just reads from the real current source now.
+  it('Home SEO descriptions (en + ar) do not contain the removed "1,200+ families" claim', () => {
+    const seoSrc = fs.readFileSync(
+      path.resolve(__dirname, '../i18n/home/seo.js'),
       'utf8',
     );
-    const descMatch = homeSrc.match(/description:\s*[`']([^`']*)[`']/);
-    expect(descMatch).not.toBeNull();
-    expect(descMatch[1]).not.toContain('1,200+');
-    expect(descMatch[1]).not.toContain('1200+');
+    const descMatches = [...seoSrc.matchAll(/description:\s*`([^`]*)`/g)];
+    expect(descMatches.length).toBeGreaterThanOrEqual(2);
+    for (const match of descMatches) {
+      expect(match[1]).not.toContain('1,200+');
+      expect(match[1]).not.toContain('1200+');
+    }
   });
 
   it('Home.jsx no longer imports or renders the deleted Testimonials/StatsBanner components', () => {

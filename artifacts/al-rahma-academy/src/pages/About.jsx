@@ -13,7 +13,7 @@ export default function AboutPage() {
     <>
       <Header />
       <main className="about-page" id="main-content">
-        <Breadcrumbs items={[{ label: 'Academy', to: '/academy' }, { label: t.about.eyebrow }]} />
+        <Breadcrumbs items={[{ label: t.nav.academy, to: '/academy' }, { label: t.about.eyebrow }]} />
         <About />
       </main>
       <Footer />

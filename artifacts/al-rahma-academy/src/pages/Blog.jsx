@@ -57,7 +57,7 @@ export default function Blog() {
     <div className="blog-page">
       <PageBar to="/" label={bl.backToSite} />
 
-      <Breadcrumbs items={[{ label: 'Resources', to: '/resources' }, { label: bl.heading }]} />
+      <Breadcrumbs items={[{ label: t.nav.resources, to: '/resources' }, { label: bl.heading }]} />
 
       <main id="main-content" className="container blog-page__main">
         <div className="blog-page__header">

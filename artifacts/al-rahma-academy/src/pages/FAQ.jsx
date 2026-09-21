@@ -25,7 +25,7 @@ export default function FAQ() {
     <div className="faq-page">
       <PageBar to="/" label={pg.backToSite} />
 
-      <Breadcrumbs items={[{ label: 'Resources', to: '/resources' }, { label: pg.heading }]} />
+      <Breadcrumbs items={[{ label: t.nav.resources, to: '/resources' }, { label: pg.heading }]} />
 
       <main id="main-content" className="container faq-page__main">
         <div className="faq-page__header">

@@ -13,7 +13,7 @@ import { site } from '../data/site';
 
 export default function CourseIslamicStudies() {
   const navigate = useNavigate();
-  const { lang }  = useLang();
+  const { t, lang } = useLang();
   const ui        = COURSE_UI[lang] || COURSE_UI.en;
   const isAr      = lang === 'ar';
   const [openModule, setOpenModule] = useState(null);
@@ -51,7 +51,7 @@ export default function CourseIslamicStudies() {
     <>
       <Header />
       <main id="main-content" dir={ui.dir}>
-        <Breadcrumbs items={[{ label: 'Courses', to: '/courses' }, { label: isAr ? 'الدراسات الإسلامية' : 'Islamic Studies Course' }]} />
+        <Breadcrumbs items={[{ label: t.nav.courses, to: '/courses' }, { label: isAr ? 'الدراسات الإسلامية' : 'Islamic Studies Course' }]} />
 
         {/* Hero */}
         <section className="cl__hero" style={{ background: 'linear-gradient(145deg,#1e0a30,#7a3a8a)' }}>

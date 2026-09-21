@@ -289,7 +289,7 @@ function BookCard({ book, lang }) {
 /* ─── Main page ─── */
 export default function CourseIjazah() {
   const navigate = useNavigate();
-  const { lang }  = useLang();
+  const { t, lang } = useLang();
   const ui        = COURSE_UI[lang] || COURSE_UI.en;
   const isAr      = lang === 'ar';
   const [openStage, setOpenStage] = useState(null);
@@ -321,7 +321,7 @@ export default function CourseIjazah() {
     <>
       <Header />
       <main id="main-content" dir={ui.dir}>
-        <Breadcrumbs items={[{ label: 'Courses', to: '/courses' }, { label: isAr ? 'دورة الإجازة' : 'Quran Ijazah Course' }]} />
+        <Breadcrumbs items={[{ label: t.nav.courses, to: '/courses' }, { label: isAr ? 'دورة الإجازة' : 'Quran Ijazah Course' }]} />
         {/* Hero */}
         <section className="cl__hero" style={{ background: 'linear-gradient(145deg,#062d1f,#0b6e4f)' }}>
           <div className="container cl__hero-inner">

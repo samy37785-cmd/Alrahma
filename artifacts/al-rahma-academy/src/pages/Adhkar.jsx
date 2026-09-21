@@ -77,7 +77,7 @@ export default function Adhkar() {
   return (
     <>
       <Header />
-      <Breadcrumbs items={[{ label: 'Tools', to: '/tools' }, { label: isAr ? 'الأذكار' : 'Adhkar' }]} />
+      <Breadcrumbs items={[{ label: t.nav.tools, to: '/tools' }, { label: isAr ? 'الأذكار' : 'Adhkar' }]} />
       <main id="main-content" className="adhkar__main">
 
         {/* Hero */}

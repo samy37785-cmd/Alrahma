@@ -1,13 +1,21 @@
 import { useEffect } from 'react';
-import { stripLangPrefix, langFromPath, pathFor, ORIGIN } from '../utils/localePath';
+import { ORIGIN } from '../utils/localePath';
 
 /**
  * Central SEO engine. Every public page calls this hook to drive its
  * <head>: title, description, canonical, Open Graph, Twitter Card, robots,
- * an automatic BreadcrumbList, and optional page-specific JSON-LD (Article,
- * Course, …). The app is client-rendered, so these are applied on mount;
- * JS-executing crawlers (e.g. Googlebot) pick them up. The static <head> in
- * index.html carries the baseline Organization/FAQ/WebSite schema + meta.
+ * and optional page-specific JSON-LD (Article, Course, …). The app is
+ * client-rendered, so these are applied on mount; JS-executing crawlers
+ * (e.g. Googlebot) pick them up. The static <head> in index.html carries
+ * the baseline Organization/FAQ/WebSite schema + meta.
+ *
+ * BreadcrumbList JSON-LD is NOT emitted here — components/ui/Breadcrumbs.jsx
+ * is the single writer of `script[data-seo="breadcrumb"]`, built from the
+ * exact same `trail`/`label` it renders for the visitor, so the schema can
+ * never drift from the visible breadcrumb (see that file's own comment for
+ * the full rationale — this used to be a URL-derived, always-English
+ * duplicate source of truth here, found and removed in the Localized
+ * Breadcrumb JSON-LD fix).
  *
  * Backward compatible: useSEO({ title, description }) still works.
  */
@@ -40,7 +48,10 @@ function setLink(rel, href) {
 
 // Inject/replace a JSON-LD block tagged with data-seo so we can update or
 // remove it on navigation without touching the static schema in index.html.
-function setJsonLd(id, obj) {
+// Exported so components/ui/Breadcrumbs.jsx (the sole writer of the
+// "breadcrumb" id) can reuse this exact DOM-write logic instead of
+// duplicating it.
+export function setJsonLd(id, obj) {
   const el = document.head.querySelector(`script[data-seo="${id}"]`);
   if (!obj) { if (el) el.remove(); return; }
   if (el) { el.textContent = JSON.stringify(obj); return; }
@@ -51,43 +62,6 @@ function setJsonLd(id, obj) {
   document.head.appendChild(s);
 }
 
-// Build a BreadcrumbList from the URL path. /courses/ijazah →
-// Home › Courses › Ijazah. Returns null on the home page (no breadcrumb).
-// Strips a leading language segment first (e.g. "/fr/courses/ijazah") so
-// it never surfaces as its own spurious "Fr" breadcrumb NAME - the
-// hardcoded "Home" item already stands in for the language root. The
-// stripped language must still come back in every breadcrumb's URL,
-// though (a French page's "Courses" crumb must link to
-// "https://…/fr/courses", not the English "/courses") - built via the same
-// pathFor() used everywhere else in the app as the single source of truth
-// for what a canonical locale-prefixed path looks like, so this can never
-// drift from the redirect/canonical policy in utils/urlCanonicalize.js.
-function buildBreadcrumb(pathname) {
-  const { lang } = langFromPath(pathname);
-  const effectiveLang = lang || 'en';
-  const parts = stripLangPrefix(pathname).split('/').filter(Boolean);
-  if (parts.length === 0) return null;
-  const items = [{ name: 'Home', url: ORIGIN + pathFor('/', effectiveLang) }];
-  let acc = '';
-  for (const p of parts) {
-    acc += `/${p}`;
-    const name = decodeURIComponent(p)
-      .replace(/[-_]/g, ' ')
-      .replace(/\b\w/g, (c) => c.toUpperCase());
-    items.push({ name, url: ORIGIN + pathFor(acc, effectiveLang) });
-  }
-  return {
-    '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    itemListElement: items.map((it, i) => ({
-      '@type': 'ListItem',
-      position: i + 1,
-      name: it.name,
-      item: it.url,
-    })),
-  };
-}
-
 export default function useSEO({
   title,
   description,
@@ -96,7 +70,6 @@ export default function useSEO({
   keywords,
   noindex = false,
   schema,        // page-specific JSON-LD (Article, Course, …) — object or null
-  breadcrumb = true,
 } = {}) {
   // Stable dependency for the (possibly inline) schema object.
   const schemaKey = schema ? JSON.stringify(schema) : '';
@@ -131,8 +104,7 @@ export default function useSEO({
     setMeta('name', 'twitter:description', description);
     setMeta('name', 'twitter:image', img);
 
-    setJsonLd('breadcrumb', breadcrumb ? buildBreadcrumb(window.location.pathname) : null);
     setJsonLd('page', schema || null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [title, description, image, type, keywords, noindex, breadcrumb, schemaKey]);
+  }, [title, description, image, type, keywords, noindex, schemaKey]);
 }

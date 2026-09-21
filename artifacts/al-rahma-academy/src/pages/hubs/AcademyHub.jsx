@@ -5,17 +5,19 @@ import Breadcrumbs from '../../components/ui/Breadcrumbs';
 import WhatsappFab from '../../components/ui/WhatsappFab';
 import { useLang } from '../../context/LangContext';
 import useSEO from '../../hooks/useSEO';
+import { pickAcademySeo } from '../../i18n/academy/seo';
 
 const ACADEMY_ROUTES = ['/academy/about', '/academy/teachers', '/academy/privacy', '/enroll'];
 
 export default function AcademyHub() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const h = t.hubs;
   const hac = h.academy;
+  const seo = pickAcademySeo(lang);
 
   useSEO({
     title: t.nav.academy,
-    description: 'Learn about Al-Rahma Academy — our mission, teachers, policies, and how to get started with a free trial lesson.',
+    description: seo.description,
   });
 
   return (

@@ -87,6 +87,91 @@ const LITERAL_FILES = [
     expectedEnHref: 'https://al-rahmaacademy.com/courses/ijazah',
     expectedArHref: 'https://al-rahmaacademy.com/ar/courses/ijazah',
   },
+  // Course hubs (2026-09-21): added once fix/courses-ar-seo (PR #84) gave
+  // /courses, /courses/quran and /courses/arabic real, already-reviewed
+  // en/ar SEO metadata (src/i18n/courses/seo.js) — no new translation was
+  // written for this addition. expectedTitle/expectedDescription are the
+  // one new check this addition adds beyond the original four entries'
+  // shape: literal copies of src/i18n/courses/seo.js's own text (title
+  // includes useSEO.js's " | AL-Rahma Academy" suffix, so this also
+  // guards the no-duplicate-academy-name rule for these three pages), not
+  // an import — same "must be able to catch a real bug, not just agree
+  // with itself" reasoning as every other literal in this file. h1Text
+  // verified against src/i18n/en.js / ar.js's hubs.courses/quran/arabic
+  // .heading — CoursesHub.jsx/CoursesQuran.jsx/CoursesArabic.jsx's own
+  // <h1>{...heading}</h1>.
+  {
+    route: '/courses',
+    locale: 'en',
+    relPath: 'courses/index.html',
+    expectedCanonical: 'https://al-rahmaacademy.com/courses',
+    h1Text: 'Learn Quran & Islamic Knowledge Online',
+    expectedEnHref: 'https://al-rahmaacademy.com/courses',
+    expectedArHref: 'https://al-rahmaacademy.com/ar/courses',
+    expectedTitle: 'Courses | AL-Rahma Academy',
+    expectedDescription:
+      'Explore all online Quran and Islamic courses at Al-Rahma Academy — Tajweed, Hifz, Ijazah, Islamic Studies, Arabic Alphabet, and more.',
+  },
+  {
+    route: '/courses',
+    locale: 'ar',
+    relPath: 'ar/courses/index.html',
+    expectedCanonical: 'https://al-rahmaacademy.com/ar/courses',
+    h1Text: 'تعلّم القرآن والعلم الإسلامي أونلاين',
+    expectedEnHref: 'https://al-rahmaacademy.com/courses',
+    expectedArHref: 'https://al-rahmaacademy.com/ar/courses',
+    expectedTitle: 'الدورات | AL-Rahma Academy',
+    expectedDescription:
+      'استكشف جميع دورات القرآن والعلوم الإسلامية أونلاين في أكاديمية الرحمة — تلاوة القرآن والتجويد، الحفظ، إجازة القرآن، الدراسات الإسلامية، الحروف العربية، والمزيد.',
+  },
+  {
+    route: '/courses/quran',
+    locale: 'en',
+    relPath: 'courses/quran/index.html',
+    expectedCanonical: 'https://al-rahmaacademy.com/courses/quran',
+    h1Text: 'Quran & Tajweed Courses',
+    expectedEnHref: 'https://al-rahmaacademy.com/courses/quran',
+    expectedArHref: 'https://al-rahmaacademy.com/ar/courses/quran',
+    expectedTitle: 'Quran & Tajweed Courses | AL-Rahma Academy',
+    expectedDescription:
+      'Online Quran Reading, Tajweed, and Hifz (memorization) courses with certified Al-Azhar teachers — in 17 languages.',
+  },
+  {
+    route: '/courses/quran',
+    locale: 'ar',
+    relPath: 'ar/courses/quran/index.html',
+    expectedCanonical: 'https://al-rahmaacademy.com/ar/courses/quran',
+    h1Text: 'دورات القرآن والتجويد',
+    expectedEnHref: 'https://al-rahmaacademy.com/courses/quran',
+    expectedArHref: 'https://al-rahmaacademy.com/ar/courses/quran',
+    expectedTitle: 'دورات القرآن والتجويد | AL-Rahma Academy',
+    expectedDescription:
+      'دروس أونلاين في تلاوة القرآن والتجويد وحفظ القرآن الكريم مع معلمين معتمدين من الأزهر — دروس فردية مباشرة ترافقك خطوة بخطوة حتى إتقان التلاوة الصحيحة.',
+  },
+  {
+    route: '/courses/arabic',
+    locale: 'en',
+    relPath: 'courses/arabic/index.html',
+    expectedCanonical: 'https://al-rahmaacademy.com/courses/arabic',
+    h1Text: 'Arabic & Italian Alphabet',
+    expectedEnHref: 'https://al-rahmaacademy.com/courses/arabic',
+    expectedArHref: 'https://al-rahmaacademy.com/ar/courses/arabic',
+    expectedTitle: 'Arabic Alphabet Course | AL-Rahma Academy',
+    expectedDescription:
+      'Learn the 28 Arabic letters with audio pronunciation and interactive exercises — ideal for beginners starting their Quran journey.',
+  },
+  {
+    route: '/courses/arabic',
+    locale: 'ar',
+    relPath: 'ar/courses/arabic/index.html',
+    expectedCanonical: 'https://al-rahmaacademy.com/ar/courses/arabic',
+    h1Text: 'الحروف العربية',
+    expectedEnHref: 'https://al-rahmaacademy.com/courses/arabic',
+    expectedArHref: 'https://al-rahmaacademy.com/ar/courses/arabic',
+    expectedTitle: 'دورة الحروف العربية | AL-Rahma Academy',
+    expectedDescription:
+      'تعلّم الحروف العربية الـ28 مع النطق الصوتي وتمارين تفاعلية مباشرة في المتصفح — الخطوة الأولى المثالية قبل قراءة القرآن الكريم.',
+  },
 ];
 
 describe.skipIf(!distExists)('Prerender output (dist/public) — real files on disk, post-build only', () => {
@@ -118,12 +203,12 @@ describe.skipIf(!distExists)('Prerender output (dist/public) — real files on d
     expect(main.textContent.trim().length, '#main-content must have real hydrated text').toBeGreaterThan(0);
   });
 
-  it('the four prerendered files are not byte-identical to each other (each is genuinely page-specific)', () => {
+  it('all prerendered files are not byte-identical to each other (each is genuinely page-specific)', () => {
     const contents = PRERENDER_MANIFEST.map((entry) =>
       readFileSync(path.join(distDir, outputRelPathFor(entry)), 'utf8'),
     );
     const unique = new Set(contents);
-    expect(unique.size, 'expected 4 distinct HTML files, not copies of one shell').toBe(PRERENDER_MANIFEST.length);
+    expect(unique.size, `expected ${PRERENDER_MANIFEST.length} distinct HTML files, not copies of one shell`).toBe(PRERENDER_MANIFEST.length);
   });
 });
 
@@ -137,7 +222,7 @@ describe.skipIf(distExists)('Prerender output — dist/public not present (expec
 // above — this reads real files too, so it needs dist/public to exist
 // just as much.
 describe.skipIf(!distExists)('Prerender output — literal dist/public paths (independent of outputRelPathFor)', () => {
-  it.each(LITERAL_FILES)('$relPath: correct raw HTML at the literal path', ({ locale, relPath, expectedCanonical, h1Text, expectedEnHref, expectedArHref }) => {
+  it.each(LITERAL_FILES)('$relPath: correct raw HTML at the literal path', ({ locale, relPath, expectedCanonical, h1Text, expectedEnHref, expectedArHref, expectedTitle, expectedDescription }) => {
     const filePath = path.join(distDir, relPath);
     expect(existsSync(filePath), `missing prerendered file: ${filePath}`).toBe(true);
 
@@ -152,10 +237,16 @@ describe.skipIf(!distExists)('Prerender output — literal dist/public paths (in
     const title = document.title;
     expect(title, 'title must not be empty').toBeTruthy();
     expect(title, 'title must not be the pre-hydration SPA shell').not.toBe(SHELL_TITLE);
+    if (expectedTitle) {
+      expect(title, 'title must exactly match the current SEO source, no duplicated academy name').toBe(expectedTitle);
+    }
 
     const description = document.querySelector('meta[name="description"]')?.getAttribute('content');
     expect(description, 'meta description must not be empty').toBeTruthy();
     expect(description, 'meta description must not be the pre-hydration SPA shell').not.toBe(SHELL_DESCRIPTION);
+    if (expectedDescription) {
+      expect(description, 'meta description must exactly match the current SEO source').toBe(expectedDescription);
+    }
 
     const canonical = document.querySelector('link[rel="canonical"]')?.getAttribute('href');
     expect(canonical, 'canonical').toBe(expectedCanonical);

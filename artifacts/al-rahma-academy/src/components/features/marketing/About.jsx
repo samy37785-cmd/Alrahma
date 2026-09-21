@@ -3,11 +3,13 @@ import Reveal from '../../ui/Reveal';
 import { useLang } from '../../../context/LangContext';
 import { stats, values, siteFacts } from '../../../data';
 import { VALUES_TEXT, pick } from '../../../i18n/content';
+import { pickFounderStory } from '../../../i18n/about/founderStory';
 
 export default function About() {
   const { t, lang } = useLang();
   const a = t.about;
   const valuesT = pick(VALUES_TEXT, lang);
+  const fs = pickFounderStory(lang);
 
   return (
     <section className="about" id="about">
@@ -60,18 +62,12 @@ export default function About() {
             <span>م س</span>
           </div>
           <div className="founder__content">
-            <p className="eyebrow">Our Story</p>
-            <h2 className="founder__title">Why We Built Al-Rahma Academy</h2>
+            <p className="eyebrow">{fs.eyebrow}</p>
+            <h2 className="founder__title">{fs.title}</h2>
+            <p className="founder__body">{fs.body1}</p>
             <p className="founder__body">
-              I am an Egyptian educator who moved to Europe and watched my children struggle to
-              find a qualified Quran teacher — someone who could teach correctly, speak their
-              language, and understand their world. Every option I found was either too expensive,
-              too unreliable, or simply not qualified.
-            </p>
-            <p className="founder__body">
-              That frustration became Al-Rahma Academy. We started with a handful of hand-picked
-              Al-Azhar graduates and one clear rule: <strong>every tutor must be someone I would
-              trust to teach my own children.</strong>
+              {fs.body2Pre}
+              {fs.body2Strong && <strong>{fs.body2Strong}</strong>}
             </p>
             {/* Trust/marketing remediation originally dropped "over 1,200
                 families across 40+ countries" for lack of a source (see
@@ -82,17 +78,12 @@ export default function About() {
                 claim. The founder narrative itself remains otherwise
                 untouched. */}
             <p className="founder__body">
-              Today, {siteFacts.totalFamilies} families across {siteFacts.countriesServed} countries trust us with the most important
-              thing they own — the Quran education of their children. Every tutor holds a verified
-              Ijazah. Every lesson is one-to-one. Every family can change their tutor, pause their
-              subscription, or request a refund — without any friction.
+              {fs.body3Pre}{siteFacts.totalFamilies}{fs.body3Mid}{siteFacts.countriesServed}{fs.body3Post}
             </p>
-            <p className="founder__body">
-              We didn&apos;t build a platform. We built the academy we needed and couldn&apos;t find.
-            </p>
+            <p className="founder__body">{fs.body4}</p>
             <div className="founder__sig">
-              <span className="founder__sig-name" dir="rtl">— {siteFacts.founder}, Founder</span>
-              <span className="founder__sig-sub">Al-Rahma Academy</span>
+              <span className="founder__sig-name" dir="rtl">— {fs.sigLine || `${siteFacts.founder}, Founder`}</span>
+              <span className="founder__sig-sub">{fs.sigBrand}</span>
             </div>
           </div>
         </Reveal>

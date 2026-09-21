@@ -168,17 +168,27 @@ async function launchBrowser(chromium) {
 }
 
 // Waits until the page is genuinely hydrated with the RIGHT page-specific
-// SEO state. All five conditions must hold together — none alone (least
-// of all `lang`, which the static shell's own <html lang="en"> can
-// coincidentally already satisfy for an English page before hydration
-// even starts) proves a real, page-specific prerender happened.
+// SEO state. All conditions must hold together — none alone (least of all
+// `lang`, which the static shell's own <html lang="en"> can coincidentally
+// already satisfy for an English page before hydration even starts)
+// proves a real, page-specific prerender happened.
+//
+// BreadcrumbList JSON-LD (script[data-seo="breadcrumb"]) is now written by
+// <Breadcrumbs> itself, in its own effect — a sibling/child effect to
+// useSEO's, not nested inside it. Nothing here guarantees React flushes
+// both in the exact same tick, so every non-Home route (every route that
+// actually renders <Breadcrumbs>) explicitly waits for a real, non-empty
+// BreadcrumbList to exist too, instead of trusting effect-ordering luck.
+// Home never renders <Breadcrumbs>, so it correctly has no such script and
+// is exempt from this check.
 async function waitForHydratedSeo(page, entry, timeoutMs = 15000) {
   const expectedLang = entry.locale;
   const expectedDir = entry.locale === 'ar' ? 'rtl' : 'ltr';
   const expectedCanonical = canonicalUrlFor(entry);
+  const expectsBreadcrumb = entry.route !== '/';
 
   await page.waitForFunction(
-    ({ expectedLang, expectedDir, expectedCanonical, shellTitle }) => {
+    ({ expectedLang, expectedDir, expectedCanonical, shellTitle, expectsBreadcrumb }) => {
       const html = document.documentElement;
       if (html.lang !== expectedLang) return false;
       if (html.dir !== expectedDir) return false;
@@ -188,9 +198,19 @@ async function waitForHydratedSeo(page, entry, timeoutMs = 15000) {
       if (!canonicalEl || canonicalEl.href !== expectedCanonical) return false;
       const main = document.querySelector('#main-content');
       if (!main || !main.textContent || main.textContent.trim().length === 0) return false;
+      if (expectsBreadcrumb) {
+        const breadcrumbEl = document.querySelector('script[data-seo="breadcrumb"]');
+        if (!breadcrumbEl) return false;
+        try {
+          const parsed = JSON.parse(breadcrumbEl.textContent);
+          if (!Array.isArray(parsed.itemListElement) || parsed.itemListElement.length === 0) return false;
+        } catch {
+          return false;
+        }
+      }
       return true;
     },
-    { expectedLang, expectedDir, expectedCanonical, shellTitle: SHELL_TITLE },
+    { expectedLang, expectedDir, expectedCanonical, shellTitle: SHELL_TITLE, expectsBreadcrumb },
     { timeout: timeoutMs, polling: 100 },
   );
 }

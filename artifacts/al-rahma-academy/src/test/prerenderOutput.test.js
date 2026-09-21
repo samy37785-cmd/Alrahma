@@ -50,6 +50,12 @@ const SHELL_DESCRIPTION =
 // the same reason expectedCanonical is literal above: this file must be
 // able to catch a bug in that helper, not just confirm it agrees with
 // itself.
+// BreadcrumbList JSON-LD (Localized Breadcrumb JSON-LD fix, 2026-09-21):
+// the exact trail Breadcrumbs.jsx renders for the visitor, for the pages
+// that mount <Breadcrumbs> — literal, not derived, same reasoning as
+// expectedCanonical/expectedEnHref above. `null` marks a page that never
+// renders <Breadcrumbs> (Home), which must have NO BreadcrumbList at all —
+// that's correct, intended behavior, not a regression.
 const LITERAL_FILES = [
   {
     route: '/',
@@ -59,6 +65,7 @@ const LITERAL_FILES = [
     h1Text: 'Give Your Child the Gift of the Quran',
     expectedEnHref: 'https://al-rahmaacademy.com/',
     expectedArHref: 'https://al-rahmaacademy.com/ar/',
+    breadcrumb: null,
   },
   {
     route: '/',
@@ -68,6 +75,7 @@ const LITERAL_FILES = [
     h1Text: 'امنح طفلك هدية القرآن الكريم',
     expectedEnHref: 'https://al-rahmaacademy.com/',
     expectedArHref: 'https://al-rahmaacademy.com/ar/',
+    breadcrumb: null,
   },
   {
     route: '/courses/ijazah',
@@ -77,6 +85,11 @@ const LITERAL_FILES = [
     h1Text: 'Quran Ijazah Course',
     expectedEnHref: 'https://al-rahmaacademy.com/courses/ijazah',
     expectedArHref: 'https://al-rahmaacademy.com/ar/courses/ijazah',
+    breadcrumb: [
+      { name: 'Home', item: 'https://al-rahmaacademy.com/' },
+      { name: 'Courses', item: 'https://al-rahmaacademy.com/courses' },
+      { name: 'Quran Ijazah Course', item: 'https://al-rahmaacademy.com/courses/ijazah' },
+    ],
   },
   {
     route: '/courses/ijazah',
@@ -86,6 +99,11 @@ const LITERAL_FILES = [
     h1Text: 'دورة إجازة القرآن الكريم',
     expectedEnHref: 'https://al-rahmaacademy.com/courses/ijazah',
     expectedArHref: 'https://al-rahmaacademy.com/ar/courses/ijazah',
+    breadcrumb: [
+      { name: 'الرئيسية', item: 'https://al-rahmaacademy.com/ar/' },
+      { name: 'الدورات', item: 'https://al-rahmaacademy.com/ar/courses' },
+      { name: 'دورة الإجازة', item: 'https://al-rahmaacademy.com/ar/courses/ijazah' },
+    ],
   },
   // Course hubs (2026-09-21): added once fix/courses-ar-seo (PR #84) gave
   // /courses, /courses/quran and /courses/arabic real, already-reviewed
@@ -111,6 +129,10 @@ const LITERAL_FILES = [
     expectedTitle: 'Courses | AL-Rahma Academy',
     expectedDescription:
       'Explore all online Quran and Islamic courses at Al-Rahma Academy — Tajweed, Hifz, Ijazah, Islamic Studies, Arabic Alphabet, and more.',
+    breadcrumb: [
+      { name: 'Home', item: 'https://al-rahmaacademy.com/' },
+      { name: 'Courses', item: 'https://al-rahmaacademy.com/courses' },
+    ],
   },
   {
     route: '/courses',
@@ -123,6 +145,10 @@ const LITERAL_FILES = [
     expectedTitle: 'الدورات | AL-Rahma Academy',
     expectedDescription:
       'استكشف جميع دورات القرآن والعلوم الإسلامية أونلاين في أكاديمية الرحمة — تلاوة القرآن والتجويد، الحفظ، إجازة القرآن، الدراسات الإسلامية، الحروف العربية، والمزيد.',
+    breadcrumb: [
+      { name: 'الرئيسية', item: 'https://al-rahmaacademy.com/ar/' },
+      { name: 'الدورات', item: 'https://al-rahmaacademy.com/ar/courses' },
+    ],
   },
   {
     route: '/courses/quran',
@@ -135,6 +161,11 @@ const LITERAL_FILES = [
     expectedTitle: 'Quran & Tajweed Courses | AL-Rahma Academy',
     expectedDescription:
       'Online Quran Reading, Tajweed, and Hifz (memorization) courses with certified Al-Azhar teachers — in 17 languages.',
+    breadcrumb: [
+      { name: 'Home', item: 'https://al-rahmaacademy.com/' },
+      { name: 'Courses', item: 'https://al-rahmaacademy.com/courses' },
+      { name: 'Quran & Tajweed', item: 'https://al-rahmaacademy.com/courses/quran' },
+    ],
   },
   {
     route: '/courses/quran',
@@ -147,6 +178,11 @@ const LITERAL_FILES = [
     expectedTitle: 'دورات القرآن والتجويد | AL-Rahma Academy',
     expectedDescription:
       'دروس أونلاين في تلاوة القرآن والتجويد وحفظ القرآن الكريم مع معلمين معتمدين من الأزهر — دروس فردية مباشرة ترافقك خطوة بخطوة حتى إتقان التلاوة الصحيحة.',
+    breadcrumb: [
+      { name: 'الرئيسية', item: 'https://al-rahmaacademy.com/ar/' },
+      { name: 'الدورات', item: 'https://al-rahmaacademy.com/ar/courses' },
+      { name: 'القرآن والتجويد', item: 'https://al-rahmaacademy.com/ar/courses/quran' },
+    ],
   },
   {
     route: '/courses/arabic',
@@ -159,6 +195,11 @@ const LITERAL_FILES = [
     expectedTitle: 'Arabic Alphabet Course | AL-Rahma Academy',
     expectedDescription:
       'Learn the 28 Arabic letters with audio pronunciation and interactive exercises — ideal for beginners starting their Quran journey.',
+    breadcrumb: [
+      { name: 'Home', item: 'https://al-rahmaacademy.com/' },
+      { name: 'Courses', item: 'https://al-rahmaacademy.com/courses' },
+      { name: 'Arabic Alphabet', item: 'https://al-rahmaacademy.com/courses/arabic' },
+    ],
   },
   {
     route: '/courses/arabic',
@@ -171,6 +212,11 @@ const LITERAL_FILES = [
     expectedTitle: 'دورة الحروف العربية | AL-Rahma Academy',
     expectedDescription:
       'تعلّم الحروف العربية الـ28 مع النطق الصوتي وتمارين تفاعلية مباشرة في المتصفح — الخطوة الأولى المثالية قبل قراءة القرآن الكريم.',
+    breadcrumb: [
+      { name: 'الرئيسية', item: 'https://al-rahmaacademy.com/ar/' },
+      { name: 'الدورات', item: 'https://al-rahmaacademy.com/ar/courses' },
+      { name: 'الحروف العربية', item: 'https://al-rahmaacademy.com/ar/courses/arabic' },
+    ],
   },
 ];
 
@@ -222,7 +268,7 @@ describe.skipIf(distExists)('Prerender output — dist/public not present (expec
 // above — this reads real files too, so it needs dist/public to exist
 // just as much.
 describe.skipIf(!distExists)('Prerender output — literal dist/public paths (independent of outputRelPathFor)', () => {
-  it.each(LITERAL_FILES)('$relPath: correct raw HTML at the literal path', ({ locale, relPath, expectedCanonical, h1Text, expectedEnHref, expectedArHref, expectedTitle, expectedDescription }) => {
+  it.each(LITERAL_FILES)('$relPath: correct raw HTML at the literal path', ({ locale, relPath, expectedCanonical, h1Text, expectedEnHref, expectedArHref, expectedTitle, expectedDescription, breadcrumb }) => {
     const filePath = path.join(distDir, relPath);
     expect(existsSync(filePath), `missing prerendered file: ${filePath}`).toBe(true);
 
@@ -270,6 +316,30 @@ describe.skipIf(!distExists)('Prerender output — literal dist/public paths (in
     expect(byHreflang.fr, 'no hreflang=fr — fr is not a published language').toBeUndefined();
     expect(byHreflang.es, 'no hreflang=es — es is not a published language').toBeUndefined();
     expect(byHreflang.de, 'no hreflang=de — de is not a published language').toBeUndefined();
+
+    // Localized Breadcrumb JSON-LD fix (2026-09-21): Breadcrumbs.jsx is the
+    // sole writer of script[data-seo="breadcrumb"], built from the exact
+    // same trail it renders for the visitor. Home never mounts
+    // <Breadcrumbs> (breadcrumb === null here) — it correctly gets no
+    // BreadcrumbList at all, which is intended behavior, not a regression.
+    const breadcrumbScript = document.querySelector('script[data-seo="breadcrumb"]');
+    if (breadcrumb === null) {
+      expect(breadcrumbScript, 'this page never renders <Breadcrumbs>, so it must have no BreadcrumbList').toBeNull();
+    } else {
+      expect(breadcrumbScript, 'missing script[data-seo="breadcrumb"]').toBeTruthy();
+      const parsedBreadcrumb = JSON.parse(breadcrumbScript.textContent);
+      expect(parsedBreadcrumb['@type']).toBe('BreadcrumbList');
+      expect(parsedBreadcrumb.itemListElement.map((i) => i.position)).toEqual(breadcrumb.map((_, i) => i + 1));
+      expect(
+        parsedBreadcrumb.itemListElement.map((i) => ({ name: i.name, item: i.item })),
+        'BreadcrumbList names/URLs must exactly match the real visible trail, in order',
+      ).toEqual(breadcrumb);
+      if (locale === 'ar') {
+        parsedBreadcrumb.itemListElement.forEach((i) => {
+          expect(i.name, `Arabic BreadcrumbList must not contain an English/URL-derived name: "${i.name}"`).not.toMatch(/[a-zA-Z]/);
+        });
+      }
+    }
   });
 });
 

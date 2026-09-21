@@ -5,17 +5,19 @@ import Breadcrumbs from '../../components/ui/Breadcrumbs';
 import WhatsappFab from '../../components/ui/WhatsappFab';
 import { useLang } from '../../context/LangContext';
 import useSEO from '../../hooks/useSEO';
+import { pickResourcesSeo } from '../../i18n/resources/content';
 
 const RESOURCE_ROUTES = ['/resources/blog', '/resources/faq', '/academy/about', '/academy/teachers'];
 
 export default function ResourcesHub() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const h = t.hubs;
   const hr = h.resources;
+  const seo = pickResourcesSeo(lang);
 
   useSEO({
     title: t.nav.resources,
-    description: 'Explore resources from Al-Rahma Academy: blog articles, FAQ, academy information, and teacher profiles.',
+    description: seo.description,
   });
 
   return (

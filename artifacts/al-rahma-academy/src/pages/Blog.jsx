@@ -9,6 +9,7 @@ import useSEO from '../hooks/useSEO';
 import Breadcrumbs from '../components/ui/Breadcrumbs';
 import { useLang } from '../context/LangContext';
 import { Skeleton } from '../components/ui/Skeleton';
+import { pickResourcesBlogText } from '../i18n/resources/content';
 
 function BlogCardSkeleton() {
   return (
@@ -28,8 +29,9 @@ function BlogCardSkeleton() {
 }
 
 export default function Blog() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const bl = t.blog;
+  const rb = pickResourcesBlogText(lang);
   const [activeCategory, setActiveCategory] = useState('All');
   const queryClient = useQueryClient();
   useSEO({ title: bl.eyebrow, description: bl.sub });
@@ -93,7 +95,7 @@ export default function Blog() {
                   }
                   onClick={() => setActiveCategory(cat)}
                 >
-                  {cat}
+                  {cat === 'All' ? rb.categoryAll : cat}
                 </button>
               ))}
             </div>
@@ -131,7 +133,7 @@ export default function Blog() {
             </div>
 
             {filtered.length === 0 && (
-              <p className="blog-page__empty">No articles in this category yet.</p>
+              <p className="blog-page__empty">{rb.emptyState}</p>
             )}
           </>
         )}

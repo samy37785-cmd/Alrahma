@@ -32,11 +32,24 @@ function pathFor(route, lang) {
   return route === '/' ? `/${lang}/` : `/${lang}${route}`;
 }
 
+// Course hubs (2026-09-21): /courses, /courses/quran and /courses/arabic
+// joined the pilot once fix/courses-ar-seo (PR #84) gave all three real,
+// already-reviewed en/ar SEO metadata (src/i18n/courses/seo.js) — the same
+// precondition Home and Ijazah already met. No new translation was written
+// for this addition; it only prerenders content that already existed and
+// was already reviewed. it/es/de/fr remain unpublished and out of scope,
+// same as every entry above.
 export const PRERENDER_MANIFEST = [
   { route: '/', locale: 'en', status: 'published', indexable: true },
   { route: '/', locale: 'ar', status: 'published', indexable: true },
   { route: '/courses/ijazah', locale: 'en', status: 'published', indexable: true },
   { route: '/courses/ijazah', locale: 'ar', status: 'published', indexable: true },
+  { route: '/courses', locale: 'en', status: 'published', indexable: true },
+  { route: '/courses', locale: 'ar', status: 'published', indexable: true },
+  { route: '/courses/quran', locale: 'en', status: 'published', indexable: true },
+  { route: '/courses/quran', locale: 'ar', status: 'published', indexable: true },
+  { route: '/courses/arabic', locale: 'en', status: 'published', indexable: true },
+  { route: '/courses/arabic', locale: 'ar', status: 'published', indexable: true },
 ];
 
 // The URL path to navigate to for one manifest entry, e.g. "/ar/courses/ijazah".

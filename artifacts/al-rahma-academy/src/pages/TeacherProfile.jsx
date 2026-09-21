@@ -38,9 +38,10 @@ export default function TeacherProfile() {
   const title       = teacher ? (teacher.title[lang]       || teacher.title.en)       : '';
   const bio         = teacher ? (teacher.bio[lang]         || teacher.bio.en)         : '';
   const specialties = teacher ? (teacher.specialties[lang] || teacher.specialties.en) : [];
+  const displayName = teacher ? (lang === 'ar' ? teacher.nameAr : teacher.nameEn) : '';
 
   useSEO({
-    title: teacher ? teacher.nameEn : 'Teacher',
+    title: teacher ? displayName : 'Teacher',
     description: bio,
   });
 
@@ -67,7 +68,7 @@ export default function TeacherProfile() {
     <>
       <Header />
       <main>
-        <Breadcrumbs items={[{ label: t.nav.teachers, to: '/academy/teachers' }, { label: teacher.nameEn }]} />
+        <Breadcrumbs items={[{ label: t.nav.teachers, to: '/academy/teachers' }, { label: displayName }]} />
         {/* Hero */}
         <section className="tp__hero" style={{ background: grad }}>
           <div className="container tp__hero-inner">

@@ -12,5 +12,9 @@ Disallow: /forgot-password
 Disallow: /reset-password
 Disallow: /payment/
 Disallow: /sessions
+Disallow: /wishlist
+Disallow: /ai-tutor
+Disallow: /community
+Disallow: /calendar
 
 Sitemap: https://al-rahmaacademy.com/sitemap.xml

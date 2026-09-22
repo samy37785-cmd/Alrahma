@@ -348,6 +348,86 @@ const LITERAL_FILES = [
       { name: 'معلمونا المؤهلون', item: 'https://al-rahmaacademy.com/ar/academy/teachers' },
     ],
   },
+  // Resources + Tools hubs (2026-09-22): the second wave, same shape as
+  // the Academy wave above. expectedTitle/expectedDescription/h1Text are
+  // literal copies of each page's own current source, verified directly
+  // against origin/main before writing this file:
+  //   - /resources: title = src/pages/hubs/ResourcesHub.jsx's
+  //     `t.nav.resources` (src/i18n/en.js+ar.js `nav.resources`);
+  //     description = src/i18n/resources/content.js's
+  //     `pickResourcesSeo(lang)`; h1 = `hr.heading`
+  //     (hubs.resources.heading).
+  //   - /tools: title = src/pages/hubs/ToolsHub.jsx's `t.nav.tools`
+  //     (`nav.tools`); description = `ht.sub` (hubs.tools.sub, reused as
+  //     the SEO description — same as production); h1 = `ht.heading`
+  //     (hubs.tools.heading).
+  // breadcrumb: both pages pass a single-item `items` prop with no `to`
+  // (Breadcrumbs.jsx's Home crumb is always prepended), so each page's own
+  // nav label is both the visible current crumb and the page's own title.
+  {
+    route: '/resources',
+    locale: 'en',
+    relPath: 'resources/index.html',
+    expectedCanonical: 'https://al-rahmaacademy.com/resources',
+    h1Text: 'Everything You Need to Get Started',
+    expectedEnHref: 'https://al-rahmaacademy.com/resources',
+    expectedArHref: 'https://al-rahmaacademy.com/ar/resources',
+    expectedTitle: 'Resources | AL-Rahma Academy',
+    expectedDescription:
+      'Explore resources from Al-Rahma Academy: blog articles, FAQ, academy information, and teacher profiles.',
+    breadcrumb: [
+      { name: 'Home', item: 'https://al-rahmaacademy.com/' },
+      { name: 'Resources', item: 'https://al-rahmaacademy.com/resources' },
+    ],
+  },
+  {
+    route: '/resources',
+    locale: 'ar',
+    relPath: 'ar/resources/index.html',
+    expectedCanonical: 'https://al-rahmaacademy.com/ar/resources',
+    h1Text: 'كل ما تحتاجه للبدء',
+    expectedEnHref: 'https://al-rahmaacademy.com/resources',
+    expectedArHref: 'https://al-rahmaacademy.com/ar/resources',
+    expectedTitle: 'الموارد | AL-Rahma Academy',
+    expectedDescription:
+      'استكشف موارد أكاديمية الرحمة: مقالات المدونة، الأسئلة الشائعة، معلومات عن الأكاديمية، والتعرّف على معلمينا.',
+    breadcrumb: [
+      { name: 'الرئيسية', item: 'https://al-rahmaacademy.com/ar/' },
+      { name: 'الموارد', item: 'https://al-rahmaacademy.com/ar/resources' },
+    ],
+  },
+  {
+    route: '/tools',
+    locale: 'en',
+    relPath: 'tools/index.html',
+    expectedCanonical: 'https://al-rahmaacademy.com/tools',
+    h1Text: 'Free Tools for Every Muslim',
+    expectedEnHref: 'https://al-rahmaacademy.com/tools',
+    expectedArHref: 'https://al-rahmaacademy.com/ar/tools',
+    expectedTitle: 'Islamic Tools | AL-Rahma Academy',
+    expectedDescription:
+      'A growing collection of free Islamic tools to help you worship, learn, and grow — built with care by the Al-Rahma Academy team.',
+    breadcrumb: [
+      { name: 'Home', item: 'https://al-rahmaacademy.com/' },
+      { name: 'Islamic Tools', item: 'https://al-rahmaacademy.com/tools' },
+    ],
+  },
+  {
+    route: '/tools',
+    locale: 'ar',
+    relPath: 'ar/tools/index.html',
+    expectedCanonical: 'https://al-rahmaacademy.com/ar/tools',
+    h1Text: 'أدوات مجانية لكل مسلم',
+    expectedEnHref: 'https://al-rahmaacademy.com/tools',
+    expectedArHref: 'https://al-rahmaacademy.com/ar/tools',
+    expectedTitle: 'أدوات إسلامية | AL-Rahma Academy',
+    expectedDescription:
+      'مجموعة متنامية من الأدوات الإسلامية المجانية لمساعدتك في العبادة والتعلم والنمو — بُنيت باهتمام من فريق أكاديمية الرحمة.',
+    breadcrumb: [
+      { name: 'الرئيسية', item: 'https://al-rahmaacademy.com/ar/' },
+      { name: 'أدوات إسلامية', item: 'https://al-rahmaacademy.com/ar/tools' },
+    ],
+  },
 ];
 
 describe.skipIf(!distExists)('Prerender output (dist/public) — real files on disk, post-build only', () => {

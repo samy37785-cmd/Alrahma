@@ -218,6 +218,136 @@ const LITERAL_FILES = [
       { name: 'الحروف العربية', item: 'https://al-rahmaacademy.com/ar/courses/arabic' },
     ],
   },
+  // Academy trust pages (2026-09-22): /academy, /academy/about and
+  // /academy/teachers joined the pilot once a read-only audit confirmed
+  // all three are genuinely static (real, already-reviewed en/ar useSEO
+  // metadata; no date/time, external API, geolocation, localStorage or
+  // per-user state at initial render). Only the /academy/teachers LIST
+  // page is here — the 11 individual /academy/teachers/:id profiles are a
+  // separate, deliberately deferred product decision (no internal links
+  // point at them yet) and are out of scope for this PR.
+  //
+  // expectedTitle/expectedDescription are literal copies of each page's
+  // own current source, verified directly against origin/main before
+  // writing this file (never invented, never re-translated):
+  //   - /academy: title = src/pages/hubs/AcademyHub.jsx's `t.nav.academy`
+  //     (src/i18n/en.js+ar.js `nav.academy`); description =
+  //     src/i18n/academy/seo.js's `pickAcademySeo(lang)`.
+  //   - /academy/about: title = src/pages/About.jsx's `t.about.eyebrow`;
+  //     description = `t.about.description` (both src/i18n/en.js+ar.js).
+  //   - /academy/teachers: title/description = src/pages/Teachers.jsx's
+  //     `ui.seoTitle`/`ui.seoDescription` (src/i18n/en.js+ar.js
+  //     `teachersPg`), which interpolate siteFacts.totalTeachers (30) and
+  //     siteFacts.featuredTeacherCount (11) — the exact numbers baked into
+  //     the literals below, not derived from siteFacts.js at test time, so
+  //     a future siteFacts change is caught here as a real mismatch rather
+  //     than silently re-agreeing with itself.
+  // h1Text: AcademyHub.jsx's `hac.heading` (hubs.academy.heading);
+  // About.jsx's `pickPageHeading(lang).h1` (src/i18n/about/pageHeading.js,
+  // the fix/about-page-h1 PR); Teachers.jsx's `ui.title` (teachersPg.title).
+  // breadcrumb: Breadcrumbs.jsx always prepends a localized Home crumb,
+  // then the exact `items` prop each page passes — verified directly
+  // against each page's own <Breadcrumbs items={...}/> call.
+  {
+    route: '/academy',
+    locale: 'en',
+    relPath: 'academy/index.html',
+    expectedCanonical: 'https://al-rahmaacademy.com/academy',
+    h1Text: 'A Trusted Home for Quran Learning',
+    expectedEnHref: 'https://al-rahmaacademy.com/academy',
+    expectedArHref: 'https://al-rahmaacademy.com/ar/academy',
+    expectedTitle: 'Academy | AL-Rahma Academy',
+    expectedDescription:
+      'Learn about Al-Rahma Academy — our mission, teachers, policies, and how to get started with a free trial lesson.',
+    breadcrumb: [
+      { name: 'Home', item: 'https://al-rahmaacademy.com/' },
+      { name: 'Academy', item: 'https://al-rahmaacademy.com/academy' },
+    ],
+  },
+  {
+    route: '/academy',
+    locale: 'ar',
+    relPath: 'ar/academy/index.html',
+    expectedCanonical: 'https://al-rahmaacademy.com/ar/academy',
+    h1Text: 'بيتك الموثوق لتعلم القرآن',
+    expectedEnHref: 'https://al-rahmaacademy.com/academy',
+    expectedArHref: 'https://al-rahmaacademy.com/ar/academy',
+    expectedTitle: 'الأكاديمية | AL-Rahma Academy',
+    expectedDescription:
+      'تعرّف على أكاديمية الرحمة — مهمتنا، معلمونا، سياساتنا، وكيفية البدء بحصة تجريبية مجانية.',
+    breadcrumb: [
+      { name: 'الرئيسية', item: 'https://al-rahmaacademy.com/ar/' },
+      { name: 'الأكاديمية', item: 'https://al-rahmaacademy.com/ar/academy' },
+    ],
+  },
+  {
+    route: '/academy/about',
+    locale: 'en',
+    relPath: 'academy/about/index.html',
+    expectedCanonical: 'https://al-rahmaacademy.com/academy/about',
+    h1Text: 'About Al-Rahma Academy',
+    expectedEnHref: 'https://al-rahmaacademy.com/academy/about',
+    expectedArHref: 'https://al-rahmaacademy.com/ar/academy/about',
+    expectedTitle: 'About us | AL-Rahma Academy',
+    expectedDescription:
+      'Al-Rahma Academy is a dedicated online platform connecting students around the world with the Holy Quran and the Arabic language. Our qualified native Egyptian tutors deliver personalised, one-to-one live lessons — for children and adults, from anywhere in the world.',
+    breadcrumb: [
+      { name: 'Home', item: 'https://al-rahmaacademy.com/' },
+      { name: 'Academy', item: 'https://al-rahmaacademy.com/academy' },
+      { name: 'About us', item: 'https://al-rahmaacademy.com/academy/about' },
+    ],
+  },
+  {
+    route: '/academy/about',
+    locale: 'ar',
+    relPath: 'ar/academy/about/index.html',
+    expectedCanonical: 'https://al-rahmaacademy.com/ar/academy/about',
+    h1Text: 'من نحن',
+    expectedEnHref: 'https://al-rahmaacademy.com/academy/about',
+    expectedArHref: 'https://al-rahmaacademy.com/ar/academy/about',
+    expectedTitle: 'من نحن | AL-Rahma Academy',
+    expectedDescription:
+      'أكاديمية الرحمة منصة تعليمية متخصصة تربط الطلاب في جميع أنحاء العالم بالقرآن الكريم واللغة العربية. يقدم معلمونا المصريون المؤهلون حصصاً فردية مباشرة — للأطفال والكبار، من أي مكان في العالم.',
+    breadcrumb: [
+      { name: 'الرئيسية', item: 'https://al-rahmaacademy.com/ar/' },
+      { name: 'الأكاديمية', item: 'https://al-rahmaacademy.com/ar/academy' },
+      { name: 'من نحن', item: 'https://al-rahmaacademy.com/ar/academy/about' },
+    ],
+  },
+  {
+    route: '/academy/teachers',
+    locale: 'en',
+    relPath: 'academy/teachers/index.html',
+    expectedCanonical: 'https://al-rahmaacademy.com/academy/teachers',
+    h1Text: 'Our Qualified Tutors',
+    expectedEnHref: 'https://al-rahmaacademy.com/academy/teachers',
+    expectedArHref: 'https://al-rahmaacademy.com/ar/academy/teachers',
+    expectedTitle: 'Al-Azhar Certified Quran Tutors | AL-Rahma Academy',
+    expectedDescription:
+      'Al-Rahma Academy has 30 teachers on our team — 11 of them are featured here. Every teacher is an Al-Azhar graduate holding a verified Ijazah with a continuous sanad, with identity verified by the academy.',
+    breadcrumb: [
+      { name: 'Home', item: 'https://al-rahmaacademy.com/' },
+      { name: 'Academy', item: 'https://al-rahmaacademy.com/academy' },
+      { name: 'Our Qualified Tutors', item: 'https://al-rahmaacademy.com/academy/teachers' },
+    ],
+  },
+  {
+    route: '/academy/teachers',
+    locale: 'ar',
+    relPath: 'ar/academy/teachers/index.html',
+    expectedCanonical: 'https://al-rahmaacademy.com/ar/academy/teachers',
+    h1Text: 'معلمونا المؤهلون',
+    expectedEnHref: 'https://al-rahmaacademy.com/academy/teachers',
+    expectedArHref: 'https://al-rahmaacademy.com/ar/academy/teachers',
+    expectedTitle: 'معلمونا المعتمدون من الأزهر | AL-Rahma Academy',
+    expectedDescription:
+      'تضم أكاديمية الرحمة 30 معلمًا، 11 منهم معروضون هنا. كل معلم خريج الأزهر ويحمل إجازة بسند متصل، وهويته موثقة لدى الأكاديمية.',
+    breadcrumb: [
+      { name: 'الرئيسية', item: 'https://al-rahmaacademy.com/ar/' },
+      { name: 'الأكاديمية', item: 'https://al-rahmaacademy.com/ar/academy' },
+      { name: 'معلمونا المؤهلون', item: 'https://al-rahmaacademy.com/ar/academy/teachers' },
+    ],
+  },
 ];
 
 describe.skipIf(!distExists)('Prerender output (dist/public) — real files on disk, post-build only', () => {

@@ -50,6 +50,23 @@ export const PRERENDER_MANIFEST = [
   { route: '/courses/quran', locale: 'ar', status: 'published', indexable: true },
   { route: '/courses/arabic', locale: 'en', status: 'published', indexable: true },
   { route: '/courses/arabic', locale: 'ar', status: 'published', indexable: true },
+
+  // Academy trust pages (2026-09-22): /academy, /academy/about and
+  // /academy/teachers joined the pilot once a read-only audit confirmed
+  // all three are genuinely static (real, already-reviewed en/ar useSEO
+  // metadata; no date/time, external API, geolocation, localStorage or
+  // per-user state at initial render) — the same precondition every prior
+  // wave met. /academy/teachers here is the LIST page only; the 11
+  // individual /academy/teachers/:id profiles are a separate, deliberately
+  // deferred product decision (no internal links point at them yet) and
+  // are NOT part of this manifest. it/es/de/fr remain unpublished and out
+  // of scope, same as every entry above.
+  { route: '/academy', locale: 'en', status: 'published', indexable: true },
+  { route: '/academy', locale: 'ar', status: 'published', indexable: true },
+  { route: '/academy/about', locale: 'en', status: 'published', indexable: true },
+  { route: '/academy/about', locale: 'ar', status: 'published', indexable: true },
+  { route: '/academy/teachers', locale: 'en', status: 'published', indexable: true },
+  { route: '/academy/teachers', locale: 'ar', status: 'published', indexable: true },
 ];
 
 // The URL path to navigate to for one manifest entry, e.g. "/ar/courses/ijazah".

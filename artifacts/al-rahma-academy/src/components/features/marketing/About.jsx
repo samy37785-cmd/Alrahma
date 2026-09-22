@@ -4,16 +4,23 @@ import { useLang } from '../../../context/LangContext';
 import { stats, values, siteFacts } from '../../../data';
 import { VALUES_TEXT, pick } from '../../../i18n/content';
 import { pickFounderStory } from '../../../i18n/about/founderStory';
+import { pickPageHeading } from '../../../i18n/about/pageHeading';
 
 export default function About() {
   const { t, lang } = useLang();
   const a = t.about;
   const valuesT = pick(VALUES_TEXT, lang);
   const fs = pickFounderStory(lang);
+  const ph = pickPageHeading(lang);
 
   return (
     <section className="about" id="about">
       <div className="container">
+        {/* ── Page heading (H1) ── */}
+        <Reveal className="section-head">
+          <h1>{ph.h1}</h1>
+        </Reveal>
+
         {/* ── Mission & Stats ── */}
         <div className="about__inner">
           <Reveal className="about__text">

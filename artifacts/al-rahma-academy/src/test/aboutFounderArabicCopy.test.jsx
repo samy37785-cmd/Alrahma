@@ -164,8 +164,10 @@ describe('About.jsx source: minimal, scoped diff', () => {
     expect(aboutSrc).toMatch(/values__grid/);
   });
 
-  it('does not touch H1, breadcrumb, or JSON-LD — this component renders none of them', () => {
-    expect(aboutSrc).not.toMatch(/<h1/);
+  it('does not touch breadcrumb or JSON-LD — this component renders neither', () => {
+    // H1 presence is intentionally not asserted here: a separate, later fix
+    // (fix/about-page-h1) added the page's one real H1 to this component.
+    // See src/test/aboutPageHeading.test.jsx for that fix's own H1 coverage.
     expect(aboutSrc).not.toMatch(/Breadcrumbs/);
     expect(aboutSrc).not.toMatch(/setJsonLd/);
   });

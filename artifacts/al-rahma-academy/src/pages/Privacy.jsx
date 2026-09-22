@@ -87,9 +87,15 @@ export default function Privacy() {
   const content = copy[lang] || copy.en;
 
   useSEO({ title: content.seoTitle, description: content.seoDescription });
+  // PageBar's own default label ("← Back to site") is English-only, so the
+  // Arabic page must pass a real Arabic label explicitly. The "← " prefix
+  // matches the same convention already used for this exact pattern on
+  // FAQ/Blog/PaymentResult (src/i18n/ar.js's backToSite keys) rather than
+  // inventing a new arrow direction here. Every other language still gets
+  // PageBar's own default, unchanged.
   return (
     <div className="legal">
-      <PageBar to="/" />
+      <PageBar to="/" label={lang === 'ar' ? '← العودة إلى الموقع' : undefined} />
 
       <Breadcrumbs items={[{ label: content.academy, to: '/academy' }, { label: content.title }]} />
 

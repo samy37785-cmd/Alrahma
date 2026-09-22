@@ -67,6 +67,21 @@ export const PRERENDER_MANIFEST = [
   { route: '/academy/about', locale: 'ar', status: 'published', indexable: true },
   { route: '/academy/teachers', locale: 'en', status: 'published', indexable: true },
   { route: '/academy/teachers', locale: 'ar', status: 'published', indexable: true },
+
+  // Resources + Tools hubs (2026-09-22): the second wave, same audit
+  // shape as the Academy wave above. Both are hub/aggregator pages only
+  // (real, already-reviewed en/ar useSEO metadata; no date/time, external
+  // API, geolocation, localStorage or per-user state at initial render).
+  // /resources/blog, /resources/faq, and every individual /tools/* page
+  // are NOT part of this manifest — each has its own real blocker (async
+  // fetch, geolocation, localStorage, or date-dependent content) or is a
+  // separate, deferred product decision, per the read-only audit this PR
+  // implements. it/es/de/fr remain unpublished and out of scope, same as
+  // every entry above.
+  { route: '/resources', locale: 'en', status: 'published', indexable: true },
+  { route: '/resources', locale: 'ar', status: 'published', indexable: true },
+  { route: '/tools', locale: 'en', status: 'published', indexable: true },
+  { route: '/tools', locale: 'ar', status: 'published', indexable: true },
 ];
 
 // The URL path to navigate to for one manifest entry, e.g. "/ar/courses/ijazah".

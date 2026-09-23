@@ -47,8 +47,23 @@ export default function VerseOfTheDayPage() {
   const trans  = verse?.translations?.[0] ? clean(verse.translations[0].text) : '';
   const [s, v] = verseKey.split(':');
 
+  // Quran.com's /translations param (translationId=20 above) returns a
+  // *non-Arabic* rendering of the verse by definition — a "translation" is
+  // always out of Arabic, so there is no separate "Arabic translation" of
+  // `trans` to switch to here. The real, authoritative Arabic text is
+  // `arabic` (text_uthmani) above, already fetched by the same call and
+  // already rendered unconditionally in every language. Language Closure
+  // Phase 2 (policy approved by محمود): an Arabic page must never show a
+  // full English sentence as if it were verse content, so `trans` (always
+  // English) is only shown/shared on the Arabic page's copy/share/WhatsApp
+  // text. English and every other existing language are unchanged — this
+  // does not touch the API call, fetch, date logic, or day-selection.
+  const showTranslation = lang !== 'ar' && !!trans;
+
   const handleCopy = async () => {
-    const text = `${arabic}\n\n"${trans}"\n— ${copy.quran} ${verseKey}\n\nalrahma.academy`;
+    const text = showTranslation
+      ? `${arabic}\n\n"${trans}"\n— ${copy.quran} ${verseKey}\n\nalrahma.academy`
+      : `${arabic}\n— ${copy.quran} ${verseKey}\n\nalrahma.academy`;
     await navigator.clipboard.writeText(text).catch(() => {});
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
@@ -56,7 +71,9 @@ export default function VerseOfTheDayPage() {
 
   const handleShare = async () => {
     const url  = `${window.location.origin}/tools/quran-reader#s=${s}&v=${v}`;
-    const text = `${copy.today} (${verseKey})\n\n${arabic}\n\n"${trans}"\n\n${copy.learn}`;
+    const text = showTranslation
+      ? `${copy.today} (${verseKey})\n\n${arabic}\n\n"${trans}"\n\n${copy.learn}`
+      : `${copy.today} (${verseKey})\n\n${arabic}\n\n${copy.learn}`;
     if (navigator.share) {
       try { await navigator.share({ title: `${copy.quran} ${verseKey}`, text, url }); setShared(true); setTimeout(() => setShared(false), 2500); }
       catch { /* cancelled */ }
@@ -67,7 +84,11 @@ export default function VerseOfTheDayPage() {
     }
   };
 
-  const waUrl = `https://wa.me/?text=${encodeURIComponent(`🌿 ${copy.today} (${verseKey})\n\n${arabic}\n\n"${trans}"\n\n📖 ${copy.learn}: ${window.location.origin}`)}`;
+  const waUrl = `https://wa.me/?text=${encodeURIComponent(
+    showTranslation
+      ? `🌿 ${copy.today} (${verseKey})\n\n${arabic}\n\n"${trans}"\n\n📖 ${copy.learn}: ${window.location.origin}`
+      : `🌿 ${copy.today} (${verseKey})\n\n${arabic}\n\n📖 ${copy.learn}: ${window.location.origin}`
+  )}`;
 
   return (
     <>
@@ -104,7 +125,7 @@ export default function VerseOfTheDayPage() {
                     {arabic}
                     <span className="votd-card__vnum"> ﴿{v}﴾</span>
                   </p>
-                  {trans && (
+                  {showTranslation && (
                     <p className="votd-card__trans">
                       <span className="votd-card__quote">&quot;</span>
                       {trans}

@@ -84,8 +84,25 @@ export default function TeacherProfile() {
             </div>
             <div className="tp__hero-info">
               <span className="tp__az-badge">{tp.alazharBadge}</span>
-              <h1 className="tp__name-ar" dir="rtl">{teacher.nameAr}</h1>
-              <p className="tp__name-en">{teacher.nameEn}</p>
+              {/* H1 must match document language for SEO (production audit
+                  finding): previously the Arabic name was always the H1,
+                  even on lang="en" pages. The <h1>/<p> roles now swap by
+                  locale while each name keeps the exact same class (so
+                  styling — including dir="rtl" on the Arabic name — is
+                  unaffected either way). Title/breadcrumb (PR #89) and the
+                  Arabic bio heading (PR #97, via bioName below) are
+                  untouched. */}
+              {lang === 'ar' ? (
+                <>
+                  <h1 className="tp__name-ar" dir="rtl">{teacher.nameAr}</h1>
+                  <p className="tp__name-en">{teacher.nameEn}</p>
+                </>
+              ) : (
+                <>
+                  <h1 className="tp__name-en">{teacher.nameEn}</h1>
+                  <p className="tp__name-ar" dir="rtl">{teacher.nameAr}</p>
+                </>
+              )}
               <p className="tp__role">{title}</p>
               <p className="tp__gender">{teacher.gender === 'f' ? tp.femaleBadge : tp.maleBadge}</p>
               <div className="tp__hero-actions">

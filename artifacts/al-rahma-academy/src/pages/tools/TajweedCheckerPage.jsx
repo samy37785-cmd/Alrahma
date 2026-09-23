@@ -83,6 +83,19 @@ export default function TajweedCheckerPage() {
   const recRef = useRef(null);
   const verse = VERSES[verseIdx];
 
+  // Language Closure Phase 3 (policy approved by محمود): each VERSES entry's
+  // `translation` is a full English sentence (e.g. "In the name of Allah,
+  // the Most Gracious, the Most Merciful") that was shown unconditionally,
+  // regardless of `lang` — an earlier, since-superseded decision documented
+  // in i18n/tools/tajweedChecker.js's own comment explicitly kept VERSES
+  // untouched as "the same fixed reference content for every UI language."
+  // The real, authoritative Arabic text (`verse.arabic`) was already
+  // correct and already rendered unconditionally above — no Quran text is
+  // invented here, only the English gloss is hidden on the Arabic page.
+  // `transliteration` (Latin) and `ref` ("Al-Fatiha 1:1") are untouched —
+  // out of scope for this phase, tracked separately per the audit.
+  const showTranslation = lang !== 'ar';
+
   const startListening = useCallback(() => {
     if (!SpeechRec) {
       setError(t.errors.noSpeechInline);
@@ -163,7 +176,7 @@ export default function TajweedCheckerPage() {
             <p className="tajweed__ref">{verse.ref}</p>
             <p className="tajweed__arabic" lang="ar" dir="rtl">{verse.arabic}</p>
             <p className="tajweed__transliteration">{verse.transliteration}</p>
-            <p className="tajweed__translation">{verse.translation}</p>
+            {showTranslation && <p className="tajweed__translation">{verse.translation}</p>}
           </div>
 
           {/* Controls */}

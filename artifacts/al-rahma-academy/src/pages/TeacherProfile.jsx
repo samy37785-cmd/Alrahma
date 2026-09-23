@@ -61,6 +61,13 @@ export default function TeacherProfile() {
   }
 
   const firstName = teacher.nameEn.split(' ')[0];
+  // Arabic bio mentions ("نبذة عن ...", "سجّل مع ...") use the teacher's full
+  // Arabic name, matching the identity already shown in the H1 above — never
+  // the English first name, and never a naive split(' ')[0] on the Arabic
+  // name, since some Arabic first "words" ("عبد") are not standalone names
+  // (e.g. "عبد الله أيمن" must stay whole). English keeps using firstName,
+  // unchanged.
+  const bioName   = lang === 'ar' ? teacher.nameAr : firstName;
   const initials  = teacher.nameAr.split(' ').slice(0, 2).map((w) => w[0]).join('');
   const grad      = `linear-gradient(145deg, ${teacher.color}ee, ${teacher.color}99)`;
 
@@ -84,7 +91,7 @@ export default function TeacherProfile() {
               <div className="tp__hero-actions">
                 <button type="button" className="btn btn--gold btn--lg"
                   onClick={() => navigate(`/enroll?teacher=${teacher.id}`)}>
-                  {tp.enrollWith} {firstName} →
+                  {tp.enrollWith} {bioName} →
                 </button>
                 <Link to="/academy/teachers" className="btn btn--ghost-white">{tp.allTeachers}</Link>
               </div>
@@ -132,7 +139,7 @@ export default function TeacherProfile() {
           {/* Left column */}
           <div className="tp__left">
             <div className="tp__section">
-              <h2>{tp.about} {firstName}</h2>
+              <h2>{tp.about} {bioName}</h2>
               <p className="tp__bio">{bio}</p>
             </div>
 
@@ -230,7 +237,7 @@ export default function TeacherProfile() {
                 </div>
               </div>
               <div className="tp__enroll-body">
-                <h3>{tp.enrollWith} {firstName}</h3>
+                <h3>{tp.enrollWith} {bioName}</h3>
                 <p>{tp.trialDesc}</p>
                 <ul className="tp__enroll-perks">
                   {tp.perks.map((perk, i) => <li key={i}>{perk}</li>)}

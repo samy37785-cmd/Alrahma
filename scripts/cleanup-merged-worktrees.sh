@@ -8,24 +8,19 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
 git fetch --prune origin >/dev/null 2>&1
 
-while IFS= read -r line; do
-  path=""
-  branch=""
-  while IFS= read -r entry; do
-    case "$entry" in
-      worktree\ *) path="${entry#worktree }" ;;
-      branch\ *) branch="${entry#branch refs/heads/}" ;;
-    esac
-  done <<< "$line"
-
-  [ -z "$path" ] && continue
-  [ "$path" = "$(pwd)" ] && continue
-  [ -z "$branch" ] && continue
-
-  if ! git show-ref --verify --quiet "refs/remotes/origin/$branch"; then
-    echo "Removing merged worktree: $path (branch: $branch)"
-    git worktree remove --force "$path" 2>/dev/null || rm -rf "$path"
-  fi
-done < <(git worktree list --porcelain | awk 'BEGIN{RS="\n\n"} {print}')
+git worktree list --porcelain | awk '
+  /^worktree / { if (path != "") print path "\t" branch; path=$0; sub(/^worktree /,"",path); branch="" }
+  /^branch /   { branch=$0; sub(/^branch refs\/heads\//,"",branch) }
+  END { if (path != "") print path "\t" branch }
+' | while IFS=$'\t' read -r path branch; do
+    [ "$path" = "$(pwd)" ] && continue
+    [ -z "$branch" ] && continue
+    if ! git show-ref --verify --quiet "refs/remotes/origin/$branch"; then
+      echo "Removing merged worktree: $path (branch: $branch)"
+      git worktree remove --force "$path" 2>/dev/null \
+        || rm -rf "$path" 2>/dev/null \
+        || echo "  WARNING: could not fully remove $path (folder may be locked by another program); rerun this script later"
+    fi
+  done
 
 git worktree prune

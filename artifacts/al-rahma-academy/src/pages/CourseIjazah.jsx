@@ -263,8 +263,15 @@ function BookCard({ book, lang }) {
       <button className="cl__book-trigger" onClick={() => setOpen((v) => !v)}>
         <span className="cl__book-icon">{book.icon}</span>
         <div className="cl__book-info">
-          <strong>{book.title}</strong>
-          <span className="cl__book-ar" dir="rtl">{book.ar}</span>
+          {/* Language Closure Phase 5 (policy approved by محمود): book.ar is the
+              approved primary Arabic title on the Arabic page -- book.title
+              (English) was previously shown as primary regardless of lang.
+              The secondary Arabic line is now redundant with the primary on
+              the Arabic page (would duplicate the same text), so it only
+              renders when the primary title is English; no new subtitle
+              text or Latin name is invented for either language. */}
+          <strong>{isAr ? book.ar : book.title}</strong>
+          {!isAr && <span className="cl__book-ar" dir="rtl">{book.ar}</span>}
           <span className="cl__book-author">{authorLabel}</span>
           <span className="cl__book-note">{stageLabel}</span>
         </div>

@@ -82,6 +82,41 @@ export const PRERENDER_MANIFEST = [
   { route: '/resources', locale: 'ar', status: 'published', indexable: true },
   { route: '/tools', locale: 'en', status: 'published', indexable: true },
   { route: '/tools', locale: 'ar', status: 'published', indexable: true },
+
+  // Teacher profiles (Phase 3, 22 pages): all 11 teachers currently in
+  // src/data/marketing/teachers.js's TEACHERS array (ids 1-11), en+ar.
+  // Real, already-reviewed useSEO/Breadcrumbs metadata (PR #89
+  // title/breadcrumb, PR #97 Arabic bio, PR #108 H1-by-locale); no
+  // date/time, external API, geolocation, localStorage or per-user state
+  // at initial render -- same precondition every prior wave met.
+  // fix/teacher-profile-main-content (PR #109, already on main) is the
+  // prerequisite this wave depends on: TeacherProfile.jsx's <main> now has
+  // id="main-content", which prerender.mjs's waitForHydratedSeo() requires
+  // of every prerendered page -- confirmed empirically to be the sole
+  // blocker (a build attempt without that fix timed out on the very first
+  // teacher entry).
+  { route: '/academy/teachers/1', locale: 'en', status: 'published', indexable: true },
+  { route: '/academy/teachers/1', locale: 'ar', status: 'published', indexable: true },
+  { route: '/academy/teachers/2', locale: 'en', status: 'published', indexable: true },
+  { route: '/academy/teachers/2', locale: 'ar', status: 'published', indexable: true },
+  { route: '/academy/teachers/3', locale: 'en', status: 'published', indexable: true },
+  { route: '/academy/teachers/3', locale: 'ar', status: 'published', indexable: true },
+  { route: '/academy/teachers/4', locale: 'en', status: 'published', indexable: true },
+  { route: '/academy/teachers/4', locale: 'ar', status: 'published', indexable: true },
+  { route: '/academy/teachers/5', locale: 'en', status: 'published', indexable: true },
+  { route: '/academy/teachers/5', locale: 'ar', status: 'published', indexable: true },
+  { route: '/academy/teachers/6', locale: 'en', status: 'published', indexable: true },
+  { route: '/academy/teachers/6', locale: 'ar', status: 'published', indexable: true },
+  { route: '/academy/teachers/7', locale: 'en', status: 'published', indexable: true },
+  { route: '/academy/teachers/7', locale: 'ar', status: 'published', indexable: true },
+  { route: '/academy/teachers/8', locale: 'en', status: 'published', indexable: true },
+  { route: '/academy/teachers/8', locale: 'ar', status: 'published', indexable: true },
+  { route: '/academy/teachers/9', locale: 'en', status: 'published', indexable: true },
+  { route: '/academy/teachers/9', locale: 'ar', status: 'published', indexable: true },
+  { route: '/academy/teachers/10', locale: 'en', status: 'published', indexable: true },
+  { route: '/academy/teachers/10', locale: 'ar', status: 'published', indexable: true },
+  { route: '/academy/teachers/11', locale: 'en', status: 'published', indexable: true },
+  { route: '/academy/teachers/11', locale: 'ar', status: 'published', indexable: true },
 ];
 
 // The URL path to navigate to for one manifest entry, e.g. "/ar/courses/ijazah".

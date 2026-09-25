@@ -74,7 +74,7 @@ export default function TeacherProfile() {
   return (
     <>
       <Header />
-      <main>
+      <main id="main-content">
         <Breadcrumbs items={[{ label: t.nav.teachers, to: '/academy/teachers' }, { label: displayName }]} />
         {/* Hero */}
         <section className="tp__hero" style={{ background: grad }}>

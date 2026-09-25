@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
+import { AR_NAV_LABELS } from '../../../i18n/quran/arabicNavigationLabels';
 
 /*
  * QuranQuickNav — type-ahead-and-jump command palette (Ctrl+K / "/").
@@ -9,6 +10,7 @@ import { useState, useMemo, useRef, useEffect } from 'react';
 export default function QuranQuickNav({ chapters, onClose, onJumpVerse, onGoPage, onGoJuz, onGoHizb, onGoSurah, ui }) {
   const [q, setQ] = useState('');
   const inputRef = useRef(null);
+  const isAr = ui.dir === 'rtl';
 
   useEffect(() => { inputRef.current?.focus(); }, []);
 
@@ -43,7 +45,7 @@ export default function QuranQuickNav({ chapters, onClose, onJumpVerse, onGoPage
     const hizbMatch = lower.match(/^h(?:izb)?\s*(\d{1,2})$/);
     if (hizbMatch) {
       const n = Number(hizbMatch[1]);
-      if (n >= 1 && n <= 60) return [{ kind: 'hizb', label: `${ui.hizb || 'Hizb'} ${n}`, n }];
+      if (n >= 1 && n <= 60) return [{ kind: 'hizb', label: `${ui.hizb || (isAr ? AR_NAV_LABELS.hizb : 'Hizb')} ${n}`, n }];
     }
 
     if (/^\d{1,3}$/.test(text)) {

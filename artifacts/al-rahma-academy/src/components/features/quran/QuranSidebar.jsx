@@ -1,4 +1,5 @@
 import { JUZ_NAMES } from '../../../data/quranLangs';
+import { AR_NAV_LABELS } from '../../../i18n/quran/arabicNavigationLabels';
 
 export default function QuranSidebar({
   navMode, chapters, activeId, search, pageNum, juzNum, hizbNum, khatmDone, filtered, ui,
@@ -6,6 +7,7 @@ export default function QuranSidebar({
   onSearchChange, onKhatmToggle, onKhatmFromSelect, onNewKhatm,
   open, onClose,
 }) {
+  const isAr = ui.dir === 'rtl';
   return (
     <>
       <div
@@ -20,7 +22,7 @@ export default function QuranSidebar({
           { key: 'surah', label: ui.navSurah || 'Surah' },
           { key: 'page',  label: ui.navPage  || 'Page' },
           { key: 'juz',   label: ui.navJuz   || 'Juz' },
-          { key: 'hizb',  label: ui.navHizb  || 'Hizb' },
+          { key: 'hizb',  label: ui.navHizb  || (isAr ? AR_NAV_LABELS.navHizb : 'Hizb') },
           { key: 'khatm', label: 'ختمة' },
         ].map((m) => (
           <button
@@ -50,11 +52,28 @@ export default function QuranSidebar({
                   onClick={() => onSurahSelect(c.id)}
                 >
                   <span className="qlc__snum">{c.id}</span>
-                  <span className="qlc__snames">
-                    <b>{c.name_simple}</b>
-                    <small>{c.translated_name?.name} · {c.verses_count} {ui.verses}</small>
-                  </span>
-                  <span className="qlc__sar">{c.name_arabic}</span>
+                  {isAr ? (
+                    <>
+                      {/* AR: Arabic name is primary -- placed first so it
+                          reads first in RTL order, and bolded to match the
+                          Latin name's existing visual weight. Latin stays
+                          secondary (same content, same <small> line), never
+                          removed. */}
+                      <span className="qlc__sar" style={{ fontWeight: 700 }}>{c.name_arabic}</span>
+                      <span className="qlc__snames">
+                        <b>{c.name_simple}</b>
+                        <small>{c.translated_name?.name} · {c.verses_count} {ui.verses}</small>
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="qlc__snames">
+                        <b>{c.name_simple}</b>
+                        <small>{c.translated_name?.name} · {c.verses_count} {ui.verses}</small>
+                      </span>
+                      <span className="qlc__sar">{c.name_arabic}</span>
+                    </>
+                  )}
                 </button>
               </li>
             ))}
@@ -110,7 +129,7 @@ export default function QuranSidebar({
               >
                 <span className="qlc__snum">{h}</span>
                 <span className="qlc__snames">
-                  <b>{ui.hizb || 'Hizb'} {h}</b>
+                  <b>{ui.hizb || (isAr ? AR_NAV_LABELS.hizb : 'Hizb')} {h}</b>
                   <small>{ui.juz || 'Juz'} {Math.ceil(h / 2)}</small>
                 </span>
               </button>

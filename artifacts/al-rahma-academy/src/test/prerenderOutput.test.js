@@ -1070,22 +1070,29 @@ describe.skipIf(!distExists)('Prerender output — literal dist/public paths (in
 // fix/faq-render-initial-content (PR #114) fixed FAQ.jsx so every visible
 // answer is always in the DOM (hidden via the standard `hidden` attribute
 // when its question is closed, never conditionally unmounted) instead of
-// only the open question's answer -- this proves that holds for the real
-// prerendered HTML a crawler actually receives, before any JavaScript
-// runs, not just for a jsdom-rendered component in memory. Expected
-// answers are derived from the real src/data/faqItems.js (the same
-// `item[lang] || item.en` selection FAQ.jsx itself uses, and the same
-// VISIBLE=8 slice), not re-invented literals -- a real wording change in
-// faqItems.js is a real content change these fixtures should track, not a
-// drift this suite should treat as a false failure.
-describe.skipIf(!distExists)('FAQ prerender output — all visible answers present in raw HTML', () => {
+// only the open question's answer. An independent review of this PR then
+// found FAQ.jsx still sliced `items` down to the first VISIBLE (8) before
+// ever mapping them into JSX, so questions 9-18 (faqItems.js has 18 total)
+// never reached the DOM at all -- not even hidden -- until "Show all" was
+// clicked, meaning the raw prerendered HTML a crawler actually receives
+// only ever carried 8 of the 18 real FAQ entries. Fixed alongside this
+// test: every one of the 18 items is now always mapped into the DOM, with
+// items 9-18's whole `.faq-item` row (not just its answer) hidden via the
+// same standard `hidden` attribute, tied to the (always-false-at-prerender-
+// time) `showAll` state, instead of being sliced out. Expected answers are
+// derived from the real src/data/faqItems.js (the same `item[lang] ||
+// item.en` selection FAQ.jsx itself uses), not re-invented literals -- a
+// real wording change in faqItems.js is a real content change these
+// fixtures should track, not a drift this suite should treat as a false
+// failure.
+describe.skipIf(!distExists)('FAQ prerender output — all 18 questions present in raw HTML, only first 8 rows visible', () => {
   const FAQ_VISIBLE = 8;
   const faqFiles = [
     { locale: 'en', relPath: 'resources/faq/index.html' },
     { locale: 'ar', relPath: 'ar/resources/faq/index.html' },
   ];
 
-  it.each(faqFiles)('$relPath: all 8 visible answers are in the raw pre-JS HTML, closed via hidden', ({ locale, relPath }) => {
+  it.each(faqFiles)('$relPath: all 18 answers are in the raw pre-JS HTML; rows 9-18 hidden until "Show all"', ({ locale, relPath }) => {
     const filePath = path.join(distDir, relPath);
     expect(existsSync(filePath), `missing prerendered file: ${filePath}`).toBe(true);
 
@@ -1093,10 +1100,12 @@ describe.skipIf(!distExists)('FAQ prerender output — all visible answers prese
     const dom = new JSDOM(html);
     const { document } = dom.window;
 
-    const expectedAnswers = faqItems.slice(0, FAQ_VISIBLE).map((item) => (item[locale] || item.en).a);
+    const expectedAnswers = faqItems.map((item) => (item[locale] || item.en).a);
 
     const panels = [...document.querySelectorAll('.faq-item__a')];
-    expect(panels.length, 'all 8 visible answer panels must be in the raw HTML').toBe(FAQ_VISIBLE);
+    expect(panels.length, `all ${faqItems.length} answer panels must be in the raw HTML, not just the first ${FAQ_VISIBLE}`).toBe(
+      faqItems.length,
+    );
 
     const actualTexts = panels.map((p) => p.textContent.trim());
     expect(actualTexts, 'answer text must match the real faqItems.js content, in order').toEqual(expectedAnswers);
@@ -1107,6 +1116,15 @@ describe.skipIf(!distExists)('FAQ prerender output — all visible answers prese
         'no question is open by default, so every answer panel must carry the standard hidden attribute in the raw HTML too',
       ).toBe(true);
     }
+
+    const rows = [...document.querySelectorAll('.faq-item')];
+    expect(rows.length, `all ${faqItems.length} question rows must be in the raw HTML`).toBe(faqItems.length);
+    rows.forEach((row, i) => {
+      expect(
+        row.hasAttribute('hidden'),
+        `row ${i} must be hidden in the raw HTML iff it is beyond the default-visible first ${FAQ_VISIBLE}`,
+      ).toBe(i >= FAQ_VISIBLE);
+    });
   });
 });
 

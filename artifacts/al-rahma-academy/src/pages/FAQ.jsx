@@ -48,11 +48,9 @@ export default function FAQ() {
                 <span>{item.q}</span>
                 <span className="faq-item__icon">{open === i ? '−' : '+'}</span>
               </button>
-              {open === i && (
-                <div className="faq-item__a">
-                  <p>{item.a}</p>
-                </div>
-              )}
+              <div className="faq-item__a" hidden={open !== i}>
+                <p>{item.a}</p>
+              </div>
             </div>
           ))}
         </div>

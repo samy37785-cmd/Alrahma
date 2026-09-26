@@ -172,6 +172,20 @@ export const PRERENDER_MANIFEST = [
   { route: '/tools/tasbeeh', locale: 'ar', status: 'published', indexable: true },
   { route: '/tools/arabic-alphabet', locale: 'en', status: 'published', indexable: true },
   { route: '/tools/arabic-alphabet', locale: 'ar', status: 'published', indexable: true },
+
+  // Adhkar (2026-09-26): /tools/adhkar, en+ar. A read-only discovery pass
+  // found the only real blocker was Adhkar.jsx mounting just the selected
+  // category's cards (`filteredCats` defaulted to one category), so a
+  // crawler's initial render only ever saw 1 of the 8 real categories (10
+  // of the 49 real adhkar). fix/adhkar-initial-content (PR #117, already on
+  // main) removed that blocker — every category's cards are now always in
+  // the DOM, with only the non-selected ones hidden via the standard
+  // `hidden` attribute, the same mechanism FAQ and static tools already
+  // rely on. No fetch/date/geolocation/login; the `done`/`counts`
+  // localStorage state only affects progress badges/classes, never the
+  // recited Arabic text, translations, H1, or SEO metadata.
+  { route: '/tools/adhkar', locale: 'en', status: 'published', indexable: true },
+  { route: '/tools/adhkar', locale: 'ar', status: 'published', indexable: true },
 ];
 
 // The URL path to navigate to for one manifest entry, e.g. "/ar/courses/ijazah".

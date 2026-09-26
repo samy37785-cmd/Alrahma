@@ -19,8 +19,8 @@
   overflow: hidden;
   transition: border-color .25s ease, box-shadow .25s ease;
 }
-.faq__item:hover { border-color: rgba(11,110,79,.22); }
-.faq__item--open { border-color: rgba(11,110,79,.35); box-shadow: var(--shadow-sm); }
+.faq__item:hover { border-color: rgba(0,84,59,.22); }
+.faq__item--open { border-color: rgba(0,84,59,.35); box-shadow: var(--shadow-sm); }
 
 .faq__question {
   width: 100%;
@@ -114,7 +114,7 @@
 .faq__aside-btn {
   display: inline-flex; align-items: center; justify-content: center;
   width: 100%; padding: 12px 16px; border-radius: 999px;
-  background: var(--gold); color: #3a2e05; font-weight: 700; font-size: .85rem;
+  background: var(--gold); color: #3a2000; font-weight: 700; font-size: .85rem;
   text-decoration: none; transition: transform .2s ease, box-shadow .2s ease;
 }
-.faq__aside-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(212,175,55,.35); }
+.faq__aside-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(200,132,42,.35); }

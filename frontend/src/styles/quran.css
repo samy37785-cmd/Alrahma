@@ -146,7 +146,7 @@
   width: 100%; padding: 8px 11px; border: 1px solid #cfdbd5; border-radius: 7px;
   font-family: inherit; font-size: .82rem; background: #fff; box-sizing: border-box;
 }
-.qlc__search:focus { outline: none; border-color: var(--green); box-shadow: 0 0 0 2px rgba(11,110,79,.1); }
+.qlc__search:focus { outline: none; border-color: var(--green); box-shadow: 0 0 0 2px rgba(0,84,59,.1); }
 
 /* ❸ Surah/Juz list */
 .qlc__list {
@@ -237,7 +237,7 @@
 .qlc__mode-switch-btn:hover { background: #eaf4ef; }
 .qlc__mode-switch-btn.active {
   background: var(--green-deep); color: #fff; border-color: var(--green-deep);
-  box-shadow: 0 2px 6px rgba(11,110,79,.25);
+  box-shadow: 0 2px 6px rgba(0,84,59,.25);
 }
 .qlc__mode-switch-icon { font-size: .95rem; }
 .qlc--dark .qlc__mode-switch { background: #151f1a; border-color: #1e3028; }
@@ -425,7 +425,7 @@
   background: var(--green); color: #fff; border: none; border-radius: 50%;
   width: 30px; height: 30px; cursor: pointer; font-size: .78rem;
   display: flex; align-items: center; justify-content: center; transition: all .15s;
-  box-shadow: 0 2px 6px rgba(11,110,79,.3);
+  box-shadow: 0 2px 6px rgba(0,84,59,.3);
 }
 .qlc__playbtn:hover { background: var(--green-deep); transform: scale(1.08); }
 .qlc__playbtn:disabled { background: #ccc; cursor: not-allowed; transform: none; box-shadow: none; }
@@ -468,7 +468,7 @@
 .qlc__tafsir-name { font-size: .82rem; font-weight: 800; color: #7a5a00; }
 .qlc__tafsir-name-en { font-size: .68rem; color: #9a7a20; }
 .qlc__tafsir-key {
-  font-size: .7rem; font-weight: 800; color: #b8941f;
+  font-size: .7rem; font-weight: 800; color: #a86a1e;
   background: #fff3c0; border-radius: 12px; padding: 2px 8px; border: 1px solid #e0c84a;
 }
 .qlc__tafsir-close {
@@ -504,14 +504,14 @@
 }
 .qlc__tafsir-spinner {
   width: 18px; height: 18px; border: 2px solid #e0d09a;
-  border-top-color: #b8941f; border-radius: 50%; animation: qlc-spin .7s linear infinite; flex-shrink: 0;
+  border-top-color: #a86a1e; border-radius: 50%; animation: qlc-spin .7s linear infinite; flex-shrink: 0;
 }
 .qlc__tafsir-err { font-size: .82rem; color: #c0392b; margin: 0; padding: 12px 18px; background: #fffff8; }
 
 /* ════  TAFSIR PICKER (inline per-verse) ════════════════════════════ */
 .qlc__tafsir-picker {
   margin-top: 12px; border: 1px solid #d8e8d0; border-radius: 10px; overflow: hidden;
-  background: #fff; box-shadow: 0 6px 22px rgba(8,77,55,.12);
+  background: #fff; box-shadow: 0 6px 22px rgba(0,59,40,.12);
   animation: qlc-pop .2s ease;
 }
 .qlc__tafsir-picker-head {
@@ -549,12 +549,12 @@
 .qlc__verse--active {
   background: linear-gradient(135deg, #e8faf1, #f0fff7);
   border-left: 5px solid var(--green);
-  box-shadow: 0 2px 20px rgba(11,110,79,.12);
+  box-shadow: 0 2px 20px rgba(0,84,59,.12);
   animation: qlc-verse-glow 2s ease-in-out infinite;
 }
 @keyframes qlc-verse-glow {
-  0%,100% { background: linear-gradient(135deg, #e8faf1, #f0fff7); box-shadow: 0 2px 20px rgba(11,110,79,.12); }
-  50%      { background: linear-gradient(135deg, #d4f5e4, #e8fff2); box-shadow: 0 4px 28px rgba(11,110,79,.2); }
+  0%,100% { background: linear-gradient(135deg, #e8faf1, #f0fff7); box-shadow: 0 2px 20px rgba(0,84,59,.12); }
+  50%      { background: linear-gradient(135deg, #d4f5e4, #e8fff2); box-shadow: 0 4px 28px rgba(0,84,59,.2); }
 }
 
 /* Now-playing badge */
@@ -741,7 +741,7 @@
 /* ════  MODAL OVERLAY  ══════════════════════════════════════════════ */
 .qlc__overlay {
   position: fixed; inset: 0; z-index: 500;
-  background: rgba(6,55,42,.45); backdrop-filter: blur(4px);
+  background: rgba(0,46,32,.45); backdrop-filter: blur(4px);
   display: flex; align-items: center; justify-content: center; padding: 20px;
   animation: qlc-fade .2s ease;
 }
@@ -979,7 +979,7 @@
 .qlc--dark .qlc__jump-of { color: #3a5a48; }
 .qlc--dark .qlc__cbar-font-btn { background: #1a2d22; border-color: #2a4035; color: #81d8a8; }
 .qlc--dark .qlc__cbar-font-val { color: #5a9a78; }
-.qlc--dark .qlc__ksp-body { background: #151f1a; border-color: #b8941f; }
+.qlc--dark .qlc__ksp-body { background: #151f1a; border-color: #a86a1e; }
 .qlc--dark .qlc__ksp-title { color: #81d8a8; border-color: #1e3028; }
 .qlc--dark .qlc__ksp-label { color: #c0dcd0; }
 .qlc--dark .qlc__ksp-row:hover { background: #1a2820; }
@@ -1333,4 +1333,4 @@
 .qlc__bookmark-btn.active { color: #e0a010; }
 .qlc--dark .qlc__bookmark-btn { color: #2a4035; }
 .qlc--dark .qlc__bookmark-btn:hover,
-.qlc--dark .qlc__bookmark-btn.active { color: #f0c040; }
+.qlc--dark .qlc__bookmark-btn.active { color: #e8ae50; }

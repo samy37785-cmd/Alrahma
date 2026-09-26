@@ -66,7 +66,7 @@
   cursor: pointer;
 }
 .mushaf-ayah-num:hover { background: #f3e6bd; }
-.mushaf-ayah-num.bookmarked { background: #f0c040; border-color: #d9a800; color: #5a4200; }
+.mushaf-ayah-num.bookmarked { background: #e8ae50; border-color: #d9a800; color: #5a4200; }
 
 .mushaf-translation {
   margin-top: 14px; padding-top: 12px; border-top: 1px dashed #e7dcc0;
@@ -81,7 +81,7 @@
 span.mushaf-ayah.qlc__verse--active {
   background: #fdf0c0;
   border-radius: 4px;
-  box-shadow: 0 0 0 2px #f0c040;
+  box-shadow: 0 0 0 2px #e8ae50;
 }
 
 /* ── Dark mode ─────────────────────────────────────────────────────── */

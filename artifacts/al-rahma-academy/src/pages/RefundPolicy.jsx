@@ -139,7 +139,7 @@ export default function RefundPolicy() {
   return (
     <>
       <Header />
-      <main>
+      <main id="main-content">
         <Breadcrumbs
           items={[{ label: content.academy, to: '/academy' }, { label: content.breadcrumb }]}
         />

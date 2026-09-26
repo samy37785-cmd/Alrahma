@@ -99,7 +99,7 @@ export default function Privacy() {
 
       <Breadcrumbs items={[{ label: content.academy, to: '/academy' }, { label: content.title }]} />
 
-      <main className="container legal__main">
+      <main id="main-content" className="container legal__main">
         <h1>{content.title}</h1>
         <p className="legal__updated">{content.updated}</p>
 

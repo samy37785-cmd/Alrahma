@@ -84,7 +84,7 @@ export default function TermsOfService() {
   const base = policies[lang] || policies.en;
   const c = { ...policies.en, ...base, ...(translated[lang] || {}) };
   useSEO({ title: c.title, description: c.seo, noindex: false });
-  return <><Header /><main><Breadcrumbs items={[{ label: c.academy, to: '/academy' }, { label: c.title }]} /><section className="legal-page"><div className="container legal-page__inner">
+  return <><Header /><main id="main-content"><Breadcrumbs items={[{ label: c.academy, to: '/academy' }, { label: c.title }]} /><section className="legal-page"><div className="container legal-page__inner">
     <h1>{c.title}</h1><p className="legal-page__meta">{c.updated}</p><p>{c.intro}</p>
     <h2>{c.headings[0]}</h2><p>{c.services}</p><h2>{c.headings[1]}</h2><ul>{c.payment.map(x => <li key={x}>{x}</li>)}</ul>
     <h2>{c.headings[2]}</h2><p>{c.refund} <a href={`mailto:${site.email}`}>{site.email}</a> {c.refundEnd} <a href={`https://wa.me/${site.whatsapp}`}>{site.whatsappDisplay}</a>. {c.refundNote}</p><p>{c.guarantee}</p>

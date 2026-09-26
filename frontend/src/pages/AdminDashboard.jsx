@@ -55,7 +55,7 @@ function RevenueChart({ pays }) {
         ? <DsChartEmpty height={120} message="No approved payments yet" />
         : <DsBarChart
             data={data}
-            bars={[{ key: 'Payments', label: 'Approved Payments', color: '#0b6e4f' }]}
+            bars={[{ key: 'Payments', label: 'Approved Payments', color: '#00543b' }]}
             height={140}
             showGrid
           />

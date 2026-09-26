@@ -449,7 +449,7 @@ export default function TeacherDashboard() {
                 return (
                   <DsBarChart
                     data={chartData}
-                    bars={[{ key: 'Verses', label: 'Verses Memorized', color: '#d4af37' }]}
+                    bars={[{ key: 'Verses', label: 'Verses Memorized', color: '#c8842a' }]}
                     height={150}
                     xKey="name"
                     showGrid={false}

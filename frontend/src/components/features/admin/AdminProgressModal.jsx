@@ -67,7 +67,7 @@ export default function AdminProgressModal({ user, onClose, onError }) {
                     <span>{c.icon} {c.title}</span>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 160 }}>
                       <div style={{ flex: 1, height: 7, background: '#e6efe9', borderRadius: 99, overflow: 'hidden' }}>
-                        <div style={{ width: `${c.percent}%`, height: '100%', background: '#0b6e4f' }} />
+                        <div style={{ width: `${c.percent}%`, height: '100%', background: '#00543b' }} />
                       </div>
                       <span style={{ fontSize: '.8rem', fontWeight: 600, whiteSpace: 'nowrap' }}>{c.done}/{c.total}</span>
                     </div>

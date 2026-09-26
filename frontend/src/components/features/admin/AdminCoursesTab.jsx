@@ -114,7 +114,7 @@ export default function AdminCoursesTab({ courses, onCoursesChange, onError }) {
             {form.modules.map((m, mi) => (
               <div key={mi} style={{ border: '1px solid #d9e4dd', borderRadius: 8, padding: '10px 12px', marginBottom: '10px', background: '#fafdfb' }}>
                 <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginBottom: '6px' }}>
-                  <strong style={{ color: '#0b6e4f' }}>{mi + 1}.</strong>
+                  <strong style={{ color: '#00543b' }}>{mi + 1}.</strong>
                   <input placeholder="Module title" value={m.title} onChange={(e) => updateModule(mi, 'title', e.target.value)} style={{ flex: 1 }} />
                   <button type="button" className="admin__del" onClick={() => removeModule(mi)} style={{ padding: '4px 8px' }}>✕</button>
                 </div>

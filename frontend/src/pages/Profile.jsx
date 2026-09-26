@@ -19,14 +19,14 @@ function printCertificate(cert, typeLabel) {
   w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${escHtml(cert.certificateNumber)}</title>
   <style>
     body{margin:0;font-family:Georgia,'Times New Roman',serif;background:#fff;}
-    .cert{width:780px;margin:24px auto;padding:48px 56px;border:3px solid #0b6e4f;border-radius:8px;position:relative;}
+    .cert{width:780px;margin:24px auto;padding:48px 56px;border:3px solid #00543b;border-radius:8px;position:relative;}
     .cert::after{content:'';position:absolute;inset:10px;border:1px solid #c9a227;border-radius:4px;pointer-events:none;}
-    .hdr{color:#0b6e4f;font-size:14px;letter-spacing:3px;text-transform:uppercase;}
-    h1{color:#0b6e4f;font-size:40px;margin:6px 0 2px;}
+    .hdr{color:#00543b;font-size:14px;letter-spacing:3px;text-transform:uppercase;}
+    h1{color:#00543b;font-size:40px;margin:6px 0 2px;}
     .sub{color:#888;font-size:13px;margin:0 0 28px;}
     .lbl{color:#888;font-size:13px;margin:24px 0 4px;}
     .name{font-size:30px;color:#222;margin:0;border-bottom:1px solid #ddd;display:inline-block;padding:0 20px 6px;}
-    .title{font-size:22px;color:#0b6e4f;margin:18px 0 4px;font-weight:bold;}
+    .title{font-size:22px;color:#00543b;margin:18px 0 4px;font-weight:bold;}
     .grade{color:#c9a227;font-weight:bold;}
     .foot{display:flex;justify-content:space-between;margin-top:48px;font-size:13px;color:#555;}
     .num{position:absolute;bottom:18px;left:0;right:0;text-align:center;color:#bbb;font-size:11px;}

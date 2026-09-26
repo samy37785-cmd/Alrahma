@@ -26,7 +26,7 @@ const doc = dom.window.document;
 
 const ORIGIN = 'https://al-rahmaacademy.com';
 
-// The 24 published route "slugs" (en path), written literally here rather
+// The 25 published route "slugs" (en path), written literally here rather
 // than imported — this suite must be able to catch a bug in
 // PRERENDER_MANIFEST or canonicalUrlFor() (a wrong route, a missing
 // teacher id, a locale mix-up), not merely confirm the sitemap agrees with
@@ -38,6 +38,11 @@ const ORIGIN = 'https://al-rahmaacademy.com';
 // /academy/refund-policy joined the published set once
 // fix/legal-page-main-landmarks (PR #112) added the id="main-content"
 // prerequisite and this PR's PRERENDER_MANIFEST entries prerendered them.
+//
+// FAQ (2026-09-26): /resources/faq joined the published set once
+// fix/faq-render-initial-content (PR #114) made every answer's text
+// always present in the DOM (previously conditionally unmounted when its
+// question was closed), removing the only real prerender blocker.
 const ROUTES = [
   '/',
   '/courses',
@@ -53,6 +58,7 @@ const ROUTES = [
   '/academy/privacy',
   '/academy/terms',
   '/academy/refund-policy',
+  '/resources/faq',
 ];
 
 function pathForLocale(route, locale) {
@@ -90,17 +96,17 @@ describe('sitemap.xml — structure', () => {
   });
 });
 
-describe('sitemap.xml — exact 48-URL published-routes whitelist', () => {
-  it('contains exactly 48 <loc> entries', () => {
-    expect(getLocUrls()).toHaveLength(48);
+describe('sitemap.xml — exact 50-URL published-routes whitelist', () => {
+  it('contains exactly 50 <loc> entries', () => {
+    expect(getLocUrls()).toHaveLength(50);
   });
 
-  it('splits into exactly 24 EN and 24 AR URLs', () => {
+  it('splits into exactly 25 EN and 25 AR URLs', () => {
     const locs = getLocUrls();
     const arUrls = locs.filter((u) => u.startsWith(`${ORIGIN}/ar/`) || u === `${ORIGIN}/ar`);
     const enUrls = locs.filter((u) => !arUrls.includes(u));
-    expect(enUrls).toHaveLength(24);
-    expect(arUrls).toHaveLength(24);
+    expect(enUrls).toHaveLength(25);
+    expect(arUrls).toHaveLength(25);
   });
 
   it('has no duplicate URLs', () => {
@@ -108,12 +114,12 @@ describe('sitemap.xml — exact 48-URL published-routes whitelist', () => {
     expect(new Set(locs).size).toBe(locs.length);
   });
 
-  it('matches the exact literal 48-URL whitelist, with nothing extra and nothing missing', () => {
+  it('matches the exact literal 50-URL whitelist, with nothing extra and nothing missing', () => {
     const locs = getLocUrls();
     expect([...locs].sort()).toEqual([...EXPECTED_URLS].sort());
   });
 
-  it('does not contain /it/, /fr/, /enroll, individual tools, FAQ, Blog, Islamic Studies, or any other unpublished route', () => {
+  it('does not contain /it/, /fr/, /enroll, individual tools, Blog, Islamic Studies, or any other unpublished route', () => {
     const locs = getLocUrls();
     for (const forbidden of [
       '/it/',
@@ -121,7 +127,6 @@ describe('sitemap.xml — exact 48-URL published-routes whitelist', () => {
       '/es/',
       '/de/',
       '/enroll',
-      '/resources/faq',
       '/resources/blog',
       '/courses/islamic-studies',
       '/tools/quran-reader',
@@ -138,7 +143,7 @@ describe('sitemap.xml — exact 48-URL published-routes whitelist', () => {
     ]) {
       expect(locs.some((u) => u.includes(forbidden))).toBe(false);
     }
-    // Belt-and-suspenders: every URL must be one of the 48 whitelisted ones.
+    // Belt-and-suspenders: every URL must be one of the 50 whitelisted ones.
     for (const loc of locs) {
       expect(EXPECTED_URLS).toContain(loc);
     }

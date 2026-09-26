@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { JSDOM } from 'jsdom';
 import { describe, it, expect } from 'vitest';
 import { PRERENDER_MANIFEST, canonicalUrlFor, outputRelPathFor } from '../../scripts/prerender-routes.mjs';
+import faqItems from '../data/faqItems.js';
 
 // SEO Prerender Pilot (2026-09-20): proves the real static HTML files
 // scripts/prerender.mjs writes after `vite build` (as `postbuild`) are
@@ -896,6 +897,50 @@ const LITERAL_FILES = [
       { name: 'سياسة الاسترداد', item: 'https://al-rahmaacademy.com/ar/academy/refund-policy' },
     ],
   },
+  // FAQ (2026-09-26): joined the pilot once fix/faq-render-initial-content
+  // (PR #114, already on main) made every answer's text always present in
+  // the DOM. expectedTitle/expectedDescription/h1Text are literal copies of
+  // FAQ.jsx's own source (src/i18n/en.js+ar.js `faqPg.heading`/`faqPg.sub`,
+  // via `useSEO({ title: pg.heading, description: pg.sub })`) verified
+  // directly against origin/main, never invented. breadcrumb: FAQ.jsx's own
+  // `items={[{ label: t.nav.resources, to: '/resources' }, { label:
+  // pg.heading }]}` (src/i18n `nav.resources`); Breadcrumbs.jsx prepends the
+  // localized Home crumb. The 8-visible-answers-in-raw-HTML check (the real
+  // point of this wave) is a dedicated describe block below, not here --
+  // this block only proves the shared metadata contract every prior wave
+  // proves.
+  {
+    route: '/resources/faq',
+    locale: 'en',
+    relPath: 'resources/faq/index.html',
+    expectedCanonical: 'https://al-rahmaacademy.com/resources/faq',
+    h1Text: 'Frequently Asked Questions',
+    expectedEnHref: 'https://al-rahmaacademy.com/resources/faq',
+    expectedArHref: 'https://al-rahmaacademy.com/ar/resources/faq',
+    expectedTitle: 'Frequently Asked Questions | AL-Rahma Academy',
+    expectedDescription: 'Everything you need to know about Al-Rahma Academy and our online Quran courses.',
+    breadcrumb: [
+      { name: 'Home', item: 'https://al-rahmaacademy.com/' },
+      { name: 'Resources', item: 'https://al-rahmaacademy.com/resources' },
+      { name: 'Frequently Asked Questions', item: 'https://al-rahmaacademy.com/resources/faq' },
+    ],
+  },
+  {
+    route: '/resources/faq',
+    locale: 'ar',
+    relPath: 'ar/resources/faq/index.html',
+    expectedCanonical: 'https://al-rahmaacademy.com/ar/resources/faq',
+    h1Text: 'الأسئلة الشائعة',
+    expectedEnHref: 'https://al-rahmaacademy.com/resources/faq',
+    expectedArHref: 'https://al-rahmaacademy.com/ar/resources/faq',
+    expectedTitle: 'الأسئلة الشائعة | AL-Rahma Academy',
+    expectedDescription: 'كل ما تحتاج معرفته عن أكاديمية الرحمة ودوراتنا الإلكترونية في القرآن الكريم.',
+    breadcrumb: [
+      { name: 'الرئيسية', item: 'https://al-rahmaacademy.com/ar/' },
+      { name: 'الموارد', item: 'https://al-rahmaacademy.com/ar/resources' },
+      { name: 'الأسئلة الشائعة', item: 'https://al-rahmaacademy.com/ar/resources/faq' },
+    ],
+  },
 ];
 
 describe.skipIf(!distExists)('Prerender output (dist/public) — real files on disk, post-build only', () => {
@@ -1017,6 +1062,50 @@ describe.skipIf(!distExists)('Prerender output — literal dist/public paths (in
           expect(i.name, `Arabic BreadcrumbList must not contain an English/URL-derived name: "${i.name}"`).not.toMatch(/[a-zA-Z]/);
         });
       }
+    }
+  });
+});
+
+// FAQ raw-HTML answers (2026-09-26): the actual point of this wave.
+// fix/faq-render-initial-content (PR #114) fixed FAQ.jsx so every visible
+// answer is always in the DOM (hidden via the standard `hidden` attribute
+// when its question is closed, never conditionally unmounted) instead of
+// only the open question's answer -- this proves that holds for the real
+// prerendered HTML a crawler actually receives, before any JavaScript
+// runs, not just for a jsdom-rendered component in memory. Expected
+// answers are derived from the real src/data/faqItems.js (the same
+// `item[lang] || item.en` selection FAQ.jsx itself uses, and the same
+// VISIBLE=8 slice), not re-invented literals -- a real wording change in
+// faqItems.js is a real content change these fixtures should track, not a
+// drift this suite should treat as a false failure.
+describe.skipIf(!distExists)('FAQ prerender output — all visible answers present in raw HTML', () => {
+  const FAQ_VISIBLE = 8;
+  const faqFiles = [
+    { locale: 'en', relPath: 'resources/faq/index.html' },
+    { locale: 'ar', relPath: 'ar/resources/faq/index.html' },
+  ];
+
+  it.each(faqFiles)('$relPath: all 8 visible answers are in the raw pre-JS HTML, closed via hidden', ({ locale, relPath }) => {
+    const filePath = path.join(distDir, relPath);
+    expect(existsSync(filePath), `missing prerendered file: ${filePath}`).toBe(true);
+
+    const html = readFileSync(filePath, 'utf8');
+    const dom = new JSDOM(html);
+    const { document } = dom.window;
+
+    const expectedAnswers = faqItems.slice(0, FAQ_VISIBLE).map((item) => (item[locale] || item.en).a);
+
+    const panels = [...document.querySelectorAll('.faq-item__a')];
+    expect(panels.length, 'all 8 visible answer panels must be in the raw HTML').toBe(FAQ_VISIBLE);
+
+    const actualTexts = panels.map((p) => p.textContent.trim());
+    expect(actualTexts, 'answer text must match the real faqItems.js content, in order').toEqual(expectedAnswers);
+
+    for (const panel of panels) {
+      expect(
+        panel.hasAttribute('hidden'),
+        'no question is open by default, so every answer panel must carry the standard hidden attribute in the raw HTML too',
+      ).toBe(true);
     }
   });
 });

@@ -17,8 +17,8 @@
   position: sticky;
   top: 0;
   z-index: 50;
-  background: linear-gradient(155deg, #123f3a, #0c3834);
-  border-bottom: 1px solid rgba(212,175,55,.25);
+  background: linear-gradient(155deg, #00543b, #002e20);
+  border-bottom: 1px solid rgba(200,132,42,.28);
   padding-top: env(safe-area-inset-top, 0px);
   box-shadow: none;
   transition: box-shadow var(--duration-slow, .25s) var(--ease-default, ease),
@@ -33,8 +33,8 @@
 /* Shrink slightly once the page has scrolled past the hero — a subtle,
    premium touch rather than an abrupt height jump. */
 .header--scrolled {
-  background: linear-gradient(155deg, #0e352f, #092a26);
-  box-shadow: var(--shadow-sm, 0 4px 16px rgba(0,0,0,.25));
+  background: linear-gradient(155deg, #003b28, #001c14);
+  box-shadow: 0 4px 20px rgba(0,0,0,.28);
 }
 .header--scrolled .header__inner { padding: 9px 0; }
 
@@ -61,11 +61,13 @@
 .nav > a:hover { color: var(--gold); background: rgba(255,255,255,.08); }
 .nav__active { color: var(--gold) !important; font-weight: 700; }
 .nav__cta {
-  background: var(--gold); color: #3a2e05 !important;
-  padding: 9px 20px; border-radius: 999px; font-weight: 600;
+  background: var(--gold); color: #3a2000 !important;
+  padding: 9px 20px; border-radius: 999px; font-weight: 700;
   margin-left: 4px;
+  box-shadow: var(--shadow-glow-amber);
+  transition: background .2s, box-shadow .2s, transform .15s;
 }
-.nav__cta:hover { background: var(--gold-dark); }
+.nav__cta:hover { background: var(--gold-dark); transform: translateY(-1px); }
 
 /* Skip link styles live in global.css — no duplicate here */
 
@@ -362,7 +364,7 @@
   align-items: center;
   justify-content: center;
   line-height: 1;
-  border: 2px solid #123f3a;
+  border: 2px solid #002e20;
   animation: bell-pop .3s cubic-bezier(.34,1.56,.64,1) both;
 }
 @keyframes bell-pop {

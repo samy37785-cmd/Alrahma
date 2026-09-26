@@ -37,7 +37,7 @@
   color: #fff;
   margin-bottom: 20px;
   line-height: 1.1;
-  font-family: var(--font-serif-display);
+  font-family: var(--font-display);
   font-weight: 700;
   font-size: var(--text-hero, clamp(2.6rem, 5.5vw, 3.8rem));
 }

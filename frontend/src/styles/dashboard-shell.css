@@ -24,7 +24,7 @@
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  background: var(--p-green-900);
+  background: linear-gradient(180deg, var(--p-green-700) 0%, var(--p-green-900) 100%);
   border-right: 1px solid rgba(255, 255, 255, 0.06);
   transition: width var(--duration-slow) var(--ease-default);
   overflow: hidden;
@@ -145,21 +145,26 @@
   color: rgba(255, 255, 255, 0.9);
 }
 
+/* High-contrast active state — solid Heritage Emerald pill (reference §Navigation) */
 .ds-nav__item--active {
-  background: rgba(79, 209, 154, 0.14) !important;
-  color: #5de3a8 !important;
+  background: var(--p-green-500) !important;
+  color: #fff !important;
+  box-shadow: 0 4px 14px -4px rgba(0, 84, 59, 0.7);
 }
 
-.ds-nav__item--active .ds-nav__icon { color: #5de3a8; }
+.ds-nav__item--active:hover { background: var(--p-green-400) !important; color: #fff !important; }
 
+.ds-nav__item--active .ds-nav__icon { color: #fff; opacity: 1; }
+
+/* Manuscript-amber marker on the active rail — the "achievement" accent */
 .ds-nav__item--active::before {
   content: '';
   position: absolute;
   left: 0;
-  top: 5px;
-  bottom: 5px;
+  top: 6px;
+  bottom: 6px;
   width: 3px;
-  background: #5de3a8;
+  background: var(--p-amber-500);
   border-radius: 0 3px 3px 0;
 }
 
@@ -272,14 +277,18 @@
 }
 
 /* ── Top header ────────────────────────────────────────────────── */
+/* Glassmorphism top bar (reference §Elevation Level 2) — semi-transparent
+   cream with a soft backdrop blur so content scrolls beneath it. */
 .ds-header {
   height: 58px;
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 0 22px;
-  background: var(--bg-surface);
-  border-bottom: 1px solid var(--border-default);
+  background: var(--glass-bg-strong);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border-bottom: 1px solid var(--border-subtle);
   position: sticky;
   top: 0;
   z-index: var(--z-sticky);
@@ -1685,11 +1694,13 @@ html.dark .ds-hifz-cell--none    { background: #1a2820; color: var(--text-second
     right: 0;
     height: calc(var(--ds-bottom-nav-h) + env(safe-area-inset-bottom, 0px));
     padding-bottom: env(safe-area-inset-bottom, 0px);
-    background: var(--bg-surface);
-    border-top: 1px solid var(--border-default);
+    background: var(--glass-bg-strong);
+    -webkit-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
+    border-top: 1px solid var(--border-subtle);
     z-index: calc(var(--z-overlay) - 2);
     align-items: stretch;
-    box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.07);
+    box-shadow: 0 -4px 20px rgba(0, 59, 40, 0.08);
     padding-left: env(safe-area-inset-left, 0px);
     padding-right: env(safe-area-inset-right, 0px);
   }
@@ -2080,4 +2091,3 @@ html.dark .milestone-toast {
 .share-verse-btn--wa     { background: #25d366; color: #fff; }
 .share-verse-btn--copy   { background: var(--bg-page); border: 1px solid var(--border-default); color: var(--text-primary); }
 .share-verse-btn--dl     { background: #4f46e5; color: #fff; }
-}

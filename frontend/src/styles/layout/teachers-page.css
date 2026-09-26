@@ -9,7 +9,7 @@
 .tpg__hero-sub { color: #cde5d8; max-width: 640px; margin: 0 auto 24px; font-size: 1.05rem; line-height: 1.7; }
 /* min-height reserves room for a 2-row wrap up front. Root cause (found via
    CDP layout-shift source attribution with position data, not just size):
-   these pills render first in a fallback font, then Poppins-500 swaps in
+   these pills render first in a fallback font, then Inter-600 swaps in
    slightly wider — on narrow mobile viewports that's just enough for one
    pill to overflow onto a second line, growing this block by a full row and
    pushing the stats bar (and everything below it) down. That push is what
@@ -33,7 +33,7 @@
 .tpg__stat { text-align: center; padding: 0 40px; border-right: 1px solid rgba(255,255,255,.12); }
 .tpg__stat:last-child { border-right: 0; }
 /* font-weight:700 (not 800): 700 is already used by the nav's active-link
-   state, which renders on every page, so its Poppins file is warm by the
+   state, which renders on every page, so its Inter file is warm by the
    time an anonymous visitor reaches Teachers. 800 was used nowhere else
    visible to a logged-out visitor, so it was always an uncached, page-
    exclusive fetch — reliably landing late and triggering a visible font

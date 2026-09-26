@@ -135,6 +135,21 @@ export const PRERENDER_MANIFEST = [
   { route: '/academy/terms', locale: 'ar', status: 'published', indexable: true },
   { route: '/academy/refund-policy', locale: 'en', status: 'published', indexable: true },
   { route: '/academy/refund-policy', locale: 'ar', status: 'published', indexable: true },
+
+  // FAQ (2026-09-26): /resources/faq joined the pilot once
+  // fix/faq-render-initial-content (PR #114, already on main) removed the
+  // only real blocker — every answer's text is now always in the DOM
+  // (hidden via the standard `hidden` attribute when its question is
+  // closed, never conditionally unmounted), so a crawler or prerendered
+  // snapshot sees the real content instead of only the open question's
+  // answer. Otherwise fully static per-locale (real, already-reviewed
+  // en/ar useSEO metadata via faqItems.js; no date/time, external API,
+  // geolocation, localStorage or per-user state at initial render) --
+  // same precondition every prior wave met. Blog, tools and Islamic
+  // Studies remain unpublished and out of scope, same as every entry
+  // above.
+  { route: '/resources/faq', locale: 'en', status: 'published', indexable: true },
+  { route: '/resources/faq', locale: 'ar', status: 'published', indexable: true },
 ];
 
 // The URL path to navigate to for one manifest entry, e.g. "/ar/courses/ijazah".

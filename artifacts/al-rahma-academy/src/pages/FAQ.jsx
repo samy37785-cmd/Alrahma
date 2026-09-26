@@ -15,10 +15,14 @@ export default function FAQ() {
   const [showAll, setShowAll] = useState(false);
 
   // Keep the page short by default — show the most important questions first
-  // and reveal the rest on demand.
+  // and reveal the rest on demand. Every item stays mounted in the DOM at
+  // all times (2026-09-26): only the row's visibility is toggled via the
+  // standard `hidden` attribute (same mechanism fix/faq-render-initial-
+  // content, PR #114, already uses for each answer panel), so a crawler or
+  // prerendered snapshot sees the full FAQ content, not just the
+  // default-visible first 8.
   const VISIBLE = 8;
   const items = faqItems.map((item) => item[lang] || item.en);
-  const visibleItems = showAll ? items : items.slice(0, VISIBLE);
   const hasMore = items.length > VISIBLE;
 
   return (
@@ -35,10 +39,11 @@ export default function FAQ() {
         </div>
 
         <div className="faq-list">
-          {visibleItems.map((item, i) => (
+          {items.map((item, i) => (
             <div
               key={i}
               className={open === i ? 'faq-item faq-item--open' : 'faq-item'}
+              hidden={i >= VISIBLE && !showAll}
             >
               <button
                 className="faq-item__q"

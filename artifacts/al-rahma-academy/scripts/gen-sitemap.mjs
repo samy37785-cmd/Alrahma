@@ -1,13 +1,16 @@
 import { writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import { seoRoutes as routes } from "./seoRoutes.mjs";
-import { site } from "../src/data/site.js";
+import { PRERENDER_MANIFEST, canonicalUrlFor } from "./prerender-routes.mjs";
 
 const directory = dirname(fileURLToPath(import.meta.url));
 const root = join(directory, "..");
-const origin = site.origin;
-const paths = [...new Set([...routes, "/it/", "/fr/"])];
+
+// Single source of truth: only the (route, locale) pairs that are actually
+// published and prerendered (PRERENDER_MANIFEST) go in the sitemap. This
+// keeps the sitemap and the prerender output from ever drifting apart again
+// — no separate route list is maintained here.
+const publishedEntries = PRERENDER_MANIFEST.filter((entry) => entry.status === "published");
 
 const priorityFor = (route) => {
   if (route === "/") return "1.0";
@@ -18,14 +21,14 @@ const priorityFor = (route) => {
   return "0.8";
 };
 
-const body = paths
-  .map((route) => {
-    const location = route === "/" ? `${origin}/` : `${origin}${route}`;
+const body = publishedEntries
+  .map((entry) => {
+    const location = canonicalUrlFor(entry);
     return [
       "  <url>",
       `    <loc>${location}</loc>`,
-      `    <changefreq>${route === "/" ? "weekly" : "monthly"}</changefreq>`,
-      `    <priority>${priorityFor(route)}</priority>`,
+      `    <changefreq>${entry.route === "/" ? "weekly" : "monthly"}</changefreq>`,
+      `    <priority>${priorityFor(entry.route)}</priority>`,
       "  </url>",
     ].join("\n");
   })
@@ -38,4 +41,4 @@ ${body}
 `;
 
 writeFileSync(join(root, "public", "sitemap.xml"), xml, "utf8");
-console.log(`[sitemap] generated ${paths.length} URLs → public/sitemap.xml`);
+console.log(`[sitemap] generated ${publishedEntries.length} URLs → public/sitemap.xml`);

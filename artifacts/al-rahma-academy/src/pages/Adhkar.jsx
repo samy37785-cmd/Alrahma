@@ -68,7 +68,11 @@ export default function Adhkar() {
           (item) => item.ar.includes(search.trim()) || (item.fadl || '').toLowerCase().includes(searchLower)
         ),
       })).filter((c) => c.items.length > 0)
-    : [{ key: cat, items: ADHKAR[cat].items }];
+    // No active search: every category stays mounted (not just the selected
+    // one) so a crawler's initial render carries all 49 adhkar, not only the
+    // 10 in whichever category is selected — the inactive ones are hidden
+    // per-category below, mirroring how FAQ hides its extra rows.
+    : CATEGORY_KEYS.map((key) => ({ key, items: ADHKAR[key].items }));
 
   const activeCat = ADHKAR[cat];
   const doneCount = activeCat.items.filter((i) => done[i.id]).length;
@@ -158,7 +162,7 @@ export default function Adhkar() {
             )}
 
             {filteredCats.map(({ key, items }) => (
-              <div key={key}>
+              <div key={key} hidden={searchLower ? false : key !== cat}>
                 {search && <h3 className="adhkar__search-cat-title">{ADHKAR[key].icon} {catName(key)}</h3>}
                 <div className="adhkar__list">
                   {items.map((item, idx) => {

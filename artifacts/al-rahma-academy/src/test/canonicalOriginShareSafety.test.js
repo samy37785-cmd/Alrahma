@@ -175,10 +175,23 @@ describe('no duplicated canonical-domain literal in production JS source outside
     expect(filesWithLiteral).toEqual(['src/data/site.js']);
   });
 
-  it('scripts/gen-sitemap.mjs imports site.origin rather than defining an independently-drifting constant', () => {
+  it('scripts/gen-sitemap.mjs derives every URL from canonicalUrlFor (prerender-routes.mjs) rather than an independently-drifting origin constant', () => {
+    // Sitemap fix (2026-09-26): gen-sitemap.mjs no longer imports site.js or
+    // defines its own `origin` — it imports canonicalUrlFor() from
+    // prerender-routes.mjs, which itself reads site.origin (asserted below),
+    // so there is still exactly one traceable path back to the single
+    // canonical-domain source. This locks in the new contract: no local
+    // `origin`/`ORIGIN` constant, and no independent domain literal.
     const content = fs.readFileSync(path.join(scriptsDir, 'gen-sitemap.mjs'), 'utf8');
+    expect(content).toMatch(/import\s*\{[^}]*\bcanonicalUrlFor\b[^}]*\}\s*from\s*['"]\.\/prerender-routes\.mjs['"]/);
+    expect(content).not.toMatch(/\bconst\s+origin\s*=/);
+    expect(content).not.toMatch(/['"`]https:\/\/al-rahmaacademy\.com/);
+  });
+
+  it('scripts/prerender-routes.mjs (the sitemap\'s URL source) itself derives ORIGIN from site.origin, not an independent literal', () => {
+    const content = fs.readFileSync(path.join(scriptsDir, 'prerender-routes.mjs'), 'utf8');
     expect(content).toMatch(/import\s*\{\s*site\s*\}\s*from\s*['"]\.\.\/src\/data\/site\.js['"]/);
-    expect(content).toMatch(/const origin = site\.origin/);
+    expect(content).toMatch(/const ORIGIN = site\.origin/);
     expect(content).not.toMatch(/['"`]https:\/\/al-rahmaacademy\.com/);
   });
 

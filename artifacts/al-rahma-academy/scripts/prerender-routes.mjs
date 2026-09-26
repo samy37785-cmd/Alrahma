@@ -150,6 +150,28 @@ export const PRERENDER_MANIFEST = [
   // above.
   { route: '/resources/faq', locale: 'en', status: 'published', indexable: true },
   { route: '/resources/faq', locale: 'ar', status: 'published', indexable: true },
+
+  // Static tools (2026-09-26, 3 pages): /tools/prayer, /tools/tasbeeh and
+  // /tools/arabic-alphabet, en+ar. A read-only SEO discovery pass across
+  // every remaining public route found these three genuinely static
+  // per-locale (real, already-reviewed en/ar useSEO metadata; no
+  // date/time, external API, geolocation, localStorage, or per-user state
+  // affecting initial content) — IslamicTools.jsx (/tools/prayer) is a
+  // static hub linking to 4 sub-tools; TasbeehPage.jsx's counter starts at
+  // 0 deterministically and reads localStorage inside a try/catch that
+  // safely falls back when unavailable; ArabicAlphabetPage.jsx has no
+  // fetch/date/localStorage at all. Every other tool page was found
+  // BLOCKED (fetch: quran-reader, hadith; geolocation: prayer-times,
+  // qibla, islamic-calendar; date-dependent content: verse-of-the-day;
+  // localStorage-dependent visible content: hifz-review) and stays out of
+  // scope, same as Blog and Islamic Studies (date-dependent daily hadith)
+  // and Enroll (known AR content gap).
+  { route: '/tools/prayer', locale: 'en', status: 'published', indexable: true },
+  { route: '/tools/prayer', locale: 'ar', status: 'published', indexable: true },
+  { route: '/tools/tasbeeh', locale: 'en', status: 'published', indexable: true },
+  { route: '/tools/tasbeeh', locale: 'ar', status: 'published', indexable: true },
+  { route: '/tools/arabic-alphabet', locale: 'en', status: 'published', indexable: true },
+  { route: '/tools/arabic-alphabet', locale: 'ar', status: 'published', indexable: true },
 ];
 
 // The URL path to navigate to for one manifest entry, e.g. "/ar/courses/ijazah".

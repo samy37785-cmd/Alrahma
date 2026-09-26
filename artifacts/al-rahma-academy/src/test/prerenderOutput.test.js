@@ -941,6 +941,126 @@ const LITERAL_FILES = [
       { name: 'الأسئلة الشائعة', item: 'https://al-rahmaacademy.com/ar/resources/faq' },
     ],
   },
+  // Static tools (2026-09-26, 6 entries): /tools/prayer, /tools/tasbeeh and
+  // /tools/arabic-alphabet, en+ar. expectedTitle/expectedDescription/h1Text
+  // are literal copies of each page's own current source, verified
+  // directly against origin/main before writing this file, never invented:
+  //   - /tools/prayer (IslamicTools.jsx): title/description =
+  //     `t.hubs.tools.cards[3]` (src/i18n/en.js+ar.js `hubs.tools.cards[3]`,
+  //     the "Prayer & Islamic Tools" card); h1 = the same card's title.
+  //   - /tools/tasbeeh (TasbeehPage.jsx): title/description =
+  //     `TASBEEH_TEXT[lang].seo` (src/i18n/tools/tasbeeh.js); h1 =
+  //     `TASBEEH_TEXT[lang].hero.title` — a different string from the SEO
+  //     title by design, same pattern as RefundPolicy's h1Text/expectedTitle.
+  //   - /tools/arabic-alphabet (ArabicAlphabetPage.jsx): title/description/h1
+  //     = the page's own inline `copy[lang]` object's title/description.
+  // breadcrumb: IslamicTools.jsx passes `[{label: t.nav.tools, to:
+  // '/tools'}, {label: toolHubCard.title}]` (nav.tools = "Islamic Tools" /
+  // "أدوات إسلامية" — the nav label, not the literal word "Tools");
+  // TasbeehPage.jsx and ArabicAlphabetPage.jsx each pass their own inline
+  // `{tools: 'Tools'/'الأدوات', ...}` literal instead (a different, page-
+  // owned string from nav.tools — verified directly in each page's source,
+  // not assumed identical). Breadcrumbs.jsx prepends the localized Home
+  // crumb in all three cases.
+  {
+    route: '/tools/prayer',
+    locale: 'en',
+    relPath: 'tools/prayer/index.html',
+    expectedCanonical: 'https://al-rahmaacademy.com/tools/prayer',
+    h1Text: 'Prayer & Islamic Tools',
+    expectedEnHref: 'https://al-rahmaacademy.com/tools/prayer',
+    expectedArHref: 'https://al-rahmaacademy.com/ar/tools/prayer',
+    expectedTitle: 'Prayer & Islamic Tools | AL-Rahma Academy',
+    expectedDescription:
+      'Prayer times, Qibla compass, Islamic calendar, and Verse of the Day — four dedicated tools for daily worship.',
+    breadcrumb: [
+      { name: 'Home', item: 'https://al-rahmaacademy.com/' },
+      { name: 'Islamic Tools', item: 'https://al-rahmaacademy.com/tools' },
+      { name: 'Prayer & Islamic Tools', item: 'https://al-rahmaacademy.com/tools/prayer' },
+    ],
+  },
+  {
+    route: '/tools/prayer',
+    locale: 'ar',
+    relPath: 'ar/tools/prayer/index.html',
+    expectedCanonical: 'https://al-rahmaacademy.com/ar/tools/prayer',
+    h1Text: 'الصلاة والأدوات الإسلامية',
+    expectedEnHref: 'https://al-rahmaacademy.com/tools/prayer',
+    expectedArHref: 'https://al-rahmaacademy.com/ar/tools/prayer',
+    expectedTitle: 'الصلاة والأدوات الإسلامية | AL-Rahma Academy',
+    expectedDescription: 'مواقيت الصلاة وبوصلة القبلة والتقويم الإسلامي وآية اليوم — أربع أدوات للعبادة اليومية.',
+    breadcrumb: [
+      { name: 'الرئيسية', item: 'https://al-rahmaacademy.com/ar/' },
+      { name: 'أدوات إسلامية', item: 'https://al-rahmaacademy.com/ar/tools' },
+      { name: 'الصلاة والأدوات الإسلامية', item: 'https://al-rahmaacademy.com/ar/tools/prayer' },
+    ],
+  },
+  {
+    route: '/tools/tasbeeh',
+    locale: 'en',
+    relPath: 'tools/tasbeeh/index.html',
+    expectedCanonical: 'https://al-rahmaacademy.com/tools/tasbeeh',
+    h1Text: 'Digital Tasbeeh Counter',
+    expectedEnHref: 'https://al-rahmaacademy.com/tools/tasbeeh',
+    expectedArHref: 'https://al-rahmaacademy.com/ar/tools/tasbeeh',
+    expectedTitle: 'Tasbeeh Counter | AL-Rahma Academy',
+    expectedDescription:
+      'Free digital tasbeeh counter. Count SubhanAllah, Alhamdulillah, AllahuAkbar and more with progress tracking.',
+    breadcrumb: [
+      { name: 'Home', item: 'https://al-rahmaacademy.com/' },
+      { name: 'Tools', item: 'https://al-rahmaacademy.com/tools' },
+      { name: 'Tasbeeh Counter', item: 'https://al-rahmaacademy.com/tools/tasbeeh' },
+    ],
+  },
+  {
+    route: '/tools/tasbeeh',
+    locale: 'ar',
+    relPath: 'ar/tools/tasbeeh/index.html',
+    expectedCanonical: 'https://al-rahmaacademy.com/ar/tools/tasbeeh',
+    h1Text: 'المسبحة الرقمية',
+    expectedEnHref: 'https://al-rahmaacademy.com/tools/tasbeeh',
+    expectedArHref: 'https://al-rahmaacademy.com/ar/tools/tasbeeh',
+    expectedTitle: 'مسبحة رقمية | AL-Rahma Academy',
+    expectedDescription: 'مسبحة رقمية مجانية: سبحان الله، الحمد لله، الله أكبر، لا إله إلا الله. تتبع أذكارك اليومية.',
+    breadcrumb: [
+      { name: 'الرئيسية', item: 'https://al-rahmaacademy.com/ar/' },
+      { name: 'الأدوات', item: 'https://al-rahmaacademy.com/ar/tools' },
+      { name: 'المسبحة', item: 'https://al-rahmaacademy.com/ar/tools/tasbeeh' },
+    ],
+  },
+  {
+    route: '/tools/arabic-alphabet',
+    locale: 'en',
+    relPath: 'tools/arabic-alphabet/index.html',
+    expectedCanonical: 'https://al-rahmaacademy.com/tools/arabic-alphabet',
+    h1Text: 'Arabic Alphabet',
+    expectedEnHref: 'https://al-rahmaacademy.com/tools/arabic-alphabet',
+    expectedArHref: 'https://al-rahmaacademy.com/ar/tools/arabic-alphabet',
+    expectedTitle: 'Arabic Alphabet | AL-Rahma Academy',
+    expectedDescription:
+      'Learn the 28 Arabic letters with audio pronunciation and interactive exercises — free from Al-Rahma Academy.',
+    breadcrumb: [
+      { name: 'Home', item: 'https://al-rahmaacademy.com/' },
+      { name: 'Tools', item: 'https://al-rahmaacademy.com/tools' },
+      { name: 'Arabic Alphabet', item: 'https://al-rahmaacademy.com/tools/arabic-alphabet' },
+    ],
+  },
+  {
+    route: '/tools/arabic-alphabet',
+    locale: 'ar',
+    relPath: 'ar/tools/arabic-alphabet/index.html',
+    expectedCanonical: 'https://al-rahmaacademy.com/ar/tools/arabic-alphabet',
+    h1Text: 'الأبجدية العربية',
+    expectedEnHref: 'https://al-rahmaacademy.com/tools/arabic-alphabet',
+    expectedArHref: 'https://al-rahmaacademy.com/ar/tools/arabic-alphabet',
+    expectedTitle: 'الأبجدية العربية | AL-Rahma Academy',
+    expectedDescription: 'تعلّم الحروف العربية الـ٢٨ مع النطق الصوتي والتدريبات التفاعلية — مجاناً من أكاديمية الرحمة.',
+    breadcrumb: [
+      { name: 'الرئيسية', item: 'https://al-rahmaacademy.com/ar/' },
+      { name: 'الأدوات', item: 'https://al-rahmaacademy.com/ar/tools' },
+      { name: 'الأبجدية العربية', item: 'https://al-rahmaacademy.com/ar/tools/arabic-alphabet' },
+    ],
+  },
 ];
 
 describe.skipIf(!distExists)('Prerender output (dist/public) — real files on disk, post-build only', () => {

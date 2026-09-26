@@ -117,6 +117,24 @@ export const PRERENDER_MANIFEST = [
   { route: '/academy/teachers/10', locale: 'ar', status: 'published', indexable: true },
   { route: '/academy/teachers/11', locale: 'en', status: 'published', indexable: true },
   { route: '/academy/teachers/11', locale: 'ar', status: 'published', indexable: true },
+
+  // Legal/policy pages (2026-09-26, 6 pages): Privacy, Terms and
+  // Refund-policy, en+ar. A read-only SEO discovery pass found all three
+  // fully static per-locale (Privacy.jsx/TermsOfService.jsx/
+  // RefundPolicy.jsx), no date/time, external API, geolocation,
+  // localStorage or per-user state at initial render -- same precondition
+  // every prior wave met. fix/legal-page-main-landmarks (PR #112, already
+  // on main) is the prerequisite this wave depends on: each page's <main>
+  // now has id="main-content", which prerender.mjs's waitForHydratedSeo()
+  // requires -- the same single blocker the Teacher profiles wave had
+  // before PR #109. FAQ, Blog, tools and Islamic Studies remain
+  // unpublished and out of scope, same as every entry above.
+  { route: '/academy/privacy', locale: 'en', status: 'published', indexable: true },
+  { route: '/academy/privacy', locale: 'ar', status: 'published', indexable: true },
+  { route: '/academy/terms', locale: 'en', status: 'published', indexable: true },
+  { route: '/academy/terms', locale: 'ar', status: 'published', indexable: true },
+  { route: '/academy/refund-policy', locale: 'en', status: 'published', indexable: true },
+  { route: '/academy/refund-policy', locale: 'ar', status: 'published', indexable: true },
 ];
 
 // The URL path to navigate to for one manifest entry, e.g. "/ar/courses/ijazah".

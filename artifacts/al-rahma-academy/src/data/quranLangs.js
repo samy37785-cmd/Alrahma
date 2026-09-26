@@ -139,6 +139,12 @@ export const UI = {
     searchLabel: 'Search Quran',
     searchPlaceholder: 'Search word or verse…',
     searchResults: 'Results',
+    // Reading mode / quick nav
+    continuousReading: 'Continuous Reading',
+    verseByVerse: 'Verse by Verse',
+    quickNavPlaceholder: 'Go to… e.g. 18:10, p400, j15, h20, or a surah name',
+    jumpToVerse: 'Jump to',
+    noResults: 'No matches',
   },
   ar: {
     title: 'مركز تعلم القرآن الكريم',
@@ -187,6 +193,11 @@ export const UI = {
     searchLabel: 'البحث في القرآن',
     searchPlaceholder: 'ابحث بكلمة أو آية…',
     searchResults: 'نتائج البحث',
+    continuousReading: 'القراءة المتصلة',
+    verseByVerse: 'آية بآية',
+    quickNavPlaceholder: 'اذهب إلى… مثال: 18:10…',
+    jumpToVerse: 'الذهاب إلى الآية',
+    noResults: 'لا نتائج',
   },
   fr: {
     title: 'Centre d\'apprentissage du Coran',

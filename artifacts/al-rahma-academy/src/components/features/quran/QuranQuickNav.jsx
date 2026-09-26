@@ -52,15 +52,24 @@ export default function QuranQuickNav({ chapters, onClose, onJumpVerse, onGoPage
       const n = Number(text);
       if (n >= 1 && n <= 114) {
         const ch = chapters.find((c) => c.id === n);
-        return [{ kind: 'surah', label: `${n}. ${ch?.name_simple || ''}`, n }];
+        // AR: Arabic name is primary (shown first), Latin name stays as a
+        // secondary suffix -- same rule already applied in QuranSidebar.
+        const label = isAr
+          ? `${n}. ${ch?.name_arabic || ''} — ${ch?.name_simple || ''}`
+          : `${n}. ${ch?.name_simple || ''}`;
+        return [{ kind: 'surah', label, n }];
       }
     }
 
     return chapters
       .filter((c) => c.name_simple.toLowerCase().includes(lower) || c.name_arabic.includes(text))
       .slice(0, 8)
-      .map((c) => ({ kind: 'surah', label: `${c.id}. ${c.name_simple} — ${c.name_arabic}`, n: c.id }));
-  }, [q, chapters, ui]);
+      .map((c) => ({
+        kind: 'surah',
+        label: isAr ? `${c.id}. ${c.name_arabic} — ${c.name_simple}` : `${c.id}. ${c.name_simple} — ${c.name_arabic}`,
+        n: c.id,
+      }));
+  }, [q, chapters, ui, isAr]);
 
   const select = (m) => {
     if (m.kind === 'verse') { onGoSurah(m.surah); onJumpVerse(m.surah, m.verse); }

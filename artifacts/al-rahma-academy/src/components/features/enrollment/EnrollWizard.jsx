@@ -103,7 +103,7 @@ export function Step1({ form, set }) {
             style={{ direction: 'ltr', textAlign: 'left' }}
             value={form.whatsapp}
             onChange={(e) => set('whatsapp', e.target.value)}
-            placeholder="+44 7700 900000"
+            placeholder={lang === 'ar' ? '+20 100 000 0000' : '+44 7700 900000'}
           />
         </div>
         <div className="field">
@@ -270,12 +270,21 @@ export function Step3({ form, set }) {
                 <span dir="rtl">{initials}</span>
               </div>
               <div className="enroll__tcard-info">
-                <strong>{t.nameEn}</strong>
-                <span dir="rtl" style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-serif)' }}>{t.nameAr}</span>
+                {lang === 'ar' ? (
+                  <>
+                    <strong dir="rtl" style={{ fontFamily: 'var(--font-serif)' }}>{t.nameAr}</strong>
+                    <span dir="ltr" style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>{t.nameEn}</span>
+                  </>
+                ) : (
+                  <>
+                    <strong>{t.nameEn}</strong>
+                    <span dir="rtl" style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-serif)' }}>{t.nameAr}</span>
+                  </>
+                )}
                 <p>{t.title[lang] || t.title.en}</p>
               </div>
               <div className="enroll__tcard-meta">
-                {t.reviews && <span className="enroll__tcard-rating">{t.reviews} reviews</span>}
+                {t.reviews && <span className="enroll__tcard-rating">{t.reviews} {tr.teachersPg.reviews}</span>}
                 {t.gender === 'f' && <span className="enroll__tcard-f">{s.female}</span>}
               </div>
               <div className="enroll__tcard-tags">

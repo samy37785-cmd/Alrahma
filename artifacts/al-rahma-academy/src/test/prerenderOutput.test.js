@@ -779,6 +779,123 @@ const LITERAL_FILES = [
       { name: 'جودة الشوبكي', item: 'https://al-rahmaacademy.com/ar/academy/teachers/11' },
     ],
   },
+  // Legal/policy pages (2026-09-26, 6 entries): Privacy, Terms and
+  // Refund-policy, en+ar. Same shape and rationale as every wave above:
+  // expectedTitle/expectedDescription/h1Text/breadcrumb are literal copies
+  // verified directly against the real prerendered dist/public files on
+  // disk (never invented, never re-derived), so this suite can catch a
+  // real regression rather than just re-agreeing with its own source.
+  //   - /academy/privacy: title/description = Privacy.jsx's
+  //     copy[lang].seoTitle/seoDescription; h1 = copy[lang].title.
+  //   - /academy/terms: title/description = TermsOfService.jsx's
+  //     c.title/c.seo; h1 = c.title (same value as the title).
+  //   - /academy/refund-policy: title/description = RefundPolicy.jsx's
+  //     content.seoTitle/seoDescription; h1 = content.guarantee (the hero
+  //     heading, a different string from the seoTitle by design).
+  // breadcrumb: all three pages pass a 2-item `items` prop
+  // ([{label: Academy, to: '/academy'}, {label: <page title>}]);
+  // Breadcrumbs.jsx prepends the localized Home crumb.
+  {
+    route: '/academy/privacy',
+    locale: 'en',
+    relPath: 'academy/privacy/index.html',
+    expectedCanonical: 'https://al-rahmaacademy.com/academy/privacy',
+    h1Text: 'Privacy Policy',
+    expectedEnHref: 'https://al-rahmaacademy.com/academy/privacy',
+    expectedArHref: 'https://al-rahmaacademy.com/ar/academy/privacy',
+    expectedTitle: 'Privacy Policy | AL-Rahma Academy',
+    expectedDescription:
+      'Read the AL-Rahma Academy privacy policy to understand how we collect, use and protect your personal data.',
+    breadcrumb: [
+      { name: 'Home', item: 'https://al-rahmaacademy.com/' },
+      { name: 'Academy', item: 'https://al-rahmaacademy.com/academy' },
+      { name: 'Privacy Policy', item: 'https://al-rahmaacademy.com/academy/privacy' },
+    ],
+  },
+  {
+    route: '/academy/privacy',
+    locale: 'ar',
+    relPath: 'ar/academy/privacy/index.html',
+    expectedCanonical: 'https://al-rahmaacademy.com/ar/academy/privacy',
+    h1Text: 'سياسة الخصوصية',
+    expectedEnHref: 'https://al-rahmaacademy.com/academy/privacy',
+    expectedArHref: 'https://al-rahmaacademy.com/ar/academy/privacy',
+    expectedTitle: 'سياسة الخصوصية | AL-Rahma Academy',
+    expectedDescription:
+      'اقرأ سياسة خصوصية أكاديمية الرحمة لتعرف كيف نجمع بياناتك الشخصية ونستخدمها ونحميها.',
+    breadcrumb: [
+      { name: 'الرئيسية', item: 'https://al-rahmaacademy.com/ar/' },
+      { name: 'الأكاديمية', item: 'https://al-rahmaacademy.com/ar/academy' },
+      { name: 'سياسة الخصوصية', item: 'https://al-rahmaacademy.com/ar/academy/privacy' },
+    ],
+  },
+  {
+    route: '/academy/terms',
+    locale: 'en',
+    relPath: 'academy/terms/index.html',
+    expectedCanonical: 'https://al-rahmaacademy.com/academy/terms',
+    h1Text: 'Terms of Service',
+    expectedEnHref: 'https://al-rahmaacademy.com/academy/terms',
+    expectedArHref: 'https://al-rahmaacademy.com/ar/academy/terms',
+    expectedTitle: 'Terms of Service | AL-Rahma Academy',
+    expectedDescription:
+      "Terms and conditions governing your use of Al-Rahma Academy's online Quran and Islamic education services.",
+    breadcrumb: [
+      { name: 'Home', item: 'https://al-rahmaacademy.com/' },
+      { name: 'Academy', item: 'https://al-rahmaacademy.com/academy' },
+      { name: 'Terms of Service', item: 'https://al-rahmaacademy.com/academy/terms' },
+    ],
+  },
+  {
+    route: '/academy/terms',
+    locale: 'ar',
+    relPath: 'ar/academy/terms/index.html',
+    expectedCanonical: 'https://al-rahmaacademy.com/ar/academy/terms',
+    h1Text: 'شروط الخدمة',
+    expectedEnHref: 'https://al-rahmaacademy.com/academy/terms',
+    expectedArHref: 'https://al-rahmaacademy.com/ar/academy/terms',
+    expectedTitle: 'شروط الخدمة | AL-Rahma Academy',
+    expectedDescription:
+      'الشروط والأحكام التي تحكم استخدامك لخدمات أكاديمية الرحمة التعليمية عبر الإنترنت للقرآن الكريم والدراسات الإسلامية.',
+    breadcrumb: [
+      { name: 'الرئيسية', item: 'https://al-rahmaacademy.com/ar/' },
+      { name: 'الأكاديمية', item: 'https://al-rahmaacademy.com/ar/academy' },
+      { name: 'شروط الخدمة', item: 'https://al-rahmaacademy.com/ar/academy/terms' },
+    ],
+  },
+  {
+    route: '/academy/refund-policy',
+    locale: 'en',
+    relPath: 'academy/refund-policy/index.html',
+    expectedCanonical: 'https://al-rahmaacademy.com/academy/refund-policy',
+    h1Text: '24-Day Refund Window',
+    expectedEnHref: 'https://al-rahmaacademy.com/academy/refund-policy',
+    expectedArHref: 'https://al-rahmaacademy.com/ar/academy/refund-policy',
+    expectedTitle: 'Refund Policy | AL-Rahma Academy',
+    expectedDescription: 'You may request a refund within 24 days of payment. See our Refund Policy for how it works.',
+    breadcrumb: [
+      { name: 'Home', item: 'https://al-rahmaacademy.com/' },
+      { name: 'Academy', item: 'https://al-rahmaacademy.com/academy' },
+      { name: 'Refund Policy', item: 'https://al-rahmaacademy.com/academy/refund-policy' },
+    ],
+  },
+  {
+    route: '/academy/refund-policy',
+    locale: 'ar',
+    relPath: 'ar/academy/refund-policy/index.html',
+    expectedCanonical: 'https://al-rahmaacademy.com/ar/academy/refund-policy',
+    h1Text: 'نافذة استرداد لمدة 24 يومًا',
+    expectedEnHref: 'https://al-rahmaacademy.com/academy/refund-policy',
+    expectedArHref: 'https://al-rahmaacademy.com/ar/academy/refund-policy',
+    expectedTitle: 'سياسة الاسترداد | AL-Rahma Academy',
+    expectedDescription:
+      'يمكنك طلب استرداد المبلغ خلال 24 يومًا من الدفع. راجع سياسة الاسترداد لمعرفة كيفية عملها.',
+    breadcrumb: [
+      { name: 'الرئيسية', item: 'https://al-rahmaacademy.com/ar/' },
+      { name: 'الأكاديمية', item: 'https://al-rahmaacademy.com/ar/academy' },
+      { name: 'سياسة الاسترداد', item: 'https://al-rahmaacademy.com/ar/academy/refund-policy' },
+    ],
+  },
 ];
 
 describe.skipIf(!distExists)('Prerender output (dist/public) — real files on disk, post-build only', () => {

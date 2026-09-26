@@ -26,13 +26,18 @@ const doc = dom.window.document;
 
 const ORIGIN = 'https://al-rahmaacademy.com';
 
-// The 21 published route "slugs" (en path), written literally here rather
+// The 24 published route "slugs" (en path), written literally here rather
 // than imported — this suite must be able to catch a bug in
 // PRERENDER_MANIFEST or canonicalUrlFor() (a wrong route, a missing
 // teacher id, a locale mix-up), not merely confirm the sitemap agrees with
 // whatever those currently say. The second describe block below adds the
 // complementary manifest-derived check, so a real drift between the two
 // sources is caught either way.
+//
+// Legal/policy pages (2026-09-26): /academy/privacy, /academy/terms and
+// /academy/refund-policy joined the published set once
+// fix/legal-page-main-landmarks (PR #112) added the id="main-content"
+// prerequisite and this PR's PRERENDER_MANIFEST entries prerendered them.
 const ROUTES = [
   '/',
   '/courses',
@@ -45,6 +50,9 @@ const ROUTES = [
   '/resources',
   '/tools',
   ...Array.from({ length: 11 }, (_, i) => `/academy/teachers/${i + 1}`),
+  '/academy/privacy',
+  '/academy/terms',
+  '/academy/refund-policy',
 ];
 
 function pathForLocale(route, locale) {
@@ -82,17 +90,17 @@ describe('sitemap.xml — structure', () => {
   });
 });
 
-describe('sitemap.xml — exact 42-URL published-routes whitelist', () => {
-  it('contains exactly 42 <loc> entries', () => {
-    expect(getLocUrls()).toHaveLength(42);
+describe('sitemap.xml — exact 48-URL published-routes whitelist', () => {
+  it('contains exactly 48 <loc> entries', () => {
+    expect(getLocUrls()).toHaveLength(48);
   });
 
-  it('splits into exactly 21 EN and 21 AR URLs', () => {
+  it('splits into exactly 24 EN and 24 AR URLs', () => {
     const locs = getLocUrls();
     const arUrls = locs.filter((u) => u.startsWith(`${ORIGIN}/ar/`) || u === `${ORIGIN}/ar`);
     const enUrls = locs.filter((u) => !arUrls.includes(u));
-    expect(enUrls).toHaveLength(21);
-    expect(arUrls).toHaveLength(21);
+    expect(enUrls).toHaveLength(24);
+    expect(arUrls).toHaveLength(24);
   });
 
   it('has no duplicate URLs', () => {
@@ -100,17 +108,37 @@ describe('sitemap.xml — exact 42-URL published-routes whitelist', () => {
     expect(new Set(locs).size).toBe(locs.length);
   });
 
-  it('matches the exact literal 42-URL whitelist, with nothing extra and nothing missing', () => {
+  it('matches the exact literal 48-URL whitelist, with nothing extra and nothing missing', () => {
     const locs = getLocUrls();
     expect([...locs].sort()).toEqual([...EXPECTED_URLS].sort());
   });
 
-  it('does not contain /it/, /fr/, /enroll, or any other unpublished route', () => {
+  it('does not contain /it/, /fr/, /enroll, individual tools, FAQ, Blog, Islamic Studies, or any other unpublished route', () => {
     const locs = getLocUrls();
-    for (const forbidden of ['/it/', '/fr/', '/es/', '/de/', '/enroll']) {
+    for (const forbidden of [
+      '/it/',
+      '/fr/',
+      '/es/',
+      '/de/',
+      '/enroll',
+      '/resources/faq',
+      '/resources/blog',
+      '/courses/islamic-studies',
+      '/tools/quran-reader',
+      '/tools/adhkar',
+      '/tools/hadith',
+      '/tools/prayer',
+      '/tools/qibla',
+      '/tools/islamic-calendar',
+      '/tools/verse-of-the-day',
+      '/tools/tasbeeh',
+      '/tools/arabic-alphabet',
+      '/tools/tajweed-checker',
+      '/tools/hifz-review',
+    ]) {
       expect(locs.some((u) => u.includes(forbidden))).toBe(false);
     }
-    // Belt-and-suspenders: every URL must be one of the 42 whitelisted ones.
+    // Belt-and-suspenders: every URL must be one of the 48 whitelisted ones.
     for (const loc of locs) {
       expect(EXPECTED_URLS).toContain(loc);
     }

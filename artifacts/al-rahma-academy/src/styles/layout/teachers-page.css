@@ -86,6 +86,8 @@
 /* Info panel */
 .tpg__info { flex: 1; padding: 28px 32px; display: flex; flex-direction: column; gap: 12px; }
 .tpg__names { }
+.tpg__name-link { display: block; }
+.tpg__name-link:hover .tpg__name-ar, .tpg__name-link:focus-visible .tpg__name-ar { text-decoration: underline; }
 .tpg__name-ar { font-size: 1.35rem; font-weight: 800; color: var(--green-deep); margin-bottom: 2px; font-family: var(--serif); }
 .tpg__name-en { font-size: .88rem; color: var(--muted); margin-bottom: 2px; }
 .tpg__role { font-size: .9rem; color: var(--green); font-weight: 600; }

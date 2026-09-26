@@ -1,5 +1,5 @@
 ﻿import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 import useSEO from '../hooks/useSEO';
@@ -59,8 +59,14 @@ function TeacherCard({ teacher, onEnroll, ui, lang }) {
       {/* Right: info */}
       <div className="tpg__info">
         <div className="tpg__names">
-          <h2 className="tpg__name-ar" dir="rtl">{teacher.nameAr}</h2>
-          <p className="tpg__name-en">{teacher.nameEn}</p>
+          {/* The teacher's own name is the internal link to their full
+              profile (/academy/teachers/:id) -- reuses existing content
+              instead of adding new translated link text, and keeps the
+              inline "Read bio"/enroll behavior below completely untouched. */}
+          <Link to={`/academy/teachers/${teacher.id}`} className="tpg__name-link">
+            <h2 className="tpg__name-ar" dir="rtl">{teacher.nameAr}</h2>
+            <p className="tpg__name-en">{teacher.nameEn}</p>
+          </Link>
           <p className="tpg__role">{title}</p>
         </div>
 

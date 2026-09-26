@@ -48,10 +48,14 @@ const ORIGIN = 'https://al-rahmaacademy.com';
 // /tools/arabic-alphabet joined the published set once a read-only SEO
 // discovery pass confirmed all three are genuinely static per-locale (no
 // fetch/date/geolocation/localStorage affecting initial content). Every
-// other tool page (adhkar, tajweed-checker, quran-reader, hadith,
-// prayer-times, qibla, islamic-calendar, verse-of-the-day, hifz-review)
-// remains unpublished and out of scope, same as Blog, Islamic Studies and
-// Enroll.
+// other tool page (tajweed-checker, quran-reader, hadith, prayer-times,
+// qibla, islamic-calendar, verse-of-the-day, hifz-review) remains
+// unpublished and out of scope, same as Blog, Islamic Studies and Enroll.
+//
+// Adhkar (2026-09-26): /tools/adhkar joined the published set once
+// fix/adhkar-initial-content (PR #117) fixed Adhkar.jsx to always mount
+// every category's cards (hiding only the non-selected ones), removing the
+// only real prerender blocker a read-only discovery pass had found.
 const ROUTES = [
   '/',
   '/courses',
@@ -71,6 +75,7 @@ const ROUTES = [
   '/tools/prayer',
   '/tools/tasbeeh',
   '/tools/arabic-alphabet',
+  '/tools/adhkar',
 ];
 
 function pathForLocale(route, locale) {
@@ -108,17 +113,17 @@ describe('sitemap.xml — structure', () => {
   });
 });
 
-describe('sitemap.xml — exact 56-URL published-routes whitelist', () => {
-  it('contains exactly 56 <loc> entries', () => {
-    expect(getLocUrls()).toHaveLength(56);
+describe('sitemap.xml — exact 58-URL published-routes whitelist', () => {
+  it('contains exactly 58 <loc> entries', () => {
+    expect(getLocUrls()).toHaveLength(58);
   });
 
-  it('splits into exactly 28 EN and 28 AR URLs', () => {
+  it('splits into exactly 29 EN and 29 AR URLs', () => {
     const locs = getLocUrls();
     const arUrls = locs.filter((u) => u.startsWith(`${ORIGIN}/ar/`) || u === `${ORIGIN}/ar`);
     const enUrls = locs.filter((u) => !arUrls.includes(u));
-    expect(enUrls).toHaveLength(28);
-    expect(arUrls).toHaveLength(28);
+    expect(enUrls).toHaveLength(29);
+    expect(arUrls).toHaveLength(29);
   });
 
   it('has no duplicate URLs', () => {
@@ -126,7 +131,7 @@ describe('sitemap.xml — exact 56-URL published-routes whitelist', () => {
     expect(new Set(locs).size).toBe(locs.length);
   });
 
-  it('matches the exact literal 56-URL whitelist, with nothing extra and nothing missing', () => {
+  it('matches the exact literal 58-URL whitelist, with nothing extra and nothing missing', () => {
     const locs = getLocUrls();
     expect([...locs].sort()).toEqual([...EXPECTED_URLS].sort());
   });
@@ -142,7 +147,6 @@ describe('sitemap.xml — exact 56-URL published-routes whitelist', () => {
       '/resources/blog',
       '/courses/islamic-studies',
       '/tools/quran-reader',
-      '/tools/adhkar',
       '/tools/hadith',
       '/tools/prayer-times',
       '/tools/qibla',
@@ -153,7 +157,7 @@ describe('sitemap.xml — exact 56-URL published-routes whitelist', () => {
     ]) {
       expect(locs.some((u) => u.includes(forbidden))).toBe(false);
     }
-    // Belt-and-suspenders: every URL must be one of the 56 whitelisted ones.
+    // Belt-and-suspenders: every URL must be one of the 58 whitelisted ones.
     for (const loc of locs) {
       expect(EXPECTED_URLS).toContain(loc);
     }

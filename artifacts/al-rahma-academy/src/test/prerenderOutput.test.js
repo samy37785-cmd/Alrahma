@@ -5,6 +5,7 @@ import { JSDOM } from 'jsdom';
 import { describe, it, expect } from 'vitest';
 import { PRERENDER_MANIFEST, canonicalUrlFor, outputRelPathFor } from '../../scripts/prerender-routes.mjs';
 import faqItems from '../data/faqItems.js';
+import { ADHKAR, CATEGORY_KEYS } from '../data/adhkarData.js';
 
 // SEO Prerender Pilot (2026-09-20): proves the real static HTML files
 // scripts/prerender.mjs writes after `vite build` (as `postbuild`) are
@@ -1061,6 +1062,47 @@ const LITERAL_FILES = [
       { name: 'الأبجدية العربية', item: 'https://al-rahmaacademy.com/ar/tools/arabic-alphabet' },
     ],
   },
+  // Adhkar (2026-09-26, 2 entries): /tools/adhkar, en+ar. expectedTitle/
+  // expectedDescription/h1Text are literal copies of the real `adhkar`
+  // block in src/i18n/en.js+ar.js (heading/sub), verified directly against
+  // origin/main before writing this file. Unlike prayer/tasbeeh/
+  // arabic-alphabet, Adhkar.jsx builds its breadcrumb parent from
+  // `t.nav.tools` ("Islamic Tools"/"أدوات إسلامية"), not an inline
+  // {tools: ...} literal, so this entry's breadcrumb intentionally differs
+  // in wording from the tasbeeh/arabic-alphabet entries above — verified
+  // against the real live BreadcrumbList JSON-LD, not assumed.
+  {
+    route: '/tools/adhkar',
+    locale: 'en',
+    relPath: 'tools/adhkar/index.html',
+    expectedCanonical: 'https://al-rahmaacademy.com/tools/adhkar',
+    h1Text: "Adhkar & Du'a Library",
+    expectedEnHref: 'https://al-rahmaacademy.com/tools/adhkar',
+    expectedArHref: 'https://al-rahmaacademy.com/ar/tools/adhkar',
+    expectedTitle: "Adhkar & Du'a Library | AL-Rahma Academy",
+    expectedDescription: 'Daily adhkar with full diacritics, virtues & sources',
+    breadcrumb: [
+      { name: 'Home', item: 'https://al-rahmaacademy.com/' },
+      { name: 'Islamic Tools', item: 'https://al-rahmaacademy.com/tools' },
+      { name: 'Adhkar', item: 'https://al-rahmaacademy.com/tools/adhkar' },
+    ],
+  },
+  {
+    route: '/tools/adhkar',
+    locale: 'ar',
+    relPath: 'ar/tools/adhkar/index.html',
+    expectedCanonical: 'https://al-rahmaacademy.com/ar/tools/adhkar',
+    h1Text: 'مكتبة الأذكار والأدعية',
+    expectedEnHref: 'https://al-rahmaacademy.com/tools/adhkar',
+    expectedArHref: 'https://al-rahmaacademy.com/ar/tools/adhkar',
+    expectedTitle: 'مكتبة الأذكار والأدعية | AL-Rahma Academy',
+    expectedDescription: 'أذكار يومية بتشكيل كامل مع الفضائل والمصادر',
+    breadcrumb: [
+      { name: 'الرئيسية', item: 'https://al-rahmaacademy.com/ar/' },
+      { name: 'أدوات إسلامية', item: 'https://al-rahmaacademy.com/ar/tools' },
+      { name: 'الأذكار', item: 'https://al-rahmaacademy.com/ar/tools/adhkar' },
+    ],
+  },
 ];
 
 describe.skipIf(!distExists)('Prerender output (dist/public) — real files on disk, post-build only', () => {
@@ -1246,6 +1288,63 @@ describe.skipIf(!distExists)('FAQ prerender output — all 18 questions present 
       ).toBe(i >= FAQ_VISIBLE);
     });
   });
+});
+
+// Adhkar raw-HTML categories/cards (2026-09-26): fix/adhkar-initial-content
+// (PR #117, already on main) fixed Adhkar.jsx so every category's cards
+// stay mounted at all times, with only the non-selected categories hidden
+// via the standard `hidden` attribute (the same mechanism as FAQ's rows
+// above) instead of only the selected category ever being rendered at all.
+// Counts and the default-visible category are derived from the real
+// src/data/adhkarData.js (CATEGORY_KEYS/ADHKAR), not invented literals, so
+// a real content change there is a real change these fixtures should
+// track, not a drift this suite should treat as a false failure.
+describe.skipIf(!distExists)('Adhkar prerender output — every category/card present in raw HTML, only the default category visible', () => {
+  const DEFAULT_CATEGORY = 'sabah';
+  const TOTAL_CATEGORIES = CATEGORY_KEYS.length;
+  const TOTAL_CARDS = CATEGORY_KEYS.reduce((sum, key) => sum + ADHKAR[key].items.length, 0);
+  const DEFAULT_CATEGORY_COUNT = ADHKAR[DEFAULT_CATEGORY].items.length;
+
+  const adhkarFiles = [
+    { locale: 'en', relPath: 'tools/adhkar/index.html' },
+    { locale: 'ar', relPath: 'ar/tools/adhkar/index.html' },
+  ];
+
+  it.each(adhkarFiles)(
+    `$relPath: all ${TOTAL_CATEGORIES} categories / ${TOTAL_CARDS} cards in raw HTML; only "${DEFAULT_CATEGORY}" visible by default`,
+    ({ relPath }) => {
+      const filePath = path.join(distDir, relPath);
+      expect(existsSync(filePath), `missing prerendered file: ${filePath}`).toBe(true);
+
+      const html = readFileSync(filePath, 'utf8');
+      const dom = new JSDOM(html);
+      const { document } = dom.window;
+
+      const lists = [...document.querySelectorAll('.adhkar__list')];
+      expect(lists.length, `all ${TOTAL_CATEGORIES} category groups must be in the raw HTML, not just the default one`).toBe(
+        TOTAL_CATEGORIES,
+      );
+
+      const totalCards = lists.reduce((sum, list) => sum + list.querySelectorAll('.adhkar__card').length, 0);
+      expect(totalCards, `all ${TOTAL_CARDS} cards must be in the raw HTML`).toBe(TOTAL_CARDS);
+
+      const visibleLists = lists.filter((list) => !list.parentElement.hasAttribute('hidden'));
+      expect(visibleLists.length, 'exactly one category group must be visible by default in the raw HTML').toBe(1);
+      expect(
+        visibleLists[0].querySelectorAll('.adhkar__card').length,
+        `the visible-by-default group must be "${DEFAULT_CATEGORY}" with its real ${DEFAULT_CATEGORY_COUNT} cards`,
+      ).toBe(DEFAULT_CATEGORY_COUNT);
+
+      const hiddenLists = lists.filter((list) => list.parentElement.hasAttribute('hidden'));
+      expect(hiddenLists.length, `the other ${TOTAL_CATEGORIES - 1} category groups must be present but hidden`).toBe(
+        TOTAL_CATEGORIES - 1,
+      );
+      const hiddenCardCount = hiddenLists.reduce((sum, list) => sum + list.querySelectorAll('.adhkar__card').length, 0);
+      expect(hiddenCardCount, 'hidden groups together must account for every card outside the default category').toBe(
+        TOTAL_CARDS - DEFAULT_CATEGORY_COUNT,
+      );
+    },
+  );
 });
 
 // Unconditional — pure logic, no filesystem access, so it runs both

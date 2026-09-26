@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { useSwipeNavigation } from '../../../hooks/useSwipeNavigation';
+import { AR_NAV_LABELS } from '../../../i18n/quran/arabicNavigationLabels';
 
 const NO_BASMALAH = new Set([1, 9]);
 
@@ -32,6 +33,8 @@ export default function QuranMushafPage({
   chromeHidden, onToggleChrome,
   progressLabel,
 }) {
+  const isAr = ui.dir === 'rtl';
+
   const segments = useMemo(() => {
     const segs = [];
     verses.forEach((v) => {
@@ -115,7 +118,7 @@ export default function QuranMushafPage({
         <div className="mushaf-margin">
           <span className="mushaf-margin__badge">{ui.juz || 'Juz'} {juzLabel}</span>
           <span className="mushaf-margin__badge mushaf-margin__badge--page">{ui.page || 'Page'} {pageLabel}</span>
-          <span className="mushaf-margin__badge">{ui.hizb || 'Hizb'} {hizbLabel}</span>
+          <span className="mushaf-margin__badge">{ui.hizb || (isAr ? AR_NAV_LABELS.hizb : 'Hizb')} {hizbLabel}</span>
         </div>
 
         {segments.map((seg) => {

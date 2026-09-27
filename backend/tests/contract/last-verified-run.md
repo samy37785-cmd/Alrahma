@@ -31,9 +31,11 @@ Render's live backend.
 1. A disposable local Postgres (`docker run --rm -d ... postgres:16`,
    bound to `127.0.0.1` only, random host port).
 2. `lib/db/drizzle/*.sql` applied via `lib/db/test/run-migrations.mjs`
-   (all 27 migrations, 0000 through 0026 — including this engagement's
-   own `0026_security_definer_view_hardening.sql`, so this run also
-   independently reconfirms that migration doesn't break the app layer).
+   (this migration was numbered 0026 at the time of this run; it was
+   renamed to `0027_security_definer_view_hardening.sql` afterward to
+   resolve a real numbering conflict with a separately-merged blog-locale
+   migration that took 0026 first — the run itself, and everything it
+   proved, is unaffected by the rename).
 3. Two seed rows inserted directly (superuser, bypassing RLS — this is
    fixture setup, not part of what's under test): one published blog
    post (`runtime-proof-post`) and one unpublished draft

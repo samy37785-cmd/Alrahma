@@ -1,11 +1,11 @@
-Regenerated 2026-08-31 by orchestrate-db-tests.mjs (Stage 0 — DB Evidence and
+Regenerated 2026-09-27 by orchestrate-db-tests.mjs (Stage 0 — DB Evidence and
 Test-Gate Remediation, Stage 0 Corrective) against a genuinely fresh, disposable
 local Postgres container created and torn down by THIS run — never a reused
 container/database.
 
 This is a point-in-time snapshot of a run that was independently verified against
-the EXACT assertion contract (not a naive sum): 230/230
-(expected exactly 230), every required suite present exactly
+the EXACT assertion contract (not a naive sum): 256/256
+(expected exactly 256), every required suite present exactly
 once with its own exact expected total, every step's own exit code 0, no step
 skipped.
 
@@ -38,10 +38,10 @@ PASS  positive control: a pipeline of only-succeeding steps reports overall succ
 PASS  trivially true
 1/1 passed.
 PASS  a step with no 'N/M passed.' line (e.g. a migration-apply step) is excluded from the aggregate, not counted as 0/0
-PASS  contract: the fully correct 230-assertion set satisfies the contract
+PASS  contract: the fully correct assertion set (DB_ASSERTION_CONTRACT_TOTAL) satisfies the contract
 PASS  contract: a required suite that exited 0 with no readable summary fails the gate
 PASS  contract: a suite reporting the wrong total (e.g. 1/1 instead of its real expected count) fails the gate
-PASS  contract: aggregate below 230 fails the gate even though every PRESENT suite has passed === total
+PASS  contract: aggregate below DB_ASSERTION_CONTRACT_TOTAL fails the gate even though every PRESENT suite has passed === total
 PASS  contract: a duplicated required suite fails the gate
 PASS  contract: a skipped required suite fails the gate
 PASS  contract: an unaccounted-for extra step with its own summary line fails the gate (can't silently inflate the total)
@@ -66,36 +66,36 @@ PASS  cleanup: the fully successful path (stop ok, initial present, rm ok, final
 === suites have not started yet.                                        ===
 ========================================================================
 
-=== Stage 0 DB test-gate orchestrator run — started 2026-08-31T00:04:50.896Z ===
-Container: alrahma-dbtest-mtgh85sg-0b418266 (image postgres:16, bound to 127.0.0.1 only, random port, random password)
+=== Stage 0 DB test-gate orchestrator run — started 2026-09-27T11:29:18.202Z ===
+Container: alrahma-dbtest-mujqkdiy-7151ad2b (image postgres:16, bound to 127.0.0.1 only, random port, random password)
 
 === node test/published-migrations-checksum.test.mjs ===
-PASS  0000_init_20_table_baseline.sql: sha256 and journal timestamp unchanged since publication
-PASS  0001_functions_triggers.sql: sha256 and journal timestamp unchanged since publication
-PASS  0002_rls.sql: sha256 and journal timestamp unchanged since publication
-PASS  0003_provider_events_lease.sql: sha256 and journal timestamp unchanged since publication
+PASS  0000_init_20_table_baseline.sql: Git blob at HEAD matches, no tracked modification, journal timestamp unchanged
+PASS  0001_functions_triggers.sql: Git blob at HEAD matches, no tracked modification, journal timestamp unchanged
+PASS  0002_rls.sql: Git blob at HEAD matches, no tracked modification, journal timestamp unchanged
+PASS  0003_provider_events_lease.sql: Git blob at HEAD matches, no tracked modification, journal timestamp unchanged
 
 4/4 passed.
 --- exit code: 0 ---
 
 === start-disposable-postgres ===
-started; TEST_DATABASE_URL=postgres://postgres:***@127.0.0.1:54975/alrahma_test
+started; TEST_DATABASE_URL=postgres://postgres:***@127.0.0.1:51818/alrahma_test
 --- exit code: 0 ---
 
 === node test/run-migrations.mjs (1st) ===
-[migrate] applying lib/db/drizzle to postgres://postgres:***@127.0.0.1:54975/alrahma_test
+[migrate] applying lib/db/drizzle to postgres://postgres:***@127.0.0.1:51818/alrahma_test
 [migrate] done.
 --- exit code: 0 ---
 
 === node test/run-migrations.mjs (2nd, proves already-applied bookkeeping) ===
-[migrate] applying lib/db/drizzle to postgres://postgres:***@127.0.0.1:54975/alrahma_test
+[migrate] applying lib/db/drizzle to postgres://postgres:***@127.0.0.1:51818/alrahma_test
 [migrate] done.
 --- exit code: 0 ---
 
 === node test/schema.local.test.mjs ===
-PASS  public schema has exactly 20 tables (auth.users excluded)
-PASS  auth.users exists as the single non-public, non-drizzle-internal table
-PASS  none of the 20 dropped tables exist
+PASS  public schema has exactly 39 tables (auth.users excluded)
+PASS  auth.users and auth.mfa_factors are the only non-public, non-drizzle-internal tables
+PASS  none of the 9 still-dropped tables exist
 PASS  subscriptions_one_active_per_user partial unique index exists
 PASS  notifications_user_dedupe_unique partial unique index exists
 PASS  provider_events_provider_event_unique unique index exists
@@ -113,7 +113,8 @@ PASS  handle_new_user() never produces role='admin' even when metadata claims it
 PASS  handle_new_user() falls back to email-local-part when no name is given
 PASS  guest enrollment insert succeeds with no user_id column at all
 PASS  guest trial_requests insert succeeds with no user_id column at all
-PASS  payments insert without user_id is rejected (paid checkout requires login)
+PASS  payments insert without user_id now succeeds (guest checkout — Stage 2J-B / 0022 fixed a real NOT NULL bug blocking softProtect's Public checkout routes)
+PASS  payments insert without user_id AND without a snapshot column is still allowed (snapshot columns are informational, not a substitute ownership key)
 PASS  invalid role enum value is rejected
 PASS  invalid payment_status enum value is rejected
 PASS  negative amount_minor is rejected
@@ -161,7 +162,7 @@ PASS  admin_audit_log DELETE is rejected (forbid_audit_log_mutation trigger)
 PASS  set_updated_at() bumps updated_at on a plans UPDATE
 PASS  set_updated_at() is attached to manual_payments/invoices/testimonials/enrollments
 
-67/67 passed.
+68/68 passed.
 --- exit code: 0 ---
 
 === node test/rls.local.test.mjs ===
@@ -203,6 +204,11 @@ PASS  anon submitting an enrollment pre-marked 'enrolled' is rejected
 PASS  anon submitting a trial request pre-marked 'scheduled' is rejected
 PASS  anon submitting a subscriber pre-marked 'unsubscribed' is rejected
 PASS  anon setting a forged created_at on an enrollment insert is rejected at the GRANT layer
+PASS  submit_enrollment_booking(): anon gets back a real, well-formed booking_ref; status is forced to 'new'; no financial field is settable
+PASS  submit_enrollment_booking(): a second call gets a DIFFERENT booking_ref (no collision with the first)
+PASS  submit_enrollment_booking(): a missing whatsapp number is rejected
+PASS  submit_enrollment_booking(): a malformed whatsapp number is rejected
+PASS  a non-admin authenticated user's raw UPDATE attempt to forge a booking's status/agreedAmount affects 0 rows
 PASS  seed: a notification for user A
 PASS  user B cannot SELECT user A's notification
 PASS  mark_notification_read() lets user A mark their own notification read, but not user B's
@@ -236,8 +242,17 @@ PASS  enforce_subscription_transition(): a row can never be INSERTed already-ter
 PASS  enforce_subscription_transition(): an ACTIVE row must have a real, future current_period_end, even on INSERT (Round 4)
 PASS  enforce_subscription_transition(): current_period_end must be after current_period_start, on INSERT and UPDATE alike (Round 4)
 PASS  admin_activate_manual_subscription(): rejected when the admin passes an already-elapsed p_current_period_end (Round 4)
+PASS  0027 seed: a teacher profile, an approved-review student, a pending-review student, and a plain user
+PASS  0027: reviews_public and teachers_public both have security_invoker AND security_barrier set (closes the advisor finding for real)
+PASS  0027: anon can still read teachers_public exactly as before (same columns, correct row)
+PASS  0027: teachers_public still excludes a non-teacher profile (view's own WHERE clause still enforced under invoker mode)
+PASS  0027: anon can still read reviews_public exactly as before, including the joined reviewer name
+PASS  0027: reviews_public still excludes a pending (non-approved) review under invoker mode
+PASS  0027: the new narrow profiles grant lets anon query the same public teacher columns directly too (expected — identical exposure to the view, not a widening)
+PASS  0027: anon still CANNOT read profiles.email directly, even for a teacher row (column-level grant boundary holds)
+PASS  0027: anon querying profiles directly for a plain user (not a teacher, no approved review) returns zero rows (RLS row-scoping, not just column-scoping)
 
-71/71 passed.
+85/85 passed.
 --- exit code: 0 ---
 
 === node test/rls-full-matrix.local.test.mjs ===
@@ -269,6 +284,7 @@ PASS  [plans] create_plan_version() rejects an old_plan_id that isn't the latest
 PASS  [plans] anon/authenticated see only active plans — a superseded (inactive) version is invisible to the public
 PASS  [subscriptions] owner SELECT own, not another's
 PASS  [subscriptions] owner raw INSERT/DELETE both genuinely denied at the GRANT layer (verified via SQLSTATE, not inferred)
+PASS  [payments] guest (user_id IS NULL) payment is invisible to anon and to any authenticated user, but AAL2 admin CAN read it
 PASS  [payments] owner raw INSERT/UPDATE denied at the GRANT layer
 PASS  [provider_events] a plain authenticated (non-admin) session sees 0 rows
 PASS  [provider_events] authenticated raw INSERT denied at the GRANT layer (service_role only)
@@ -302,14 +318,23 @@ PASS  [notification_preferences] owner raw DELETE denied at the GRANT layer (set
 PASS  [admin_audit_log] AAL1 admin sees 0 rows (needs AAL2)
 PASS  [admin_audit_log] AAL2 admin's raw UPDATE/DELETE denied at the GRANT layer (not just the trigger)
 PASS  [admin_audit_log] service_role HAS the grant, but forbid_audit_log_mutation() trigger still rejects UPDATE/DELETE
+PASS  [migration_source_ledger] anon denied at the GRANT layer
+PASS  [migration_source_ledger] a plain authenticated user denied at the GRANT layer
+PASS  [migration_source_ledger] AAL2 admin ALSO denied at the GRANT layer — this is not admin-UI-facing data
+PASS  [migration_source_ledger] service_role CAN read/write it
+PASS  [payment_source_snapshots] anon denied at the GRANT layer
+PASS  [payment_source_snapshots] the OWNER of the payment itself still cannot read its raw snapshot — no owner path exists at all
+PASS  [payment_source_snapshots] AAL2 admin ALSO denied at the GRANT layer — customer/raw payload never reaches even the admin UI's normal session
+PASS  [payment_source_snapshots] service_role CAN read it
 
-61/61 passed.
+70/70 passed.
 --- exit code: 0 ---
 
 === node test/acl.local.test.mjs ===
 PASS  PUBLIC has no table privileges and no function EXECUTE on anything in schema public
 PASS  anon: SELECT only on plans/blogs/testimonials, nothing else
 PASS  anon: column-restricted INSERT on enrollments/trial_requests/subscribers — allowed fields only, never created_at/id/status-forgery fields
+PASS  anon: none of enrollments' 7 new admin/financial columns are INSERT-grantable
 PASS  anon: no EXECUTE on any admin/service/owner RPC — only is_admin() (referenced by an anon-visible policy)
 PASS  authenticated: SELECT on every one of the 20 tables (RLS is what actually narrows visibility, not the GRANT)
 PASS  authenticated: subscriptions has NO INSERT/UPDATE/DELETE at all — fully RPC-only (Section C)
@@ -323,19 +348,20 @@ PASS  authenticated: the old admin_issue_refund(uuid, integer) function object n
 PASS  service_role: full SELECT/INSERT/UPDATE/DELETE on every table
 PASS  service_role: EXECUTE on the webhook lease functions and the subscription upsert
 PASS  service_role: also has EXECUTE on issue_invoice_from_payment() (an automated post-charge issuance flow) and the shared admin RPCs (self-guarded, but not force-excluded)
+PASS  migration_source_ledger / payment_source_snapshots: PUBLIC/anon/authenticated have NO table privilege at all; service_role has all 4
 PASS  schema public: USAGE granted to anon/authenticated/service_role, nothing more
 PASS  no sequences exist anywhere in schema public (every id is gen_random_uuid()-defaulted, not serial/identity)
 
-18/18 passed.
+20/20 passed.
 --- exit code: 0 ---
 
 === node test/upgrade-scenario.local.test.mjs ===
 PASS  phase 1: apply 0000-0003 only (the pre-Round-3 baseline)
 PASS  phase 2: inject legacy privilege drift + a stuck pre-fencing provider_events row
-PASS  phase 3: apply the full migrations folder — only 0004-0011 actually run
+PASS  phase 3: apply the full migrations folder — only 0004+ actually run
 PASS  phase 4: the injected broad grants are gone — proven via has_table_privilege/has_function_privilege, not inferred
 PASS  phase 5: the legacy stuck provider_events row was reset to pending and is claimable again
-PASS  phase 6 (schema): exactly 20 tables in public
+PASS  phase 6 (schema): exactly 39 tables in public
 PASS  phase 6 (RLS): anon is denied at the GRANT layer reading payments on the upgraded database
 PASS  phase 6 (RPC): admin_record_refund() still rejects a zero amount on the upgraded database
 PASS  phase 6 (concurrency): two workers racing claim_provider_event() on the same event — only one wins, on the upgraded database
@@ -348,18 +374,18 @@ OK       published-migrations-checksum — exit 0 (4/4 passed.)
 OK       start-disposable-postgres — exit 0
 OK       run-migrations (1st) — exit 0
 OK       run-migrations (2nd, proves already-applied bookkeeping) — exit 0
-OK       schema.local.test.mjs — exit 0 (67/67 passed.)
-OK       rls.local.test.mjs — exit 0 (71/71 passed.)
-OK       rls-full-matrix.local.test.mjs — exit 0 (61/61 passed.)
-OK       acl.local.test.mjs — exit 0 (18/18 passed.)
+OK       schema.local.test.mjs — exit 0 (68/68 passed.)
+OK       rls.local.test.mjs — exit 0 (85/85 passed.)
+OK       rls-full-matrix.local.test.mjs — exit 0 (70/70 passed.)
+OK       acl.local.test.mjs — exit 0 (20/20 passed.)
 OK       upgrade-scenario.local.test.mjs — exit 0 (9/9 passed.)
 
 === Exact assertion contract ===
-OK  exact contract satisfied: 230/230 (expected exactly 230)
-Naive pipeline aggregate (informational only, NOT the green/not-green judgment): 230/230
+OK  exact contract satisfied: 256/256 (expected exactly 256)
+Naive pipeline aggregate (informational only, NOT the green/not-green judgment): 256/256
 Pipeline overall exit code: 0
 
-=== cleanup: stopping and verifying removal of container "alrahma-dbtest-mtgh85sg-0b418266" ===
+=== cleanup: stopping and verifying removal of container "alrahma-dbtest-mujqkdiy-7151ad2b" ===
 docker stop: exit=0
 initial presence check: docker ps exit=0 → ABSENT
 docker rm -f fallback: not attempted (initial presence check independently confirmed ABSENT already)

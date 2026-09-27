@@ -4,9 +4,9 @@
 
 | Variable | Where | Value |
 |---|---|---|
-| `VITE_GA_MEASUREMENT_ID` | Vercel → Project → Settings → Environment Variables (Production) | The GA4 web stream's Measurement ID (`G-…`) |
+| `VITE_GA_MEASUREMENT_ID` | Vercel → Project → Settings → Environment Variables, **Production only** (not Preview or Development) | The GA4 web stream's Measurement ID (`G-…`) |
 
-- Never commit the ID. It is read at build time, so a redeploy is needed after setting it.
+- Never commit the ID. Vite bakes it in at build time, so a Production redeploy of `main` is needed after setting it. Preview builds stay analytics-free.
 - Unset (or not a valid `G-…` ID) = analytics fully off: no banner, no Cookie settings link, no Privacy section, nothing loaded.
 - `VITE_GA_ID` and Microsoft Clarity (`VITE_CLARITY_ID`) are no longer used.
 
@@ -24,15 +24,19 @@
 | `enroll_step_view` | `page_path`, `site_lang`, `step` (number) |
 | `whatsapp_click` / `email_click` | `page_path`, `site_lang` (links to the academy's own number/address only) |
 | `faq_show_all` | `page_path`, `site_lang` |
-| `adhkar_category_change` | `page_path`, `site_lang`, `category` (fixed key, e.g. `sabah`) |
+| `adhkar_category_change` | `page_path`, `site_lang`, `category` (fixed key, e.g. `s## GA4 web stream settings (applied)
 
-No form values, names, emails, phone numbers, submits, bookings or payments are tracked.
+Stream "AL-Rahma Academy – Web" (`https://al-rahmaacademy.com`). Enhanced measurement is enabled only because GA does not allow "Page loads" to be switched off. Everything else is off, so the only events are the app's allow-listed ones:
 
-## Required GA4 web stream settings
+| Setting | State | Why |
+|---|---|---|
+| Page views → Page loads | on (locked by GA) | Inert: the app configures the tag with `send_page_view: false` |
+| Page views → Page changes based on browser history events | **off** | The app sends its own SPA `page_view` without the query string |
+| Scrolls | **off** | Not needed |
+| Outbound clicks | **off** | Would send `mailto:` / WhatsApp URLs, which contain the email address / phone number |
+| Site search | **off** | Reads query parameters |
+| Form interactions | **off** | Form tracking is out of scope |
+| Video engagement | **off** | Not needed |
+| File downloads | **off** | Not needed |
 
-Enhanced Measurement is on, but two of its options conflict with the rules above and **must be turned off** in GA4 → Admin → Data streams → Web → Enhanced measurement:
-
-1. **Page views → "Page changes based on browser history events"**: off. The app sends its own SPA `page_view` without query strings, and leaving this on would send duplicates that include the full URL.
-2. **Form interactions**: off. This option sends `form_start` / `form_submit`, and form tracking is out of scope.
-
-Also review **Site search**. It reads query parameters such as `q` and `s`. Turn it off unless the site has a search results page that needs it.
+Keep these settings off. Turning any of them back on bypasses the allow-list in `ga.js`.

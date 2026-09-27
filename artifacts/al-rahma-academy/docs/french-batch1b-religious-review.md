@@ -1,6 +1,6 @@
-# French Batch 1B — Inventory and review notes (not started)
+# French Batch 1B — Inventory and review notes
 
-`/courses/ijazah` and `/courses/islamic-studies` are **not translated**, and Batch 1A does not touch them. This is the inventory for a separate Batch 1B, which starts only on the owner's approval.
+Inventory used for Batch 1B (`/courses/ijazah`, `/courses/islamic-studies`). Batch 1B is implemented in its own Draft PR; the `source-accuracy` rows below are tracked as S3–S8 in [french-localization-registry.md](french-localization-registry.md#source-accuracy-issues).
 
 Batch 1B follows the translation policy in [french-localization-registry.md](french-localization-registry.md#translation-policy-owner-decision-2026-09-27):
 
@@ -25,7 +25,7 @@ Baseline: `origin/main` @ `79561a4`. Line numbers refer to that commit.
 
 ## A. `/courses/ijazah` — source `src/pages/CourseIjazah.jsx`
 
-French today: title, description, H1 and all body text below render in **English** on `/fr/courses/ijazah` (27 `isAr ?` ternaries; `COURSE_UI.fr` section headings are already French).
+Before Batch 1B: title, description, H1 and all body text below rendered in **English** on `/fr/courses/ijazah` (27 `isAr ?` ternaries; `COURSE_UI.fr` section headings are already French).
 
 ### A1. Ijazah and Sanad claims (R-CLAIM)
 
@@ -40,7 +40,7 @@ French today: title, description, H1 and all body text below render in **English
 | 7 | Stage 4 points (128–132): full recitation, final evaluation by certified Ijazah Sheikh, "Sanad documentation — unbroken chain to the Prophet ﷺ", official signed certificate, "You are now authorised to teach and issue your own Ijazah" | 135–139 | |
 | 8 | PERKS (247): "1-on-1 with certified Ijazah Sheikh", "Official Sanad document issued" | 248 | |
 | 9 | FOR[2] (235): "Muslims worldwide who want a Sanad to the Prophet ﷺ"; FOR[3]: "Those who want the highest Quranic credential" | 241–242 | Superlative |
-| 10 | Course JSON-LD `name`/`description` (312–313), EN only | — | JSON-LD is not translated per page. `inLanguage: ['en','ar']` is the language of instruction and stays unchanged |
+| 10 | Course JSON-LD `name`/`description` (312–313), EN only | — | Batch 1B: French `name`/`description`/`educationalLevel`/`teaches` on the French page only. `inLanguage: ['en','ar']` is the language of instruction and stays unchanged |
 
 ### A2. Curriculum, Qira'at and Tajweed terms (R-TERM, R-FACT)
 
@@ -72,7 +72,7 @@ French today: title, description, H1 and all body text below render in **English
 
 ## B. `/courses/islamic-studies` — sources `src/pages/CourseIslamicStudies.jsx`, `src/data/islamicStudiesData.js`, `src/components/features/courses/IslamicStudiesBookCard.jsx`
 
-French today: title, description, H1, the hadith card meaning and all body text render in **English** on `/fr/courses/islamic-studies` (27 `isAr` ternaries; `COURSE_UI.fr` headings are already French). The page is date-dependent (hadith of the day) and not prerendered.
+Before Batch 1B: title, description, H1, the hadith card meaning and all body text rendered in **English** on `/fr/courses/islamic-studies` (27 `isAr` ternaries; `COURSE_UI.fr` headings are already French). The page is date-dependent (hadith of the day) and not prerendered.
 
 ### B1. Hadith of the day — 17 hadiths (R-HADITH)
 
@@ -133,7 +133,7 @@ Also in the hadith card: narrator names (`narrator.en`), source labels (`source.
 | # | Current EN source | Type | Note |
 |---|---|---|---|
 | 38 | `useSEO` title/description (`CourseIslamicStudies.jsx` 29–32), hero H1/sub (60–64) | R-TERM + UI | "taught by certified scholars" is a credential claim (R-CLAIM) |
-| 39 | Course JSON-LD `name`/`description`/`teaches` (35–41), EN only | — | Not translated per page; `inLanguage` unchanged |
+| 39 | Course JSON-LD `name`/`description`/`teaches` (35–41), EN only | — | Batch 1B: French `name`/`description`/`educationalLevel`/`teaches` on the French page only; `inLanguage` unchanged |
 | 40 | LEARN (`islamicStudiesData.js` 329–338) | R-TERM | **source-accuracy**: EN "Islamic theology" vs AR "علم الكلام الإسلامي" (a specific discipline) |
 | 41 | LEARN[7] / PERKS: "Lessons available in English, Arabic, Italian, French, German, or Spanish", "Available in 6 languages", stat "6 Lang" | O-BIZ | Owner to confirm instruction languages |
 | 42 | FOR (352–357): "New Muslims…", "Western Muslims…", "…not just opinions" | UI + R-TERM | |

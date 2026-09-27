@@ -25,8 +25,8 @@ Baseline: `origin/main` @ `79561a4`, audited 2026-09-27 against production.
 | 2 | `/courses` | `/ar/courses` | `/fr/courses` | 1A | draft-review | published | no | no | Batch 1A: title/description |
 | 3 | `/courses/quran` | `/ar/courses/quran` | `/fr/courses/quran` | 1A | draft-review | published | yes | no | Batch 1A: title/description |
 | 4 | `/courses/arabic` | `/ar/courses/arabic` | `/fr/courses/arabic` | 1A | draft-review | published | no | no | Batch 1A: title/description. H1 "Alphabet arabe et italien" kept as the source says, pending owner |
-| 5 | `/courses/ijazah` | `/ar/courses/ijazah` | `/fr/courses/ijazah` | 1B | partial (1B not started) | published | owner may review (Sanad/Ijazah claims) | no | Title, description, H1 and about 104 body strings EN-only (`pages/CourseIjazah.jsx` `isAr` ternaries) |
-| 6 | `/courses/islamic-studies` | `/ar/courses/islamic-studies` | `/fr/courses/islamic-studies` | 1B | partial (1B not started) | unpublished | owner may review (hadith meanings from English, book descriptions) | no | About 23 page strings EN (`pages/CourseIslamicStudies.jsx`); 43 EN fields in `data/islamicStudiesData.js` incl. hadith translations |
+| 5 | `/courses/ijazah` | `/ar/courses/ijazah` | `/fr/courses/ijazah` | 1B | draft-review | published | owner may review (Sanad/Ijazah claims) | no | Batch 1B: title/description/OG, Course JSON-LD text, H1, hero, stats, learn list, 4 stages, 4 books, prerequisites, audience, perks, enroll card |
+| 6 | `/courses/islamic-studies` | `/ar/courses/islamic-studies` | `/fr/courses/islamic-studies` | 1B | draft-review | unpublished | owner may review (hadith lines from English, book descriptions) | no | Batch 1B: title/description/OG, Course JSON-LD text, H1, hero, stats, learn list, hadith of the day (17), 5 modules, 9 books, audience, perks, enroll card |
 | 7 | `/academy` | `/ar/academy` | `/fr/academy` | 1A | draft-review | published | no | no | Batch 1A: description |
 | 8 | `/academy/about` | `/ar/academy/about` | `/fr/academy/about` | 1A | draft-review | published | no | no (owner narrative) | Batch 1A: H1, founder story (owner review) |
 | 9 | `/academy/teachers` | `/ar/academy/teachers` | `/fr/academy/teachers` | 2 | complete | published | review teacher claims | no | — |
@@ -103,8 +103,8 @@ Also:
 
 | Batch | Templates | State |
 |---|---|---|
-| 1A | `/`, `/courses`, `/courses/quran`, `/courses/arabic`, `/academy`, `/academy/about` | Draft PR, not merged |
-| 1B | `/courses/ijazah`, `/courses/islamic-studies` | Not started; starts only on the owner's approval. Inventory: [french-batch1b-religious-review.md](french-batch1b-religious-review.md) |
+| 1A | `/`, `/courses`, `/courses/quran`, `/courses/arabic`, `/academy`, `/academy/about` | Merged (PR #130) |
+| 1B | `/courses/ijazah`, `/courses/islamic-studies` | Draft PR, not merged. Inventory: [french-batch1b-religious-review.md](french-batch1b-religious-review.md) |
 | 2–5 | See the table above | Not started; each needs separate approval |
 
 ## Owner review (non-blocking)
@@ -152,6 +152,11 @@ Known errors or contradictions in the English (or EN/AR) source. French follows 
 |---|---|---|---|---|
 | S1 | Teaching-language count is inconsistent within English: "in 17 languages" vs "English, Italian, French, German or Spanish" vs "English, Italian or French" | `i18n/courses/seo.js` `quran.en`; `en.js` `hubs.courses.sub`, `hubs.quran` Hifz card; `en.js` `hero.sub`; `en.js` features (line 90) | 1A `/courses/quran`, `/courses`, `/` | Translates each English sentence as written ("en 17 langues") |
 | S2 | "Arabic & Italian Alphabet" H1: intent unconfirmed (the page body describes Italian phonetic equivalents) | `en.js` `hubs.arabic.heading` | 1A `/courses/arabic` | "Alphabet arabe et italien" (existing `fr.js`, unchanged) |
-| S3 | Batch 1B: EN/AR differences (Ijazah SEO description, LEARN[9], duration stat; Islamic Studies "40" vs "42" hadiths, "Islamic theology" vs "علم الكلام") and a hadith source link pointing to the wrong collection (H17) | See [french-batch1b-religious-review.md](french-batch1b-religious-review.md) | 1B | Not translated (1B not started) |
+| S3 | Ijazah SEO description: English names "the Seven Qira'at", Arabic does not | `pages/CourseIjazah.jsx` `useSEO` description (EN vs AR) | 1B `/courses/ijazah` | Follows the English (mentions the sept qira'at) |
+| S4 | Ijazah "What you'll learn" item 10: English "Authorisation to teach the Quran with your own Sanad"; Arabic adds "and issue Ijazahs" | `pages/CourseIjazah.jsx` `LEARN.en[9]` vs `LEARN.ar[9]` | 1B `/courses/ijazah` | Follows the English (teaching authorisation only) |
+| S5 | Ijazah duration stat: English "Average Duration", Arabic "المدة المتوقعة" (expected duration) | `pages/CourseIjazah.jsx` stats | 1B `/courses/ijazah` | Follows the English ("Durée moyenne") |
+| S6 | Islamic Studies: "40 core hadiths" / "40 Hadiths of Imam Al-Nawawi" vs the book card's "42 hadiths" | `data/islamicStudiesData.js` `MODULES[3].topics`, `LEARN[3]` vs `BOOKS[5]` | 1B `/courses/islamic-studies` | Follows each English sentence as written (40 and 42) |
+| S7 | Islamic Studies learn item 1: English "Islamic theology", Arabic "علم الكلام الإسلامي" (a specific discipline) | `data/islamicStudiesData.js` `LEARN.en[0]` vs `LEARN.ar[0]` | 1B `/courses/islamic-studies` | Follows the English ("la théologie islamique") |
+| S8 | Hadith "The best of people are those who are most beneficial to people" (Al-Tabarani): its link points to the Nawawi 40 collection (`sunnah.com/nawawi40`), not to this hadith | `data/islamicStudiesData.js` `HADITHS[16].url` | 1B `/courses/islamic-studies` | Same link kept (URLs are not changed by translation) |
 
 Resolved: "24-day" refund stat matches `siteFacts.refundWindowDays` (24). Not an issue.

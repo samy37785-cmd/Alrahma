@@ -1,0 +1,99 @@
+{
+  "baseline": "origin/main@2e43bb4",
+  "pages": {
+    "ijazah": {
+      "en": {
+        "title": "Quran Ijazah Course | AL-Rahma Academy",
+        "description": "Earn a formal Quran Ijazah with a continuous Sanad to the Prophet ﷺ. Study Matn Al-Jazariyyah, Al-Shatibiyyah and the Seven Qira'at with certified Al-Azhar scholars.",
+        "ogTitle": "Quran Ijazah Course | AL-Rahma Academy",
+        "ogDescription": "Earn a formal Quran Ijazah with a continuous Sanad to the Prophet ﷺ. Study Matn Al-Jazariyyah, Al-Shatibiyyah and the Seven Qira'at with certified Al-Azhar scholars.",
+        "htmlLang": "en",
+        "htmlDir": "ltr",
+        "jsonLd": [
+          "{\"@context\":\"https://schema.org\",\"@type\":\"BreadcrumbList\",\"itemListElement\":[{\"@type\":\"ListItem\",\"position\":1,\"name\":\"Home\",\"item\":\"https://al-rahmaacademy.com/\"},{\"@type\":\"ListItem\",\"position\":2,\"name\":\"Courses\",\"item\":\"https://al-rahmaacademy.com/courses\"},{\"@type\":\"ListItem\",\"position\":3,\"name\":\"Quran Ijazah Course\",\"item\":\"https://al-rahmaacademy.com/courses/ijazah\"}]}",
+          "{\"@context\":\"https://schema.org\",\"@type\":\"Course\",\"name\":\"Quran Ijazah Certification Course\",\"description\":\"Earn a formal Quran Ijazah with a continuous Sanad to the Prophet ﷺ. Study Matn Al-Jazariyyah, Al-Shatibiyyah and the Seven Qira'at with certified Al-Azhar scholars.\",\"provider\":{\"@type\":\"EducationalOrganization\",\"name\":\"Al-Rahma Academy\",\"sameAs\":\"https://al-rahmaacademy.com\"},\"educationalLevel\":\"Advanced\",\"inLanguage\":[\"en\",\"ar\"],\"teaches\":\"Quran Ijazah, Tajweed, Matn Al-Jazariyyah, Al-Shatibiyyah, Seven Qira'at\",\"hasCourseInstance\":{\"@type\":\"CourseInstance\",\"courseMode\":\"online\"}}"
+        ],
+        "stageCount": 4,
+        "bookCount": 4,
+        "states": {
+          "initial": "22e713c491305be72be93ed2bb14d78814b2b812a11beb8778e916de08ee29fb",
+          "stage0": "4cfdc53741a27d7980a63a1e0bb4a06d0f81e7c5f9fe08f481863c304a6c3c69",
+          "stage1": "4828854509d1b878bc8347e7d418b6572b67e3a2474d73f40797dd5970bbe9f6",
+          "stage2": "699a763db6ce03d4e66c8d47ef7b59ad315dd78ccb20eb9063c603126b5452cc",
+          "stage3": "03513ca299083d7dce3d7a6986d81f2645785c1fd1477d3b6862a7195e44c70b",
+          "allBooksOpen": "11a70b48b8e0c161cc1703457c49248bcf2275480905f59768d5ab4fcb947851"
+        }
+      },
+      "ar": {
+        "title": "دورة إجازة القرآن الكريم | AL-Rahma Academy",
+        "description": "احصل على إجازة قرآنية رسمية بسند متصل إلى النبي ﷺ. ادرس متن الجزرية والشاطبية مع علماء أزهريين معتمدين.",
+        "ogTitle": "دورة إجازة القرآن الكريم | AL-Rahma Academy",
+        "ogDescription": "احصل على إجازة قرآنية رسمية بسند متصل إلى النبي ﷺ. ادرس متن الجزرية والشاطبية مع علماء أزهريين معتمدين.",
+        "htmlLang": "ar",
+        "htmlDir": "rtl",
+        "jsonLd": [
+          "{\"@context\":\"https://schema.org\",\"@type\":\"Course\",\"name\":\"Quran Ijazah Certification Course\",\"description\":\"Earn a formal Quran Ijazah with a continuous Sanad to the Prophet ﷺ. Study Matn Al-Jazariyyah, Al-Shatibiyyah and the Seven Qira'at with certified Al-Azhar scholars.\",\"provider\":{\"@type\":\"EducationalOrganization\",\"name\":\"Al-Rahma Academy\",\"sameAs\":\"https://al-rahmaacademy.com\"},\"educationalLevel\":\"Advanced\",\"inLanguage\":[\"en\",\"ar\"],\"teaches\":\"Quran Ijazah, Tajweed, Matn Al-Jazariyyah, Al-Shatibiyyah, Seven Qira'at\",\"hasCourseInstance\":{\"@type\":\"CourseInstance\",\"courseMode\":\"online\"}}",
+          "{\"@context\":\"https://schema.org\",\"@type\":\"BreadcrumbList\",\"itemListElement\":[{\"@type\":\"ListItem\",\"position\":1,\"name\":\"الرئيسية\",\"item\":\"https://al-rahmaacademy.com/ar/\"},{\"@type\":\"ListItem\",\"position\":2,\"name\":\"الدورات\",\"item\":\"https://al-rahmaacademy.com/ar/courses\"},{\"@type\":\"ListItem\",\"position\":3,\"name\":\"دورة الإجازة\",\"item\":\"https://al-rahmaacademy.com/ar/courses/ijazah\"}]}"
+        ],
+        "stageCount": 4,
+        "bookCount": 4,
+        "states": {
+          "initial": "1627c71429b54868ec620f9cb11c0f1b48cf0d020d11067b6923d0a3270ab8a7",
+          "stage0": "e57ddf09ec405bc9c3c591dd6918d3b06c273b98f2644efc285430cae06c2e0d",
+          "stage1": "346721d2299b7c6602801b6738f1239791ee825d50ce5d37304612958f843009",
+          "stage2": "66077cf6182eaeaca2fd70d646d0230384bea8a4f31dc650423ff21b831cb69f",
+          "stage3": "7ea8b594a001283276563aefcac33b6944ffebf4ac71b434c7ea7613938fafd9",
+          "allBooksOpen": "24a18d4ef8668630ea6e02ca13109ed9db434cdf84f288452046fa758e82e422"
+        }
+      }
+    },
+    "islamicStudies": {
+      "en": {
+        "title": "Islamic Studies Course | AL-Rahma Academy",
+        "description": "A comprehensive, source-based curriculum covering Aqeedah, Fiqh, Seerah, Hadith and Tafsir — 5 structured modules taught by certified scholars in your own language.",
+        "ogTitle": "Islamic Studies Course | AL-Rahma Academy",
+        "ogDescription": "A comprehensive, source-based curriculum covering Aqeedah, Fiqh, Seerah, Hadith and Tafsir — 5 structured modules taught by certified scholars in your own language.",
+        "htmlLang": "en",
+        "htmlDir": "ltr",
+        "jsonLd": [
+          "{\"@context\":\"https://schema.org\",\"@type\":\"Course\",\"name\":\"Islamic Studies Course\",\"description\":\"A comprehensive, source-based curriculum covering Aqeedah, Fiqh, Seerah, Hadith and Tafsir — 5 structured modules taught by certified scholars in your own language.\",\"provider\":{\"@type\":\"EducationalOrganization\",\"name\":\"Al-Rahma Academy\",\"sameAs\":\"https://al-rahmaacademy.com\"},\"educationalLevel\":\"All levels\",\"inLanguage\":[\"en\",\"ar\"],\"teaches\":\"Aqeedah, Fiqh, Seerah, Hadith, Tafsir, Islamic Studies\",\"hasCourseInstance\":{\"@type\":\"CourseInstance\",\"courseMode\":\"online\"}}",
+          "{\"@context\":\"https://schema.org\",\"@type\":\"BreadcrumbList\",\"itemListElement\":[{\"@type\":\"ListItem\",\"position\":1,\"name\":\"Home\",\"item\":\"https://al-rahmaacademy.com/\"},{\"@type\":\"ListItem\",\"position\":2,\"name\":\"Courses\",\"item\":\"https://al-rahmaacademy.com/courses\"},{\"@type\":\"ListItem\",\"position\":3,\"name\":\"Islamic Studies Course\",\"item\":\"https://al-rahmaacademy.com/courses/islamic-studies\"}]}"
+        ],
+        "stageCount": 5,
+        "bookCount": 9,
+        "states": {
+          "initial": "a787618a814370c06e22fca82295b12cadbfe476539ec85b7ba97827bced0921",
+          "stage0": "01d41290f6c9d39a13125bad1b9abad237eaf6ecebfc296d6475788de99a8fa9",
+          "stage1": "cd0154aaacb0eded15f9f030dc3b719962ac90f477be925f322fd63cbbdd0384",
+          "stage2": "4bf72315e1d1fb1a7568bc9a1e94d4fefdadf7d5bf570de84cfc4ec9e3d4796d",
+          "stage3": "a12e7bbed86f663567f388ead2576a6a932af736e91e481c082cb3587b7d949d",
+          "stage4": "2633b025a93732b7dc0528afd04629113d32923ad99e2f91c144d90ac25cface",
+          "allBooksOpen": "219e3328ae7e4b806089c4d5e9ba93ac188857d2b4452d6b12b2b1aa9ebba25d"
+        }
+      },
+      "ar": {
+        "title": "دورة الدراسات الإسلامية | AL-Rahma Academy",
+        "description": "منهج شامل مبني على المصادر يغطي العقيدة والفقه والسيرة والحديث والتفسير — ٥ وحدات يدرّسها علماء معتمدون بلغتك.",
+        "ogTitle": "دورة الدراسات الإسلامية | AL-Rahma Academy",
+        "ogDescription": "منهج شامل مبني على المصادر يغطي العقيدة والفقه والسيرة والحديث والتفسير — ٥ وحدات يدرّسها علماء معتمدون بلغتك.",
+        "htmlLang": "ar",
+        "htmlDir": "rtl",
+        "jsonLd": [
+          "{\"@context\":\"https://schema.org\",\"@type\":\"Course\",\"name\":\"Islamic Studies Course\",\"description\":\"A comprehensive, source-based curriculum covering Aqeedah, Fiqh, Seerah, Hadith and Tafsir — 5 structured modules taught by certified scholars in your own language.\",\"provider\":{\"@type\":\"EducationalOrganization\",\"name\":\"Al-Rahma Academy\",\"sameAs\":\"https://al-rahmaacademy.com\"},\"educationalLevel\":\"All levels\",\"inLanguage\":[\"en\",\"ar\"],\"teaches\":\"Aqeedah, Fiqh, Seerah, Hadith, Tafsir, Islamic Studies\",\"hasCourseInstance\":{\"@type\":\"CourseInstance\",\"courseMode\":\"online\"}}",
+          "{\"@context\":\"https://schema.org\",\"@type\":\"BreadcrumbList\",\"itemListElement\":[{\"@type\":\"ListItem\",\"position\":1,\"name\":\"الرئيسية\",\"item\":\"https://al-rahmaacademy.com/ar/\"},{\"@type\":\"ListItem\",\"position\":2,\"name\":\"الدورات\",\"item\":\"https://al-rahmaacademy.com/ar/courses\"},{\"@type\":\"ListItem\",\"position\":3,\"name\":\"الدراسات الإسلامية\",\"item\":\"https://al-rahmaacademy.com/ar/courses/islamic-studies\"}]}"
+        ],
+        "stageCount": 5,
+        "bookCount": 9,
+        "states": {
+          "initial": "73540409b1e02d3fe82636f44f149ee2bfda48943e3da71bea0909e8ef38b5a0",
+          "stage0": "905c07bbdff25a2d6a9a8d1e7ad4c435d1a994b5f6c03d84efb75b5c85615423",
+          "stage1": "83fb398f517d9d56986b6e2fa9e36a22b72dc8a9c3d9ba95bf85dfe9584fb447",
+          "stage2": "596c27465d1c790af11344bfa75b1ce5e76cd458417aee6e41c0524ce15e181d",
+          "stage3": "2b38e966e71fb3492f099dd0bd791cdc6833fda70d5e5387aa6dca2f6758aad0",
+          "stage4": "01ea7c6c38ccd1c4a6ca4ac59e267538858bbd31c77201bf9683e41ad5a45a90",
+          "allBooksOpen": "2680a0826865225f52ae2ce6a331fcf673773626dc92ae472609d0c450cfce62"
+        }
+      }
+    }
+  }
+}

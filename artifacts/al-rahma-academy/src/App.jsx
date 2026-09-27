@@ -11,6 +11,7 @@ import AdminSessionGate from './components/ui/AdminSessionGate';
 import ScrollToTop from './components/ui/ScrollToTop';
 import RoutePrefetcher from './components/ui/RoutePrefetcher';
 import Analytics from './components/ui/Analytics';
+import ConsentBanner from './components/ui/ConsentBanner';
 import ErrorBoundary from './components/ui/ErrorBoundary';
 import ContentGuard from './components/ui/ContentGuard';
 import LiveChat from './components/ui/LiveChat';
@@ -112,6 +113,7 @@ export default function App({ basename = '' }) {
         <ScrollToTop />
         <RoutePrefetcher />
         <Analytics />
+        <ConsentBanner />
         <LiveChat />
         <ContentGuard />
         <LocalizedSkipLink />

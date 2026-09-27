@@ -1,0 +1,46 @@
+.consent-banner {
+  position: fixed;
+  inset-inline: 16px;
+  bottom: 16px;
+  z-index: 1000;
+  max-width: 720px;
+  margin-inline: auto;
+  padding: 16px 20px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 20px;
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  border: 1px solid var(--p-neutral-200, #e5e7eb);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(6, 55, 42, 0.18);
+}
+
+.consent-banner__text {
+  flex: 1 1 320px;
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.consent-banner__text a {
+  color: var(--text-brand);
+  text-decoration: underline;
+}
+
+.consent-banner__actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.consent-settings-link {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}

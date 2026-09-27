@@ -3,6 +3,49 @@ import { site } from '../data';
 import useSEO from '../hooks/useSEO';
 import Breadcrumbs from '../components/ui/Breadcrumbs';
 import { useLang } from '../context/LangContext';
+import CookieSettingsButton from '../components/ui/CookieSettingsButton';
+import { getMeasurementId } from '../analytics/ga';
+
+// Google Analytics disclosure, shown only while GA is actually configured.
+// Owner-approved scope (EN/AR); other locales fall back to English until
+// their translation is approved.
+export const ANALYTICS_PRIVACY_COPY = {
+  en: {
+    title: 'Analytics cookies',
+    what: 'With your permission, we use Google Analytics 4 to understand how visitors use our website so we can improve it.',
+    when: 'Google Analytics is loaded only after you choose “Accept analytics” in the cookie banner. If you choose “Reject” or make no choice, it is not loaded.',
+    forms: 'We do not send the information you enter in our forms — such as your name, email address or phone number — to Google Analytics.',
+    change: 'You can change or withdraw your choice at any time from',
+    google: 'How Google uses information from sites that use its services',
+  },
+  ar: {
+    title: 'ملفات تعريف الارتباط الخاصة بالتحليلات',
+    what: 'بعد موافقتك، نستخدم Google Analytics 4 لفهم كيفية استخدام الزوار لموقعنا حتى نتمكن من تحسينه.',
+    when: 'لا يتم تحميل Google Analytics إلا بعد اختيارك «السماح بالتحليلات» في شريط ملفات تعريف الارتباط. إذا اخترت «رفض» أو لم تختر شيئًا، فلن يتم تحميله.',
+    forms: 'لا نرسل المعلومات التي تُدخلها في نماذجنا — مثل اسمك أو بريدك الإلكتروني أو رقم هاتفك — إلى Google Analytics.',
+    change: 'يمكنك تغيير اختيارك أو سحبه في أي وقت من',
+    google: 'كيف تستخدم Google المعلومات من المواقع التي تستخدم خدماتها',
+  },
+};
+
+function AnalyticsSection({ lang }) {
+  if (!getMeasurementId()) return null;
+  const ga = ANALYTICS_PRIVACY_COPY[lang] || ANALYTICS_PRIVACY_COPY.en;
+  return (
+    <section id="analytics-cookies">
+      <h2>{ga.title}</h2>
+      <p>{ga.what}</p>
+      <p>{ga.when}</p>
+      <p>{ga.forms}</p>
+      <p>{ga.change} <CookieSettingsButton />.</p>
+      <p>
+        <a href="https://policies.google.com/technologies/partner-sites" target="_blank" rel="noopener noreferrer">
+          {ga.google}
+        </a>
+      </p>
+    </section>
+  );
+}
 
 export default function Privacy() {
   const { lang } = useLang();
@@ -114,6 +157,8 @@ export default function Privacy() {
         <ul>
           {content.uses.map((use) => <li key={use}>{use}</li>)}
         </ul>
+
+        <AnalyticsSection lang={lang} />
 
         <h2>{content.rightsTitle}</h2>
         <p>

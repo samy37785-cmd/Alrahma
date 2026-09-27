@@ -6,6 +6,7 @@ import { useLang } from '../context/LangContext';
 import faqItems from '../data/faqItems';
 import { homeHref } from '../utils/localePath';
 import { site } from '../data/site';
+import { trackEvent } from '../analytics/ga';
 
 export default function FAQ() {
   const { t, lang } = useLang();
@@ -67,6 +68,7 @@ export default function FAQ() {
               className="btn btn--ghost"
               onClick={() => {
                 if (showAll) setOpen(null);
+                else trackEvent('faq_show_all');
                 setShowAll((v) => !v);
               }}
               aria-expanded={showAll}

@@ -102,7 +102,7 @@ export const FOUNDER_STORY_TEXT = {
     body3Mid: ' familles dans ',
     body3Post:
       " pays nous confient ce qu'elles ont de plus précieux — l'éducation coranique de leurs " +
-      'enfants. Chaque enseignant détient une Ijazah vérifiée. Chaque cours est individuel. ' +
+      'enfants. Chaque enseignant détient une ijaza vérifiée. Chaque cours est individuel. ' +
       "Chaque famille peut changer d'enseignant, suspendre son abonnement ou demander un " +
       'remboursement — sans aucune complication.',
     body4: "Nous n'avons pas créé une plateforme. Nous avons créé l'académie dont nous avions besoin et que nous ne trouvions pas.",

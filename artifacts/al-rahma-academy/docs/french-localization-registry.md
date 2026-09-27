@@ -118,12 +118,31 @@ Translated faithfully from the English source under the policy above. Status: `f
 | 3 | Level quiz, including the Ijazah recommendation | `/` | `i18n/home/levelQuiz.js` `fr` |
 | 4 | SEO titles/descriptions, H1, leaked strings, course labels, country names, a11y labels | all 1A | 1A `fr` entries, `i18n/a11yLabels.js` |
 
-## Open decisions for the owner (Batch 1A)
+## Owner decisions applied in Batch 1A (PR #130)
 
-| # | Item | Current state in PR #130 | Why it is open |
+| # | Decision | Applied |
+|---|---|---|
+| D1 | Home hadith (Sahih al-Bukhari 5027): French shows a faithful French translation of the English line, not the Arabic original | `i18n/home/isnadChain.js` `fr.quote`: « Les meilleurs d'entre vous sont ceux qui apprennent le Coran et l'enseignent. » Translated from the English only; presented as a translation, not an approved interpretation; no commentary added. EN and AR unchanged |
+| D2 | French glossary for Batch 1A: **tajwid**, **ijaza** (never "Tajweed" / "Ijazah") | Every French string rendered on the six 1A pages (text, a11y labels, `<option>`s, `<title>`, `<meta>`, all quiz screens). Guarded by `frenchBatch1aPages.test.jsx` |
+
+## French glossary
+
+| English source | French | Notes |
+|---|---|---|
+| Tajweed | tajwid | Lower case inside a sentence; capital only at the start of a label |
+| Ijazah | ijaza (feminine: « une ijaza ») | The pricing plan's **display** name is « Ijaza ». The submitted plan value stays `Ijazah` (`data/home.js`) |
+
+Some strings used on the 1A pages are shared with other French pages: the nav, footer, trust badges, tutors section, the FAQ item on Home, and the Home teacher cards. The glossary change therefore also shows wherever those same strings appear.
+
+### Later work: glossary outside Batch 1A (not changed now)
+
+French strings that still say "Tajweed" / "Ijazah" and do not render on any 1A page. They get the glossary in their own batch:
+
+| File | Where | Count | Batch |
 |---|---|---|---|
-| D1 | Home hadith (Sahih al-Bukhari 5027) | French shows the Arabic original (`ar.quote`), with no French meaning | The English page shows only the English meaning, not the Arabic. The policy keeps the Arabic original *where it is already shown* and translates from the English. The owner decides: (a) keep the Arabic original, or (b) show the French translation of the English line, as a translation, not an approved interpretation |
-| D2 | Terminology in the new 1A text | "Tajweed", "Ijazah" (English transliterations), "Hifz" | The policy asks for the natural French term. Proposal: "tajwid" (already the French H1 of `/courses/quran`), "ijaza", "mémorisation (hifz)". `fr.js` also has "Tajweed"/"Ijazah" on 31 lines outside the 1A text |
+| `i18n/fr.js` | teachers page (`seoDescription`, `sub`, filter labels "Tajweed"/"Ijazah"), teacher profile (`ijazahCertTitle`, `ijazahCertDesc`, `credentialsOnFileDesc`), blog `sub`, dashboard `certTypes.ijazah`, enroll `subjectLabels` ("Tajweed", "Cours Ijazah"), resources card | 12 lines (354, 357, 379, 387, 455, 456, 460, 578, 699, 790, 792, 1159) | 2 (teachers, enroll, resources), blog/dashboard later |
+| `data/faqItems.js` `fr` | FAQ page answers | 4 (lines 47, 63, 79, 87) | 2 |
+| `data/marketing/teachers.js` `fr` | bios of the other 10 teachers, credential label "Ijazah à sanad ininterrompu" | 11 (lines 71, 102, 133, 164, 195, 226, 257, 288, 319, 350, 380) | 2 |
 
 ## Source-accuracy issues
 

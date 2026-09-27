@@ -45,15 +45,7 @@ export default function IsnadChain() {
         </Reveal>
 
         <Reveal className="isnad__manifesto">
-          {/* quoteLang is set only where the quote is shown in its original
-              language (French: the untranslated Arabic hadith). */}
-          <blockquote
-            className="isnad__quote"
-            lang={t.quoteLang}
-            dir={t.quoteLang === 'ar' ? 'rtl' : undefined}
-          >
-            {t.quote}
-          </blockquote>
+          <blockquote className="isnad__quote">{t.quote}</blockquote>
           <cite className="isnad__cite">{t.citation}</cite>
           <div className="isnad__cta-row">
             <Link to="/enroll" className="btn btn--gold">

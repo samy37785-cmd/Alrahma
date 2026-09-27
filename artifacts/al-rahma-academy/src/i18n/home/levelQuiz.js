@@ -171,7 +171,7 @@ export const LEVEL_QUIZ_TEXT = {
         options: {
           read: 'Apprendre à lire correctement le Coran',
           memorize: 'Mémoriser le Coran (Hifz)',
-          ijazah: 'Obtenir une certification Ijazah',
+          ijazah: 'Obtenir une certification ijaza',
           islamic: 'Études islamiques / arabe',
         },
       },
@@ -197,8 +197,8 @@ export const LEVEL_QUIZ_TEXT = {
         badge: '🏆 Cours le plus demandé',
       },
       ijazah: {
-        title: "Cours d'Ijazah du Coran",
-        desc: "Recevez une Ijazah avec une chaîne connectée (sanad) remontant au Prophète ﷺ — enseignée par des détenteurs de l'Ijazah eux-mêmes.",
+        title: "Cours d'ijaza du Coran",
+        desc: "Recevez une ijaza avec une chaîne connectée (sanad) remontant au Prophète ﷺ — enseignée par des titulaires de l'ijaza eux-mêmes.",
         badge: '📜 Certification avancée',
       },
       islamic: {

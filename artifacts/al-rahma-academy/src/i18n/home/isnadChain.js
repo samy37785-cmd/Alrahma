@@ -93,11 +93,9 @@ export const ISNAD_CHAIN_TEXT = {
     ctaMeet: 'تعرّف على حاملي الإجازة لدينا',
   },
   // French Localization Batch 1A: faithful translation of `en` (English is
-  // the canonical source for French). The hadith line is not translated:
-  // French shows the Arabic original (the same text as `ar.quote`), marked
-  // lang="ar" by IsnadChain.jsx via `quoteLang` — an open owner decision,
-  // see docs/french-localization-registry.md (D1). The citation is the book
-  // name and number only.
+  // the canonical source for French), including the quote, which is a
+  // French rendering of the English line — a translation, not an approved
+  // interpretation. The citation is the book name and number only.
   fr: {
     eyebrow: 'Notre héritage',
     headingLine1: 'Chaque cours est relié à',
@@ -119,17 +117,16 @@ export const ISNAD_CHAIN_TEXT = {
       },
       tutors: {
         name: 'Nos enseignants',
-        detail: 'Certifiés Ijazah avec un sanad vérifié',
+        detail: "Titulaires d'une ijaza avec un sanad vérifié",
       },
       child: {
         name: 'Votre enfant',
         detail: "Rejoint une chaîne de 1 400 ans d'apprenants du Coran",
       },
     },
-    quote: 'خَيْرُكُمْ مَنْ تَعَلَّمَ الْقُرْآنَ وَعَلَّمَهُ',
-    quoteLang: 'ar',
+    quote: "« Les meilleurs d'entre vous sont ceux qui apprennent le Coran et l'enseignent. »",
     citation: '— Sahih al-Bukhari 5027',
     ctaGift: 'Offrez ce cadeau à votre enfant →',
-    ctaMeet: "Découvrez nos détenteurs de l'Ijazah",
+    ctaMeet: "Découvrez nos titulaires de l'ijaza",
   },
 };

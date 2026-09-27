@@ -53,9 +53,9 @@ export const COURSES_SEO_TEXT = {
     fr: {
       title: 'Cours',
       description:
-        "Découvrez tous les cours de Coran et de sciences islamiques en ligne d'Al-Rahma Academy — Tajweed, Hifz, Ijazah, études islamiques, alphabet arabe et plus encore.",
+        "Découvrez tous les cours de Coran et de sciences islamiques en ligne d'Al-Rahma Academy — tajwid, hifz, ijaza, études islamiques, alphabet arabe et plus encore.",
       keywords:
-        "cours de coran en ligne, cours de tajweed, programme de hifz, ijazah du coran, études islamiques en ligne, cours d'alphabet arabe, enseignants certifiés al-azhar",
+        "cours de coran en ligne, cours de tajwid, programme de hifz, ijaza du coran, études islamiques en ligne, cours d'alphabet arabe, enseignants certifiés al-azhar",
     },
   },
   quran: {
@@ -74,11 +74,11 @@ export const COURSES_SEO_TEXT = {
         'دورة تلاوة القرآن, دورة تجويد أونلاين, حفظ القرآن الكريم, دورة حفظ, معلم قرآن أزهري, دروس تلاوة القرآن',
     },
     fr: {
-      title: 'Cours de Coran et de Tajweed',
+      title: 'Cours de Coran et de tajwid',
       description:
-        'Cours en ligne de lecture du Coran, de Tajweed et de Hifz (mémorisation) avec des enseignants certifiés par Al-Azhar — en 17 langues.',
+        'Cours en ligne de lecture du Coran, de tajwid et de hifz (mémorisation) avec des enseignants certifiés par Al-Azhar — en 17 langues.',
       keywords:
-        'cours de lecture du coran, cours de tajweed en ligne, mémorisation du coran, cours de hifz, professeur de coran al-azhar, cours de récitation du coran',
+        'cours de lecture du coran, cours de tajwid en ligne, mémorisation du coran, cours de hifz, professeur de coran al-azhar, cours de récitation du coran',
     },
   },
   arabic: {

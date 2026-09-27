@@ -43,8 +43,8 @@ export const HOME_SEO_TEXT = {
   // is still unpublished for SEO: no sitemap, hreflang or prerender entry.
   fr: {
     title: 'Apprendre le Coran en ligne',
-    description: `Cours particuliers de Coran, de Tajweed et d'arabe en ligne avec des enseignants certifiés par Al-Azhar. ${siteFacts.totalStudents} élèves dans ${siteFacts.countriesServed} pays nous font confiance. Une leçon d'essai gratuite — sans aucun paiement.`,
-    keywords: 'apprendre le coran en ligne, cours de coran en ligne, professeur de coran, cours de tajweed, enseignant al-azhar, études islamiques en ligne, coran pour enfants, hifz en ligne',
+    description: `Cours particuliers de Coran, de tajwid et d'arabe en ligne avec des enseignants certifiés par Al-Azhar. ${siteFacts.totalStudents} élèves dans ${siteFacts.countriesServed} pays nous font confiance. Une leçon d'essai gratuite — sans aucun paiement.`,
+    keywords: 'apprendre le coran en ligne, cours de coran en ligne, professeur de coran, cours de tajwid, enseignant al-azhar, études islamiques en ligne, coran pour enfants, hifz en ligne',
   },
 };
 

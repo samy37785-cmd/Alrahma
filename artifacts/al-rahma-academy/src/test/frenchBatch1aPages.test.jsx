@@ -88,6 +88,37 @@ describe('French Batch 1A pages render French metadata, H1 and text', () => {
     });
   }
 
+  // French glossary (owner decision D2): "tajwid" and "ijaza", never the
+  // English transliterations "Tajweed" / "Ijazah", anywhere on a Batch 1A
+  // page — text, accessibility labels, <option>s, <title> and <meta>.
+  it('Batch 1A pages use the French glossary: no "Tajweed" or "Ijazah" anywhere', async () => {
+    const found = [];
+    const scan = (where) => {
+      const strings = [...bodyStrings(), document.title,
+        ...[...document.querySelectorAll('option')].map((o) => o.textContent),
+        ...[...document.head.querySelectorAll('meta[content]')].map((m) => m.getAttribute('content'))];
+      for (const s of strings) if (/tajweed|ijazah/i.test(s)) found.push(`${where}: ${s}`);
+    };
+    for (const { path, Page } of PAGES) {
+      const frPath = path === '/' ? '/fr/' : `/fr${path}`;
+      await mountFullPage(frPath, Page);
+      scan(frPath);
+      if (frPath === '/fr/') {
+        for (const goal of [0, 1, 2, 3]) {
+          for (const idx of [0, goal, 0]) {
+            fireEvent.click(document.querySelectorAll('.lq__opt')[idx]);
+            await act(async () => { await vi.advanceTimersByTimeAsync(300); });
+          }
+          scan(`/fr/ quiz result ${goal}`);
+          fireEvent.click(document.querySelector('.lq__restart'));
+          await act(async () => { await vi.advanceTimersByTimeAsync(50); });
+        }
+      }
+      cleanup();
+    }
+    expect(found).toEqual([]);
+  });
+
   it('/fr/: every Level Quiz screen is French, including the result', async () => {
     await mountFullPage('/fr/', Home);
     const text = () => document.querySelector('.lq').textContent;
@@ -124,8 +155,6 @@ describe('French text modules: complete, faithful, nothing invented', () => {
       : [[`${prefix}${k}`, v]]));
   }
 
-  // Keys fr may add that en does not have, and en keys fr may leave unused.
-  const FR_ONLY_KEYS = { ISNAD_CHAIN_TEXT: ['quoteLang'] };
   // Values allowed to be identical to English (proper nouns, brand).
   const SAME_VALUE_OK = new Set([
     'Canada', 'France', 'Portugal', 'Al-Rahma Academy', '— Sahih al-Bukhari 5027', 'Cours',
@@ -136,7 +165,7 @@ describe('French text modules: complete, faithful, nothing invented', () => {
       expect(mod.fr, `${name}.fr`).toBeDefined();
       const en = Object.fromEntries(leaves(mod.en));
       const frLeaves = Object.fromEntries(leaves(mod.fr));
-      const extra = Object.keys(frLeaves).filter((k) => !(k in en) && !(FR_ONLY_KEYS[name] || []).includes(k));
+      const extra = Object.keys(frLeaves).filter((k) => !(k in en));
       const missing = Object.keys(en).filter((k) => !(k in frLeaves) && en[k] !== null);
       expect(extra, `${name}: fr keys not in en`).toEqual([]);
       expect(missing, `${name}: en keys missing from fr`).toEqual([]);
@@ -160,23 +189,22 @@ describe('French text modules: complete, faithful, nothing invented', () => {
       const en = numbers(mod.en);
       const added = [...numbers(mod.fr)].filter((n) => !en.has(n)
         // Same figures, French spacing: "1 400" / "1 000" split the digits.
-        && !(name === 'ISNAD_CHAIN_TEXT' && ['1', '400', '000'].includes(n))
-        // The Arabic hadith keeps its source number in the citation only.
-        && !(name === 'ISNAD_CHAIN_TEXT' && n === '5027'));
+        && !(name === 'ISNAD_CHAIN_TEXT' && ['1', '400', '000'].includes(n)));
       expect(added, name).toEqual([]);
     }
   });
 
-  it('hadith: French shows the approved Arabic original, never an English or invented French meaning', async () => {
-    expect(ISNAD_CHAIN_TEXT.fr.quote).toBe(ISNAD_CHAIN_TEXT.ar.quote);
-    expect(ISNAD_CHAIN_TEXT.fr.quoteLang).toBe('ar');
+  it('hadith: French shows a French translation of the English line, not the Arabic and not the English', async () => {
+    expect(ISNAD_CHAIN_TEXT.fr.quote).toBe("« Les meilleurs d'entre vous sont ceux qui apprennent le Coran et l'enseignent. »");
     expect(ISNAD_CHAIN_TEXT.fr.citation).toBe(ISNAD_CHAIN_TEXT.en.citation);
+    expect(ISNAD_CHAIN_TEXT.fr).not.toHaveProperty('quoteLang');
     await mountFullPage('/fr/', Home);
     const quote = document.querySelector('.isnad__quote');
-    expect(quote.textContent.trim()).toBe(ISNAD_CHAIN_TEXT.ar.quote);
-    expect(quote.getAttribute('lang')).toBe('ar');
-    expect(quote.getAttribute('dir')).toBe('rtl');
+    expect(quote.textContent.trim()).toBe(ISNAD_CHAIN_TEXT.fr.quote);
+    expect(quote.hasAttribute('lang')).toBe(false);
+    expect(quote.hasAttribute('dir')).toBe(false);
     expect(document.body.textContent).not.toContain('The best of you');
+    expect(document.body.textContent).not.toContain(ISNAD_CHAIN_TEXT.ar.quote);
   });
 
   it('founder story: the French signature uses the siteFacts founder name', async () => {

@@ -26,7 +26,7 @@ const fr = {
     "academy": "Académie",
     "quranTajweed": "Coran et tajwid",
     "hifzMem": "Mémorisation (Hifz)",
-    "quranIjazah": "Ijazah du Coran",
+    "quranIjazah": "Ijaza du Coran",
     "islamicStudies": "Études islamiques",
     "arabicAlphabet": "Alphabet arabe",
     "quranReader": "Lecteur du Coran",
@@ -75,7 +75,7 @@ const fr = {
       },
       {
         "title": "Enseignants certifiés par Al-Azhar",
-        "text": "Tous les enseignants sont diplômés de l'Université Al-Azhar et possèdent un Ijazah vérifié."
+        "text": "Tous les enseignants sont diplômés de l'Université Al-Azhar et possèdent une ijaza vérifiée."
       },
       {
         "title": "Horaire flexible",
@@ -129,10 +129,10 @@ const fr = {
         ]
       },
       {
-        "title": "Récitation avec Tajweed",
-        "text": "Maîtrisez les règles du Tajweed pour une récitation coranique belle et précise.",
+        "title": "Récitation avec tajwid",
+        "text": "Maîtrisez les règles du tajwid pour une récitation coranique belle et précise.",
         "points": [
-          "Toutes les règles Tajweed (Hafs et Warsh)",
+          "Toutes les règles du tajwid (Hafs et Warsh)",
           "Correction en direct par un enseignant certifié",
           "Matériaux de pratique audio et vidéo"
         ]
@@ -147,12 +147,12 @@ const fr = {
         ]
       },
       {
-        "title": "Cours Ijazah du Coran",
+        "title": "Cours d'ijaza du Coran",
         "text": "Obtenez une ijaza officielle avec une chaîne de transmission ininterrompue.",
         "points": [
           "Sanad remontant au Prophète ﷺ",
           "Matn Al-Jazariyyah et Al-Shatibiyyah",
-          "Certificat Ijazah officiel délivré"
+          "Certificat d'ijaza officiel délivré"
         ]
       },
       {
@@ -232,7 +232,9 @@ const fr = {
     "refundInline": "Remboursement possible sur demande dans les 24 jours",
     "refundTitle": "Fenêtre de remboursement de 24 jours",
     "refundSub": "Pas entièrement satisfait ? Vous pouvez demander un remboursement dans les 24 jours suivant le paiement.",
-    "comparisonNote": `Le plan ${cmp.top.name} vous offre ${cmp.multiplier}× le temps de cours hebdomadaire de ${cmp.base.name} — ${cmp.top.sessionsPerWeek} cours par semaine au lieu de ${cmp.base.sessionsPerWeek}.`,
+    // French glossary: the top plan's French display name is "Ijaza" (same as
+    // PLAN_TEXT.fr); its data value stays "Ijazah".
+    "comparisonNote": `Le plan ${cmp.top.name === 'Ijazah' ? 'Ijaza' : cmp.top.name} vous offre ${cmp.multiplier}× le temps de cours hebdomadaire de ${cmp.base.name} — ${cmp.top.sessionsPerWeek} cours par semaine au lieu de ${cmp.base.sessionsPerWeek}.`,
     "securePayment": "Nous confirmerons le prix final sur WhatsApp",
     "cancelAnytime": "Annulez à tout moment",
     "azharCertified": "Enseignants certifiés Al-Azhar",
@@ -287,10 +289,10 @@ const fr = {
   },
   "newsletter": {
     "badge": "Newsletter",
-    "heading": "Conseils de Tajweed pour débutants",
-    "sub": "Des conseils pratiques de Coran et de Tajweed pour débutants, envoyés dans votre boîte mail — en langage simple, sans aucune connaissance de l'arabe.",
+    "heading": "Conseils de tajwid pour débutants",
+    "sub": "Des conseils pratiques de Coran et de tajwid pour débutants, envoyés dans votre boîte mail — en langage simple, sans aucune connaissance de l'arabe.",
     "benefits": [
-      "Des conseils pratiques de Tajweed pour débutants",
+      "Des conseils pratiques de tajwid pour débutants",
       "Des astuces de prononciation expliquées simplement",
       "Un plan simple pour créer une habitude quotidienne"
     ],
@@ -325,9 +327,9 @@ const fr = {
     "resourcesCol": "Ressources",
     "academyCol": "Académie",
     "allCourses": "Tous les cours",
-    "quranTajweed": "Coran et Tajweed",
+    "quranTajweed": "Coran et tajwid",
     "hifzMem": "Hifz (Mémorisation)",
-    "quranIjazah": "Ijazah du Coran",
+    "quranIjazah": "Ijaza du Coran",
     "islamicStudies": "Études islamiques",
     "arabicAlphabet": "Alphabet arabe",
     "allTools": "Tous les outils",
@@ -477,10 +479,10 @@ const fr = {
   "tutors": {
     "eyebrow": "Notre équipe",
     "heading": "Nos enseignants certifiés",
-    "sub": "Chaque enseignant est un diplômé vérifié d'Al-Azhar, titulaire d'un Ijazah authentique — sélectionné personnellement pour ses connaissances, sa patience et son dévouement.",
+    "sub": "Chaque enseignant est un diplômé vérifié d'Al-Azhar, titulaire d'une ijaza authentique — sélectionné personnellement pour ses connaissances, sa patience et son dévouement.",
     "creds": [
       "Diplômé d'Al-Azhar",
-      "Ijazah avec Sanad",
+      "Ijaza avec sanad",
       "Fiqh · Tafsir · Aqida",
       "6 langues européennes"
     ],
@@ -521,8 +523,8 @@ const fr = {
         "a": "La flexibilité est l'une de nos valeurs fondamentales. Vous pouvez reporter tout cours avec un préavis raisonnable (idéalement 24 heures) et nous trouverons un nouveau créneau."
       },
       {
-        "q": "Proposez-vous la certification Ijazah ?",
-        "a": "Oui. Nous avons un cours Ijazah dédié pour les étudiants qui souhaitent recevoir une certification formelle avec une chaîne connectée (sanad) remontant au Prophète ﷺ."
+        "q": "Proposez-vous la certification ijaza ?",
+        "a": "Oui. Nous avons un cours d'ijaza dédié pour les étudiants qui souhaitent recevoir une certification formelle avec une chaîne connectée (sanad) remontant au Prophète ﷺ."
       }
     ]
   },
@@ -534,7 +536,7 @@ const fr = {
     "stats": [
       "Élèves dans le monde entier",
       "Confiance des familles",
-      "Certifiés Ijazah",
+      "Titulaires d'une ijaza",
       "Un Cours Gratuit"
     ],
     "cta": "Commencez gratuitement — sans carte →",
@@ -1096,7 +1098,7 @@ const fr = {
       "heading": "Apprenez le Coran et les sciences islamiques en ligne",
       "sub": "Des cours individuels en direct avec des enseignants certifiés Al-Azhar — en 17 langues, à votre rythme, depuis n'importe où.",
       "cards": [
-        { "icon": "📖", "title": "Lecture du Coran & Tajweed", "desc": "Apprenez à lire le Coran correctement avec les règles du Tajweed auprès d'enseignants certifiés.", "badge": "Populaire" },
+        { "icon": "📖", "title": "Lecture du Coran et tajwid", "desc": "Apprenez à lire le Coran correctement avec les règles du tajwid auprès d'enseignants certifiés.", "badge": "Populaire" },
         { "icon": "🧠", "title": "Mémorisation du Coran (Hifz)", "desc": "Programmes de mémorisation structurés avec révision quotidienne et suivi des progrès.", "badge": "" },
         { "icon": "📜", "title": "Ijaza du Coran", "desc": "Obtenez une ijaza officielle avec un sanad remontant au Prophète ﷺ.", "badge": "Avancé" },
         { "icon": "🕌", "title": "Études islamiques", "desc": "Apprenez l’aqida, le fiqh, la sîra et la pratique islamique quotidienne dans votre langue.", "badge": "" },
@@ -1113,7 +1115,7 @@ const fr = {
       "relatedBtn": "Ouvrir le lecteur du Coran →",
       "cards": [
         { "icon": "📖", "title": "Lecture du Coran (Noorani Qaida)", "desc": "Commencez de zéro — apprenez les lettres arabes, la prononciation et lisez le Coran de façon autonome.", "points": ["Lettres arabes & prononciation", "Méthode Noorani Qaida étape par étape", "Lire le Coran de façon autonome"] },
-        { "icon": "🎙️", "title": "Récitation avec Tajweed", "desc": "Maîtrisez toutes les règles du Tajweed pour une récitation coranique belle et précise.", "points": ["Toutes les règles du Tajweed (Hafs & Warsh)", "Correction en direct par un enseignant certifié", "Matériaux de pratique audio et vidéo"] },
+        { "icon": "🎙️", "title": "Récitation avec tajwid", "desc": "Maîtrisez toutes les règles du tajwid pour une récitation coranique belle et précise.", "points": ["Toutes les règles du tajwid (Hafs & Warsh)", "Correction en direct par un enseignant certifié", "Matériaux de pratique audio et vidéo"] },
         { "icon": "🧠", "title": "Mémorisation du Coran (Hifz)", "desc": "Plan de Hifz personnalisé avec outils de répétition, tests de mémoire et suivi des révisions.", "points": ["Plan de mémorisation personnalisé", "Révision quotidienne & suivi des progrès", "Adapté à tous les âges"] }
       ]
     },

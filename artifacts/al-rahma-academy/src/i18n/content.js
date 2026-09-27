@@ -43,7 +43,7 @@ export const PLAN_TEXT = {
   fr: [
     { name: 'Noorani',  sub: 'Commencez votre chemin de lumière', features: ['2 cours par semaine', '8 cours par mois', '1 heure par cours', 'Cours particuliers', 'Zoom ou Skype'] },
     { name: 'Huffaz',   sub: 'Préservez le Coran',              features: ['3 cours par semaine', '12 cours par mois', '1 heure par cours', 'Cours particuliers', 'Bilans de progression'] },
-    { name: 'Ijazah',   sub: 'Obtenez votre chaîne de transmission', features: ['4 cours par semaine', '16 cours par mois', '1 heure par cours', 'Cours particuliers', 'Accompagnement vers l\'ijazah'] },
+    { name: 'Ijaza',    sub: 'Obtenez votre chaîne de transmission', features: ['4 cours par semaine', '16 cours par mois', '1 heure par cours', 'Cours particuliers', 'Accompagnement vers l\'ijaza'] },
   ],
 };
 
@@ -91,7 +91,7 @@ export const VALUES_TEXT = {
   ],
   fr: [
     { title: 'Modération',     desc: 'Nous présentons l\'Islam dans sa véritable forme équilibrée — inclusif, accueillant et exempt d\'extrémisme, adapté aux communautés musulmanes en Occident.' },
-    { title: 'Authenticité',   desc: 'Chaque enseignant détient une Ijazah vérifiée avec une chaîne de savoir remontant au Prophète. Notre programme est ancré dans une érudition traditionnelle et authentique.' },
+    { title: 'Authenticité',   desc: 'Chaque enseignant détient une ijaza vérifiée avec une chaîne de savoir remontant au Prophète. Notre programme est ancré dans une érudition traditionnelle et authentique.' },
     { title: 'Modernité',      desc: 'Nous associons des siècles d’érudition islamique à la technologie en ligne moderne pour offrir un enseignement coranique de premier ordre directement chez vous.' },
     { title: 'Responsabilité', desc: 'Chaque enseignant est personnellement responsable des progrès, du bien-être et du développement islamique de chaque élève qui lui est confié.' },
     { title: 'Excellence',     desc: 'Nous fixons des normes académiques élevées et améliorons sans cesse la qualité de notre enseignement, en nous appuyant sur la meilleure tradition savante égyptienne.' },

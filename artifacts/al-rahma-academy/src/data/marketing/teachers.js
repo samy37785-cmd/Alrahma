@@ -37,7 +37,7 @@ export const TEACHERS = [
       it: "Laureato all'Università di Al-Azhar, titolare di un'Ijazah con sanad connesso. Specializzato in Tajweed avanzato nelle letture Hafs e Warsh, memorizzazione del Corano, programma Ijazah e Tafsir coranico.",
       es: 'Graduado de la Universidad de Al-Azhar, titular de una Ijazah con sanad conectado. Especializado en Tajweed avanzado en las recitaciones de Hafs y Warsh, memorización del Corán, el programa de Ijazah y Tafsir coránico.',
       de: 'Absolvent der Al-Azhar-Universität mit einer Ijazah mit durchgehendem Sanad. Spezialisiert auf fortgeschrittenes Tadschwīd in den Lesarten Hafs und Warsh, das Auswendiglernen des Korans, das Ijazah-Programm und Koran-Tafsir.',
-      fr: "Diplômé de l'Université d'Al-Azhar, titulaire d'une Ijazah à sanad ininterrompu. Spécialisé en Tajwid avancé dans les lectures de Hafs et Warsh, la mémorisation du Coran, le programme d'Ijazah et le Tafsir du Coran.",
+      fr: "Diplômé de l'Université d'Al-Azhar, titulaire d'une ijaza à sanad ininterrompu. Spécialisé en tajwid avancé dans les lectures de Hafs et Warsh, la mémorisation du Coran, le programme d'ijaza et le Tafsir du Coran.",
     },
     specialties: {
       en: ['Advanced Tajweed — Hafs & Warsh', 'Quran Memorization', 'Ijazah Programme', 'Quranic Tafsir'],
@@ -45,7 +45,7 @@ export const TEACHERS = [
       it: ['Tajweed avanzato — Hafs e Warsh', 'Memorizzazione del Corano', 'Programma Ijazah', 'Tafsir coranico'],
       es: ['Tajweed avanzado — Hafs y Warsh', 'Memorización del Corán', 'Programa de Ijazah', 'Tafsir coránico'],
       de: ['Fortgeschrittenes Tadschwīd — Hafs & Warsh', 'Auswendiglernen des Korans', 'Ijazah-Programm', 'Koran-Tafsir'],
-      fr: ['Tajwid avancé — Hafs et Warsh', 'Mémorisation du Coran', "Programme d'Ijazah", 'Tafsir du Coran'],
+      fr: ['Tajwid avancé — Hafs et Warsh', 'Mémorisation du Coran', "Programme d'ijaza", 'Tafsir du Coran'],
     },
     subjects: ['tajweed', 'hifz', 'ijazah', 'tafsir', 'quran'],
     langs: ['ar', 'en', 'es'],
@@ -246,7 +246,7 @@ export const TEACHERS = [
     title: {
       en: 'Quran & Ijazah Instructor', ar: 'معلمة قرآن وإجازة',
       it: 'Istruttrice di Corano e Ijazah', es: 'Instructora de Corán e Ijazah',
-      de: 'Lehrerin für Koran und Ijazah', fr: "Instructrice de Coran et d'Ijazah",
+      de: 'Lehrerin für Koran und Ijazah', fr: "Instructrice de Coran et d'ijaza",
     },
     bio: {
       en: 'Al-Azhar University graduate holding an Ijazah with a connected sanad. She specialises in the Ijazah programme, Tajweed, Quran memorization and Arabic language.',
@@ -262,7 +262,7 @@ export const TEACHERS = [
       it: ['Programma Ijazah', 'Tajweed', 'Memorizzazione del Corano', 'Lingua araba'],
       es: ['Programa de Ijazah', 'Tajweed', 'Memorización del Corán', 'Lengua árabe'],
       de: ['Ijazah-Programm', 'Tadschwīd', 'Auswendiglernen des Korans', 'Arabische Sprache'],
-      fr: ["Programme d'Ijazah", 'Tajwid', 'Mémorisation du Coran', 'Langue arabe'],
+      fr: ["Programme d'ijaza", 'Tajwid', 'Mémorisation du Coran', 'Langue arabe'],
     },
     subjects: ['ijazah', 'tajweed', 'hifz', 'arabic', 'quran'],
     langs: ['ar', 'es'],

@@ -83,9 +83,9 @@ export const COURSE_OPTION_LABELS_TEXT = {
   // value stays the English key.
   fr: {
     'Quran Reading (Noorani Qaida)': 'Lecture du Coran (Qaida Nourania)',
-    'Recitation with Tajweed': 'Récitation avec Tajweed',
+    'Recitation with Tajweed': 'Récitation avec tajwid',
     'Quran Memorization (Hifz)': 'Mémorisation du Coran (Hifz)',
-    'Quran Ijazah': 'Ijazah du Coran',
+    'Quran Ijazah': 'Ijaza du Coran',
     'Islamic Studies': 'Études islamiques',
     'Arabic Language': 'Langue arabe',
   },

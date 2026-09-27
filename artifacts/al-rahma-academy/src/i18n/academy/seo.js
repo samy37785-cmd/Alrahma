@@ -30,6 +30,12 @@ export const ACADEMY_SEO_TEXT = {
     description:
       'تعرّف على أكاديمية الرحمة — مهمتنا، معلمونا، سياساتنا، وكيفية البدء بحصة تجريبية مجانية.',
   },
+  // French Localization Batch 1A: faithful translation of the English
+  // description. French is still unpublished for SEO.
+  fr: {
+    description:
+      "Découvrez Al-Rahma Academy — notre mission, nos enseignants, nos politiques et comment commencer avec une leçon d'essai gratuite.",
+  },
 };
 
 export function pickAcademySeo(lang) {

@@ -33,6 +33,16 @@ export const HOME_LEAKED_STRINGS_TEXT = {
     quranPlayingLabel: 'القرآن يُتلى',
     refundWindowStat: '24 يومًا',
   },
+  // French Localization Batch 1A: faithful translations of `en`.
+  fr: {
+    mostPopularCourseBadge: 'Le plus demandé',
+    startFreeTrialLink: 'Commencez votre essai gratuit',
+    featuredTutorBadge: 'Enseignant à la une',
+    browseFullCurriculum: 'Parcourir le programme complet',
+    playQuranLabel: 'Écouter le Coran',
+    quranPlayingLabel: 'Coran en lecture',
+    refundWindowStat: '24 jours',
+  },
 };
 
 export function pickLeakedString(key, lang) {
@@ -68,6 +78,16 @@ export const COURSE_OPTION_LABELS_TEXT = {
     'Quran Ijazah': 'إجازة القرآن الكريم',
     'Islamic Studies': 'الدراسات الإسلامية',
     'Arabic Language': 'اللغة العربية',
+  },
+  // French Localization Batch 1A: display labels only; the submitted
+  // value stays the English key.
+  fr: {
+    'Quran Reading (Noorani Qaida)': 'Lecture du Coran (Qaida Nourania)',
+    'Recitation with Tajweed': 'Récitation avec tajwid',
+    'Quran Memorization (Hifz)': 'Mémorisation du Coran (Hifz)',
+    'Quran Ijazah': 'Ijaza du Coran',
+    'Islamic Studies': 'Études islamiques',
+    'Arabic Language': 'Langue arabe',
   },
 };
 

@@ -1,22 +1,24 @@
 import Reveal from '../../ui/Reveal';
 import { useLang } from '../../../context/LangContext';
+import { COUNTRY_NAMES_TEXT } from '../../../i18n/home/countries';
+import { pickA11yLabels } from '../../../i18n/a11yLabels';
 
 const COUNTRIES = [
-  { flag: '🇬🇧', name: 'UK' },
-  { flag: '🇩🇪', name: 'Germany' },
-  { flag: '🇫🇷', name: 'France' },
-  { flag: '🇮🇹', name: 'Italy' },
-  { flag: '🇪🇸', name: 'Spain' },
-  { flag: '🇳🇱', name: 'Netherlands' },
-  { flag: '🇸🇪', name: 'Sweden' },
-  { flag: '🇨🇦', name: 'Canada' },
-  { flag: '🇺🇸', name: 'USA' },
-  { flag: '🇦🇺', name: 'Australia' },
-  { flag: '🇧🇪', name: 'Belgium' },
-  { flag: '🇨🇭', name: 'Switzerland' },
-  { flag: '🇦🇹', name: 'Austria' },
-  { flag: '🇵🇹', name: 'Portugal' },
-  { flag: '🇳🇴', name: 'Norway' },
+  { id: 'gb', flag: '🇬🇧', name: 'UK' },
+  { id: 'de', flag: '🇩🇪', name: 'Germany' },
+  { id: 'fr', flag: '🇫🇷', name: 'France' },
+  { id: 'it', flag: '🇮🇹', name: 'Italy' },
+  { id: 'es', flag: '🇪🇸', name: 'Spain' },
+  { id: 'nl', flag: '🇳🇱', name: 'Netherlands' },
+  { id: 'se', flag: '🇸🇪', name: 'Sweden' },
+  { id: 'ca', flag: '🇨🇦', name: 'Canada' },
+  { id: 'us', flag: '🇺🇸', name: 'USA' },
+  { id: 'au', flag: '🇦🇺', name: 'Australia' },
+  { id: 'be', flag: '🇧🇪', name: 'Belgium' },
+  { id: 'ch', flag: '🇨🇭', name: 'Switzerland' },
+  { id: 'at', flag: '🇦🇹', name: 'Austria' },
+  { id: 'pt', flag: '🇵🇹', name: 'Portugal' },
+  { id: 'no', flag: '🇳🇴', name: 'Norway' },
 ];
 
 /* Inline SVG icons — same Lucide-style, 24×24 viewBox, white stroke used by
@@ -50,11 +52,15 @@ const TRUST_ICONS = [
 ];
 
 export default function TrustBadges() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
+  const a11y = pickA11yLabels(lang);
+  // French gets French flag tooltips; every other language keeps the
+  // English `name` it already rendered (EN/AR output unchanged).
+  const countryTitle = (c) => (lang === 'fr' ? COUNTRY_NAMES_TEXT.fr[c.id] : c.name);
   const tr = t.trust;
 
   return (
-    <section className="trust" aria-label="Trust signals">
+    <section className="trust" aria-label={a11y.trustSignals}>
       <div className="container">
         <Reveal className="section-head">
           <p className="eyebrow">{tr.eyebrow}</p>
@@ -122,10 +128,10 @@ export default function TrustBadges() {
           <p className="trust__countries-label">
             <strong>{tr.countriesLabel}</strong>
           </p>
-          <div className="trust__flags" aria-label="Countries represented">
+          <div className="trust__flags" aria-label={a11y.countriesRepresented}>
             <div className="trust__flags-track" aria-hidden="true">
               {[...COUNTRIES, ...COUNTRIES].map((c, i) => (
-                <span key={i} className="trust__flag" title={c.name}>{c.flag}</span>
+                <span key={i} className="trust__flag" title={countryTitle(c)}>{c.flag}</span>
               ))}
             </div>
           </div>

@@ -5,6 +5,7 @@ import MobileCarousel from '../../ui/MobileCarousel';
 import { useLang, withLanguage } from '../../../context/LangContext';
 import { plans } from '../../../data';
 import { PLAN_TEXT, pick } from '../../../i18n/content';
+import { pickA11yLabels } from '../../../i18n/a11yLabels';
 
 // Currency config: code, symbol, rate from EUR, display label
 const CURRENCIES = [
@@ -81,7 +82,7 @@ export default function Pricing() {
         {/* Currency toggle */}
         <Reveal className="pricing__currency-row">
           <span className="pricing__currency-label">{p.showPricesIn}</span>
-          <div className="pricing__currency-toggle" role="group" aria-label="Currency selector">
+          <div className="pricing__currency-toggle" role="group" aria-label={pickA11yLabels(lang).currencySelector}>
             {CURRENCIES.map((c) => (
               <button
                 key={c.code}

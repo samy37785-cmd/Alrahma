@@ -3,11 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { useLang } from '../../../context/LangContext';
 import { LEVEL_QUIZ_STEPS, LEVEL_QUIZ_RECOMMENDATIONS } from '../../../data/home/levelQuiz';
 import { LEVEL_QUIZ_TEXT } from '../../../i18n/home/levelQuiz';
+import { pickA11yLabels } from '../../../i18n/a11yLabels';
 
 export default function LevelQuiz() {
   const navigate = useNavigate();
   const { lang } = useLang();
   const t = LEVEL_QUIZ_TEXT[lang] || LEVEL_QUIZ_TEXT.en;
+  const a11y = pickA11yLabels(lang);
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState({});
   const [done, setDone] = useState(false);
@@ -31,7 +33,7 @@ export default function LevelQuiz() {
   const reset = () => { setStep(0); setAnswers({}); setDone(false); };
 
   return (
-    <section className="lq" aria-label="Find your perfect course">
+    <section className="lq" aria-label={a11y.quizSection}>
       <div className="container">
         <div className="lq__inner">
           {!done ? (
@@ -39,7 +41,7 @@ export default function LevelQuiz() {
               <p className="eyebrow lq__eyebrow">{t.eyebrow}</p>
               <h2 className="lq__heading">{t.heading}</h2>
 
-              <div className="lq__progress" aria-label={`Step ${step + 1} of ${LEVEL_QUIZ_STEPS.length}`}>
+              <div className="lq__progress" aria-label={a11y.quizProgress(step + 1, LEVEL_QUIZ_STEPS.length)}>
                 {LEVEL_QUIZ_STEPS.map((_, i) => (
                   <div
                     key={i}

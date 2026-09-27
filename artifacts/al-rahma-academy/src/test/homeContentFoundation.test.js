@@ -189,7 +189,9 @@ describe('2. Every structural id has a matching English text entry, and vice ver
 });
 
 describe('2b. Arabic structural parity (Arabic Home Copy Implementation, 2026-09-18)', () => {
-  it('every new Home content module has exactly "en" and "ar" -- no it/es/de/fr key exists, nothing invented for them', () => {
+  // French Localization Batch 1A added `fr` to these modules; its parity is
+  // covered in frenchBatch1aPages.test.jsx.
+  it('every new Home content module has exactly "en", "ar" and "fr" -- no it/es/de key exists, nothing invented for them', () => {
     for (const [label, mod] of [
       ['LEVEL_QUIZ_TEXT', LEVEL_QUIZ_TEXT],
       ['ISNAD_CHAIN_TEXT', ISNAD_CHAIN_TEXT],
@@ -197,7 +199,7 @@ describe('2b. Arabic structural parity (Arabic Home Copy Implementation, 2026-09
       ['HOME_LEAKED_STRINGS_TEXT', HOME_LEAKED_STRINGS_TEXT],
       ['COURSE_OPTION_LABELS_TEXT', COURSE_OPTION_LABELS_TEXT],
     ]) {
-      expect(Object.keys(mod).sort(), label).toEqual(['ar', 'en']);
+      expect(Object.keys(mod).sort(), label).toEqual(['ar', 'en', 'fr']);
     }
   });
 
@@ -311,8 +313,8 @@ describe('2c. IsnadChain hadith citation (Mahmoud-approved, 2026-09-19): Sahih a
   });
 });
 
-describe('3. it/es/de/fr are never invented, and lookups fall back to English, not to undefined/empty', () => {
-  it('it/es/de/fr still have no key in any new Home content module -- direct proof nothing was invented for them', () => {
+describe('3. it/es/de are never invented, and lookups fall back to English, not to undefined/empty', () => {
+  it('it/es/de still have no key in any new Home content module -- direct proof nothing was invented for them', () => {
     for (const [label, mod] of [
       ['LEVEL_QUIZ_TEXT', LEVEL_QUIZ_TEXT],
       ['ISNAD_CHAIN_TEXT', ISNAD_CHAIN_TEXT],
@@ -320,14 +322,14 @@ describe('3. it/es/de/fr are never invented, and lookups fall back to English, n
       ['HOME_LEAKED_STRINGS_TEXT', HOME_LEAKED_STRINGS_TEXT],
       ['COURSE_OPTION_LABELS_TEXT', COURSE_OPTION_LABELS_TEXT],
     ]) {
-      for (const lang of ['it', 'es', 'de', 'fr']) {
+      for (const lang of ['it', 'es', 'de']) {
         expect(mod[lang], `${label}.${lang} should not exist`).toBeUndefined();
       }
     }
   });
 
-  it('it/es/de/fr lookups on any new content module still fall back to English text, never to undefined/empty (pick* helpers behave correctly for a genuinely absent language)', () => {
-    for (const lang of ['it', 'es', 'de', 'fr']) {
+  it('it/es/de lookups on any new content module still fall back to English text, never to undefined/empty (pick* helpers behave correctly for a genuinely absent language)', () => {
+    for (const lang of ['it', 'es', 'de']) {
       expect(LEVEL_QUIZ_TEXT[lang] || LEVEL_QUIZ_TEXT.en).toBe(LEVEL_QUIZ_TEXT.en);
       expect(ISNAD_CHAIN_TEXT[lang] || ISNAD_CHAIN_TEXT.en).toBe(ISNAD_CHAIN_TEXT.en);
       expect(pickLeakedString('playQuranLabel', lang)).toBe('Play Quran');

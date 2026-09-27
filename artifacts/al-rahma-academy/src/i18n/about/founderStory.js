@@ -29,6 +29,8 @@
 // body3 keeps the same pre/mid/post shape as English since it also
 // embeds the same two dynamic siteFacts numbers, just in a different
 // word order.
+import { siteFacts } from '../../data/siteFacts';
+
 export const FOUNDER_STORY_TEXT = {
   en: {
     eyebrow: 'Our Story',
@@ -79,6 +81,33 @@ export const FOUNDER_STORY_TEXT = {
     // Arabic comma "،" is exactly what was approved.
     sigLine: 'محمود سامي، المؤسس',
     sigBrand: 'Al-Rahma Academy', // Brand name — deliberately identical in both languages.
+  },
+  // French Localization Batch 1A: a faithful French translation of the
+  // English story above (English is the canonical source for French) — no
+  // event, claim, figure or promise added, and the same <strong> fragment
+  // and siteFacts numbers. The owner may review it before merge.
+  fr: {
+    eyebrow: 'Notre histoire',
+    title: 'Pourquoi nous avons créé Al-Rahma Academy',
+    body1:
+      "Je suis un éducateur égyptien installé en Europe, et j'ai vu mes enfants peiner à " +
+      "trouver un enseignant du Coran qualifié — quelqu'un capable d'enseigner correctement, " +
+      'de parler leur langue et de comprendre leur monde. Chaque option que je trouvais était ' +
+      'soit trop chère, soit peu fiable, soit tout simplement pas qualifiée.',
+    body2Pre:
+      'Cette frustration est devenue Al-Rahma Academy. Nous avons commencé avec une poignée de ' +
+      "diplômés d'Al-Azhar choisis avec soin et une règle claire : ",
+    body2Strong: "chaque enseignant doit être quelqu'un à qui je confierais l'enseignement de mes propres enfants.",
+    body3Pre: "Aujourd'hui, ",
+    body3Mid: ' familles dans ',
+    body3Post:
+      " pays nous confient ce qu'elles ont de plus précieux — l'éducation coranique de leurs " +
+      'enfants. Chaque enseignant détient une ijaza vérifiée. Chaque cours est individuel. ' +
+      "Chaque famille peut changer d'enseignant, suspendre son abonnement ou demander un " +
+      'remboursement — sans aucune complication.',
+    body4: "Nous n'avons pas créé une plateforme. Nous avons créé l'académie dont nous avions besoin et que nous ne trouvions pas.",
+    sigLine: `${siteFacts.founder}, fondateur`,
+    sigBrand: 'Al-Rahma Academy',
   },
 };
 

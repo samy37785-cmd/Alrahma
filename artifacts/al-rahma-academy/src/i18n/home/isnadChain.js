@@ -92,4 +92,41 @@ export const ISNAD_CHAIN_TEXT = {
     ctaGift: 'امنح طفلك هذه الهدية ←',
     ctaMeet: 'تعرّف على حاملي الإجازة لدينا',
   },
+  // French Localization Batch 1A: faithful translation of `en` (English is
+  // the canonical source for French), including the quote, which is a
+  // French rendering of the English line — a translation, not an approved
+  // interpretation. The citation is the book name and number only.
+  fr: {
+    eyebrow: 'Notre héritage',
+    headingLine1: 'Chaque cours est relié à',
+    headingLine2: '1 400 ans de transmission ininterrompue',
+    subCopy: "Lorsque votre enfant apprend avec Al-Rahma, il rejoint une chaîne vivante — le même Coran "
+      + "récité au Prophète ﷺ, transmis de génération en génération jusqu'à votre foyer.",
+    nodes: {
+      prophet: {
+        name: 'Le Prophète ﷺ',
+        detail: 'A reçu la révélation dans la grotte de Hira',
+      },
+      companions: {
+        name: 'Les Compagnons',
+        detail: "L'ont mémorisé et transmis mot pour mot",
+      },
+      alAzhar: {
+        name: 'Université Al-Azhar',
+        detail: 'Plus de 1 000 ans de savoir ininterrompu',
+      },
+      tutors: {
+        name: 'Nos enseignants',
+        detail: "Titulaires d'une ijaza avec un sanad vérifié",
+      },
+      child: {
+        name: 'Votre enfant',
+        detail: "Rejoint une chaîne de 1 400 ans d'apprenants du Coran",
+      },
+    },
+    quote: "« Les meilleurs d'entre vous sont ceux qui apprennent le Coran et l'enseignent. »",
+    citation: '— Sahih al-Bukhari 5027',
+    ctaGift: 'Offrez ce cadeau à votre enfant →',
+    ctaMeet: "Découvrez nos titulaires de l'ijaza",
+  },
 };

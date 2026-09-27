@@ -128,10 +128,11 @@ describe('About founder story: real Arabic, not an English fallback', () => {
     expect(arP3).toContain(String(siteFacts.countriesServed));
   });
 
-  it('a legacy language without real founder-story copy (e.g. fr) falls back to the English object, not an invented translation', () => {
-    expect(pickFounderStory('fr')).toBe(FOUNDER_STORY_TEXT.en);
+  it('a legacy language without real founder-story copy (e.g. it) falls back to the English object, not an invented translation', () => {
+    expect(pickFounderStory('it')).toBe(FOUNDER_STORY_TEXT.en);
     expect(pickFounderStory('de')).toBe(FOUNDER_STORY_TEXT.en);
-    expect(Object.keys(FOUNDER_STORY_TEXT)).toEqual(['en', 'ar']);
+    // French Localization Batch 1A added a real `fr` entry (see frenchBatch1aPages.test.jsx).
+    expect(Object.keys(FOUNDER_STORY_TEXT)).toEqual(['en', 'ar', 'fr']);
   });
 });
 

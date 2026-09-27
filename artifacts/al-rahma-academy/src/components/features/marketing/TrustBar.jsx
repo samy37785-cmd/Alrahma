@@ -5,6 +5,7 @@ import { site } from '../../../data/site';
 import { TRUST_BAR_COUNTRIES } from '../../../data/home/countries';
 import { COUNTRY_NAMES_TEXT } from '../../../i18n/home/countries';
 import { pickLeakedString } from '../../../i18n/home/leakedStrings';
+import { pickA11yLabels } from '../../../i18n/a11yLabels';
 
 const BADGE_ICONS = ['🔒', '💳', '🎓', '👩‍🏫', '🕐', '📄', '⚡'];
 
@@ -42,7 +43,7 @@ export default function TrustBar() {
   const doubled = [...COUNTRIES, ...COUNTRIES];
 
   return (
-    <Reveal as="section" className="trust-bar" aria-label="Trusted worldwide">
+    <Reveal as="section" className="trust-bar" aria-label={pickA11yLabels(lang).trustBar}>
       <div className="container">
 
         {/* Top row: headline trust stats.

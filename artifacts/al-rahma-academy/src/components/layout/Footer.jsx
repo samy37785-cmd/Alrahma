@@ -4,20 +4,21 @@ import { useLang } from "../../context/LangContext";
 import { site, socials } from "../../data";
 import { ShieldIcon, BookOpenIcon, GlobeIcon, StarIcon, CalendarIcon } from '../ui/Icons';
 import CookieSettingsButton from '../ui/CookieSettingsButton';
+import { pickA11yLabels } from '../../i18n/a11yLabels';
 
 const footerShieldIconStyle = { display: 'inline-flex', verticalAlign: '-3px', marginRight: 4 };
 
 const TRUST_ICONS = [ShieldIcon, BookOpenIcon, GlobeIcon, StarIcon, CalendarIcon];
 
 export default function Footer() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const f = t.footer;
 
   return (
     <footer className="footer" id="contact">
 
       {/* Trust badges strip */}
-      <div className="footer__trust" aria-label="Trust credentials">
+      <div className="footer__trust" aria-label={pickA11yLabels(lang).footerTrust}>
         {f.trustBadges.map((label, i) => {
           const Icon = TRUST_ICONS[i];
           return (

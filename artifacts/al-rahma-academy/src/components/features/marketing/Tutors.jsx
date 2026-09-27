@@ -4,6 +4,7 @@ import Reveal from '../../ui/Reveal';
 import { TEACHERS } from '../../../data';
 import { useLang, withLanguage } from '../../../context/LangContext';
 import { pickLeakedString } from '../../../i18n/home/leakedStrings';
+import { pickA11yLabels } from '../../../i18n/a11yLabels';
 
 /* Inline SVG icons — Lucide-style, consistent with the rest of the homepage. */
 const STAR_ICON = (
@@ -65,19 +66,21 @@ const CRED_ICONS = [
 const initialsOf = (nameAr) => nameAr.split(' ').slice(0, 2).map((w) => w[0]).join('');
 
 function VideoModal({ teacher, onClose }) {
+  const { lang } = useLang();
+  const a11y = pickA11yLabels(lang);
   return (
     <div
       className="tc3__video-overlay"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
-      aria-label={`Introduction video for ${teacher.nameEn}`}
+      aria-label={a11y.tutorVideo(teacher.nameEn)}
     >
       <div className="tc3__video-wrap" onClick={(e) => e.stopPropagation()}>
-        <button className="tc3__video-close" onClick={onClose} aria-label="Close video">×</button>
+        <button className="tc3__video-close" onClick={onClose} aria-label={a11y.closeVideo}>×</button>
         <iframe
           src={teacher.videoUrl}
-          title={`${teacher.nameEn} introduction`}
+          title={a11y.tutorVideoTitle(teacher.nameEn)}
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           allowFullScreen
           style={{ width: '100%', height: '100%', border: 'none', borderRadius: 12 }}
@@ -118,11 +121,12 @@ function TutorAvatar({ teacher, tp, initials, lang, size = 'md', onPlay }) {
 // Real per-teacher review counts are shown where the owner has confirmed a
 // value; teachers without a confirmed count render no pill at all.
 function ReviewsPill({ teacher, size = 'md' }) {
+  const { lang } = useLang();
   if (!teacher.reviews) return null;
   return (
     <span
       className={`tc3__rating-pill tc3__rating-pill--${size}`}
-      aria-label={`${teacher.reviews} reviews`}
+      aria-label={pickA11yLabels(lang).reviewCount(teacher.reviews)}
     >
       <span className="tc3__rating-star" aria-hidden="true">{REVIEWS_ICON}</span>
       {teacher.reviews}
@@ -167,7 +171,7 @@ function TutorCard({ t: teacher }) {
         </div>
 
         <div className="tc3__meta">
-          <span className="tc3__meta-item" aria-label={`${teacher.reviews} reviews`}>
+          <span className="tc3__meta-item" aria-label={pickA11yLabels(lang).reviewCount(teacher.reviews)}>
             <span aria-hidden="true">{REVIEWS_ICON}</span>({teacher.reviews})
           </span>
           {teacher.lessons && (

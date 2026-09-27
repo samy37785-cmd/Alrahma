@@ -85,10 +85,11 @@ describe('Academy hub SEO metadata: real Arabic, not an English fallback', () =>
     expect(arOccurrences).toBe(1);
   });
 
-  it('a legacy language without real Academy copy (e.g. fr) falls back to the English object, not an invented translation', () => {
-    expect(pickAcademySeo('fr')).toBe(ACADEMY_SEO_TEXT.en);
+  it('a legacy language without real Academy copy (e.g. it) falls back to the English object, not an invented translation', () => {
+    expect(pickAcademySeo('it')).toBe(ACADEMY_SEO_TEXT.en);
     expect(pickAcademySeo('es')).toBe(ACADEMY_SEO_TEXT.en);
-    expect(Object.keys(ACADEMY_SEO_TEXT)).toEqual(['en', 'ar']);
+    // French Localization Batch 1A added a real `fr` entry (see frenchBatch1aPages.test.jsx).
+    expect(Object.keys(ACADEMY_SEO_TEXT)).toEqual(['en', 'ar', 'fr']);
   });
 });
 

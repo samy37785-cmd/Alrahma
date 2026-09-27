@@ -92,4 +92,44 @@ export const ISNAD_CHAIN_TEXT = {
     ctaGift: 'امنح طفلك هذه الهدية ←',
     ctaMeet: 'تعرّف على حاملي الإجازة لدينا',
   },
+  // French Localization Batch 1A: faithful translation of `en`, listed for
+  // religious review in docs/french-localization-registry.md. The hadith is
+  // NOT translated: no French meaning or translation source has been
+  // approved, so French shows the approved Arabic original (the same text
+  // as `ar.quote`), marked lang="ar" by IsnadChain.jsx via `quoteLang`. The
+  // citation is the book name and number only.
+  fr: {
+    eyebrow: 'Notre héritage',
+    headingLine1: 'Chaque cours est relié à',
+    headingLine2: '1 400 ans de transmission ininterrompue',
+    subCopy: "Lorsque votre enfant apprend avec Al-Rahma, il rejoint une chaîne vivante — le même Coran "
+      + "récité au Prophète ﷺ, transmis de génération en génération jusqu'à votre foyer.",
+    nodes: {
+      prophet: {
+        name: 'Le Prophète ﷺ',
+        detail: 'A reçu la révélation dans la grotte de Hira',
+      },
+      companions: {
+        name: 'Les Compagnons',
+        detail: "L'ont mémorisé et transmis mot pour mot",
+      },
+      alAzhar: {
+        name: 'Université Al-Azhar',
+        detail: 'Plus de 1 000 ans de savoir ininterrompu',
+      },
+      tutors: {
+        name: 'Nos enseignants',
+        detail: 'Certifiés Ijazah avec un sanad vérifié',
+      },
+      child: {
+        name: 'Votre enfant',
+        detail: "Rejoint une chaîne de 1 400 ans d'apprenants du Coran",
+      },
+    },
+    quote: 'خَيْرُكُمْ مَنْ تَعَلَّمَ الْقُرْآنَ وَعَلَّمَهُ',
+    quoteLang: 'ar',
+    citation: '— Sahih al-Bukhari 5027',
+    ctaGift: 'Offrez ce cadeau à votre enfant →',
+    ctaMeet: "Découvrez nos détenteurs de l'Ijazah",
+  },
 };

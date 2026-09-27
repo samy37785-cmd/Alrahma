@@ -1,4 +1,6 @@
 import { useRef } from 'react';
+import { useLang } from '../../context/LangContext';
+import { pickA11yLabels } from '../../i18n/a11yLabels';
 
 /*
  * MobileCarousel — keeps the existing desktop grid EXACTLY as-is, and on small
@@ -12,6 +14,8 @@ import { useRef } from 'react';
  */
 export default function MobileCarousel({ trackClassName = '', children, ariaLabel }) {
   const trackRef = useRef(null);
+  const { lang } = useLang();
+  const a11y = pickA11yLabels(lang);
 
   const scroll = (dir) => {
     const el = trackRef.current;
@@ -26,7 +30,7 @@ export default function MobileCarousel({ trackClassName = '', children, ariaLabe
       <button
         type="button"
         className="mcar__arrow mcar__arrow--prev"
-        aria-label="Previous"
+        aria-label={a11y.carouselPrev}
         onClick={() => scroll(-1)}
       >
         ‹
@@ -39,7 +43,7 @@ export default function MobileCarousel({ trackClassName = '', children, ariaLabe
       <button
         type="button"
         className="mcar__arrow mcar__arrow--next"
-        aria-label="Next"
+        aria-label={a11y.carouselNext}
         onClick={() => scroll(1)}
       >
         ›

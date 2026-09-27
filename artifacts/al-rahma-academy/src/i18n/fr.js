@@ -35,7 +35,7 @@ const fr = {
     "islamicCalendar": "Calendrier islamique",
     "verseOfDay": "Verset du jour",
     "tasbeehCounter": "Compteur de tasbih",
-    "blog": "Blog & Articles",
+    "blog": "Blog et articles",
     "faq": "FAQ",
     "privacy": "Politique de Confidentialité",
     "profile": "Mon Profil",
@@ -159,7 +159,7 @@ const fr = {
         "title": "Études Islamiques",
         "text": "Découvrez les fondements de l’aqida, du fiqh, de la sîra et de la pratique islamique quotidienne.",
         "points": [
-          "5 modules — Aqeedah, Fiqh, Seerah, Hadith, Tafsir",
+          "5 modules — Aqida, Fiqh, Sira, Hadith, Tafsir",
           "Sources islamiques primaires authentiques",
           "Enseignés dans votre langue"
         ]
@@ -481,7 +481,7 @@ const fr = {
     "creds": [
       "Diplômé d'Al-Azhar",
       "Ijazah avec Sanad",
-      "Fiqh · Tafsir · Aqeedah",
+      "Fiqh · Tafsir · Aqida",
       "6 langues européennes"
     ],
     "viewProfile": "Voir le profil",

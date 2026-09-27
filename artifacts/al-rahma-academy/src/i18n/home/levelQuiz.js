@@ -149,4 +149,67 @@ export const LEVEL_QUIZ_TEXT = {
     // further forward, the wrong direction for a restart action.
     retakeBtn: '→ إعادة الاختبار',
   },
+  // French Localization Batch 1A: a faithful translation of `en` above —
+  // same courses, same "4–6 months" figure, nothing added. The Ijazah
+  // recommendation's sanad wording reuses the phrase fr.js already
+  // publishes ("chaîne connectée (sanad) remontant au Prophète ﷺ") and is
+  // listed for religious review in docs/french-localization-registry.md.
+  fr: {
+    eyebrow: 'Trouvez votre cours',
+    heading: '3 questions → votre plan de cours idéal',
+    steps: {
+      arabic: {
+        question: "Votre enfant (ou vous-même) sait-il lire l'arabe ?",
+        options: {
+          none: 'Pas encore — on part de zéro',
+          basic: "Quelques lettres — besoin d'entraînement",
+          fluent: "Oui, sait déjà lire l'arabe",
+        },
+      },
+      goal: {
+        question: 'Quel est votre objectif principal ?',
+        options: {
+          read: 'Apprendre à lire correctement le Coran',
+          memorize: 'Mémoriser le Coran (Hifz)',
+          ijazah: 'Obtenir une certification Ijazah',
+          islamic: 'Études islamiques / arabe',
+        },
+      },
+      who: {
+        question: "À qui s'adresse ce cours ?",
+        options: {
+          child: 'Mon enfant (moins de 12 ans)',
+          teen: 'Mon adolescent (12–17 ans)',
+          adult: 'Moi-même (adulte)',
+          family: 'Plusieurs membres de la famille',
+        },
+      },
+    },
+    recommendations: {
+      read: {
+        title: 'Lecture du Coran — Qaida Nourania',
+        desc: 'Commencez dès la toute première lettre. Nos enseignants amènent les débutants complets à une lecture assurée du Coran en 4 à 6 mois.',
+        badge: '🌱 Idéal pour les débutants',
+      },
+      memorize: {
+        title: 'Mémorisation du Coran (Hifz)',
+        desc: 'Un programme de Hifz structuré avec révision quotidienne, répétition espacée et suivi personnel — pour tous les âges.',
+        badge: '🏆 Cours le plus demandé',
+      },
+      ijazah: {
+        title: "Cours d'Ijazah du Coran",
+        desc: "Recevez une Ijazah avec une chaîne connectée (sanad) remontant au Prophète ﷺ — enseignée par des détenteurs de l'Ijazah eux-mêmes.",
+        badge: '📜 Certification avancée',
+      },
+      islamic: {
+        title: 'Études islamiques et arabe',
+        desc: "Aqida, Fiqh, Sira, Hadith, Tafsir — ainsi que les bases de l'arabe — dans votre langue.",
+        badge: '🌍 Tous niveaux bienvenus',
+      },
+    },
+    resultEyebrow: 'Votre recommandation personnalisée',
+    startTrialBtn: "Commencer l'essai gratuit — sans carte bancaire",
+    learnMoreBtn: 'En savoir plus sur ce cours',
+    retakeBtn: '← Refaire le quiz',
+  },
 };

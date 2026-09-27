@@ -1,12 +1,14 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useLang } from '../../context/LangContext';
 import { pickLeakedString } from '../../i18n/home/leakedStrings';
+import { pickA11yLabels } from '../../i18n/a11yLabels';
 
 const RECITATION_URL =
   'https://cdn.islamic.network/quran/audio/128/ar.alafasy/1.mp3';
 
 export default function QuranAudioPlayer() {
   const { lang } = useLang();
+  const a11y = pickA11yLabels(lang);
   const [playing, setPlaying] = useState(false);
   const [loading, setLoading] = useState(false);
   const [dismissed, setDismissed] = useState(false);
@@ -44,13 +46,13 @@ export default function QuranAudioPlayer() {
   if (dismissed) return null;
 
   return (
-    <div className="qap" role="region" aria-label="Quran recitation audio">
+    <div className="qap" role="region" aria-label={a11y.audioRegion}>
       <button
         type="button"
         className={`qap__btn${playing ? ' qap__btn--active' : ''}`}
         onClick={toggle}
-        aria-label={playing ? 'Mute Quran recitation' : 'Play Quran recitation softly'}
-        title={playing ? 'Mute recitation' : 'Play Quran softly'}
+        aria-label={playing ? a11y.audioMute : a11y.audioPlay}
+        title={playing ? a11y.audioMuteTitle : a11y.audioPlayTitle}
       >
         {loading ? (
           <span className="qap__spin" aria-hidden="true" />
@@ -71,7 +73,7 @@ export default function QuranAudioPlayer() {
         type="button"
         className="qap__close"
         onClick={() => { if (audioRef.current) audioRef.current.pause(); setDismissed(true); }}
-        aria-label="Dismiss audio player"
+        aria-label={a11y.audioDismiss}
       >×</button>
     </div>
   );

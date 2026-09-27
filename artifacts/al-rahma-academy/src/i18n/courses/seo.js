@@ -29,6 +29,11 @@
 // The one number used (28 Arabic letters) is the same figure already
 // stated in both the English and Arabic body copy on the Arabic Alphabet
 // page itself, not a new claim.
+//
+// French Localization Batch 1A: each `fr` entry is a faithful translation
+// of the English entry beside it (the "17 languages" and "28 letters"
+// figures are the English source's own). French is still unpublished for
+// SEO: no sitemap, hreflang or prerender entry.
 export const COURSES_SEO_TEXT = {
   hub: {
     en: {
@@ -44,6 +49,13 @@ export const COURSES_SEO_TEXT = {
         'استكشف جميع دورات القرآن والعلوم الإسلامية أونلاين في أكاديمية الرحمة — تلاوة القرآن والتجويد، الحفظ، إجازة القرآن، الدراسات الإسلامية، الحروف العربية، والمزيد.',
       keywords:
         'دورات قرآن أونلاين, دورة تجويد, برنامج حفظ القرآن, إجازة القرآن, دراسات إسلامية أونلاين, دورة الحروف العربية, معلمون معتمدون من الأزهر',
+    },
+    fr: {
+      title: 'Cours',
+      description:
+        "Découvrez tous les cours de Coran et de sciences islamiques en ligne d'Al-Rahma Academy — Tajweed, Hifz, Ijazah, études islamiques, alphabet arabe et plus encore.",
+      keywords:
+        "cours de coran en ligne, cours de tajweed, programme de hifz, ijazah du coran, études islamiques en ligne, cours d'alphabet arabe, enseignants certifiés al-azhar",
     },
   },
   quran: {
@@ -61,6 +73,13 @@ export const COURSES_SEO_TEXT = {
       keywords:
         'دورة تلاوة القرآن, دورة تجويد أونلاين, حفظ القرآن الكريم, دورة حفظ, معلم قرآن أزهري, دروس تلاوة القرآن',
     },
+    fr: {
+      title: 'Cours de Coran et de Tajweed',
+      description:
+        'Cours en ligne de lecture du Coran, de Tajweed et de Hifz (mémorisation) avec des enseignants certifiés par Al-Azhar — en 17 langues.',
+      keywords:
+        'cours de lecture du coran, cours de tajweed en ligne, mémorisation du coran, cours de hifz, professeur de coran al-azhar, cours de récitation du coran',
+    },
   },
   arabic: {
     en: {
@@ -76,6 +95,13 @@ export const COURSES_SEO_TEXT = {
         'تعلّم الحروف العربية الـ28 مع النطق الصوتي وتمارين تفاعلية مباشرة في المتصفح — الخطوة الأولى المثالية قبل قراءة القرآن الكريم.',
       keywords:
         'دورة الحروف العربية, تعلم الحروف العربية, نطق الحروف العربية, العربية للمبتدئين, حروف القرآن العربية',
+    },
+    fr: {
+      title: "Cours d'alphabet arabe",
+      description:
+        'Apprenez les 28 lettres arabes avec la prononciation audio et des exercices interactifs — idéal pour les débutants qui commencent leur parcours avec le Coran.',
+      keywords:
+        "cours d'alphabet arabe, apprendre les lettres arabes, prononciation arabe, arabe pour débutants, alphabet arabe du coran",
     },
   },
 };

@@ -38,6 +38,14 @@ export const HOME_SEO_TEXT = {
     description: `دروس فردية مباشرة أونلاين في القرآن الكريم والتجويد واللغة العربية مع معلمين معتمدين من الأزهر، موثوق بنا من ${siteFacts.totalStudents} طالب في ${siteFacts.countriesServed} دولة. حصة تجريبية مجانية واحدة — بدون أي دفع.`,
     keywords: 'تعلم القرآن أونلاين, دروس قرآن أونلاين, معلم قرآن, دروس تجويد, معلم أزهري, دراسات إسلامية أونلاين, تعليم القرآن للأطفال, حفظ القرآن أونلاين',
   },
+  // French Localization Batch 1A: a faithful translation of the English
+  // entry above (same facts, same siteFacts figures, nothing added). French
+  // is still unpublished for SEO: no sitemap, hreflang or prerender entry.
+  fr: {
+    title: 'Apprendre le Coran en ligne',
+    description: `Cours particuliers de Coran, de Tajweed et d'arabe en ligne avec des enseignants certifiés par Al-Azhar. ${siteFacts.totalStudents} élèves dans ${siteFacts.countriesServed} pays nous font confiance. Une leçon d'essai gratuite — sans aucun paiement.`,
+    keywords: 'apprendre le coran en ligne, cours de coran en ligne, professeur de coran, cours de tajweed, enseignant al-azhar, études islamiques en ligne, coran pour enfants, hifz en ligne',
+  },
 };
 
 export function pickHomeSeo(lang) {

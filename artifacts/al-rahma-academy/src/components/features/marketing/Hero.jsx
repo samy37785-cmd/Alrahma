@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useLang } from '../../../context/LangContext';
 import QuranAudioPlayer from '../../ui/QuranAudioPlayer';
 import BrandLockup from '../../ui/BrandLockup';
+import { pickA11yLabels } from '../../../i18n/a11yLabels';
 
 const DEMO_VIDEO_ID = import.meta.env.VITE_DEMO_VIDEO_ID || 'dQw4w9WgXcQ';
 
@@ -30,7 +31,8 @@ const stripLeadingCheck = (str) => (str || '').replace(/^✓\s*/, '');
 // Unknown Evidence Register).
 
 export default function Hero({ onTrialClick }) {
-  const { t } = useLang();
+  const { t, lang } = useLang();
+  const a11y = pickA11yLabels(lang);
   const h = t.hero;
   const [videoOpen, setVideoOpen] = useState(false);
 
@@ -56,7 +58,7 @@ export default function Hero({ onTrialClick }) {
         <div className="hero__text">
 
           {/* Live sessions badge */}
-          <div className="hero__live-badge" aria-label="Live sessions available now">
+          <div className="hero__live-badge" aria-label={a11y.heroLiveBadge}>
             <span className="live-dot" aria-hidden="true" />
             {h.liveSessions}
           </div>
@@ -141,7 +143,7 @@ export default function Hero({ onTrialClick }) {
       </div>
 
       {/* Scroll indicator */}
-      <a href="#courses" className="hero__scroll-cue" aria-label="Scroll down to explore courses">
+      <a href="#courses" className="hero__scroll-cue" aria-label={a11y.heroScrollCue}>
         <span>{h.scroll}</span>
         <div className="hero__scroll-icon" />
       </a>
@@ -162,7 +164,7 @@ export default function Hero({ onTrialClick }) {
           className="hero__video-overlay"
           role="dialog"
           aria-modal="true"
-          aria-label="Live lesson demo"
+          aria-label={a11y.lessonDemo}
           onClick={closeVideo}
         >
           <div className="hero__video-box">
@@ -170,13 +172,13 @@ export default function Hero({ onTrialClick }) {
               type="button"
               className="hero__video-close"
               onClick={() => setVideoOpen(false)}
-              aria-label="Close video"
+              aria-label={a11y.closeVideo}
             >
               ✕
             </button>
             <iframe
               src={`https://www.youtube.com/embed/${DEMO_VIDEO_ID}?autoplay=1&rel=0`}
-              title="Live lesson demo"
+              title={a11y.lessonDemo}
               allow="autoplay; encrypted-media"
               allowFullScreen
               className="hero__video-iframe"

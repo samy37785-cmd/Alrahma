@@ -3,13 +3,15 @@ import Reveal from '../../ui/Reveal';
 import { useLang } from '../../../context/LangContext';
 import { ISNAD_CHAIN_NODES } from '../../../data/home/isnadChain';
 import { ISNAD_CHAIN_TEXT } from '../../../i18n/home/isnadChain';
+import { pickA11yLabels } from '../../../i18n/a11yLabels';
 
 export default function IsnadChain() {
   const { lang } = useLang();
   const t = ISNAD_CHAIN_TEXT[lang] || ISNAD_CHAIN_TEXT.en;
+  const a11y = pickA11yLabels(lang);
 
   return (
-    <section className="isnad" aria-label="The Isnad — unbroken chain of Quran transmission">
+    <section className="isnad" aria-label={a11y.isnadSection}>
       <div className="isnad__bg" aria-hidden="true" />
       <div className="container">
         <Reveal className="section-head isnad__head">
@@ -21,7 +23,7 @@ export default function IsnadChain() {
           <p className="section-sub">{t.subCopy}</p>
         </Reveal>
 
-        <Reveal className="isnad__chain" aria-label="Chain of Quran transmission">
+        <Reveal className="isnad__chain" aria-label={a11y.isnadChain}>
           {ISNAD_CHAIN_NODES.map((node, i) => {
             const nodeText = t.nodes[node.id];
             return (
@@ -43,7 +45,15 @@ export default function IsnadChain() {
         </Reveal>
 
         <Reveal className="isnad__manifesto">
-          <blockquote className="isnad__quote">{t.quote}</blockquote>
+          {/* quoteLang is set only where the quote is shown in its original
+              language (French: the untranslated Arabic hadith). */}
+          <blockquote
+            className="isnad__quote"
+            lang={t.quoteLang}
+            dir={t.quoteLang === 'ar' ? 'rtl' : undefined}
+          >
+            {t.quote}
+          </blockquote>
           <cite className="isnad__cite">{t.citation}</cite>
           <div className="isnad__cta-row">
             <Link to="/enroll" className="btn btn--gold">

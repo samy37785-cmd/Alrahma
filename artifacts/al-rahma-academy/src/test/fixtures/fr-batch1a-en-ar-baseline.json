@@ -1,0 +1,521 @@
+{
+  "baseline": "origin/main@79561a4",
+  "modules": {
+    "HOME_SEO_TEXT": {
+      "en": {
+        "title": "Learn the Quran Online",
+        "description": "One-to-one online Quran, Tajweed and Arabic lessons with Al-Azhar certified tutors, trusted by 1,500+ students in 10 countries. One free trial lesson — no payment needed.",
+        "keywords": "learn quran online, online quran classes, quran tutor, tajweed lessons, al-azhar tutor, online islamic studies, quran for children, hifz online"
+      },
+      "ar": {
+        "title": "تعلم القرآن الكريم أونلاين",
+        "description": "دروس فردية مباشرة أونلاين في القرآن الكريم والتجويد واللغة العربية مع معلمين معتمدين من الأزهر، موثوق بنا من 1,500+ طالب في 10 دولة. حصة تجريبية مجانية واحدة — بدون أي دفع.",
+        "keywords": "تعلم القرآن أونلاين, دروس قرآن أونلاين, معلم قرآن, دروس تجويد, معلم أزهري, دراسات إسلامية أونلاين, تعليم القرآن للأطفال, حفظ القرآن أونلاين"
+      }
+    },
+    "COURSES_SEO_TEXT_hub": {
+      "en": {
+        "title": "Courses",
+        "description": "Explore all online Quran and Islamic courses at Al-Rahma Academy — Tajweed, Hifz, Ijazah, Islamic Studies, Arabic Alphabet, and more.",
+        "keywords": "online quran courses, tajweed course, hifz program, quran ijazah, islamic studies online, arabic alphabet course, al-azhar certified teachers"
+      },
+      "ar": {
+        "title": "الدورات",
+        "description": "استكشف جميع دورات القرآن والعلوم الإسلامية أونلاين في أكاديمية الرحمة — تلاوة القرآن والتجويد، الحفظ، إجازة القرآن، الدراسات الإسلامية، الحروف العربية، والمزيد.",
+        "keywords": "دورات قرآن أونلاين, دورة تجويد, برنامج حفظ القرآن, إجازة القرآن, دراسات إسلامية أونلاين, دورة الحروف العربية, معلمون معتمدون من الأزهر"
+      }
+    },
+    "COURSES_SEO_TEXT_quran": {
+      "en": {
+        "title": "Quran & Tajweed Courses",
+        "description": "Online Quran Reading, Tajweed, and Hifz (memorization) courses with certified Al-Azhar teachers — in 17 languages.",
+        "keywords": "quran reading course, tajweed course online, quran memorization, hifz course, al-azhar quran teacher, quran recitation lessons"
+      },
+      "ar": {
+        "title": "دورات القرآن والتجويد",
+        "description": "دروس أونلاين في تلاوة القرآن والتجويد وحفظ القرآن الكريم مع معلمين معتمدين من الأزهر — دروس فردية مباشرة ترافقك خطوة بخطوة حتى إتقان التلاوة الصحيحة.",
+        "keywords": "دورة تلاوة القرآن, دورة تجويد أونلاين, حفظ القرآن الكريم, دورة حفظ, معلم قرآن أزهري, دروس تلاوة القرآن"
+      }
+    },
+    "COURSES_SEO_TEXT_arabic": {
+      "en": {
+        "title": "Arabic Alphabet Course",
+        "description": "Learn the 28 Arabic letters with audio pronunciation and interactive exercises — ideal for beginners starting their Quran journey.",
+        "keywords": "arabic alphabet course, learn arabic letters, arabic pronunciation, arabic for beginners, quran arabic alphabet"
+      },
+      "ar": {
+        "title": "دورة الحروف العربية",
+        "description": "تعلّم الحروف العربية الـ28 مع النطق الصوتي وتمارين تفاعلية مباشرة في المتصفح — الخطوة الأولى المثالية قبل قراءة القرآن الكريم.",
+        "keywords": "دورة الحروف العربية, تعلم الحروف العربية, نطق الحروف العربية, العربية للمبتدئين, حروف القرآن العربية"
+      }
+    },
+    "ACADEMY_SEO_TEXT": {
+      "en": {
+        "description": "Learn about Al-Rahma Academy — our mission, teachers, policies, and how to get started with a free trial lesson."
+      },
+      "ar": {
+        "description": "تعرّف على أكاديمية الرحمة — مهمتنا، معلمونا، سياساتنا، وكيفية البدء بحصة تجريبية مجانية."
+      }
+    },
+    "PAGE_HEADING_TEXT": {
+      "en": {
+        "h1": "About Al-Rahma Academy"
+      },
+      "ar": {
+        "h1": "من نحن"
+      }
+    },
+    "FOUNDER_STORY_TEXT": {
+      "en": {
+        "eyebrow": "Our Story",
+        "title": "Why We Built Al-Rahma Academy",
+        "body1": "I am an Egyptian educator who moved to Europe and watched my children struggle to find a qualified Quran teacher — someone who could teach correctly, speak their language, and understand their world. Every option I found was either too expensive, too unreliable, or simply not qualified.",
+        "body2Pre": "That frustration became Al-Rahma Academy. We started with a handful of hand-picked Al-Azhar graduates and one clear rule: ",
+        "body2Strong": "every tutor must be someone I would trust to teach my own children.",
+        "body3Pre": "Today, ",
+        "body3Mid": " families across ",
+        "body3Post": " countries trust us with the most important thing they own — the Quran education of their children. Every tutor holds a verified Ijazah. Every lesson is one-to-one. Every family can change their tutor, pause their subscription, or request a refund — without any friction.",
+        "body4": "We didn't build a platform. We built the academy we needed and couldn't find.",
+        "sigLine": null,
+        "sigBrand": "Al-Rahma Academy"
+      },
+      "ar": {
+        "eyebrow": "قصتنا",
+        "title": "لماذا أسّسنا أكاديمية الرحمة",
+        "body1": "أنا معلّم مصري انتقلت إلى أوروبا، ورأيت أبنائي يعانون في إيجاد معلّم قرآن كريم مؤهّل — شخص يُحسن التعليم، ويتحدث لغتهم، ويفهم عالمهم. كل خيار وجدته كان إمّا باهظ التكلفة، أو غير موثوق، أو ببساطة غير مؤهّل.",
+        "body2Pre": "تحوّلت هذه المعاناة إلى أكاديمية الرحمة. بدأنا بعدد قليل من خريجي الأزهر المختارين بعناية، وبقاعدة واضحة: أن يكون كل معلّم شخصًا أثق به لتعليم أبنائي.",
+        "body2Strong": "",
+        "body3Pre": "اليوم، تثق بنا ",
+        "body3Mid": " أسرة في ",
+        "body3Post": " دولة على أهم ما يملكون — تعليم أبنائهم للقرآن الكريم. كل معلّم يحمل إجازة معتمدة. كل حصة فردية مباشرة. وبإمكان كل أسرة تغيير معلّمها، أو إيقاف اشتراكها مؤقتًا، أو طلب استرداد المبلغ — دون أي تعقيد.",
+        "body4": "لم نبنِ منصة إلكترونية. بل بنينا الأكاديمية التي احتجناها ولم نجدها.",
+        "sigLine": "محمود سامي، المؤسس",
+        "sigBrand": "Al-Rahma Academy"
+      }
+    },
+    "LEVEL_QUIZ_TEXT": {
+      "en": {
+        "eyebrow": "Find your course",
+        "heading": "3 questions → your perfect lesson plan",
+        "steps": {
+          "arabic": {
+            "question": "Can your child / you read Arabic?",
+            "options": {
+              "none": "Not yet — starting from zero",
+              "basic": "A few letters — needs practice",
+              "fluent": "Yes, can read Arabic"
+            }
+          },
+          "goal": {
+            "question": "What is your main goal?",
+            "options": {
+              "read": "Learn to read the Quran correctly",
+              "memorize": "Memorize the Quran (Hifz)",
+              "ijazah": "Earn an Ijazah certification",
+              "islamic": "Islamic Studies / Arabic"
+            }
+          },
+          "who": {
+            "question": "Who is this for?",
+            "options": {
+              "child": "My child (under 12)",
+              "teen": "My teenager (12–17)",
+              "adult": "Myself (adult)",
+              "family": "Multiple family members"
+            }
+          }
+        },
+        "recommendations": {
+          "read": {
+            "title": "Quran Reading — Noorani Qaida",
+            "desc": "Start from the very first letter. Our tutors take complete beginners to confident Quran reading in 4–6 months.",
+            "badge": "🌱 Perfect for beginners"
+          },
+          "memorize": {
+            "title": "Quran Memorization (Hifz)",
+            "desc": "A structured Hifz plan with daily revision, spaced repetition, and personal accountability — for all ages.",
+            "badge": "🏆 Most popular course"
+          },
+          "ijazah": {
+            "title": "Quran Ijazah Course",
+            "desc": "Receive an Ijazah with a connected chain (sanad) back to the Prophet ﷺ — taught by Ijazah-holders themselves.",
+            "badge": "📜 Advanced certification"
+          },
+          "islamic": {
+            "title": "Islamic Studies & Arabic",
+            "desc": "Aqeedah, Fiqh, Seerah, Hadith, Tafsir — plus foundational Arabic — in your language.",
+            "badge": "🌍 All levels welcome"
+          }
+        },
+        "resultEyebrow": "Your personalised recommendation",
+        "startTrialBtn": "Start free trial — no card needed",
+        "learnMoreBtn": "Learn more about this course",
+        "retakeBtn": "← Retake quiz"
+      },
+      "ar": {
+        "eyebrow": "دورتك المناسبة",
+        "heading": "3 أسئلة ← خطة دروسك المثالية",
+        "steps": {
+          "arabic": {
+            "question": "هل يستطيع طفلك / تستطيع أنت قراءة العربية؟",
+            "options": {
+              "none": "ليس بعد — البداية من الصفر",
+              "basic": "بضعة حروف — يحتاج إلى تدريب",
+              "fluent": "نعم، يستطيع قراءة العربية"
+            }
+          },
+          "goal": {
+            "question": "ما هو هدفك الرئيسي؟",
+            "options": {
+              "read": "تعلّم قراءة القرآن الكريم بشكل صحيح",
+              "memorize": "حفظ القرآن الكريم",
+              "ijazah": "الحصول على إجازة معتمدة",
+              "islamic": "الدراسات الإسلامية / اللغة العربية"
+            }
+          },
+          "who": {
+            "question": "لمن هذه الدورة؟",
+            "options": {
+              "child": "طفلي (أقل من 12 عامًا)",
+              "teen": "طفلي المراهق (12–17 عامًا)",
+              "adult": "لنفسي (بالغ)",
+              "family": "أكثر من فرد في الأسرة"
+            }
+          }
+        },
+        "recommendations": {
+          "read": {
+            "title": "قراءة القرآن — القاعدة النورانية",
+            "desc": "ابدأ من أول حرف. يرافق معلمونا المبتدئين تمامًا وصولًا إلى قراءة واثقة للقرآن الكريم خلال 4–6 أشهر.",
+            "badge": "🌱 مثالي للمبتدئين"
+          },
+          "memorize": {
+            "title": "حفظ القرآن الكريم",
+            "desc": "خطة حفظ منظمة مع مراجعة يومية وتكرار متباعد ومتابعة شخصية — لجميع الأعمار.",
+            "badge": "🏆 الدورة الأكثر طلبًا"
+          },
+          "ijazah": {
+            "title": "دورة إجازة القرآن الكريم",
+            "desc": "احصل على إجازة بسند متصل إلى النبي ﷺ — بتدريس من حاملي الإجازة أنفسهم.",
+            "badge": "📜 شهادة متقدمة"
+          },
+          "islamic": {
+            "title": "الدراسات الإسلامية واللغة العربية",
+            "desc": "العقيدة والفقه والسيرة والحديث والتفسير — إلى جانب أساسيات اللغة العربية — بلغتك.",
+            "badge": "🌍 لكل المستويات"
+          }
+        },
+        "resultEyebrow": "توصيتك الشخصية",
+        "startTrialBtn": "ابدأ تجربة مجانية — دون الحاجة لبطاقة",
+        "learnMoreBtn": "تعرّف على المزيد حول هذه الدورة",
+        "retakeBtn": "→ إعادة الاختبار"
+      }
+    },
+    "ISNAD_CHAIN_TEXT": {
+      "en": {
+        "eyebrow": "Our Legacy",
+        "headingLine1": "Every lesson is connected to",
+        "headingLine2": "1,400 years of unbroken transmission",
+        "subCopy": "When your child learns with Al-Rahma, they join a living chain — the same Quran recited to the Prophet ﷺ, passed down generation by generation to your home.",
+        "nodes": {
+          "prophet": {
+            "name": "The Prophet ﷺ",
+            "detail": "Received revelation in the Cave of Hira"
+          },
+          "companions": {
+            "name": "The Companions",
+            "detail": "Memorised and transmitted word-for-word"
+          },
+          "alAzhar": {
+            "name": "Al-Azhar University",
+            "detail": "Over 1,000 years of unbroken scholarship"
+          },
+          "tutors": {
+            "name": "Our Tutors",
+            "detail": "Ijazah-certified with verified sanad"
+          },
+          "child": {
+            "name": "Your Child",
+            "detail": "Joins a 1,400-year chain of Quran learners"
+          }
+        },
+        "quote": "\"The best of you are those who learn the Quran and teach it.\"",
+        "citation": "— Sahih al-Bukhari 5027",
+        "ctaGift": "Give your child this gift →",
+        "ctaMeet": "Meet our Ijazah holders"
+      },
+      "ar": {
+        "eyebrow": "إرثنا",
+        "headingLine1": "كل درس متصل",
+        "headingLine2": "بسند متواصل عمره ١٤٠٠ عام",
+        "subCopy": "عندما يتعلّم طفلك مع أكاديمية الرحمة، ينضم إلى سلسلة حية — القرآن نفسه الذي تُلِيَ على النبي ﷺ، ونُقل جيلًا بعد جيل حتى وصل إلى بيتك.",
+        "nodes": {
+          "prophet": {
+            "name": "النبي ﷺ",
+            "detail": "تلقّى الوحي في غار حراء"
+          },
+          "companions": {
+            "name": "الصحابة",
+            "detail": "حفظوه ونقلوه كلمة بكلمة"
+          },
+          "alAzhar": {
+            "name": "جامعة الأزهر",
+            "detail": "أكثر من ١٠٠٠ عام من العلم المتصل"
+          },
+          "tutors": {
+            "name": "معلمونا",
+            "detail": "حاصلون على إجازة بسند موثّق"
+          },
+          "child": {
+            "name": "طفلك",
+            "detail": "ينضم إلى سلسلة عمرها ١٤٠٠ عام من متعلمي القرآن الكريم"
+          }
+        },
+        "quote": "خَيْرُكُمْ مَنْ تَعَلَّمَ الْقُرْآنَ وَعَلَّمَهُ",
+        "citation": "— صحيح البخاري ٥٠٢٧",
+        "ctaGift": "امنح طفلك هذه الهدية ←",
+        "ctaMeet": "تعرّف على حاملي الإجازة لدينا"
+      }
+    },
+    "HOME_LEAKED_STRINGS_TEXT": {
+      "en": {
+        "mostPopularCourseBadge": "Most Popular",
+        "startFreeTrialLink": "Start your free trial",
+        "featuredTutorBadge": "Featured Tutor",
+        "browseFullCurriculum": "Browse full curriculum",
+        "playQuranLabel": "Play Quran",
+        "quranPlayingLabel": "Quran playing",
+        "refundWindowStat": "24-day"
+      },
+      "ar": {
+        "mostPopularCourseBadge": "الأكثر طلبًا",
+        "startFreeTrialLink": "ابدأ تجربتك المجانية",
+        "featuredTutorBadge": "المعلم المميز",
+        "browseFullCurriculum": "تصفّح المنهج الكامل",
+        "playQuranLabel": "تشغيل القرآن",
+        "quranPlayingLabel": "القرآن يُتلى",
+        "refundWindowStat": "24 يومًا"
+      }
+    },
+    "COURSE_OPTION_LABELS_TEXT": {
+      "en": {
+        "Quran Reading (Noorani Qaida)": "Quran Reading (Noorani Qaida)",
+        "Recitation with Tajweed": "Recitation with Tajweed",
+        "Quran Memorization (Hifz)": "Quran Memorization (Hifz)",
+        "Quran Ijazah": "Quran Ijazah",
+        "Islamic Studies": "Islamic Studies",
+        "Arabic Language": "Arabic Language"
+      },
+      "ar": {
+        "Quran Reading (Noorani Qaida)": "قراءة القرآن (القاعدة النورانية)",
+        "Recitation with Tajweed": "التلاوة بأحكام التجويد",
+        "Quran Memorization (Hifz)": "حفظ القرآن الكريم",
+        "Quran Ijazah": "إجازة القرآن الكريم",
+        "Islamic Studies": "الدراسات الإسلامية",
+        "Arabic Language": "اللغة العربية"
+      }
+    },
+    "COUNTRY_NAMES_TEXT": {
+      "en": {
+        "gb": "UK",
+        "de": "Germany",
+        "fr": "France",
+        "it": "Italy",
+        "es": "Spain",
+        "nl": "Netherlands",
+        "us": "USA",
+        "ca": "Canada",
+        "au": "Australia",
+        "se": "Sweden",
+        "no": "Norway",
+        "be": "Belgium",
+        "ch": "Switzerland",
+        "at": "Austria",
+        "dk": "Denmark",
+        "pt": "Portugal",
+        "gr": "Greece",
+        "pl": "Poland",
+        "tr": "Turkey",
+        "sa": "Saudi Arabia",
+        "ae": "UAE",
+        "my": "Malaysia",
+        "uz": "Uzbekistan",
+        "idn": "Indonesia",
+        "za": "South Africa"
+      },
+      "ar": {
+        "gb": "المملكة المتحدة",
+        "de": "ألمانيا",
+        "fr": "فرنسا",
+        "it": "إيطاليا",
+        "es": "إسبانيا",
+        "nl": "هولندا",
+        "us": "الولايات المتحدة",
+        "ca": "كندا",
+        "au": "أستراليا",
+        "se": "السويد",
+        "no": "النرويج",
+        "be": "بلجيكا",
+        "ch": "سويسرا",
+        "at": "النمسا",
+        "dk": "الدنمارك",
+        "pt": "البرتغال",
+        "gr": "اليونان",
+        "pl": "بولندا",
+        "tr": "تركيا",
+        "sa": "المملكة العربية السعودية",
+        "ae": "الإمارات العربية المتحدة",
+        "my": "ماليزيا",
+        "uz": "أوزبكستان",
+        "idn": "إندونيسيا",
+        "za": "جنوب أفريقيا"
+      }
+    }
+  },
+  "pages": {
+    "home": {
+      "en": {
+        "title": "Learn the Quran Online | AL-Rahma Academy",
+        "description": "One-to-one online Quran, Tajweed and Arabic lessons with Al-Azhar certified tutors, trusted by 1,500+ students in 10 countries. One free trial lesson — no payment needed.",
+        "ogTitle": "Learn the Quran Online | AL-Rahma Academy",
+        "ogDescription": "One-to-one online Quran, Tajweed and Arabic lessons with Al-Azhar certified tutors, trusted by 1,500+ students in 10 countries. One free trial lesson — no payment needed.",
+        "htmlLang": "en",
+        "htmlDir": "ltr",
+        "bodySha256": "bfe4cf63bfd6e9ae044a5ca19230c7dc19a82c9500d0104ff703648abcf7ab05",
+        "bodyLength": 120991,
+        "deferredSectionsMounted": true
+      },
+      "ar": {
+        "title": "تعلم القرآن الكريم أونلاين | AL-Rahma Academy",
+        "description": "دروس فردية مباشرة أونلاين في القرآن الكريم والتجويد واللغة العربية مع معلمين معتمدين من الأزهر، موثوق بنا من 1,500+ طالب في 10 دولة. حصة تجريبية مجانية واحدة — بدون أي دفع.",
+        "ogTitle": "تعلم القرآن الكريم أونلاين | AL-Rahma Academy",
+        "ogDescription": "دروس فردية مباشرة أونلاين في القرآن الكريم والتجويد واللغة العربية مع معلمين معتمدين من الأزهر، موثوق بنا من 1,500+ طالب في 10 دولة. حصة تجريبية مجانية واحدة — بدون أي دفع.",
+        "htmlLang": "ar",
+        "htmlDir": "rtl",
+        "bodySha256": "46dab05aa8f528e22ecdbd93bbc4d2ba11a1494e7f8d5d048f22457ee4433ba0",
+        "bodyLength": 119253,
+        "deferredSectionsMounted": true
+      }
+    },
+    "courses": {
+      "en": {
+        "title": "Courses | AL-Rahma Academy",
+        "description": "Explore all online Quran and Islamic courses at Al-Rahma Academy — Tajweed, Hifz, Ijazah, Islamic Studies, Arabic Alphabet, and more.",
+        "ogTitle": "Courses | AL-Rahma Academy",
+        "ogDescription": "Explore all online Quran and Islamic courses at Al-Rahma Academy — Tajweed, Hifz, Ijazah, Islamic Studies, Arabic Alphabet, and more.",
+        "htmlLang": "en",
+        "htmlDir": "ltr",
+        "bodySha256": "5ec1079e2256dec392e1c21f260091facdfd76d8c09d7b6bba6dae068fbcb645",
+        "bodyLength": 30542,
+        "deferredSectionsMounted": true
+      },
+      "ar": {
+        "title": "الدورات | AL-Rahma Academy",
+        "description": "استكشف جميع دورات القرآن والعلوم الإسلامية أونلاين في أكاديمية الرحمة — تلاوة القرآن والتجويد، الحفظ، إجازة القرآن، الدراسات الإسلامية، الحروف العربية، والمزيد.",
+        "ogTitle": "الدورات | AL-Rahma Academy",
+        "ogDescription": "استكشف جميع دورات القرآن والعلوم الإسلامية أونلاين في أكاديمية الرحمة — تلاوة القرآن والتجويد، الحفظ، إجازة القرآن، الدراسات الإسلامية، الحروف العربية، والمزيد.",
+        "htmlLang": "ar",
+        "htmlDir": "rtl",
+        "bodySha256": "2079d5a6340f0fc776e3e2c176f0135ca76164a3862c58ce09084d43c1b20cdf",
+        "bodyLength": 30565,
+        "deferredSectionsMounted": true
+      }
+    },
+    "coursesQuran": {
+      "en": {
+        "title": "Quran & Tajweed Courses | AL-Rahma Academy",
+        "description": "Online Quran Reading, Tajweed, and Hifz (memorization) courses with certified Al-Azhar teachers — in 17 languages.",
+        "ogTitle": "Quran & Tajweed Courses | AL-Rahma Academy",
+        "ogDescription": "Online Quran Reading, Tajweed, and Hifz (memorization) courses with certified Al-Azhar teachers — in 17 languages.",
+        "htmlLang": "en",
+        "htmlDir": "ltr",
+        "bodySha256": "b124deec99bb47ef589928bcf8547ba6d5fb7c3b9f98c9c4a7bec46baa84095d",
+        "bodyLength": 30706,
+        "deferredSectionsMounted": true
+      },
+      "ar": {
+        "title": "دورات القرآن والتجويد | AL-Rahma Academy",
+        "description": "دروس أونلاين في تلاوة القرآن والتجويد وحفظ القرآن الكريم مع معلمين معتمدين من الأزهر — دروس فردية مباشرة ترافقك خطوة بخطوة حتى إتقان التلاوة الصحيحة.",
+        "ogTitle": "دورات القرآن والتجويد | AL-Rahma Academy",
+        "ogDescription": "دروس أونلاين في تلاوة القرآن والتجويد وحفظ القرآن الكريم مع معلمين معتمدين من الأزهر — دروس فردية مباشرة ترافقك خطوة بخطوة حتى إتقان التلاوة الصحيحة.",
+        "htmlLang": "ar",
+        "htmlDir": "rtl",
+        "bodySha256": "ff1e9f3a430c2a5af39a7d51aec46afc58becc3c6d0d3b039642ed0f453fb41e",
+        "bodyLength": 30612,
+        "deferredSectionsMounted": true
+      }
+    },
+    "coursesArabic": {
+      "en": {
+        "title": "Arabic Alphabet Course | AL-Rahma Academy",
+        "description": "Learn the 28 Arabic letters with audio pronunciation and interactive exercises — ideal for beginners starting their Quran journey.",
+        "ogTitle": "Arabic Alphabet Course | AL-Rahma Academy",
+        "ogDescription": "Learn the 28 Arabic letters with audio pronunciation and interactive exercises — ideal for beginners starting their Quran journey.",
+        "htmlLang": "en",
+        "htmlDir": "ltr",
+        "bodySha256": "b651de80e5567e2bd530a26babe90b0dfb60ec2a5c4128282332a8b5219de037",
+        "bodyLength": 29996,
+        "deferredSectionsMounted": true
+      },
+      "ar": {
+        "title": "دورة الحروف العربية | AL-Rahma Academy",
+        "description": "تعلّم الحروف العربية الـ28 مع النطق الصوتي وتمارين تفاعلية مباشرة في المتصفح — الخطوة الأولى المثالية قبل قراءة القرآن الكريم.",
+        "ogTitle": "دورة الحروف العربية | AL-Rahma Academy",
+        "ogDescription": "تعلّم الحروف العربية الـ28 مع النطق الصوتي وتمارين تفاعلية مباشرة في المتصفح — الخطوة الأولى المثالية قبل قراءة القرآن الكريم.",
+        "htmlLang": "ar",
+        "htmlDir": "rtl",
+        "bodySha256": "e391aa566724f500aa9ed8d9d612fdb1a14f832dddc39221d49994ba9c03bc92",
+        "bodyLength": 30031,
+        "deferredSectionsMounted": true
+      }
+    },
+    "academy": {
+      "en": {
+        "title": "Academy | AL-Rahma Academy",
+        "description": "Learn about Al-Rahma Academy — our mission, teachers, policies, and how to get started with a free trial lesson.",
+        "ogTitle": "Academy | AL-Rahma Academy",
+        "ogDescription": "Learn about Al-Rahma Academy — our mission, teachers, policies, and how to get started with a free trial lesson.",
+        "htmlLang": "en",
+        "htmlDir": "ltr",
+        "bodySha256": "7fda2fb030ddf1ad0e6b2404fc576fd932c9e65f74eabe0c998bd433b64c8866",
+        "bodyLength": 29751,
+        "deferredSectionsMounted": true
+      },
+      "ar": {
+        "title": "الأكاديمية | AL-Rahma Academy",
+        "description": "تعرّف على أكاديمية الرحمة — مهمتنا، معلمونا، سياساتنا، وكيفية البدء بحصة تجريبية مجانية.",
+        "ogTitle": "الأكاديمية | AL-Rahma Academy",
+        "ogDescription": "تعرّف على أكاديمية الرحمة — مهمتنا، معلمونا، سياساتنا، وكيفية البدء بحصة تجريبية مجانية.",
+        "htmlLang": "ar",
+        "htmlDir": "rtl",
+        "bodySha256": "0e92c18c82482fc9e4d928c44471bed9711f9a926aaf1233bc6a62413c502974",
+        "bodyLength": 29837,
+        "deferredSectionsMounted": true
+      }
+    },
+    "about": {
+      "en": {
+        "title": "About us | AL-Rahma Academy",
+        "description": "Al-Rahma Academy is a dedicated online platform connecting students around the world with the Holy Quran and the Arabic language. Our qualified native Egyptian tutors deliver personalised, one-to-one live lessons — for children and adults, from anywhere in the world.",
+        "ogTitle": "About us | AL-Rahma Academy",
+        "ogDescription": "Al-Rahma Academy is a dedicated online platform connecting students around the world with the Holy Quran and the Arabic language. Our qualified native Egyptian tutors deliver personalised, one-to-one live lessons — for children and adults, from anywhere in the world.",
+        "htmlLang": "en",
+        "htmlDir": "ltr",
+        "bodySha256": "e9b6366a73c6722f5521e4915d89e46105609dc16ba6ef352d1249c13305155d",
+        "bodyLength": 32772,
+        "deferredSectionsMounted": true
+      },
+      "ar": {
+        "title": "من نحن | AL-Rahma Academy",
+        "description": "أكاديمية الرحمة منصة تعليمية متخصصة تربط الطلاب في جميع أنحاء العالم بالقرآن الكريم واللغة العربية. يقدم معلمونا المصريون المؤهلون حصصاً فردية مباشرة — للأطفال والكبار، من أي مكان في العالم.",
+        "ogTitle": "من نحن | AL-Rahma Academy",
+        "ogDescription": "أكاديمية الرحمة منصة تعليمية متخصصة تربط الطلاب في جميع أنحاء العالم بالقرآن الكريم واللغة العربية. يقدم معلمونا المصريون المؤهلون حصصاً فردية مباشرة — للأطفال والكبار، من أي مكان في العالم.",
+        "htmlLang": "ar",
+        "htmlDir": "rtl",
+        "bodySha256": "1ce83be4d09ba08a3be02dfd145a378f21fc48c69e831f6b5f0299b6eacf6af6",
+        "bodyLength": 32275,
+        "deferredSectionsMounted": true
+      }
+    }
+  }
+}

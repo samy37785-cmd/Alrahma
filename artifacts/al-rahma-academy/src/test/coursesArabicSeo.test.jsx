@@ -83,10 +83,11 @@ describe.each(ROUTES)('%s: Courses SEO metadata: real Arabic, not an English fal
     expect(arOccurrences).toBe(1);
   });
 
-  it('a legacy language without real Arabic copy (e.g. fr) falls back to the English object, not an invented translation', () => {
-    expect(pickCoursesSeo(route, 'fr')).toBe(COURSES_SEO_TEXT[route].en);
+  it('a legacy language without real copy (e.g. it) falls back to the English object, not an invented translation', () => {
+    expect(pickCoursesSeo(route, 'it')).toBe(COURSES_SEO_TEXT[route].en);
     expect(pickCoursesSeo(route, 'es')).toBe(COURSES_SEO_TEXT[route].en);
-    expect(Object.keys(COURSES_SEO_TEXT[route])).toEqual(['en', 'ar']);
+    // French Localization Batch 1A added a real `fr` entry (see frenchBatch1aPages.test.jsx).
+    expect(Object.keys(COURSES_SEO_TEXT[route])).toEqual(['en', 'ar', 'fr']);
   });
 });
 

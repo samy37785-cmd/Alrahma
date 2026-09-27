@@ -7,7 +7,7 @@
 // Arabic Home Copy Implementation (2026-09-18): `ar` was added below from
 // docs/home-arabic-copy-approval-pack.md's section 4, Claude editorial
 // approval pending human/Islamic review where applicable -- standard MSA
-// country names, no corrections needed from that draft. it/es/de/fr still
+// country names, no corrections needed from that draft. it/es/de still
 // stay absent; nothing is invented for them here.
 export const COUNTRY_NAMES_TEXT = {
   en: {
@@ -63,5 +63,33 @@ export const COUNTRY_NAMES_TEXT = {
     uz: 'أوزبكستان',
     idn: 'إندونيسيا',
     za: 'جنوب أفريقيا',
+  },
+  // French Localization Batch 1A: standard French country names.
+  fr: {
+    gb: 'Royaume-Uni',
+    de: 'Allemagne',
+    fr: 'France',
+    it: 'Italie',
+    es: 'Espagne',
+    nl: 'Pays-Bas',
+    us: 'États-Unis',
+    ca: 'Canada',
+    au: 'Australie',
+    se: 'Suède',
+    no: 'Norvège',
+    be: 'Belgique',
+    ch: 'Suisse',
+    at: 'Autriche',
+    dk: 'Danemark',
+    pt: 'Portugal',
+    gr: 'Grèce',
+    pl: 'Pologne',
+    tr: 'Turquie',
+    sa: 'Arabie saoudite',
+    ae: 'Émirats arabes unis',
+    my: 'Malaisie',
+    uz: 'Ouzbékistan',
+    idn: 'Indonésie',
+    za: 'Afrique du Sud',
   },
 };

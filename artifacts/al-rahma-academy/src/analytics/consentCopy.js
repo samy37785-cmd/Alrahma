@@ -1,4 +1,6 @@
-// Owner-approved banner wording (EN/AR). Other locales fall back to English
+// Owner-approved banner wording (EN/AR). French (Batch 1C) is translated
+// from the English only, owner review recommended (see
+// docs/french-localization-registry.md). Other locales fall back to English
 // until their own translation is approved.
 export const CONSENT_COPY = {
   en: {
@@ -16,6 +18,14 @@ export const CONSENT_COPY = {
     reject: 'رفض',
     privacy: 'سياسة الخصوصية',
     settings: 'إعدادات ملفات تعريف الارتباط',
+  },
+  fr: {
+    region: 'Consentement aux cookies',
+    message: 'Nous utilisons des cookies d’analyse facultatifs pour comprendre comment les visiteurs utilisent notre site web et l’améliorer. Les outils d’analyse ne sont pas chargés, sauf si vous choisissez d’accepter.',
+    accept: 'Accepter les cookies d’analyse',
+    reject: 'Refuser',
+    privacy: 'Politique de confidentialité',
+    settings: 'Paramètres des cookies',
   },
 };
 

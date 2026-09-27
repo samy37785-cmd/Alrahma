@@ -9,42 +9,43 @@
 // order, same strings -- see enrollCountryLabels.test.js), and a display
 // label is added per language.
 //
-// Only en/ar are real, reviewed translations. it/es/de/fr are intentionally
-// left undefined here (see countryLabel()'s fallback) rather than filled
-// with invented/unreviewed translations -- they render the English name
-// until a real translation pass covers them.
+// en/ar are the original labels; fr (French Localization Batch 1C) gives the
+// standard French country name for each English label. it/es/de are
+// intentionally left undefined here (see countryLabel()'s fallback) -- they
+// render the English name until a real translation pass covers them. The
+// submitted `value` never changes.
 export const COUNTRIES = [
-  { value: 'United Kingdom', en: 'United Kingdom', ar: 'المملكة المتحدة' },
-  { value: 'Italy',          en: 'Italy',          ar: 'إيطاليا' },
-  { value: 'France',         en: 'France',         ar: 'فرنسا' },
-  { value: 'Germany',        en: 'Germany',        ar: 'ألمانيا' },
-  { value: 'Spain',          en: 'Spain',          ar: 'إسبانيا' },
-  { value: 'Netherlands',    en: 'Netherlands',    ar: 'هولندا' },
-  { value: 'Belgium',        en: 'Belgium',        ar: 'بلجيكا' },
-  { value: 'Switzerland',    en: 'Switzerland',    ar: 'سويسرا' },
-  { value: 'Austria',        en: 'Austria',        ar: 'النمسا' },
-  { value: 'Sweden',         en: 'Sweden',         ar: 'السويد' },
-  { value: 'Denmark',        en: 'Denmark',        ar: 'الدنمارك' },
-  { value: 'Norway',         en: 'Norway',         ar: 'النرويج' },
-  { value: 'United States',  en: 'United States',  ar: 'الولايات المتحدة' },
-  { value: 'Canada',         en: 'Canada',         ar: 'كندا' },
-  { value: 'Australia',      en: 'Australia',      ar: 'أستراليا' },
-  { value: 'New Zealand',    en: 'New Zealand',    ar: 'نيوزيلندا' },
-  { value: 'Egypt',          en: 'Egypt',          ar: 'مصر' },
-  { value: 'Saudi Arabia',   en: 'Saudi Arabia',   ar: 'السعودية' },
-  { value: 'UAE',            en: 'UAE',            ar: 'الإمارات' },
-  { value: 'Qatar',          en: 'Qatar',          ar: 'قطر' },
-  { value: 'Kuwait',         en: 'Kuwait',          ar: 'الكويت' },
-  { value: 'Jordan',         en: 'Jordan',          ar: 'الأردن' },
-  { value: 'Morocco',        en: 'Morocco',         ar: 'المغرب' },
-  { value: 'Tunisia',        en: 'Tunisia',         ar: 'تونس' },
-  { value: 'Algeria',        en: 'Algeria',         ar: 'الجزائر' },
-  { value: 'Turkey',         en: 'Turkey',          ar: 'تركيا' },
-  { value: 'Other',          en: 'Other',           ar: 'أخرى' },
+  { value: 'United Kingdom', en: 'United Kingdom', ar: 'المملكة المتحدة', fr: 'Royaume-Uni' },
+  { value: 'Italy',          en: 'Italy',          ar: 'إيطاليا', fr: 'Italie' },
+  { value: 'France',         en: 'France',         ar: 'فرنسا', fr: 'France' },
+  { value: 'Germany',        en: 'Germany',        ar: 'ألمانيا', fr: 'Allemagne' },
+  { value: 'Spain',          en: 'Spain',          ar: 'إسبانيا', fr: 'Espagne' },
+  { value: 'Netherlands',    en: 'Netherlands',    ar: 'هولندا', fr: 'Pays-Bas' },
+  { value: 'Belgium',        en: 'Belgium',        ar: 'بلجيكا', fr: 'Belgique' },
+  { value: 'Switzerland',    en: 'Switzerland',    ar: 'سويسرا', fr: 'Suisse' },
+  { value: 'Austria',        en: 'Austria',        ar: 'النمسا', fr: 'Autriche' },
+  { value: 'Sweden',         en: 'Sweden',         ar: 'السويد', fr: 'Suède' },
+  { value: 'Denmark',        en: 'Denmark',        ar: 'الدنمارك', fr: 'Danemark' },
+  { value: 'Norway',         en: 'Norway',         ar: 'النرويج', fr: 'Norvège' },
+  { value: 'United States',  en: 'United States',  ar: 'الولايات المتحدة', fr: 'États-Unis' },
+  { value: 'Canada',         en: 'Canada',         ar: 'كندا', fr: 'Canada' },
+  { value: 'Australia',      en: 'Australia',      ar: 'أستراليا', fr: 'Australie' },
+  { value: 'New Zealand',    en: 'New Zealand',    ar: 'نيوزيلندا', fr: 'Nouvelle-Zélande' },
+  { value: 'Egypt',          en: 'Egypt',          ar: 'مصر', fr: 'Égypte' },
+  { value: 'Saudi Arabia',   en: 'Saudi Arabia',   ar: 'السعودية', fr: 'Arabie saoudite' },
+  { value: 'UAE',            en: 'UAE',            ar: 'الإمارات', fr: 'Émirats arabes unis' },
+  { value: 'Qatar',          en: 'Qatar',          ar: 'قطر', fr: 'Qatar' },
+  { value: 'Kuwait',         en: 'Kuwait',          ar: 'الكويت', fr: 'Koweït' },
+  { value: 'Jordan',         en: 'Jordan',          ar: 'الأردن', fr: 'Jordanie' },
+  { value: 'Morocco',        en: 'Morocco',         ar: 'المغرب', fr: 'Maroc' },
+  { value: 'Tunisia',        en: 'Tunisia',         ar: 'تونس', fr: 'Tunisie' },
+  { value: 'Algeria',        en: 'Algeria',         ar: 'الجزائر', fr: 'Algérie' },
+  { value: 'Turkey',         en: 'Turkey',          ar: 'تركيا', fr: 'Turquie' },
+  { value: 'Other',          en: 'Other',           ar: 'أخرى', fr: 'Autre' },
 ];
 
 // entry[lang] is undefined for any language without a real translation
-// (currently everything except en/ar), so this always falls back to the
+// (currently everything except en/ar/fr), so this always falls back to the
 // English name rather than ever returning undefined or inventing text.
 export function countryLabel(value, lang) {
   const entry = COUNTRIES.find((c) => c.value === value);

@@ -40,8 +40,10 @@ export default function TeacherProfile() {
   const specialties = teacher ? (teacher.specialties[lang] || teacher.specialties.en) : [];
   const displayName = teacher ? (lang === 'ar' ? teacher.nameAr : teacher.nameEn) : '';
 
+  // French (Batch 1C): an unknown teacher id gets the French word for the
+  // fallback title; English and Arabic keep their existing 'Teacher'.
   useSEO({
-    title: teacher ? displayName : 'Teacher',
+    title: teacher ? displayName : lang === 'fr' ? tp.instructor : 'Teacher',
     description: bio,
   });
 

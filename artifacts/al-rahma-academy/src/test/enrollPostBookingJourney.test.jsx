@@ -96,10 +96,12 @@ describe('Enroll SEO metadata: real Arabic, not an English fallback', () => {
     expect(description).not.toMatch(/اشتراك/);
   });
 
-  it('a legacy language without real Enroll copy (e.g. fr) falls back to the English object, not an invented translation', () => {
-    expect(pickEnrollSeo('fr')).toBe(ENROLL_SEO_TEXT.en);
+  it('a legacy language without real Enroll copy (e.g. es) falls back to the English object, not an invented translation', () => {
     expect(pickEnrollSeo('es')).toBe(ENROLL_SEO_TEXT.en);
-    expect(Object.keys(ENROLL_SEO_TEXT)).toEqual(['en', 'ar']);
+    expect(pickEnrollSeo('de')).toBe(ENROLL_SEO_TEXT.en);
+    // French Localization Batch 1C: French has its own entry.
+    expect(pickEnrollSeo('fr')).toBe(ENROLL_SEO_TEXT.fr);
+    expect(Object.keys(ENROLL_SEO_TEXT)).toEqual(['en', 'ar', 'fr']);
   });
 });
 

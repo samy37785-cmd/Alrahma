@@ -128,7 +128,8 @@ describe('TeacherProfile.jsx source: minimal, scoped diff', () => {
 
   it('does not touch displayName (PR #89), useSEO, breadcrumb, or H1', () => {
     expect(src).toMatch(/const displayName = teacher \? \(lang === 'ar' \? teacher\.nameAr : teacher\.nameEn\) : '';/);
-    expect(src).toMatch(/title: teacher \? displayName : 'Teacher'/);
+    // French Localization Batch 1C only adds a French fallback for an unknown id.
+    expect(src).toMatch(/title: teacher \? displayName : lang === 'fr' \? tp\.instructor : 'Teacher'/);
     expect(src).toMatch(/<h1 className="tp__name-ar" dir="rtl">\{teacher\.nameAr\}<\/h1>/);
   });
 });

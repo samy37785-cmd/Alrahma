@@ -11,7 +11,8 @@ Baseline: `origin/main` @ `79561a4`, audited 2026-09-27 against production.
 | `complete` | Visible text, title, description and H1 are French after render |
 | `partial` | French page exists but has English metadata and/or English body text |
 | `blocked-review` | Needs religious or legal human review before French text can ship |
-| `draft-review` | French text written in an open Draft PR, not merged, waiting for the review listed in the queue |
+| `draft-review` | French translated faithfully from the English source in an open Draft PR, not merged. The owner may review before merge; this is not a blocker |
+| `source-accuracy` | The English (or EN/AR) source itself has a known error or contradiction. French follows the English source as-is; the source is fixed separately, outside the French PRs, and does not block the batch |
 | `not-applicable` | Not a public SEO page: auth, admin, legacy redirect, error |
 
 `SEO` = in the EN/AR sitemap + prerender today (`published`) or not (`unpublished`). French is `unpublished` everywhere.
@@ -24,8 +25,8 @@ Baseline: `origin/main` @ `79561a4`, audited 2026-09-27 against production.
 | 2 | `/courses` | `/ar/courses` | `/fr/courses` | 1A | draft-review | published | no | no | Batch 1A: title/description |
 | 3 | `/courses/quran` | `/ar/courses/quran` | `/fr/courses/quran` | 1A | draft-review | published | yes | no | Batch 1A: title/description |
 | 4 | `/courses/arabic` | `/ar/courses/arabic` | `/fr/courses/arabic` | 1A | draft-review | published | no | no | Batch 1A: title/description. H1 "Alphabet arabe et italien" kept as the source says, pending owner |
-| 5 | `/courses/ijazah` | `/ar/courses/ijazah` | `/fr/courses/ijazah` | 1B | blocked-review | published | **yes** (Sanad/Ijazah claims) | no | Title, description, H1 and about 104 body strings EN-only (`pages/CourseIjazah.jsx` `isAr` ternaries) |
-| 6 | `/courses/islamic-studies` | `/ar/courses/islamic-studies` | `/fr/courses/islamic-studies` | 1B | blocked-review | unpublished | **yes** (hadith meanings, book descriptions) | no | About 23 page strings EN (`pages/CourseIslamicStudies.jsx`); 43 EN fields in `data/islamicStudiesData.js` incl. hadith translations |
+| 5 | `/courses/ijazah` | `/ar/courses/ijazah` | `/fr/courses/ijazah` | 1B | partial (1B not started) | published | owner may review (Sanad/Ijazah claims) | no | Title, description, H1 and about 104 body strings EN-only (`pages/CourseIjazah.jsx` `isAr` ternaries) |
+| 6 | `/courses/islamic-studies` | `/ar/courses/islamic-studies` | `/fr/courses/islamic-studies` | 1B | partial (1B not started) | unpublished | owner may review (hadith meanings from English, book descriptions) | no | About 23 page strings EN (`pages/CourseIslamicStudies.jsx`); 43 EN fields in `data/islamicStudiesData.js` incl. hadith translations |
 | 7 | `/academy` | `/ar/academy` | `/fr/academy` | 1A | draft-review | published | no | no | Batch 1A: description |
 | 8 | `/academy/about` | `/ar/academy/about` | `/fr/academy/about` | 1A | draft-review | published | no | no (owner narrative) | Batch 1A: H1, founder story (owner review) |
 | 9 | `/academy/teachers` | `/ar/academy/teachers` | `/fr/academy/teachers` | 2 | complete | published | review teacher claims | no | — |
@@ -77,10 +78,25 @@ Baseline: `origin/main` @ `79561a4`, audited 2026-09-27 against production.
   - AR content gap at the time: `/enroll`
 - 18 + 11 = 29 static. 29 + 11 = 40. No discrepancy.
 
-## Program rules
+## Translation policy (owner decision, 2026-09-27)
 
-- French text for rows marked **religious review** or **legal review** ships only after it is listed in the review queue below and approved by a named reviewer.
-- No new religious, legal or teacher claims. Translate the approved EN/AR source faithfully.
+Applies to Batch 1A and every later batch.
+
+- **English is the canonical source for French.** French is translated directly from the English text into natural, professional French.
+- Arabic is **not** used as a source for French translation.
+- No English transliteration and no Arabicised spelling: use the natural French term, consistently across the site.
+- No fact, promise, number or claim that is not in the English text.
+- A French PR never "corrects" the English text and never changes EN or AR output.
+
+Religious text:
+
+- Quran or hadith text shown in its original Arabic stays exactly as it is.
+- Explanations and interface text are translated faithfully from the English.
+- The French is a translation of the English page. It is never presented as an approved religious interpretation (tafsir or sharh).
+- A wrong source link, or a contradiction between EN and AR, is not changed in the French PR. It is logged below as a separate `source-accuracy` issue.
+
+Also:
+
 - Course JSON-LD `inLanguage` describes the language of instruction (currently `en`, `ar`), not the page language. It is not changed by translation.
 
 ## Batches
@@ -88,21 +104,35 @@ Baseline: `origin/main` @ `79561a4`, audited 2026-09-27 against production.
 | Batch | Templates | State |
 |---|---|---|
 | 1A | `/`, `/courses`, `/courses/quran`, `/courses/arabic`, `/academy`, `/academy/about` | Draft PR, not merged |
-| 1B | `/courses/ijazah`, `/courses/islamic-studies` | Not started. Detailed list: [french-batch1b-religious-review.md](french-batch1b-religious-review.md). Starts only after the owner names a religious reviewer or an approved French translation source |
+| 1B | `/courses/ijazah`, `/courses/islamic-studies` | Not started; starts only on the owner's approval. Inventory: [french-batch1b-religious-review.md](french-batch1b-religious-review.md) |
 | 2–5 | See the table above | Not started; each needs separate approval |
 
-## Review queue
+## Owner review (non-blocking)
 
-No reviewer has been designated. The Reviewer column stays empty until the owner names one; no name is filled in on anyone's behalf. Everything below stays in a Draft PR and unpublished until approved.
+Translated faithfully from the English source under the policy above. Status: `faithful-English-source translation — owner may review before merge`. None of these blocks Batch 1A. No reviewer is named; none is filled in on anyone's behalf.
 
-| # | Item | Template | Source | Review needed | Reviewer | Status |
-|---|---|---|---|---|---|---|
-| 1 | Founder story, French translation (faithful, nothing added) | `/academy/about` | `i18n/about/founderStory.js` `fr` | **owner-review-required** | — | pending |
-| 2 | IsnadChain section, French (transmission chain, Prophet ﷺ / Companions / Al-Azhar / tutors' sanad) | `/` | `i18n/home/isnadChain.js` `fr` | religious review | — | pending |
-| 3 | Hadith (Sahih al-Bukhari 5027): French shows the approved Arabic original only; no French meaning written | `/` | `i18n/home/isnadChain.js` `fr.quote` | religious review: keep Arabic only, or approve a French meaning source | — | blocked-review (French meaning) |
-| 4 | Level quiz, Ijazah recommendation: "chaîne connectée (sanad) remontant au Prophète ﷺ" | `/` | `i18n/home/levelQuiz.js` `fr.recommendations.ijazah` | religious review | — | pending |
-| 5 | French terminology: "Tajweed" (new text) vs "tajwid" (existing `fr.js` H1/nav); "Ijazah" gender (fr.js uses both "un Ijazah" and "une ijaza"); Aqida/Sira spelling | all 1A | `fr.js`, 1A modules | French language review | — | pending |
-| 6 | "Arabic & Italian Alphabet" / "Alphabet arabe et italien" H1: kept exactly as the source says | `/courses/arabic` | `fr.js` `hubs.arabic.heading` (unchanged) | owner to confirm intent | — | pending |
-| 7 | "24-day" refund stat translated as "24 jours" (faithful to source) | `/` | `i18n/home/leakedStrings.js` `fr.refundWindowStat` | owner to confirm the source figure | — | pending |
-| 8 | "in 17 languages" (courses/quran description, EN source) vs the hero listing 5 teaching languages | `/courses/quran`, `/` | `i18n/courses/seo.js` `quran.fr` | owner to confirm the source claim | — | pending |
-| 9 | All Batch 1B items | `/courses/ijazah`, `/courses/islamic-studies` | see [french-batch1b-religious-review.md](french-batch1b-religious-review.md) | religious / owner / legal | — | not started |
+| # | Item | Template | Source |
+|---|---|---|---|
+| 1 | Founder story | `/academy/about` | `i18n/about/founderStory.js` `fr` |
+| 2 | IsnadChain section (transmission chain, tutors' sanad) | `/` | `i18n/home/isnadChain.js` `fr` |
+| 3 | Level quiz, including the Ijazah recommendation | `/` | `i18n/home/levelQuiz.js` `fr` |
+| 4 | SEO titles/descriptions, H1, leaked strings, course labels, country names, a11y labels | all 1A | 1A `fr` entries, `i18n/a11yLabels.js` |
+
+## Open decisions for the owner (Batch 1A)
+
+| # | Item | Current state in PR #130 | Why it is open |
+|---|---|---|---|
+| D1 | Home hadith (Sahih al-Bukhari 5027) | French shows the Arabic original (`ar.quote`), with no French meaning | The English page shows only the English meaning, not the Arabic. The policy keeps the Arabic original *where it is already shown* and translates from the English. The owner decides: (a) keep the Arabic original, or (b) show the French translation of the English line, as a translation, not an approved interpretation |
+| D2 | Terminology in the new 1A text | "Tajweed", "Ijazah" (English transliterations), "Hifz" | The policy asks for the natural French term. Proposal: "tajwid" (already the French H1 of `/courses/quran`), "ijaza", "mémorisation (hifz)". `fr.js` also has "Tajweed"/"Ijazah" on 31 lines outside the 1A text |
+
+## Source-accuracy issues
+
+Known errors or contradictions in the English (or EN/AR) source. French follows the English as-is. Each is fixed separately, outside the French PRs, with the owner's decision, and **does not block** its batch.
+
+| # | Issue | Where (source) | Affects | French today |
+|---|---|---|---|---|
+| S1 | Teaching-language count is inconsistent within English: "in 17 languages" vs "English, Italian, French, German or Spanish" vs "English, Italian or French" | `i18n/courses/seo.js` `quran.en`; `en.js` `hubs.courses.sub`, `hubs.quran` Hifz card; `en.js` `hero.sub`; `en.js` features (line 90) | 1A `/courses/quran`, `/courses`, `/` | Translates each English sentence as written ("en 17 langues") |
+| S2 | "Arabic & Italian Alphabet" H1: intent unconfirmed (the page body describes Italian phonetic equivalents) | `en.js` `hubs.arabic.heading` | 1A `/courses/arabic` | "Alphabet arabe et italien" (existing `fr.js`, unchanged) |
+| S3 | Batch 1B: EN/AR differences (Ijazah SEO description, LEARN[9], duration stat; Islamic Studies "40" vs "42" hadiths, "Islamic theology" vs "علم الكلام") and a hadith source link pointing to the wrong collection (H17) | See [french-batch1b-religious-review.md](french-batch1b-religious-review.md) | 1B | Not translated (1B not started) |
+
+Resolved: "24-day" refund stat matches `siteFacts.refundWindowDays` (24). Not an issue.

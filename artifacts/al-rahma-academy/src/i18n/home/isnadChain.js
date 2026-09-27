@@ -92,12 +92,12 @@ export const ISNAD_CHAIN_TEXT = {
     ctaGift: 'امنح طفلك هذه الهدية ←',
     ctaMeet: 'تعرّف على حاملي الإجازة لدينا',
   },
-  // French Localization Batch 1A: faithful translation of `en`, listed for
-  // religious review in docs/french-localization-registry.md. The hadith is
-  // NOT translated: no French meaning or translation source has been
-  // approved, so French shows the approved Arabic original (the same text
-  // as `ar.quote`), marked lang="ar" by IsnadChain.jsx via `quoteLang`. The
-  // citation is the book name and number only.
+  // French Localization Batch 1A: faithful translation of `en` (English is
+  // the canonical source for French). The hadith line is not translated:
+  // French shows the Arabic original (the same text as `ar.quote`), marked
+  // lang="ar" by IsnadChain.jsx via `quoteLang` — an open owner decision,
+  // see docs/french-localization-registry.md (D1). The citation is the book
+  // name and number only.
   fr: {
     eyebrow: 'Notre héritage',
     headingLine1: 'Chaque cours est relié à',

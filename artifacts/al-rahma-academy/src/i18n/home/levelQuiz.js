@@ -152,8 +152,8 @@ export const LEVEL_QUIZ_TEXT = {
   // French Localization Batch 1A: a faithful translation of `en` above —
   // same courses, same "4–6 months" figure, nothing added. The Ijazah
   // recommendation's sanad wording reuses the phrase fr.js already
-  // publishes ("chaîne connectée (sanad) remontant au Prophète ﷺ") and is
-  // listed for religious review in docs/french-localization-registry.md.
+  // publishes ("chaîne connectée (sanad) remontant au Prophète ﷺ"). The
+  // owner may review it before merge.
   fr: {
     eyebrow: 'Trouvez votre cours',
     heading: '3 questions → votre plan de cours idéal',

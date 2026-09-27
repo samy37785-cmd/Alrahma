@@ -83,9 +83,9 @@ export const FOUNDER_STORY_TEXT = {
     sigBrand: 'Al-Rahma Academy', // Brand name — deliberately identical in both languages.
   },
   // French Localization Batch 1A: a faithful French translation of the
-  // English story above — no event, claim, figure or promise added, and the
-  // same <strong> fragment and siteFacts numbers. Owner review required
-  // (listed in docs/french-localization-registry.md); not yet approved.
+  // English story above (English is the canonical source for French) — no
+  // event, claim, figure or promise added, and the same <strong> fragment
+  // and siteFacts numbers. The owner may review it before merge.
   fr: {
     eyebrow: 'Notre histoire',
     title: 'Pourquoi nous avons créé Al-Rahma Academy',

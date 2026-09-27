@@ -7,6 +7,30 @@ import { asyncHandler } from '../../utils/asyncHandler.js';
 import { parsePagination } from '../../utils/pagination.js';
 import { withAnonContext } from './client.js';
 
+// Blog SEO Foundation PR A: en/ar only for now. Deliberately not imported
+// from ../../models/Blog.js's BLOG_LOCALES -- this file has zero
+// dependencies on the Mongo-only model tree (same self-contained-SQL
+// convention as mapListRow's own comment below). Exported (read-only; no
+// behavior depends on it being public) purely so
+// tests/blog-locale-parity.test.js can assert this stays identical to the
+// Mongo side's allow-list without needing a database of either kind.
+export const LOCALES = ['en', 'ar'];
+
+// Same 400 shape and same "no header/URL inference" rule as the Mongo
+// controller's requireLocale() (controllers/blogController.js) — the two
+// are independent implementations by construction (see the LOCALES comment
+// above) but must produce the same observable contract.
+function requireLocale(req, res) {
+  const { locale } = req.query;
+  if (!locale || !LOCALES.includes(locale)) {
+    res.status(400).json({
+      message: `locale query parameter is required and must be one of: ${LOCALES.join(', ')}`,
+    });
+    return null;
+  }
+  return locale;
+}
+
 // Stage 2E documented category/coverImage/readTime as missing columns
 // (always null). Stage 2F closed that (0014_close_partial_gaps_schema.sql
 // adds blogs.category/cover_image/read_time/canonical_url).
@@ -22,20 +46,25 @@ function mapListRow(row) {
     readTime: row.read_time,
     publishedAt: row.published_at,
     views: row.views,
+    locale: row.locale,
+    translationGroupId: row.translation_group_id,
   };
 }
 
 // @route  GET /api/blog
 // @access Public
 export const listPosts = asyncHandler(async (req, res) => {
+  const locale = requireLocale(req, res);
+  if (!locale) return;
+
   const { page, limit, skip } = parsePagination(req.query, { defaultLimit: 9, maxLimit: 20 });
   const { category, tag } = req.query;
 
   const { rows, total } = await withAnonContext(async (client) => {
     // blogs_select_published_or_admin (0002_rls.sql) lets anon see only
     // published = true rows, matching the Mongo filter's { published: true }.
-    const conditions = ['published = true'];
-    const params = [];
+    const conditions = ['published = true', 'locale = $1'];
+    const params = [locale];
     if (category) {
       params.push(category);
       conditions.push(`category = $${params.length}`);
@@ -48,7 +77,7 @@ export const listPosts = asyncHandler(async (req, res) => {
 
     params.push(limit, skip);
     const listSql = `SELECT id, title, slug, excerpt, category, tags, author_name, author_role,
-              author_image, cover_image, read_time, published_at, views
+              author_image, cover_image, read_time, published_at, views, locale, translation_group_id
          FROM blogs
         WHERE ${where}
         ORDER BY published_at DESC NULLS LAST
@@ -76,14 +105,18 @@ export const listPosts = asyncHandler(async (req, res) => {
 // @route  GET /api/blog/:slug
 // @access Public
 export const getPost = asyncHandler(async (req, res) => {
+  const locale = requireLocale(req, res);
+  if (!locale) return;
+
   const post = await withAnonContext(async (client) => {
     const r = await client.query(
       `SELECT id, title, slug, content, excerpt, category, tags, author_name,
               author_role, author_image, cover_image, read_time, canonical_url,
-              published, views, published_at, seo_title, seo_description, created_at
+              published, views, published_at, seo_title, seo_description, created_at,
+              locale, translation_group_id
          FROM blogs
-        WHERE slug = $1 AND published = true`,
-      [req.params.slug]
+        WHERE slug = $1 AND locale = $2 AND published = true`,
+      [req.params.slug, locale]
     );
     return r.rows[0];
   });
@@ -122,6 +155,8 @@ export const getPost = asyncHandler(async (req, res) => {
       },
       views: post.views,
       createdAt: post.created_at,
+      locale: post.locale,
+      translationGroupId: post.translation_group_id,
     },
   });
 });

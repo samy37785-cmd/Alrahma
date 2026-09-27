@@ -183,6 +183,13 @@
       "when": 1788912003000,
       "tag": "0025_booking_first_enrollment",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1788912004000,
+      "tag": "0026_blog_locale_translation_group",
+      "breakpoints": true
     }
   ]
 }

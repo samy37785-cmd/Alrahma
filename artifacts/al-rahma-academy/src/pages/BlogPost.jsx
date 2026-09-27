@@ -93,12 +93,16 @@ function parseInline(text) {
 
 export default function BlogPost() {
   const { slug } = useParams();
-  const { t } = useLang();
+  const { t, lang } = useLang();
 
-  const { data: post, isLoading, isError } = useBlogPost(slug);
+  // Backend blog articles are en/ar only for now (Blog SEO Foundation PR A)
+  // — see Blog.jsx's identical comment for why non-ar languages map to 'en'.
+  const locale = lang === 'ar' ? 'ar' : 'en';
+
+  const { data: post, isLoading, isError } = useBlogPost(slug, locale);
 
   // Fetch the full list to determine prev/next neighbours.
-  const { data: allPosts = [] } = useBlogPosts();
+  const { data: allPosts = [] } = useBlogPosts({ locale });
   const idx  = allPosts.findIndex((p) => p.slug === slug);
   const prev = idx > 0 ? allPosts[idx - 1] : null;
   const next = idx < allPosts.length - 1 ? allPosts[idx + 1] : null;

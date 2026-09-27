@@ -45,7 +45,7 @@
 --
 -- Verified empirically against a disposable local Postgres via this
 -- project's own lib/db/test/orchestrate-db-tests.mjs (not merely reasoned
--- about) — see rls.local.test.mjs's "0026 security definer view
+-- about) — see rls.local.test.mjs's "0027 security definer view
 -- hardening" block for the exact assertions this migration must keep
 -- passing: both views keep returning identical rows/columns to anon as
 -- before, both views' security_invoker reloption is confirmed set, and

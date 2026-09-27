@@ -36,7 +36,7 @@ pnpm run check:published-migrations  # just the 4 filesystem checksum assertions
 Suites, in the order the orchestrator runs them:
 
 - `test/schema.local.test.mjs` — 68 real-SQL assertions (schema, constraints, functions/triggers)
-- `test/rls.local.test.mjs` — 85 real-SQL assertions (specific findings: bypass closure, forgery prevention, AAL boundaries, concurrency, webhook lease + fencing, subscription/invoice/refund RPCs, Booking-First Enrollment's submit_enrollment_booking() RPC, 0026's reviews_public/teachers_public security_invoker hardening)
+- `test/rls.local.test.mjs` — 85 real-SQL assertions (specific findings: bypass closure, forgery prevention, AAL boundaries, concurrency, webhook lease + fencing, subscription/invoice/refund RPCs, Booking-First Enrollment's submit_enrollment_booking() RPC, 0027's reviews_public/teachers_public security_invoker hardening)
 - `test/rls-full-matrix.local.test.mjs` — 70 real-SQL assertions (systematic per-table sweep of docs/rls-matrix.md, incl. plan versioning + invoice issuance sweeps)
 - `test/acl.local.test.mjs` — 20 real-SQL assertions (direct has_table_privilege/has_column_privilege/has_function_privilege checks — proves the GRANT matrix directly, not by inference)
 - `test/upgrade-scenario.local.test.mjs` — 9 real-SQL assertions (self-contained — see below; applies 0000-0003, injects legacy drift, then applies the rest and proves it's cleaned up)
@@ -48,7 +48,9 @@ targeted RLS + 70 full RLS matrix + 20 ACL + 9 upgrade.** (Stage 2J-B /
 migration then raised it from 241 to 247: +5 targeted RLS —
 submit_enrollment_booking() RPC coverage — and +1 ACL — one test
 covering all 7 new admin/financial columns having no anon INSERT grant.
-0026_security_definer_view_hardening.sql then raised it from 247 to 256:
+0027_security_definer_view_hardening.sql then raised it from 247 to 256
+(0026 is a separately-merged blog-locale migration that doesn't touch
+this suite):
 +9 targeted RLS — reviews_public/teachers_public keep exposing identical
 anon-visible rows/columns under security_invoker, both views' reloptions
 are confirmed set, and the new narrow profiles column grant is proven
@@ -213,7 +215,7 @@ The fix is `test/orchestrate-db-tests.mjs` (a fresh, uniquely-named,
 disposable container every run — see above), not any change to
 migrations or RLS SQL. Verified empirically, not assumed: the full
 230-assertion suite (the contract's total at Stage 0 — now 256 after
-Stage 2J-B, Booking-First Enrollment's 0025 migration, and 0026's
+Stage 2J-B, Booking-First Enrollment's 0025 migration, and 0027's
 security-definer-view hardening, see above) was
 run twice, each on its own independently fresh disposable database (Run
 A, Run B), and both reached 230/230. See

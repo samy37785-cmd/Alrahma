@@ -1,6 +1,7 @@
 import {
   boolean,
   check,
+  index,
   integer,
   jsonb,
   pgTable,
@@ -20,13 +21,17 @@ import { profiles } from "./profiles";
 // baseline.
 
 /** Public blog content — unchanged shape from the original evidence-based
- * design, plus one addition: can't be published without a timestamp. */
+ * design, plus: can't be published without a timestamp, and (Blog SEO
+ * Foundation PR A) every article now carries a `locale` and an optional
+ * `translationGroupId` linking it to its counterpart in the other locale. */
 export const blogs = pgTable(
   "blogs",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     title: text("title").notNull(),
-    slug: text("slug").notNull().unique(),
+    // No longer unique on its own -- see the compound (locale, slug) index
+    // below. The same slug is now valid once per locale.
+    slug: text("slug").notNull(),
     content: text("content").notNull(),
     excerpt: text("excerpt"),
     tags: jsonb("tags").$type<string[]>().notNull().default([]),
@@ -39,12 +44,28 @@ export const blogs = pgTable(
     seoTitle: text("seo_title"),
     seoDescription: text("seo_description"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    // en/ar only for now (matches backend/models/Blog.js's Mongo-side
+    // BLOG_LOCALES) -- the 'en' default is a backward-compatible safety net
+    // only; 0 real rows exist today (docs/option-a-mongo-supabase-parity-map.md
+    // §9), so it never relabels real content.
+    locale: text("locale").notNull().default("en"),
+    // Links this article to its counterpart in the other locale for the
+    // same topic. Nullable: an article with no translation yet is valid.
+    // No FK to blogs.id on purpose -- a translation pair is two independent
+    // rows sharing one arbitrary token, not a parent/child relationship, so
+    // there is no single row either side could correctly reference.
+    translationGroupId: uuid("translation_group_id"),
   },
   (t) => [
     check(
       "blogs_published_requires_timestamp",
       sql`(${t.published} = false) OR (${t.publishedAt} IS NOT NULL)`,
     ),
+    check("blogs_locale_allowlist", sql`${t.locale} IN ('en','ar')`),
+    uniqueIndex("blogs_locale_slug_unique").on(t.locale, t.slug),
+    index("blogs_translation_group_id_idx")
+      .on(t.translationGroupId)
+      .where(sql`${t.translationGroupId} IS NOT NULL`),
   ],
 );
 

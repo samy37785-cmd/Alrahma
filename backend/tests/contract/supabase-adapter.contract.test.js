@@ -7,7 +7,20 @@
 // real client would make against the real Express app wired to
 // DATA_BACKEND=supabase.
 //
-// Prerequisites (all local-only — see the module-level guards below):
+// EASIEST WAY TO RUN THIS FILE — one command, no manual setup:
+//
+//   cd backend && npm run test:supabase-contract
+//
+// scripts/test-supabase-contract.mjs does everything below for you: spins
+// up a brand-new disposable local Postgres container, applies every
+// lib/db/drizzle migration, seeds the exact fixture rows this file's own
+// assertions expect, runs this file unmodified against a really-booted
+// Express app, independently double-checks the two write paths directly
+// against Postgres, and always tears the container down (verified) no
+// matter the outcome. Requires only a running local Docker daemon.
+//
+// Manual setup (what that script automates, kept here for anyone who
+// wants to drive it by hand or against a different local Postgres):
 //   1. A local Postgres with the lib/db schema applied:
 //        cd lib/db && TEST_DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5434/postgres \
 //          node test/run-migrations.mjs
@@ -16,19 +29,22 @@
 //          node scripts/migration/seed-mongo-fixture.mjs
 //        cd backend && MIGRATION_MONGO_URI=... MIGRATION_DB_URL=postgresql://postgres:postgres@127.0.0.1:5434/postgres \
 //          node scripts/migration/mongo-to-supabase.mjs --domain=all
+//   3. Run with:
+//        DATA_BACKEND=supabase SUPABASE_DB_URL=postgresql://postgres:postgres@127.0.0.1:5434/postgres \
+//        SUPABASE_URL=http://127.0.0.1:0 SUPABASE_ANON_KEY=dummy SUPABASE_SERVICE_ROLE_KEY=dummy \
+//        MONGO_URI=mongodb://127.0.0.1:1/unused JWT_SECRET=test-secret NODE_ENV=test \
+//        node --test tests/contract/supabase-adapter.contract.test.js
 //
-// Run with:
-//   DATA_BACKEND=supabase SUPABASE_DB_URL=postgresql://postgres:postgres@127.0.0.1:5434/postgres \
-//   SUPABASE_URL=http://127.0.0.1:0 SUPABASE_ANON_KEY=dummy SUPABASE_SERVICE_ROLE_KEY=dummy \
-//   MONGO_URI=mongodb://127.0.0.1:1/unused JWT_SECRET=test-secret NODE_ENV=test \
-//   node --test tests/contract/supabase-adapter.contract.test.js
+// This file is still deliberately excluded from the default `npm run test`
+// sweep (that suite always runs with DATA_BACKEND unset/mongodb, matching
+// what's actually deployed) — `npm run test:supabase-contract` is a
+// separate, explicit command, not part of the standard pre-deploy gate.
 //
-// This is a rehearsal/dev tool, deliberately excluded from `npm run test`
-// (package.json's script glob only matches tests/**/*.test.js run under the
-// default DATA_BACKEND=mongodb env — this file still matches that glob, so
-// CI users must be aware it requires the above local setup to pass; it is
-// intended to be run manually during Supabase-adapter development/review,
-// not as part of the standard pre-deploy gate).
+// See ./last-verified-run.md for the first real, end-to-end run of this
+// exact file against a disposable local Postgres + a real booted Express
+// app (not mocks) — what was proven, what wasn't (anon/guest paths only,
+// not yet authenticated/service-role), and the direct DB proof the writes
+// were real rows, not stubbed responses.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import request from 'supertest';

@@ -1,5 +1,15 @@
 # Supabase adapter contract suite — last real, end-to-end verified run
 
+**Update:** this manual run is now automated as a single, repeatable
+command — `npm run test:supabase-contract` (see
+`scripts/test-supabase-contract.mjs`). That script does everything
+described below itself (disposable container, migrations, fixture seed,
+real app boot, the contract suite, a direct-DB row check, guaranteed
+cleanup) and exits nonzero on any failure. This file remains as the
+historical record of the first time this suite was proven to actually
+pass, and as a description of what the automated command does under the
+hood.
+
 This file exists because `supabase-adapter.contract.test.js` is explicitly
 excluded from `npm test` and, per its own header comment, is a
 "rehearsal/dev tool" that requires manual local setup — nothing in this

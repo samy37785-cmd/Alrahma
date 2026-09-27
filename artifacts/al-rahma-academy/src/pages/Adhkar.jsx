@@ -8,6 +8,7 @@ import { ADHKAR_TR, sourceTr } from '../i18n/adhkarText';
 
 import { ADHKAR, CATEGORY_KEYS } from '../data/adhkarData';
 import Breadcrumbs from '../components/ui/Breadcrumbs';
+import { trackEvent } from '../analytics/ga';
 
 
 /* ══════════════════════════════════════════════════════════════════
@@ -124,7 +125,10 @@ export default function Adhkar() {
                   <button
                     key={key}
                     className={`adhkar__cat-btn${cat === key && !search ? ' active' : ''}`}
-                    onClick={() => { setCat(key); setSearch(''); }}
+                    onClick={() => {
+                      if (key !== cat) trackEvent('adhkar_category_change', { category: key });
+                      setCat(key); setSearch('');
+                    }}
                     style={{ '--cat-color': c.color }}
                   >
                     <span className="adhkar__cat-icon">{c.icon}</span>

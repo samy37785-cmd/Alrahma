@@ -250,6 +250,9 @@ const EXPECTED_WA_ME_INVENTORY = {
   'components/features/marketing/TrustBar.jsx': { count: 1, classification: 'academy-direct' },
   'components/layout/dashboardNav.js': { count: 1, classification: 'academy-direct' },
   'components/layout/Footer.jsx': { count: 1, classification: 'academy-direct' },
+  // Not a link: the consent-gated analytics click matcher (whatsapp_click),
+  // built from site.whatsapp so it can never drift from the real number.
+  'components/ui/Analytics.jsx': { count: 1, classification: 'academy-direct' },
   'components/ui/CancelSurvey.jsx': { count: 1, classification: 'academy-direct' },
   'components/ui/WhatsappFab.jsx': { count: 1, classification: 'academy-direct' },
   'pages/Dashboard.jsx': { count: 1, classification: 'academy-direct' },
@@ -267,9 +270,9 @@ const EXPECTED_WA_ME_INVENTORY = {
 // the single helper that builds the post-booking WhatsApp CTA, resolving the
 // number through site.whatsapp like every other academy-direct occurrence
 // (never a hardcoded literal).
-const EXPECTED_TOTAL_FILES = 16;
-const EXPECTED_TOTAL_OCCURRENCES = 18;
-const EXPECTED_DIRECT_OCCURRENCES = 14;
+const EXPECTED_TOTAL_FILES = 17;
+const EXPECTED_TOTAL_OCCURRENCES = 19;
+const EXPECTED_DIRECT_OCCURRENCES = 15;
 const EXPECTED_SHARE_OCCURRENCES = 4;
 
 // Classifies by index math on the raw file text (never a single-line

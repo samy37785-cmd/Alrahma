@@ -1,51 +1,50 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
+import { site } from '../../data/site';
+import { CONSENT_GRANTED, useAnalyticsConsent } from '../../analytics/consent';
+import { getMeasurementId, loadGa, disableGa, trackPageView, trackEvent } from '../../analytics/ga';
 
-// Google Analytics 4 — set VITE_GA_ID in Vercel env vars (e.g. G-XXXXXXX).
-const GA_ID = import.meta.env.VITE_GA_ID;
-// Microsoft Clarity — set VITE_CLARITY_ID in env vars (e.g. abc123xyz).
-const CLARITY_ID = import.meta.env.VITE_CLARITY_ID;
+// Consent-aware Google Analytics 4 (see src/analytics/ga.js for the privacy
+// rules and docs/analytics.md for configuration). Renders nothing.
+
+// Only links to the academy's own WhatsApp number / email address count as
+// contact clicks; recipient-less WhatsApp share links do not. The number and the
+// address themselves are never sent — only the event name.
+export function contactEventForHref(href) {
+  if (typeof href !== 'string') return null;
+  if (href.startsWith(`https://wa.me/${site.whatsapp}`)) return 'whatsapp_click';
+  if (href.toLowerCase().startsWith(`mailto:${site.email.toLowerCase()}`)) return 'email_click';
+  return null;
+}
 
 export default function Analytics() {
   const location = useLocation();
+  const consent = useAnalyticsConsent();
+  const id = getMeasurementId();
+  const enabled = !!id && consent === CONSENT_GRANTED;
 
-  // Load GA4 + Clarity once on mount.
   useEffect(() => {
-    // ── Google Analytics 4 ─────────────────────────────────────
-    if (GA_ID && !window.gtag) {
-      const script = document.createElement('script');
-      script.async = true;
-      script.src = `https://www.googletagmanager.com/gtag/js?id=${GA_ID}`;
-      document.head.appendChild(script);
+    if (!id) return;
+    if (enabled) loadGa(id);
+    else disableGa(id);
+  }, [id, enabled]);
 
-      window.dataLayer = window.dataLayer || [];
-      function gtag() { window.dataLayer.push(arguments); }
-      window.gtag = gtag;
-      gtag('js', new Date());
-      gtag('config', GA_ID, { send_page_view: false });
-    }
-
-    // ── Microsoft Clarity ──────────────────────────────────────
-    if (CLARITY_ID && !window.clarity) {
-      window.clarity = window.clarity || function () {
-        (window.clarity.q = window.clarity.q || []).push(arguments);
-      };
-      const s = document.createElement('script');
-      s.async = true;
-      s.src = `https://www.clarity.ms/tag/${CLARITY_ID}`;
-      document.head.appendChild(s);
-    }
-  }, []);
-
-  // Report a page view on every client-side navigation.
+  // location.pathname is basename-relative (/enroll under /ar); trackPageView
+  // reads the full window.location.pathname itself.
   useEffect(() => {
-    if (!GA_ID || !window.gtag) return;
-    window.gtag('event', 'page_view', {
-      page_path: location.pathname + location.search,
-      page_location: window.location.href,
-      page_title: document.title,
-    });
-  }, [location]);
+    if (enabled) trackPageView();
+  }, [enabled, location.pathname]);
+
+  useEffect(() => {
+    if (!enabled) return undefined;
+    const onClick = (e) => {
+      const link = e.target instanceof Element ? e.target.closest('a[href]') : null;
+      const eventName = link ? contactEventForHref(link.getAttribute('href')) : null;
+      if (eventName) trackEvent(eventName);
+    };
+    document.addEventListener('click', onClick, true);
+    return () => document.removeEventListener('click', onClick, true);
+  }, [enabled]);
 
   return null;
 }

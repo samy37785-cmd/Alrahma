@@ -29,6 +29,12 @@
 // CI users must be aware it requires the above local setup to pass; it is
 // intended to be run manually during Supabase-adapter development/review,
 // not as part of the standard pre-deploy gate).
+//
+// See ./last-verified-run.md for the first real, end-to-end run of this
+// exact file against a disposable local Postgres + a real booted Express
+// app (not mocks) — what was proven, what wasn't (anon/guest paths only,
+// not yet authenticated/service-role), and the direct DB proof the writes
+// were real rows, not stubbed responses.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import request from 'supertest';

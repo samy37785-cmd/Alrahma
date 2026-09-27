@@ -66,8 +66,8 @@ PASS  cleanup: the fully successful path (stop ok, initial present, rm ok, final
 === suites have not started yet.                                        ===
 ========================================================================
 
-=== Stage 0 DB test-gate orchestrator run — started 2026-09-27T10:28:39.295Z ===
-Container: alrahma-dbtest-mujoedq7-99909953 (image postgres:16, bound to 127.0.0.1 only, random port, random password)
+=== Stage 0 DB test-gate orchestrator run — started 2026-09-27T11:29:18.202Z ===
+Container: alrahma-dbtest-mujqkdiy-7151ad2b (image postgres:16, bound to 127.0.0.1 only, random port, random password)
 
 === node test/published-migrations-checksum.test.mjs ===
 PASS  0000_init_20_table_baseline.sql: Git blob at HEAD matches, no tracked modification, journal timestamp unchanged
@@ -79,16 +79,16 @@ PASS  0003_provider_events_lease.sql: Git blob at HEAD matches, no tracked modif
 --- exit code: 0 ---
 
 === start-disposable-postgres ===
-started; TEST_DATABASE_URL=postgres://postgres:***@127.0.0.1:60030/alrahma_test
+started; TEST_DATABASE_URL=postgres://postgres:***@127.0.0.1:51818/alrahma_test
 --- exit code: 0 ---
 
 === node test/run-migrations.mjs (1st) ===
-[migrate] applying lib/db/drizzle to postgres://postgres:***@127.0.0.1:60030/alrahma_test
+[migrate] applying lib/db/drizzle to postgres://postgres:***@127.0.0.1:51818/alrahma_test
 [migrate] done.
 --- exit code: 0 ---
 
 === node test/run-migrations.mjs (2nd, proves already-applied bookkeeping) ===
-[migrate] applying lib/db/drizzle to postgres://postgres:***@127.0.0.1:60030/alrahma_test
+[migrate] applying lib/db/drizzle to postgres://postgres:***@127.0.0.1:51818/alrahma_test
 [migrate] done.
 --- exit code: 0 ---
 
@@ -242,15 +242,15 @@ PASS  enforce_subscription_transition(): a row can never be INSERTed already-ter
 PASS  enforce_subscription_transition(): an ACTIVE row must have a real, future current_period_end, even on INSERT (Round 4)
 PASS  enforce_subscription_transition(): current_period_end must be after current_period_start, on INSERT and UPDATE alike (Round 4)
 PASS  admin_activate_manual_subscription(): rejected when the admin passes an already-elapsed p_current_period_end (Round 4)
-PASS  0026 seed: a teacher profile, an approved-review student, a pending-review student, and a plain user
-PASS  0026: reviews_public and teachers_public both have security_invoker AND security_barrier set (closes the advisor finding for real)
-PASS  0026: anon can still read teachers_public exactly as before (same columns, correct row)
-PASS  0026: teachers_public still excludes a non-teacher profile (view's own WHERE clause still enforced under invoker mode)
-PASS  0026: anon can still read reviews_public exactly as before, including the joined reviewer name
-PASS  0026: reviews_public still excludes a pending (non-approved) review under invoker mode
-PASS  0026: the new narrow profiles grant lets anon query the same public teacher columns directly too (expected — identical exposure to the view, not a widening)
-PASS  0026: anon still CANNOT read profiles.email directly, even for a teacher row (column-level grant boundary holds)
-PASS  0026: anon querying profiles directly for a plain user (not a teacher, no approved review) returns zero rows (RLS row-scoping, not just column-scoping)
+PASS  0027 seed: a teacher profile, an approved-review student, a pending-review student, and a plain user
+PASS  0027: reviews_public and teachers_public both have security_invoker AND security_barrier set (closes the advisor finding for real)
+PASS  0027: anon can still read teachers_public exactly as before (same columns, correct row)
+PASS  0027: teachers_public still excludes a non-teacher profile (view's own WHERE clause still enforced under invoker mode)
+PASS  0027: anon can still read reviews_public exactly as before, including the joined reviewer name
+PASS  0027: reviews_public still excludes a pending (non-approved) review under invoker mode
+PASS  0027: the new narrow profiles grant lets anon query the same public teacher columns directly too (expected — identical exposure to the view, not a widening)
+PASS  0027: anon still CANNOT read profiles.email directly, even for a teacher row (column-level grant boundary holds)
+PASS  0027: anon querying profiles directly for a plain user (not a teacher, no approved review) returns zero rows (RLS row-scoping, not just column-scoping)
 
 85/85 passed.
 --- exit code: 0 ---
@@ -385,7 +385,7 @@ OK  exact contract satisfied: 256/256 (expected exactly 256)
 Naive pipeline aggregate (informational only, NOT the green/not-green judgment): 256/256
 Pipeline overall exit code: 0
 
-=== cleanup: stopping and verifying removal of container "alrahma-dbtest-mujoedq7-99909953" ===
+=== cleanup: stopping and verifying removal of container "alrahma-dbtest-mujqkdiy-7151ad2b" ===
 docker stop: exit=0
 initial presence check: docker ps exit=0 → ABSENT
 docker rm -f fallback: not attempted (initial presence check independently confirmed ABSENT already)

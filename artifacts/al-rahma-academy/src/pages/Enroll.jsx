@@ -1,4 +1,4 @@
-﻿import { useState } from 'react';
+﻿import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
@@ -9,6 +9,7 @@ import { useLang } from '../context/LangContext';
 import { PLAN_TEXT } from '../i18n/content';
 import { pickEnrollSeo } from '../i18n/enroll/seo';
 import { Progress, Step1, Step2, Step3, Step4, Success } from '../components/features/enrollment/EnrollWizard';
+import { trackEvent } from '../analytics/ga';
 
 const BLANK = {
   name:'', email:'', whatsapp:'', country:'', city:'',
@@ -46,6 +47,15 @@ export default function Enroll() {
   const [done, setDone] = useState(false);
   const [error, setError] = useState('');
   const [bookingRef, setBookingRef] = useState('');
+
+  // Analytics (consent-gated inside trackEvent): the step number only —
+  // never any form value.
+  useEffect(() => { trackEvent('enroll_view'); }, []);
+  const firstStepRender = useRef(true);
+  useEffect(() => {
+    if (firstStepRender.current) { firstStepRender.current = false; return; }
+    trackEvent('enroll_step_view', { step });
+  }, [step]);
 
   const set = (key, valOrFn) =>
     setForm((prev) => ({

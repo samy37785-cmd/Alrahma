@@ -3,6 +3,7 @@ import Brand from "./Brand";
 import { useLang } from "../../context/LangContext";
 import { site, socials } from "../../data";
 import { ShieldIcon, BookOpenIcon, GlobeIcon, StarIcon, CalendarIcon } from '../ui/Icons';
+import CookieSettingsButton from '../ui/CookieSettingsButton';
 
 const footerShieldIconStyle = { display: 'inline-flex', verticalAlign: '-3px', marginRight: 4 };
 
@@ -118,6 +119,7 @@ export default function Footer() {
             <Link to="/academy/refund-policy">{f.refundPolicy || "Refund Policy"}</Link>
             {" · "}
             <a href={"mailto:" + site.email}>{f.contact}</a>
+            <CookieSettingsButton prefix=" · " />
           </p>
         </div>
       </div>

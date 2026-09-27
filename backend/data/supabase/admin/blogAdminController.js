@@ -13,7 +13,7 @@ export { blogValidation, blogUpdateValidation } from '../../../controllers/blogC
 
 // Same allowlist as the Mongo path's BLOG_UPDATABLE_FIELDS — `views` stays
 // system-managed (incremented only by the public getPost read path).
-const UPDATABLE = ['slug', 'title', 'excerpt', 'category', 'tags', 'author', 'coverImage', 'readTime', 'published', 'publishedAt', 'seo'];
+const UPDATABLE = ['slug', 'title', 'excerpt', 'category', 'tags', 'author', 'coverImage', 'readTime', 'published', 'publishedAt', 'seo', 'locale', 'translationGroupId'];
 
 function toJson(row) {
   return {
@@ -33,13 +33,18 @@ function toJson(row) {
     publishedAt: row.published_at,
     seo: { metaTitle: row.seo_title, metaDescription: row.seo_description },
     createdAt: row.created_at,
+    locale: row.locale,
+    translationGroupId: row.translation_group_id,
   };
 }
 
 // @route POST /api/v1/admin/blog
 export const createPost = asyncHandler(async (req, res) => {
   if (handleValidationErrors(req, res)) return;
-  const { slug, title, excerpt, body, category, tags = [], author, coverImage, readTime, published, publishedAt, seo } = req.body;
+  const {
+    slug, title, excerpt, body, category, tags = [], author, coverImage, readTime, published, publishedAt, seo,
+    locale = 'en', translationGroupId,
+  } = req.body;
 
   let row;
   try {
@@ -47,8 +52,9 @@ export const createPost = asyncHandler(async (req, res) => {
       const r = await client.query(
         `INSERT INTO blogs (
            slug, title, content, excerpt, category, tags, author_name, author_role, author_image,
-           cover_image, read_time, published, published_at, seo_title, seo_description
-         ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,COALESCE($11,5),$12,$13,$14,$15)
+           cover_image, read_time, published, published_at, seo_title, seo_description,
+           locale, translation_group_id
+         ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,COALESCE($11,5),$12,$13,$14,$15,$16,$17)
          RETURNING *`,
         [
           slug, title, body, excerpt ?? null, category ?? null, JSON.stringify(tags),
@@ -56,12 +62,13 @@ export const createPost = asyncHandler(async (req, res) => {
           coverImage ?? null, readTime ?? null, published ?? false,
           published ? (publishedAt ? new Date(publishedAt) : new Date()) : null,
           seo?.metaTitle ?? null, seo?.metaDescription ?? null,
+          locale, translationGroupId ?? null,
         ]
       );
       return r.rows[0];
     }, { aal: req.adminAal });
   } catch (err) {
-    if (err.code === '23505') return res.status(409).json({ message: 'A post with this slug already exists' });
+    if (err.code === '23505') return res.status(409).json({ message: 'A post with this slug already exists in this locale' });
     if (err.code === '42501' || /permission denied|row-level security/i.test(err.message)) {
       return res.status(403).json({ message: 'Insufficient permissions' });
     }
@@ -94,7 +101,9 @@ export const updatePost = asyncHandler(async (req, res) => {
            cover_image = COALESCE($10, cover_image),
            read_time = COALESCE($11, read_time),
            published = COALESCE($12, published),
-           published_at = COALESCE($13, published_at)
+           published_at = COALESCE($13, published_at),
+           locale = COALESCE($14, locale),
+           translation_group_id = COALESCE($15, translation_group_id)
          WHERE id = $1
          RETURNING *`,
         [
@@ -103,12 +112,13 @@ export const updatePost = asyncHandler(async (req, res) => {
           updates.author?.name ?? null, updates.author?.role ?? null, updates.author?.image ?? null,
           updates.coverImage ?? null, updates.readTime ?? null, updates.published ?? null,
           updates.publishedAt ? new Date(updates.publishedAt) : (updates.published ? new Date() : null),
+          updates.locale ?? null, updates.translationGroupId ?? null,
         ]
       );
       return r.rows[0];
     }, { aal: req.adminAal });
   } catch (err) {
-    if (err.code === '23505') return res.status(409).json({ message: 'A post with this slug already exists' });
+    if (err.code === '23505') return res.status(409).json({ message: 'A post with this slug already exists in this locale' });
     if (err.code === '42501' || /permission denied|row-level security/i.test(err.message)) {
       return res.status(403).json({ message: 'Insufficient permissions' });
     }

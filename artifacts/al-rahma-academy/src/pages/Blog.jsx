@@ -36,7 +36,14 @@ export default function Blog() {
   const queryClient = useQueryClient();
   useSEO({ title: bl.eyebrow, description: bl.sub });
 
-  const { data: posts = [], isLoading, isError } = useBlogPosts();
+  // Backend blog articles are en/ar only for now (Blog SEO Foundation PR A)
+  // — every other UI language falls back to 'en' here, the same content
+  // every non-Arabic visitor has always effectively seen (no new fallback
+  // introduced; this only keeps that pre-existing behavior working now that
+  // the API requires an explicit locale instead of accepting none).
+  const locale = lang === 'ar' ? 'ar' : 'en';
+
+  const { data: posts = [], isLoading, isError } = useBlogPosts({ locale });
 
   const categories = useMemo(
     () => ['All', ...new Set(posts.map((p) => p.category))],
@@ -49,8 +56,8 @@ export default function Blog() {
 
   const prefetchPost = (slug) => {
     queryClient.prefetchQuery({
-      queryKey: BLOG_KEYS.post(slug),
-      queryFn:  () => getBlogPost(slug),
+      queryKey: BLOG_KEYS.post(locale, slug),
+      queryFn:  () => getBlogPost(slug, locale),
       staleTime: 1000 * 60 * 10,
     });
   };

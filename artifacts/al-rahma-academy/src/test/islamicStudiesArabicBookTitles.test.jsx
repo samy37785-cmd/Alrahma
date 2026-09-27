@@ -104,16 +104,20 @@ describe('IslamicStudiesBookCard.jsx source: minimal, scoped diff', () => {
   const src = fs.readFileSync(path.resolve(__dirname, '../components/features/courses/IslamicStudiesBookCard.jsx'), 'utf8');
 
   it('derives the primary title from book.ar/book.title only, not new content', () => {
-    expect(src).toMatch(/<strong>\{isAr \? book\.ar : book\.title\}<\/strong>/);
+    // French Localization Batch 1B added a French branch (isFr) between the
+    // Arabic and English ones; Arabic and English still read the same fields.
+    expect(src).toMatch(/<strong>\{isAr \? book\.ar : \(isFr && book\.titleFr\) \|\| book\.title\}<\/strong>/);
   });
 
   it('does not touch author/module/desc/topics/link/libraryNote logic', () => {
-    expect(src).toMatch(/book\.author\.ar : book\.author\.en/);
-    expect(src).toMatch(/book\.module\.ar : book\.module\.en/);
-    expect(src).toMatch(/book\.desc\.ar : book\.desc\.en/);
-    expect(src).toMatch(/book\.topics\.ar : book\.topics\.en/);
-    expect(src).toMatch(/book\.linkLabel\.ar : book\.linkLabel\.en/);
-    expect(src).toMatch(/book\.libraryNote\.ar : book\.libraryNote\.en/);
+    // French Localization Batch 1B added a French branch (isFr) between the
+    // Arabic and English ones; Arabic and English still read the same fields.
+    expect(src).toMatch(/book\.author\.ar : isFr \? book\.author\.fr : book\.author\.en/);
+    expect(src).toMatch(/book\.module\.ar : isFr \? book\.module\.fr : book\.module\.en/);
+    expect(src).toMatch(/book\.desc\.ar : isFr \? book\.desc\.fr : book\.desc\.en/);
+    expect(src).toMatch(/book\.topics\.ar : isFr \? book\.topics\.fr : book\.topics\.en/);
+    expect(src).toMatch(/book\.linkLabel\.ar : isFr \? book\.linkLabel\.fr : book\.linkLabel\.en/);
+    expect(src).toMatch(/book\.libraryNote\.ar : isFr \? book\.libraryNote\.fr : book\.libraryNote\.en/);
   });
 
   it('does not import from islamicStudiesData.js (book data is untouched)', () => {

@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 export default function IslamicStudiesBookCard({ book, lang }) {
   const [open, setOpen] = useState(false);
   const isAr = lang === 'ar';
+  const isFr = lang === 'fr';
   return (
     <div className={`cl__book${open ? ' open' : ''}`}>
       <button className="cl__book-trigger" onClick={() => setOpen((v) => !v)}>
@@ -16,26 +17,26 @@ export default function IslamicStudiesBookCard({ book, lang }) {
               the Arabic page (would duplicate the same text), so it only
               renders when the primary title is English; no new subtitle
               text is invented for either language. */}
-          <strong>{isAr ? book.ar : book.title}</strong>
+          <strong>{isAr ? book.ar : (isFr && book.titleFr) || book.title}</strong>
           {!isAr && <span className="cl__book-ar" dir="rtl">{book.ar}</span>}
-          <span className="cl__book-author">{isAr ? book.author.ar : book.author.en}</span>
-          <span className="cl__book-note">{isAr ? book.module.ar : book.module.en}</span>
+          <span className="cl__book-author">{isAr ? book.author.ar : isFr ? book.author.fr : book.author.en}</span>
+          <span className="cl__book-note">{isAr ? book.module.ar : isFr ? book.module.fr : book.module.en}</span>
         </div>
         <span className="cl__book-chevron">{open ? '▲' : '▼'}</span>
       </button>
       {open && (
         <div className="cl__book-body">
-          <p className="cl__book-desc">{isAr ? book.desc.ar : book.desc.en}</p>
+          <p className="cl__book-desc">{isAr ? book.desc.ar : isFr ? book.desc.fr : book.desc.en}</p>
           <ul className="cl__book-topics">
-            {(isAr ? book.topics.ar : book.topics.en).map((t) => <li key={t}>{t}</li>)}
+            {(isAr ? book.topics.ar : isFr ? book.topics.fr : book.topics.en).map((t) => <li key={t}>{t}</li>)}
           </ul>
           {book.link
-            ? <a href={book.link} target="_blank" rel="noreferrer" className="cl__book-link">{isAr ? book.linkLabel.ar : book.linkLabel.en} ↗</a>
-            : <span className="cl__book-link cl__book-link--muted">📚 {isAr ? book.linkLabel.ar : book.linkLabel.en}</span>
+            ? <a href={book.link} target="_blank" rel="noreferrer" className="cl__book-link">{isAr ? book.linkLabel.ar : isFr ? book.linkLabel.fr : book.linkLabel.en} ↗</a>
+            : <span className="cl__book-link cl__book-link--muted">📚 {isAr ? book.linkLabel.ar : isFr ? book.linkLabel.fr : book.linkLabel.en}</span>
           }
           {book.libraryNote && (
             <Link to="/hadith-library" className="cl__book-library-link">
-              {isAr ? book.libraryNote.ar : book.libraryNote.en} →
+              {isAr ? book.libraryNote.ar : isFr ? book.libraryNote.fr : book.libraryNote.en} →
             </Link>
           )}
         </div>

@@ -132,9 +132,15 @@ test('GET /api/blog?locale=fr — unsupported locale is rejected per the current
 
 // ── Phase B.2 — guest-safe writes (run-id tagged) ───────────────────────────
 
+// Only required once we're actually going to run (skip is falsy) — checking
+// this unconditionally at module scope would throw on import under the plain
+// `npm test` sweep (DATA_BACKEND unset), before any test's own `skip` option
+// gets a chance to apply, crashing the whole file instead of skipping it.
 const RUN_ID = process.env.HTTP_CONTRACT_GATE_RUN_ID;
-if (!RUN_ID) throw new Error('HTTP_CONTRACT_GATE_RUN_ID must be set by the orchestrator script before this file runs');
-const RUN_EMAIL = `supabase-http-contract-${RUN_ID}@example.invalid`;
+if (!skip && !RUN_ID) {
+  skip = 'HTTP_CONTRACT_GATE_RUN_ID must be set by the orchestrator script before this file runs';
+}
+const RUN_EMAIL = RUN_ID ? `supabase-http-contract-${RUN_ID}@example.invalid` : undefined;
 
 test('POST /api/newsletter — guest-safe write, always 200', { skip }, async () => {
   const { default: app } = await import('../../app.js');

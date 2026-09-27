@@ -17,6 +17,7 @@
     "test:migration": "node scripts/migration/run-all-tests.mjs",
     "test:supabase-contract": "node scripts/test-supabase-contract.mjs",
     "test:supabase-auth-service-contract": "node scripts/test-supabase-auth-service-contract.mjs",
+    "test:supabase-http-contract": "node scripts/test-supabase-http-contract-gate.mjs",
     "test:all": "npm run lint && npm run test && npm run test:migration",
     "route-parity-gate": "node scripts/route-parity-gate/route-parity-gate.mjs",
     "lint": "eslint ."

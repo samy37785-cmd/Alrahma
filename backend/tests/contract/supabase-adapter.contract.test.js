@@ -75,7 +75,10 @@ async function agentWithCsrf(app) {
 
 test('GET /api/blog — matches the Mongo contract: { posts, total, page, pages }, published-only', { skip }, async () => {
   const { default: app } = await import('../../app.js');
-  const res = await request(app).get('/api/blog');
+  // Blog SEO Foundation PR A: locale is now a required query parameter on
+  // both backends — see the two new tests just below for that contract's
+  // own coverage.
+  const res = await request(app).get('/api/blog?locale=en');
   assert.equal(res.status, 200);
   assert.ok(Array.isArray(res.body.posts));
   assert.equal(typeof res.body.total, 'number');
@@ -88,9 +91,23 @@ test('GET /api/blog — matches the Mongo contract: { posts, total, page, pages 
 
 test('GET /api/blog/:slug — matches the Mongo contract: { post: {...} }, 404 shape for missing/unpublished', { skip }, async () => {
   const { default: app } = await import('../../app.js');
-  const missing = await request(app).get('/api/blog/does-not-exist-slug');
+  const missing = await request(app).get('/api/blog/does-not-exist-slug?locale=en');
   assert.equal(missing.status, 404);
   assert.equal(missing.body.message, 'Post not found');
+});
+
+test('GET /api/blog and /:slug — both require an explicit ?locale=en|ar, matching the Mongo contract\'s 400 shape', { skip }, async () => {
+  const { default: app } = await import('../../app.js');
+
+  const listMissing = await request(app).get('/api/blog');
+  assert.equal(listMissing.status, 400);
+  const listInvalid = await request(app).get('/api/blog?locale=fr');
+  assert.equal(listInvalid.status, 400);
+
+  const postMissing = await request(app).get('/api/blog/does-not-exist-slug');
+  assert.equal(postMissing.status, 400);
+  const postInvalid = await request(app).get('/api/blog/does-not-exist-slug?locale=fr');
+  assert.equal(postInvalid.status, 400);
 });
 
 test('POST /api/newsletter — matches the Mongo contract: always 200, idempotent on repeat', { skip }, async () => {

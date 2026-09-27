@@ -3,7 +3,7 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 import { handleValidationErrors } from '../utils/validationHelper.js';
 import { parsePagination } from '../utils/pagination.js';
 import { auditFromReq } from '../services/auditService.js';
-import Blog from '../models/Blog.js';
+import Blog, { BLOG_LOCALES } from '../models/Blog.js';
 
 export const blogValidation = [
   body('slug').trim().toLowerCase().notEmpty().matches(/^[a-z0-9-]+$/),
@@ -11,6 +11,11 @@ export const blogValidation = [
   body('excerpt').trim().notEmpty().isLength({ max: 500 }),
   body('body').trim().notEmpty(),
   body('author.name').trim().notEmpty(),
+  // Defaults to 'en' when omitted (same safe, documented backward-compat
+  // default as the Mongoose schema) so existing callers that don't send
+  // `locale` keep working; any explicit value outside en/ar is rejected.
+  body('locale').default('en').isIn(BLOG_LOCALES),
+  body('translationGroupId').optional({ nullable: true }).isUUID(),
 ];
 
 // Same field rules as blogValidation, but every field is optional — PATCH is
@@ -22,6 +27,8 @@ export const blogUpdateValidation = [
   body('excerpt').optional().trim().notEmpty().isLength({ max: 500 }),
   body('body').optional().trim().notEmpty(),
   body('author.name').optional().trim().notEmpty(),
+  body('locale').optional().isIn(BLOG_LOCALES),
+  body('translationGroupId').optional({ nullable: true }).isUUID(),
 ];
 
 // Fields an admin may edit via updatePost. `views` is a system-managed
@@ -31,13 +38,35 @@ export const blogUpdateValidation = [
 const BLOG_UPDATABLE_FIELDS = [
   'slug', 'title', 'excerpt', 'body', 'category', 'tags',
   'author', 'coverImage', 'readTime', 'published', 'publishedAt', 'seo',
+  'locale', 'translationGroupId',
 ];
 
+// Public list/get-by-slug must be told which locale to read explicitly —
+// no silent fallback and no inference from headers/URL at this stage (that
+// belongs to the frontend routes touched in a later phase). Missing or
+// invalid locale follows this codebase's existing inline-validation pattern
+// for public GET endpoints (see searchController.js's globalSearch): a
+// plain 400 with a { message } body, not express-validator's 422 (which is
+// reserved for the admin write routes' middleware chain).
+function requireLocale(req, res) {
+  const { locale } = req.query;
+  if (!locale || !BLOG_LOCALES.includes(locale)) {
+    res.status(400).json({
+      message: `locale query parameter is required and must be one of: ${BLOG_LOCALES.join(', ')}`,
+    });
+    return null;
+  }
+  return locale;
+}
+
 export const listPosts = asyncHandler(async (req, res) => {
+  const locale = requireLocale(req, res);
+  if (!locale) return;
+
   const { page, limit, skip } = parsePagination(req.query, { defaultLimit: 9, maxLimit: 20 });
   const { category, tag } = req.query;
 
-  const filter = { published: true };
+  const filter = { published: true, locale };
   if (category) filter.category = category;
   if (tag) filter.tags = tag;
 
@@ -57,8 +86,11 @@ export const listPosts = asyncHandler(async (req, res) => {
 });
 
 export const getPost = asyncHandler(async (req, res) => {
+  const locale = requireLocale(req, res);
+  if (!locale) return;
+
   const post = await Blog.findOneAndUpdate(
-    { slug: req.params.slug, published: true },
+    { slug: req.params.slug, locale, published: true },
     { $inc: { views: 1 } },
     { new: true },
   ).lean();

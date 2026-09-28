@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { cleanup, fireEvent, act } from '@testing-library/react';
 import { useFullPageEnvironment, mountFullPage, headMeta, bodyStrings } from './utils/fullPageRender';
-import CourseIjazah from '../pages/CourseIjazah';
+import CourseIjazah, { BOOKS as IJAZAH_BOOKS } from '../pages/CourseIjazah';
 import CourseIslamicStudies from '../pages/CourseIslamicStudies';
 import { IJAZAH_PAGE_FR, ISLAMIC_STUDIES_PAGE_FR } from '../i18n/courses/religiousPagesFr';
 import { HADITHS, MODULES, BOOKS, LEARN, FOR, PERKS } from '../data/islamicStudiesData';
@@ -60,9 +60,24 @@ const SAME_IN_FRENCH = new Set([
   "Al-Arba'een Al-Nawawiyyah — Imam Al-Nawawi", "Al-Mu'jam Al-Awsat — Al-Tabarani",
 ]);
 
+// French Religious-Content Safety Correction: no French translation of a
+// hadith, its narrator formula, or a book's title/description/topics is
+// created in-project without a licensed source. HADITHS[].fr,
+// HADITHS[].narrator.fr, BOOKS[].title (no titleFr is read at all
+// anymore) and BOOKS[].desc.fr/topics.fr are now literal copies of their
+// English source -- so on the French page they legitimately equal the
+// English text the leak-scan below would otherwise flag. Derived
+// directly from the data (not hand-copied) so it always matches reality.
+const RELIGIOUS_SOURCE_TEXT = new Set([
+  ...HADITHS.flatMap((h) => [h.fr, h.narrator.fr]),
+  ...BOOKS.flatMap((b) => [b.title, b.desc.fr, ...b.topics.fr]),
+  ...IJAZAH_BOOKS.flatMap((b) => [b.title, b.desc.fr, ...b.topics.fr]),
+]);
+
 function isAllowed(s) {
   const value = s.replace(/^@[a-z-]+: /, '');
   if (SAME_IN_FRENCH.has(value) || !/[A-Za-z]{2}/.test(value)) return true;
+  if (RELIGIOUS_SOURCE_TEXT.has(value)) return true;
   // Hadith source label: book name + hadith number.
   if (/^Hadith \d+ — Al-Arba'een Al-Nawawiyyah$/.test(value)) return true;
   // Stage source line: the book's name followed by its author's Arabic name.
@@ -113,12 +128,18 @@ describe('French Batch 1B pages', () => {
       expect(leaks).toEqual([]);
     });
 
-    it(`${frPath}: French glossary — no "Tajweed" or "Ijazah" in text, metadata or JSON-LD text`, async () => {
+    // French Religious-Content Safety Correction: this glossary rule is
+    // about French PROSE (which must say "tajwid"/"ijaza", never the
+    // English transliterations) -- it was never a rule about the hadith
+    // and book text this task now deliberately shows in its English
+    // source form, which naturally spells them "Tajweed"/"Ijazah".
+    it(`${frPath}: French glossary — no "Tajweed" or "Ijazah" outside the English-source religious text`, async () => {
       const strings = [...await allStrings(frPath, Page), document.title,
         ...[...document.head.querySelectorAll('meta[content]')].map((m) => m.getAttribute('content')),
         ...[...document.head.querySelectorAll('script[type="application/ld+json"]')].map((s) => s.textContent)];
       // URLs keep their slugs (e.g. /fr/courses/ijazah): slugs are not translated.
       const found = strings.map((s) => s.replace(/https?:\/\/\S+?(?=["\s]|$)/g, ''))
+        .filter((s) => !RELIGIOUS_SOURCE_TEXT.has(s.replace(/^@[a-z-]+: /, '')))
         .filter((s) => /tajweed|ijazah/i.test(s));
       expect(found).toEqual([]);
     });
@@ -135,13 +156,16 @@ describe('French Batch 1B pages', () => {
     });
   }
 
-  it('/fr/courses/islamic-studies: the hadith card keeps the Arabic original and shows the French line', async () => {
+  // French Religious-Content Safety Correction: the card shows the
+  // literal English source line (`hadith.fr` === `hadith.en`), not a
+  // French translation of the hadith.
+  it('/fr/courses/islamic-studies: the hadith card keeps the Arabic original and shows the literal English line', async () => {
     await mountFullPage('/fr/courses/islamic-studies', CourseIslamicStudies);
     const arabic = document.querySelector('.cl__hadith-arabic').textContent;
     const hadith = HADITHS.find((h) => h.arabic === arabic);
     expect(hadith).toBeDefined();
-    expect(document.querySelector('.cl__hadith-text').textContent.trim()).toBe(hadith.fr);
-    expect(document.querySelector('.cl__hadith-narrator').textContent).toBe(`— ${hadith.narrator.fr}`);
+    expect(document.querySelector('.cl__hadith-text').textContent.trim()).toBe(hadith.en);
+    expect(document.querySelector('.cl__hadith-narrator').textContent).toBe(`— ${hadith.narrator.en}`);
     expect(document.querySelector('.cl__hadith-link').getAttribute('href')).toBe(hadith.url);
   });
 
@@ -179,9 +203,17 @@ describe('Islamic Studies data: French for every English value, nothing invented
     for (const list of [LEARN, FOR]) expect(list.fr.length).toBe(list.en.length);
   });
 
-  it('French is translated, not copied: only names and sources may equal the English', () => {
+  // French Religious-Content Safety Correction: HADITHS[].fr (the hadith
+  // meaning) and HADITHS[].narrator.fr (its "may Allah be pleased with
+  // them" formula) are now intentionally literal copies of the English
+  // source -- no French translation of hadith text is created in-project
+  // without a licensed source. BOOKS[].desc.fr is the same policy applied
+  // to book descriptions.
+  const RELIGIOUS_SOURCE_PATHS = /^\.HADITHS\[\d+\](\.narrator)?$|^\.BOOKS\[\d+\]\.desc$/;
+
+  it('French is translated, not copied: only names, sources, and English-source religious text may equal the English', () => {
     const copied = all.filter(({ en, fr, where }) => typeof en === 'string' && fr === en
-      && !where.includes('.source') && !SAME_OK.has(en));
+      && !where.includes('.source') && !SAME_OK.has(en) && !RELIGIOUS_SOURCE_PATHS.test(where));
     expect(copied.map((c) => c.where)).toEqual([]);
   });
 
@@ -192,13 +224,30 @@ describe('Islamic Studies data: French for every English value, nothing invented
     }
   });
 
-  it('all 17 hadiths keep their Arabic text and sunnah.com link, with a French line from the English', () => {
+  // French Religious-Content Safety Correction: `fr` (and `narrator.fr`)
+  // must now equal the English source exactly, not a French translation.
+  it('all 17 hadiths keep their Arabic text and sunnah.com link, with the literal English line (no French translation)', () => {
     expect(HADITHS).toHaveLength(17);
     for (const h of HADITHS) {
       expect(ARABIC.test(h.arabic)).toBe(true);
       expect(ARABIC.test(h.fr)).toBe(false);
-      expect(h.fr).not.toBe(h.en);
+      expect(h.fr).toBe(h.en);
+      expect(h.narrator.fr).toBe(h.narrator.en);
       expect(h.url).toMatch(/^https:\/\/sunnah\.com\//);
+    }
+  });
+
+  // French Religious-Content Safety Correction: no book's title,
+  // description or topics are translated into French -- `titleFr` is
+  // never read (the field itself was removed wherever it existed), and
+  // `desc.fr`/`topics.fr` are literal copies of the English source.
+  it('all 9 Islamic Studies books and all 4 Ijazah books show their Latin title as-is, with no titleFr and no French desc/topics', () => {
+    expect(BOOKS).toHaveLength(9);
+    expect(IJAZAH_BOOKS).toHaveLength(4);
+    for (const b of [...BOOKS, ...IJAZAH_BOOKS]) {
+      expect(b, b.title).not.toHaveProperty('titleFr');
+      expect(b.desc.fr, `${b.title}.desc.fr`).toBe(b.desc.en);
+      expect(b.topics.fr, `${b.title}.topics.fr`).toEqual(b.topics.en);
     }
   });
 });

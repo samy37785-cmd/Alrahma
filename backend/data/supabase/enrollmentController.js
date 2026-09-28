@@ -115,11 +115,17 @@ export const createEnrollment = asyncHandler(async (req, res) => {
 export const getMyEnrollment = asyncHandler(async (req, res) => {
   // Stage 2E found this endpoint silently broken: `enrollments` had exactly
   // one SELECT policy (admin-only), so a non-admin caller always got 0 rows
-  // back regardless of email match. Closed in Stage 2F by adding
+  // back regardless of email match. Stage 2F added
   // `enrollments_select_own_by_email` (lib/db/drizzle/0015_new_domains_rls.sql)
-  // — `using (email = auth.jwt()->>'email' OR is_admin())` — so the query
-  // below (unchanged since Stage 2E) now actually returns the caller's own
-  // guest submission(s) by email match.
+  // — `using (email = auth.jwt()->>'email' OR is_admin())` — but the Supabase
+  // Auth + Booking Gate rehearsal found this backend's own withUserContext()
+  // never actually put an email claim in request.jwt.claims at all, so the
+  // policy could never match for ANY caller regardless of the query below.
+  // Fixed by passing the verified caller's own req.user.email (sourced
+  // server-side from profiles via the JWT-signature-verified user id — see
+  // middleware/auth.js/data/supabase/loadUser.js — never request body/query)
+  // as withUserContext's `email` option, which forwards it into the same
+  // request.jwt.claims a real Supabase Auth session would have carried.
   const enrollment = await withUserContext(req.user._id, async (client) => {
     const r = await client.query(
       `SELECT id, name, email, whatsapp, country, city, timezone, times,
@@ -135,7 +141,7 @@ export const getMyEnrollment = asyncHandler(async (req, res) => {
       [req.user.email]
     );
     return r.rows[0];
-  });
+  }, { email: req.user.email });
 
   res.json(enrollment ? mapRow(enrollment) : null);
 });

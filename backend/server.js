@@ -2,14 +2,21 @@
 // Production: Render runs "node server.js" directly (see render.yaml).
 import app from './app.js';
 import connectDB from './config/db.js';
+import { isSupabaseBackend } from './config/dataBackend.js';
 import { startKeepAlive } from './config/keepAlive.js';
 import logger from './config/logger.js';
 
-// Connect eagerly at startup so the first request isn't slow.
-connectDB().catch((err) => {
-  logger.error('MongoDB connection failed at startup', { message: err.message });
-  process.exit(1);
-});
+// Connect eagerly at startup so the first request isn't slow. Skipped
+// entirely under DATA_BACKEND=supabase: there is no MongoDB to connect to in
+// that mode (see app.js's own isSupabaseBackend() guards around every other
+// connectDB() call site), and calling it anyway would crash the process on
+// an unset/unreachable MONGO_URI before the server ever starts listening.
+if (!isSupabaseBackend()) {
+  connectDB().catch((err) => {
+    logger.error('MongoDB connection failed at startup', { message: err.message });
+    process.exit(1);
+  });
+}
 
 const PORT = process.env.PORT || 5000;
 const server = app.listen(PORT, () => {

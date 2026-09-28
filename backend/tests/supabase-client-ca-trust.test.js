@@ -58,9 +58,17 @@ function runGetPool(overrides) {
   return JSON.parse(out);
 }
 
-const REMOTE_URL = 'postgresql://postgres:pw@aws-0-eu-central-1.pooler.supabase.com:5432/postgres';
-const LOCAL_IP_URL = 'postgresql://postgres:pw@127.0.0.1:54322/postgres';
-const LOCALHOST_URL = 'postgresql://postgres:pw@localhost:54322/postgres';
+// getPool()'s isLocal check only cares whether the hostname is
+// 'localhost'/'127.0.0.1' — any other hostname exercises the identical
+// "remote host" branch, so this deliberately uses an RFC 2606 reserved,
+// guaranteed-unresolvable .invalid host rather than a real-looking Supabase
+// pooler URL. This repo's own CI secret scan hard-fails, with no
+// exceptions by design, on any diff line shaped like a Postgres connection
+// URL that names a Supabase host — a fake, unrelated host still proves the
+// exact same code path without ever looking like a live credential.
+const REMOTE_URL = 'postgresql://test-user:test-pass@db.example-remote-host.invalid:5432/postgres';
+const LOCAL_IP_URL = 'postgresql://test-user:test-pass@127.0.0.1:54322/postgres';
+const LOCALHOST_URL = 'postgresql://test-user:test-pass@localhost:54322/postgres';
 
 // Generates a throwaway, local-only self-signed CA (never committed,
 // written under a temp dir, deleted at the end of this file) so the

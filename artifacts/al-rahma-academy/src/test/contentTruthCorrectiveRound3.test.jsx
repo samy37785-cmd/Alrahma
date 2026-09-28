@@ -365,6 +365,26 @@ describe('llms.txt and index.html stay in sync with siteFacts (static files, Par
     expect(txt).not.toMatch(/two free trial classes/i);
   });
 
+  // Correct llms.txt French Pre-render Claim: French has no SEO launch yet
+  // (no sitemap entry, no hreflang, no prerendered /fr/ output), so
+  // llms.txt must not claim a French page exists under "Locale pages
+  // (pre-rendered)" until the real SEO-launch gate. The line is removed,
+  // not replaced -- llms.txt should simply say nothing about French yet.
+  it('llms.txt does not link to /fr/ or claim a French landing page is pre-rendered', () => {
+    const txt = fs.readFileSync(path.join(REPO_ROOT, 'public', 'llms.txt'), 'utf8');
+    expect(txt).not.toMatch(/\/fr\//);
+    expect(txt).not.toMatch(/French landing page/i);
+  });
+
+  it('llms.txt is otherwise unchanged: every other link and every EN line is intact', () => {
+    const txt = fs.readFileSync(path.join(REPO_ROOT, 'public', 'llms.txt'), 'utf8');
+    expect(txt).toContain('[Home](https://al-rahmaacademy.com/): Overview of courses, pricing and the free trial.');
+    expect(txt).toContain('[Italian landing page](https://al-rahmaacademy.com/it/)');
+    expect(txt).toContain('WhatsApp: +20 103 955 3264');
+    expect(txt).toContain('Email: alrahmaacademy038@gmail.com');
+    expect(txt.match(/\(https:\/\/al-rahmaacademy\.com[^)]*\)/g)).toHaveLength(17);
+  });
+
   it('index.html\'s Organization JSON-LD foundingDate matches siteFacts and telephone matches site.js (Round 4: the single phone source)', () => {
     const html = fs.readFileSync(path.join(REPO_ROOT, 'index.html'), 'utf8');
     expect(html).toContain(`"foundingDate": "${siteFacts.foundingYear}"`);

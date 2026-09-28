@@ -93,7 +93,30 @@ export function getPool() {
 // for every OTHER caller, since no such signed, GoTrue-verified claim
 // exists anywhere else in this codebase. Never pass `aal:'aal2'` here from
 // any code path that hasn't gone through that real verification.
-export async function withUserContext(userId, fn, { aal } = {}) {
+//
+// The `email` option exists so a policy written against a real Supabase Auth
+// session's auth.jwt()->>'email' (e.g. enrollments_select_own_by_email,
+// lib/db/drizzle/0015_new_domains_rls.sql) can also be satisfied through this
+// backend's own custom-JWT bridge, which otherwise never puts an email claim
+// in request.jwt.claims at all. Found and fixed after the Supabase Auth +
+// Booking Gate rehearsal proved GET /api/enrollments/mine could never work
+// for ANY caller: the policy checks auth.jwt()->>'email', which was always
+// NULL here, so `email = NULL` never matched (SQL's three-valued logic),
+// regardless of app-layer query correctness.
+//
+// SECURITY RULE, same discipline as `aal` above: the caller MUST pass the
+// verified account's own email exactly as loaded by data/supabase/loadUser.js
+// (i.e. req.user.email, itself a profiles.email row fetched server-side using
+// only the JWT-signature-verified user id — see middleware/auth.js's
+// _loadUser()) — NEVER a value read from request body/query/headers. This
+// function does no verification of its own; it only forwards whatever the
+// caller asserts into a claim RLS will trust. Passing anything client-
+// controlled here would let a caller impersonate any email. When omitted
+// (the default, unchanged for every existing caller), no email claim is set
+// at all — exactly today's behavior — so any policy keyed on
+// auth.jwt()->>'email' fails closed (returns zero rows) rather than matching
+// on an absent/forged value.
+export async function withUserContext(userId, fn, { aal, email } = {}) {
   if (!userId) throw new Error('withUserContext requires a userId');
   const client = await getPool().connect();
   try {
@@ -101,6 +124,7 @@ export async function withUserContext(userId, fn, { aal } = {}) {
     await client.query('SET LOCAL ROLE authenticated');
     const claims = { sub: userId, role: 'authenticated' };
     if (aal) claims.aal = aal;
+    if (email) claims.email = email;
     await client.query('SELECT set_config($1, $2, true)', ['request.jwt.claims', JSON.stringify(claims)]);
     const result = await fn(client);
     await client.query('COMMIT');

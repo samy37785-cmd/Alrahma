@@ -43,8 +43,9 @@ async function loadAdminForBackend(id) {
  * Rejects tokens where MFA is enabled but not verified.
  * Attaches req.adminUser + req.adminId on success. Under DATA_BACKEND=
  * supabase, also attaches req.adminAal ('aal2' | undefined) — computed FRESH
- * on every request by re-verifying the admin_sat cookie's signature against
- * SUPABASE_JWT_SECRET and reading its real `aal` claim directly (see
+ * on every request by re-verifying the admin_sat cookie's signature (against
+ * SUPABASE_JWT_SECRET if set, otherwise via the project's JWKS endpoint) and
+ * reading its real `aal` claim directly (see
  * data/supabase/supabaseSessionCookie.js). This is NOT read from admin_at's
  * own `mfaVerified` field under this backend — that field is only ever
  * informational here (mirrors the Mongo-mode token shape) — because a value
@@ -96,7 +97,7 @@ export const verifyAccessToken = asyncHandler(async function verifyAccessToken(r
 
   const supabase = isSupabaseBackend();
   const verifiedAal2 = supabase
-    ? isVerifiedAal2(req.cookies?.[SUPABASE_AT_COOKIE], decoded.id)
+    ? await isVerifiedAal2(req.cookies?.[SUPABASE_AT_COOKIE], decoded.id)
     : false;
 
   // MFA enabled but not verified in this token/session

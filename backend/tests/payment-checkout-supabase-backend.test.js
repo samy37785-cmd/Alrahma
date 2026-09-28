@@ -44,6 +44,9 @@ before(async () => {
   // middleware in app.js skips connectDB() entirely when
   // isSupabaseBackend() is true).
   process.env.JWT_SECRET = process.env.JWT_SECRET || 'test-jwt-secret-for-supabase-backend-mode';
+  // No longer required by config/validateEnv.js under DATA_BACKEND=supabase
+  // (see MONGO_REQUIRED there), but set anyway to prove app.js's own routes
+  // never touch it in this mode either — never actually connected to.
   process.env.MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:1/unused-placeholder';
   // Required by validateEnv() specifically when DATA_BACKEND=supabase (see
   // config/validateEnv.js's SUPABASE_REQUIRED) — fake, non-routable values

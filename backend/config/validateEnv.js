@@ -5,8 +5,14 @@ import { getDataBackend } from './dataBackend.js';
  * Validates environment variables at process startup.
  *
  * REQUIRED vars: if any are absent the process exits immediately with a clear
- * message — a missing JWT_SECRET or MONGO_URI renders the entire service
- * non-functional and is not recoverable at runtime.
+ * message — a missing JWT_SECRET renders the entire service non-functional
+ * and is not recoverable at runtime, regardless of DATA_BACKEND.
+ *
+ * MONGO_REQUIRED vars: only checked when getDataBackend() is 'mongodb' (the
+ * default) — mirrors the SUPABASE_REQUIRED pattern below. Under
+ * DATA_BACKEND=supabase, MONGO_URI is neither required nor read: server.js
+ * skips connectDB() entirely in that mode (see isSupabaseBackend() there), so
+ * an unset MONGO_URI must not block startup.
  *
  * ADMIN_CRITICAL vars: without these, admin login/MFA cannot function at all
  * (see config/encryption.js) — as non-functional, in that subsystem, as a
@@ -30,6 +36,11 @@ import { getDataBackend } from './dataBackend.js';
 
 const REQUIRED = [
   'JWT_SECRET',
+];
+
+// Only required when getDataBackend() is 'mongodb' (the default) — see the
+// MONGO_REQUIRED doc comment above.
+const MONGO_REQUIRED = [
   'MONGO_URI',
 ];
 
@@ -77,6 +88,12 @@ export function validateEnv() {
         'Server startup aborted — DATA_BACKEND=supabase but required Supabase environment variables are not set',
         { missing: supabaseMissing },
       );
+      process.exit(1);
+    }
+  } else {
+    const mongoMissing = MONGO_REQUIRED.filter((k) => !process.env[k]);
+    if (mongoMissing.length) {
+      logger.error('Server startup aborted — required environment variables are not set', { missing: mongoMissing });
       process.exit(1);
     }
   }

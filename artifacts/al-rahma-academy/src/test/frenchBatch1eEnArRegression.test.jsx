@@ -31,12 +31,27 @@ const WRITE = process.env.FR_BATCH1E_WRITE_BASELINE === '1';
 
 const sha = (s) => crypto.createHash('sha256').update(s).digest('hex');
 
+// QiblaCompass.jsx renders its needle with an UNROUNDED
+// `rotate(${bearing}deg)` inline style (the rounded whole-degree value is
+// only used in the aria-label). `bearing` comes from Math.atan2/sin/cos on
+// the mocked Paris coordinates, and those transcendental functions can
+// differ by roughly 1 ULP between platforms/libm builds (observed: this
+// baseline recorded on Windows, compared against a Linux CI run of the
+// identical source) -- changing digits far past any visually-meaningful
+// precision, but changing the exact byte string, hence the body hash. It
+// carries no French-localization content, so it's normalized away before
+// hashing rather than pinning the baseline to one platform's float
+// rendering.
+function normalizeBody(html) {
+  return html.replace(/rotate\((-?\d+\.\d+)deg\)/g, (_, deg) => `rotate(${Math.round(Number(deg))}deg)`);
+}
+
 useFullPageEnvironment();
 
 async function snapshot(page, prefix, mocks) {
   const states = {};
   await page.run(prefix, async (name) => {
-    states[name] = { ...pageMeta(), body: sha(document.body.innerHTML) };
+    states[name] = { ...pageMeta(), body: sha(normalizeBody(document.body.innerHTML)) };
   }, mocks);
   cleanup();
   return states;

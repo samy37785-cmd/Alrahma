@@ -96,6 +96,12 @@ function isAllowed(s) {
   const value = s.replace(/^@[a-z-]+: /, '');
   if (SAME_IN_FRENCH.has(value) || TAJWEED_VERSE_CONTENT.has(value)) return true;
   if (/[؀-ۿ]/.test(value) || !/[A-Za-z]{2}/.test(value)) return true;
+  // HadithLibrary.jsx's hero meta and results count interpolate a live
+  // number into "{count} hadiths" (h.hadiths / h.resultsCount) — "hadiths"
+  // itself is already the site's deliberate French loanword (see
+  // SAME_IN_FRENCH above); only the concatenated "<number> hadiths" text
+  // node wasn't previously enumerated here.
+  if (/^\d[\d,.\s]*\s+hadiths$/.test(value)) return true;
   return false;
 }
 

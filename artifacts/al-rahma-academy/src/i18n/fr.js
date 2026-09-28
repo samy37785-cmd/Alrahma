@@ -576,7 +576,7 @@ const fr = {
   "blog": {
     "eyebrow": "Notre Blog",
     "heading": "Apprendre. Comprendre. Grandir.",
-    "sub": "Articles sur le Coran, le Tajweed, l'arabe et l'éducation islamique — écrits pour les non-arabophones en Europe.",
+    "sub": "Articles sur le Coran, le tajwid, l'arabe et l'éducation islamique — écrits pour les non-arabophones en Europe.",
     "backToSite": "Retour au site",
     "readArticle": "Lire l'article →"
   },
@@ -1157,7 +1157,7 @@ const fr = {
       "heading": "Tout ce dont vous avez besoin pour commencer",
       "sub": "Parcourez nos articles de blog, nos questions fréquentes et apprenez-en plus sur Al-Rahma Academy et nos enseignants.",
       "cards": [
-        { "icon": "✍️", "title": "Blog & Articles", "desc": "Conseils, guides et histoires sur l'apprentissage du Coran, le Tajweed, le Hifz et la vie islamique." },
+        { "icon": "✍️", "title": "Blog & Articles", "desc": "Conseils, guides et histoires sur l'apprentissage du Coran, le tajwid, le Hifz et la vie islamique." },
         { "icon": "❓", "title": "FAQ", "desc": "Réponses aux questions les plus courantes sur les cours, les tarifs, les horaires et plus encore." },
         { "icon": "🏫", "title": "À propos de l’académie", "desc": "Notre mission, notre méthodologie et les valeurs qui guident Al-Rahma Academy." },
         { "icon": "👨‍🏫", "title": "Nos enseignants", "desc": "Rencontrez nos érudits certifiés par Al-Azhar et nos professeurs de Coran expérimentés." }

@@ -30,6 +30,8 @@
 //    "No articles in this category yet." empty-state message. Both are
 //    kept here, not moved into t.blog, since they are two standalone
 //    strings rather than a delegated SEO description object.
+// French Localization Batch 1D: `fr` below is a faithful translation of the
+// English description only (never of the Arabic). en/ar are unchanged.
 export const RESOURCES_SEO_TEXT = {
   en: {
     description:
@@ -39,20 +41,43 @@ export const RESOURCES_SEO_TEXT = {
     description:
       'استكشف موارد أكاديمية الرحمة: مقالات المدونة، الأسئلة الشائعة، معلومات عن الأكاديمية، والتعرّف على معلمينا.',
   },
+  fr: {
+    description:
+      "Découvrez les ressources d'Al-Rahma Academy : articles de blog, FAQ, informations sur l'académie et profils des enseignants.",
+  },
 };
 
 export function pickResourcesSeo(lang) {
   return RESOURCES_SEO_TEXT[lang] || RESOURCES_SEO_TEXT.en;
 }
 
+// French Localization Batch 1D adds `loading` and `loadError`: Blog.jsx's
+// "Loading articles" aria-label and "Could not load articles. Please try
+// again." were hardcoded English JSX literals with no lang branch at all.
+// en/ar below keep that exact literal, byte-for-byte, so EN and AR rendered
+// output does not change; `fr` is a faithful translation of the same
+// English text. `categoryAll` is display text only — Blog.jsx's own
+// filtering logic compares against the literal 'All', never against this
+// value (see the comment above), so translating it here does not touch
+// filtering.
 export const RESOURCES_BLOG_TEXT = {
   en: {
     categoryAll: 'All',
     emptyState: 'No articles in this category yet.',
+    loading: 'Loading articles',
+    loadError: 'Could not load articles. Please try again.',
   },
   ar: {
     categoryAll: 'الكل',
     emptyState: 'لا توجد مقالات منشورة حتى الآن.',
+    loading: 'Loading articles',
+    loadError: 'Could not load articles. Please try again.',
+  },
+  fr: {
+    categoryAll: 'Tous',
+    emptyState: 'Aucun article dans cette catégorie pour le moment.',
+    loading: 'Chargement des articles',
+    loadError: 'Impossible de charger les articles. Veuillez réessayer.',
   },
 };
 

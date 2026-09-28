@@ -33,25 +33,25 @@ Baseline: `origin/main` @ `79561a4`, audited 2026-09-27 against production.
 | 9 | `/academy/teachers` | `/ar/academy/teachers` | `/fr/academy/teachers` | 1C | draft-review | published | owner may review (teacher claims) | no | Batch 1C: SEO description and hero glossary ("ijaza"), hero sub "(sanad)" restored from the English, subject filters "Tajwid" / "Ijaza" / "Sira" |
 | 10 | `/academy/teachers/:id` (11) | `/ar/academy/teachers/:id` | `/fr/academy/teachers/:id` | 1C | draft-review | published | owner may review (Sanad/Ijazah claims) | no | Batch 1C: 10 bios and 5 titles/specialties/credential labels (glossary; "Aqeedah" → "Aqida"), "Certificat d'ijaza", sanad line faithful to the English, French `<title>` for an unknown id |
 | 11 | `/resources/faq` | `/ar/resources/faq` | `/fr/resources/faq` | 1C | draft-review | published | owner may review | no | Batch 1C: 12 of 18 items — omissions restored from the English (#2, #4, #6, #14, #17), "Quran" restored in 2 questions, glossary, "plans" → "formules", WhatsApp button label |
-| 12 | `/resources` | `/ar/resources` | `/fr/resources` | 1D | partial | published | no | no | EN description. Hub page, grouped with the tools (Batch 1D) |
+| 12 | `/resources` | `/ar/resources` | `/fr/resources` | 1D | draft-review | published | no | no | Batch 1D: SEO description; hero (eyebrow/H1/sub) and the 4 hub cards were already French |
 | 13 | `/enroll` | `/ar/enroll` | `/fr/enroll` | 1C | draft-review | unpublished | no | owner-review-recommended (consent/booking wording) | Batch 1C: French title/description/keywords, 27 country names (submitted value unchanged), subject labels (glossary), gender-preference label, age labels, e-mail wording, phone example = the English one, success title brand name |
 | 14 | `/academy/privacy` | `/ar/academy/privacy` | `/fr/academy/privacy` | 1C | draft-review | published | no | **owner-review-recommended** | Batch 1C: GA4 "Analytics cookies" section in French (from the English), "Cookie settings" button, back link. Date, contact and cookie policy unchanged |
 | 15 | `/academy/terms` | `/ar/academy/terms` | `/fr/academy/terms` | 1C | draft-review | published | no | **owner-review-recommended** | Batch 1C: 5 fidelity fixes — "for any reason", "agree to be bound", "any subscription plan", "all tutor changes within 48 hours", glossary |
 | 16 | `/academy/refund-policy` | `/ar/academy/refund-policy` | `/fr/academy/refund-policy` | 1C | draft-review | published | no | **owner-review-recommended** | Batch 1C: plan display name « Ijaza » |
-| 17 | `/tools` | `/ar/tools` | `/fr/tools` | 3 | complete | published | no | no | — |
+| 17 | `/tools` | `/ar/tools` | `/fr/tools` | 3 | complete | published | no | no | Batch 1D verified: hub, badges and the free-trial modal (all validation, failure and success states) are French; no fix needed |
 | 18 | `/tools/adhkar` | `/ar/tools/adhkar` | `/fr/tools/adhkar` | 3 | complete | published | **yes** (dhikr meanings) | no | — |
 | 19 | `/tools/tasbeeh` | `/ar/tools/tasbeeh` | `/fr/tools/tasbeeh` | 3 | partial | published | yes | no | Title, description, H1 and body EN |
 | 20 | `/tools/quran-reader` | `/ar/tools/quran-reader` | `/fr/tools/quran-reader` | 3 | complete (UI) | unpublished | **yes** (translation source) | no | — |
 | 21 | `/tools/hadith` | `/ar/tools/hadith` | `/fr/tools/hadith` | 3 | partial → blocked-review | unpublished | **yes** | no | EN body |
 | 22 | `/tools/verse-of-the-day` | `/ar/tools/verse-of-the-day` | `/fr/tools/verse-of-the-day` | 3 | partial → blocked-review | unpublished | **yes** (FR Quran translation not chosen; shows EN translation id 20) | no | Verse translation EN |
 | 23 | `/tools/arabic-alphabet` | `/ar/tools/arabic-alphabet` | `/fr/tools/arabic-alphabet` | 3 | complete | published | no | no | — |
-| 24 | `/tools/prayer` | `/ar/tools/prayer` | `/fr/tools/prayer` | 4 | complete | published | no | no | — |
+| 24 | `/tools/prayer` | `/ar/tools/prayer` | `/fr/tools/prayer` | 4 | complete | published | no | no | Batch 1D verified: hero and all 4 card titles/descriptions are French ("Qibla" kept as the site's existing French spelling); its 4 links go to still-deferred tools (1E), untouched |
 | 25 | `/tools/prayer-times` | `/ar/tools/prayer-times` | `/fr/tools/prayer-times` | 4 | partial | unpublished | no | no | Title, description, H1 EN |
 | 26 | `/tools/qibla` | `/ar/tools/qibla` | `/fr/tools/qibla` | 4 | partial | unpublished | no | no | Title, description, H1 EN |
 | 27 | `/tools/islamic-calendar` | `/ar/tools/islamic-calendar` | `/fr/tools/islamic-calendar` | 4 | partial | unpublished | no | no | Title, description, H1 EN |
 | 28 | `/tools/tajweed-checker` | `/ar/tools/tajweed-checker` | `/fr/tools/tajweed-checker` | 4 | partial | unpublished | yes | no | Page EN |
 | 29 | `/tools/hifz-review` | `/ar/tools/hifz-review` | `/fr/tools/hifz-review` | 4 | partial | unpublished | no | no | Page EN |
-| 30 | `/resources/blog` | `/ar/resources/blog` | `/fr/resources/blog` | — | complete (empty listing) | unpublished | n/a | no | API returns 0 posts; out of French publication until French articles exist |
+| 30 | `/resources/blog` | `/ar/resources/blog` | `/fr/resources/blog` | 1D | draft-review | unpublished | n/a | no | Batch 1D: title/description, and 2 hardcoded English JSX literals (loading aria-label, load-error message) that had no lang branch at all — en/ar keep the exact same literal, fr is a faithful translation. API still returns 0 posts; out of French SEO publication until French articles exist |
 | 31 | `/resources/blog/:slug` | — | — | — | not-applicable (0 posts) | unpublished | n/a | no | — |
 
 ## Not applicable (36 routes)
@@ -106,8 +106,9 @@ Also:
 |---|---|---|
 | 1A | `/`, `/courses`, `/courses/quran`, `/courses/arabic`, `/academy`, `/academy/about` | Merged (PR #130) |
 | 1B | `/courses/ijazah`, `/courses/islamic-studies` | Merged (PR #131). Inventory: [french-batch1b-religious-review.md](french-batch1b-religious-review.md) |
-| 1C | `/academy/teachers`, `/academy/teachers/:id` (11), `/resources/faq`, `/enroll`, `/academy/privacy`, `/academy/terms`, `/academy/refund-policy`, and the shared cookie banner | Draft PR, not merged. Inventory below |
-| 1D / 1E | `/resources` and the `/tools/*` pages | Not started; needs separate approval |
+| 1C | `/academy/teachers`, `/academy/teachers/:id` (11), `/resources/faq`, `/enroll`, `/academy/privacy`, `/academy/terms`, `/academy/refund-policy`, and the shared cookie banner | Merged (PR #133) |
+| 1D | `/resources`, `/tools`, `/tools/prayer`, `/resources/blog` | Draft PR, not merged. Inventory below |
+| 1E | The remaining `/tools/*` pages (Quran Reader, Adhkar, Hadith, Prayer Times, Qibla, Islamic Calendar, Verse of the Day, Tasbeeh, Arabic Alphabet, Tajweed Checker, Hifz Review) | Not started; needs separate approval |
 | 5 | French SEO publication gate (sitemap, hreflang, prerender) | Not started |
 
 ## Batch 1C inventory (scope audit, `origin/main` @ `8f8b014`)
@@ -140,6 +141,39 @@ Audited from `App.jsx`, `scripts/prerender-routes.mjs` and this registry. Only r
 ### Not applicable
 
 Unchanged from the table below: login / register / password pages, payment result pages, authenticated and admin pages, legacy redirects, 404 (36 routes), plus `/courses/:id` (private course content).
+
+## Batch 1D inventory (scope audit, `origin/main` @ `1a8d498`)
+
+Audited from `App.jsx`, `scripts/prerender-routes.mjs` and this registry. Only routes that exist were considered; none was added. Interactive religious tools, and any page reading the API, today's date, the visitor's location or `localStorage`, are deferred to Batch 1E — not because they are hard, but because their content is the tool's live output, not static UI text.
+
+### Included in Batch 1D
+
+| Template | Why included | States checked (per language) | What changed |
+|---|---|---|---|
+| `/resources` | Static hub: a hero and 4 link cards to other pages (blog, FAQ, about, teachers). No API, date or location | 1 | SEO description translated to French. The hero and the 4 cards were already French |
+| `/tools` | Static hub: a hero, 6 link cards to tool pages, and a free-trial modal (form only, no external send in this review) | 6 (hub, modal open, 2 validation states, a failed and a successful mocked trial request) | Verified only — hub, badges and the modal were already fully French from earlier work; no source change was needed |
+| `/tools/prayer` | Static hub: a hero and 4 link cards to `/tools/prayer-times`, `/tools/qibla`, `/tools/islamic-calendar`, `/tools/verse-of-the-day` — all 4 are 1E tools. Per the task's card-only rule, only this hub's own title/description were in scope, never the tools behind the links | 1 | Verified only — hero and all 4 card titles/descriptions were already French (`i18n/content.js` `TOOLS_TEXT.fr`, added in earlier unrelated work, not this program). "Qibla" is kept as the site's existing French spelling, not a leak |
+| `/resources/blog` | The blog **index** shows only static UI chrome today: a title, category filter, and an empty-state message, because the API returns 0 posts. No article content exists to translate | 3 (loading, load-error, the empty listing — the only states production can reach) | SEO title/description translated. Two hardcoded English JSX literals with no lang branch at all (the loading aria-label, the load-error message) now read from `i18n/resources/content.js`; en/ar keep the exact same literal byte-for-byte |
+
+4 templates, 0 new dynamic URLs (the blog has 0 posts, so `/resources/blog/:slug` renders nothing to localize). Nothing is submitted or sent: the blog API and the free-trial request are mocked in tests, and no form was submitted or link clicked externally during local review.
+
+### Deferred to Batch 1E
+
+| Template | Reason |
+|---|---|
+| `/tools/quran-reader`, `/tools/hadith` | Fetches live content from the API |
+| `/tools/prayer-times`, `/tools/qibla`, `/tools/islamic-calendar` | Reads geolocation and/or today's date |
+| `/tools/verse-of-the-day` | Reads today's date; picks a verse translation |
+| `/tools/tasbeeh` | Reads/writes `localStorage` |
+| `/tools/arabic-alphabet`, `/tools/tajweed-checker`, `/tools/hifz-review` | Interactive tool, not static UI (Hifz Review also reads `localStorage`) |
+
+### Deferred: blog articles
+
+`/resources/blog/:slug` stays `not-applicable`: the API returns 0 posts (`docs/french-localization-registry.md` row 31), so there is no article content to translate. No article, seed data or API contract change was made.
+
+### Not applicable
+
+Unchanged from the table below: login/register/password pages, payment result pages, authenticated and admin pages, legacy redirects, 404.
 
 ## Owner review (non-blocking)
 
@@ -177,7 +211,7 @@ French strings that still say "Tajweed" / "Ijazah" and do not render on any 1A p
 
 | File | Where | Count | Batch |
 |---|---|---|---|
-| `i18n/fr.js` | blog `sub`, dashboard `certTypes.ijazah`, resources card | 3 (blog, dashboard, resources) | 1D / later. Teachers, teacher profile and enroll lines: **done in 1C** |
+| `i18n/fr.js` | dashboard `certTypes.ijazah` | 1 (dashboard, authenticated) | Not applicable to the public program. Teachers, teacher profile and enroll lines: **done in 1C**. Blog `sub` and the resources card: **done in 1D** |
 | `data/faqItems.js` `fr` | FAQ page answers | — | **Done in 1C** |
 | `data/marketing/teachers.js` `fr` | bios, credential label | — | **Done in 1C** |
 

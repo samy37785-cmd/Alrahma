@@ -92,10 +92,12 @@ describe('Resources hub SEO metadata: real Arabic, not an English fallback', () 
     expect(description).not.toMatch(/\d/);
   });
 
-  it('a legacy language without real Resources copy (e.g. fr) falls back to the English object, not an invented translation', () => {
-    expect(pickResourcesSeo('fr')).toBe(RESOURCES_SEO_TEXT.en);
+  it('a legacy language without real Resources copy (e.g. es) falls back to the English object, not an invented translation', () => {
     expect(pickResourcesSeo('es')).toBe(RESOURCES_SEO_TEXT.en);
-    expect(Object.keys(RESOURCES_SEO_TEXT)).toEqual(['en', 'ar']);
+    expect(pickResourcesSeo('de')).toBe(RESOURCES_SEO_TEXT.en);
+    // French Localization Batch 1D: French now has its own entry.
+    expect(pickResourcesSeo('fr')).toBe(RESOURCES_SEO_TEXT.fr);
+    expect(Object.keys(RESOURCES_SEO_TEXT)).toEqual(['en', 'ar', 'fr']);
   });
 });
 
@@ -127,10 +129,12 @@ describe('Blog page copy: "All" filter and empty state are real Arabic, not an E
     expect(screen.queryByText(/No articles/i)).toBeNull();
   });
 
-  it('a legacy language without real Blog-chrome copy (e.g. fr) falls back to English, not an invented translation', () => {
-    expect(pickResourcesBlogText('fr')).toBe(RESOURCES_BLOG_TEXT.en);
+  it('a legacy language without real Blog-chrome copy (e.g. de) falls back to English, not an invented translation', () => {
     expect(pickResourcesBlogText('de')).toBe(RESOURCES_BLOG_TEXT.en);
-    expect(Object.keys(RESOURCES_BLOG_TEXT)).toEqual(['en', 'ar']);
+    expect(pickResourcesBlogText('es')).toBe(RESOURCES_BLOG_TEXT.en);
+    // French Localization Batch 1D: French now has its own entry.
+    expect(pickResourcesBlogText('fr')).toBe(RESOURCES_BLOG_TEXT.fr);
+    expect(Object.keys(RESOURCES_BLOG_TEXT)).toEqual(['en', 'ar', 'fr']);
   });
 });
 

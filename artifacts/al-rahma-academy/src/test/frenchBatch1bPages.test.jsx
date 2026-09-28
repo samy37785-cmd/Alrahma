@@ -68,10 +68,21 @@ const SAME_IN_FRENCH = new Set([
 // English source -- so on the French page they legitimately equal the
 // English text the leak-scan below would otherwise flag. Derived
 // directly from the data (not hand-copied) so it always matches reality.
+//
+// French Language & Book-Source Consistency Correction: same reasoning
+// for a book's `author` when it names a publisher/organisation (King
+// Fahd Glorious Quran Printing Complex) rather than a person -- that is
+// source-of-record bibliographic data, not ordinary UI copy, so its
+// French field is a literal copy of English too. Filtered to only the
+// books where that is actually true, so an accidental future English
+// leak in some other book's author.fr still fails this scan.
 const RELIGIOUS_SOURCE_TEXT = new Set([
   ...HADITHS.flatMap((h) => [h.fr, h.narrator.fr]),
   ...BOOKS.flatMap((b) => [b.title, b.desc.fr, ...b.topics.fr]),
   ...IJAZAH_BOOKS.flatMap((b) => [b.title, b.desc.fr, ...b.topics.fr]),
+  ...[...BOOKS, ...IJAZAH_BOOKS]
+    .filter((b) => b.author.fr === b.author.en)
+    .map((b) => b.author.fr),
 ]);
 
 function isAllowed(s) {
@@ -190,7 +201,13 @@ describe('Islamic Studies data: French for every English value, nothing invented
   }
   const all = pairs({ HADITHS, MODULES, BOOKS, LEARN, FOR, PERKS });
   // Hadith `en` is the English meaning line; its French must exist too.
-  const SAME_OK = new Set(['Zoom / Skype / Google Meet']);
+  // 'King Fahd Glorious Quran Printing Complex' (author of Al-Fiqh
+  // Al-Muyassar and Al-Tafsir Al-Muyassar): a publisher/organisation name
+  // is source-of-record data, not ordinary UI copy, so it is not
+  // francised without a licensed source -- see the French Language &
+  // Book-Source Consistency Correction comment on RELIGIOUS_SOURCE_TEXT
+  // in frenchBatch1bPages.test.jsx's other describe block.
+  const SAME_OK = new Set(['Zoom / Skype / Google Meet', 'King Fahd Glorious Quran Printing Complex']);
   const digits = (v) => (Array.isArray(v) ? v.join(' ') : String(v)).replace(/(\d)[ ,](\d{3})/g, '$1$2').match(/\d+/g) || [];
 
   it('has a French value, of the same shape, for every English value', () => {
@@ -248,6 +265,36 @@ describe('Islamic Studies data: French for every English value, nothing invented
       expect(b, b.title).not.toHaveProperty('titleFr');
       expect(b.desc.fr, `${b.title}.desc.fr`).toBe(b.desc.en);
       expect(b.topics.fr, `${b.title}.topics.fr`).toEqual(b.topics.en);
+    }
+  });
+
+  // French Language & Book-Source Consistency Correction: a publisher/
+  // organisation name is source-of-record bibliographic data, not ordinary
+  // UI copy -- King Fahd Glorious Quran Printing Complex is the author of
+  // record for 3 books (Madinah Mus'haf, Al-Fiqh Al-Muyassar,
+  // Al-Tafsir Al-Muyassar) and must show the literal English source name in
+  // French too, not a francised rendering.
+  it("the King Fahd Glorious Quran Printing Complex author credit is the literal English source in French, on all 3 books that cite it", () => {
+    const kingFahdBooks = [...BOOKS, ...IJAZAH_BOOKS].filter(
+      (b) => b.author.en === 'King Fahd Glorious Quran Printing Complex',
+    );
+    expect(kingFahdBooks, 'number of books citing the King Fahd Complex as author').toHaveLength(3);
+    for (const b of kingFahdBooks) {
+      expect(b.author.fr, `${b.title}.author.fr`).toBe(b.author.en);
+      expect(b.author.fr, `${b.title}.author.fr`).not.toContain("Complexe du roi Fahd");
+    }
+  });
+
+  // French Language & Book-Source Consistency Correction: the Hijri-era
+  // abbreviation in French author credits ("m. 676 H") is unified to "H",
+  // matching src/i18n/hadith/collections.js -- never the English/Latin
+  // "AH" (Anno Hegirae).
+  it('every book author.fr uses "H" for the Hijri era, never "AH"', () => {
+    for (const b of [...BOOKS, ...IJAZAH_BOOKS]) {
+      expect(b.author.fr, `${b.title}.author.fr`).not.toMatch(/\bAH\)/);
+      if (/\bm\.\s*\d/.test(b.author.fr)) {
+        expect(b.author.fr, `${b.title}.author.fr`).toMatch(/\bH\)/);
+      }
     }
   });
 });

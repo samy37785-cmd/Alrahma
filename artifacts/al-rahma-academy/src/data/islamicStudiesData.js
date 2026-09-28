@@ -254,7 +254,11 @@ export const BOOKS = [
   },
   {
     icon: '📘', title: 'Al-Fiqh Al-Muyassar', ar: 'الفقه الميسر في ضوء الكتاب والسنة',
-    author: { en: 'King Fahd Glorious Quran Printing Complex', ar: 'مجمع الملك فهد لطباعة المصحف الشريف', fr: "Complexe du roi Fahd pour l'impression du Noble Coran" },
+    // fr is a literal copy of en, not a French translation -- see the
+    // French Religious-Content Safety Correction policy header above: a
+    // publisher/organisation name is source-of-record data, not ordinary
+    // UI copy, so it is not francised without a licensed source.
+    author: { en: 'King Fahd Glorious Quran Printing Complex', ar: 'مجمع الملك فهد لطباعة المصحف الشريف', fr: 'King Fahd Glorious Quran Printing Complex' },
     module: { en: '🕌 Fiqh module — Primary source', ar: '🕌 وحدة الفقه — المصدر الأساسي', fr: '🕌 Module fiqh — source principale' },
     desc: {
       en: 'A 2-volume authoritative work covering all pillars of Islamic worship — Taharah, Salah, Sawm, Zakat, and Hajj — compiled by scholars of the King Fahd Complex from Quran and authentic Sunnah.',
@@ -367,7 +371,11 @@ export const BOOKS = [
   },
   {
     icon: '✨', title: 'Al-Tafsir Al-Muyassar', ar: 'التفسير الميسر',
-    author: { en: 'King Fahd Glorious Quran Printing Complex', ar: 'مجمع الملك فهد لطباعة المصحف الشريف', fr: "Complexe du roi Fahd pour l'impression du Noble Coran" },
+    // fr is a literal copy of en, not a French translation -- see the
+    // French Religious-Content Safety Correction policy header above: a
+    // publisher/organisation name is source-of-record data, not ordinary
+    // UI copy, so it is not francised without a licensed source.
+    author: { en: 'King Fahd Glorious Quran Printing Complex', ar: 'مجمع الملك فهد لطباعة المصحف الشريف', fr: 'King Fahd Glorious Quran Printing Complex' },
     module: { en: '✨ Tafsir module — Primary source', ar: '✨ وحدة التفسير — المصدر الأساسي', fr: '✨ Module tafsir — source principale' },
     desc: {
       en: "A scholarly yet accessible single-volume Tafsir of the complete Quran. Covers the meaning of every verse with clarity grounded in classical Islamic sources — ideal for students beginning Tafsir studies.",

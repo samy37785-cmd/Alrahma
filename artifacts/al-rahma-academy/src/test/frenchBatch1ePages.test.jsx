@@ -208,4 +208,20 @@ describe('Batch 1E French shell data: complete, same shape as English, no invent
       expect(HADITH_COLLECTIONS_TEXT.fr[id].author, id).not.toBe(HADITH_COLLECTIONS_TEXT.en[id].author);
     }
   });
+
+  // French Language & Book-Source Consistency Correction: the Hijri-era
+  // abbreviation in French author credits is unified to "H" (e.g.
+  // "m. 676 H"), matching the convention already used in
+  // src/data/islamicStudiesData.js and src/pages/CourseIjazah.jsx --
+  // never the English/Latin "AH" (Anno Hegirae).
+  it('HADITH_COLLECTIONS_TEXT.fr author credits use "H" for the Hijri era, never "AH"', () => {
+    for (const id of Object.keys(HADITH_COLLECTIONS_TEXT.fr)) {
+      if (id === 'dir') continue;
+      const author = HADITH_COLLECTIONS_TEXT.fr[id].author;
+      expect(author, id).not.toMatch(/\bAH\)/);
+      if (/\bm\.\s*\d/.test(author)) {
+        expect(author, id).toMatch(/\bH\)/);
+      }
+    }
+  });
 });

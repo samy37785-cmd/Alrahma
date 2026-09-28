@@ -256,7 +256,11 @@ export const BOOKS = [
     icon: '📕',
     title: "Madinah Mus'haf",
     ar: 'مصحف المدينة النبوية',
-    author: { en: 'King Fahd Glorious Quran Printing Complex', ar: 'مجمع الملك فهد لطباعة المصحف الشريف', fr: "Complexe du roi Fahd pour l'impression du Noble Coran" },
+    // fr is a literal copy of en, not a French translation -- see the
+    // French Religious-Content Safety Correction policy header above:
+    // a publisher/organisation name is source-of-record data, not
+    // ordinary UI copy, so it is not francised without a licensed source.
+    author: { en: 'King Fahd Glorious Quran Printing Complex', ar: 'مجمع الملك فهد لطباعة المصحف الشريف', fr: 'King Fahd Glorious Quran Printing Complex' },
     stage: { en: 'Certification Stage', ar: 'مرحلة الإجازة', fr: 'Étape de certification' },
     desc: {
       en: "The world's most widely distributed Mus'haf — printed by the official Saudi complex in Madinah. Used for the final certification recitation in the Hafs 'an 'Asim riwayah.",

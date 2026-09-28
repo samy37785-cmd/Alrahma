@@ -1,6 +1,8 @@
 import { useRef } from 'react';
 import { useModalA11y } from '../../hooks/useModalA11y';
 import { escapeHtml } from '../../utils/escapeHtml';
+import { useLang } from '../../context/LangContext';
+import { pickVerseCardModal } from '../../i18n/quran/verseCardModal';
 
 const clean = (html = '') =>
   html.replace(/<br\s*\/?>/gi, '\n').replace(/<\/p>/gi, ' ').replace(/<\/div>/gi, ' ')
@@ -11,6 +13,9 @@ const clean = (html = '') =>
 export default function VerseCardModal({ verse, chapterName, onClose }) {
   const cardRef = useRef(null);
   const firstFocusRef = useModalA11y(!!verse, onClose);
+  // useLang() must run before the early return below (Rules of Hooks).
+  const { lang } = useLang();
+  const vc = pickVerseCardModal(lang);
 
   if (!verse) return null;
 
@@ -21,15 +26,15 @@ export default function VerseCardModal({ verse, chapterName, onClose }) {
   const handleShare = async () => {
     const [s, v] = verseKey.split(':');
     const url = `${window.location.origin}/tools/quran-reader#s=${s}&v=${v}`;
-    const text = `${arabic}\n\n"${trans}"\n— Quran ${verseKey}`;
+    const text = `${arabic}\n\n"${trans}"\n— ${vc.quran} ${verseKey}`;
 
     if (navigator.share) {
       try {
-        await navigator.share({ title: `Quran ${verseKey}`, text, url });
+        await navigator.share({ title: `${vc.quran} ${verseKey}`, text, url });
       } catch { /* user cancelled */ }
     } else {
       await navigator.clipboard.writeText(`${text}\n\n${url}`);
-      alert('Verse link copied to clipboard!');
+      alert(vc.linkCopied);
     }
   };
 
@@ -47,7 +52,7 @@ export default function VerseCardModal({ verse, chapterName, onClose }) {
     const safeVerseKey = escapeHtml(verseKey);
     const safeChapterName = escapeHtml(chapterName);
     win.document.write(`
-      <html><head><title>Quran ${safeVerseKey}</title>
+      <html><head><title>${vc.quran} ${safeVerseKey}</title>
       <style>
         @import url('https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700&display=swap');
         * { margin:0; padding:0; box-sizing:border-box; }
@@ -64,7 +69,7 @@ export default function VerseCardModal({ verse, chapterName, onClose }) {
           <div class="brand">Al-Rahma Academy</div>
           <div class="arabic">${safeArabic}</div>
           ${safeTrans ? `<div class="trans">"${safeTrans}"</div>` : ''}
-          <div class="ref">Quran · ${safeVerseKey}${safeChapterName ? ` · ${safeChapterName}` : ''}</div>
+          <div class="ref">${vc.quran} · ${safeVerseKey}${safeChapterName ? ` · ${safeChapterName}` : ''}</div>
           <div class="footer">alrahma.academy</div>
         </div>
       </body></html>
@@ -78,11 +83,11 @@ export default function VerseCardModal({ verse, chapterName, onClose }) {
       className="vcard-overlay"
       role="dialog"
       aria-modal="true"
-      aria-label="Share this verse"
+      aria-label={vc.dialogLabel}
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div className="vcard-modal">
-        <button ref={firstFocusRef} className="vcard-modal__close" onClick={onClose} aria-label="Close">✕</button>
+        <button ref={firstFocusRef} className="vcard-modal__close" onClick={onClose} aria-label={vc.close}>✕</button>
 
         {/* The shareable card */}
         <div className="vcard" ref={cardRef}>
@@ -111,7 +116,7 @@ export default function VerseCardModal({ verse, chapterName, onClose }) {
           </div>
 
           <p className="vcard__ref">
-            Quran · {verseKey}
+            {vc.quran} · {verseKey}
             {chapterName ? ` · ${chapterName}` : ''}
           </p>
 
@@ -121,18 +126,18 @@ export default function VerseCardModal({ verse, chapterName, onClose }) {
         {/* Actions */}
         <div className="vcard-modal__actions">
           <button className="btn btn--gold" onClick={handleShare}>
-            {navigator.share ? '🔗 Share' : '📋 Copy link'}
+            {navigator.share ? vc.share : vc.copyLink}
           </button>
           <button className="btn btn--ghost" onClick={handlePrint}>
-            🖨️ Save as image
+            {vc.saveAsImage}
           </button>
           <button className="btn btn--ghost" onClick={onClose}>
-            Close
+            {vc.close}
           </button>
         </div>
 
         <p className="vcard-modal__hint">
-          Take a screenshot of the card above to share it on Instagram or WhatsApp.
+          {vc.hint}
         </p>
       </div>
     </div>

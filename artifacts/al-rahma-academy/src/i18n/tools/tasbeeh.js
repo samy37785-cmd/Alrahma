@@ -6,8 +6,10 @@
 // (components/features/tools/Tasbeeh.jsx) has no isAr/language fork and is
 // untouched -- out of this migration's scope.
 //
-// Only en/ar are populated -- it/es/de/fr stay genuinely absent; the route
-// stays 'legacy' in translationStatus.js (see that file's own comment).
+// French Localization Batch 1E adds `fr`, translated from the English shell
+// only (the counter widget itself already has full French via `t.tasbeeh`
+// in i18n/fr.js). it/es/de stay genuinely absent; the route stays 'legacy'
+// in translationStatus.js for those (see that file's own comment).
 export const TASBEEH_TEXT = {
   en: {
     seo: {
@@ -31,6 +33,18 @@ export const TASBEEH_TEXT = {
     hero: {
       title: 'المسبحة الرقمية',
       sub: 'عدّد أذكارك بسهولة — سبحان الله، الحمد لله، الله أكبر، وغيرها.',
+    },
+  },
+  fr: {
+    seo: {
+      title: 'Compteur de tasbih',
+      description: 'Compteur de tasbih numérique gratuit. Comptez SubhanAllah, Alhamdulillah, AllahuAkbar et plus, avec suivi de la progression.',
+    },
+    breadcrumbs: { tools: 'Outils', current: 'Compteur de tasbih' },
+    eyebrow: 'Dhikr',
+    hero: {
+      title: 'Compteur de tasbih numérique',
+      sub: 'Comptez votre dhikr numériquement — SubhanAllah, Alhamdulillah, AllahuAkbar et plus.',
     },
   },
 };

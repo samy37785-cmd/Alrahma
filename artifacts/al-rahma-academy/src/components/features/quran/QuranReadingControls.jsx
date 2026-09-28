@@ -2,6 +2,8 @@ import { CtrlItem } from './QuranControls';
 import QuranPlayer from './QuranPlayer';
 import { RECITERS } from '../../../api/quran';
 import { TRANSLATIONS, TAFASEER } from '../../../data/quranLangs';
+import { pickQuranA11y } from '../../../i18n/quran/a11yLabels';
+import { useLang } from '../../../context/LangContext';
 
 /* Build a readable option label: "🇰🇼 Mishari Rashid al-Afasy · Murattal" */
 const reciterLabel = (r) =>
@@ -12,6 +14,12 @@ export default function QuranReadingControls({
   onReciterChange, onLangChange, onTafsirChange, onFontSizeChange,
 }) {
   const activeReciter = RECITERS.find((r) => r.id === reciterId);
+  // `lang` above is this reader's independent translation-language picker
+  // (e.g. an Italian translation while browsing in French) -- the site's
+  // own interface language, needed for the a11y labels below, is read
+  // separately via context, matching how the parent page (Quran.jsx) does it.
+  const { lang: siteLang } = useLang();
+  const a11y = pickQuranA11y(siteLang);
 
   return (
     <div className="qlc__cbar">
@@ -60,7 +68,7 @@ export default function QuranReadingControls({
                 <option key={t.id} value={t.id}>{t.name}</option>
               ))}
             </optgroup>
-            <optgroup label="Other languages">
+            <optgroup label={a11y.quranOtherLanguages}>
               {TAFASEER.filter((t) => t.lang !== 'ar').map((t) => (
                 <option key={t.id} value={t.id}>{t.name} ({t.lang.toUpperCase()})</option>
               ))}
@@ -76,7 +84,7 @@ export default function QuranReadingControls({
             <button
               className="qlc__cbar-font-btn"
               onClick={() => onFontSizeChange((v) => Math.max(v - 2, 22))}
-              aria-label="Decrease font size"
+              aria-label={a11y.quranDecreaseFont}
             >
               A−
             </button>
@@ -84,7 +92,7 @@ export default function QuranReadingControls({
             <button
               className="qlc__cbar-font-btn"
               onClick={() => onFontSizeChange((v) => Math.min(v + 2, 52))}
-              aria-label="Increase font size"
+              aria-label={a11y.quranIncreaseFont}
             >
               A+
             </button>

@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useLang } from '../../../context/LangContext';
+import { pickQuranA11y } from '../../../i18n/quran/a11yLabels';
 
 const fmt = (s) => {
   if (!isFinite(s) || s < 0) return '0:00';
@@ -42,6 +44,8 @@ const NoteIcon = () => (
  * The hidden <audio> element is rendered here and attached to that ref.
  */
 export default function QuranPlayer({ src, audioKey, audioRef, reciterName }) {
+  const { lang } = useLang();
+  const a11y = pickQuranA11y(lang);
   const [playing, setPlaying]     = useState(false);
   const [loading, setLoading]     = useState(false);
   const [currentTime, setCurrent] = useState(0);
@@ -165,7 +169,7 @@ export default function QuranPlayer({ src, audioKey, audioRef, reciterName }) {
   const bufPct = duration ? (buffered   / duration) * 100 : 0;
 
   return (
-    <div className="qplayer" role="region" aria-label="Chapter recitation player">
+    <div className="qplayer" role="region" aria-label={a11y.quranPlayerRegion}>
       {/* Hidden audio element — ref shared with parent keyboard hook */}
       <audio
         ref={audioRef}
@@ -199,7 +203,7 @@ export default function QuranPlayer({ src, audioKey, audioRef, reciterName }) {
         aria-valuemin={0}
         aria-valuemax={Math.round(duration)}
         aria-valuenow={Math.round(currentTime)}
-        aria-label="Audio position"
+        aria-label={a11y.quranPlayerPosition}
         tabIndex={0}
         onKeyDown={(e) => {
           if (e.key === 'ArrowLeft')  { e.preventDefault(); skip(-5); }
@@ -217,8 +221,8 @@ export default function QuranPlayer({ src, audioKey, audioRef, reciterName }) {
           <button
             className="qplayer__skip-btn"
             onClick={() => skip(-10)}
-            title="Rewind 10 seconds"
-            aria-label="Rewind 10 seconds"
+            title={a11y.quranPlayerRewind}
+            aria-label={a11y.quranPlayerRewind}
           >
             <BackIcon />
             <span>10</span>
@@ -227,10 +231,10 @@ export default function QuranPlayer({ src, audioKey, audioRef, reciterName }) {
           <button
             className="qplayer__play-btn"
             onClick={toggle}
-            aria-label={loading ? 'Loading…' : playing ? 'Pause' : 'Play'}
+            aria-label={loading ? a11y.quranPlayerLoadingLabel : playing ? a11y.quranPlayerPause : a11y.quranPlayerPlay}
           >
             {loading
-              ? <span className="qplayer__spin" role="status" aria-label="Loading audio" />
+              ? <span className="qplayer__spin" role="status" aria-label={a11y.quranPlayerLoadingAudio} />
               : playing ? <PauseIcon /> : <PlayIcon />
             }
           </button>
@@ -238,21 +242,21 @@ export default function QuranPlayer({ src, audioKey, audioRef, reciterName }) {
           <button
             className="qplayer__skip-btn"
             onClick={() => skip(10)}
-            title="Forward 10 seconds"
-            aria-label="Forward 10 seconds"
+            title={a11y.quranPlayerForward}
+            aria-label={a11y.quranPlayerForward}
           >
             <span>10</span>
             <FwdIcon />
           </button>
         </div>
 
-        <div className="qplayer__speeds" role="group" aria-label="Playback speed">
+        <div className="qplayer__speeds" role="group" aria-label={a11y.quranPlayerSpeedGroup}>
           {SPEEDS.map((s) => (
             <button
               key={s}
               className={`qplayer__speed${speed === s ? ' active' : ''}`}
               onClick={() => changeSpeed(s)}
-              aria-label={`${s}× speed`}
+              aria-label={a11y.quranPlayerSpeedOption(s)}
               aria-pressed={speed === s}
             >
               {s}×

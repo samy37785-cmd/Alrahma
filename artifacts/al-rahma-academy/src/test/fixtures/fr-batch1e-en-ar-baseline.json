@@ -1,0 +1,389 @@
+{
+  "baseline": "origin/main@8ccc963",
+  "pages": {
+    "prayerTimes": {
+      "en": {
+        "noLocation": {
+          "title": "Prayer Times | AL-Rahma Academy",
+          "description": "Accurate prayer times for your location with live countdown, prayer alerts, and full monthly timetable.",
+          "ogTitle": "Prayer Times | AL-Rahma Academy",
+          "ogDescription": "Accurate prayer times for your location with live countdown, prayer alerts, and full monthly timetable.",
+          "htmlLang": "en",
+          "htmlDir": "ltr",
+          "body": "3be66ae748a0495080ce3281cfbf43b657f10037360f103d9cc31ee038dff485"
+        },
+        "found": {
+          "title": "Prayer Times | AL-Rahma Academy",
+          "description": "Accurate prayer times for your location with live countdown, prayer alerts, and full monthly timetable.",
+          "ogTitle": "Prayer Times | AL-Rahma Academy",
+          "ogDescription": "Accurate prayer times for your location with live countdown, prayer alerts, and full monthly timetable.",
+          "htmlLang": "en",
+          "htmlDir": "ltr",
+          "body": "e5e309d867a41a0fba9fb38716d535c7a7cc01e7b3684a7f67483367c9db520d"
+        },
+        "notifyToggle": {
+          "title": "Prayer Times | AL-Rahma Academy",
+          "description": "Accurate prayer times for your location with live countdown, prayer alerts, and full monthly timetable.",
+          "ogTitle": "Prayer Times | AL-Rahma Academy",
+          "ogDescription": "Accurate prayer times for your location with live countdown, prayer alerts, and full monthly timetable.",
+          "htmlLang": "en",
+          "htmlDir": "ltr",
+          "body": "e503619151a980a4c6ac59b617936568fee5a5503d8ab0d64fb045333443fca6"
+        },
+        "monthOpen": {
+          "title": "Prayer Times | AL-Rahma Academy",
+          "description": "Accurate prayer times for your location with live countdown, prayer alerts, and full monthly timetable.",
+          "ogTitle": "Prayer Times | AL-Rahma Academy",
+          "ogDescription": "Accurate prayer times for your location with live countdown, prayer alerts, and full monthly timetable.",
+          "htmlLang": "en",
+          "htmlDir": "ltr",
+          "body": "9ff91e05aa11aa2944a24935b36ef4c3cd981a67738e8d13c6b73f48ea7d294a"
+        }
+      },
+      "ar": {
+        "noLocation": {
+          "title": "مواقيت الصلاة | AL-Rahma Academy",
+          "description": "مواقيت صلاة دقيقة لموقعك مع عداد تنازلي للصلاة القادمة، ومنبه الصلاة، والجدول الشهري الكامل.",
+          "ogTitle": "مواقيت الصلاة | AL-Rahma Academy",
+          "ogDescription": "مواقيت صلاة دقيقة لموقعك مع عداد تنازلي للصلاة القادمة، ومنبه الصلاة، والجدول الشهري الكامل.",
+          "htmlLang": "ar",
+          "htmlDir": "rtl",
+          "body": "2069fd29f90ff7083d45eeeb5214db8f2d386393465c64377c8110edb1d4fdbd"
+        },
+        "found": {
+          "title": "مواقيت الصلاة | AL-Rahma Academy",
+          "description": "مواقيت صلاة دقيقة لموقعك مع عداد تنازلي للصلاة القادمة، ومنبه الصلاة، والجدول الشهري الكامل.",
+          "ogTitle": "مواقيت الصلاة | AL-Rahma Academy",
+          "ogDescription": "مواقيت صلاة دقيقة لموقعك مع عداد تنازلي للصلاة القادمة، ومنبه الصلاة، والجدول الشهري الكامل.",
+          "htmlLang": "ar",
+          "htmlDir": "rtl",
+          "body": "27f89d000764c3f7a0f88668d1f435e51a8112f5b79c7011a0bd9b13a47412d2"
+        },
+        "notifyToggle": {
+          "title": "مواقيت الصلاة | AL-Rahma Academy",
+          "description": "مواقيت صلاة دقيقة لموقعك مع عداد تنازلي للصلاة القادمة، ومنبه الصلاة، والجدول الشهري الكامل.",
+          "ogTitle": "مواقيت الصلاة | AL-Rahma Academy",
+          "ogDescription": "مواقيت صلاة دقيقة لموقعك مع عداد تنازلي للصلاة القادمة، ومنبه الصلاة، والجدول الشهري الكامل.",
+          "htmlLang": "ar",
+          "htmlDir": "rtl",
+          "body": "9d3a1edbd5693eb1cfd27da366ff0dd8973d062f1633a260bd20380902464068"
+        },
+        "monthOpen": {
+          "title": "مواقيت الصلاة | AL-Rahma Academy",
+          "description": "مواقيت صلاة دقيقة لموقعك مع عداد تنازلي للصلاة القادمة، ومنبه الصلاة، والجدول الشهري الكامل.",
+          "ogTitle": "مواقيت الصلاة | AL-Rahma Academy",
+          "ogDescription": "مواقيت صلاة دقيقة لموقعك مع عداد تنازلي للصلاة القادمة، ومنبه الصلاة، والجدول الشهري الكامل.",
+          "htmlLang": "ar",
+          "htmlDir": "rtl",
+          "body": "05d77f8211d887d70374b80e703e825817032cedee8c36551dc674cd1aba70d6"
+        }
+      }
+    },
+    "qibla": {
+      "en": {
+        "noLocation": {
+          "title": "Qibla Direction | AL-Rahma Academy",
+          "description": "Find the exact Qibla direction from your location with a live compass on mobile.",
+          "ogTitle": "Qibla Direction | AL-Rahma Academy",
+          "ogDescription": "Find the exact Qibla direction from your location with a live compass on mobile.",
+          "htmlLang": "en",
+          "htmlDir": "ltr",
+          "body": "55193b4e1e10cc0373c46ae1de6c30546d0a3d6e75fe0626374bc9cc530552df"
+        },
+        "found": {
+          "title": "Qibla Direction | AL-Rahma Academy",
+          "description": "Find the exact Qibla direction from your location with a live compass on mobile.",
+          "ogTitle": "Qibla Direction | AL-Rahma Academy",
+          "ogDescription": "Find the exact Qibla direction from your location with a live compass on mobile.",
+          "htmlLang": "en",
+          "htmlDir": "ltr",
+          "body": "41691a8205b92535d3a69b6db7f5c13f2849b7cdca47818d65694bdc6c702873"
+        }
+      },
+      "ar": {
+        "noLocation": {
+          "title": "اتجاه القبلة | AL-Rahma Academy",
+          "description": "اعرف اتجاه القبلة الدقيق من موقعك مع بوصلة حية للهاتف المحمول.",
+          "ogTitle": "اتجاه القبلة | AL-Rahma Academy",
+          "ogDescription": "اعرف اتجاه القبلة الدقيق من موقعك مع بوصلة حية للهاتف المحمول.",
+          "htmlLang": "ar",
+          "htmlDir": "rtl",
+          "body": "4d976c86100614cf10ac11be9dde5e3d4492739af880b6d38e7eb7a3d7fae713"
+        },
+        "found": {
+          "title": "اتجاه القبلة | AL-Rahma Academy",
+          "description": "اعرف اتجاه القبلة الدقيق من موقعك مع بوصلة حية للهاتف المحمول.",
+          "ogTitle": "اتجاه القبلة | AL-Rahma Academy",
+          "ogDescription": "اعرف اتجاه القبلة الدقيق من موقعك مع بوصلة حية للهاتف المحمول.",
+          "htmlLang": "ar",
+          "htmlDir": "rtl",
+          "body": "f774011473de8be2a074d560084a4b47a70b36715d2ba6a0fd7b3b203e6f2fee"
+        }
+      }
+    },
+    "islamicCalendar": {
+      "en": {
+        "noLocation": {
+          "title": "Islamic Calendar | AL-Rahma Academy",
+          "description": "Today's Hijri date with countdowns to Ramadan, Eid al-Fitr, and Eid al-Adha.",
+          "ogTitle": "Islamic Calendar | AL-Rahma Academy",
+          "ogDescription": "Today's Hijri date with countdowns to Ramadan, Eid al-Fitr, and Eid al-Adha.",
+          "htmlLang": "en",
+          "htmlDir": "ltr",
+          "body": "6b9b90ff24e73875eb6c40d83ae500b64b3e9d01e335b34ff829f8f44b63e9d6"
+        },
+        "found": {
+          "title": "Islamic Calendar | AL-Rahma Academy",
+          "description": "Today's Hijri date with countdowns to Ramadan, Eid al-Fitr, and Eid al-Adha.",
+          "ogTitle": "Islamic Calendar | AL-Rahma Academy",
+          "ogDescription": "Today's Hijri date with countdowns to Ramadan, Eid al-Fitr, and Eid al-Adha.",
+          "htmlLang": "en",
+          "htmlDir": "ltr",
+          "body": "87aa0d9606ce56f3d265909d92efee5ae718c56c6f269fe0ace8abc1693f53dc"
+        }
+      },
+      "ar": {
+        "noLocation": {
+          "title": "التقويم الإسلامي | AL-Rahma Academy",
+          "description": "التاريخ الهجري لليوم، والعد التنازلي لرمضان وعيد الفطر وعيد الأضحى.",
+          "ogTitle": "التقويم الإسلامي | AL-Rahma Academy",
+          "ogDescription": "التاريخ الهجري لليوم، والعد التنازلي لرمضان وعيد الفطر وعيد الأضحى.",
+          "htmlLang": "ar",
+          "htmlDir": "rtl",
+          "body": "d93dadf4be061e01fe55a3b5cb70f2ae92a789880a46ac61de2f7d42e4c944ca"
+        },
+        "found": {
+          "title": "التقويم الإسلامي | AL-Rahma Academy",
+          "description": "التاريخ الهجري لليوم، والعد التنازلي لرمضان وعيد الفطر وعيد الأضحى.",
+          "ogTitle": "التقويم الإسلامي | AL-Rahma Academy",
+          "ogDescription": "التاريخ الهجري لليوم، والعد التنازلي لرمضان وعيد الفطر وعيد الأضحى.",
+          "htmlLang": "ar",
+          "htmlDir": "rtl",
+          "body": "61090f74cc438be313b3b58df580c2b874acfa07b6b2e45995d7884b36a9f026"
+        }
+      }
+    },
+    "tasbeeh": {
+      "en": {
+        "initial": {
+          "title": "Tasbeeh Counter | AL-Rahma Academy",
+          "description": "Free digital tasbeeh counter. Count SubhanAllah, Alhamdulillah, AllahuAkbar and more with progress tracking.",
+          "ogTitle": "Tasbeeh Counter | AL-Rahma Academy",
+          "ogDescription": "Free digital tasbeeh counter. Count SubhanAllah, Alhamdulillah, AllahuAkbar and more with progress tracking.",
+          "htmlLang": "en",
+          "htmlDir": "ltr",
+          "body": "71ee645ce6e9b861bcafa168f43c8dff42e9f4dfc3c898ed4828cda0b95bc414"
+        },
+        "tapped": {
+          "title": "Tasbeeh Counter | AL-Rahma Academy",
+          "description": "Free digital tasbeeh counter. Count SubhanAllah, Alhamdulillah, AllahuAkbar and more with progress tracking.",
+          "ogTitle": "Tasbeeh Counter | AL-Rahma Academy",
+          "ogDescription": "Free digital tasbeeh counter. Count SubhanAllah, Alhamdulillah, AllahuAkbar and more with progress tracking.",
+          "htmlLang": "en",
+          "htmlDir": "ltr",
+          "body": "df9fdb5ffd4fab958480516cf307df91c28e68b420fdccd2f538f14e5f1de224"
+        },
+        "reset": {
+          "title": "Tasbeeh Counter | AL-Rahma Academy",
+          "description": "Free digital tasbeeh counter. Count SubhanAllah, Alhamdulillah, AllahuAkbar and more with progress tracking.",
+          "ogTitle": "Tasbeeh Counter | AL-Rahma Academy",
+          "ogDescription": "Free digital tasbeeh counter. Count SubhanAllah, Alhamdulillah, AllahuAkbar and more with progress tracking.",
+          "htmlLang": "en",
+          "htmlDir": "ltr",
+          "body": "7ed564611318b0fc53d0f6fa51b9b850b69840de3b429a94d1b1d62aa671c095"
+        }
+      },
+      "ar": {
+        "initial": {
+          "title": "مسبحة رقمية | AL-Rahma Academy",
+          "description": "مسبحة رقمية مجانية: سبحان الله، الحمد لله، الله أكبر، لا إله إلا الله. تتبع أذكارك اليومية.",
+          "ogTitle": "مسبحة رقمية | AL-Rahma Academy",
+          "ogDescription": "مسبحة رقمية مجانية: سبحان الله، الحمد لله، الله أكبر، لا إله إلا الله. تتبع أذكارك اليومية.",
+          "htmlLang": "ar",
+          "htmlDir": "rtl",
+          "body": "e5f185dea220d97bd3281c714261ac4e669348ec78b4da339055a2a718053464"
+        },
+        "tapped": {
+          "title": "مسبحة رقمية | AL-Rahma Academy",
+          "description": "مسبحة رقمية مجانية: سبحان الله، الحمد لله، الله أكبر، لا إله إلا الله. تتبع أذكارك اليومية.",
+          "ogTitle": "مسبحة رقمية | AL-Rahma Academy",
+          "ogDescription": "مسبحة رقمية مجانية: سبحان الله، الحمد لله، الله أكبر، لا إله إلا الله. تتبع أذكارك اليومية.",
+          "htmlLang": "ar",
+          "htmlDir": "rtl",
+          "body": "85750c93dbdbffc1c869b39ba37de12c6dabee86c954386080d91ea40b116eef"
+        },
+        "reset": {
+          "title": "مسبحة رقمية | AL-Rahma Academy",
+          "description": "مسبحة رقمية مجانية: سبحان الله، الحمد لله، الله أكبر، لا إله إلا الله. تتبع أذكارك اليومية.",
+          "ogTitle": "مسبحة رقمية | AL-Rahma Academy",
+          "ogDescription": "مسبحة رقمية مجانية: سبحان الله، الحمد لله، الله أكبر، لا إله إلا الله. تتبع أذكارك اليومية.",
+          "htmlLang": "ar",
+          "htmlDir": "rtl",
+          "body": "d52847e920835590dafb48b7b915d03828e875bab1eeb57a4881cc1e06cd2d49"
+        }
+      }
+    },
+    "tajweedChecker": {
+      "en": {
+        "initial": {
+          "title": "AI Tajweed Checker | AL-Rahma Academy",
+          "description": "Practice Quran recitation and get instant AI feedback on your Tajweed",
+          "ogTitle": "AI Tajweed Checker | AL-Rahma Academy",
+          "ogDescription": "Practice Quran recitation and get instant AI feedback on your Tajweed",
+          "htmlLang": "en",
+          "htmlDir": "ltr",
+          "body": "a9839421d52394c5602f5536bf578991f087ca6b9938cc8348644649a20c0918"
+        },
+        "verse2": {
+          "title": "AI Tajweed Checker | AL-Rahma Academy",
+          "description": "Practice Quran recitation and get instant AI feedback on your Tajweed",
+          "ogTitle": "AI Tajweed Checker | AL-Rahma Academy",
+          "ogDescription": "Practice Quran recitation and get instant AI feedback on your Tajweed",
+          "htmlLang": "en",
+          "htmlDir": "ltr",
+          "body": "39fb84524af4589105496d94a50d50545ab26f4fd8c5530c7aaab85d1904db3e"
+        }
+      },
+      "ar": {
+        "initial": {
+          "title": "مدقق التجويد بالذكاء الاصطناعي | AL-Rahma Academy",
+          "description": "تدرّب على تلاوة القرآن الكريم واحصل على تقييم فوري بالذكاء الاصطناعي",
+          "ogTitle": "مدقق التجويد بالذكاء الاصطناعي | AL-Rahma Academy",
+          "ogDescription": "تدرّب على تلاوة القرآن الكريم واحصل على تقييم فوري بالذكاء الاصطناعي",
+          "htmlLang": "ar",
+          "htmlDir": "rtl",
+          "body": "8561ac9ff9f4bce8e4077b1cc2f9467b321acfe9f1c19c414462e84f9dc954dd"
+        },
+        "verse2": {
+          "title": "مدقق التجويد بالذكاء الاصطناعي | AL-Rahma Academy",
+          "description": "تدرّب على تلاوة القرآن الكريم واحصل على تقييم فوري بالذكاء الاصطناعي",
+          "ogTitle": "مدقق التجويد بالذكاء الاصطناعي | AL-Rahma Academy",
+          "ogDescription": "تدرّب على تلاوة القرآن الكريم واحصل على تقييم فوري بالذكاء الاصطناعي",
+          "htmlLang": "ar",
+          "htmlDir": "rtl",
+          "body": "2ea81707e0f3b5decff70466b3e680edb4345854d4ebf0648dc56cfe2c9e01b4"
+        }
+      }
+    },
+    "hifzReview": {
+      "en": {
+        "overview": {
+          "title": "Hifz Spaced Repetition | AL-Rahma Academy",
+          "description": "Review your Hifz using SM-2 spaced repetition to commit Quran to long-term memory",
+          "ogTitle": "Hifz Spaced Repetition | AL-Rahma Academy",
+          "ogDescription": "Review your Hifz using SM-2 spaced repetition to commit Quran to long-term memory",
+          "htmlLang": "en",
+          "htmlDir": "ltr",
+          "body": "bf1ee006446c147bbb1c94f64c1a8e867b594d2b10f378d42dd3c326607ba875"
+        },
+        "session": {
+          "title": "Hifz Spaced Repetition | AL-Rahma Academy",
+          "description": "Review your Hifz using SM-2 spaced repetition to commit Quran to long-term memory",
+          "ogTitle": "Hifz Spaced Repetition | AL-Rahma Academy",
+          "ogDescription": "Review your Hifz using SM-2 spaced repetition to commit Quran to long-term memory",
+          "htmlLang": "en",
+          "htmlDir": "ltr",
+          "body": "d3f6b22c7ebe67374f2dab5365620c6c4e267dd5fd637a2bf60e455e29f530c0"
+        },
+        "revealed": {
+          "title": "Hifz Spaced Repetition | AL-Rahma Academy",
+          "description": "Review your Hifz using SM-2 spaced repetition to commit Quran to long-term memory",
+          "ogTitle": "Hifz Spaced Repetition | AL-Rahma Academy",
+          "ogDescription": "Review your Hifz using SM-2 spaced repetition to commit Quran to long-term memory",
+          "htmlLang": "en",
+          "htmlDir": "ltr",
+          "body": "950b81ef302470cc174a972eab00f8211de908f39e41fb13219952dc22fdff7c"
+        },
+        "done": {
+          "title": "Hifz Spaced Repetition | AL-Rahma Academy",
+          "description": "Review your Hifz using SM-2 spaced repetition to commit Quran to long-term memory",
+          "ogTitle": "Hifz Spaced Repetition | AL-Rahma Academy",
+          "ogDescription": "Review your Hifz using SM-2 spaced repetition to commit Quran to long-term memory",
+          "htmlLang": "en",
+          "htmlDir": "ltr",
+          "body": "b85935f894bda62fd76da4495463541317d20c053ae8a859686b0bfec4d58119"
+        }
+      },
+      "ar": {
+        "overview": {
+          "title": "مراجعة الحفظ بالتكرار المتباعد | AL-Rahma Academy",
+          "description": "راجع محفوظاتك بنظام التكرار المتباعد SM-2 لتثبيت القرآن الكريم في الذاكرة",
+          "ogTitle": "مراجعة الحفظ بالتكرار المتباعد | AL-Rahma Academy",
+          "ogDescription": "راجع محفوظاتك بنظام التكرار المتباعد SM-2 لتثبيت القرآن الكريم في الذاكرة",
+          "htmlLang": "ar",
+          "htmlDir": "rtl",
+          "body": "0accf5cd999680fc869ff04fdb6e2f0c9c564457080d39102c73c0e5a3aa3620"
+        },
+        "session": {
+          "title": "مراجعة الحفظ بالتكرار المتباعد | AL-Rahma Academy",
+          "description": "راجع محفوظاتك بنظام التكرار المتباعد SM-2 لتثبيت القرآن الكريم في الذاكرة",
+          "ogTitle": "مراجعة الحفظ بالتكرار المتباعد | AL-Rahma Academy",
+          "ogDescription": "راجع محفوظاتك بنظام التكرار المتباعد SM-2 لتثبيت القرآن الكريم في الذاكرة",
+          "htmlLang": "ar",
+          "htmlDir": "rtl",
+          "body": "906eeaf508b0b58b03d3e84c4676cce9dc6bf394e32f902e032d16ca2d60670d"
+        },
+        "revealed": {
+          "title": "مراجعة الحفظ بالتكرار المتباعد | AL-Rahma Academy",
+          "description": "راجع محفوظاتك بنظام التكرار المتباعد SM-2 لتثبيت القرآن الكريم في الذاكرة",
+          "ogTitle": "مراجعة الحفظ بالتكرار المتباعد | AL-Rahma Academy",
+          "ogDescription": "راجع محفوظاتك بنظام التكرار المتباعد SM-2 لتثبيت القرآن الكريم في الذاكرة",
+          "htmlLang": "ar",
+          "htmlDir": "rtl",
+          "body": "66728b653934943c905cf545d6624431f8ec1a9ed467dcbd7e66654043bffe8a"
+        },
+        "done": {
+          "title": "مراجعة الحفظ بالتكرار المتباعد | AL-Rahma Academy",
+          "description": "راجع محفوظاتك بنظام التكرار المتباعد SM-2 لتثبيت القرآن الكريم في الذاكرة",
+          "ogTitle": "مراجعة الحفظ بالتكرار المتباعد | AL-Rahma Academy",
+          "ogDescription": "راجع محفوظاتك بنظام التكرار المتباعد SM-2 لتثبيت القرآن الكريم في الذاكرة",
+          "htmlLang": "ar",
+          "htmlDir": "rtl",
+          "body": "457f411366ef54a0d512fb8da9c3323554a27d84f475498b1f88e15864f05ddf"
+        }
+      }
+    },
+    "hadithLibrary": {
+      "en": {
+        "grid": {
+          "title": "Hadith Library | AL-Rahma Academy",
+          "description": "Browse & search 10 authentic hadith collections including Sahih Al-Bukhari, Sahih Muslim, Sunan Abi Dawud, and more.",
+          "ogTitle": "Hadith Library | AL-Rahma Academy",
+          "ogDescription": "Browse & search 10 authentic hadith collections including Sahih Al-Bukhari, Sahih Muslim, Sunan Abi Dawud, and more.",
+          "htmlLang": "en",
+          "htmlDir": "ltr",
+          "body": "4083c77adc6597f5a24147600dbd53587df9d9dbed841656b192077c35e8a3c8"
+        },
+        "loaded": {
+          "title": "Hadith Library | AL-Rahma Academy",
+          "description": "Browse & search 10 authentic hadith collections including Sahih Al-Bukhari, Sahih Muslim, Sunan Abi Dawud, and more.",
+          "ogTitle": "Hadith Library | AL-Rahma Academy",
+          "ogDescription": "Browse & search 10 authentic hadith collections including Sahih Al-Bukhari, Sahih Muslim, Sunan Abi Dawud, and more.",
+          "htmlLang": "en",
+          "htmlDir": "ltr",
+          "body": "0b6b8be81b858059a7860031d860d81b06b7a0093e22d8129246694855f0dc1c"
+        }
+      },
+      "ar": {
+        "grid": {
+          "title": "مكتبة الحديث النبوي | AL-Rahma Academy",
+          "description": "تصفح وابحث في ١٠ كتب من أمهات كتب الحديث النبوي — صحيح البخاري، صحيح مسلم، سنن أبي داود وغيرها.",
+          "ogTitle": "مكتبة الحديث النبوي | AL-Rahma Academy",
+          "ogDescription": "تصفح وابحث في ١٠ كتب من أمهات كتب الحديث النبوي — صحيح البخاري، صحيح مسلم، سنن أبي داود وغيرها.",
+          "htmlLang": "ar",
+          "htmlDir": "rtl",
+          "body": "14e2cfec8066ea3b40788545bd274561fcf1f237fd4c9dc063aa69b05c55416b"
+        },
+        "loaded": {
+          "title": "مكتبة الحديث النبوي | AL-Rahma Academy",
+          "description": "تصفح وابحث في ١٠ كتب من أمهات كتب الحديث النبوي — صحيح البخاري، صحيح مسلم، سنن أبي داود وغيرها.",
+          "ogTitle": "مكتبة الحديث النبوي | AL-Rahma Academy",
+          "ogDescription": "تصفح وابحث في ١٠ كتب من أمهات كتب الحديث النبوي — صحيح البخاري، صحيح مسلم، سنن أبي داود وغيرها.",
+          "htmlLang": "ar",
+          "htmlDir": "rtl",
+          "body": "622eeebb251b8f9e17f64682f6af8854049ea2a85acc088c9b03e366cc5f1de5"
+        }
+      }
+    }
+  }
+}

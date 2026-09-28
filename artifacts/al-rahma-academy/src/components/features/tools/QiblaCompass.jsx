@@ -1,4 +1,9 @@
+import { useLang } from '../../../context/LangContext';
+import { pickQuranA11y } from '../../../i18n/quran/a11yLabels';
+
 export default function QiblaCompass({ bearing, deviceHeading }) {
+  const { lang } = useLang();
+  const a11y = pickQuranA11y(lang);
   const needleAngle = deviceHeading !== null ? bearing - deviceHeading : bearing;
   const ringAngle   = deviceHeading !== null ? -deviceHeading : 0;
 
@@ -6,7 +11,7 @@ export default function QiblaCompass({ bearing, deviceHeading }) {
     <div
       className="it__compass-wrap"
       role="img"
-      aria-label={`Qibla direction: ${Math.round(bearing)} degrees from North`}
+      aria-label={a11y.qiblaDirectionAria(Math.round(bearing))}
     >
       <div className="it__compass" aria-hidden="true" style={{ transform: `rotate(${ringAngle}deg)` }}>
         {[['N','0'],['E','90'],['S','180'],['W','270']].map(([lbl, deg]) => (

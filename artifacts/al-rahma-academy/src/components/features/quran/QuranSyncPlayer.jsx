@@ -3,6 +3,8 @@ import { getVerseAudioMapForVerses } from '../../../api/quran';
 import { useQuranAudioEngine, readSavedPosition } from '../../../hooks/useQuranAudioEngine';
 import { useReadingProgress, useUpdatePosition, useLogReading } from '../../../hooks/useQuranProgress';
 import { useAuth } from '../../../context/AuthContext';
+import { useLang } from '../../../context/LangContext';
+import { pickQuranA11y } from '../../../i18n/quran/a11yLabels';
 
 const SPEEDS = [0.75, 1, 1.25, 1.5, 2];
 const REPEAT_PAGE_OPTIONS = [1, 2, 3, 5, 10];
@@ -30,6 +32,8 @@ export default function QuranSyncPlayer({
   verses, reciterId, reciterName, navMode, activeId, pageNum, juzNum, hizbNum, ui,
 }) {
   const { user } = useAuth();
+  const { lang } = useLang();
+  const a11y = pickQuranA11y(lang);
   const [audioMap, setAudioMap]     = useState({});
   const [loadingMap, setLoadingMap] = useState(false);
   const [selFrom, setSelFrom]       = useState(1);
@@ -147,7 +151,7 @@ export default function QuranSyncPlayer({
           </select>
         </label>
 
-        <div className="qlc__syncplayer-speeds" role="group" aria-label="Playback speed">
+        <div className="qlc__syncplayer-speeds" role="group" aria-label={a11y.quranPlayerSpeedGroup}>
           {SPEEDS.map((s) => (
             <button
               key={s}

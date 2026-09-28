@@ -26,7 +26,6 @@
 
 ## Locale pages (pre-rendered)
 - [Italian landing page](https://al-rahmaacademy.com/it/)
-- [French landing page](https://al-rahmaacademy.com/fr/)
 
 ## Contact
 - WhatsApp: +20 103 955 3264

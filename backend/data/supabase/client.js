@@ -17,7 +17,8 @@
 // only ever sets an `aal2` claim when the caller passes one in explicitly,
 // and the ONE legitimate caller (middleware/adminAuth.js's verifyAccessToken,
 // supabase mode) only does so after re-verifying, on THAT request, the
-// admin_sat cookie's signature against SUPABASE_JWT_SECRET and reading a
+// admin_sat cookie's signature (against SUPABASE_JWT_SECRET, or via the
+// project's JWKS endpoint when that is unset) and reading a
 // real `aal: "aal2"` claim GoTrue itself put there when the admin completed
 // a TOTP challenge (see data/supabase/supabaseSessionCookie.js and
 // data/supabase/adminAuthController.js). It is never read from this

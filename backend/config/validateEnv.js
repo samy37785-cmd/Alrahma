@@ -67,12 +67,18 @@ const SUPABASE_REQUIRED = [
   'SUPABASE_ANON_KEY',
   'SUPABASE_SERVICE_ROLE_KEY',
   'SUPABASE_DB_URL',
-  // Stage 2F: verifies the signature of the live GoTrue access token carried
-  // in the admin_sat cookie, so admin AAL2 proof is read from a real,
-  // signed Supabase JWT claim on every request — see
-  // data/supabase/supabaseSessionCookie.js.
-  'SUPABASE_JWT_SECRET',
 ];
+
+// Stage 2F / JWKS migration: SUPABASE_JWT_SECRET verifies the signature of
+// the live GoTrue access token carried in the admin_sat cookie, so admin
+// AAL2 proof is read from a real, signed Supabase JWT claim on every
+// request — see data/supabase/supabaseSessionCookie.js. Deliberately NOT in
+// SUPABASE_REQUIRED: a project that has moved to asymmetric "JWT Signing
+// Keys" has no shared secret to set at all, and supabaseSessionCookie.js
+// falls back to verifying against the project's JWKS endpoint
+// (SUPABASE_URL/auth/v1/.well-known/jwks.json) whenever this is unset — so
+// requiring it here would wrongly block startup for that valid, supported
+// configuration.
 
 export function validateEnv() {
   const missing = REQUIRED.filter((k) => !process.env[k]);

@@ -7,8 +7,9 @@
 // src/i18n/content.js TOOLS_TEXT export and are untouched, still imported
 // separately by the page.
 //
-// Only en/ar are populated -- it/es/de/fr stay genuinely absent; the route
-// stays 'legacy' in translationStatus.js (see that file's own comment).
+// French Localization Batch 1E adds `fr`, translated from the English shell
+// only. it/es/de stay genuinely absent; the route stays 'legacy' in
+// translationStatus.js for those (see that file's own comment).
 export const PRAYER_TIMES_TEXT = {
   en: {
     dir: 'ltr',
@@ -37,5 +38,19 @@ export const PRAYER_TIMES_TEXT = {
     },
     hijriEra: 'هـ',
     notifyToggleAria: 'تفعيل منبّه الصلاة',
+  },
+  fr: {
+    dir: 'ltr',
+    seo: {
+      title: 'Horaires de prière',
+      description: 'Horaires de prière précis pour votre position, avec compte à rebours en direct, alertes de prière et calendrier mensuel complet.',
+    },
+    breadcrumbs: { tools: 'Outils', prayerTools: 'Outils de prière', current: 'Horaires de prière' },
+    hero: {
+      title: 'Horaires de prière',
+      sub: 'Horaires précis pour votre position, avec un compte à rebours en direct jusqu\'à la prochaine prière, des alertes et un calendrier mensuel.',
+    },
+    hijriEra: 'H',
+    notifyToggleAria: 'Activer les alertes de prière',
   },
 };

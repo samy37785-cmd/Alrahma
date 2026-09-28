@@ -6,8 +6,9 @@
 // enableCompass, kaabaTitle/Text, etc.) already lived in the 6-language
 // src/i18n/content.js TOOLS_TEXT.qibla export and is untouched.
 //
-// Only en/ar are populated -- it/es/de/fr stay genuinely absent; the route
-// stays 'legacy' in translationStatus.js (see that file's own comment).
+// French Localization Batch 1E adds `fr`, translated from the English shell
+// only. it/es/de stay genuinely absent; the route stays 'legacy' in
+// translationStatus.js for those (see that file's own comment).
 export const QIBLA_TEXT = {
   en: {
     dir: 'ltr',
@@ -34,5 +35,18 @@ export const QIBLA_TEXT = {
       sub: 'اعرف اتجاه الكعبة المشرفة من أي مكان في العالم، مع بوصلة حية على الهاتف المحمول.',
     },
     changeLocation: 'تغيير الموقع',
+  },
+  fr: {
+    dir: 'ltr',
+    seo: {
+      title: 'Direction de la Qibla',
+      description: 'Trouvez la direction exacte de la Qibla depuis votre position, avec une boussole en direct sur mobile.',
+    },
+    breadcrumbs: { tools: 'Outils', prayerTools: 'Outils de prière', current: 'Direction de la Qibla' },
+    hero: {
+      title: 'Direction de la Qibla',
+      sub: 'Trouvez la direction de la Sainte Kaaba depuis n\'importe où dans le monde, avec une boussole en direct sur mobile.',
+    },
+    changeLocation: 'Changer de lieu',
   },
 };

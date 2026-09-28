@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import TafsirPanel from './TafsirPanel';
 import TafsirPicker from './TafsirPicker';
+import { useLang } from '../../../context/LangContext';
+import { pickQuranA11y } from '../../../i18n/quran/a11yLabels';
 
 const HIGHLIGHT_COLORS = ['#f6e05e', '#68d391', '#63b3ed', '#f687b3', '#fc8181'];
 
@@ -21,6 +23,8 @@ export default function QuranVerseList({
   onJumpVerseChange, onJump,
   isBookmarked, onToggleBookmark, getBookmark, onSaveNote, onSetHighlight,
 }) {
+  const { lang } = useLang();
+  const a11y = pickQuranA11y(lang);
   const [noteOpenKey, setNoteOpenKey]           = useState('');
   const [noteDraft, setNoteDraft]               = useState('');
   const [highlightOpenKey, setHighlightOpenKey] = useState('');
@@ -147,7 +151,7 @@ export default function QuranVerseList({
                       <button
                         className={`qlc__actbtn${copiedKey === `copy-${v.verse_key}` ? ' copied' : ''}`}
                         onClick={() => onCopyVerse(v)}
-                        title="Copy verse (text + translation)"
+                        title={a11y.quranCopyVerseText}
                       >
                         {copiedKey === `copy-${v.verse_key}` ? '✓' : '📋'}
                       </button>
@@ -155,7 +159,7 @@ export default function QuranVerseList({
                       <button
                         className={`qlc__actbtn${copiedKey === `share-${v.verse_key}` ? ' copied' : ''}`}
                         onClick={() => onShareVerse(v)}
-                        title="Copy link to this verse"
+                        title={a11y.quranCopyVerseLink}
                       >
                         {copiedKey === `share-${v.verse_key}` ? '✓' : '🔗'}
                       </button>
@@ -163,7 +167,7 @@ export default function QuranVerseList({
                       <button
                         className="qlc__actbtn qlc__actbtn--card"
                         onClick={() => onShowCard?.(v)}
-                        title="Share as a verse card"
+                        title={a11y.quranShareVerseCard}
                       >
                         🖼️
                       </button>

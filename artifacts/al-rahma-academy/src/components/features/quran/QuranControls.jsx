@@ -1,3 +1,7 @@
+import { useLang } from '../../../context/LangContext';
+import { pickQuranA11y } from '../../../i18n/quran/a11yLabels';
+import { pickControlsPanels } from '../../../i18n/quran/controlsPanels';
+
 export function CtrlItem({ icon, label, children }) {
   return (
     <div className="qlc__cbar-item">
@@ -20,9 +24,11 @@ const SHORTCUTS = [
 ];
 
 export function KbdSidePanel({ open, onToggle }) {
+  const { lang } = useLang();
+  const a11y = pickQuranA11y(lang);
   return (
     <div className={`qlc__ksp${open ? ' open' : ''}`}>
-      <button className="qlc__ksp-tab" onClick={onToggle} title="Keyboard Shortcuts (K)">
+      <button className="qlc__ksp-tab" onClick={onToggle} title={a11y.quranKbdShortcutsTab}>
         <span className="qlc__ksp-tab-icon">⌨</span>
         <span className="qlc__ksp-tab-text">مفاتيح</span>
       </button>
@@ -40,19 +46,20 @@ export function KbdSidePanel({ open, onToggle }) {
   );
 }
 
-const SHORTCUT_GROUPS = [
-  { title: 'Playback',   items: [['Space','Play / Pause'],['Esc','Stop']] },
-  { title: 'Navigation', items: [['← →','Prev / Next Surah'],['1–9','Jump to Surah']] },
-  { title: 'Display',    items: [['+ / −','Font size'],['T','Toggle translation'],['D','Dark mode']] },
-  { title: 'Panels',     items: [['?','Shortcuts'],['G','Settings'],['K','Side shortcuts'],['P','Print']] },
-];
-
 export function ShortcutsModal({ onClose }) {
+  const { lang } = useLang();
+  const cp = pickControlsPanels(lang);
+  const SHORTCUT_GROUPS = [
+    { title: cp.groups.playback,   items: [['Space', cp.items.playPause], ['Esc', cp.items.stop]] },
+    { title: cp.groups.navigation, items: [['← →', cp.items.prevNextSurah], ['1–9', cp.items.jumpToSurah]] },
+    { title: cp.groups.display,    items: [['+ / −', cp.items.fontSize], ['T', cp.items.toggleTranslation], ['D', cp.items.darkModeItem]] },
+    { title: cp.groups.panels,     items: [['?', cp.items.shortcuts], ['G', cp.items.settings], ['K', cp.items.sideShortcuts], ['P', cp.items.print]] },
+  ];
   return (
     <div className="qlc__overlay" onClick={onClose}>
       <div className="qlc__shortcuts" onClick={(e) => e.stopPropagation()}>
         <div className="qlc__panel-head">
-          <span>⌨ Keyboard Shortcuts</span>
+          <span>{cp.shortcutsTitle}</span>
           <button className="qlc__panel-close" onClick={onClose}>✕</button>
         </div>
         <div className="qlc__shortcuts-body">
@@ -73,27 +80,28 @@ export function ShortcutsModal({ onClose }) {
   );
 }
 
-const THEMES = [
-  { key: 'light', icon: '☀️', label: 'Light' },
-  { key: 'sepia', icon: '📜', label: 'Sepia' },
-  { key: 'dark',  icon: '🌙', label: 'Dark'  },
-];
-
 export function SettingsPanel({
   fontSize, setFontSize, darkMode, setDarkMode, showTrans, setShowTrans,
   readingTheme, setReadingTheme, lineHeight, setLineHeight, contentWidth, setContentWidth,
   onClose,
 }) {
+  const { lang } = useLang();
+  const cp = pickControlsPanels(lang);
+  const THEMES = [
+    { key: 'light', icon: '☀️', label: cp.themes.light },
+    { key: 'sepia', icon: '📜', label: cp.themes.sepia },
+    { key: 'dark',  icon: '🌙', label: cp.themes.dark },
+  ];
   return (
     <div className="qlc__overlay" onClick={onClose}>
       <div className="qlc__settings" onClick={(e) => e.stopPropagation()}>
         <div className="qlc__panel-head">
-          <span>⚙ Settings</span>
+          <span>{cp.settingsTitle}</span>
           <button className="qlc__panel-close" onClick={onClose}>✕</button>
         </div>
         <div className="qlc__settings-body">
           <div className="qlc__settings-section">
-            <p className="qlc__settings-label">Arabic Font Size</p>
+            <p className="qlc__settings-label">{cp.arabicFontSize}</p>
             <div className="qlc__fontsize-row">
               <button className="qlc__fontsize-btn" onClick={() => setFontSize((v) => Math.max(v - 2, 22))}>A−</button>
               <input type="range" min={22} max={52} value={fontSize} className="qlc__fontsize-slider"
@@ -107,7 +115,7 @@ export function SettingsPanel({
 
           {readingTheme !== undefined && setReadingTheme && (
             <div className="qlc__settings-section">
-              <p className="qlc__settings-label">Reading Theme</p>
+              <p className="qlc__settings-label">{cp.readingTheme}</p>
               <div className="qlc__theme-row">
                 {THEMES.map((t) => (
                   <button
@@ -124,7 +132,7 @@ export function SettingsPanel({
 
           {setLineHeight && (
             <div className="qlc__settings-section">
-              <p className="qlc__settings-label">Line Spacing</p>
+              <p className="qlc__settings-label">{cp.lineSpacing}</p>
               <div className="qlc__fontsize-row">
                 <button className="qlc__fontsize-btn" onClick={() => setLineHeight((v) => Math.max(1.6, +(v - 0.1).toFixed(1)))}>−</button>
                 <input type="range" min={1.6} max={3.0} step={0.1} value={lineHeight} className="qlc__fontsize-slider"
@@ -136,9 +144,9 @@ export function SettingsPanel({
 
           {setContentWidth && (
             <div className="qlc__settings-section">
-              <p className="qlc__settings-label">Content Width</p>
+              <p className="qlc__settings-label">{cp.contentWidth}</p>
               <div className="qlc__theme-row">
-                {[['narrow', 'Narrow'], ['medium', 'Medium'], ['wide', 'Wide']].map(([key, label]) => (
+                {[['narrow', cp.widths.narrow], ['medium', cp.widths.medium], ['wide', cp.widths.wide]].map(([key, label]) => (
                   <button
                     key={key}
                     className={`qlc__theme-btn${contentWidth === key ? ' active' : ''}`}
@@ -150,17 +158,17 @@ export function SettingsPanel({
           )}
 
           <div className="qlc__settings-section">
-            <p className="qlc__settings-label">Appearance</p>
+            <p className="qlc__settings-label">{cp.appearance}</p>
             {!(readingTheme !== undefined && setReadingTheme) && (
               <label className="qlc__toggle-row">
-                <span>🌙 Dark mode</span>
+                <span>{cp.darkMode}</span>
                 <div className={`qlc__switch${darkMode ? ' on' : ''}`} onClick={() => setDarkMode((v) => !v)}>
                   <div className="qlc__switch-knob" />
                 </div>
               </label>
             )}
             <label className="qlc__toggle-row">
-              <span>🌐 Show translation</span>
+              <span>{cp.showTranslation}</span>
               <div className={`qlc__switch${showTrans ? ' on' : ''}`} onClick={() => setShowTrans((v) => !v)}>
                 <div className="qlc__switch-knob" />
               </div>
@@ -168,8 +176,8 @@ export function SettingsPanel({
           </div>
           <div className="qlc__settings-section">
             <p className="qlc__settings-hint">
-              Press <kbd className="qlc__kbd qlc__kbd--sm">?</kbd> to see all shortcuts ·&nbsp;
-              <kbd className="qlc__kbd qlc__kbd--sm">K</kbd> side panel
+              {cp.shortcutsHintPre} <kbd className="qlc__kbd qlc__kbd--sm">?</kbd> {cp.shortcutsHintMid}&nbsp;
+              <kbd className="qlc__kbd qlc__kbd--sm">K</kbd> {cp.shortcutsHintSide}
             </p>
           </div>
         </div>

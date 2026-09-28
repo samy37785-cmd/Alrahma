@@ -16,8 +16,9 @@
 // (English pluralizes "verse/card", Arabic does not) without any
 // isAr/lang-based branching in the component.
 //
-// Only en/ar are populated -- it/es/de/fr stay genuinely absent; the route
-// stays 'legacy' in translationStatus.js (see that file's own comment).
+// French Localization Batch 1E adds `fr`, translated from the English
+// shell only. it/es/de stay genuinely absent; the route stays 'legacy' in
+// translationStatus.js for those (see that file's own comment).
 export const HIFZ_REVIEW_TEXT = {
   en: {
     seo: {
@@ -86,5 +87,39 @@ export const HIFZ_REVIEW_TEXT = {
       backToOverview: 'العودة للرئيسية',
     },
     quality: { perfect: 'ممتاز', good: 'جيد', ok: 'مقبول', hard: 'صعب', forgot: 'نسيت' },
+  },
+  fr: {
+    seo: {
+      title: 'Répétition espacée du hifz',
+      description: "Révisez votre hifz avec la répétition espacée SM-2 pour ancrer le Coran dans la mémoire à long terme",
+    },
+    breadcrumbs: { tools: 'Outils', current: 'Révision du hifz' },
+    eyebrow: 'Répétition espacée',
+    hero: {
+      title: 'Révision du hifz',
+      sub: "Révisez votre mémorisation avec l'algorithme SM-2 pour une rétention à long terme",
+    },
+    overview: {
+      dueToday: "À réviser aujourd'hui",
+      reviewed: 'Révisées',
+      totalCards: 'Total des cartes',
+      startSession: 'Commencer la session ({count} carte{plural})',
+      allCaughtUp: "Vous êtes à jour ! Aucune carte à réviser pour le moment. Revenez plus tard.",
+      verseAbbrev: 'v.',
+      due: 'À réviser',
+      resetAll: 'Réinitialiser toutes les cartes',
+    },
+    session: {
+      verse: 'Verset',
+      hintLabel: '(début du verset…)',
+      showVerse: 'Afficher le verset',
+      qualityLabel: "Comment avez-vous fait ?",
+    },
+    done: {
+      title: 'Session terminée — bravo !',
+      summary: 'Vous avez révisé {count} verset{plural}. Les cartes reviendront à leurs dates prévues.',
+      backToOverview: "Retour à l'aperçu",
+    },
+    quality: { perfect: 'Parfait', good: 'Bien', ok: 'Correct', hard: 'Difficile', forgot: 'Oublié' },
   },
 };

@@ -1,3 +1,6 @@
+import { useLang } from '../../../context/LangContext';
+import { pickQuranA11y } from '../../../i18n/quran/a11yLabels';
+
 const fmt = (s) => {
   if (!isFinite(s) || s < 0) return '0:00';
   const m = Math.floor(s / 60);
@@ -9,6 +12,10 @@ export default function QuranFloatingBar({
   playCount, repeatCount, rangeIteration, rangeRepeat, ui, stopHifz,
   verseTime, verseDuration,
 }) {
+  // useLang() must run before the early return below (Rules of Hooks).
+  const { lang } = useLang();
+  const a11y = pickQuranA11y(lang);
+
   if (tab !== 'hifz' || hifzMode !== 'repeat' || !isPlaying || !selectedVerses[curIdx]) return null;
 
   const verse       = selectedVerses[curIdx];
@@ -50,7 +57,7 @@ export default function QuranFloatingBar({
         {rangeRepeat > 1 && (
           <span className="qlc__float-range">{rangeIteration + 1}/{rangeRepeat}</span>
         )}
-        <button className="qlc__float-stop" onClick={stopHifz} aria-label="Stop memorization">
+        <button className="qlc__float-stop" onClick={stopHifz} aria-label={a11y.quranStopMemorization}>
           {ui.stop}
         </button>
       </div>

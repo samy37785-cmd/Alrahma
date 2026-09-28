@@ -40,17 +40,17 @@ Baseline: `origin/main` @ `79561a4`, audited 2026-09-27 against production.
 | 16 | `/academy/refund-policy` | `/ar/academy/refund-policy` | `/fr/academy/refund-policy` | 1C | draft-review | published | no | **owner-review-recommended** | Batch 1C: plan display name « Ijaza » |
 | 17 | `/tools` | `/ar/tools` | `/fr/tools` | 3 | complete | published | no | no | Batch 1D verified: hub, badges and the free-trial modal (all validation, failure and success states) are French; no fix needed |
 | 18 | `/tools/adhkar` | `/ar/tools/adhkar` | `/fr/tools/adhkar` | 3 | complete | published | **yes** (dhikr meanings) | no | — |
-| 19 | `/tools/tasbeeh` | `/ar/tools/tasbeeh` | `/fr/tools/tasbeeh` | 3 | partial | published | yes | no | Title, description, H1 and body EN |
-| 20 | `/tools/quran-reader` | `/ar/tools/quran-reader` | `/fr/tools/quran-reader` | 3 | complete (UI) | unpublished | **yes** (translation source) | no | — |
-| 21 | `/tools/hadith` | `/ar/tools/hadith` | `/fr/tools/hadith` | 3 | partial → blocked-review | unpublished | **yes** | no | EN body |
-| 22 | `/tools/verse-of-the-day` | `/ar/tools/verse-of-the-day` | `/fr/tools/verse-of-the-day` | 3 | partial → blocked-review | unpublished | **yes** (FR Quran translation not chosen; shows EN translation id 20) | no | Verse translation EN |
+| 19 | `/tools/tasbeeh` | `/ar/tools/tasbeeh` | `/fr/tools/tasbeeh` | 1E | draft-review | published | owner may review | no | Batch 1E: SEO title/description, breadcrumb, hero. The counter widget itself was already fully French (`t.tasbeeh`, unrelated earlier work) |
+| 20 | `/tools/quran-reader` | `/ar/tools/quran-reader` | `/fr/tools/quran-reader` | 1E | draft-review | unpublished | **yes** (translation source, `external-content-language-gap` S15) | no | Batch 1E: settings panel, keyboard-shortcuts modal, verse-list copy/share tooltips, player and reading-control a11y labels (none previously read by any language). The reader UI itself (`data/quranLangs.js` `UI.fr`) was already fully French, from earlier unrelated work |
+| 21 | `/tools/hadith` | `/ar/tools/hadith` | `/fr/tools/hadith` | 1E | draft-review → blocked-review | unpublished | **yes** | no | Batch 1E: 10 collection-card author/note strings. The hadith text itself stays `external-content-language-gap` S16 (the CDN has no French edition). Page chrome (`t.hadith`) was already fully French |
+| 22 | `/tools/verse-of-the-day` | `/ar/tools/verse-of-the-day` | `/fr/tools/verse-of-the-day` | — | complete (UI) → blocked-review | unpublished | **yes** (`external-content-language-gap` S17: FR Quran translation not chosen; shows EN translation id 20) | no | Verified in Batch 1E, no source change: the page's own UI was already fully French (unrelated earlier work) |
 | 23 | `/tools/arabic-alphabet` | `/ar/tools/arabic-alphabet` | `/fr/tools/arabic-alphabet` | 3 | complete | published | no | no | — |
 | 24 | `/tools/prayer` | `/ar/tools/prayer` | `/fr/tools/prayer` | 4 | complete | published | no | no | Batch 1D verified: hero and all 4 card titles/descriptions are French ("Qibla" kept as the site's existing French spelling); its 4 links go to still-deferred tools (1E), untouched |
-| 25 | `/tools/prayer-times` | `/ar/tools/prayer-times` | `/fr/tools/prayer-times` | 4 | partial | unpublished | no | no | Title, description, H1 EN |
-| 26 | `/tools/qibla` | `/ar/tools/qibla` | `/fr/tools/qibla` | 4 | partial | unpublished | no | no | Title, description, H1 EN |
-| 27 | `/tools/islamic-calendar` | `/ar/tools/islamic-calendar` | `/fr/tools/islamic-calendar` | 4 | partial | unpublished | no | no | Title, description, H1 EN |
-| 28 | `/tools/tajweed-checker` | `/ar/tools/tajweed-checker` | `/fr/tools/tajweed-checker` | 4 | partial | unpublished | yes | no | Page EN |
-| 29 | `/tools/hifz-review` | `/ar/tools/hifz-review` | `/fr/tools/hifz-review` | 4 | partial | unpublished | no | no | Page EN |
+| 25 | `/tools/prayer-times` | `/ar/tools/prayer-times` | `/fr/tools/prayer-times` | 1E | draft-review | unpublished | owner may review | no | Batch 1E: SEO title/description, breadcrumb, hero, hijri era abbreviation, notification-toggle a11y label. The controls/prayer-list body (`i18n/content.js` `TOOLS_TEXT.fr`) was already fully French |
+| 26 | `/tools/qibla` | `/ar/tools/qibla` | `/fr/tools/qibla` | 1E | draft-review | unpublished | owner may review | no | Batch 1E: SEO title/description, breadcrumb, hero, change-location link, compass direction a11y label. The Kaaba/compass body text (`TOOLS_TEXT.fr.qibla`) was already fully French |
+| 27 | `/tools/islamic-calendar` | `/ar/tools/islamic-calendar` | `/fr/tools/islamic-calendar` | 1E | draft-review | unpublished | owner may review | no | Batch 1E: SEO title/description, breadcrumb, hero, hijri era abbreviation, change-city link. The occasions/months body (`TOOLS_TEXT.fr.cal`) was already fully French |
+| 28 | `/tools/tajweed-checker` | `/ar/tools/tajweed-checker` | `/fr/tools/tajweed-checker` | 1E | draft-review | unpublished | owner may review (Quran verse content) | no | Batch 1E: SEO title/description, breadcrumb, hero, every UI string, error and feedback message; glossary ("tajwid"). The 6 practice verses (Arabic, transliteration, English gloss) are fixed reference content and were not touched — `external-content-language-gap` S18 |
+| 29 | `/tools/hifz-review` | `/ar/tools/hifz-review` | `/fr/tools/hifz-review` | 1E | draft-review | unpublished | owner may review | no | Batch 1E: SEO title/description, breadcrumb, hero, every overview/session/done string, quality-button labels. Card `hint` transliterations are fixed reference content, untouched |
 | 30 | `/resources/blog` | `/ar/resources/blog` | `/fr/resources/blog` | 1D | draft-review | unpublished | n/a | no | Batch 1D: title/description, and 2 hardcoded English JSX literals (loading aria-label, load-error message) that had no lang branch at all — en/ar keep the exact same literal, fr is a faithful translation. API still returns 0 posts; out of French SEO publication until French articles exist |
 | 31 | `/resources/blog/:slug` | — | — | — | not-applicable (0 posts) | unpublished | n/a | no | — |
 
@@ -107,8 +107,8 @@ Also:
 | 1A | `/`, `/courses`, `/courses/quran`, `/courses/arabic`, `/academy`, `/academy/about` | Merged (PR #130) |
 | 1B | `/courses/ijazah`, `/courses/islamic-studies` | Merged (PR #131). Inventory: [french-batch1b-religious-review.md](french-batch1b-religious-review.md) |
 | 1C | `/academy/teachers`, `/academy/teachers/:id` (11), `/resources/faq`, `/enroll`, `/academy/privacy`, `/academy/terms`, `/academy/refund-policy`, and the shared cookie banner | Merged (PR #133) |
-| 1D | `/resources`, `/tools`, `/tools/prayer`, `/resources/blog` | Draft PR, not merged. Inventory below |
-| 1E | The remaining `/tools/*` pages (Quran Reader, Adhkar, Hadith, Prayer Times, Qibla, Islamic Calendar, Verse of the Day, Tasbeeh, Arabic Alphabet, Tajweed Checker, Hifz Review) | Not started; needs separate approval |
+| 1D | `/resources`, `/tools`, `/tools/prayer`, `/resources/blog` | Merged (PR #134) |
+| 1E | `/tools/prayer-times`, `/tools/qibla`, `/tools/islamic-calendar`, `/tools/tasbeeh`, `/tools/tajweed-checker`, `/tools/hifz-review`, `/tools/hadith`, `/tools/quran-reader`; verified only (no source change needed): `/tools/verse-of-the-day`, `/tools/adhkar`, `/tools/arabic-alphabet` | Draft PR, not merged. Inventory below |
 | 5 | French SEO publication gate (sitemap, hreflang, prerender) | Not started |
 
 ## Batch 1C inventory (scope audit, `origin/main` @ `8f8b014`)
@@ -175,6 +175,41 @@ Audited from `App.jsx`, `scripts/prerender-routes.mjs` and this registry. Only r
 
 Unchanged from the table below: login/register/password pages, payment result pages, authenticated and admin pages, legacy redirects, 404.
 
+## Batch 1E inventory (scope audit, `origin/main` @ `c9c6a6a`)
+
+Audited every route under `/tools/*` in `App.jsx` against this registry's 1D deferral list. No route was added.
+
+### Included in Batch 1E
+
+| Template | UI translated | External content kept as-is | Gap logged |
+|---|---|---|---|
+| `/tools/prayer-times` | Shell (SEO, breadcrumb, hero, hijri era, notify-toggle label). Controls/prayer list were already French | Aladhan API timings/hijri data; `CALC_METHODS`/`ASR_SCHOOLS` (EN/AR-only structural data, an earlier unrelated decision) | — |
+| `/tools/qibla` | Shell + compass a11y label. Kaaba/compass body was already French | Aladhan API data; compass N/E/S/W points (kept as the site's existing compass notation) | — |
+| `/tools/islamic-calendar` | Shell (SEO, breadcrumb, hero, hijri era, change-city). Occasions/months body was already French | Aladhan API data; the Gregorian weekday (hardcoded to `.en` regardless of language, pre-existing) | — |
+| `/tools/tasbeeh` | Shell only. The counter widget (`t.tasbeeh`) was already fully French | Dhikr transliterations (SubhanAllah, …), by design | — |
+| `/tools/tajweed-checker` | Every UI string (hero, buttons, errors, feedback); glossary "tajwid" | The 6 practice verses (Arabic, transliteration, English gloss) — fixed reference content | S18 |
+| `/tools/hifz-review` | Every UI string (overview, session, done, quality labels) | Card `hint` transliterations — fixed reference content | — |
+| `/tools/hadith` | 10 collection author/note strings. Page chrome (`t.hadith`) was already French | The hadith text itself (`hadith-api` CDN, English/Arabic editions only) | S16 |
+| `/tools/quran-reader` | Settings panel, keyboard-shortcuts modal, verse-list copy/share tooltips, player and reading-control a11y labels (none previously read by any language). The reader body (`UI.fr`) was already fully French | The live Quran translation (translationId 20, English only) | S15 |
+
+### Verified only (already fully French; no source change)
+
+| Template | Why no change was needed |
+|---|---|
+| `/tools/verse-of-the-day` | Its own `copy.fr` object already covers every string |
+| `/tools/adhkar` | `t.adhkar` (49/49 dhikr meanings in `i18n/adhkarText.js` `ADHKAR_TR.fr`) already complete |
+| `/tools/arabic-alphabet` | Its own `copy.fr` object, and the shared `AlphabetLearner` widget's `t.alphabet`, already complete |
+
+None of these three needed a source change; each was checked by rendering it and confirming no English leak, without adding a new French entry.
+
+### Not applicable
+
+Unchanged from the table below: login/register/password pages, payment result pages, authenticated and admin pages, legacy redirects, 404.
+
+### A build-output finding (fixed within this batch, not shipped)
+
+Adding the Quran/Qibla accessibility labels to the sitewide `i18n/a11yLabels.js` (Batch 1A) caused the bundler to hoist that file into a new shared chunk, adding a `modulepreload` tag to every page's prerendered HTML — caught by this batch's own build-output diff against `origin/main` before opening the PR. Fixed by moving those labels into their own `i18n/quran/a11yLabels.js`, imported only by the Quran Reader and Qibla routes; the sitewide file is untouched (byte-identical to `origin/main`), and the final build's 59 HTML files are identical to `origin/main`'s.
+
 ## Owner review (non-blocking)
 
 Translated faithfully from the English source under the policy above. Status: `faithful-English-source translation — owner may review before merge`. None of these blocks Batch 1A. No reviewer is named; none is filled in on anyone's behalf.
@@ -239,3 +274,16 @@ Known errors or contradictions in the English (or EN/AR) source. French follows 
 Also: S1 (teaching-language count) appears on 1C as well — FAQ item 5 says "English, Italian or French".
 
 Resolved: "24-day" refund stat matches `siteFacts.refundWindowDays` (24). Not an issue.
+
+## External-content-language gaps (Batch 1E)
+
+Not a source-accuracy issue (there is no contradiction to fix) and not something French Localization is allowed to fix by adding a new French source: the live content itself, fetched from an external API/CDN at render time, is only ever returned in English (or English/Arabic). The surrounding app UI is French; the fetched content is not, and is never manually translated or reworded here.
+
+| # | Where | What's English-only | Why it's not fixed here |
+|---|---|---|---|
+| S15 | `/tools/quran-reader` | The live Quran translation shown next to the Arabic text (`api/quran.js` `getVerse`/`getVerses`, hardcoded `translationId = 20`, an English translation) | No French Quran translation edition is wired up; choosing and licensing one is a content decision outside this program, not a translation-quality fix |
+| S16 | `/tools/hadith` | Every hadith's text, fetched live from `cdn.jsdelivr.net/gh/fawazahmed0/hadith-api` (`eng-{slug}.min.json` / `ara-{slug}.min.json`) | That CDN publishes English and Arabic editions only; no French edition exists to fetch |
+| S17 | `/tools/verse-of-the-day` | Same as S15 — reuses `getVerse(verseKey, 20)` | Same as S15 |
+| S18 | `/tools/tajweed-checker` | Each practice verse's English gloss (`VERSES[].translation`, hardcoded in the page, not fetched) | Fixed reference content, not app UI; translating a Quran verse gloss is a religious-content decision this batch's mandate explicitly excludes ("لا ترجمة آية … من العربية") |
+
+None of these four claims to be "fully French": the page chrome around each is French; the Quran/hadith content itself is not, and is logged here rather than silently left unmentioned.

@@ -2,12 +2,19 @@ import { Link } from 'react-router-dom';
 import { homeHref } from '../../../utils/localePath';
 import Brand from '../../layout/Brand';
 import { TRANSLATIONS } from '../../../data/quranLangs';
+import { useLang } from '../../../context/LangContext';
+import { pickQuranA11y } from '../../../i18n/quran/a11yLabels';
 
 export default function QuranTopBar({
   tab, darkMode, kbdPanelOpen, lang, ui,
   onTabChange, onLangChange, onSettingsToggle, onKbdToggle, onDarkToggle, onQuickNavToggle,
   onSidebarToggle,
 }) {
+  // `lang` above is the reader's own translation-language picker, not the
+  // site's interface language (see Quran.jsx's own `lang`/`siteLang` split);
+  // the a11y labels below need the latter, read separately via context.
+  const { lang: siteLang } = useLang();
+  const a11y = pickQuranA11y(siteLang);
   return (
     <header className="qlc__bar">
       <div className="qlc__bar-inner">
@@ -44,19 +51,19 @@ export default function QuranTopBar({
             </select>
           </div>
 
-          <button className="qlc__bar-icon" onClick={onQuickNavToggle} title="Quick navigation (/)">🔎</button>
-          <button className="qlc__bar-icon" onClick={onSettingsToggle} title="Settings (G)">⚙</button>
+          <button className="qlc__bar-icon" onClick={onQuickNavToggle} title={a11y.quranQuickNavTab}>🔎</button>
+          <button className="qlc__bar-icon" onClick={onSettingsToggle} title={a11y.quranSettingsTab}>⚙</button>
           <button
             className={`qlc__bar-icon${kbdPanelOpen ? ' active' : ''}`}
             onClick={onKbdToggle}
-            title="Keyboard panel (K)"
+            title={a11y.quranKbdPanelTab}
           >⌨</button>
           <button
             className={`qlc__bar-icon${darkMode ? ' active' : ''}`}
             onClick={onDarkToggle}
-            title="Dark mode (D)"
+            title={a11y.quranDarkModeTab}
           >🌙</button>
-          <button className="qlc__bar-icon" onClick={() => window.print()} title="Print (P)">🖨</button>
+          <button className="qlc__bar-icon" onClick={() => window.print()} title={a11y.quranPrintTab}>🖨</button>
 
           <a href={homeHref()} className="btn btn--ghost btn--sm qlc__back">{ui.back}</a>
         </div>

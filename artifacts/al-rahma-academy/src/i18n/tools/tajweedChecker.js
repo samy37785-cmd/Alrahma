@@ -15,8 +15,10 @@
 // behaviour (English appended the raw error code, Arabic did not) without
 // any isAr/lang-based branching in the component.
 //
-// Only en/ar are populated -- it/es/de/fr stay genuinely absent; the route
-// stays 'legacy' in translationStatus.js (see that file's own comment).
+// French Localization Batch 1E adds `fr`, translated from the English shell
+// only, with the house glossary term "tajwid". it/es/de stay genuinely
+// absent; the route stays 'legacy' in translationStatus.js for those (see
+// that file's own comment).
 export const TAJWEED_CHECKER_TEXT = {
   en: {
     seo: {
@@ -70,6 +72,33 @@ export const TAJWEED_CHECKER_TEXT = {
       excellent: 'ممتاز! تلاوتك صحيحة.',
       good: 'جيد! حاول مرة أخرى لمزيد من الدقة.',
       keepPractising: 'واصل التدريب — استمع للمثال وكرر.',
+    },
+  },
+  fr: {
+    seo: {
+      title: 'Vérificateur de tajwid par IA',
+      description: 'Entraînez-vous à réciter le Coran et recevez un retour instantané par IA sur votre tajwid',
+    },
+    breadcrumbs: { tools: 'Outils', current: 'Vérificateur de tajwid' },
+    eyebrow: "Propulsé par l'IA",
+    hero: {
+      title: 'Vérificateur de tajwid',
+      sub: 'Lisez le verset à voix haute et recevez un retour instantané sur votre récitation',
+    },
+    startReciting: 'Commencer la récitation',
+    stop: 'Arrêter',
+    listeningHint: 'Écoute en cours… récitez le verset clairement',
+    whatIHeard: "Ce que j'ai entendu :",
+    tryAgain: 'Réessayer',
+    errors: {
+      noSpeechInline: "Votre navigateur ne prend pas en charge la reconnaissance vocale. Essayez Chrome.",
+      recognitionError: 'Erreur de reconnaissance vocale : {error}',
+      noSpeechBanner: "La reconnaissance vocale n'est pas prise en charge par ce navigateur. Utilisez Chrome pour une meilleure expérience.",
+    },
+    feedback: {
+      excellent: 'Excellent ! Votre récitation correspond bien.',
+      good: 'Bon effort ! Réessayez pour plus de précision.',
+      keepPractising: "Continuez à vous entraîner — écoutez attentivement et réessayez.",
     },
   },
 };

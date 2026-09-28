@@ -9,8 +9,9 @@
 // language) instead of forking hijri.month.ar directly, since the two were
 // already the same Arabic month names.
 //
-// Only en/ar are populated -- it/es/de/fr stay genuinely absent; the route
-// stays 'legacy' in translationStatus.js (see that file's own comment).
+// French Localization Batch 1E adds `fr`, translated from the English shell
+// only. it/es/de stay genuinely absent; the route stays 'legacy' in
+// translationStatus.js for those (see that file's own comment).
 export const ISLAMIC_CALENDAR_TEXT = {
   en: {
     dir: 'ltr',
@@ -39,5 +40,19 @@ export const ISLAMIC_CALENDAR_TEXT = {
     },
     hijriEra: 'هـ',
     changeCity: 'تغيير المدينة',
+  },
+  fr: {
+    dir: 'ltr',
+    seo: {
+      title: 'Calendrier islamique',
+      description: "La date hégirienne du jour, avec un compte à rebours vers le Ramadan, l'Aïd al-Fitr et l'Aïd al-Adha.",
+    },
+    breadcrumbs: { tools: 'Outils', prayerTools: 'Outils de prière', current: 'Calendrier islamique' },
+    hero: {
+      title: 'Calendrier islamique',
+      sub: "La date hégirienne du jour, avec un compte à rebours vers le Ramadan, l'Aïd al-Fitr et l'Aïd al-Adha, ainsi que les noms des mois hégiriens.",
+    },
+    hijriEra: 'H',
+    changeCity: 'Changer de ville',
   },
 };

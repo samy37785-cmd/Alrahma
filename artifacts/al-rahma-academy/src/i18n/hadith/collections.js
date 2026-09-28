@@ -9,11 +9,14 @@
 // wording unchanged except Bukhari's note, whose hadith count was corrected
 // from 7,563 to 7,589 to match the live-verified count now shown everywhere
 // else on this page (see src/data/hadith/sources.js). No content invented.
-// Only en/ar are populated -- it/es/de/fr stay genuinely absent, matching
-// this phase's explicit instruction not to start those languages for
-// Hadith Library. Structural fields (id/slug/color/icon/count/label/ar)
-// live in src/data/hadith/collections.js instead; source/license
-// documentation lives in src/data/hadith/sources.js.
+// French Localization Batch 1E adds `fr` author/note text for each
+// collection card, a faithful translation of the English (biographical and
+// bibliographic facts, not Quran/hadith text itself). it/es/de stay
+// genuinely absent, matching this phase's explicit instruction not to
+// start those languages for Hadith Library. Structural fields
+// (id/slug/color/icon/count/label/ar) live in
+// src/data/hadith/collections.js instead; source/license documentation
+// lives in src/data/hadith/sources.js.
 export const HADITH_COLLECTIONS_TEXT = {
   en: {
     dir: 'ltr',
@@ -40,5 +43,18 @@ export const HADITH_COLLECTIONS_TEXT = {
     ibnmajah: { author: 'الإمام ابن ماجه القزويني (ت ٢٧٣هـ)', note: 'السادس من الكتب الستة الصحاح — يغطي جميع الموضوعات الفقهية الكبرى' },
     nasai:    { author: 'الإمام أحمد النسائي (ت ٣٠٣هـ)', note: 'مشهور بصرامة شروطه في قبول الرواة — من الكتب الستة الصحاح' },
     malik:    { author: 'الإمام مالك بن أنس (ت ١٧٩هـ)', note: 'أقدم مجموعة حديثية كبرى — والمصدر التأسيسي للمذهب المالكي' },
+  },
+  fr: {
+    dir: 'ltr',
+    nawawi:   { author: "L'imam Yahya Al-Nawawi (m. 676 AH)", note: 'Les 42 hadiths les plus essentiels — le fondement de tout étudiant musulman' },
+    qudsi:    { author: "Divers (paroles d'Allah rapportées par le Prophète ﷺ)", note: "Parole divine rapportée par le Prophète ﷺ — les paroles d'Allah au-delà du Coran" },
+    dehlawi:  { author: 'Shah Waliullah Dehlawi (m. 1176 AH)', note: "Choisis par le grand savant islamique indien — couvrant la foi, l'éthique et le culte" },
+    bukhari:  { author: "L'imam Muhammad ibn Ismail Al-Bukhari (m. 256 AH)", note: 'Le livre le plus authentique après le Coran — 7 589 hadiths, 97 livres' },
+    muslim:   { author: "L'imam Muslim ibn Al-Hajjaj (m. 261 AH)", note: 'Le deuxième recueil de hadiths le plus authentique — loué pour son organisation supérieure' },
+    abudawud: { author: "L'imam Abu Dawud Al-Sijistani (m. 275 AH)", note: "5 274 hadiths centrés sur la jurisprudence islamique — la référence essentielle pour l'étudiant en fiqh" },
+    tirmidhi: { author: "L'imam Muhammad Al-Tirmidhi (m. 279 AH)", note: "Reconnu pour sa classification des hadiths (sahih/hasan/da'if) — essentiel pour les sciences du hadith" },
+    ibnmajah: { author: "L'imam Ibn Majah Al-Qazwini (m. 273 AH)", note: 'Le sixième des six livres canoniques de hadiths — couvre tous les sujets majeurs du fiqh' },
+    nasai:    { author: "L'imam Ahmad An-Nasa'i (m. 303 AH)", note: "Connu pour ses conditions strictes d'acceptation des rapporteurs — l'un des « Kutub As-Sittah »" },
+    malik:    { author: "L'imam Malik ibn Anas (m. 179 AH)", note: "Le plus ancien grand recueil de hadiths — également le texte fondateur de l'école malikite" },
   },
 };

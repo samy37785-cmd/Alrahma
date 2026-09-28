@@ -29,7 +29,7 @@ export const TEACHERS = [
     title: {
       en: 'Quran & Advanced Tajweed Specialist', ar: 'متخصص في القرآن والتجويد المتقدم',
       it: 'Specialista in Corano e Tajweed avanzato', es: 'Especialista en Corán y Tajweed avanzado',
-      de: 'Spezialist für Koran und fortgeschrittenes Tadschwīd', fr: 'Spécialiste du Coran et du Tajwid avancé',
+      de: 'Spezialist für Koran und fortgeschrittenes Tadschwīd', fr: 'Spécialiste du Coran et du tajwid avancé',
     },
     bio: {
       en: 'Al-Azhar University graduate holding an Ijazah with a connected sanad. He specialises in advanced Tajweed across the Hafs and Warsh recitations, Quran memorization, the Ijazah programme and Quranic Tafsir.',
@@ -68,7 +68,7 @@ export const TEACHERS = [
       it: "Laureato all'Università di Al-Azhar, titolare di un'Ijazah con sanad connesso. Specializzato in arabo classico, grammatica araba (Nahw), arabo coranico e studi islamici.",
       es: 'Graduado de la Universidad de Al-Azhar, titular de una Ijazah con sanad conectado. Especializado en árabe clásico, gramática árabe (Nahw), árabe coránico y estudios islámicos.',
       de: 'Absolvent der Al-Azhar-Universität mit einer Ijazah mit durchgehendem Sanad. Spezialisiert auf klassisches Arabisch, arabische Grammatik (Nahw), Koranarabisch und Islamwissenschaften.',
-      fr: "Diplômé de l'Université d'Al-Azhar, titulaire d'une Ijazah à sanad ininterrompu. Spécialisé en arabe classique, grammaire arabe (Nahw), arabe coranique et études islamiques.",
+      fr: "Diplômé de l'Université d'Al-Azhar, titulaire d'une ijaza à sanad ininterrompu. Spécialisé en arabe classique, grammaire arabe (Nahw), arabe coranique et études islamiques.",
     },
     specialties: {
       en: ['Classical Arabic', 'Arabic Grammar — Nahw', 'Quranic Arabic', 'Islamic Studies'],
@@ -99,7 +99,7 @@ export const TEACHERS = [
       it: "Laureato all'Università di Al-Azhar, titolare di un'Ijazah con sanad connesso. Specializzato in memorizzazione del Corano (Hifz), recitazione del Corano, Tajweed e ripasso del Corano (Murajaʿah).",
       es: 'Graduado de la Universidad de Al-Azhar, titular de una Ijazah con sanad conectado. Especializado en memorización del Corán (Hifz), recitación del Corán, Tajweed y repaso del Corán (Murajaʿah).',
       de: 'Absolvent der Al-Azhar-Universität mit einer Ijazah mit durchgehendem Sanad. Spezialisiert auf das Auswendiglernen des Korans (Hifz), Koranrezitation, Tadschwīd und Koranwiederholung (Muradschaʿah).',
-      fr: "Diplômé de l'Université d'Al-Azhar, titulaire d'une Ijazah à sanad ininterrompu. Spécialisé dans la mémorisation du Coran (Hifz), la récitation du Coran, le Tajwid et la révision du Coran (Murajaʿah).",
+      fr: "Diplômé de l'Université d'Al-Azhar, titulaire d'une ijaza à sanad ininterrompu. Spécialisé dans la mémorisation du Coran (Hifz), la récitation du Coran, le tajwid et la révision du Coran (Murajaʿah).",
     },
     specialties: {
       en: ['Quran Memorization — Hifz', 'Quran Recitation', 'Tajweed', "Quran Revision — Muraja'ah"],
@@ -130,7 +130,7 @@ export const TEACHERS = [
       it: "Laureata all'Università di Al-Azhar, titolare di un'Ijazah con sanad connesso. Specializzata nell'insegnamento del Corano ai bambini, Qaida Noorani e Noor Al-Bayan, Tajweed e alfabeto arabo.",
       es: 'Graduada de la Universidad de Al-Azhar, titular de una Ijazah con sanad conectado. Especializada en la enseñanza del Corán a niños, Qaida Noorani y Noor Al-Bayan, Tajweed y el alfabeto árabe.',
       de: 'Absolventin der Al-Azhar-Universität mit einer Ijazah mit durchgehendem Sanad. Spezialisiert auf Koranunterricht für Kinder, Noorani-Qaida und Noor Al-Bayan, Tadschwīd und das arabische Alphabet.',
-      fr: "Diplômée de l'Université d'Al-Azhar, titulaire d'une Ijazah à sanad ininterrompu. Spécialisée dans l'enseignement du Coran aux enfants, la Qaida Nourania et Noor Al-Bayan, le Tajwid et l'alphabet arabe.",
+      fr: "Diplômée de l'Université d'Al-Azhar, titulaire d'une ijaza à sanad ininterrompu. Spécialisée dans l'enseignement du Coran aux enfants, la Qaida Nourania et Noor Al-Bayan, le tajwid et l'alphabet arabe.",
     },
     specialties: {
       en: ['Quran for Children', 'Noorani Qaida / Noor Al-Bayan', 'Tajweed', 'Arabic Alphabet'],
@@ -161,7 +161,7 @@ export const TEACHERS = [
       it: "Laureato all'Università di Al-Azhar, titolare di un'Ijazah con sanad connesso. Specializzato in Sira profetica, studi islamici, studi coranici e lingua araba.",
       es: 'Graduado de la Universidad de Al-Azhar, titular de una Ijazah con sanad conectado. Especializado en Sira profética, estudios islámicos, estudios coránicos y lengua árabe.',
       de: 'Absolvent der Al-Azhar-Universität mit einer Ijazah mit durchgehendem Sanad. Spezialisiert auf die prophetische Sira, Islamwissenschaften, Koranwissenschaften und die arabische Sprache.',
-      fr: "Diplômé de l'Université d'Al-Azhar, titulaire d'une Ijazah à sanad ininterrompu. Spécialisé en Sira prophétique, études islamiques, études coraniques et langue arabe.",
+      fr: "Diplômé de l'Université d'Al-Azhar, titulaire d'une ijaza à sanad ininterrompu. Spécialisé en Sira prophétique, études islamiques, études coraniques et langue arabe.",
     },
     specialties: {
       en: ['Prophetic Seerah', 'Islamic Studies', 'Quran Studies', 'Arabic Language'],
@@ -192,7 +192,7 @@ export const TEACHERS = [
       it: "Laureato all'Università di Al-Azhar, titolare di un'Ijazah con sanad connesso. Specializzato in giurisprudenza islamica (Fiqh), Sira profetica, lingua araba e Tafsir coranico.",
       es: 'Graduado de la Universidad de Al-Azhar, titular de una Ijazah con sanad conectado. Especializado en jurisprudencia islámica (Fiqh), Sira profética, lengua árabe y Tafsir coránico.',
       de: 'Absolvent der Al-Azhar-Universität mit einer Ijazah mit durchgehendem Sanad. Spezialisiert auf islamische Rechtslehre (Fiqh), die prophetische Sira, die arabische Sprache und Koran-Tafsir.',
-      fr: "Diplômé de l'Université d'Al-Azhar, titulaire d'une Ijazah à sanad ininterrompu. Spécialisé en jurisprudence islamique (Fiqh), Sira prophétique, langue arabe et Tafsir du Coran.",
+      fr: "Diplômé de l'Université d'Al-Azhar, titulaire d'une ijaza à sanad ininterrompu. Spécialisé en jurisprudence islamique (Fiqh), Sira prophétique, langue arabe et Tafsir du Coran.",
     },
     specialties: {
       en: ['Islamic Jurisprudence — Fiqh', 'Prophetic Seerah', 'Arabic Language', 'Quranic Tafsir'],
@@ -215,7 +215,7 @@ export const TEACHERS = [
     title: {
       en: 'Tafsir & Aqeedah Instructor', ar: 'مدرس التفسير والعقيدة الإسلامية',
       it: 'Istruttore di Tafsir e Aqeedah', es: 'Instructor de Tafsir y Aqeedah',
-      de: 'Lehrer für Tafsir und Aqeedah', fr: "Instructeur de Tafsir et d'Aqeedah",
+      de: 'Lehrer für Tafsir und Aqeedah', fr: "Instructeur de Tafsir et d'Aqida",
     },
     bio: {
       en: 'Al-Azhar University graduate holding an Ijazah with a connected sanad. He specialises in Quranic Tafsir, Islamic Creed (Aqeedah), Tajweed and Islamic jurisprudence.',
@@ -223,7 +223,7 @@ export const TEACHERS = [
       it: "Laureato all'Università di Al-Azhar, titolare di un'Ijazah con sanad connesso. Specializzato in Tafsir coranico, credo islamico (Aqida), Tajweed e giurisprudenza islamica.",
       es: 'Graduado de la Universidad de Al-Azhar, titular de una Ijazah con sanad conectado. Especializado en Tafsir coránico, credo islámico (Aqida), Tajweed y jurisprudencia islámica.',
       de: 'Absolvent der Al-Azhar-Universität mit einer Ijazah mit durchgehendem Sanad. Spezialisiert auf Koran-Tafsir, islamische Glaubenslehre (Aqida), Tadschwīd und islamische Rechtslehre.',
-      fr: "Diplômé de l'Université d'Al-Azhar, titulaire d'une Ijazah à sanad ininterrompu. Spécialisé en Tafsir du Coran, croyance islamique (Aqida), Tajwid et jurisprudence islamique.",
+      fr: "Diplômé de l'Université d'Al-Azhar, titulaire d'une ijaza à sanad ininterrompu. Spécialisé en Tafsir du Coran, croyance islamique (Aqida), tajwid et jurisprudence islamique.",
     },
     specialties: {
       en: ['Quranic Tafsir', 'Aqeedah', 'Tajweed', 'Islamic Jurisprudence'],
@@ -231,7 +231,7 @@ export const TEACHERS = [
       it: ['Tafsir coranico', 'Aqeedah (credo islamico)', 'Tajweed', 'Giurisprudenza islamica'],
       es: ['Tafsir coránico', 'Aqeedah (credo islámico)', 'Tajweed', 'Jurisprudencia islámica'],
       de: ['Koran-Tafsir', 'Aqeedah (islamische Glaubenslehre)', 'Tadschwīd', 'Islamische Rechtslehre'],
-      fr: ['Tafsir du Coran', 'Aqeedah (croyance islamique)', 'Tajwid', 'Jurisprudence islamique'],
+      fr: ['Tafsir du Coran', 'Aqida (croyance islamique)', 'Tajwid', 'Jurisprudence islamique'],
     },
     subjects: ['tafsir', 'islamic', 'tajweed'],
     langs: ['ar', 'fr', 'it'],
@@ -254,7 +254,7 @@ export const TEACHERS = [
       it: "Laureata all'Università di Al-Azhar, titolare di un'Ijazah con sanad connesso. Specializzata nel programma Ijazah, Tajweed, memorizzazione del Corano e lingua araba.",
       es: 'Graduada de la Universidad de Al-Azhar, titular de una Ijazah con sanad conectado. Especializada en el programa de Ijazah, Tajweed, memorización del Corán y lengua árabe.',
       de: 'Absolventin der Al-Azhar-Universität mit einer Ijazah mit durchgehendem Sanad. Spezialisiert auf das Ijazah-Programm, Tadschwīd, das Auswendiglernen des Korans und die arabische Sprache.',
-      fr: "Diplômée de l'Université d'Al-Azhar, titulaire d'une Ijazah à sanad ininterrompu. Spécialisée dans le programme d'Ijazah, le Tajwid, la mémorisation du Coran et la langue arabe.",
+      fr: "Diplômée de l'Université d'Al-Azhar, titulaire d'une ijaza à sanad ininterrompu. Spécialisée dans le programme d'ijaza, le tajwid, la mémorisation du Coran et la langue arabe.",
     },
     specialties: {
       en: ['Ijazah Programme', 'Tajweed', 'Quran Memorization', 'Arabic Language'],
@@ -285,7 +285,7 @@ export const TEACHERS = [
       it: "Laureata all'Università di Al-Azhar, titolare di un'Ijazah con sanad connesso. Specializzata in memorizzazione del Corano (Hifz), ripasso del Corano (Murajaʿah), Tajweed e Sira profetica.",
       es: 'Graduada de la Universidad de Al-Azhar, titular de una Ijazah con sanad conectado. Especializada en memorización del Corán (Hifz), repaso del Corán (Murajaʿah), Tajweed y Sira profética.',
       de: 'Absolventin der Al-Azhar-Universität mit einer Ijazah mit durchgehendem Sanad. Spezialisiert auf das Auswendiglernen des Korans (Hifz), Koranwiederholung (Muradschaʿah), Tadschwīd und die prophetische Sira.',
-      fr: "Diplômée de l'Université d'Al-Azhar, titulaire d'une Ijazah à sanad ininterrompu. Spécialisée dans la mémorisation du Coran (Hifz), la révision du Coran (Murajaʿah), le Tajwid et la Sira prophétique.",
+      fr: "Diplômée de l'Université d'Al-Azhar, titulaire d'une ijaza à sanad ininterrompu. Spécialisée dans la mémorisation du Coran (Hifz), la révision du Coran (Murajaʿah), le tajwid et la Sira prophétique.",
     },
     specialties: {
       en: ['Quran Memorization — Hifz', "Quran Revision — Muraja'ah", 'Tajweed', 'Prophetic Seerah'],
@@ -308,7 +308,7 @@ export const TEACHERS = [
     title: {
       en: 'Quran Reading & Tajweed Instructor', ar: 'مدرس القراءة القرآنية والتجويد',
       it: 'Istruttore di lettura del Corano e Tajweed', es: 'Instructor de lectura del Corán y Tajweed',
-      de: 'Lehrer für Koranlesen und Tadschwīd', fr: 'Instructeur de lecture du Coran et de Tajwid',
+      de: 'Lehrer für Koranlesen und Tadschwīd', fr: 'Instructeur de lecture du Coran et de tajwid',
     },
     bio: {
       en: 'Al-Azhar University graduate holding an Ijazah with a connected sanad. He specialises in Quran reading, Noorani Qaida, Tajweed and Islamic Studies.',
@@ -316,7 +316,7 @@ export const TEACHERS = [
       it: "Laureato all'Università di Al-Azhar, titolare di un'Ijazah con sanad connesso. Specializzato in lettura del Corano, Qaida Noorani, Tajweed e studi islamici.",
       es: 'Graduado de la Universidad de Al-Azhar, titular de una Ijazah con sanad conectado. Especializado en lectura del Corán, Qaida Noorani, Tajweed y estudios islámicos.',
       de: 'Absolvent der Al-Azhar-Universität mit einer Ijazah mit durchgehendem Sanad. Spezialisiert auf Koranlesen, Noorani-Qaida, Tadschwīd und Islamwissenschaften.',
-      fr: "Diplômé de l'Université d'Al-Azhar, titulaire d'une Ijazah à sanad ininterrompu. Spécialisé en lecture du Coran, Qaida Nourania, Tajwid et études islamiques.",
+      fr: "Diplômé de l'Université d'Al-Azhar, titulaire d'une ijaza à sanad ininterrompu. Spécialisé en lecture du Coran, Qaida Nourania, tajwid et études islamiques.",
     },
     specialties: {
       en: ['Quran Reading', 'Noorani Qaida', 'Tajweed', 'Islamic Studies'],
@@ -347,7 +347,7 @@ export const TEACHERS = [
       it: "Laureata all'Università di Al-Azhar, titolare di un'Ijazah con sanad connesso. Specializzata nel Corano per studenti con bisogni speciali, Corano per principianti, Qaida Noorani, Tajweed e basi di arabo.",
       es: 'Graduada de la Universidad de Al-Azhar, titular de una Ijazah con sanad conectado. Especializada en el Corán para estudiantes con necesidades especiales, Corán para principiantes, Qaida Noorani, Tajweed y fundamentos de árabe.',
       de: 'Absolventin der Al-Azhar-Universität mit einer Ijazah mit durchgehendem Sanad. Spezialisiert auf Koranunterricht für Lernende mit besonderen Bedürfnissen, Koran für Anfänger, Noorani-Qaida, Tadschwīd und arabische Grundlagen.',
-      fr: "Diplômée de l'Université d'Al-Azhar, titulaire d'une Ijazah à sanad ininterrompu. Spécialisée dans le Coran pour élèves à besoins particuliers, le Coran pour débutants, la Qaida Nourania, le Tajwid et les bases de l'arabe.",
+      fr: "Diplômée de l'Université d'Al-Azhar, titulaire d'une ijaza à sanad ininterrompu. Spécialisée dans le Coran pour élèves à besoins particuliers, le Coran pour débutants, la Qaida Nourania, le tajwid et les bases de l'arabe.",
     },
     specialties: {
       en: ['Quran for Special Needs', 'Beginner Quran', 'Noorani Qaida', 'Tajweed', 'Arabic Basics'],
@@ -377,7 +377,7 @@ export const TEACHER_CREDENTIALS = [
   { icon: '📜', label: {
     en: 'Ijazah with Connected Sanad', ar: 'إجازة بسند متصل',
     it: 'Ijazah con sanad connesso', es: 'Ijazah con sanad conectado',
-    de: 'Ijazah mit durchgehendem Sanad', fr: 'Ijazah à sanad ininterrompu',
+    de: 'Ijazah mit durchgehendem Sanad', fr: 'Ijaza à sanad ininterrompu',
   } },
   { icon: '📖', label: {
     en: 'Arabic Language & Translation (B.A.)', ar: 'بكالوريوس اللغة العربية والترجمة',

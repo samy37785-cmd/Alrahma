@@ -12,7 +12,7 @@ const items = [
     it: { q: 'Offrite una lezione di prova gratuita?', a: `Sì. Al-Rahma Academy offre ${trialLessonPhrase('it')} (${siteFacts.trialLessonMinutes} minuti), senza pagamento o impegno. Prenota direttamente dal nostro sito compilando il modulo di prova nella home page.` },
     es: { q: '¿Ofrecen una clase de prueba gratuita?', a: `Sí. Al-Rahma Academy ofrece ${trialLessonPhrase('es')} (${siteFacts.trialLessonMinutes} minutos) sin pago ni compromiso. Reserva directamente desde nuestro sitio rellenando el formulario de prueba en la página de inicio.` },
     de: { q: 'Bietet ihr eine kostenlose Probestunde an?', a: `Ja. Al-Rahma Academy bietet ${trialLessonPhrase('de')} an (${siteFacts.trialLessonMinutes} Minuten) — ohne Zahlung oder Verpflichtung. Buche direkt auf unserer Website über das Probeformular auf der Startseite.` },
-    fr: { q: "Proposez-vous un cours d'essai gratuit ?", a: `Oui. Al-Rahma Academy propose ${trialLessonPhrase('fr')} (${siteFacts.trialLessonMinutes} minutes), sans paiement ni engagement. Réservez directement sur notre site en remplissant le formulaire d'essai sur la page d'accueil.` },
+    fr: { q: "Proposez-vous un cours d'essai de Coran gratuit ?", a: `Oui. Al-Rahma Academy propose ${trialLessonPhrase('fr')} (${siteFacts.trialLessonMinutes} minutes), sans paiement ni engagement. Réservez directement sur notre site en remplissant le formulaire d'essai sur la page d'accueil.` },
   },
   {
     en: { q: 'Are female Quran tutors available?', a: 'Yes. We have a dedicated team of certified female tutors available for sisters and children. Simply indicate your preference when filling in the booking form and we will match you accordingly.' },
@@ -20,7 +20,7 @@ const items = [
     it: { q: "Sono disponibili tutrici donne?", a: "Sì. Abbiamo un team dedicato di tutrici certificate disponibili per sorelle e bambini. Indica semplicemente la tua preferenza nel modulo di prenotazione e ti abbineremo di conseguenza." },
     es: { q: '¿Hay tutoras disponibles?', a: 'Sí. Tenemos un equipo dedicado de tutoras certificadas disponibles para hermanas y niños. Indica tu preferencia al rellenar el formulario de reserva y te asignaremos una tutora.' },
     de: { q: 'Gibt es weibliche Lehrerinnen?', a: 'Ja. Wir haben ein engagiertes Team zertifizierter Lehrerinnen für Schwestern und Kinder. Gib einfach deine Präferenz im Buchungsformular an und wir vermitteln dir eine passende Lehrerin.' },
-    fr: { q: 'Des enseignantes sont-elles disponibles ?', a: "Oui. Nous avons une équipe dédiée d'enseignantes certifiées disponibles pour les sœurs et les enfants. Indiquez simplement votre préférence dans le formulaire de réservation et nous vous mettrons en relation." },
+    fr: { q: 'Des enseignantes de Coran sont-elles disponibles ?', a: "Oui. Nous avons une équipe dédiée d'enseignantes certifiées disponibles pour les sœurs et les enfants. Indiquez simplement votre préférence dans le formulaire de réservation et nous vous mettrons en relation." },
   },
   {
     en: { q: 'Can complete beginners with no Arabic background join?', a: 'Absolutely. Our Noorani Qaida programme starts from the very first Arabic letter. No prior knowledge of Arabic is needed. We welcome students of all levels, from young children to adults.' },
@@ -28,7 +28,7 @@ const items = [
     it: { q: 'I principianti assoluti senza background arabo possono iscriversi?', a: "Assolutamente sì. Il nostro programma Noorani Qaida inizia dalla prima lettera araba. Non è richiesta alcuna conoscenza precedente dell'arabo. Accogliamo studenti di tutti i livelli." },
     es: { q: '¿Pueden unirse principiantes absolutos sin conocimiento del árabe?', a: 'Por supuesto. Nuestro programa Noorani Qaida comienza desde la primera letra árabe. No se necesita conocimiento previo del árabe. Aceptamos estudiantes de todos los niveles.' },
     de: { q: 'Können absolute Anfänger ohne Arabischkenntnisse teilnehmen?', a: 'Auf jeden Fall. Unser Noorani Qaida Programm beginnt mit dem ersten arabischen Buchstaben. Vorkenntnisse sind nicht nötig. Wir heißen Schüler aller Niveaus willkommen.' },
-    fr: { q: "Les débutants sans aucune connaissance de l'arabe peuvent-ils s'inscrire ?", a: "Absolument. Notre programme Noorani Qaida commence dès la première lettre arabe. Aucune connaissance préalable de l'arabe n'est requise. Nous accueillons des étudiants de tous niveaux." },
+    fr: { q: "Les débutants sans aucune connaissance de l'arabe peuvent-ils s'inscrire ?", a: "Absolument. Notre programme Qaida Nourania commence dès la première lettre arabe. Aucune connaissance préalable de l'arabe n'est requise. Nous accueillons des étudiants de tous niveaux, des jeunes enfants aux adultes." },
   },
   {
     en: { q: 'Which platforms are used for the online lessons?', a: 'All lessons are delivered live via Zoom or Skype. Every class is one-to-one between the student and the tutor — not group sessions — giving full individual attention.' },
@@ -36,7 +36,7 @@ const items = [
     it: { q: 'Quali piattaforme vengono utilizzate per le lezioni online?', a: 'Tutte le lezioni vengono erogate in diretta tramite Zoom o Skype. Ogni lezione è individuale tra lo studente e il tutore — non sessioni di gruppo — per garantire piena attenzione.' },
     es: { q: '¿Qué plataformas se usan para las clases online?', a: 'Todas las clases se imparten en directo por Zoom o Skype. Cada clase es individual entre el estudiante y el tutor — no son sesiones grupales — garantizando atención plena.' },
     de: { q: 'Welche Plattformen werden für Online-Unterricht verwendet?', a: 'Alle Stunden werden live über Zoom oder Skype abgehalten. Jede Stunde ist eine Einzelstunde zwischen Schüler und Lehrer — keine Gruppenstunden — für volle individuelle Aufmerksamkeit.' },
-    fr: { q: 'Quelles plateformes sont utilisées pour les cours en ligne ?', a: 'Tous les cours sont dispensés en direct via Zoom ou Skype. Chaque cours est individuel entre l\'étudiant et le tuteur — pas de sessions de groupe — pour une attention totale.' },
+    fr: { q: 'Quelles plateformes sont utilisées pour les cours en ligne ?', a: 'Tous les cours sont dispensés en direct via Zoom ou Skype. Chaque cours est individuel entre l\'étudiant et le tuteur — pas de sessions de groupe — pour une attention individuelle totale.' },
   },
   {
     en: { q: 'Are your tutors certified from Al-Azhar?', a: 'Yes. All our tutors are graduates of Al-Azhar University in Egypt and hold a verified Ijazah certificate with a chain of narration traced back to the Prophet (peace be upon him). Every tutor goes through a quality check before teaching.' },
@@ -44,7 +44,7 @@ const items = [
     it: { q: 'I vostri tutor sono certificati da Al-Azhar?', a: "Sì. Tutti i nostri tutor sono laureati all'Università di Al-Azhar in Egitto e possiedono un certificato Ijazah verificato con una catena di trasmissione risalente al Profeta (pace a lui). Ogni tutore supera un controllo di qualità prima di insegnare." },
     es: { q: '¿Sus tutores tienen certificación de Al-Azhar?', a: 'Sí. Todos nuestros tutores son graduados de la Universidad Al-Azhar en Egipto y poseen un certificado Ijazah verificado con una cadena de transmisión hasta el Profeta (la paz sea con él). Cada tutor pasa un control de calidad.' },
     de: { q: 'Sind Ihre Lehrer von Al-Azhar zertifiziert?', a: 'Ja. Alle unsere Lehrer sind Absolventen der Al-Azhar-Universität in Ägypten und besitzen ein verifiziertes Ijazah-Zertifikat mit einer Überlieferungskette zurück zum Propheten. Jeder Lehrer durchläuft einen Qualitätscheck.' },
-    fr: { q: 'Vos tuteurs sont-ils certifiés par Al-Azhar ?', a: "Oui. Tous nos tuteurs sont diplômés de l'Université Al-Azhar en Égypte et détiennent un certificat Ijazah vérifié avec une chaîne de transmission remontant au Prophète (paix sur lui). Chaque tuteur passe un contrôle qualité." },
+    fr: { q: 'Vos tuteurs sont-ils certifiés par Al-Azhar ?', a: "Oui. Tous nos tuteurs sont diplômés de l'Université Al-Azhar en Égypte et détiennent un certificat d'ijaza vérifié avec une chaîne de transmission remontant au Prophète (paix sur lui). Chaque tuteur passe un contrôle qualité avant d'enseigner." },
   },
   {
     en: { q: 'Can lessons be conducted in Italian or French?', a: 'Yes. Our tutors can deliver lessons in English, Italian or French to ensure maximum understanding for European students. Simply mention your preferred language when booking.' },
@@ -60,7 +60,7 @@ const items = [
     it: { q: 'Quanto costano i piani mensili?', a: `I piani partono da ${noorani.price} al mese per ${noorani.sessionsPerWeek} lezioni a settimana (Noorani). Il piano Huffaz offre ${huffaz.sessionsPerWeek} lezioni a settimana per ${huffaz.price}/mese, e il piano Ijazah offre ${ijazah.sessionsPerWeek} lezioni a settimana per ${ijazah.price}/mese.` },
     es: { q: '¿Cuánto cuestan los planes mensuales?', a: `Los planes comienzan desde ${noorani.price} al mes por ${noorani.sessionsPerWeek} clases a la semana (Noorani). El plan Huffaz ofrece ${huffaz.sessionsPerWeek} clases semanales por ${huffaz.price}/mes, y el plan Ijazah ofrece ${ijazah.sessionsPerWeek} clases por ${ijazah.price}/mes.` },
     de: { q: 'Wie viel kosten die Monatspläne?', a: `Pläne beginnen ab ${noorani.price} pro Monat für ${noorani.sessionsPerWeek} Stunden pro Woche (Noorani). Der Huffaz-Plan bietet ${huffaz.sessionsPerWeek} Stunden pro Woche für ${huffaz.price}/Monat, und der Ijazah-Plan bietet ${ijazah.sessionsPerWeek} Stunden für ${ijazah.price}/Monat.` },
-    fr: { q: 'Combien coûtent les plans mensuels ?', a: `Les plans commencent à ${noorani.price} par mois pour ${noorani.sessionsPerWeek} cours par semaine (Noorani). Le plan Huffaz offre ${huffaz.sessionsPerWeek} cours par semaine pour ${huffaz.price}/mois, et le plan Ijazah offre ${ijazah.sessionsPerWeek} cours pour ${ijazah.price}/mois.` },
+    fr: { q: 'Combien coûtent les formules mensuelles ?', a: `Les formules commencent à ${noorani.price} par mois pour ${noorani.sessionsPerWeek} cours par semaine (Noorani). La formule Huffaz offre ${huffaz.sessionsPerWeek} cours par semaine pour ${huffaz.price}/mois, et la formule Ijaza offre ${ijazah.sessionsPerWeek} cours par semaine pour ${ijazah.price}/mois. Toutes les formules comprennent des cours particuliers.` },
   },
   {
     en: { q: 'Do you teach students across Europe?', a: 'Yes. Al-Rahma Academy serves Muslim communities across Europe including Italy, France, the UK, Germany, Belgium and beyond. All lessons are online so there are no geographical restrictions.' },
@@ -76,7 +76,7 @@ const items = [
     it: { q: 'Bambini e adulti possono ottenere un certificato Ijazah?', a: "Sì. Offriamo un percorso Ijazah strutturato per gli studenti che raggiungono il livello richiesto. È disponibile sia per bambini che per adulti e porta a un certificato formale con una catena di trasmissione verificata." },
     es: { q: '¿Pueden niños y adultos obtener un certificado Ijazah?', a: 'Sí. Ofrecemos un camino Ijazah estructurado para estudiantes que alcanzan el nivel requerido. Está disponible para niños y adultos y resulta en un certificado formal con cadena de transmisión verificada.' },
     de: { q: 'Können Kinder und Erwachsene ein Ijazah-Zertifikat erhalten?', a: 'Ja. Wir bieten einen strukturierten Ijazah-Weg für Schüler an, die das erforderliche Niveau erreichen. Dies ist für Kinder und Erwachsene verfügbar und führt zu einem formellen Zertifikat.' },
-    fr: { q: 'Les enfants et les adultes peuvent-ils obtenir un certificat Ijazah ?', a: "Oui. Nous proposons un parcours Ijazah structuré pour les étudiants qui atteignent le niveau requis. Il est disponible pour les enfants et les adultes et aboutit à un certificat formel avec chaîne de transmission vérifiée." },
+    fr: { q: "Les enfants et les adultes peuvent-ils obtenir un certificat d'ijaza ?", a: "Oui. Nous proposons un parcours d'ijaza structuré pour les étudiants qui atteignent le niveau requis. Il est disponible pour les enfants et les adultes et aboutit à un certificat formel avec chaîne de transmission vérifiée." },
   },
   {
     en: { q: 'What courses do you offer?', a: 'We offer: Quran Reading (Noorani Qaida), Recitation with Tajweed, Quran Memorization (Hifz), Ijazah Certification, Islamic Studies, and Arabic Language. All courses are available one-to-one for all ages.' },
@@ -84,7 +84,7 @@ const items = [
     it: { q: 'Quali corsi offrite?', a: "Offriamo: Lettura del Corano (Noorani Qaida), Recitazione con Tajweed, Memorizzazione del Corano (Hifz), Certificazione Ijazah, Studi Islamici e Lingua Araba. Tutti i corsi sono individuali per tutte le età." },
     es: { q: '¿Qué cursos ofrecen?', a: 'Ofrecemos: Lectura del Corán (Noorani Qaida), Recitación con Tajweed, Memorización del Corán (Hifz), Certificación Ijazah, Estudios Islámicos y Lengua Árabe. Todos los cursos son individuales para todas las edades.' },
     de: { q: 'Welche Kurse bietet ihr an?', a: 'Wir bieten an: Koran-Lesen (Noorani Qaida), Rezitation mit Tajweed, Koran-Memorierung (Hifz), Ijazah-Zertifizierung, Islamische Studien und Arabische Sprache. Alle Kurse sind Einzelunterricht für alle Altersgruppen.' },
-    fr: { q: 'Quels cours proposez-vous ?', a: "Nous proposons : Lecture du Coran (Noorani Qaida), Récitation avec Tajweed, Mémorisation du Coran (Hifz), Certification Ijazah, Études Islamiques et Langue Arabe. Tous les cours sont individuels pour tous les âges." },
+    fr: { q: 'Quels cours proposez-vous ?', a: "Nous proposons : Lecture du Coran (Qaida Nourania), Récitation avec tajwid, Mémorisation du Coran (Hifz), Certification d'ijaza, Études islamiques et Langue arabe. Tous les cours sont disponibles en individuel pour tous les âges." },
   },
   {
     en: { q: 'How do I book a free trial?', a: "Simply go to the home page and fill in the free trial form. Tell us about the student, the preferred course, and your available times. We'll contact you to confirm your tutor and schedule." },
@@ -100,7 +100,7 @@ const items = [
     it: { q: 'Esiste un contratto a lungo termine?', a: 'No. Non esiste nessun contratto a lungo termine. Puoi annullare o cambiare il tuo piano in qualsiasi momento. Crediamo nel guadagnare il tuo impegno attraverso la qualità del nostro insegnamento.' },
     es: { q: '¿Hay contrato a largo plazo?', a: 'No. No hay contrato a largo plazo. Puedes cancelar o cambiar tu plan en cualquier momento. Creemos en ganar tu compromiso a través de la calidad de nuestra enseñanza, no mediante cláusulas de fidelización.' },
     de: { q: 'Gibt es einen langfristigen Vertrag?', a: 'Nein. Es gibt keinen langfristigen Vertrag. Du kannst deinen Plan jederzeit kündigen oder ändern. Wir verdienen dein Vertrauen durch die Qualität unseres Unterrichts, nicht durch Bindungsklauseln.' },
-    fr: { q: "Y a-t-il un contrat à long terme ?", a: "Non. Il n'y a pas de contrat à long terme. Vous pouvez annuler ou modifier votre plan à tout moment. Nous croyons gagner votre confiance par la qualité de notre enseignement, pas par des clauses d'engagement." },
+    fr: { q: "Y a-t-il un contrat à long terme ?", a: "Non. Il n'y a pas de contrat à long terme. Vous pouvez annuler ou modifier votre formule à tout moment. Nous tenons à mériter votre engagement par la qualité de notre enseignement, et non par des clauses contraignantes." },
   },
   {
     en: { q: 'What happens if I miss a lesson?', a: 'Life happens — we understand. If you need to cancel or reschedule, please give us at least 24 hours notice and we will find a replacement slot at no extra charge. Lessons cancelled with less than 24 hours notice may be counted as used.' },
@@ -124,7 +124,7 @@ const items = [
     it: { q: 'Quale velocità Internet è necessaria per le lezioni online?', a: "Una connessione stabile di almeno 5 Mbps in download è sufficiente per videochiamate fluide. La maggior parte delle connessioni domestiche in Europa funziona perfettamente. Consigliamo di usare una connessione cablata o di sedersi vicino al router per la migliore esperienza." },
     es: { q: '¿Qué velocidad de internet necesito para las clases online?', a: 'Una conexión estable de al menos 5 Mbps de descarga es suficiente para videollamadas fluidas. La mayoría de las conexiones domésticas en Europa funcionan perfectamente. Recomendamos usar una conexión por cable o sentarse cerca del router para la mejor experiencia.' },
     de: { q: 'Welche Internetgeschwindigkeit brauche ich für Online-Unterricht?', a: 'Eine stabile Verbindung von mindestens 5 Mbps Download ist für flüssige Videoanrufe ausreichend. Die meisten Heimverbindungen in Europa funktionieren einwandfrei. Wir empfehlen eine Kabelverbindung oder das Sitzen nahe am Router für das beste Erlebnis.' },
-    fr: { q: "Quelle vitesse Internet faut-il pour les cours en ligne ?", a: "Une connexion stable d'au moins 5 Mbps en téléchargement est suffisante pour des appels vidéo fluides. La plupart des connexions domestiques en Europe fonctionnent parfaitement. Nous recommandons une connexion filaire ou de s'asseoir près du routeur pour la meilleure expérience." },
+    fr: { q: "Quelle vitesse Internet faut-il pour les cours en ligne ?", a: "Une connexion stable d'au moins 5 Mbps en téléchargement est suffisante pour des appels vidéo fluides. La plupart des connexions domestiques en Europe fonctionnent parfaitement. Nous recommandons une connexion filaire ou de s'asseoir près du routeur pour la meilleure expérience. Un smartphone avec un bon signal 4G/5G fonctionne également." },
   },
   {
     en: { q: 'Are lessons recorded?', a: 'Lessons are not recorded by default to protect student privacy. If you would like to record a session for personal revision purposes, please ask your teacher at the start of the class. Recording is only permitted with the teacher\'s consent.' },
@@ -148,7 +148,7 @@ const items = [
     it: { q: 'Quale dispositivo posso usare per le lezioni?', a: "Qualsiasi dispositivo va bene — laptop, tablet o smartphone. Zoom e Skype sono disponibili gratuitamente su tutte le piattaforme. Si consiglia un dispositivo con fotocamera e microfono. Un auricolare o delle cuffie migliorano significativamente la qualità audio." },
     es: { q: '¿Qué dispositivo puedo usar para las clases?', a: 'Cualquier dispositivo funciona — portátil, tablet o smartphone. Zoom y Skype están disponibles gratuitamente en todas las plataformas. Recomendamos un dispositivo con cámara y micrófono. Los auriculares mejoran significativamente la calidad del audio.' },
     de: { q: 'Welches Gerät kann ich für den Unterricht verwenden?', a: 'Jedes Gerät funktioniert — Laptop, Tablet oder Smartphone. Zoom und Skype sind auf allen Plattformen kostenlos verfügbar. Wir empfehlen ein Gerät mit Kamera und Mikrofon. Ein Headset oder Kopfhörer verbessern die Audioqualität erheblich.' },
-    fr: { q: 'Quel appareil puis-je utiliser pour les cours ?', a: "N'importe quel appareil convient — ordinateur portable, tablette ou smartphone. Zoom et Skype sont disponibles gratuitement sur toutes les plateformes. Nous recommandons un appareil avec caméra et microphone. Un casque ou des écouteurs améliorent significativement la qualité audio." },
+    fr: { q: 'Quel appareil puis-je utiliser pour les cours ?', a: "N'importe quel appareil convient — ordinateur portable, tablette ou smartphone. Zoom et Skype sont disponibles gratuitement sur toutes les plateformes (Windows, Mac, iOS, Android). Nous recommandons un appareil avec caméra et microphone. Un casque ou des écouteurs améliorent significativement la qualité audio." },
   },
 ];
 

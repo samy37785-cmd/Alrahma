@@ -56,9 +56,11 @@ describe('countries.js data: same 27 values/order as before, real Arabic labels,
     expect(countryLabel('Italy', 'ar')).toBe('إيطاليا');
   });
 
-  it('a legacy language with no real translation (fr/es) falls back to the English name, never an invented one', () => {
-    expect(countryLabel('Egypt', 'fr')).toBe('Egypt');
+  it('a legacy language with no real translation (es) falls back to the English name, never an invented one', () => {
     expect(countryLabel('Egypt', 'es')).toBe('Egypt');
+    expect(countryLabel('Egypt', 'de')).toBe('Egypt');
+    // French Localization Batch 1C: French now has its own labels.
+    expect(countryLabel('Egypt', 'fr')).toBe('Égypte');
     // sanity: proves the fallback actually triggers, not a coincidence
     expect(countryLabel('Egypt', 'ar')).not.toBe(countryLabel('Egypt', 'en'));
   });

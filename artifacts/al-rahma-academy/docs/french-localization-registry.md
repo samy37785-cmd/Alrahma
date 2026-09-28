@@ -14,6 +14,7 @@ Baseline: `origin/main` @ `79561a4`, audited 2026-09-27 against production.
 | `draft-review` | French translated faithfully from the English source in an open Draft PR, not merged. The owner may review before merge; this is not a blocker |
 | `source-accuracy` | The English (or EN/AR) source itself has a known error or contradiction. French follows the English source as-is; the source is fixed separately, outside the French PRs, and does not block the batch |
 | `not-applicable` | Not a public SEO page: auth, admin, legacy redirect, error |
+| `owner-review-recommended` | Legal or consent text translated faithfully from the English. The owner is advised to read it before French is published; it does not block the Draft |
 
 `SEO` = in the EN/AR sitemap + prerender today (`published`) or not (`unpublished`). French is `unpublished` everywhere.
 
@@ -29,14 +30,14 @@ Baseline: `origin/main` @ `79561a4`, audited 2026-09-27 against production.
 | 6 | `/courses/islamic-studies` | `/ar/courses/islamic-studies` | `/fr/courses/islamic-studies` | 1B | draft-review | unpublished | owner may review (hadith lines from English, book descriptions) | no | Batch 1B: title/description/OG, Course JSON-LD text, H1, hero, stats, learn list, hadith of the day (17), 5 modules, 9 books, audience, perks, enroll card |
 | 7 | `/academy` | `/ar/academy` | `/fr/academy` | 1A | draft-review | published | no | no | Batch 1A: description |
 | 8 | `/academy/about` | `/ar/academy/about` | `/fr/academy/about` | 1A | draft-review | published | no | no (owner narrative) | Batch 1A: H1, founder story (owner review) |
-| 9 | `/academy/teachers` | `/ar/academy/teachers` | `/fr/academy/teachers` | 2 | complete | published | review teacher claims | no | — |
-| 10 | `/academy/teachers/:id` (11) | `/ar/academy/teachers/:id` | `/fr/academy/teachers/:id` | 2 | complete | published | review Sanad/Ijazah claims | no | — |
-| 11 | `/resources/faq` | `/ar/resources/faq` | `/fr/resources/faq` | 2 | complete | published | yes | no | — |
-| 12 | `/resources` | `/ar/resources` | `/fr/resources` | 2 | partial | published | no | no | EN description |
-| 13 | `/enroll` | `/ar/enroll` | `/fr/enroll` | 2 | partial | unpublished | no | yes (consent text) | EN title/description |
-| 14 | `/academy/privacy` | `/ar/academy/privacy` | `/fr/academy/privacy` | 2 | partial | published | no | **yes** | GA4 section EN-only (EN/AR approved copy) |
-| 15 | `/academy/terms` | `/ar/academy/terms` | `/fr/academy/terms` | 2 | complete | published | no | **yes** | — |
-| 16 | `/academy/refund-policy` | `/ar/academy/refund-policy` | `/fr/academy/refund-policy` | 2 | complete | published | no | **yes** | — |
+| 9 | `/academy/teachers` | `/ar/academy/teachers` | `/fr/academy/teachers` | 1C | draft-review | published | owner may review (teacher claims) | no | Batch 1C: SEO description and hero glossary ("ijaza"), hero sub "(sanad)" restored from the English, subject filters "Tajwid" / "Ijaza" / "Sira" |
+| 10 | `/academy/teachers/:id` (11) | `/ar/academy/teachers/:id` | `/fr/academy/teachers/:id` | 1C | draft-review | published | owner may review (Sanad/Ijazah claims) | no | Batch 1C: 10 bios and 5 titles/specialties/credential labels (glossary; "Aqeedah" → "Aqida"), "Certificat d'ijaza", sanad line faithful to the English, French `<title>` for an unknown id |
+| 11 | `/resources/faq` | `/ar/resources/faq` | `/fr/resources/faq` | 1C | draft-review | published | owner may review | no | Batch 1C: 12 of 18 items — omissions restored from the English (#2, #4, #6, #14, #17), "Quran" restored in 2 questions, glossary, "plans" → "formules", WhatsApp button label |
+| 12 | `/resources` | `/ar/resources` | `/fr/resources` | 1D | partial | published | no | no | EN description. Hub page, grouped with the tools (Batch 1D) |
+| 13 | `/enroll` | `/ar/enroll` | `/fr/enroll` | 1C | draft-review | unpublished | no | owner-review-recommended (consent/booking wording) | Batch 1C: French title/description/keywords, 27 country names (submitted value unchanged), subject labels (glossary), gender-preference label, age labels, e-mail wording, phone example = the English one, success title brand name |
+| 14 | `/academy/privacy` | `/ar/academy/privacy` | `/fr/academy/privacy` | 1C | draft-review | published | no | **owner-review-recommended** | Batch 1C: GA4 "Analytics cookies" section in French (from the English), "Cookie settings" button, back link. Date, contact and cookie policy unchanged |
+| 15 | `/academy/terms` | `/ar/academy/terms` | `/fr/academy/terms` | 1C | draft-review | published | no | **owner-review-recommended** | Batch 1C: 5 fidelity fixes — "for any reason", "agree to be bound", "any subscription plan", "all tutor changes within 48 hours", glossary |
+| 16 | `/academy/refund-policy` | `/ar/academy/refund-policy` | `/fr/academy/refund-policy` | 1C | draft-review | published | no | **owner-review-recommended** | Batch 1C: plan display name « Ijaza » |
 | 17 | `/tools` | `/ar/tools` | `/fr/tools` | 3 | complete | published | no | no | — |
 | 18 | `/tools/adhkar` | `/ar/tools/adhkar` | `/fr/tools/adhkar` | 3 | complete | published | **yes** (dhikr meanings) | no | — |
 | 19 | `/tools/tasbeeh` | `/ar/tools/tasbeeh` | `/fr/tools/tasbeeh` | 3 | partial | published | yes | no | Title, description, H1 and body EN |
@@ -104,8 +105,41 @@ Also:
 | Batch | Templates | State |
 |---|---|---|
 | 1A | `/`, `/courses`, `/courses/quran`, `/courses/arabic`, `/academy`, `/academy/about` | Merged (PR #130) |
-| 1B | `/courses/ijazah`, `/courses/islamic-studies` | Draft PR, not merged. Inventory: [french-batch1b-religious-review.md](french-batch1b-religious-review.md) |
-| 2–5 | See the table above | Not started; each needs separate approval |
+| 1B | `/courses/ijazah`, `/courses/islamic-studies` | Merged (PR #131). Inventory: [french-batch1b-religious-review.md](french-batch1b-religious-review.md) |
+| 1C | `/academy/teachers`, `/academy/teachers/:id` (11), `/resources/faq`, `/enroll`, `/academy/privacy`, `/academy/terms`, `/academy/refund-policy`, and the shared cookie banner | Draft PR, not merged. Inventory below |
+| 1D / 1E | `/resources` and the `/tools/*` pages | Not started; needs separate approval |
+| 5 | French SEO publication gate (sitemap, hreflang, prerender) | Not started |
+
+## Batch 1C inventory (scope audit, `origin/main` @ `8f8b014`)
+
+Audited from `App.jsx`, `scripts/prerender-routes.mjs` and this registry. Only routes that exist were considered; none was added. There is no `/pricing`, `/contact` or `/trial` route: pricing is shown on `/` (Batch 1A) and in the enroll wizard's plan step (1C), the free-trial booking **is** `/enroll`, and contact details appear on the legal pages and in the footer.
+
+### Included in Batch 1C
+
+| Template | FR URLs | States checked (per language) | Distinct visible/accessible strings in French, all states (approx., header/footer included) |
+|---|---|---|---|
+| `/academy/teachers` | 1 | 19: loaded, every bio open, each of the 8 subject / 2 gender / 5 language filters, no-match, reset | 259 |
+| `/academy/teachers/:id` | 11 dynamic (ids 1–11) + unknown id | 12 | 279 |
+| `/resources/faq` | 1 | 20: loaded, all questions shown, each of the 18 answers open | 54 |
+| `/enroll` | 1 | 21: each step, each of the 7 validation messages, plan choice (3), no-match tutor list, failed submit, success screen (API mocked), arrival with `?teacher=&plan=` | 357 |
+| `/academy/privacy` | 1 | 2: with and without the GA section | 33 |
+| `/academy/terms` | 1 | 1 | 141 |
+| `/academy/refund-policy` | 1 | 1 | 132 |
+| Cookie banner (shared, every page while GA is configured) | — | 1 | 6 (banner + "Cookie settings") |
+
+7 templates + 1 shared element; 6 static + 11 dynamic = **17 French URLs**. Nothing is submitted: the booking request is mocked in tests and never sent during review.
+
+### Deferred
+
+| Template | To | Reason |
+|---|---|---|
+| `/resources` | 1D | Hub page for the tools and blog, grouped with them |
+| `/tools/*` (13 templates) | 1D / 1E | Religious tools, heavy dynamic content or religious review (Quran Reader, Adhkar, Hadith, Prayer Times, …) |
+| `/resources/blog`, `/resources/blog/:slug` | later | Empty listing (0 posts) |
+
+### Not applicable
+
+Unchanged from the table below: login / register / password pages, payment result pages, authenticated and admin pages, legacy redirects, 404 (36 routes), plus `/courses/:id` (private course content).
 
 ## Owner review (non-blocking)
 
@@ -117,6 +151,9 @@ Translated faithfully from the English source under the policy above. Status: `f
 | 2 | IsnadChain section (transmission chain, tutors' sanad) | `/` | `i18n/home/isnadChain.js` `fr` |
 | 3 | Level quiz, including the Ijazah recommendation | `/` | `i18n/home/levelQuiz.js` `fr` |
 | 4 | SEO titles/descriptions, H1, leaked strings, course labels, country names, a11y labels | all 1A | 1A `fr` entries, `i18n/a11yLabels.js` |
+| 5 | Privacy policy GA4 section, cookie banner (`owner-review-recommended`) | 1C `/academy/privacy`, every page | `pages/Privacy.jsx` `ANALYTICS_PRIVACY_COPY.fr`, `analytics/consentCopy.js` `fr` |
+| 6 | Terms and refund policy fidelity fixes (`owner-review-recommended`) | 1C `/academy/terms`, `/academy/refund-policy` | `pages/TermsOfService.jsx` `translated.fr`, `pages/RefundPolicy.jsx` `fr` |
+| 7 | Teacher bios and credential labels | 1C teachers, profiles | `data/marketing/teachers.js` `fr` |
 
 ## Owner decisions applied in Batch 1A (PR #130)
 
@@ -140,9 +177,9 @@ French strings that still say "Tajweed" / "Ijazah" and do not render on any 1A p
 
 | File | Where | Count | Batch |
 |---|---|---|---|
-| `i18n/fr.js` | teachers page (`seoDescription`, `sub`, filter labels "Tajweed"/"Ijazah"), teacher profile (`ijazahCertTitle`, `ijazahCertDesc`, `credentialsOnFileDesc`), blog `sub`, dashboard `certTypes.ijazah`, enroll `subjectLabels` ("Tajweed", "Cours Ijazah"), resources card | 12 lines (354, 357, 379, 387, 455, 456, 460, 578, 699, 790, 792, 1159) | 2 (teachers, enroll, resources), blog/dashboard later |
-| `data/faqItems.js` `fr` | FAQ page answers | 4 (lines 47, 63, 79, 87) | 2 |
-| `data/marketing/teachers.js` `fr` | bios of the other 10 teachers, credential label "Ijazah à sanad ininterrompu" | 11 (lines 71, 102, 133, 164, 195, 226, 257, 288, 319, 350, 380) | 2 |
+| `i18n/fr.js` | blog `sub`, dashboard `certTypes.ijazah`, resources card | 3 (blog, dashboard, resources) | 1D / later. Teachers, teacher profile and enroll lines: **done in 1C** |
+| `data/faqItems.js` `fr` | FAQ page answers | — | **Done in 1C** |
+| `data/marketing/teachers.js` `fr` | bios, credential label | — | **Done in 1C** |
 
 ## Source-accuracy issues
 
@@ -158,5 +195,13 @@ Known errors or contradictions in the English (or EN/AR) source. French follows 
 | S6 | Islamic Studies: "40 core hadiths" / "40 Hadiths of Imam Al-Nawawi" vs the book card's "42 hadiths" | `data/islamicStudiesData.js` `MODULES[3].topics`, `LEARN[3]` vs `BOOKS[5]` | 1B `/courses/islamic-studies` | Follows each English sentence as written (40 and 42) |
 | S7 | Islamic Studies learn item 1: English "Islamic theology", Arabic "علم الكلام الإسلامي" (a specific discipline) | `data/islamicStudiesData.js` `LEARN.en[0]` vs `LEARN.ar[0]` | 1B `/courses/islamic-studies` | Follows the English ("la théologie islamique") |
 | S8 | Hadith "The best of people are those who are most beneficial to people" (Al-Tabarani): its link points to the Nawawi 40 collection (`sunnah.com/nawawi40`), not to this hadith | `data/islamicStudiesData.js` `HADITHS[16].url` | 1B `/courses/islamic-studies` | Same link kept (URLs are not changed by translation) |
+
+| S9 | Enroll `<title>` says "Book Free Trial **Lessons**" (plural) while its description, the FAQ and the Terms say **one** free trial lesson | `i18n/enroll/seo.js` `en.title` | 1C `/enroll` | Follows the English (« Réserver des cours d'essai gratuits ») |
+| S10 | FAQ refund answer ("If you are unhappy after your first paid month … We cannot offer refunds for lessons that have already been delivered") contradicts the Refund Policy and Terms (full refund within 24 days of the first payment, "No deductions for lessons already attended") | `data/faqItems.js` item 13 `en` vs `pages/RefundPolicy.jsx`, `pages/TermsOfService.jsx` §3 | 1C `/resources/faq`, `/academy/refund-policy` | Each page follows its own English text |
+| S11 | Teacher 5 "Abd Allah Ayman": the English card button and profile use the first word of the name — "Enroll with Abd", "About Abd" ("Abd" is not a standalone name; the Arabic page already uses the full name) | `pages/Teachers.jsx` (`nameEn.split(' ')[0]`), `pages/TeacherProfile.jsx` `firstName` | 1C teachers, profile 5 | Same code, so French shows « S'inscrire avec Abd », « À propos de Abd » |
+| S12 | Terms §4 and the refund policy tell customers to cancel "from your Billing page", but a booking request creates no account (Booking-First Enrollment; see the success-screen comment in `EnrollWizard.jsx`) | `pages/TermsOfService.jsx` `cancellation`, `pages/RefundPolicy.jsx` `cancellationText` | 1C `/academy/terms`, `/academy/refund-policy` | Follows the English (« depuis votre page de facturation ») |
+| S13 | Privacy "Last updated: June 2026" predates the GA4 analytics section added in September 2026 (PR #129) | `pages/Privacy.jsx` `updated` | 1C `/academy/privacy` | Date kept as in the English, not changed by translation |
+
+Also: S1 (teaching-language count) appears on 1C as well — FAQ item 5 says "English, Italian or French".
 
 Resolved: "24-day" refund stat matches `siteFacts.refundWindowDays` (24). Not an issue.

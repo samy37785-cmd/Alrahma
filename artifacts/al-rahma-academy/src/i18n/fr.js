@@ -352,10 +352,10 @@ const fr = {
     "academy": "Académie",
     "langAll": "Tous",
     "seoTitle": "Tuteurs de Coran certifiés Al-Azhar",
-    "seoDescription": `Al-Rahma Academy compte ${siteFacts.totalTeachers} enseignants dans notre équipe — ${siteFacts.featuredTeacherCount} d'entre eux sont présentés ici. Chaque enseignant est diplômé d'Al-Azhar, titulaire d'un Ijazah vérifié avec un sanad continu, et son identité est vérifiée par l'académie.`,
+    "seoDescription": `Al-Rahma Academy compte ${siteFacts.totalTeachers} enseignants dans notre équipe — ${siteFacts.featuredTeacherCount} d'entre eux sont présentés ici. Chaque enseignant est diplômé d'Al-Azhar, titulaire d'une ijaza vérifiée avec un sanad continu, et son identité est vérifiée par l'académie.`,
     "eyebrow": "Découvrez certains de nos enseignants",
     "title": "Nos enseignants qualifiés",
-    "sub": "Chaque enseignant d'Al-Rahma Academy est un diplômé vérifié de l'Université Al-Azhar, titulaire d'un Ijazah authentique avec une chaîne de transmission ininterrompue.",
+    "sub": "Chaque enseignant d'Al-Rahma Academy est un diplômé vérifié de l'Université Al-Azhar, titulaire d'une ijaza authentique avec une chaîne de transmission ininterrompue (sanad).",
     "rosterNote": `Al-Rahma Academy compte une équipe de ${siteFacts.totalTeachers} enseignants. Cette page présente ${siteFacts.featuredTeacherCount} de nos tuteurs — d'autres enseignants font également partie de notre équipe.`,
     "badges": [
       "🎓 Certifié Al-Azhar",
@@ -377,7 +377,7 @@ const fr = {
       },
       {
         "id": "tajweed",
-        "label": "Tajweed"
+        "label": "Tajwid"
       },
       {
         "id": "hifz",
@@ -385,7 +385,7 @@ const fr = {
       },
       {
         "id": "ijazah",
-        "label": "Ijazah"
+        "label": "Ijaza"
       },
       {
         "id": "arabic",
@@ -393,7 +393,7 @@ const fr = {
       },
       {
         "id": "islamic",
-        "label": "Études Islamiques"
+        "label": "Études islamiques"
       },
       {
         "id": "tafsir",
@@ -401,7 +401,7 @@ const fr = {
       },
       {
         "id": "seerah",
-        "label": "Seerah"
+        "label": "Sira"
       }
     ],
     "genders": [
@@ -453,12 +453,12 @@ const fr = {
     "proofHeader": "Qualifications vérifiées",
     "azharTitle": "Université Al-Azhar",
     "azharDesc": "Le Caire, Égypte — diplômé vérifié",
-    "ijazahCertTitle": "Certificat d'Ijazah",
-    "ijazahCertDesc": "Chaîne de transmission (sanad) ininterrompue jusqu'au Prophète ﷺ — conservée par l'académie",
+    "ijazahCertTitle": "Certificat d'ijaza",
+    "ijazahCertDesc": "Sanad continu jusqu'au Prophète ﷺ — conservé par l'académie",
     "identityVerifiedTitle": "Identité vérifiée",
     "identityVerifiedDesc": "Pièce d'identité vérifiée par Al-Rahma Academy",
     "credentialsOnFileTitle": "Justificatifs archivés",
-    "credentialsOnFileDesc": "Diplômes, Ijazah et documents d'identité conservés en toute sécurité par l'académie",
+    "credentialsOnFileDesc": "Diplômes, ijaza et documents d'identité conservés en toute sécurité par l'académie",
     "proofNote": "Des copies de tous les certificats sont conservées en toute sécurité par Al-Rahma Academy. Les parents peuvent demander une vérification en contactant le support.",
     "verified": "Vérifié",
     "studentRating": "Avis des élèves",
@@ -594,7 +594,7 @@ const fr = {
     "backToSite": "Retour au site",
     "stillQuestion": "Encore une question ?",
     "bookTrial": "Réserver un essai gratuit",
-    "whatsapp": "WhatsApp",
+    "whatsapp": "Écrivez-nous sur WhatsApp",
     "showAll": "Voir toutes les questions",
     "showLess": "Voir moins"
   },
@@ -746,7 +746,7 @@ const fr = {
       "title": "Parlez-nous de vous",
       "sub": "Ces informations nous aideront à vous proposer l’enseignant et les horaires qui vous conviennent.",
       "fullName": "Nom complet *",
-      "email": "Adresse email *",
+      "email": "Adresse e-mail *",
       "whatsapp": "Numéro WhatsApp",
       "country": "Pays",
       "city": "Ville / Région",
@@ -779,22 +779,22 @@ const fr = {
       "levelIntermediate": "Intermédiaire — quelques connaissances",
       "levelAdvanced": "Avancé — étude approfondie",
       "ageGroup": "Groupe d'âge",
-      "ageChild": "Enfant (moins de 12)",
-      "ageTeen": "Adolescent (12–17)",
-      "ageAdult": "Adulte (18+)",
-      "teacherPref": "Préférence concernant l’enseignant",
+      "ageChild": "Enfant (moins de 12 ans)",
+      "ageTeen": "Adolescent (12–17 ans)",
+      "ageAdult": "Adulte (18 ans et plus)",
+      "teacherPref": "Préférence de sexe de l’enseignant",
       "prefAny": "🤝 Pas de préférence",
       "prefMale": "👨‍🏫 Enseignant",
       "prefFemale": "👩‍🏫 Enseignante",
       "subjectLabels": [
         "Lecture du Coran",
-        "Tajweed",
+        "Tajwid",
         "Mémorisation (Hifz)",
-        "Cours Ijazah",
+        "Cours d'ijaza",
         "Langue arabe",
         "Études islamiques",
         "Tafsir coranique",
-        "Sîra prophétique"
+        "Sira prophétique"
       ]
     },
     "step3": {
@@ -808,10 +808,10 @@ const fr = {
       "title": "Choisissez votre formule",
       "sub": "Toutes les formules comprennent des cours individuels avec l’enseignant de votre choix. Résiliez à tout moment.",
       "perMo": "/mois",
-      "selected": "✓ Sélectionné",
+      "selected": "✓ Sélectionnée",
       "summaryTitle": "Résumé de l'inscription",
       "summaryStudent": "Étudiant",
-      "summaryEmail": "Email",
+      "summaryEmail": "E-mail",
       "summaryTeacher": "Enseignant",
       "summaryPlan": "Formule",
       "summaryLang": "Langue",
@@ -819,12 +819,12 @@ const fr = {
     },
     "success": {
       "icon": "🎉",
-      "title": "Bienvenue à l'Académie Al-Rahma !",
+      "title": "Bienvenue à Al-Rahma Academy !",
       "blessing": "بارك الله فيك",
       "blessingSub": "Qu'Allah bénisse votre parcours d'apprentissage",
       "thankYouPre": "Votre demande de réservation a bien été reçue, ",
       "thankYouPost": ". Notre équipe vous contactera sur WhatsApp pour confirmer votre planning et le paiement.",
-      "emailNote": "Une confirmation a été envoyée à votre adresse email.",
+      "emailNote": "Une confirmation a été envoyée à votre adresse e-mail.",
       "bookingRefLabel": "Votre numéro de référence de réservation",
       "whatsappCta": "Écrivez-nous sur WhatsApp",
       "whatsappNote": "Envoyez le message prérempli pour que nous confirmions votre planning et organisions le paiement.",
@@ -833,7 +833,7 @@ const fr = {
       "goToDashboard": "Aller au tableau de bord",
       "nextTitle": "Ce qui se passe ensuite",
       "nextSteps": [
-        { "icon": "📧", "title": "Email de confirmation", "text": "Vérifiez votre boîte de réception — nous confirmerons les détails de votre inscription dans les prochaines heures." },
+        { "icon": "📧", "title": "E-mail de confirmation", "text": "Vérifiez votre boîte de réception — nous confirmerons les détails de votre inscription dans les prochaines heures." },
         { "icon": "👨‍🏫", "title": "Rencontrez votre enseignant", "text": "Nous vous attribuerons un enseignant certifié selon vos objectifs et vos préférences horaires." },
         { "icon": "🎓", "title": "Première leçon", "text": "Votre première séance en direct sera planifiée sous deux à trois jours. Votre parcours commence." }
       ]
@@ -845,9 +845,9 @@ const fr = {
     },
     "validation": {
       "nameRequired": "Le nom complet est obligatoire.",
-      "emailRequired": "L'adresse email est obligatoire.",
-      "emailInvalid": "Veuillez entrer une adresse email valide.",
-      "phoneInvalid": "Veuillez saisir un numéro de téléphone valide (par exemple : +33 6 12 34 56 78).",
+      "emailRequired": "L'adresse e-mail est obligatoire.",
+      "emailInvalid": "Veuillez saisir une adresse e-mail valide.",
+      "phoneInvalid": "Veuillez saisir un numéro de téléphone valide (par exemple : +44 7700 900000).",
       "whatsappRequired": "Un numéro WhatsApp est requis pour que nous puissions vous contacter et organiser votre réservation.",
       "subjectRequired": "Veuillez sélectionner au moins une matière.",
       "teacherRequired": "Veuillez choisir un enseignant.",

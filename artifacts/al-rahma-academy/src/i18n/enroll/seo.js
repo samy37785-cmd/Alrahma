@@ -5,9 +5,9 @@
 // was already fully Arabic. Live-browser review confirmed this: html
 // lang="ar" but document.title in English. This file gives Enroll its own
 // small lang-aware source, following the same en/ar-only + English-fallback
-// shape as src/i18n/home/leakedStrings.js's pickLeakedString() -- only en/ar
-// are real content here; it/es/de/fr fall back to the English copy rather
-// than inventing unreviewed translations.
+// shape as src/i18n/home/leakedStrings.js's pickLeakedString() -- en/ar are
+// the original content; fr (French Localization Batch 1C) is translated from
+// the English entry; it/es/de fall back to the English copy.
 //
 // Copy is deliberately literal about the actual booking flow (Booking-First
 // Enrollment -- see docs/current-project-status.md §5): a free trial
@@ -28,6 +28,12 @@ export const ENROLL_SEO_TEXT = {
     title: 'احجز حصة تجريبية مجانية',
     description: 'حصة تجريبية مجانية فردية في القرآن الكريم — بلا دفع وبلا التزام. اختر موادك، واختر معلمًا معتمدًا من الأزهر، وأرسل طلب حجز خطتك — سيتواصل فريقنا معك عبر واتساب لتأكيد الموعد والدفع.',
     keywords: 'حصة تجريبية مجانية للقرآن, تسجيل تعلم القرآن أونلاين, حجز حصة قرآن, حجز دورة قرآن',
+  },
+  // French Localization Batch 1C: translated from the English entry only.
+  fr: {
+    title: 'Réserver des cours d\'essai gratuits',
+    description: 'Un cours d\'essai de Coran individuel et gratuit — sans paiement, sans engagement. Choisissez vos matières, choisissez un enseignant certifié par Al-Azhar et réservez votre formule — nous confirmerons avec vous votre planning et le paiement sur WhatsApp.',
+    keywords: 'cours d\'essai de Coran gratuit, inscription Coran en ligne, réserver un cours de Coran, réservation de cours de Coran',
   },
 };
 

@@ -113,7 +113,8 @@ describe('TeacherProfile.jsx source: minimal, scoped diff', () => {
   });
 
   it('useSEO title now reads displayName, not the raw nameEn literal', () => {
-    expect(src).toMatch(/title:\s*teacher \? displayName : 'Teacher'/);
+    // French Localization Batch 1C only adds a French fallback for an unknown id.
+    expect(src).toMatch(/title:\s*teacher \? displayName : lang === 'fr' \? tp\.instructor : 'Teacher'/);
   });
 
   it('breadcrumb label now reads displayName', () => {

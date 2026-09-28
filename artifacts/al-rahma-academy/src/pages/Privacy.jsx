@@ -7,8 +7,10 @@ import CookieSettingsButton from '../components/ui/CookieSettingsButton';
 import { getMeasurementId } from '../analytics/ga';
 
 // Google Analytics disclosure, shown only while GA is actually configured.
-// Owner-approved scope (EN/AR); other locales fall back to English until
-// their translation is approved.
+// Owner-approved scope (EN/AR). French (Batch 1C) is translated from the
+// English only, owner review recommended (see
+// docs/french-localization-registry.md). Other locales fall back to English
+// until their translation is approved.
 export const ANALYTICS_PRIVACY_COPY = {
   en: {
     title: 'Analytics cookies',
@@ -25,6 +27,14 @@ export const ANALYTICS_PRIVACY_COPY = {
     forms: 'لا نرسل المعلومات التي تُدخلها في نماذجنا — مثل اسمك أو بريدك الإلكتروني أو رقم هاتفك — إلى Google Analytics.',
     change: 'يمكنك تغيير اختيارك أو سحبه في أي وقت من',
     google: 'كيف تستخدم Google المعلومات من المواقع التي تستخدم خدماتها',
+  },
+  fr: {
+    title: 'Cookies d’analyse',
+    what: 'Avec votre autorisation, nous utilisons Google Analytics 4 pour comprendre comment les visiteurs utilisent notre site web, afin de pouvoir l’améliorer.',
+    when: 'Google Analytics n’est chargé qu’après que vous avez choisi « Accepter les cookies d’analyse » dans le bandeau des cookies. Si vous choisissez « Refuser » ou ne faites aucun choix, il n’est pas chargé.',
+    forms: 'Nous n’envoyons pas à Google Analytics les informations que vous saisissez dans nos formulaires — comme votre nom, votre adresse e-mail ou votre numéro de téléphone.',
+    change: 'Vous pouvez modifier ou retirer votre choix à tout moment depuis',
+    google: 'Comment Google utilise les informations des sites qui utilisent ses services',
   },
 };
 
@@ -134,11 +144,12 @@ export default function Privacy() {
   // Arabic page must pass a real Arabic label explicitly. The "← " prefix
   // matches the same convention already used for this exact pattern on
   // FAQ/Blog/PaymentResult (src/i18n/ar.js's backToSite keys) rather than
-  // inventing a new arrow direction here. Every other language still gets
-  // PageBar's own default, unchanged.
+  // inventing a new arrow direction here. French (Batch 1C) passes the same
+  // "← Retour au site" label its other pages use (fr.js backToSite). Every
+  // other language still gets PageBar's own default, unchanged.
   return (
     <div className="legal">
-      <PageBar to="/" label={lang === 'ar' ? '← العودة إلى الموقع' : undefined} />
+      <PageBar to="/" label={lang === 'ar' ? '← العودة إلى الموقع' : lang === 'fr' ? '← Retour au site' : undefined} />
 
       <Breadcrumbs items={[{ label: content.academy, to: '/academy' }, { label: content.title }]} />
 

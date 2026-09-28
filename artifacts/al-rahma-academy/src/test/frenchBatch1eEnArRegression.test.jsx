@@ -31,19 +31,37 @@ const WRITE = process.env.FR_BATCH1E_WRITE_BASELINE === '1';
 
 const sha = (s) => crypto.createHash('sha256').update(s).digest('hex');
 
-// QiblaCompass.jsx renders its needle with an UNROUNDED
-// `rotate(${bearing}deg)` inline style (the rounded whole-degree value is
-// only used in the aria-label). `bearing` comes from Math.atan2/sin/cos on
-// the mocked Paris coordinates, and those transcendental functions can
-// differ by roughly 1 ULP between platforms/libm builds (observed: this
-// baseline recorded on Windows, compared against a Linux CI run of the
-// identical source) -- changing digits far past any visually-meaningful
-// precision, but changing the exact byte string, hence the body hash. It
-// carries no French-localization content, so it's normalized away before
-// hashing rather than pinning the baseline to one platform's float
-// rendering.
+// Two sources of PLATFORM-dependent (not French-localization-dependent)
+// byte differences in these pages' rendered markup, both normalized away
+// before hashing rather than pinned to one machine's rendering:
+//
+// 1) QiblaCompass.jsx renders its needle with an UNROUNDED
+//    `rotate(${bearing}deg)` inline style (the rounded whole-degree value
+//    is only used in the aria-label). `bearing` comes from
+//    Math.atan2/sin/cos on the mocked Paris coordinates, and those
+//    transcendental functions can differ by roughly 1 ULP between
+//    platforms/libm builds -- changing digits far past any
+//    visually-meaningful precision, but changing the exact byte string.
+//
+// 2) QiblaPage.jsx's distance and HadithLibrary.jsx's collection/result
+//    counts call `.toLocaleString()` with no explicit locale, which
+//    formats using the HOST MACHINE's default ICU locale, not the page's
+//    own language. On Windows that follows the OS "regional format"
+//    setting (confirmed: this dev machine resolves it to ar-EG, printing
+//    Arabic-Indic digits and an Arabic thousands separator even on
+//    English-language pages), while GitHub Actions' Linux runners default
+//    to en-US -- a difference in *where the test was run*, unrelated to
+//    French localization. Arabic-Indic digits/separators are converted
+//    back to their Western equivalents so both environments hash the same
+//    canonical text (never touching a page's own intentional Arabic
+//    prose, which uses Arabic letters, not Arabic-Indic numerals).
+const ARABIC_INDIC_DIGITS = '٠١٢٣٤٥٦٧٨٩';
 function normalizeBody(html) {
-  return html.replace(/rotate\((-?\d+\.\d+)deg\)/g, (_, deg) => `rotate(${Math.round(Number(deg))}deg)`);
+  return html
+    .replace(/rotate\((-?\d+\.\d+)deg\)/g, (_, deg) => `rotate(${Math.round(Number(deg))}deg)`)
+    .replace(/[٠-٩]/g, (d) => String(ARABIC_INDIC_DIGITS.indexOf(d)))
+    .replace(/٬/g, ',')
+    .replace(/٫/g, '.');
 }
 
 useFullPageEnvironment();

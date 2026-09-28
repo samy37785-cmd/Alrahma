@@ -119,7 +119,11 @@ export const INVOICE_TEXT = {
   it: { locale: 'it-IT', invoice: 'Fattura', date: 'Data', period: 'Periodo', subscription: 'Abbonamento', planWord: 'Piano', monthlyRate: 'Tariffa mensile', discount: 'Sconto', off: 'SCONTO', totalPaid: 'Totale pagato', paid: '✓ Pagato', thankYou: 'Grazie per aver studiato con Al-Rahma Academy. Che Allah benedica il tuo percorso.', print: '🖨 Stampa / Salva come PDF' },
   es: { locale: 'es-ES', invoice: 'Factura', date: 'Fecha', period: 'Período', subscription: 'Suscripción', planWord: 'Plan', monthlyRate: 'Tarifa mensual', discount: 'Descuento', off: 'DESC.', totalPaid: 'Total pagado', paid: '✓ Pagado', thankYou: 'Gracias por aprender con Al-Rahma Academy. Que Allah bendiga tu camino.', print: '🖨 Imprimir / Guardar como PDF' },
   de: { locale: 'de-DE', invoice: 'Rechnung', date: 'Datum', period: 'Zeitraum', subscription: 'Abonnement', planWord: 'Tarif', monthlyRate: 'Monatlicher Preis', discount: 'Rabatt', off: 'RABATT', totalPaid: 'Insgesamt bezahlt', paid: '✓ Bezahlt', thankYou: 'Danke, dass Sie mit der Al-Rahma Academy lernen. Möge Allah Ihren Weg segnen.', print: '🖨 Drucken / Als PDF speichern' },
-  fr: { locale: 'fr-FR', invoice: 'Facture', date: 'Date', period: 'Période', subscription: 'Abonnement', planWord: 'Forfait', monthlyRate: 'Tarif mensuel', discount: 'Remise', off: 'REMISE', totalPaid: 'Total payé', paid: '✓ Payé', thankYou: 'Merci d\'apprendre avec Al-Rahma Academy. Qu\'Allah bénisse votre parcours.', print: '🖨 Imprimer / Enregistrer en PDF' },
+  // French Religious-Content Safety Correction: `thankYou` closes with a
+  // blessing ("Qu'Allah bénisse votre parcours" / "May Allah bless your
+  // journey") -- a dua-like phrase. Per the owner-approved policy this is
+  // the literal English source sentence, not a French rendering of it.
+  fr: { locale: 'fr-FR', invoice: 'Facture', date: 'Date', period: 'Période', subscription: 'Abonnement', planWord: 'Forfait', monthlyRate: 'Tarif mensuel', discount: 'Remise', off: 'REMISE', totalPaid: 'Total payé', paid: '✓ Payé', thankYou: 'Thank you for learning with Al-Rahma Academy. May Allah bless your journey.', print: '🖨 Imprimer / Enregistrer en PDF' },
 };
 
 /* ── Small shared UI strings (modals, floating buttons) ── */

@@ -1,0 +1,293 @@
+{
+  "baseline": "origin/main@1a8d498",
+  "pages": {
+    "resources": {
+      "en": {
+        "initial": {
+          "title": "Resources | AL-Rahma Academy",
+          "description": "Explore resources from Al-Rahma Academy: blog articles, FAQ, academy information, and teacher profiles.",
+          "ogTitle": "Resources | AL-Rahma Academy",
+          "ogDescription": "Explore resources from Al-Rahma Academy: blog articles, FAQ, academy information, and teacher profiles.",
+          "twitterTitle": "Resources | AL-Rahma Academy",
+          "twitterDescription": "Explore resources from Al-Rahma Academy: blog articles, FAQ, academy information, and teacher profiles.",
+          "htmlLang": "en",
+          "htmlDir": "ltr",
+          "jsonLd": "3afa227e05647886233dd677e55a4c95c3e1d94362eb7de995a4dd9824de8ec7",
+          "body": "dc7a2d6ba1a20885c21b11949019828996a34005f68a0073b9ef46f0b225d7c3"
+        }
+      },
+      "ar": {
+        "initial": {
+          "title": "الموارد | AL-Rahma Academy",
+          "description": "استكشف موارد أكاديمية الرحمة: مقالات المدونة، الأسئلة الشائعة، معلومات عن الأكاديمية، والتعرّف على معلمينا.",
+          "ogTitle": "الموارد | AL-Rahma Academy",
+          "ogDescription": "استكشف موارد أكاديمية الرحمة: مقالات المدونة، الأسئلة الشائعة، معلومات عن الأكاديمية، والتعرّف على معلمينا.",
+          "twitterTitle": "الموارد | AL-Rahma Academy",
+          "twitterDescription": "استكشف موارد أكاديمية الرحمة: مقالات المدونة، الأسئلة الشائعة، معلومات عن الأكاديمية، والتعرّف على معلمينا.",
+          "htmlLang": "ar",
+          "htmlDir": "rtl",
+          "jsonLd": "5619ac452cefc04c3cc2b3f22371f53fb5f01705163f42b67a65acbc44a1de82",
+          "body": "542d7cb654ec8c24eb1600c1da19796e2bdc9be0c75e6b4cdb143f52643ebec7"
+        }
+      }
+    },
+    "tools": {
+      "en": {
+        "initial": {
+          "title": "Islamic Tools | AL-Rahma Academy",
+          "description": "A growing collection of free Islamic tools to help you worship, learn, and grow — built with care by the Al-Rahma Academy team.",
+          "ogTitle": "Islamic Tools | AL-Rahma Academy",
+          "ogDescription": "A growing collection of free Islamic tools to help you worship, learn, and grow — built with care by the Al-Rahma Academy team.",
+          "twitterTitle": "Islamic Tools | AL-Rahma Academy",
+          "twitterDescription": "A growing collection of free Islamic tools to help you worship, learn, and grow — built with care by the Al-Rahma Academy team.",
+          "htmlLang": "en",
+          "htmlDir": "ltr",
+          "jsonLd": "ba57e1a4df293c89f227abbf86cebc5e5206304960117c4c9e0b9ad60a49cb30",
+          "body": "bf009b5fcdb2d210eccff79e2bd0ebe9792127bfca1db32f114dab53a110951e"
+        },
+        "trialOpen": {
+          "title": "Islamic Tools | AL-Rahma Academy",
+          "description": "A growing collection of free Islamic tools to help you worship, learn, and grow — built with care by the Al-Rahma Academy team.",
+          "ogTitle": "Islamic Tools | AL-Rahma Academy",
+          "ogDescription": "A growing collection of free Islamic tools to help you worship, learn, and grow — built with care by the Al-Rahma Academy team.",
+          "twitterTitle": "Islamic Tools | AL-Rahma Academy",
+          "twitterDescription": "A growing collection of free Islamic tools to help you worship, learn, and grow — built with care by the Al-Rahma Academy team.",
+          "htmlLang": "en",
+          "htmlDir": "ltr",
+          "jsonLd": "ba57e1a4df293c89f227abbf86cebc5e5206304960117c4c9e0b9ad60a49cb30",
+          "body": "b55b0c756826cd228a9772c412e9c45ba864521db889dba5bbdcd292d12f9e67"
+        },
+        "trialErrName": {
+          "title": "Islamic Tools | AL-Rahma Academy",
+          "description": "A growing collection of free Islamic tools to help you worship, learn, and grow — built with care by the Al-Rahma Academy team.",
+          "ogTitle": "Islamic Tools | AL-Rahma Academy",
+          "ogDescription": "A growing collection of free Islamic tools to help you worship, learn, and grow — built with care by the Al-Rahma Academy team.",
+          "twitterTitle": "Islamic Tools | AL-Rahma Academy",
+          "twitterDescription": "A growing collection of free Islamic tools to help you worship, learn, and grow — built with care by the Al-Rahma Academy team.",
+          "htmlLang": "en",
+          "htmlDir": "ltr",
+          "jsonLd": "ba57e1a4df293c89f227abbf86cebc5e5206304960117c4c9e0b9ad60a49cb30",
+          "body": "a64e70f2a6a74d313ea43974cd92d7ada8d4d5073b4b8c023b06cb56d329c3bb"
+        },
+        "trialErrEmail": {
+          "title": "Islamic Tools | AL-Rahma Academy",
+          "description": "A growing collection of free Islamic tools to help you worship, learn, and grow — built with care by the Al-Rahma Academy team.",
+          "ogTitle": "Islamic Tools | AL-Rahma Academy",
+          "ogDescription": "A growing collection of free Islamic tools to help you worship, learn, and grow — built with care by the Al-Rahma Academy team.",
+          "twitterTitle": "Islamic Tools | AL-Rahma Academy",
+          "twitterDescription": "A growing collection of free Islamic tools to help you worship, learn, and grow — built with care by the Al-Rahma Academy team.",
+          "htmlLang": "en",
+          "htmlDir": "ltr",
+          "jsonLd": "ba57e1a4df293c89f227abbf86cebc5e5206304960117c4c9e0b9ad60a49cb30",
+          "body": "a4cc1c43631af7aae864a0e2d4d0dcc73e8309cdca84ffa5768da3c5eed6e554"
+        },
+        "trialFailed": {
+          "title": "Islamic Tools | AL-Rahma Academy",
+          "description": "A growing collection of free Islamic tools to help you worship, learn, and grow — built with care by the Al-Rahma Academy team.",
+          "ogTitle": "Islamic Tools | AL-Rahma Academy",
+          "ogDescription": "A growing collection of free Islamic tools to help you worship, learn, and grow — built with care by the Al-Rahma Academy team.",
+          "twitterTitle": "Islamic Tools | AL-Rahma Academy",
+          "twitterDescription": "A growing collection of free Islamic tools to help you worship, learn, and grow — built with care by the Al-Rahma Academy team.",
+          "htmlLang": "en",
+          "htmlDir": "ltr",
+          "jsonLd": "ba57e1a4df293c89f227abbf86cebc5e5206304960117c4c9e0b9ad60a49cb30",
+          "body": "d4230665857c1d801e7d9349894f688aa9ee4f1673e11325a134851ef14a4cb4"
+        },
+        "trialDone": {
+          "title": "Islamic Tools | AL-Rahma Academy",
+          "description": "A growing collection of free Islamic tools to help you worship, learn, and grow — built with care by the Al-Rahma Academy team.",
+          "ogTitle": "Islamic Tools | AL-Rahma Academy",
+          "ogDescription": "A growing collection of free Islamic tools to help you worship, learn, and grow — built with care by the Al-Rahma Academy team.",
+          "twitterTitle": "Islamic Tools | AL-Rahma Academy",
+          "twitterDescription": "A growing collection of free Islamic tools to help you worship, learn, and grow — built with care by the Al-Rahma Academy team.",
+          "htmlLang": "en",
+          "htmlDir": "ltr",
+          "jsonLd": "ba57e1a4df293c89f227abbf86cebc5e5206304960117c4c9e0b9ad60a49cb30",
+          "body": "4e737691d74c7a1acd4579c90f584611b1c83a2abbd0dbab5d64b304433c63db"
+        }
+      },
+      "ar": {
+        "initial": {
+          "title": "أدوات إسلامية | AL-Rahma Academy",
+          "description": "مجموعة متنامية من الأدوات الإسلامية المجانية لمساعدتك في العبادة والتعلم والنمو — بُنيت باهتمام من فريق أكاديمية الرحمة.",
+          "ogTitle": "أدوات إسلامية | AL-Rahma Academy",
+          "ogDescription": "مجموعة متنامية من الأدوات الإسلامية المجانية لمساعدتك في العبادة والتعلم والنمو — بُنيت باهتمام من فريق أكاديمية الرحمة.",
+          "twitterTitle": "أدوات إسلامية | AL-Rahma Academy",
+          "twitterDescription": "مجموعة متنامية من الأدوات الإسلامية المجانية لمساعدتك في العبادة والتعلم والنمو — بُنيت باهتمام من فريق أكاديمية الرحمة.",
+          "htmlLang": "ar",
+          "htmlDir": "rtl",
+          "jsonLd": "c1749ffe37788c63090333270145832c982269ee1734ecb9dc79d42105fd8e68",
+          "body": "7df33816c0c5d49e1c1f30bf26d7c52ae07f5593e4fcbe6a56ca41065838f29a"
+        },
+        "trialOpen": {
+          "title": "أدوات إسلامية | AL-Rahma Academy",
+          "description": "مجموعة متنامية من الأدوات الإسلامية المجانية لمساعدتك في العبادة والتعلم والنمو — بُنيت باهتمام من فريق أكاديمية الرحمة.",
+          "ogTitle": "أدوات إسلامية | AL-Rahma Academy",
+          "ogDescription": "مجموعة متنامية من الأدوات الإسلامية المجانية لمساعدتك في العبادة والتعلم والنمو — بُنيت باهتمام من فريق أكاديمية الرحمة.",
+          "twitterTitle": "أدوات إسلامية | AL-Rahma Academy",
+          "twitterDescription": "مجموعة متنامية من الأدوات الإسلامية المجانية لمساعدتك في العبادة والتعلم والنمو — بُنيت باهتمام من فريق أكاديمية الرحمة.",
+          "htmlLang": "ar",
+          "htmlDir": "rtl",
+          "jsonLd": "c1749ffe37788c63090333270145832c982269ee1734ecb9dc79d42105fd8e68",
+          "body": "74e8a0513c59f1e4e48b9e430be9a35fa971942168186f734982b3c80a51c72c"
+        },
+        "trialErrName": {
+          "title": "أدوات إسلامية | AL-Rahma Academy",
+          "description": "مجموعة متنامية من الأدوات الإسلامية المجانية لمساعدتك في العبادة والتعلم والنمو — بُنيت باهتمام من فريق أكاديمية الرحمة.",
+          "ogTitle": "أدوات إسلامية | AL-Rahma Academy",
+          "ogDescription": "مجموعة متنامية من الأدوات الإسلامية المجانية لمساعدتك في العبادة والتعلم والنمو — بُنيت باهتمام من فريق أكاديمية الرحمة.",
+          "twitterTitle": "أدوات إسلامية | AL-Rahma Academy",
+          "twitterDescription": "مجموعة متنامية من الأدوات الإسلامية المجانية لمساعدتك في العبادة والتعلم والنمو — بُنيت باهتمام من فريق أكاديمية الرحمة.",
+          "htmlLang": "ar",
+          "htmlDir": "rtl",
+          "jsonLd": "c1749ffe37788c63090333270145832c982269ee1734ecb9dc79d42105fd8e68",
+          "body": "aaae709c6577e9666be231c78d9619bf0953a9df4bc75d5864bc53055e661cf3"
+        },
+        "trialErrEmail": {
+          "title": "أدوات إسلامية | AL-Rahma Academy",
+          "description": "مجموعة متنامية من الأدوات الإسلامية المجانية لمساعدتك في العبادة والتعلم والنمو — بُنيت باهتمام من فريق أكاديمية الرحمة.",
+          "ogTitle": "أدوات إسلامية | AL-Rahma Academy",
+          "ogDescription": "مجموعة متنامية من الأدوات الإسلامية المجانية لمساعدتك في العبادة والتعلم والنمو — بُنيت باهتمام من فريق أكاديمية الرحمة.",
+          "twitterTitle": "أدوات إسلامية | AL-Rahma Academy",
+          "twitterDescription": "مجموعة متنامية من الأدوات الإسلامية المجانية لمساعدتك في العبادة والتعلم والنمو — بُنيت باهتمام من فريق أكاديمية الرحمة.",
+          "htmlLang": "ar",
+          "htmlDir": "rtl",
+          "jsonLd": "c1749ffe37788c63090333270145832c982269ee1734ecb9dc79d42105fd8e68",
+          "body": "73961251cff98324dad877702f8338b13481dc33d7095ebdba75217b1ebcb269"
+        },
+        "trialFailed": {
+          "title": "أدوات إسلامية | AL-Rahma Academy",
+          "description": "مجموعة متنامية من الأدوات الإسلامية المجانية لمساعدتك في العبادة والتعلم والنمو — بُنيت باهتمام من فريق أكاديمية الرحمة.",
+          "ogTitle": "أدوات إسلامية | AL-Rahma Academy",
+          "ogDescription": "مجموعة متنامية من الأدوات الإسلامية المجانية لمساعدتك في العبادة والتعلم والنمو — بُنيت باهتمام من فريق أكاديمية الرحمة.",
+          "twitterTitle": "أدوات إسلامية | AL-Rahma Academy",
+          "twitterDescription": "مجموعة متنامية من الأدوات الإسلامية المجانية لمساعدتك في العبادة والتعلم والنمو — بُنيت باهتمام من فريق أكاديمية الرحمة.",
+          "htmlLang": "ar",
+          "htmlDir": "rtl",
+          "jsonLd": "c1749ffe37788c63090333270145832c982269ee1734ecb9dc79d42105fd8e68",
+          "body": "f3c44e1eddad968c769990663aeacb3e1e59163eb4c272c89bfbc437d775a120"
+        },
+        "trialDone": {
+          "title": "أدوات إسلامية | AL-Rahma Academy",
+          "description": "مجموعة متنامية من الأدوات الإسلامية المجانية لمساعدتك في العبادة والتعلم والنمو — بُنيت باهتمام من فريق أكاديمية الرحمة.",
+          "ogTitle": "أدوات إسلامية | AL-Rahma Academy",
+          "ogDescription": "مجموعة متنامية من الأدوات الإسلامية المجانية لمساعدتك في العبادة والتعلم والنمو — بُنيت باهتمام من فريق أكاديمية الرحمة.",
+          "twitterTitle": "أدوات إسلامية | AL-Rahma Academy",
+          "twitterDescription": "مجموعة متنامية من الأدوات الإسلامية المجانية لمساعدتك في العبادة والتعلم والنمو — بُنيت باهتمام من فريق أكاديمية الرحمة.",
+          "htmlLang": "ar",
+          "htmlDir": "rtl",
+          "jsonLd": "c1749ffe37788c63090333270145832c982269ee1734ecb9dc79d42105fd8e68",
+          "body": "e7bbf03d390596d1838589334c6df57d74a55bb9292a3d066b62a28f75024e24"
+        }
+      }
+    },
+    "prayerHub": {
+      "en": {
+        "initial": {
+          "title": "Prayer & Islamic Tools | AL-Rahma Academy",
+          "description": "Prayer times, Qibla compass, Islamic calendar, and Verse of the Day — four dedicated tools for daily worship.",
+          "ogTitle": "Prayer & Islamic Tools | AL-Rahma Academy",
+          "ogDescription": "Prayer times, Qibla compass, Islamic calendar, and Verse of the Day — four dedicated tools for daily worship.",
+          "twitterTitle": "Prayer & Islamic Tools | AL-Rahma Academy",
+          "twitterDescription": "Prayer times, Qibla compass, Islamic calendar, and Verse of the Day — four dedicated tools for daily worship.",
+          "htmlLang": "en",
+          "htmlDir": "ltr",
+          "jsonLd": "45aa7a56fdb2b202e82d8b9b9c7c3fa28357828a9c4a9c404731e8dccf7cc7d9",
+          "body": "24fb96303158cd65d31ecc12059e68de4df3074f040747df233ad122c86c86b0"
+        }
+      },
+      "ar": {
+        "initial": {
+          "title": "الصلاة والأدوات الإسلامية | AL-Rahma Academy",
+          "description": "مواقيت الصلاة وبوصلة القبلة والتقويم الإسلامي وآية اليوم — أربع أدوات للعبادة اليومية.",
+          "ogTitle": "الصلاة والأدوات الإسلامية | AL-Rahma Academy",
+          "ogDescription": "مواقيت الصلاة وبوصلة القبلة والتقويم الإسلامي وآية اليوم — أربع أدوات للعبادة اليومية.",
+          "twitterTitle": "الصلاة والأدوات الإسلامية | AL-Rahma Academy",
+          "twitterDescription": "مواقيت الصلاة وبوصلة القبلة والتقويم الإسلامي وآية اليوم — أربع أدوات للعبادة اليومية.",
+          "htmlLang": "ar",
+          "htmlDir": "rtl",
+          "jsonLd": "616dfca019a6062ccc147636a31e525f986f1ddaa13942103cc723c696359cb6",
+          "body": "e6fca56a3305d93f72b93decfc23af7e993f1a33cfffb7e5c66ac7d942901f1f"
+        }
+      }
+    },
+    "blog": {
+      "en": {
+        "loading": {
+          "title": "Our Blog | AL-Rahma Academy",
+          "description": "Articles on Quran, Tajweed, Arabic and Islamic education — written for non-Arabic speakers in Europe.",
+          "ogTitle": "Our Blog | AL-Rahma Academy",
+          "ogDescription": "Articles on Quran, Tajweed, Arabic and Islamic education — written for non-Arabic speakers in Europe.",
+          "twitterTitle": "Our Blog | AL-Rahma Academy",
+          "twitterDescription": "Articles on Quran, Tajweed, Arabic and Islamic education — written for non-Arabic speakers in Europe.",
+          "htmlLang": "en",
+          "htmlDir": "ltr",
+          "jsonLd": "3be814eaca97e76ffe6464f4882362972aad84e2cec9b00a4d7099af2ef2395c",
+          "body": "9f34a4dcf29b7f943f0864036927624b69a1c2ade4165d45022dc09ed81dccf9"
+        },
+        "error": {
+          "title": "Our Blog | AL-Rahma Academy",
+          "description": "Articles on Quran, Tajweed, Arabic and Islamic education — written for non-Arabic speakers in Europe.",
+          "ogTitle": "Our Blog | AL-Rahma Academy",
+          "ogDescription": "Articles on Quran, Tajweed, Arabic and Islamic education — written for non-Arabic speakers in Europe.",
+          "twitterTitle": "Our Blog | AL-Rahma Academy",
+          "twitterDescription": "Articles on Quran, Tajweed, Arabic and Islamic education — written for non-Arabic speakers in Europe.",
+          "htmlLang": "en",
+          "htmlDir": "ltr",
+          "jsonLd": "3be814eaca97e76ffe6464f4882362972aad84e2cec9b00a4d7099af2ef2395c",
+          "body": "99b2e0a4bc28224fd20db54e48376170f5840b6edc1950bacef51b5a146188ad"
+        },
+        "empty": {
+          "title": "Our Blog | AL-Rahma Academy",
+          "description": "Articles on Quran, Tajweed, Arabic and Islamic education — written for non-Arabic speakers in Europe.",
+          "ogTitle": "Our Blog | AL-Rahma Academy",
+          "ogDescription": "Articles on Quran, Tajweed, Arabic and Islamic education — written for non-Arabic speakers in Europe.",
+          "twitterTitle": "Our Blog | AL-Rahma Academy",
+          "twitterDescription": "Articles on Quran, Tajweed, Arabic and Islamic education — written for non-Arabic speakers in Europe.",
+          "htmlLang": "en",
+          "htmlDir": "ltr",
+          "jsonLd": "3be814eaca97e76ffe6464f4882362972aad84e2cec9b00a4d7099af2ef2395c",
+          "body": "654e35fa26488e575de4e8f248ce2d374c2ac68e728db2003a4315fc742cfcc0"
+        }
+      },
+      "ar": {
+        "loading": {
+          "title": "مدونتنا | AL-Rahma Academy",
+          "description": "مقالات عن القرآن والتجويد واللغة العربية والتعليم الإسلامي — مكتوبة لغير الناطقين بالعربية في أوروبا.",
+          "ogTitle": "مدونتنا | AL-Rahma Academy",
+          "ogDescription": "مقالات عن القرآن والتجويد واللغة العربية والتعليم الإسلامي — مكتوبة لغير الناطقين بالعربية في أوروبا.",
+          "twitterTitle": "مدونتنا | AL-Rahma Academy",
+          "twitterDescription": "مقالات عن القرآن والتجويد واللغة العربية والتعليم الإسلامي — مكتوبة لغير الناطقين بالعربية في أوروبا.",
+          "htmlLang": "ar",
+          "htmlDir": "rtl",
+          "jsonLd": "84007e83d92e818dc6a6801f83ce7551793f1be5f40c7afc97ff5732c1de3b38",
+          "body": "516b668078acb3779fb611140d9effd96faa9e52916443c4b11af9a0c0378012"
+        },
+        "error": {
+          "title": "مدونتنا | AL-Rahma Academy",
+          "description": "مقالات عن القرآن والتجويد واللغة العربية والتعليم الإسلامي — مكتوبة لغير الناطقين بالعربية في أوروبا.",
+          "ogTitle": "مدونتنا | AL-Rahma Academy",
+          "ogDescription": "مقالات عن القرآن والتجويد واللغة العربية والتعليم الإسلامي — مكتوبة لغير الناطقين بالعربية في أوروبا.",
+          "twitterTitle": "مدونتنا | AL-Rahma Academy",
+          "twitterDescription": "مقالات عن القرآن والتجويد واللغة العربية والتعليم الإسلامي — مكتوبة لغير الناطقين بالعربية في أوروبا.",
+          "htmlLang": "ar",
+          "htmlDir": "rtl",
+          "jsonLd": "84007e83d92e818dc6a6801f83ce7551793f1be5f40c7afc97ff5732c1de3b38",
+          "body": "370c5dc5c1475351d76c04226859e2c6d7bb51f466843e1becd6ae217e3c4f4f"
+        },
+        "empty": {
+          "title": "مدونتنا | AL-Rahma Academy",
+          "description": "مقالات عن القرآن والتجويد واللغة العربية والتعليم الإسلامي — مكتوبة لغير الناطقين بالعربية في أوروبا.",
+          "ogTitle": "مدونتنا | AL-Rahma Academy",
+          "ogDescription": "مقالات عن القرآن والتجويد واللغة العربية والتعليم الإسلامي — مكتوبة لغير الناطقين بالعربية في أوروبا.",
+          "twitterTitle": "مدونتنا | AL-Rahma Academy",
+          "twitterDescription": "مقالات عن القرآن والتجويد واللغة العربية والتعليم الإسلامي — مكتوبة لغير الناطقين بالعربية في أوروبا.",
+          "htmlLang": "ar",
+          "htmlDir": "rtl",
+          "jsonLd": "84007e83d92e818dc6a6801f83ce7551793f1be5f40c7afc97ff5732c1de3b38",
+          "body": "dd656b8232ed1b0eb01063c0cdceb18048c1fd19ceb1c7aa4a33b63152106cea"
+        }
+      }
+    }
+  }
+}

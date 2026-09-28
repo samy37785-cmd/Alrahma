@@ -76,13 +76,13 @@ export default function Blog() {
         </div>
 
         {isLoading && (
-          <div className="blog-grid" aria-busy="true" aria-label="Loading articles">
+          <div className="blog-grid" aria-busy="true" aria-label={rb.loading}>
             {Array.from({ length: 6 }, (_, i) => <BlogCardSkeleton key={i} />)}
           </div>
         )}
         {isError && (
           <p className="blog-page__empty" style={{ color: 'var(--color-danger)' }}>
-            Could not load articles. Please try again.
+            {rb.loadError}
           </p>
         )}
 

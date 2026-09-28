@@ -185,7 +185,16 @@ const STAGES = [
   },
 ];
 
-const BOOKS = [
+// French Religious-Content Safety Correction: book titles, descriptions
+// and topic lists stay in their source language on the French page --
+// `title`/`ar` are shown as-is (no `titleFr` is read anywhere; the field
+// was removed from the one entry that had one), and `desc.fr`/`topics.fr`
+// are literal copies of `desc.en`/`topics.en`, not French translations.
+// `author`, `stage`, `link` and `linkLabel` are unaffected -- they are
+// not book title/description/topic content and were already faithful,
+// non-religious-text translations. Exported so tests can assert this
+// directly against the real data instead of duplicating it.
+export const BOOKS = [
   {
     icon: '📗',
     title: 'Tuhfat Al-Atfal',
@@ -195,12 +204,12 @@ const BOOKS = [
     desc: {
       en: 'A didactic poem of 61 verses covering the foundational rules of Tajweed — Noon Sakinah, Tanwin, Meem Sakinah, and basic Madd rules. Memorised by every student before advancing.',
       ar: 'منظومة من 61 بيتاً تغطي أحكام التجويد الأساسية — النون الساكنة، التنوين، الميم الساكنة، وأحكام المد الأساسية. يحفظها كل طالب قبل الانتقال للمراحل المتقدمة.',
-      fr: 'Un poème didactique de 61 vers couvrant les règles fondamentales du tajwid — nun sakina, tanwin, mim sakina et règles de base du madd. Chaque étudiant le mémorise avant de passer au niveau supérieur.',
+      fr: 'A didactic poem of 61 verses covering the foundational rules of Tajweed — Noon Sakinah, Tanwin, Meem Sakinah, and basic Madd rules. Memorised by every student before advancing.',
     },
     topics: {
       en: ['Noon Sakinah & Tanwin (4 rules)', 'Meem Sakinah (3 rules)', 'Basic Madd rules', 'Heavy letters (Tafkheem)'],
       ar: ['أحكام النون الساكنة والتنوين (٤ أحكام)', 'أحكام الميم الساكنة (٣ أحكام)', 'أحكام المد الأساسية', 'الحروف المفخمة'],
-      fr: ['Nun sakina et tanwin (4 règles)', 'Mim sakina (3 règles)', 'Règles de base du madd', 'Lettres emphatiques (tafkhim)'],
+      fr: ['Noon Sakinah & Tanwin (4 rules)', 'Meem Sakinah (3 rules)', 'Basic Madd rules', 'Heavy letters (Tafkheem)'],
     },
     link: null,
     linkLabel: { en: 'Provided in class', ar: 'يُوفَّر في الحصة', fr: 'Fourni pendant le cours' },
@@ -214,12 +223,12 @@ const BOOKS = [
     desc: {
       en: 'The definitive classical reference on Tajweed — a poem of 107 verses by the greatest Tajweed scholar in Islamic history. Covers Makhaarij, Sifaat, all Madd types, and Waqf rules in full depth.',
       ar: 'المرجع الكلاسيكي الرئيسي في علم التجويد — قصيدة من ١٠٧ أبيات لأعظم عالم تجويد في التاريخ الإسلامي. تغطي المخارج والصفات وجميع أحكام المد والوقف بعمق كامل.',
-      fr: "La référence classique incontournable du tajwid — un poème de 107 vers écrit par le plus grand savant du tajwid de l'histoire islamique. Il couvre en profondeur les points d'articulation, les caractéristiques des lettres, tous les types de madd et les règles de pause.",
+      fr: 'The definitive classical reference on Tajweed — a poem of 107 verses by the greatest Tajweed scholar in Islamic history. Covers Makhaarij, Sifaat, all Madd types, and Waqf rules in full depth.',
     },
     topics: {
       en: ['Makhaarij Al-Huroof (17 points)', 'Sifaat Al-Huroof (18 characteristics)', 'All Madd rules', 'Waqf & Ibtida\''],
       ar: ['مخارج الحروف (١٧ مخرجاً)', 'صفات الحروف (١٨ صفة)', 'جميع أحكام المدود', 'أحكام الوقف والابتداء'],
-      fr: ["Points d'articulation des lettres (17 points)", 'Caractéristiques des lettres (18 caractéristiques)', 'Toutes les règles du madd', "Pause et reprise (waqf et ibtida')"],
+      fr: ['Makhaarij Al-Huroof (17 points)', 'Sifaat Al-Huroof (18 characteristics)', 'All Madd rules', 'Waqf & Ibtida\''],
     },
     link: null,
     linkLabel: { en: 'Provided in class', ar: 'يُوفَّر في الحصة', fr: 'Fourni pendant le cours' },
@@ -233,12 +242,12 @@ const BOOKS = [
     desc: {
       en: "A celebrated poem of 1,173 verses encoding the Seven Mutawatir Qira'at. The standard reference for anyone seeking to master or teach the various Quranic recitation traditions.",
       ar: 'قصيدة مشهورة من ١١٧٣ بيتاً تضمّن القراءات السبع المتواترة. المرجع الأساسي لكل من يسعى لإتقان روايات القراءات القرآنية أو تدريسها.',
-      fr: "Un poème célèbre de 1 173 vers qui codifie les sept lectures (qira'at) mutawatir. La référence de base pour quiconque souhaite maîtriser ou enseigner les différentes traditions de récitation coranique.",
+      fr: "A celebrated poem of 1,173 verses encoding the Seven Mutawatir Qira'at. The standard reference for anyone seeking to master or teach the various Quranic recitation traditions.",
     },
     topics: {
       en: ['Seven Mutawatir Qira\'at', "Hafs 'an 'Asim", "Warsh 'an Nafi'", 'All other five Qira\'at'],
       ar: ['القراءات السبع المتواترة', "رواية حفص عن عاصم", "رواية ورش عن نافع", 'القراءات الخمس الأخرى'],
-      fr: ["Les sept qira'at mutawatir", "Hafs 'an 'Asim", "Warsh 'an Nafi'", "Les cinq autres qira'at"],
+      fr: ['Seven Mutawatir Qira\'at', "Hafs 'an 'Asim", "Warsh 'an Nafi'", 'All other five Qira\'at'],
     },
     link: null,
     linkLabel: { en: 'Provided in class', ar: 'يُوفَّر في الحصة', fr: 'Fourni pendant le cours' },
@@ -247,18 +256,17 @@ const BOOKS = [
     icon: '📕',
     title: "Madinah Mus'haf",
     ar: 'مصحف المدينة النبوية',
-    titleFr: 'Mushaf de Médine',
     author: { en: 'King Fahd Glorious Quran Printing Complex', ar: 'مجمع الملك فهد لطباعة المصحف الشريف', fr: "Complexe du roi Fahd pour l'impression du Noble Coran" },
     stage: { en: 'Certification Stage', ar: 'مرحلة الإجازة', fr: 'Étape de certification' },
     desc: {
       en: "The world's most widely distributed Mus'haf — printed by the official Saudi complex in Madinah. Used for the final certification recitation in the Hafs 'an 'Asim riwayah.",
       ar: "أكثر مصحف توزيعاً في العالم — تطبعه مجمع الملك فهد الرسمي في المدينة المنورة. يُستخدم في اختبار الإجازة النهائي برواية حفص عن عاصم.",
-      fr: "Le mushaf le plus distribué au monde — imprimé par le complexe officiel saoudien de Médine. Utilisé pour la récitation finale de certification selon la riwaya de Hafs 'an 'Asim.",
+      fr: "The world's most widely distributed Mus'haf — printed by the official Saudi complex in Madinah. Used for the final certification recitation in the Hafs 'an 'Asim riwayah.",
     },
     topics: {
       en: ["Hafs 'an 'Asim riwayah", 'Colour-coded Tajweed edition available', 'Used in the final Ijazah exam'],
       ar: ["رواية حفص عن عاصم", 'متوفر بنسخة تجويد ملوّنة', 'يُستخدم في اختبار الإجازة النهائي'],
-      fr: ["Riwaya de Hafs 'an 'Asim", 'Édition tajwid en couleurs disponible', "Utilisé pour l'examen final d'ijaza"],
+      fr: ["Hafs 'an 'Asim riwayah", 'Colour-coded Tajweed edition available', 'Used in the final Ijazah exam'],
     },
     link: 'https://quran.gov.sa',
     linkLabel: { en: 'Read Online — Official Site', ar: 'اقرأ أونلاين — الموقع الرسمي', fr: 'Lire en ligne — site officiel' },

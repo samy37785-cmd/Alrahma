@@ -92,10 +92,16 @@ export const ISNAD_CHAIN_TEXT = {
     ctaGift: 'امنح طفلك هذه الهدية ←',
     ctaMeet: 'تعرّف على حاملي الإجازة لدينا',
   },
-  // French Localization Batch 1A: faithful translation of `en` (English is
-  // the canonical source for French), including the quote, which is a
-  // French rendering of the English line — a translation, not an approved
-  // interpretation. The citation is the book name and number only.
+  // French Religious-Content Safety Correction: everything below is
+  // ordinary marketing/UI copy and stays a faithful French translation of
+  // `en`, EXCEPT `quote`, which is a hadith (Sahih al-Bukhari 5027). Per
+  // the owner-approved policy, no French translation of Quran/hadith/dua
+  // text is created in-project without a licensed source -- `quote` is
+  // therefore the literal English source string (see `en.quote` above),
+  // not a translation, so the French page shows the same hadith text a
+  // non-Arabic, non-French reader already saw before this section existed
+  // in French at all. `citation` was already just "Sahih al-Bukhari 5027"
+  // in both languages -- no change needed there.
   fr: {
     eyebrow: 'Notre héritage',
     headingLine1: 'Chaque cours est relié à',
@@ -124,7 +130,9 @@ export const ISNAD_CHAIN_TEXT = {
         detail: "Rejoint une chaîne de 1 400 ans d'apprenants du Coran",
       },
     },
-    quote: "« Les meilleurs d'entre vous sont ceux qui apprennent le Coran et l'enseignent. »",
+    // Not translated -- see the block comment above. Literal copy of
+    // `en.quote`.
+    quote: '"The best of you are those who learn the Quran and teach it."',
     citation: '— Sahih al-Bukhari 5027',
     ctaGift: 'Offrez ce cadeau à votre enfant →',
     ctaMeet: "Découvrez nos titulaires de l'ijaza",

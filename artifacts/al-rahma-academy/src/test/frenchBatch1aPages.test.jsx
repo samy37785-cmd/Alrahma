@@ -48,6 +48,10 @@ const SAME_IN_FRENCH = new Set([
   'Noorani', 'Huffaz', 'Ijazah', 'France', 'Canada', 'Portugal',
   '— Sahih al-Bukhari 5027', 'alrahmaacademy038@gmail.com',
   'Facebook', 'Instagram', 'YouTube', 'TikTok', 'Snapchat',
+  // French Religious-Content Safety Correction: this hadith (Sahih
+  // al-Bukhari 5027) is shown as its literal English source on the French
+  // page, not translated -- see isnadChain.js's own comment.
+  '"The best of you are those who learn the Quran and teach it."',
 ]);
 
 function isAllowed(s) {
@@ -155,9 +159,13 @@ describe('French text modules: complete, faithful, nothing invented', () => {
       : [[`${prefix}${k}`, v]]));
   }
 
-  // Values allowed to be identical to English (proper nouns, brand).
+  // Values allowed to be identical to English (proper nouns, brand, and
+  // -- per the French Religious-Content Safety Correction -- the one
+  // hadith quote ISNAD_CHAIN_TEXT carries, shown as its literal English
+  // source rather than translated).
   const SAME_VALUE_OK = new Set([
     'Canada', 'France', 'Portugal', 'Al-Rahma Academy', '— Sahih al-Bukhari 5027', 'Cours',
+    '"The best of you are those who learn the Quran and teach it."',
   ]);
 
   for (const [name, mod] of Object.entries(MODULES)) {
@@ -194,16 +202,20 @@ describe('French text modules: complete, faithful, nothing invented', () => {
     }
   });
 
-  it('hadith: French shows a French translation of the English line, not the Arabic and not the English', async () => {
-    expect(ISNAD_CHAIN_TEXT.fr.quote).toBe("« Les meilleurs d'entre vous sont ceux qui apprennent le Coran et l'enseignent. »");
+  // French Religious-Content Safety Correction: no French translation of
+  // this hadith (Sahih al-Bukhari 5027) is created in-project without a
+  // licensed source. The French page shows the literal English source
+  // sentence instead of a French rendering of it.
+  it('hadith: French shows the literal English source line, not a French translation and not the Arabic', async () => {
+    expect(ISNAD_CHAIN_TEXT.fr.quote).toBe(ISNAD_CHAIN_TEXT.en.quote);
     expect(ISNAD_CHAIN_TEXT.fr.citation).toBe(ISNAD_CHAIN_TEXT.en.citation);
     expect(ISNAD_CHAIN_TEXT.fr).not.toHaveProperty('quoteLang');
     await mountFullPage('/fr/', Home);
     const quote = document.querySelector('.isnad__quote');
-    expect(quote.textContent.trim()).toBe(ISNAD_CHAIN_TEXT.fr.quote);
+    expect(quote.textContent.trim()).toBe(ISNAD_CHAIN_TEXT.en.quote);
     expect(quote.hasAttribute('lang')).toBe(false);
     expect(quote.hasAttribute('dir')).toBe(false);
-    expect(document.body.textContent).not.toContain('The best of you');
+    expect(document.body.textContent).not.toContain("« Les meilleurs d'entre vous");
     expect(document.body.textContent).not.toContain(ISNAD_CHAIN_TEXT.ar.quote);
   });
 

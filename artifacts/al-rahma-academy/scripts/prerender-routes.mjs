@@ -2,9 +2,23 @@
 // (route, locale) pairs are prerendered to static HTML after `vite build`.
 // Deliberately tiny and explicit — no route is ever prerendered just
 // because it exists in scripts/seoRoutes.mjs or has a locale directory
-// under src/i18n/. Only en/ar are "published" for this pilot (see
-// docs/localization-audit.md — it/es/de/fr have real, undocumented
+// under src/i18n/. Only en/ar/fr are "published" (see
+// docs/localization-audit.md — it/es/de still have real, undocumented
 // content gaps, not just missing routes, so they stay out entirely).
+//
+// French SEO Publication Gate (2026-09-30): fr joins every route that was
+// already published for en+ar, once the "French Localization Batch
+// 1A-1E" work (PRs already on main — main i18n dict at 952/952 key parity
+// with en, all 11 teacher bios/titles/specialties, every legal page, every
+// hub, every static tool page, CourseIjazah's isFr branching including its
+// JSON-LD schema) gave every one of those routes real, already-reviewed
+// French content — the exact precondition every prior en/ar wave above
+// required before joining this manifest. No route is added here that
+// wasn't already 'published' for en/ar; /courses/islamic-studies and every
+// other still-unpublished route (Blog, individual /tools/* pages, Enroll)
+// stay out for the same pre-existing reasons those comments already give,
+// regardless of French — this PR does not touch en/ar publication status
+// or revisit those exclusions.
 //
 // No title/description/keywords here on purpose: those stay owned by
 // each page's own useSEO() call (Home.jsx's pickHomeSeo(lang),
@@ -186,6 +200,40 @@ export const PRERENDER_MANIFEST = [
   // recited Arabic text, translations, H1, or SEO metadata.
   { route: '/tools/adhkar', locale: 'en', status: 'published', indexable: true },
   { route: '/tools/adhkar', locale: 'ar', status: 'published', indexable: true },
+
+  // French wave (2026-09-30, 29 pages): fr for every route already
+  // published above for en/ar — see this file's top-of-manifest comment
+  // for the content precondition and exclusions. Listed in the same order
+  // as the en/ar blocks above for easy side-by-side review.
+  { route: '/', locale: 'fr', status: 'published', indexable: true },
+  { route: '/courses/ijazah', locale: 'fr', status: 'published', indexable: true },
+  { route: '/courses', locale: 'fr', status: 'published', indexable: true },
+  { route: '/courses/quran', locale: 'fr', status: 'published', indexable: true },
+  { route: '/courses/arabic', locale: 'fr', status: 'published', indexable: true },
+  { route: '/academy', locale: 'fr', status: 'published', indexable: true },
+  { route: '/academy/about', locale: 'fr', status: 'published', indexable: true },
+  { route: '/academy/teachers', locale: 'fr', status: 'published', indexable: true },
+  { route: '/resources', locale: 'fr', status: 'published', indexable: true },
+  { route: '/tools', locale: 'fr', status: 'published', indexable: true },
+  { route: '/academy/teachers/1', locale: 'fr', status: 'published', indexable: true },
+  { route: '/academy/teachers/2', locale: 'fr', status: 'published', indexable: true },
+  { route: '/academy/teachers/3', locale: 'fr', status: 'published', indexable: true },
+  { route: '/academy/teachers/4', locale: 'fr', status: 'published', indexable: true },
+  { route: '/academy/teachers/5', locale: 'fr', status: 'published', indexable: true },
+  { route: '/academy/teachers/6', locale: 'fr', status: 'published', indexable: true },
+  { route: '/academy/teachers/7', locale: 'fr', status: 'published', indexable: true },
+  { route: '/academy/teachers/8', locale: 'fr', status: 'published', indexable: true },
+  { route: '/academy/teachers/9', locale: 'fr', status: 'published', indexable: true },
+  { route: '/academy/teachers/10', locale: 'fr', status: 'published', indexable: true },
+  { route: '/academy/teachers/11', locale: 'fr', status: 'published', indexable: true },
+  { route: '/academy/privacy', locale: 'fr', status: 'published', indexable: true },
+  { route: '/academy/terms', locale: 'fr', status: 'published', indexable: true },
+  { route: '/academy/refund-policy', locale: 'fr', status: 'published', indexable: true },
+  { route: '/resources/faq', locale: 'fr', status: 'published', indexable: true },
+  { route: '/tools/prayer', locale: 'fr', status: 'published', indexable: true },
+  { route: '/tools/tasbeeh', locale: 'fr', status: 'published', indexable: true },
+  { route: '/tools/arabic-alphabet', locale: 'fr', status: 'published', indexable: true },
+  { route: '/tools/adhkar', locale: 'fr', status: 'published', indexable: true },
 ];
 
 // The URL path to navigate to for one manifest entry, e.g. "/ar/courses/ijazah".
@@ -201,22 +249,49 @@ export function canonicalUrlFor(entry) {
   return ORIGIN + urlPathFor(entry);
 }
 
-// The exact 3 hreflang alternates a prerendered page must carry: en, ar,
-// and x-default (pointing at the English version, the established
-// convention already used in index.html's own static block). Depends only
-// on entry.route, not entry.locale — the en and ar versions of the same
-// route are reciprocal alternates of each other, so both locale entries
-// for one route share this same set. No it/es/de/fr: this pilot only ever
-// publishes en/ar (see PRERENDER_MANIFEST's own comment above), so those
-// languages have no real alternate page to point to here.
+// Every locale actually 'published' for one exact route, e.g. ['en','ar']
+// or ['en','ar','fr'] — never a fixed/hardcoded set, so hreflang and
+// og:locale automatically stay in sync with PRERENDER_MANIFEST as routes
+// gain (or lose) a published locale, with no second list to keep in sync.
+function publishedLocalesForRoute(route) {
+  return PRERENDER_MANIFEST.filter((e) => e.route === route && e.status === 'published').map((e) => e.locale);
+}
+
+// The hreflang alternates a prerendered page must carry: one per locale
+// actually published for this exact route (reciprocal — every locale
+// version of a route shares this same set, since it depends only on
+// entry.route, not entry.locale), plus x-default pointing at the English
+// version (the established convention already used in index.html's own
+// static block). A locale never appears here unless PRERENDER_MANIFEST has
+// a real 'published' entry for that (route, locale) pair — no alternate is
+// ever claimed for a page that has no real HTML behind it.
 export function hreflangLinksFor(entry) {
   const enHref = ORIGIN + pathFor(entry.route, 'en');
-  const arHref = ORIGIN + pathFor(entry.route, 'ar');
-  return [
-    { hreflang: 'en', href: enHref },
-    { hreflang: 'ar', href: arHref },
-    { hreflang: 'x-default', href: enHref },
-  ];
+  const links = publishedLocalesForRoute(entry.route).map((locale) => ({
+    hreflang: locale,
+    href: ORIGIN + pathFor(entry.route, locale),
+  }));
+  links.push({ hreflang: 'x-default', href: enHref });
+  return links;
+}
+
+// Open Graph locale tags per locale this pilot ever publishes. Kept as an
+// explicit map (not derived from src/i18n's LANGS) so adding a new
+// unpublished i18n locale file never silently changes prerendered og:locale
+// output — only a real PRERENDER_MANIFEST entry can do that, same guarantee
+// hreflangLinksFor already gives.
+const OG_LOCALE_BY_LANG = { en: 'en_GB', ar: 'ar_EG', fr: 'fr_FR' };
+
+// The self og:locale plus every reciprocal og:locale:alternate for one
+// prerendered page — same "only real published (route, locale) pairs"
+// guarantee as hreflangLinksFor, and depends on entry.locale (unlike
+// hreflangLinksFor) since og:locale has no separate x-default concept.
+export function ogLocaleFor(entry) {
+  const others = publishedLocalesForRoute(entry.route).filter((locale) => locale !== entry.locale);
+  return {
+    primary: OG_LOCALE_BY_LANG[entry.locale],
+    alternates: others.map((locale) => OG_LOCALE_BY_LANG[locale]),
+  };
 }
 
 // Where prerender.mjs writes, and prerenderOutput.test.js reads, this

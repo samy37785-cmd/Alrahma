@@ -31,7 +31,7 @@ import { spawn, spawnSync } from 'node:child_process';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { PRERENDER_MANIFEST, urlPathFor, canonicalUrlFor, outputRelPathFor, hreflangLinksFor } from './prerender-routes.mjs';
+import { PRERENDER_MANIFEST, urlPathFor, canonicalUrlFor, outputRelPathFor, hreflangLinksFor, ogLocaleFor } from './prerender-routes.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..');
@@ -136,15 +136,16 @@ function waitForServer(proc, url, timeoutMs = 30000) {
 }
 
 // index.html's static <head> (which every navigated page starts from,
-// prerendered or not) bakes in one fixed hreflang block — en/it/fr, no ar
-// (see index.html's own comment: "omitted until Phase 2 prerenders real
-// /ar/... pages"). That block is now simply wrong on a page this script IS
-// prerendering for real: it/fr point at pages that were never proven real
-// or distinct here, and ar — the one language actually being prerendered —
-// is missing entirely. Fixed here, as a post-process on the captured HTML
-// string (not in useSEO.js or index.html), because those two still serve
-// every OTHER, non-prerendered route, which this pilot has proven nothing
-// about and must not start claiming a hreflang set for.
+// prerendered or not) bakes in one fixed hreflang block (currently just
+// en + x-default — see index.html's own comment) and a fixed og:locale
+// block (en_GB primary, ar_EG/it_IT/es_ES/de_DE/fr_FR as alternates, none
+// of it ever corrected per page). Both are simply wrong on a page this
+// script IS prerendering for real: the static block was never written for
+// any one specific (route, locale) pair. Fixed here, as a post-process on
+// the captured HTML string (not in useSEO.js or index.html), because those
+// two still serve every OTHER, non-prerendered route, which this pilot has
+// proven nothing about and must not start claiming a hreflang/og:locale set
+// for.
 const HREFLANG_LINK_RE = /<link\b[^>]*\bhreflang=["'][^"']*["'][^>]*>\s*/gi;
 
 function fixHreflangLinks(html, entry) {
@@ -153,6 +154,25 @@ function fixHreflangLinks(html, entry) {
     .map(({ hreflang, href }) => `<link rel="alternate" hreflang="${hreflang}" href="${href}">`)
     .join('');
   return withoutInheritedLinks.replace('</head>', `${correctLinks}</head>`);
+}
+
+// Same fix, same reasoning, for og:locale — the static shell's og:locale
+// block is unconditionally wrong for any one prerendered page (its primary
+// is always en_GB regardless of entry.locale), so it is replaced with the
+// real self og:locale plus a reciprocal og:locale:alternate per other
+// locale actually published for this exact route (ogLocaleFor, from
+// prerender-routes.mjs — the same PRERENDER_MANIFEST-derived source
+// hreflangLinksFor already uses, so the two can never independently drift).
+const OG_LOCALE_META_RE = /<meta\b[^>]*\bproperty=["']og:locale(?::alternate)?["'][^>]*>\s*/gi;
+
+function fixOgLocale(html, entry) {
+  const withoutInheritedMeta = html.replace(OG_LOCALE_META_RE, '');
+  const { primary, alternates } = ogLocaleFor(entry);
+  const correctMeta = [
+    `<meta property="og:locale" content="${primary}">`,
+    ...alternates.map((locale) => `<meta property="og:locale:alternate" content="${locale}">`),
+  ].join('');
+  return withoutInheritedMeta.replace('</head>', `${correctMeta}</head>`);
 }
 
 async function launchBrowser(chromium) {
@@ -259,7 +279,7 @@ async function run() {
         await waitForHydratedSeo(page, entry);
 
         const rawHtml = await page.content();
-        const html = fixHreflangLinks(rawHtml, entry);
+        const html = fixOgLocale(fixHreflangLinks(rawHtml, entry), entry);
         const outRelPath = outputRelPathFor(entry);
         const outAbsPath = join(distDir, outRelPath);
         await mkdir(dirname(outAbsPath), { recursive: true });

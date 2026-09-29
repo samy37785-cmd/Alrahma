@@ -24,6 +24,9 @@
 - [Prayer Times](https://al-rahmaacademy.com/tools/prayer): Prayer times, Qibla and Islamic calendar.
 - [Blog](https://al-rahmaacademy.com/resources/blog): Articles on Quran learning, Tajweed and Arabic.
 
+## Locale pages (pre-rendered)
+- [French landing page](https://al-rahmaacademy.com/fr/): Same academy, presented in French — one of 29 pages actually pre-rendered in French (see the site's sitemap.xml for the full list).
+
 ## Contact
 - WhatsApp: +20 103 955 3264
 - Email: alrahmaacademy038@gmail.com

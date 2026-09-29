@@ -82,11 +82,13 @@ describe('Home SEO metadata: real Arabic, not an English fallback', () => {
     expect(arOccurrences).toBe(1);
   });
 
-  it('a legacy language without real Home copy (e.g. it) falls back to the English object, not an invented translation', () => {
-    expect(pickHomeSeo('it')).toBe(HOME_SEO_TEXT.en);
+  it('a legacy language without real Home copy (e.g. es) falls back to the English object, not an invented translation', () => {
     expect(pickHomeSeo('es')).toBe(HOME_SEO_TEXT.en);
-    // French Localization Batch 1A added a real `fr` entry (see frenchBatch1aPages.test.jsx).
-    expect(Object.keys(HOME_SEO_TEXT)).toEqual(['en', 'ar', 'fr']);
+    // French Localization Batch 1A added a real `fr` entry (see
+    // frenchBatch1aPages.test.jsx); Italian Batch 1A added a real `it`
+    // entry (see italianBatch1aPages.test.jsx) -- `it` removed from the
+    // legacy-fallback check above accordingly.
+    expect(Object.keys(HOME_SEO_TEXT)).toEqual(['en', 'ar', 'fr', 'it']);
   });
 });
 

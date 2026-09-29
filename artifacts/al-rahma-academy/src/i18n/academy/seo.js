@@ -36,6 +36,14 @@ export const ACADEMY_SEO_TEXT = {
     description:
       "Découvrez Al-Rahma Academy — notre mission, nos enseignants, nos politiques et comment commencer avec une leçon d'essai gratuite.",
   },
+  // Italian Batch 1A: faithful translation of the English description
+  // above (same scope: mission, teachers, policies, free trial — nothing
+  // added). Ordinary marketing copy only. Italian still unpublished for
+  // SEO.
+  it: {
+    description:
+      'Scopri Al-Rahma Academy — la nostra missione, i nostri insegnanti, le nostre politiche e come iniziare con una lezione di prova gratuita.',
+  },
 };
 
 export function pickAcademySeo(lang) {

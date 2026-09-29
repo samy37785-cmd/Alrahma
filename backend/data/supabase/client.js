@@ -41,6 +41,8 @@
 // to GET /api/v1/admin/invoices — see data/supabase/admin/
 // invoicesAdminController.js — which runs under the real, AAL2-capable
 // admin router instead.)
+import fs from 'node:fs';
+import { X509Certificate } from 'node:crypto';
 import pg from 'pg';
 
 let pool;
@@ -56,6 +58,41 @@ function getConnectionString() {
   return url;
 }
 
+// Optional escape hatch for "self-signed certificate in certificate chain"
+// (Node's default trusted CA store not recognizing the chain a given
+// Postgres/Supabase endpoint presents) WITHOUT weakening TLS: when set,
+// SUPABASE_CA_CERT_PATH must point at a local PEM file containing the CA
+// Node should additionally trust for this connection; rejectUnauthorized
+// stays true either way — a bad/missing CA never falls back to disabling
+// verification, it fails closed instead. Never logs or returns the PEM
+// contents on the error path, only the path and the underlying error's own
+// (content-free) message.
+function loadCaCert() {
+  const caPath = process.env.SUPABASE_CA_CERT_PATH;
+  if (!caPath) return undefined;
+
+  let pem;
+  try {
+    pem = fs.readFileSync(caPath, 'utf8');
+  } catch (err) {
+    throw new Error(
+      `SUPABASE_CA_CERT_PATH is set to "${caPath}" but the file could not be read: ${err.message}`
+    );
+  }
+
+  try {
+    // Structural validation only (a real PEM-encoded certificate) — never
+    // logs or echoes `pem` itself.
+    new X509Certificate(pem);
+  } catch (err) {
+    throw new Error(
+      `SUPABASE_CA_CERT_PATH ("${caPath}") does not contain a valid PEM certificate: ${err.message}`
+    );
+  }
+
+  return pem;
+}
+
 export function getPool() {
   if (!pool) {
     const connectionString = getConnectionString();
@@ -68,10 +105,16 @@ export function getPool() {
     // (impossible to point at the real project without TLS), not a flag
     // someone could accidentally leave permissive in production.
     const isLocal = host === 'localhost' || host === '127.0.0.1';
-    pool = new pg.Pool({
-      connectionString,
-      ssl: isLocal ? false : { rejectUnauthorized: true },
-    });
+    let ssl = false;
+    if (!isLocal) {
+      const ca = loadCaCert();
+      // rejectUnauthorized: true unconditionally — ca (when present) adds a
+      // trusted root on top of Node's default store, it never replaces or
+      // loosens verification. There is no code path here that can produce
+      // rejectUnauthorized: false for a non-local host.
+      ssl = ca ? { rejectUnauthorized: true, ca } : { rejectUnauthorized: true };
+    }
+    pool = new pg.Pool({ connectionString, ssl });
   }
   return pool;
 }

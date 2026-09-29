@@ -56,8 +56,14 @@ const it = {
     "badge1": "✓ Una lezione di prova gratuita — senza carta",
     "badge2": "✓ Insegnanti certificati Ijazah con catena verificata",
     "badge3": "✓ Insegnanti donne disponibili · orari 24/7",
-    "verseQuote": "\"Leggi nel nome del tuo Signore che ha creato.\"",
-    "verseRef": "Sura Al-'Alaq · 96:1",
+    // Italian Batch 0 — Religious Source-Language Policy Alignment: this
+    // Quran verse quote and its Surah reference are the literal English
+    // source (en.js), not an Italian translation — per the owner-approved
+    // policy, no Italian translation of Quran text is created in-project
+    // without a licensed source, mirroring the same correction already
+    // applied to fr.js's adhkarText.js entries.
+    "verseQuote": "\"Read in the name of your Lord who created.\"",
+    "verseRef": "Surah Al-'Alaq · 96:1",
     "iqraRead": "Leggi",
     "certifiedTutors": "Insegnanti certificati",
     "watchDemo": "Guarda una lezione dal vivo",

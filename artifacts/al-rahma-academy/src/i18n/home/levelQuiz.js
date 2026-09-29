@@ -212,4 +212,73 @@ export const LEVEL_QUIZ_TEXT = {
     learnMoreBtn: 'En savoir plus sur ce cours',
     retakeBtn: '← Refaire le quiz',
   },
+  // Italian Batch 1A: a faithful translation of `en` above -- same
+  // courses, same "4–6 months" figure, nothing added. This is quiz
+  // interface text and ordinary course-description copy (the same genre
+  // already published throughout it.js's own `courses` section, e.g.
+  // "Sanad collegato al Profeta ﷺ"), not a translation of Quran, hadith
+  // or dua text itself -- no ayah, hadith wording, or dua meaning/virtue
+  // appears in this file. Reuses it.js's own established terms
+  // (courses.items titles, hubs.learnMore "Scopri di più") for
+  // consistency. The Ijazah recommendation's sanad wording is owner/
+  // religious-review-recommended before publication, same as the
+  // equivalent French text -- non-blocking for this batch.
+  it: {
+    eyebrow: 'Trova il tuo corso',
+    heading: '3 domande → il tuo piano di lezioni perfetto',
+    steps: {
+      arabic: {
+        question: "Tuo figlio (o tu) sa leggere l'arabo?",
+        options: {
+          none: 'Non ancora — si parte da zero',
+          basic: 'Qualche lettera — serve pratica',
+          fluent: "Sì, sa già leggere l'arabo",
+        },
+      },
+      goal: {
+        question: 'Qual è il tuo obiettivo principale?',
+        options: {
+          read: 'Imparare a leggere correttamente il Corano',
+          memorize: 'Memorizzare il Corano (Hifz)',
+          ijazah: 'Ottenere una certificazione Ijazah',
+          islamic: 'Studi Islamici / Arabo',
+        },
+      },
+      who: {
+        question: 'Per chi è pensato questo corso?',
+        options: {
+          child: 'Mio figlio (sotto i 12 anni)',
+          teen: 'Il mio adolescente (12–17 anni)',
+          adult: 'Per me stesso (adulto)',
+          family: 'Più membri della famiglia',
+        },
+      },
+    },
+    recommendations: {
+      read: {
+        title: 'Lettura del Corano — Noorani Qaida',
+        desc: 'Inizia dalla primissima lettera. I nostri insegnanti accompagnano chi parte da zero fino a una lettura sicura del Corano in 4–6 mesi.',
+        badge: '🌱 Perfetto per principianti',
+      },
+      memorize: {
+        title: 'Memorizzazione del Corano (Hifz)',
+        desc: 'Un piano di Hifz strutturato con revisione quotidiana, ripetizione dilazionata e un percorso personale — per tutte le età.',
+        badge: '🏆 Il corso più richiesto',
+      },
+      ijazah: {
+        title: 'Corso Ijazah del Corano',
+        desc: "Ottieni un'Ijazah con una catena (sanad) che risale al Profeta ﷺ — insegnata direttamente da chi possiede l'Ijazah.",
+        badge: '📜 Certificazione avanzata',
+      },
+      islamic: {
+        title: 'Studi Islamici e Arabo',
+        desc: "Aqeedah, Fiqh, Seerah, Hadith, Tafsir — oltre alle basi dell'arabo — nella tua lingua.",
+        badge: '🌍 Adatto a tutti i livelli',
+      },
+    },
+    resultEyebrow: 'Il tuo consiglio personalizzato',
+    startTrialBtn: 'Inizia la prova gratuita — senza carta',
+    learnMoreBtn: 'Scopri di più su questo corso',
+    retakeBtn: '← Rifai il quiz',
+  },
 };

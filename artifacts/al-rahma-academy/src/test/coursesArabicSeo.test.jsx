@@ -83,11 +83,13 @@ describe.each(ROUTES)('%s: Courses SEO metadata: real Arabic, not an English fal
     expect(arOccurrences).toBe(1);
   });
 
-  it('a legacy language without real copy (e.g. it) falls back to the English object, not an invented translation', () => {
-    expect(pickCoursesSeo(route, 'it')).toBe(COURSES_SEO_TEXT[route].en);
+  it('a legacy language without real copy (e.g. es) falls back to the English object, not an invented translation', () => {
     expect(pickCoursesSeo(route, 'es')).toBe(COURSES_SEO_TEXT[route].en);
-    // French Localization Batch 1A added a real `fr` entry (see frenchBatch1aPages.test.jsx).
-    expect(Object.keys(COURSES_SEO_TEXT[route])).toEqual(['en', 'ar', 'fr']);
+    // French Localization Batch 1A added a real `fr` entry (see
+    // frenchBatch1aPages.test.jsx); Italian Batch 1A added a real `it`
+    // entry (see italianBatch1aPages.test.jsx) -- `it` removed from the
+    // legacy-fallback check above accordingly.
+    expect(Object.keys(COURSES_SEO_TEXT[route])).toEqual(['en', 'ar', 'fr', 'it']);
   });
 });
 

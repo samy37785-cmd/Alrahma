@@ -46,6 +46,18 @@ export const HOME_SEO_TEXT = {
     description: `Cours particuliers de Coran, de tajwid et d'arabe en ligne avec des enseignants certifiés par Al-Azhar. ${siteFacts.totalStudents} élèves dans ${siteFacts.countriesServed} pays nous font confiance. Une leçon d'essai gratuite — sans aucun paiement.`,
     keywords: 'apprendre le coran en ligne, cours de coran en ligne, professeur de coran, cours de tajwid, enseignant al-azhar, études islamiques en ligne, coran pour enfants, hifz en ligne',
   },
+  // Italian Batch 1A: a faithful translation of the English entry above
+  // (same facts, same siteFacts figures, nothing added; reuses "insegnanti
+  // certificati di Al-Azhar" exactly as already published in it.js's own
+  // hero.sub). No Quran verse, hadith, dua or religious meaning is
+  // translated here -- this is ordinary marketing title/description/
+  // keywords copy. Italian is still unpublished for SEO: no sitemap,
+  // hreflang or prerender entry (unchanged by this batch).
+  it: {
+    title: 'Impara il Corano online',
+    description: `Lezioni individuali online di Corano, Tajweed e arabo con insegnanti certificati di Al-Azhar, di cui si fidano ${siteFacts.totalStudents} studenti in ${siteFacts.countriesServed} paesi. Una lezione di prova gratuita — senza alcun pagamento.`,
+    keywords: 'imparare il corano online, corsi di corano online, insegnante di corano, lezioni di tajweed, insegnante al-azhar, studi islamici online, corano per bambini, hifz online',
+  },
 };
 
 export function pickHomeSeo(lang) {

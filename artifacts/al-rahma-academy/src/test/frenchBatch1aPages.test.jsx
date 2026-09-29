@@ -228,13 +228,22 @@ describe('French text modules: complete, faithful, nothing invented', () => {
     expect(fr.hubs.arabic.heading).toBe('Alphabet arabe et italien');
   });
 
-  it('it/es/de are still not translated (fall back to English)', async () => {
+  // Italian Batch 1A added real `it` entries to HOME_SEO_TEXT and
+  // LEVEL_QUIZ_TEXT (see italianBatch1aPages.test.jsx) -- `it` is
+  // therefore removed from those two checks below, but founderStory.js is
+  // a later, separate batch and `it` still falls back to English there.
+  it('es/de are still not translated in HOME_SEO_TEXT/LEVEL_QUIZ_TEXT (fall back to English)', async () => {
     const { pickHomeSeo } = await import('../i18n/home/seo');
+    for (const lang of ['es', 'de']) {
+      expect(pickHomeSeo(lang)).toBe(HOME_SEO_TEXT.en);
+      expect(LEVEL_QUIZ_TEXT[lang]).toBeUndefined();
+    }
+  });
+
+  it('it/es/de are still not translated in founderStory.js (fall back to English)', async () => {
     const { pickFounderStory } = await import('../i18n/about/founderStory');
     for (const lang of ['it', 'es', 'de']) {
-      expect(pickHomeSeo(lang)).toBe(HOME_SEO_TEXT.en);
       expect(pickFounderStory(lang)).toBe(FOUNDER_STORY_TEXT.en);
-      expect(LEVEL_QUIZ_TEXT[lang]).toBeUndefined();
     }
   });
 });

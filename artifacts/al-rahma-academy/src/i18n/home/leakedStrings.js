@@ -43,6 +43,21 @@ export const HOME_LEAKED_STRINGS_TEXT = {
     quranPlayingLabel: 'Coran en lecture',
     refundWindowStat: '24 jours',
   },
+  // Italian Batch 1A: ordinary UI badges/buttons/labels only -- not a
+  // translation of the Quran or any religious text. playQuranLabel/
+  // quranPlayingLabel name the audio-player button that plays a Quran
+  // recitation; the recitation itself is untouched by this file. Reuses
+  // it.js's own established terms (mostPopular: "Più popolare",
+  // "Sfoglia" for "Browse").
+  it: {
+    mostPopularCourseBadge: 'Più popolare',
+    startFreeTrialLink: 'Inizia la tua prova gratuita',
+    featuredTutorBadge: 'Insegnante in evidenza',
+    browseFullCurriculum: 'Sfoglia il programma completo',
+    playQuranLabel: 'Ascolta il Corano',
+    quranPlayingLabel: 'Corano in riproduzione',
+    refundWindowStat: '24 giorni',
+  },
 };
 
 export function pickLeakedString(key, lang) {
@@ -88,6 +103,19 @@ export const COURSE_OPTION_LABELS_TEXT = {
     'Quran Ijazah': 'Ijaza du Coran',
     'Islamic Studies': 'Études islamiques',
     'Arabic Language': 'Langue arabe',
+  },
+  // Italian Batch 1A: display labels only, keyed by the exact English
+  // value Trial.jsx still submits unchanged -- the submitted value never
+  // changes. Reuses it.js's own established course names verbatim
+  // (nav.quranIjazah, nav.islamicStudies, enroll.step2.subjectLabels'
+  // "Lingua Araba") for consistency.
+  it: {
+    'Quran Reading (Noorani Qaida)': 'Lettura del Corano (Noorani Qaida)',
+    'Recitation with Tajweed': 'Recitazione con Tajweed',
+    'Quran Memorization (Hifz)': 'Memorizzazione del Corano (Hifz)',
+    'Quran Ijazah': 'Ijazah del Corano',
+    'Islamic Studies': 'Studi Islamici',
+    'Arabic Language': 'Lingua Araba',
   },
 };
 

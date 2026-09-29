@@ -57,6 +57,18 @@ export const COURSES_SEO_TEXT = {
       keywords:
         "cours de coran en ligne, cours de tajwid, programme de hifz, ijaza du coran, études islamiques en ligne, cours d'alphabet arabe, enseignants certifiés al-azhar",
     },
+    // Italian Batch 1A: faithful translation of the English entry above,
+    // reusing it.js's own established course names (nav.quranTajweed,
+    // nav.hifzMem, nav.quranIjazah, nav.islamicStudies, nav.arabicAlphabet)
+    // for consistency. Ordinary marketing copy only. Italian still
+    // unpublished for SEO.
+    it: {
+      title: 'Corsi',
+      description:
+        'Scopri tutti i corsi online di Corano e scienze islamiche di Al-Rahma Academy — Tajweed, Hifz, Ijazah, Studi Islamici, Alfabeto Arabo e altro ancora.',
+      keywords:
+        'corsi di corano online, corso di tajweed, programma hifz, ijazah del corano, studi islamici online, corso di alfabeto arabo, insegnanti certificati al-azhar',
+    },
   },
   quran: {
     en: {
@@ -80,6 +92,18 @@ export const COURSES_SEO_TEXT = {
       keywords:
         'cours de lecture du coran, cours de tajwid en ligne, mémorisation du coran, cours de hifz, professeur de coran al-azhar, cours de récitation du coran',
     },
+    // Italian Batch 1A: faithful translation of the English entry above
+    // (same "17 languages" figure, the English source's own). Matches
+    // it.js's own hubs.quran.heading ("Corsi di Corano e Tajweed")
+    // exactly. Ordinary marketing copy only. Italian still unpublished
+    // for SEO.
+    it: {
+      title: 'Corsi di Corano e Tajweed',
+      description:
+        'Corsi online di lettura del Corano, Tajweed e Hifz (memorizzazione) con insegnanti certificati Al-Azhar — in 17 lingue.',
+      keywords:
+        'corso di lettura del corano, corso di tajweed online, memorizzazione del corano, corso di hifz, insegnante di corano al-azhar, lezioni di recitazione del corano',
+    },
   },
   arabic: {
     en: {
@@ -102,6 +126,16 @@ export const COURSES_SEO_TEXT = {
         'Apprenez les 28 lettres arabes avec la prononciation audio et des exercices interactifs — idéal pour les débutants qui commencent leur parcours avec le Coran.',
       keywords:
         "cours d'alphabet arabe, apprendre les lettres arabes, prononciation arabe, arabe pour débutants, alphabet arabe du coran",
+    },
+    // Italian Batch 1A: faithful translation of the English entry above
+    // (same "28 letters" figure, the English source's own). Ordinary
+    // marketing copy only. Italian still unpublished for SEO.
+    it: {
+      title: 'Corso di Alfabeto Arabo',
+      description:
+        'Impara le 28 lettere arabe con pronuncia audio ed esercizi interattivi — ideale per chi inizia il proprio percorso con il Corano.',
+      keywords:
+        'corso di alfabeto arabo, imparare le lettere arabe, pronuncia araba, arabo per principianti, alfabeto arabo del corano',
     },
   },
 };

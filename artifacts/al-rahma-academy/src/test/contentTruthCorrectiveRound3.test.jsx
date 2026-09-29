@@ -16,6 +16,7 @@ import { siteFacts, trialLessonPhrase, limitedTrialSpotsText } from '../data/sit
 import { site } from '../data/site';
 import { plans, planComparison } from '../data/home';
 import { TEACHER_CREDENTIALS } from '../data/marketing/teachers';
+import { PRERENDER_MANIFEST } from '../../scripts/prerender-routes.mjs';
 import ReferralCard from '../components/ui/ReferralCard';
 import Pricing from '../components/features/marketing/Pricing';
 
@@ -365,10 +366,10 @@ describe('llms.txt and index.html stay in sync with siteFacts (static files, Par
     expect(txt).not.toMatch(/two free trial classes/i);
   });
 
-  // Correct llms.txt French Pre-render Claim: French has no SEO launch yet
-  // (no sitemap entry, no hreflang, no prerendered /fr/ output), so
-  // llms.txt must not claim a French page exists under "Locale pages
-  // (pre-rendered)" until the real SEO-launch gate. The line is removed,
+  // Correct llms.txt French Pre-render Claim (PR #142): French has no SEO
+  // launch yet (no sitemap entry, no hreflang, no prerendered /fr/ output),
+  // so llms.txt must not claim a French page exists under "Locale pages
+  // (pre-rendered)" until the real SEO-launch gate. The line was removed,
   // not replaced -- llms.txt should simply say nothing about French yet.
   it('llms.txt does not link to /fr/ or claim a French landing page is pre-rendered', () => {
     const txt = fs.readFileSync(path.join(REPO_ROOT, 'public', 'llms.txt'), 'utf8');
@@ -376,13 +377,56 @@ describe('llms.txt and index.html stay in sync with siteFacts (static files, Par
     expect(txt).not.toMatch(/French landing page/i);
   });
 
+  // SEO Truth Correction (2026-09-29): the same problem existed for Italian
+  // -- /it/ was never added to PRERENDER_MANIFEST (only en/ar are
+  // published), so the "Italian landing page (pre-rendered)" line, and the
+  // now-empty "## Locale pages (pre-rendered)" heading it was the sole
+  // entry under, were both removed. This check is intentionally general
+  // (any locale absent from PRERENDER_MANIFEST, not just it/fr by name) so
+  // it keeps catching this exact mistake for any future locale, not only
+  // the two it has already caught.
+  it('llms.txt never claims a "pre-rendered" locale landing page for a locale that is not actually published in PRERENDER_MANIFEST', () => {
+    const txt = fs.readFileSync(path.join(REPO_ROOT, 'public', 'llms.txt'), 'utf8');
+    expect(txt).not.toMatch(/\/it\//);
+    expect(txt).not.toMatch(/Italian landing page/i);
+    expect(txt).not.toMatch(/pre-rendered/i);
+
+    const publishedLocales = new Set(
+      PRERENDER_MANIFEST.filter((entry) => entry.status === 'published').map((entry) => entry.locale),
+    );
+    for (const loc of ['fr', 'it', 'es', 'de']) {
+      expect(publishedLocales.has(loc)).toBe(false);
+    }
+  });
+
   it('llms.txt is otherwise unchanged: every other link and every EN line is intact', () => {
     const txt = fs.readFileSync(path.join(REPO_ROOT, 'public', 'llms.txt'), 'utf8');
     expect(txt).toContain('[Home](https://al-rahmaacademy.com/): Overview of courses, pricing and the free trial.');
-    expect(txt).toContain('[Italian landing page](https://al-rahmaacademy.com/it/)');
     expect(txt).toContain('WhatsApp: +20 103 955 3264');
     expect(txt).toContain('Email: alrahmaacademy038@gmail.com');
-    expect(txt.match(/\(https:\/\/al-rahmaacademy\.com[^)]*\)/g)).toHaveLength(17);
+    expect(txt.match(/\(https:\/\/al-rahmaacademy\.com[^)]*\)/g)).toHaveLength(16);
+  });
+
+  // SEO Truth Correction (2026-09-29): index.html's static hreflang block
+  // used to assert it/fr as "real, self-canonical, reciprocal pages" even
+  // though neither was ever in PRERENDER_MANIFEST. Guards against that
+  // exact claim reappearing for any locale that is not actually published.
+  it('index.html carries no hreflang="fr" or hreflang="it" alternate while those locales remain unpublished', () => {
+    const html = fs.readFileSync(path.join(REPO_ROOT, 'index.html'), 'utf8');
+    expect(html).not.toMatch(/hreflang=["']fr["']/);
+    expect(html).not.toMatch(/hreflang=["']it["']/);
+
+    const publishedLocales = new Set(
+      PRERENDER_MANIFEST.filter((entry) => entry.status === 'published').map((entry) => entry.locale),
+    );
+    expect(publishedLocales.has('fr')).toBe(false);
+    expect(publishedLocales.has('it')).toBe(false);
+  });
+
+  it('index.html still carries the real hreflang="en" and hreflang="x-default" alternates, untouched', () => {
+    const html = fs.readFileSync(path.join(REPO_ROOT, 'index.html'), 'utf8');
+    expect(html).toMatch(/<link rel="alternate" hreflang="en"\s+href="https:\/\/al-rahmaacademy\.com\/" \/>/);
+    expect(html).toMatch(/<link rel="alternate" hreflang="x-default" href="https:\/\/al-rahmaacademy\.com\/" \/>/);
   });
 
   it('index.html\'s Organization JSON-LD foundingDate matches siteFacts and telephone matches site.js (Round 4: the single phone source)', () => {

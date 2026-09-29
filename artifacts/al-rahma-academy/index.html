@@ -26,12 +26,17 @@
   <meta name="author" content="Al-Rahma Academy" />
   <link rel="canonical" href="https://al-rahmaacademy.com/" />
 
-  <!-- hreflang — only en/it/fr are real, self-canonical, reciprocal pages.
-       ar/es/de are query-param only (?lang=), not distinct indexable URLs —
-       omitted until Phase 2 prerenders real /ar/, /es/, /de/ pages. -->
+  <!-- hreflang — only en is a real, self-canonical page linked here today.
+       SEO Truth Correction (2026-09-29): the it/fr alternates were removed —
+       neither locale is actually published or prerendered per
+       scripts/prerender-routes.mjs's PRERENDER_MANIFEST (it was never in
+       it; fr's own entry was already 'unpublished'), so claiming them as
+       reciprocal alternates was misleading to crawlers. ar is genuinely
+       published/prerendered today but is deliberately NOT added here — out
+       of scope for this correction, which only removes false claims and
+       adds no new ones; a future PR can add real hreflang="ar" separately.
+       es/de remain the pre-existing, unchanged query-param-era omission. -->
   <link rel="alternate" hreflang="en"       href="https://al-rahmaacademy.com/" />
-  <link rel="alternate" hreflang="it"       href="https://al-rahmaacademy.com/it/" />
-  <link rel="alternate" hreflang="fr"       href="https://al-rahmaacademy.com/fr/" />
   <link rel="alternate" hreflang="x-default" href="https://al-rahmaacademy.com/" />
 
   <!-- ═══════════════════════════════════════════════════════════════

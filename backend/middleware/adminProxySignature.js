@@ -18,10 +18,16 @@ import logger from '../config/logger.js';
  * falls through to req.ip exactly as it did before this feature existed.
  */
 export function adminProxySignature(req, res, next) {
+  // req.url (mount-relative, like req.path) still carries the query string;
+  // req.path never does. Extracted this way so it matches exactly whichever
+  // raw query string the Vercel side observed on the original request URL.
+  const query = req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
+
   const result = verifyAdminProxySignature({
     headers: req.headers,
     method:  req.method,
     path:    req.path,
+    query,
     rawBody: req.rawBody,
   });
 

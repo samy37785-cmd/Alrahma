@@ -29,15 +29,18 @@ export function hashBody(buf) {
   return crypto.createHash('sha256').update(bytes).digest('hex');
 }
 
-function canonicalString({ method, path, clientIp, timestamp, bodyHash }) {
-  return `${method.toUpperCase()}\n${path}\n${clientIp}\n${timestamp}\n${bodyHash}`;
+function canonicalString({ method, path, query, clientIp, timestamp, bodyHash }) {
+  // query: raw query string INCLUDING its leading '?' when present, or ''.
+  // Must match backend/config/adminProxySigning.js's canonicalString() byte
+  // for byte.
+  return `${method.toUpperCase()}\n${path}\n${query}\n${clientIp}\n${timestamp}\n${bodyHash}`;
 }
 
 /**
  * @param {Buffer} secretBuf
  */
-export function computeSignature(secretBuf, { method, path, clientIp, timestamp, bodyHash }) {
-  const message = canonicalString({ method, path, clientIp, timestamp, bodyHash });
+export function computeSignature(secretBuf, { method, path, query, clientIp, timestamp, bodyHash }) {
+  const message = canonicalString({ method, path, query, clientIp, timestamp, bodyHash });
   return crypto.createHmac('sha256', secretBuf).update(message).digest('hex');
 }
 
@@ -48,12 +51,12 @@ export function computeSignature(secretBuf, { method, path, clientIp, timestamp,
  * so the admin API keeps working exactly as before this feature exists
  * until the secret is deployed on both sides.
  */
-export function buildSignedHeaders({ secretHex, method, path, clientIp, rawBody }) {
+export function buildSignedHeaders({ secretHex, method, path, query = '', clientIp, rawBody }) {
   if (!isValidSigningSecret(secretHex)) return null;
   const secretBuf = Buffer.from(secretHex, 'hex');
   const timestamp = Date.now();
   const bodyHash  = hashBody(rawBody);
-  const signature = computeSignature(secretBuf, { method, path, clientIp, timestamp, bodyHash });
+  const signature = computeSignature(secretBuf, { method, path, query, clientIp, timestamp, bodyHash });
   return {
     [CLIENT_IP_HEADER]: clientIp,
     [TIMESTAMP_HEADER]: String(timestamp),

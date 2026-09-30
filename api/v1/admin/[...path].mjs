@@ -1,5 +1,6 @@
 import { readRawBody } from '../../_lib/readRawBody.mjs';
 import { buildSignedHeaders, extractTrustedClientIp } from '../../_lib/adminProxySigning.mjs';
+import { isPathTraversalAttempt } from '../../_lib/pathSafety.mjs';
 
 /**
  * Signed admin proxy: the ONLY thing on the Vercel side allowed to add
@@ -61,6 +62,15 @@ function buildForwardHeaders(req) {
 }
 
 export default async function handler(req, res) {
+  // Checked before anything else — including reading the body — so a
+  // traversal attempt never reaches fetch()'s URL construction at all.
+  const requestPathname = req.url.split('?')[0];
+  if (isPathTraversalAttempt(requestPathname)) {
+    res.statusCode = 400;
+    res.end(JSON.stringify({ message: 'Invalid path' }));
+    return;
+  }
+
   let rawBody;
   try {
     rawBody = await readRawBody(req);
@@ -72,13 +82,18 @@ export default async function handler(req, res) {
 
   const method   = req.method || 'GET';
   const clientIp = extractTrustedClientIp(req.headers);
-  const fullPath = req.url.split('?')[0];
+  const fullPath = requestPathname;
   // Matches Express's req.path inside the mounted admin router (see
   // ADMIN_MOUNT_PREFIX above) — this is the path value that gets signed
   // and later re-checked by verifyAdminProxySignature() on the Render side.
   const path = fullPath.startsWith(ADMIN_MOUNT_PREFIX)
     ? (fullPath.slice(ADMIN_MOUNT_PREFIX.length) || '/')
     : fullPath;
+  // Raw query string including its leading '?', or '' — matches Express's
+  // req.url (minus req.path) on the Render side exactly, so a request
+  // cannot be replayed with a tampered query string under a still-valid
+  // signature (e.g. GET /enrollments?page=1 rewritten to ?page=2).
+  const query = req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
 
   const forwardHeaders = buildForwardHeaders(req);
 
@@ -89,7 +104,7 @@ export default async function handler(req, res) {
   // docs/admin-proxy-signing-runbook.md for the rollout order.
   const signedHeaders = buildSignedHeaders({
     secretHex: process.env.ADMIN_PROXY_SIGNING_SECRET,
-    method, path, clientIp, rawBody,
+    method, path, query, clientIp, rawBody,
   });
   if (signedHeaders) {
     for (const [key, value] of Object.entries(signedHeaders)) forwardHeaders.set(key, value);

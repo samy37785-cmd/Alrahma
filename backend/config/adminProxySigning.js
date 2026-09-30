@@ -51,14 +51,18 @@ export function hashBody(buf) {
   return crypto.createHash('sha256').update(bytes).digest('hex');
 }
 
-function canonicalString({ method, path, clientIp, timestamp, bodyHash }) {
+function canonicalString({ method, path, query, clientIp, timestamp, bodyHash }) {
   // Order and delimiter are part of the contract with api/_lib/adminProxySigning.mjs
   // on the Vercel side — changing this shape requires updating both ends together.
-  return `${method.toUpperCase()}\n${path}\n${clientIp}\n${timestamp}\n${bodyHash}`;
+  // query is the raw query string INCLUDING its leading '?' when present, or ''
+  // when absent — binding it here means a request cannot be replayed with a
+  // different query (e.g. GET /enrollments?page=1 rewritten to ?page=2) under
+  // an otherwise-valid signature.
+  return `${method.toUpperCase()}\n${path}\n${query}\n${clientIp}\n${timestamp}\n${bodyHash}`;
 }
 
-export function computeSignature({ secret, method, path, clientIp, timestamp, bodyHash }) {
-  const message = canonicalString({ method, path, clientIp, timestamp, bodyHash });
+export function computeSignature({ secret, method, path, query, clientIp, timestamp, bodyHash }) {
+  const message = canonicalString({ method, path, query, clientIp, timestamp, bodyHash });
   return crypto.createHmac('sha256', secret).update(message).digest('hex');
 }
 
@@ -80,10 +84,11 @@ function timingSafeHexEqual(a, b) {
  * @param {Record<string,string>} params.headers  lower-cased request headers
  * @param {string} params.method
  * @param {string} params.path      pathname only (no query string)
+ * @param {string} [params.query]   raw query string including leading '?', or '' — defaults to ''
  * @param {Buffer} params.rawBody
  * @param {number} [params.now]     injectable for tests; defaults to Date.now()
  */
-export function verifyAdminProxySignature({ headers, method, path, rawBody, now = Date.now() }) {
+export function verifyAdminProxySignature({ headers, method, path, query = '', rawBody, now = Date.now() }) {
   let secret;
   try {
     secret = getSigningSecret();
@@ -111,7 +116,7 @@ export function verifyAdminProxySignature({ headers, method, path, rawBody, now 
   }
 
   const bodyHash  = hashBody(rawBody);
-  const expected  = computeSignature({ secret, method, path, clientIp, timestamp, bodyHash });
+  const expected  = computeSignature({ secret, method, path, query, clientIp, timestamp, bodyHash });
 
   if (!timingSafeHexEqual(signature, expected)) {
     return { ok: false, reason: 'signature_mismatch' };

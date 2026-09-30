@@ -68,6 +68,13 @@ const ORIGIN = 'https://al-rahmaacademy.com';
 // all three locales and CourseIslamicStudies.jsx's "Hadith of the Day" no
 // longer freezes a Date.now()-computed value into the prerendered file (see
 // scripts/prerender-routes.mjs's own comment on this entry).
+//
+// Tajweed Checker SEO Publication Gate (2026-09-30): /tools/tajweed-checker
+// joined as a 31st route, en+ar+fr all at once, once a dedicated readiness
+// audit found no real blocker at all — no fetch/geolocation/localStorage/
+// session/Date.now() affecting initial render, and the SpeechRecognition mic
+// flow only ever starts on a real user's own click, never during prerender's
+// own automated page load (see scripts/prerender-routes.mjs's own comment).
 const ROUTES = [
   '/',
   '/courses',
@@ -80,6 +87,7 @@ const ROUTES = [
   '/academy/teachers',
   '/resources',
   '/tools',
+  '/tools/tajweed-checker',
   ...Array.from({ length: 11 }, (_, i) => `/academy/teachers/${i + 1}`),
   '/academy/privacy',
   '/academy/terms',
@@ -103,9 +111,11 @@ function pathForLocale(route, locale) {
 const EXPECTED_EN_URLS = ROUTES.map((route) => ORIGIN + pathForLocale(route, 'en'));
 const EXPECTED_AR_URLS = ROUTES.map((route) => ORIGIN + pathForLocale(route, 'ar'));
 const EXPECTED_FR_URLS = ROUTES.map((route) => ORIGIN + pathForLocale(route, 'fr'));
-// Italian SEO wave: it publishes every route above EXCEPT the two whose own
-// waves are separate (/courses/ijazah and /courses/islamic-studies).
-const IT_EXCLUDED_ROUTES = ['/courses/ijazah', '/courses/islamic-studies'];
+// Italian SEO wave: it publishes every route above EXCEPT the ones whose
+// own waves are separate (/courses/ijazah, /courses/islamic-studies) and
+// /tools/tajweed-checker (en+ar+fr only, per the Tajweed Checker SEO
+// Publication Gate — Italian publication is out of that wave's scope).
+const IT_EXCLUDED_ROUTES = ['/courses/ijazah', '/courses/islamic-studies', '/tools/tajweed-checker'];
 const IT_ROUTES = ROUTES.filter((route) => !IT_EXCLUDED_ROUTES.includes(route));
 const EXPECTED_IT_URLS = IT_ROUTES.map((route) => ORIGIN + pathForLocale(route, 'it'));
 const EXPECTED_URLS = [...EXPECTED_EN_URLS, ...EXPECTED_AR_URLS, ...EXPECTED_FR_URLS, ...EXPECTED_IT_URLS];
@@ -141,7 +151,7 @@ describe('sitemap.xml — exact published-routes whitelist', () => {
     expect(getLocUrls()).toHaveLength(EXPECTED_URLS.length);
   });
 
-  it('splits into exactly 30 EN, 30 AR, 30 FR and 28 IT URLs', () => {
+  it('splits into exactly 31 EN, 31 AR, 31 FR and 28 IT URLs', () => {
     const locs = getLocUrls();
     const byPrefix = (l) => locs.filter((u) => u.startsWith(`${ORIGIN}/${l}/`) || u === `${ORIGIN}/${l}`);
     const arUrls = byPrefix('ar');
@@ -152,6 +162,9 @@ describe('sitemap.xml — exact published-routes whitelist', () => {
     expect(arUrls).toHaveLength(EXPECTED_AR_URLS.length);
     expect(frUrls).toHaveLength(EXPECTED_FR_URLS.length);
     expect(itUrls).toHaveLength(EXPECTED_IT_URLS.length);
+    expect(enUrls).toHaveLength(31);
+    expect(arUrls).toHaveLength(31);
+    expect(frUrls).toHaveLength(31);
     expect(itUrls).toHaveLength(28);
   });
 
@@ -180,7 +193,6 @@ describe('sitemap.xml — exact published-routes whitelist', () => {
       '/tools/qibla',
       '/tools/islamic-calendar',
       '/tools/verse-of-the-day',
-      '/tools/tajweed-checker',
       '/tools/hifz-review',
     ]) {
       expect(locs.some((u) => u.includes(forbidden))).toBe(false);

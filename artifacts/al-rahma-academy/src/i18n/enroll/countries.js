@@ -10,38 +10,42 @@
 // label is added per language.
 //
 // en/ar are the original labels; fr (French Localization Batch 1C) gives the
-// standard French country name for each English label. it/es/de are
-// intentionally left undefined here (see countryLabel()'s fallback) -- they
-// render the English name until a real translation pass covers them. The
-// submitted `value` never changes.
+// standard French country name for each English label. Italian Batch 1B
+// adds `it` the same way -- this is the second half of that batch's country
+// names task: the trust-bar ticker (src/i18n/home/countries.js) and this
+// Step1 form dropdown are two separate files/lists, and both had to gain
+// `it` for a visitor booking a trial to see Italian country names
+// end-to-end. es/de are still intentionally left undefined here (see
+// countryLabel()'s fallback) -- they render the English name until a real
+// translation pass covers them. The submitted `value` never changes.
 export const COUNTRIES = [
-  { value: 'United Kingdom', en: 'United Kingdom', ar: 'المملكة المتحدة', fr: 'Royaume-Uni' },
-  { value: 'Italy',          en: 'Italy',          ar: 'إيطاليا', fr: 'Italie' },
-  { value: 'France',         en: 'France',         ar: 'فرنسا', fr: 'France' },
-  { value: 'Germany',        en: 'Germany',        ar: 'ألمانيا', fr: 'Allemagne' },
-  { value: 'Spain',          en: 'Spain',          ar: 'إسبانيا', fr: 'Espagne' },
-  { value: 'Netherlands',    en: 'Netherlands',    ar: 'هولندا', fr: 'Pays-Bas' },
-  { value: 'Belgium',        en: 'Belgium',        ar: 'بلجيكا', fr: 'Belgique' },
-  { value: 'Switzerland',    en: 'Switzerland',    ar: 'سويسرا', fr: 'Suisse' },
-  { value: 'Austria',        en: 'Austria',        ar: 'النمسا', fr: 'Autriche' },
-  { value: 'Sweden',         en: 'Sweden',         ar: 'السويد', fr: 'Suède' },
-  { value: 'Denmark',        en: 'Denmark',        ar: 'الدنمارك', fr: 'Danemark' },
-  { value: 'Norway',         en: 'Norway',         ar: 'النرويج', fr: 'Norvège' },
-  { value: 'United States',  en: 'United States',  ar: 'الولايات المتحدة', fr: 'États-Unis' },
-  { value: 'Canada',         en: 'Canada',         ar: 'كندا', fr: 'Canada' },
-  { value: 'Australia',      en: 'Australia',      ar: 'أستراليا', fr: 'Australie' },
-  { value: 'New Zealand',    en: 'New Zealand',    ar: 'نيوزيلندا', fr: 'Nouvelle-Zélande' },
-  { value: 'Egypt',          en: 'Egypt',          ar: 'مصر', fr: 'Égypte' },
-  { value: 'Saudi Arabia',   en: 'Saudi Arabia',   ar: 'السعودية', fr: 'Arabie saoudite' },
-  { value: 'UAE',            en: 'UAE',            ar: 'الإمارات', fr: 'Émirats arabes unis' },
-  { value: 'Qatar',          en: 'Qatar',          ar: 'قطر', fr: 'Qatar' },
-  { value: 'Kuwait',         en: 'Kuwait',          ar: 'الكويت', fr: 'Koweït' },
-  { value: 'Jordan',         en: 'Jordan',          ar: 'الأردن', fr: 'Jordanie' },
-  { value: 'Morocco',        en: 'Morocco',         ar: 'المغرب', fr: 'Maroc' },
-  { value: 'Tunisia',        en: 'Tunisia',         ar: 'تونس', fr: 'Tunisie' },
-  { value: 'Algeria',        en: 'Algeria',         ar: 'الجزائر', fr: 'Algérie' },
-  { value: 'Turkey',         en: 'Turkey',          ar: 'تركيا', fr: 'Turquie' },
-  { value: 'Other',          en: 'Other',           ar: 'أخرى', fr: 'Autre' },
+  { value: 'United Kingdom', en: 'United Kingdom', ar: 'المملكة المتحدة', fr: 'Royaume-Uni', it: 'Regno Unito' },
+  { value: 'Italy',          en: 'Italy',          ar: 'إيطاليا', fr: 'Italie', it: 'Italia' },
+  { value: 'France',         en: 'France',         ar: 'فرنسا', fr: 'France', it: 'Francia' },
+  { value: 'Germany',        en: 'Germany',        ar: 'ألمانيا', fr: 'Allemagne', it: 'Germania' },
+  { value: 'Spain',          en: 'Spain',          ar: 'إسبانيا', fr: 'Espagne', it: 'Spagna' },
+  { value: 'Netherlands',    en: 'Netherlands',    ar: 'هولندا', fr: 'Pays-Bas', it: 'Paesi Bassi' },
+  { value: 'Belgium',        en: 'Belgium',        ar: 'بلجيكا', fr: 'Belgique', it: 'Belgio' },
+  { value: 'Switzerland',    en: 'Switzerland',    ar: 'سويسرا', fr: 'Suisse', it: 'Svizzera' },
+  { value: 'Austria',        en: 'Austria',        ar: 'النمسا', fr: 'Autriche', it: 'Austria' },
+  { value: 'Sweden',         en: 'Sweden',         ar: 'السويد', fr: 'Suède', it: 'Svezia' },
+  { value: 'Denmark',        en: 'Denmark',        ar: 'الدنمارك', fr: 'Danemark', it: 'Danimarca' },
+  { value: 'Norway',         en: 'Norway',         ar: 'النرويج', fr: 'Norvège', it: 'Norvegia' },
+  { value: 'United States',  en: 'United States',  ar: 'الولايات المتحدة', fr: 'États-Unis', it: 'Stati Uniti' },
+  { value: 'Canada',         en: 'Canada',         ar: 'كندا', fr: 'Canada', it: 'Canada' },
+  { value: 'Australia',      en: 'Australia',      ar: 'أستراليا', fr: 'Australie', it: 'Australia' },
+  { value: 'New Zealand',    en: 'New Zealand',    ar: 'نيوزيلندا', fr: 'Nouvelle-Zélande', it: 'Nuova Zelanda' },
+  { value: 'Egypt',          en: 'Egypt',          ar: 'مصر', fr: 'Égypte', it: 'Egitto' },
+  { value: 'Saudi Arabia',   en: 'Saudi Arabia',   ar: 'السعودية', fr: 'Arabie saoudite', it: 'Arabia Saudita' },
+  { value: 'UAE',            en: 'UAE',            ar: 'الإمارات', fr: 'Émirats arabes unis', it: 'Emirati Arabi Uniti' },
+  { value: 'Qatar',          en: 'Qatar',          ar: 'قطر', fr: 'Qatar', it: 'Qatar' },
+  { value: 'Kuwait',         en: 'Kuwait',          ar: 'الكويت', fr: 'Koweït', it: 'Kuwait' },
+  { value: 'Jordan',         en: 'Jordan',          ar: 'الأردن', fr: 'Jordanie', it: 'Giordania' },
+  { value: 'Morocco',        en: 'Morocco',         ar: 'المغرب', fr: 'Maroc', it: 'Marocco' },
+  { value: 'Tunisia',        en: 'Tunisia',         ar: 'تونس', fr: 'Tunisie', it: 'Tunisia' },
+  { value: 'Algeria',        en: 'Algeria',         ar: 'الجزائر', fr: 'Algérie', it: 'Algeria' },
+  { value: 'Turkey',         en: 'Turkey',          ar: 'تركيا', fr: 'Turquie', it: 'Turchia' },
+  { value: 'Other',          en: 'Other',           ar: 'أخرى', fr: 'Autre', it: 'Altro' },
 ];
 
 // entry[lang] is undefined for any language without a real translation

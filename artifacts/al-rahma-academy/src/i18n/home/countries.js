@@ -7,8 +7,13 @@
 // Arabic Home Copy Implementation (2026-09-18): `ar` was added below from
 // docs/home-arabic-copy-approval-pack.md's section 4, Claude editorial
 // approval pending human/Islamic review where applicable -- standard MSA
-// country names, no corrections needed from that draft. it/es/de still
-// stay absent; nothing is invented for them here.
+// country names, no corrections needed from that draft. es/de still stay
+// absent; nothing is invented for them here.
+//
+// Italian Batch 1B: `it` added below -- standard Italian country names,
+// ordinary non-religious display text. TrustBar.jsx already does a plain
+// `COUNTRY_NAMES_TEXT[lang] || COUNTRY_NAMES_TEXT.en` lookup, so no
+// component change was needed for the ticker to pick this up.
 export const COUNTRY_NAMES_TEXT = {
   en: {
     gb: 'UK',
@@ -91,5 +96,33 @@ export const COUNTRY_NAMES_TEXT = {
     uz: 'Ouzbékistan',
     idn: 'Indonésie',
     za: 'Afrique du Sud',
+  },
+  // Italian Batch 1B: standard Italian country names.
+  it: {
+    gb: 'Regno Unito',
+    de: 'Germania',
+    fr: 'Francia',
+    it: 'Italia',
+    es: 'Spagna',
+    nl: 'Paesi Bassi',
+    us: 'Stati Uniti',
+    ca: 'Canada',
+    au: 'Australia',
+    se: 'Svezia',
+    no: 'Norvegia',
+    be: 'Belgio',
+    ch: 'Svizzera',
+    at: 'Austria',
+    dk: 'Danimarca',
+    pt: 'Portogallo',
+    gr: 'Grecia',
+    pl: 'Polonia',
+    tr: 'Turchia',
+    sa: 'Arabia Saudita',
+    ae: 'Emirati Arabi Uniti',
+    my: 'Malesia',
+    uz: 'Uzbekistan',
+    idn: 'Indonesia',
+    za: 'Sudafrica',
   },
 };

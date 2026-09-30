@@ -35,6 +35,13 @@ export const ENROLL_SEO_TEXT = {
     description: 'Un cours d\'essai de Coran individuel et gratuit — sans paiement, sans engagement. Choisissez vos matières, choisissez un enseignant certifié par Al-Azhar et réservez votre formule — nous confirmerons avec vous votre planning et le paiement sur WhatsApp.',
     keywords: 'cours d\'essai de Coran gratuit, inscription Coran en ligne, réserver un cours de Coran, réservation de cours de Coran',
   },
+  // Italian Batch 1B: translated from the English entry only, same
+  // booking-first framing (free trial request, not an instant purchase).
+  it: {
+    title: 'Prenota lezioni di prova gratuite',
+    description: 'Una lezione di prova gratuita individuale di Corano — senza pagamento, senza impegno. Scegli le tue materie, scegli un insegnante certificato Al-Azhar e prenota il tuo piano — confermeremo con te l\'orario e il pagamento su WhatsApp.',
+    keywords: 'lezione di prova gratuita del corano, iscrizione al corano online, prenota lezione di corano, prenotazione corso di corano',
+  },
 };
 
 export function pickEnrollSeo(lang) {

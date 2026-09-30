@@ -14,11 +14,14 @@
 // JSON-LD schema) gave every one of those routes real, already-reviewed
 // French content — the exact precondition every prior en/ar wave above
 // required before joining this manifest. No route is added here that
-// wasn't already 'published' for en/ar; /courses/islamic-studies and every
-// other still-unpublished route (Blog, individual /tools/* pages, Enroll)
-// stay out for the same pre-existing reasons those comments already give,
-// regardless of French — this PR does not touch en/ar publication status
-// or revisit those exclusions.
+// wasn't already 'published' for en/ar; every other still-unpublished
+// route (Blog, individual /tools/* pages, Enroll) stays out for the same
+// pre-existing reasons those comments already give, regardless of French —
+// this PR does not touch en/ar publication status or revisit those
+// exclusions. (/courses/islamic-studies later joined in its own dedicated
+// en+ar+fr wave — see the Islamic Studies SEO Publication Gate comment
+// below — once its own real blocker, a build-time-frozen "Hadith of the
+// Day", was fixed.)
 //
 // No title/description/keywords here on purpose: those stay owned by
 // each page's own useSEO() call (Home.jsx's pickHomeSeo(lang),
@@ -234,6 +237,25 @@ export const PRERENDER_MANIFEST = [
   { route: '/tools/tasbeeh', locale: 'fr', status: 'published', indexable: true },
   { route: '/tools/arabic-alphabet', locale: 'fr', status: 'published', indexable: true },
   { route: '/tools/adhkar', locale: 'fr', status: 'published', indexable: true },
+
+  // Islamic Studies SEO Publication Gate (2026-09-30): /courses/islamic-studies,
+  // en+ar+fr, the first single-route wave to include fr from day one (every
+  // prior wave started en+ar and added fr later as a separate pass). A
+  // dedicated read-only readiness audit found the page fully content-complete
+  // and religious-content-policy-compliant in all three locales already, with
+  // exactly one real blocker: "Hadith of the Day" was chosen from
+  // Date.now() during render, which this prerender step (a REAL headless
+  // Chromium session, not a JS-free server render) would have baked into
+  // the static file at whichever day the build ran on. CourseIslamicStudies.jsx
+  // now starts that section as a locale-aware loading placeholder and only
+  // ever resolves it to a real hadith client-side, gated on the absence of
+  // navigator.webdriver (Playwright's own browser launch applies no stealth
+  // args, so this script's own capture always sees the placeholder) — so the
+  // static HTML this manifest entry produces is stable and hydration-safe
+  // regardless of how long ago the site was last built.
+  { route: '/courses/islamic-studies', locale: 'en', status: 'published', indexable: true },
+  { route: '/courses/islamic-studies', locale: 'ar', status: 'published', indexable: true },
+  { route: '/courses/islamic-studies', locale: 'fr', status: 'published', indexable: true },
 ];
 
 // The URL path to navigate to for one manifest entry, e.g. "/ar/courses/ijazah".

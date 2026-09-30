@@ -111,11 +111,13 @@ describe('CourseIjazah.jsx source: minimal, scoped diff', () => {
   it('does not touch author/stage/desc/topics/link/linkLabel derivation logic', () => {
     // French Localization Batch 1B added a French branch (isFr) between the
     // Arabic and English ones; Arabic and English still read the same fields.
-    expect(src).toMatch(/const authorLabel = isAr \? book\.author\.ar : isFr \? book\.author\.fr : book\.author\.en;/);
-    expect(src).toMatch(/const stageLabel {2}= isAr \? book\.stage\.ar {2}: isFr \? book\.stage\.fr {2}: book\.stage\.en;/);
-    expect(src).toMatch(/const descText {4}= isAr \? book\.desc\.ar {3}: isFr \? book\.desc\.fr {3}: book\.desc\.en;/);
-    expect(src).toMatch(/const topics {6}= isAr \? book\.topics\.ar : isFr \? book\.topics\.fr : book\.topics\.en;/);
-    expect(src).toMatch(/const linkLabel {3}= isAr \? book\.linkLabel\.ar : isFr \? book\.linkLabel\.fr : book\.linkLabel\.en;/);
+    // The Italian Ijazah batch inserted an Italian branch (isIt) before the
+    // English fallback; Arabic, French and English still read the same fields.
+    expect(src).toMatch(/const authorLabel = isAr \? book\.author\.ar : isFr \? book\.author\.fr : isIt \? book\.author\.it : book\.author\.en;/);
+    expect(src).toMatch(/const stageLabel {2}= isAr \? book\.stage\.ar {2}: isFr \? book\.stage\.fr {2}: isIt \? book\.stage\.it {2}: book\.stage\.en;/);
+    expect(src).toMatch(/const descText {4}= isAr \? book\.desc\.ar {3}: isFr \? book\.desc\.fr {3}: isIt \? book\.desc\.it {3}: book\.desc\.en;/);
+    expect(src).toMatch(/const topics {6}= isAr \? book\.topics\.ar : isFr \? book\.topics\.fr : isIt \? book\.topics\.it : book\.topics\.en;/);
+    expect(src).toMatch(/const linkLabel {3}= isAr \? book\.linkLabel\.ar : isFr \? book\.linkLabel\.fr : isIt \? book\.linkLabel\.it : book\.linkLabel\.en;/);
   });
 
   it('BOOKS data is untouched (4 approved titles, no new entries, no invented transliteration)', () => {
@@ -129,6 +131,6 @@ describe('CourseIjazah.jsx source: minimal, scoped diff', () => {
     expect(src).toMatch(/useSEO\(\{/);
     // French Localization Batch 1B added a French branch (isFr) between the
     // Arabic and English ones; Arabic and English still read the same fields.
-    expect(src).toMatch(/<h1 className="cl__hero-title">\{isAr \? 'دورة إجازة القرآن الكريم' : isFr \? FR\.h1 : 'Quran Ijazah Course'\}<\/h1>/);
+    expect(src).toMatch(/<h1 className="cl__hero-title">\{isAr \? 'دورة إجازة القرآن الكريم' : isFr \? FR\.h1 : isIt \? IT\.h1 : 'Quran Ijazah Course'\}<\/h1>/);
   });
 });

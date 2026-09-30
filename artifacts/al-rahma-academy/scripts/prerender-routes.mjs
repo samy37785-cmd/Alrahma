@@ -256,6 +256,38 @@ export const PRERENDER_MANIFEST = [
   { route: '/courses/islamic-studies', locale: 'en', status: 'published', indexable: true },
   { route: '/courses/islamic-studies', locale: 'ar', status: 'published', indexable: true },
   { route: '/courses/islamic-studies', locale: 'fr', status: 'published', indexable: true },
+
+  // Italian wave (28 pages): it for every route below that already has real,
+  // reviewed Italian content. /courses/ijazah (it), /courses/islamic-studies (it),
+  // Blog, Enroll and every other /tools/* page stay out of scope.
+  { route: '/', locale: 'it', status: 'published', indexable: true },
+  { route: '/courses', locale: 'it', status: 'published', indexable: true },
+  { route: '/courses/quran', locale: 'it', status: 'published', indexable: true },
+  { route: '/courses/arabic', locale: 'it', status: 'published', indexable: true },
+  { route: '/academy', locale: 'it', status: 'published', indexable: true },
+  { route: '/academy/about', locale: 'it', status: 'published', indexable: true },
+  { route: '/academy/teachers', locale: 'it', status: 'published', indexable: true },
+  { route: '/academy/teachers/1', locale: 'it', status: 'published', indexable: true },
+  { route: '/academy/teachers/2', locale: 'it', status: 'published', indexable: true },
+  { route: '/academy/teachers/3', locale: 'it', status: 'published', indexable: true },
+  { route: '/academy/teachers/4', locale: 'it', status: 'published', indexable: true },
+  { route: '/academy/teachers/5', locale: 'it', status: 'published', indexable: true },
+  { route: '/academy/teachers/6', locale: 'it', status: 'published', indexable: true },
+  { route: '/academy/teachers/7', locale: 'it', status: 'published', indexable: true },
+  { route: '/academy/teachers/8', locale: 'it', status: 'published', indexable: true },
+  { route: '/academy/teachers/9', locale: 'it', status: 'published', indexable: true },
+  { route: '/academy/teachers/10', locale: 'it', status: 'published', indexable: true },
+  { route: '/academy/teachers/11', locale: 'it', status: 'published', indexable: true },
+  { route: '/academy/privacy', locale: 'it', status: 'published', indexable: true },
+  { route: '/academy/terms', locale: 'it', status: 'published', indexable: true },
+  { route: '/academy/refund-policy', locale: 'it', status: 'published', indexable: true },
+  { route: '/resources', locale: 'it', status: 'published', indexable: true },
+  { route: '/resources/faq', locale: 'it', status: 'published', indexable: true },
+  { route: '/tools', locale: 'it', status: 'published', indexable: true },
+  { route: '/tools/prayer', locale: 'it', status: 'published', indexable: true },
+  { route: '/tools/tasbeeh', locale: 'it', status: 'published', indexable: true },
+  { route: '/tools/arabic-alphabet', locale: 'it', status: 'published', indexable: true },
+  { route: '/tools/adhkar', locale: 'it', status: 'published', indexable: true },
 ];
 
 // The URL path to navigate to for one manifest entry, e.g. "/ar/courses/ijazah".
@@ -302,7 +334,7 @@ export function hreflangLinksFor(entry) {
 // unpublished i18n locale file never silently changes prerendered og:locale
 // output — only a real PRERENDER_MANIFEST entry can do that, same guarantee
 // hreflangLinksFor already gives.
-const OG_LOCALE_BY_LANG = { en: 'en_GB', ar: 'ar_EG', fr: 'fr_FR' };
+const OG_LOCALE_BY_LANG = { en: 'en_GB', ar: 'ar_EG', fr: 'fr_FR', it: 'it_IT' };
 
 // The self og:locale plus every reciprocal og:locale:alternate for one
 // prerendered page — same "only real published (route, locale) pairs"

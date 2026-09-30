@@ -45,6 +45,10 @@ export const RESOURCES_SEO_TEXT = {
     description:
       "Découvrez les ressources d'Al-Rahma Academy : articles de blog, FAQ, informations sur l'académie et profils des enseignants.",
   },
+  it: {
+    description:
+      "Scopri le risorse di Al-Rahma Academy: articoli del blog, FAQ, informazioni sull'accademia e profili degli insegnanti.",
+  },
 };
 
 export function pickResourcesSeo(lang) {

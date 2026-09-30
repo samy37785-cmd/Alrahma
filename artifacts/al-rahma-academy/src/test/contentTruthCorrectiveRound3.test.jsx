@@ -392,14 +392,19 @@ describe('llms.txt and index.html stay in sync with siteFacts (static files, Par
   // without llms.txt being updated to match.
   it('llms.txt never claims a "pre-rendered" locale landing page for a locale that is not actually published in PRERENDER_MANIFEST', () => {
     const txt = fs.readFileSync(path.join(REPO_ROOT, 'public', 'llms.txt'), 'utf8');
-    expect(txt).not.toMatch(/\/it\//);
-    expect(txt).not.toMatch(/Italian landing page/i);
+    expect(txt).not.toMatch(/\/(es|de)\//);
+    expect(txt).not.toMatch(/(Spanish|German) landing page/i);
 
     const publishedLocales = new Set(
       PRERENDER_MANIFEST.filter((entry) => entry.status === 'published').map((entry) => entry.locale),
     );
-    for (const loc of ['it', 'es', 'de']) {
+    // Italian SEO wave: it is now published; only es/de remain unpublished.
+    for (const loc of ['es', 'de']) {
       expect(publishedLocales.has(loc)).toBe(false);
+    }
+    // llms.txt makes no Italian claim, so nothing may contradict the manifest.
+    if (/\/it\//.test(txt)) {
+      expect(publishedLocales.has('it')).toBe(true);
     }
   });
 
@@ -429,7 +434,9 @@ describe('llms.txt and index.html stay in sync with siteFacts (static files, Par
     const publishedLocales = new Set(
       PRERENDER_MANIFEST.filter((entry) => entry.status === 'published').map((entry) => entry.locale),
     );
-    expect(publishedLocales.has('it')).toBe(false);
+    // it is published now (Italian SEO wave) — its hreflang is still only
+    // ever written per prerendered file, never baked into the static shell.
+    expect(publishedLocales.has('it')).toBe(true);
   });
 
   it('index.html still carries the real hreflang="en" and hreflang="x-default" alternates, untouched', () => {

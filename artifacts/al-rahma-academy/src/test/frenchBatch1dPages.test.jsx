@@ -131,8 +131,8 @@ describe('French Batch 1D pages', () => {
     expect(document.querySelectorAll('.blog-card')).toHaveLength(2);
   });
 
-  it('other languages (it) still render the English resources description', async () => {
-    await mountFullPage('/it/resources', ResourcesHub);
+  it('other languages (es) still render the English resources description', async () => {
+    await mountFullPage('/es/resources', ResourcesHub);
     expect(document.querySelector('meta[name="description"]').content).toBe(RESOURCES_SEO_TEXT.en.description);
   });
 });

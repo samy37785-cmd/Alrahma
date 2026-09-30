@@ -76,11 +76,13 @@ describe('About page: exactly one visible H1, in the visitor\'s language', () =>
     expect(h2s.length).toBe(3);
   });
 
-  it('a legacy language without real page-heading copy (e.g. it) falls back to the English object, not an invented translation', () => {
-    expect(pickPageHeading('it')).toBe(PAGE_HEADING_TEXT.en);
+  it('a legacy language without real page-heading copy (e.g. de) falls back to the English object, not an invented translation', () => {
+    expect(pickPageHeading('es')).toBe(PAGE_HEADING_TEXT.en);
     expect(pickPageHeading('de')).toBe(PAGE_HEADING_TEXT.en);
+    // Italian SEO wave added a real `it` entry (see italianSeoWave.test.jsx).
+    expect(pickPageHeading('it')).toBe(PAGE_HEADING_TEXT.it);
     // French Localization Batch 1A added a real `fr` entry (see frenchBatch1aPages.test.jsx).
-    expect(Object.keys(PAGE_HEADING_TEXT)).toEqual(['en', 'ar', 'fr']);
+    expect(Object.keys(PAGE_HEADING_TEXT)).toEqual(['en', 'ar', 'fr', 'it']);
   });
 });
 

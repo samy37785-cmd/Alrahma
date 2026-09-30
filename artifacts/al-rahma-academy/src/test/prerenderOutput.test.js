@@ -1316,7 +1316,13 @@ describe.skipIf(!distExists)('Prerender output — literal dist/public paths (in
     // every LITERAL_FILES entry (fr joined every route that already had
     // en+ar), so this is unconditional, not an if-present check.
     const hreflangEls = [...document.querySelectorAll('link[rel="alternate"][hreflang]')];
-    expect(hreflangEls.length, 'exactly 4 hreflang alternates (en, ar, fr, x-default), no more').toBe(4);
+    // Italian SEO wave: it is published for every route here EXCEPT
+    // /courses/ijazah and /courses/islamic-studies (separate waves). Derived
+    // from the literal fr href (always ORIGIN + '/fr' + route), not from
+    // hreflangLinksFor(), so a bug in that helper is still caught.
+    const itPublished = !/\/fr\/courses\/(ijazah|islamic-studies)$/.test(expectedFrHref);
+    const publishedLocales = itPublished ? ['en', 'ar', 'fr', 'it'] : ['en', 'ar', 'fr'];
+    expect(hreflangEls.length, 'one hreflang per published locale + x-default, no more').toBe(publishedLocales.length + 1);
 
     const byHreflang = Object.fromEntries(hreflangEls.map((el) => [el.getAttribute('hreflang'), el.getAttribute('href')]));
     expect(byHreflang.en, 'hreflang=en must point at the English version of this same page').toBe(expectedEnHref);
@@ -1324,7 +1330,11 @@ describe.skipIf(!distExists)('Prerender output — literal dist/public paths (in
     expect(byHreflang.fr, 'hreflang=fr must point at the French version of this same page').toBe(expectedFrHref);
     expect(byHreflang['x-default'], 'hreflang=x-default must point at the English version').toBe(expectedEnHref);
 
-    expect(byHreflang.it, 'no hreflang=it — it is not a published language').toBeUndefined();
+    if (itPublished) {
+      expect(byHreflang.it, 'hreflang=it must point at the Italian version of this same page').toBe(expectedFrHref.replace('/fr', '/it'));
+    } else {
+      expect(byHreflang.it, 'no hreflang=it — Italian is not published for this route').toBeUndefined();
+    }
     expect(byHreflang.es, 'no hreflang=es — es is not a published language').toBeUndefined();
     expect(byHreflang.de, 'no hreflang=de — de is not a published language').toBeUndefined();
 
@@ -1333,15 +1343,15 @@ describe.skipIf(!distExists)('Prerender output — literal dist/public paths (in
     // the static shell's inherited og:locale (always en_GB primary) and
     // og:locale:alternate (it_IT/es_ES/de_DE/fr_FR, none reciprocal) must be
     // fully replaced with this page's real self locale + real alternates.
-    const OG_LOCALE_BY_LOCALE = { en: 'en_GB', ar: 'ar_EG', fr: 'fr_FR' };
+    const OG_LOCALE_BY_LOCALE = { en: 'en_GB', ar: 'ar_EG', fr: 'fr_FR', it: 'it_IT' };
     const ogLocaleEl = document.querySelector('meta[property="og:locale"]');
     expect(ogLocaleEl, 'meta[property="og:locale"] must exist').toBeTruthy();
     expect(ogLocaleEl.getAttribute('content'), 'og:locale must be this page\'s own locale').toBe(OG_LOCALE_BY_LOCALE[locale]);
 
     const ogAlternateEls = [...document.querySelectorAll('meta[property="og:locale:alternate"]')];
     const ogAlternates = ogAlternateEls.map((el) => el.getAttribute('content'));
-    const expectedOtherLocales = ['en', 'ar', 'fr'].filter((l) => l !== locale);
-    expect(ogAlternates.sort(), 'og:locale:alternate must list exactly the other 2 published locales for this route').toEqual(
+    const expectedOtherLocales = publishedLocales.filter((l) => l !== locale);
+    expect(ogAlternates.sort(), 'og:locale:alternate must list exactly the other published locales for this route').toEqual(
       expectedOtherLocales.map((l) => OG_LOCALE_BY_LOCALE[l]).sort(),
     );
 

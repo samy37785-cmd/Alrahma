@@ -47,4 +47,18 @@ export const TASBEEH_TEXT = {
       sub: 'Comptez votre dhikr numériquement — SubhanAllah, Alhamdulillah, AllahuAkbar et plus.',
     },
   },
+  // Italian SEO wave: translated from the English shell only; the dhikr
+  // phrases themselves stay in their transliterated form, unchanged.
+  it: {
+    seo: {
+      title: 'Contatore tasbeeh',
+      description: 'Contatore tasbeeh digitale gratuito. Conta SubhanAllah, Alhamdulillah, AllahuAkbar e altro, con il monitoraggio dei progressi.',
+    },
+    breadcrumbs: { tools: 'Strumenti', current: 'Contatore tasbeeh' },
+    eyebrow: 'Dhikr',
+    hero: {
+      title: 'Contatore tasbeeh digitale',
+      sub: 'Conta il tuo dhikr in digitale — SubhanAllah, Alhamdulillah, AllahuAkbar e altro.',
+    },
+  },
 };

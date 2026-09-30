@@ -54,9 +54,17 @@ const TRUST_ICONS = [
 export default function TrustBadges() {
   const { t, lang } = useLang();
   const a11y = pickA11yLabels(lang);
-  // French gets French flag tooltips; every other language keeps the
-  // English `name` it already rendered (EN/AR output unchanged).
-  const countryTitle = (c) => (lang === 'fr' ? COUNTRY_NAMES_TEXT.fr[c.id] : c.name);
+  // French and Italian get their own flag tooltips (Italian Batch 1C: every
+  // id in this file's own COUNTRIES list already has an `it` entry in
+  // COUNTRY_NAMES_TEXT, added for the trust-bar ticker in Italian Batch 1B);
+  // every other language keeps the English `name` it already rendered
+  // (EN/AR output unchanged). Decorative-only: this whole marquee is
+  // aria-hidden, so `title` is the only place this text is exposed.
+  const countryTitle = (c) => {
+    if (lang === 'fr') return COUNTRY_NAMES_TEXT.fr[c.id];
+    if (lang === 'it') return COUNTRY_NAMES_TEXT.it[c.id];
+    return c.name;
+  };
   const tr = t.trust;
 
   return (

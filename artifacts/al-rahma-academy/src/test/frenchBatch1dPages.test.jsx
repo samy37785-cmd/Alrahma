@@ -131,8 +131,13 @@ describe('French Batch 1D pages', () => {
     expect(document.querySelectorAll('.blog-card')).toHaveLength(2);
   });
 
-  it('other languages (it) still render the English resources description', async () => {
+  // Italian SEO Publication Gate (2026-09-30) added a real `it` entry to
+  // RESOURCES_SEO_TEXT (see resourcesArabicCopy.test.jsx and
+  // prerenderOutput.test.js's Italian describe block); /it/resources now
+  // renders its own real Italian description, not an English fallback.
+  it('/it/resources renders the real Italian resources description, not an English fallback', async () => {
     await mountFullPage('/it/resources', ResourcesHub);
-    expect(document.querySelector('meta[name="description"]').content).toBe(RESOURCES_SEO_TEXT.en.description);
+    expect(document.querySelector('meta[name="description"]').content).toBe(RESOURCES_SEO_TEXT.it.description);
+    expect(document.querySelector('meta[name="description"]').content).not.toBe(RESOURCES_SEO_TEXT.en.description);
   });
 });

@@ -141,7 +141,7 @@ export default function HadithLibrary() {
                 <Link to="/courses/islamic-studies" className="hl__course-note-link">
                   {h.courseLink}
                 </Link>
-                {h.courseClick}
+                {' '}{h.courseClick}
               </span>
             </div>
           )}

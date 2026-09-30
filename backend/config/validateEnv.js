@@ -56,6 +56,10 @@ const RECOMMENDED = [
   'SMTP_USER',
   'SMTP_PASS',
   'CLIENT_URL',
+  // Unset = adminProxySignature.js never marks a request's IP as trusted,
+  // so ipWhitelist.js falls back to plain req.ip — the same behavior the
+  // admin API has always had. See docs/admin-proxy-signing-runbook.md.
+  'ADMIN_PROXY_SIGNING_SECRET',
 ];
 
 // Stage 2E: only required when DATA_BACKEND=supabase (the default,

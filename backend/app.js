@@ -131,7 +131,11 @@ app.use(
 app.use('/api/payments/stripe/webhook', express.raw({ type: 'application/json' }));
 
 app.use(correlationId);   // assign x-request-id to every request (tracing)
-app.use(express.json({ limit: '100kb' }));
+// verify: captures the exact raw bytes alongside the parsed body. Currently
+// only consumed by adminProxySignature.js (the signed Vercel-admin-proxy
+// verifier needs to hash the identical bytes Vercel signed) — a cheap,
+// purely additive capture that changes nothing for every other route.
+app.use(express.json({ limit: '100kb', verify: (req, _res, buf) => { req.rawBody = buf; } }));
 app.use(express.urlencoded({ extended: true, limit: '100kb' }));
 app.use(cookieParser()); // parses the httpOnly auth cookie into req.cookies
 app.use(sanitizeMongo);   // strip $-operators / dotted keys from input (NoSQL-injection guard)

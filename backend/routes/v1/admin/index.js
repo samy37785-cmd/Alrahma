@@ -1,8 +1,9 @@
 import { Router } from 'express';
 import helmet from 'helmet';
 
-import { adminApiLimiter }   from '../../../config/adminRateLimits.js';
-import { ipWhitelist }       from '../../../middleware/ipWhitelist.js';
+import { adminApiLimiter }      from '../../../config/adminRateLimits.js';
+import { ipWhitelist }          from '../../../middleware/ipWhitelist.js';
+import { adminProxySignature }  from '../../../middleware/adminProxySignature.js';
 import { sanitizeMongo }     from '../../../middleware/sanitizeMongo.js';
 import { verifyAccessToken } from '../../../middleware/adminAuth.js';
 import { maintenanceGuard }  from '../../../middleware/maintenanceGuard.js';
@@ -41,6 +42,12 @@ import supabaseInvoicesAdminRoutes from '../../../data/supabase/admin/invoicesAd
 const router = Router();
 
 // ── Security hardening applied to ALL /api/v1/admin/* requests ───────────────
+
+// Verifies the signed Vercel-proxy headers (no-op unless
+// ADMIN_PROXY_SIGNING_SECRET is set) — must run BEFORE ipWhitelist so the
+// latter can prefer the verified client IP over req.ip. See
+// docs/admin-proxy-signing-runbook.md.
+router.use(adminProxySignature);
 
 // IP whitelist (no-op unless ADMIN_IP_WHITELIST env var is set)
 router.use(ipWhitelist);

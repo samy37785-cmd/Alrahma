@@ -9,8 +9,9 @@ import { useLang, withLanguage } from '../context/LangContext';
 import { COURSE_UI } from '../i18n/coursePages';
 import { site } from '../data/site';
 import { IJAZAH_PAGE_FR as FR } from '../i18n/courses/religiousPagesFr';
+import { IJAZAH_PAGE_IT as IT } from '../i18n/courses/ijazahPageIt';
 
-/* ─── Static data (bilingual) ─── */
+/* ─── Static data (en / ar / fr / it) ─── */
 const LEARN = {
   en: [
     'Complete mastery of all Tajweed rules — Hafs & Warsh',
@@ -48,14 +49,15 @@ const LEARN = {
     "Certificat d'ijaza officiel avec un sanad remontant au Prophète ﷺ",
     "Autorisation d'enseigner le Coran avec votre propre sanad",
   ],
+  it: IT.learn,
 };
 
 const STAGES = [
   {
     num: '01',
     color: '#0b6e4f',
-    title: { en: 'Foundation', ar: 'المرحلة الأولى: التأسيس', fr: 'Fondation' },
-    duration: { en: '3 – 6 months', ar: '٣ – ٦ أشهر', fr: '3 – 6 mois' },
+    title: { en: 'Foundation', ar: 'المرحلة الأولى: التأسيس', fr: 'Fondation', it: IT.stageTitles[0] },
+    duration: { en: '3 – 6 months', ar: '٣ – ٦ أشهر', fr: '3 – 6 mois', it: IT.stageDurations[0] },
     source: 'تحفة الأطفال',
     sourceEn: 'Tuhfat Al-Atfal',
     author: 'الإمام سليمان الجمزوري',
@@ -81,13 +83,14 @@ const STAGES = [
         "Nun sakina et tanwin — idgham, ikhfa', iqlab, izhar",
         "Mim sakina — idgham shafawi, ikhfa' shafawi, izhar shafawi",
       ],
+      it: IT.stagePoints[0],
     },
   },
   {
     num: '02',
     color: '#1a5fa0',
-    title: { en: 'Intermediate — Tajweed', ar: 'المرحلة الثانية: التجويد المتقدم', fr: 'Intermédiaire — tajwid' },
-    duration: { en: '6 – 12 months', ar: '٦ – ١٢ شهراً', fr: '6 – 12 mois' },
+    title: { en: 'Intermediate — Tajweed', ar: 'المرحلة الثانية: التجويد المتقدم', fr: 'Intermédiaire — tajwid', it: IT.stageTitles[1] },
+    duration: { en: '6 – 12 months', ar: '٦ – ١٢ شهراً', fr: '6 – 12 mois', it: IT.stageDurations[1] },
     source: 'متن الجزرية',
     sourceEn: 'Matn Al-Jazariyyah',
     author: 'الإمام ابن الجزري',
@@ -116,13 +119,14 @@ const STAGES = [
         'Mutaqaribayn, mutajanisayn, mutamathilayn',
         "Règles de la pause et de la reprise (waqf et ibtida') — les 12 signes de pause expliqués",
       ],
+      it: IT.stagePoints[1],
     },
   },
   {
     num: '03',
     color: '#7a3a8a',
-    title: { en: "Advanced — Qira'at", ar: "المرحلة الثالثة: القراءات", fr: "Avancé — qira'at" },
-    duration: { en: '6 – 12 months', ar: '٦ – ١٢ شهراً', fr: '6 – 12 mois' },
+    title: { en: "Advanced — Qira'at", ar: "المرحلة الثالثة: القراءات", fr: "Avancé — qira'at", it: IT.stageTitles[2] },
+    duration: { en: '6 – 12 months', ar: '٦ – ١٢ شهراً', fr: '6 – 12 mois', it: IT.stageDurations[2] },
     source: 'متن الشاطبية',
     sourceEn: 'Matn Al-Shatibiyyah',
     author: 'الإمام الشاطبي',
@@ -148,13 +152,14 @@ const STAGES = [
         'Étude comparative des sept modes de récitation',
         "Examen de récitation complet — un juz' par séance avec le cheikh",
       ],
+      it: IT.stagePoints[2],
     },
   },
   {
     num: '04',
     color: '#c8920a',
-    title: { en: 'Certification', ar: 'المرحلة الرابعة: الإجازة', fr: 'Certification' },
-    duration: { en: '1 – 3 months', ar: '١ – ٣ أشهر', fr: '1 – 3 mois' },
+    title: { en: 'Certification', ar: 'المرحلة الرابعة: الإجازة', fr: 'Certification', it: IT.stageTitles[3] },
+    duration: { en: '1 – 3 months', ar: '١ – ٣ أشهر', fr: '1 – 3 mois', it: IT.stageDurations[3] },
     source: 'مصحف المدينة النبوية',
     sourceEn: "Madinah Mus'haf",
     sourceFr: 'Mushaf de Médine',
@@ -181,6 +186,7 @@ const STAGES = [
         "Délivrance du certificat d'ijaza officiel signé",
         'Vous êtes désormais autorisé à enseigner et à délivrer votre propre ijaza',
       ],
+      it: IT.stagePoints[3],
     },
   },
 ];
@@ -199,58 +205,64 @@ export const BOOKS = [
     icon: '📗',
     title: 'Tuhfat Al-Atfal',
     ar: 'تحفة الأطفال',
-    author: { en: 'Imam Sulayman Al-Jamzouri', ar: 'الإمام سليمان الجمزوري', fr: 'Imam Sulayman Al-Jamzouri' },
-    stage: { en: 'Foundation Stage', ar: 'مرحلة التأسيس', fr: 'Étape de fondation' },
+    author: { en: 'Imam Sulayman Al-Jamzouri', ar: 'الإمام سليمان الجمزوري', fr: 'Imam Sulayman Al-Jamzouri', it: 'Imam Sulayman Al-Jamzouri' },
+    stage: { en: 'Foundation Stage', ar: 'مرحلة التأسيس', fr: 'Étape de fondation', it: IT.bookStages[0] },
     desc: {
       en: 'A didactic poem of 61 verses covering the foundational rules of Tajweed — Noon Sakinah, Tanwin, Meem Sakinah, and basic Madd rules. Memorised by every student before advancing.',
       ar: 'منظومة من 61 بيتاً تغطي أحكام التجويد الأساسية — النون الساكنة، التنوين، الميم الساكنة، وأحكام المد الأساسية. يحفظها كل طالب قبل الانتقال للمراحل المتقدمة.',
       fr: 'A didactic poem of 61 verses covering the foundational rules of Tajweed — Noon Sakinah, Tanwin, Meem Sakinah, and basic Madd rules. Memorised by every student before advancing.',
+      it: 'A didactic poem of 61 verses covering the foundational rules of Tajweed — Noon Sakinah, Tanwin, Meem Sakinah, and basic Madd rules. Memorised by every student before advancing.',
     },
     topics: {
       en: ['Noon Sakinah & Tanwin (4 rules)', 'Meem Sakinah (3 rules)', 'Basic Madd rules', 'Heavy letters (Tafkheem)'],
       ar: ['أحكام النون الساكنة والتنوين (٤ أحكام)', 'أحكام الميم الساكنة (٣ أحكام)', 'أحكام المد الأساسية', 'الحروف المفخمة'],
       fr: ['Noon Sakinah & Tanwin (4 rules)', 'Meem Sakinah (3 rules)', 'Basic Madd rules', 'Heavy letters (Tafkheem)'],
+      it: ['Noon Sakinah & Tanwin (4 rules)', 'Meem Sakinah (3 rules)', 'Basic Madd rules', 'Heavy letters (Tafkheem)'],
     },
     link: null,
-    linkLabel: { en: 'Provided in class', ar: 'يُوفَّر في الحصة', fr: 'Fourni pendant le cours' },
+    linkLabel: { en: 'Provided in class', ar: 'يُوفَّر في الحصة', fr: 'Fourni pendant le cours', it: IT.bookLinkProvided },
   },
   {
     icon: '📘',
     title: 'Matn Al-Jazariyyah',
     ar: 'متن الجزرية',
-    author: { en: 'Imam Ibn Al-Jazari (d. 833 AH)', ar: 'الإمام ابن الجزري (ت ٨٣٣هـ)', fr: 'Imam Ibn Al-Jazari (m. 833 H)' },
-    stage: { en: 'Intermediate Stage', ar: 'المرحلة المتوسطة', fr: 'Étape intermédiaire' },
+    author: { en: 'Imam Ibn Al-Jazari (d. 833 AH)', ar: 'الإمام ابن الجزري (ت ٨٣٣هـ)', fr: 'Imam Ibn Al-Jazari (m. 833 H)', it: 'Imam Ibn Al-Jazari (d. 833 AH)' },
+    stage: { en: 'Intermediate Stage', ar: 'المرحلة المتوسطة', fr: 'Étape intermédiaire', it: IT.bookStages[1] },
     desc: {
       en: 'The definitive classical reference on Tajweed — a poem of 107 verses by the greatest Tajweed scholar in Islamic history. Covers Makhaarij, Sifaat, all Madd types, and Waqf rules in full depth.',
       ar: 'المرجع الكلاسيكي الرئيسي في علم التجويد — قصيدة من ١٠٧ أبيات لأعظم عالم تجويد في التاريخ الإسلامي. تغطي المخارج والصفات وجميع أحكام المد والوقف بعمق كامل.',
       fr: 'The definitive classical reference on Tajweed — a poem of 107 verses by the greatest Tajweed scholar in Islamic history. Covers Makhaarij, Sifaat, all Madd types, and Waqf rules in full depth.',
+      it: 'The definitive classical reference on Tajweed — a poem of 107 verses by the greatest Tajweed scholar in Islamic history. Covers Makhaarij, Sifaat, all Madd types, and Waqf rules in full depth.',
     },
     topics: {
       en: ['Makhaarij Al-Huroof (17 points)', 'Sifaat Al-Huroof (18 characteristics)', 'All Madd rules', 'Waqf & Ibtida\''],
       ar: ['مخارج الحروف (١٧ مخرجاً)', 'صفات الحروف (١٨ صفة)', 'جميع أحكام المدود', 'أحكام الوقف والابتداء'],
       fr: ['Makhaarij Al-Huroof (17 points)', 'Sifaat Al-Huroof (18 characteristics)', 'All Madd rules', 'Waqf & Ibtida\''],
+      it: ['Makhaarij Al-Huroof (17 points)', 'Sifaat Al-Huroof (18 characteristics)', 'All Madd rules', 'Waqf & Ibtida\''],
     },
     link: null,
-    linkLabel: { en: 'Provided in class', ar: 'يُوفَّر في الحصة', fr: 'Fourni pendant le cours' },
+    linkLabel: { en: 'Provided in class', ar: 'يُوفَّر في الحصة', fr: 'Fourni pendant le cours', it: IT.bookLinkProvided },
   },
   {
     icon: '📙',
     title: 'Matn Al-Shatibiyyah',
     ar: 'متن الشاطبية',
-    author: { en: "Imam Al-Shatibi (d. 590 AH)", ar: 'الإمام الشاطبي (ت ٥٩٠هـ)', fr: 'Imam Al-Shatibi (m. 590 H)' },
-    stage: { en: "Advanced — Qira'at", ar: 'المرحلة المتقدمة: القراءات', fr: "Avancé — qira'at" },
+    author: { en: "Imam Al-Shatibi (d. 590 AH)", ar: 'الإمام الشاطبي (ت ٥٩٠هـ)', fr: 'Imam Al-Shatibi (m. 590 H)', it: 'Imam Al-Shatibi (d. 590 AH)' },
+    stage: { en: "Advanced — Qira'at", ar: 'المرحلة المتقدمة: القراءات', fr: "Avancé — qira'at", it: IT.bookStages[2] },
     desc: {
       en: "A celebrated poem of 1,173 verses encoding the Seven Mutawatir Qira'at. The standard reference for anyone seeking to master or teach the various Quranic recitation traditions.",
       ar: 'قصيدة مشهورة من ١١٧٣ بيتاً تضمّن القراءات السبع المتواترة. المرجع الأساسي لكل من يسعى لإتقان روايات القراءات القرآنية أو تدريسها.',
       fr: "A celebrated poem of 1,173 verses encoding the Seven Mutawatir Qira'at. The standard reference for anyone seeking to master or teach the various Quranic recitation traditions.",
+      it: "A celebrated poem of 1,173 verses encoding the Seven Mutawatir Qira'at. The standard reference for anyone seeking to master or teach the various Quranic recitation traditions.",
     },
     topics: {
       en: ['Seven Mutawatir Qira\'at', "Hafs 'an 'Asim", "Warsh 'an Nafi'", 'All other five Qira\'at'],
       ar: ['القراءات السبع المتواترة', "رواية حفص عن عاصم", "رواية ورش عن نافع", 'القراءات الخمس الأخرى'],
       fr: ['Seven Mutawatir Qira\'at', "Hafs 'an 'Asim", "Warsh 'an Nafi'", 'All other five Qira\'at'],
+      it: ['Seven Mutawatir Qira\'at', "Hafs 'an 'Asim", "Warsh 'an Nafi'", 'All other five Qira\'at'],
     },
     link: null,
-    linkLabel: { en: 'Provided in class', ar: 'يُوفَّر في الحصة', fr: 'Fourni pendant le cours' },
+    linkLabel: { en: 'Provided in class', ar: 'يُوفَّر في الحصة', fr: 'Fourni pendant le cours', it: IT.bookLinkProvided },
   },
   {
     icon: '📕',
@@ -260,20 +272,22 @@ export const BOOKS = [
     // French Religious-Content Safety Correction policy header above:
     // a publisher/organisation name is source-of-record data, not
     // ordinary UI copy, so it is not francised without a licensed source.
-    author: { en: 'King Fahd Glorious Quran Printing Complex', ar: 'مجمع الملك فهد لطباعة المصحف الشريف', fr: 'King Fahd Glorious Quran Printing Complex' },
-    stage: { en: 'Certification Stage', ar: 'مرحلة الإجازة', fr: 'Étape de certification' },
+    author: { en: 'King Fahd Glorious Quran Printing Complex', ar: 'مجمع الملك فهد لطباعة المصحف الشريف', fr: 'King Fahd Glorious Quran Printing Complex', it: 'King Fahd Glorious Quran Printing Complex' },
+    stage: { en: 'Certification Stage', ar: 'مرحلة الإجازة', fr: 'Étape de certification', it: IT.bookStages[3] },
     desc: {
       en: "The world's most widely distributed Mus'haf — printed by the official Saudi complex in Madinah. Used for the final certification recitation in the Hafs 'an 'Asim riwayah.",
       ar: "أكثر مصحف توزيعاً في العالم — تطبعه مجمع الملك فهد الرسمي في المدينة المنورة. يُستخدم في اختبار الإجازة النهائي برواية حفص عن عاصم.",
       fr: "The world's most widely distributed Mus'haf — printed by the official Saudi complex in Madinah. Used for the final certification recitation in the Hafs 'an 'Asim riwayah.",
+      it: "The world's most widely distributed Mus'haf — printed by the official Saudi complex in Madinah. Used for the final certification recitation in the Hafs 'an 'Asim riwayah.",
     },
     topics: {
       en: ["Hafs 'an 'Asim riwayah", 'Colour-coded Tajweed edition available', 'Used in the final Ijazah exam'],
       ar: ["رواية حفص عن عاصم", 'متوفر بنسخة تجويد ملوّنة', 'يُستخدم في اختبار الإجازة النهائي'],
       fr: ["Hafs 'an 'Asim riwayah", 'Colour-coded Tajweed edition available', 'Used in the final Ijazah exam'],
+      it: ["Hafs 'an 'Asim riwayah", 'Colour-coded Tajweed edition available', 'Used in the final Ijazah exam'],
     },
     link: 'https://quran.gov.sa',
-    linkLabel: { en: 'Read Online — Official Site', ar: 'اقرأ أونلاين — الموقع الرسمي', fr: 'Lire en ligne — site officiel' },
+    linkLabel: { en: 'Read Online — Official Site', ar: 'اقرأ أونلاين — الموقع الرسمي', fr: 'Lire en ligne — site officiel', it: IT.bookLinkOnline },
   },
 ];
 
@@ -296,6 +310,12 @@ const PREREQS = {
     { icon: '⏱️', text: 'Engagement à suivre au moins 3 cours par semaine' },
     { icon: '🧠', text: 'Recommandé : programme de hifz (mémorisation) terminé' },
   ],
+  it: [
+    { icon: '📖', text: IT.prereqs[0] },
+    { icon: '🎙️', text: IT.prereqs[1] },
+    { icon: '⏱️', text: IT.prereqs[2] },
+    { icon: '🧠', text: IT.prereqs[3] },
+  ],
 };
 
 const FOR = {
@@ -317,12 +337,19 @@ const FOR = {
     { icon: '🌍', label: 'Musulmans du monde entier souhaitant un sanad remontant au Prophète ﷺ' },
     { icon: '🏅', label: 'Ceux qui recherchent la plus haute qualification coranique' },
   ],
+  it: [
+    { icon: '🎓', label: IT.audience[0] },
+    { icon: '👨‍🏫', label: IT.audience[1] },
+    { icon: '🌍', label: IT.audience[2] },
+    { icon: '🏅', label: IT.audience[3] },
+  ],
 };
 
 const PERKS = {
   en: ['1-on-1 with certified Ijazah Sheikh', 'Flexible weekly schedule', 'Zoom / Skype / Google Meet', 'Monthly progress reports', 'Official Sanad document issued', 'Cancel anytime'],
   ar: ['فردي مع شيخ مجاز معتمد', 'جدول أسبوعي مرن', 'زووم / سكايب / جوجل ميت', 'تقارير تقدم شهرية', 'وثيقة السند الرسمية', 'إلغاء في أي وقت'],
   fr: ["Cours particuliers avec un cheikh d'ijaza certifié", 'Emploi du temps hebdomadaire flexible', 'Zoom / Skype / Google Meet', 'Rapports de progression mensuels', 'Document officiel du sanad délivré', 'Annulation à tout moment'],
+  it: IT.perks,
 };
 
 /* ─── Book card with expand ─── */
@@ -330,11 +357,12 @@ function BookCard({ book, lang }) {
   const [open, setOpen] = useState(false);
   const isAr = lang === 'ar';
   const isFr = lang === 'fr';
-  const authorLabel = isAr ? book.author.ar : isFr ? book.author.fr : book.author.en;
-  const stageLabel  = isAr ? book.stage.ar  : isFr ? book.stage.fr  : book.stage.en;
-  const descText    = isAr ? book.desc.ar   : isFr ? book.desc.fr   : book.desc.en;
-  const topics      = isAr ? book.topics.ar : isFr ? book.topics.fr : book.topics.en;
-  const linkLabel   = isAr ? book.linkLabel.ar : isFr ? book.linkLabel.fr : book.linkLabel.en;
+  const isIt = lang === 'it';
+  const authorLabel = isAr ? book.author.ar : isFr ? book.author.fr : isIt ? book.author.it : book.author.en;
+  const stageLabel  = isAr ? book.stage.ar  : isFr ? book.stage.fr  : isIt ? book.stage.it  : book.stage.en;
+  const descText    = isAr ? book.desc.ar   : isFr ? book.desc.fr   : isIt ? book.desc.it   : book.desc.en;
+  const topics      = isAr ? book.topics.ar : isFr ? book.topics.fr : isIt ? book.topics.it : book.topics.en;
+  const linkLabel   = isAr ? book.linkLabel.ar : isFr ? book.linkLabel.fr : isIt ? book.linkLabel.it : book.linkLabel.en;
 
   return (
     <div className={`cl__book${open ? ' open' : ''}`}>
@@ -371,16 +399,18 @@ function BookCard({ book, lang }) {
   );
 }
 
-// French Localization Batch 1B: the Course JSON-LD text fields in French;
+// French Localization Batch 1B / Italian Ijazah Content Batch: the Course
+// JSON-LD text fields in French or Italian;
 // every other field, inLanguage included, is left as it is.
-function localizeSchema(isFr, schema) {
-  if (!isFr) return schema;
+function localizeSchema(lang, schema) {
+  const T = lang === 'fr' ? FR : lang === 'it' ? IT : null;
+  if (!T) return schema;
   return {
     ...schema,
-    name: FR.schemaName,
-    description: FR.seoDescription,
-    educationalLevel: FR.schemaLevel,
-    teaches: FR.schemaTeaches,
+    name: T.schemaName,
+    description: T.seoDescription,
+    educationalLevel: T.schemaLevel,
+    teaches: T.schemaTeaches,
   };
 }
 
@@ -391,17 +421,19 @@ export default function CourseIjazah() {
   const ui        = COURSE_UI[lang] || COURSE_UI.en;
   const isAr      = lang === 'ar';
   const isFr      = lang === 'fr';
+  const isIt      = lang === 'it';
   const [openStage, setOpenStage] = useState(null);
 
   useSEO({
-    title: isAr ? 'دورة إجازة القرآن الكريم' : isFr ? FR.seoTitle : 'Quran Ijazah Course',
+    title: isAr ? 'دورة إجازة القرآن الكريم' : isFr ? FR.seoTitle : isIt ? IT.seoTitle : 'Quran Ijazah Course',
     description: isAr
       ? 'احصل على إجازة قرآنية رسمية بسند متصل إلى النبي ﷺ. ادرس متن الجزرية والشاطبية مع علماء أزهريين معتمدين.'
       : isFr ? FR.seoDescription
+      : isIt ? IT.seoDescription
       : "Earn a formal Quran Ijazah with a continuous Sanad to the Prophet ﷺ. Study Matn Al-Jazariyyah, Al-Shatibiyyah and the Seven Qira'at with certified Al-Azhar scholars.",
     // French: the same Course object with its text fields in French;
     // inLanguage (language of instruction) is unchanged.
-    schema: localizeSchema(isFr, {
+    schema: localizeSchema(lang, {
       '@context': 'https://schema.org',
       '@type': 'Course',
       name: 'Quran Ijazah Certification Course',
@@ -414,25 +446,26 @@ export default function CourseIjazah() {
     }),
   });
 
-  const learnList = isAr ? LEARN.ar : isFr ? LEARN.fr : LEARN.en;
-  const prereqs   = isAr ? PREREQS.ar : isFr ? PREREQS.fr : PREREQS.en;
-  const forList   = isAr ? FOR.ar : isFr ? FOR.fr : FOR.en;
-  const perks     = isAr ? PERKS.ar : isFr ? PERKS.fr : PERKS.en;
+  const learnList = isAr ? LEARN.ar : isFr ? LEARN.fr : isIt ? LEARN.it : LEARN.en;
+  const prereqs   = isAr ? PREREQS.ar : isFr ? PREREQS.fr : isIt ? PREREQS.it : PREREQS.en;
+  const forList   = isAr ? FOR.ar : isFr ? FOR.fr : isIt ? FOR.it : FOR.en;
+  const perks     = isAr ? PERKS.ar : isFr ? PERKS.fr : isIt ? PERKS.it : PERKS.en;
 
   return (
     <>
       <Header />
       <main id="main-content" dir={ui.dir}>
-        <Breadcrumbs items={[{ label: t.nav.courses, to: '/courses' }, { label: isAr ? 'دورة الإجازة' : isFr ? FR.breadcrumb : 'Quran Ijazah Course' }]} />
+        <Breadcrumbs items={[{ label: t.nav.courses, to: '/courses' }, { label: isAr ? 'دورة الإجازة' : isFr ? FR.breadcrumb : isIt ? IT.breadcrumb : 'Quran Ijazah Course' }]} />
         {/* Hero */}
         <section className="cl__hero" style={{ background: 'linear-gradient(145deg,#062d1f,#0b6e4f)' }}>
           <div className="container cl__hero-inner">
-            <span className="cl__hero-badge">🏅 {isAr ? 'شهادة نادرة ورفيعة' : isFr ? FR.badge : 'Rare Certification'}</span>
-            <h1 className="cl__hero-title">{isAr ? 'دورة إجازة القرآن الكريم' : isFr ? FR.h1 : 'Quran Ijazah Course'}</h1>
+            <span className="cl__hero-badge">🏅 {isAr ? 'شهادة نادرة ورفيعة' : isFr ? FR.badge : isIt ? IT.badge : 'Rare Certification'}</span>
+            <h1 className="cl__hero-title">{isAr ? 'دورة إجازة القرآن الكريم' : isFr ? FR.h1 : isIt ? IT.h1 : 'Quran Ijazah Course'}</h1>
             <p className="cl__hero-sub">
               {isAr
                 ? 'احصل على إجازة رسمية بسند متصل مباشرةً إلى النبي محمد ﷺ — ويصبح لك الحق في تدريس القرآن الكريم.'
                 : isFr ? FR.heroSub
+                : isIt ? IT.heroSub
                 : "Earn a formal Ijazah with a continuous chain of transmission (Sanad) connected directly to the Prophet Muhammad ﷺ — and become authorised to teach the Quran."
               }
             </p>
@@ -448,10 +481,10 @@ export default function CourseIjazah() {
         {/* Stats */}
         <div className="cl__stats" style={{ background: '#062d1f' }}>
           <div className="container cl__stats-inner">
-            <div className="cl__stat"><strong>{isAr ? 'أكثر من سنتين' : isFr ? FR.stats[0].value : '2+ Years'}</strong><span>{isAr ? 'المدة المتوقعة' : isFr ? FR.stats[0].label : 'Average Duration'}</span></div>
-            <div className="cl__stat"><strong>{isAr ? 'متقدم' : isFr ? FR.stats[1].value : 'Advanced'}</strong><span>{isAr ? 'المستوى المطلوب' : isFr ? FR.stats[1].label : 'Required Level'}</span></div>
-            <div className="cl__stat"><strong>{isAr ? 'فردي' : isFr ? FR.stats[2].value : '1-on-1'}</strong><span>{isAr ? 'حصص خاصة' : isFr ? FR.stats[2].label : 'Private Lessons'}</span></div>
-            <div className="cl__stat"><strong>{isAr ? '٤ مراحل' : isFr ? FR.stats[3].value : '4 Stages'}</strong><span>{isAr ? 'منهج منظم' : isFr ? FR.stats[3].label : 'Structured Curriculum'}</span></div>
+            <div className="cl__stat"><strong>{isAr ? 'أكثر من سنتين' : isFr ? FR.stats[0].value : isIt ? IT.stats[0].value : '2+ Years'}</strong><span>{isAr ? 'المدة المتوقعة' : isFr ? FR.stats[0].label : isIt ? IT.stats[0].label : 'Average Duration'}</span></div>
+            <div className="cl__stat"><strong>{isAr ? 'متقدم' : isFr ? FR.stats[1].value : isIt ? IT.stats[1].value : 'Advanced'}</strong><span>{isAr ? 'المستوى المطلوب' : isFr ? FR.stats[1].label : isIt ? IT.stats[1].label : 'Required Level'}</span></div>
+            <div className="cl__stat"><strong>{isAr ? 'فردي' : isFr ? FR.stats[2].value : isIt ? IT.stats[2].value : '1-on-1'}</strong><span>{isAr ? 'حصص خاصة' : isFr ? FR.stats[2].label : isIt ? IT.stats[2].label : 'Private Lessons'}</span></div>
+            <div className="cl__stat"><strong>{isAr ? '٤ مراحل' : isFr ? FR.stats[3].value : isIt ? IT.stats[3].value : '4 Stages'}</strong><span>{isAr ? 'منهج منظم' : isFr ? FR.stats[3].label : isIt ? IT.stats[3].label : 'Structured Curriculum'}</span></div>
             <div className="cl__stat"><strong>🏅</strong><span>{ui.officialCert}</span></div>
           </div>
         </div>
@@ -483,8 +516,8 @@ export default function CourseIjazah() {
                     <button className="cl__stage-header" onClick={() => setOpenStage(openStage === i ? null : i)}>
                       <span className="cl__stage-num" style={{ background: s.color }}>{s.num}</span>
                       <div className="cl__stage-meta">
-                        <strong>{isAr ? s.title.ar : isFr ? s.title.fr : s.title.en}</strong>
-                        <span>{isAr ? s.duration.ar : isFr ? s.duration.fr : s.duration.en}</span>
+                        <strong>{isAr ? s.title.ar : isFr ? s.title.fr : isIt ? s.title.it : s.title.en}</strong>
+                        <span>{isAr ? s.duration.ar : isFr ? s.duration.fr : isIt ? s.duration.it : s.duration.en}</span>
                       </div>
                       <span className="cl__stage-source cl__stage-source--ar" dir="rtl">{s.source}</span>
                       <span className="cl__stage-chevron">{openStage === i ? '▲' : '▼'}</span>
@@ -493,7 +526,7 @@ export default function CourseIjazah() {
                       <div className="cl__stage-body">
                         <p className="cl__stage-author">📚 {isAr ? s.source : `${(isFr && s.sourceFr) || s.sourceEn} — ${s.author}`}</p>
                         <ul className="cl__stage-points">
-                          {(isAr ? s.points.ar : isFr ? s.points.fr : s.points.en).map((pt) => <li key={pt}>{pt}</li>)}
+                          {(isAr ? s.points.ar : isFr ? s.points.fr : isIt ? s.points.it : s.points.en).map((pt) => <li key={pt}>{pt}</li>)}
                         </ul>
                       </div>
                     )}
@@ -539,7 +572,7 @@ export default function CourseIjazah() {
             <div className="cl__enroll-card">
               <div className="cl__enroll-card-top" style={{ background: 'linear-gradient(145deg,#062d1f,#0b6e4f)' }}>
                 <span className="cl__enroll-icon">📜</span>
-                <p className="cl__enroll-title">{isAr ? 'إجازة القرآن الكريم' : isFr ? FR.enrollTitle : 'Quran Ijazah'}</p>
+                <p className="cl__enroll-title">{isAr ? 'إجازة القرآن الكريم' : isFr ? FR.enrollTitle : isIt ? IT.enrollTitle : 'Quran Ijazah'}</p>
                 <p className="cl__enroll-sub">🏅 {ui.officialCert}</p>
               </div>
               <div className="cl__enroll-body">

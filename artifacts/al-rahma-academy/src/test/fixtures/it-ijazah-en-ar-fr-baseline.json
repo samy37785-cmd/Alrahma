@@ -1,0 +1,71 @@
+{
+  "baseline": "origin/main@185fe95",
+  "pages": {
+    "en": {
+      "title": "Quran Ijazah Course | AL-Rahma Academy",
+      "description": "Earn a formal Quran Ijazah with a continuous Sanad to the Prophet ﷺ. Study Matn Al-Jazariyyah, Al-Shatibiyyah and the Seven Qira'at with certified Al-Azhar scholars.",
+      "ogTitle": "Quran Ijazah Course | AL-Rahma Academy",
+      "ogDescription": "Earn a formal Quran Ijazah with a continuous Sanad to the Prophet ﷺ. Study Matn Al-Jazariyyah, Al-Shatibiyyah and the Seven Qira'at with certified Al-Azhar scholars.",
+      "htmlLang": "en",
+      "htmlDir": "ltr",
+      "jsonLd": [
+        "{\"@context\":\"https://schema.org\",\"@type\":\"BreadcrumbList\",\"itemListElement\":[{\"@type\":\"ListItem\",\"position\":1,\"name\":\"Home\",\"item\":\"https://al-rahmaacademy.com/\"},{\"@type\":\"ListItem\",\"position\":2,\"name\":\"Courses\",\"item\":\"https://al-rahmaacademy.com/courses\"},{\"@type\":\"ListItem\",\"position\":3,\"name\":\"Quran Ijazah Course\",\"item\":\"https://al-rahmaacademy.com/courses/ijazah\"}]}",
+        "{\"@context\":\"https://schema.org\",\"@type\":\"Course\",\"name\":\"Quran Ijazah Certification Course\",\"description\":\"Earn a formal Quran Ijazah with a continuous Sanad to the Prophet ﷺ. Study Matn Al-Jazariyyah, Al-Shatibiyyah and the Seven Qira'at with certified Al-Azhar scholars.\",\"provider\":{\"@type\":\"EducationalOrganization\",\"name\":\"Al-Rahma Academy\",\"sameAs\":\"https://al-rahmaacademy.com\"},\"educationalLevel\":\"Advanced\",\"inLanguage\":[\"en\",\"ar\"],\"teaches\":\"Quran Ijazah, Tajweed, Matn Al-Jazariyyah, Al-Shatibiyyah, Seven Qira'at\",\"hasCourseInstance\":{\"@type\":\"CourseInstance\",\"courseMode\":\"online\"}}"
+      ],
+      "stageCount": 4,
+      "bookCount": 4,
+      "states": {
+        "initial": "22e713c491305be72be93ed2bb14d78814b2b812a11beb8778e916de08ee29fb",
+        "stage0": "4cfdc53741a27d7980a63a1e0bb4a06d0f81e7c5f9fe08f481863c304a6c3c69",
+        "stage1": "4828854509d1b878bc8347e7d418b6572b67e3a2474d73f40797dd5970bbe9f6",
+        "stage2": "699a763db6ce03d4e66c8d47ef7b59ad315dd78ccb20eb9063c603126b5452cc",
+        "stage3": "03513ca299083d7dce3d7a6986d81f2645785c1fd1477d3b6862a7195e44c70b",
+        "allBooksOpen": "11a70b48b8e0c161cc1703457c49248bcf2275480905f59768d5ab4fcb947851"
+      }
+    },
+    "ar": {
+      "title": "دورة إجازة القرآن الكريم | AL-Rahma Academy",
+      "description": "احصل على إجازة قرآنية رسمية بسند متصل إلى النبي ﷺ. ادرس متن الجزرية والشاطبية مع علماء أزهريين معتمدين.",
+      "ogTitle": "دورة إجازة القرآن الكريم | AL-Rahma Academy",
+      "ogDescription": "احصل على إجازة قرآنية رسمية بسند متصل إلى النبي ﷺ. ادرس متن الجزرية والشاطبية مع علماء أزهريين معتمدين.",
+      "htmlLang": "ar",
+      "htmlDir": "rtl",
+      "jsonLd": [
+        "{\"@context\":\"https://schema.org\",\"@type\":\"Course\",\"name\":\"Quran Ijazah Certification Course\",\"description\":\"Earn a formal Quran Ijazah with a continuous Sanad to the Prophet ﷺ. Study Matn Al-Jazariyyah, Al-Shatibiyyah and the Seven Qira'at with certified Al-Azhar scholars.\",\"provider\":{\"@type\":\"EducationalOrganization\",\"name\":\"Al-Rahma Academy\",\"sameAs\":\"https://al-rahmaacademy.com\"},\"educationalLevel\":\"Advanced\",\"inLanguage\":[\"en\",\"ar\"],\"teaches\":\"Quran Ijazah, Tajweed, Matn Al-Jazariyyah, Al-Shatibiyyah, Seven Qira'at\",\"hasCourseInstance\":{\"@type\":\"CourseInstance\",\"courseMode\":\"online\"}}",
+        "{\"@context\":\"https://schema.org\",\"@type\":\"BreadcrumbList\",\"itemListElement\":[{\"@type\":\"ListItem\",\"position\":1,\"name\":\"الرئيسية\",\"item\":\"https://al-rahmaacademy.com/ar/\"},{\"@type\":\"ListItem\",\"position\":2,\"name\":\"الدورات\",\"item\":\"https://al-rahmaacademy.com/ar/courses\"},{\"@type\":\"ListItem\",\"position\":3,\"name\":\"دورة الإجازة\",\"item\":\"https://al-rahmaacademy.com/ar/courses/ijazah\"}]}"
+      ],
+      "stageCount": 4,
+      "bookCount": 4,
+      "states": {
+        "initial": "1627c71429b54868ec620f9cb11c0f1b48cf0d020d11067b6923d0a3270ab8a7",
+        "stage0": "e57ddf09ec405bc9c3c591dd6918d3b06c273b98f2644efc285430cae06c2e0d",
+        "stage1": "346721d2299b7c6602801b6738f1239791ee825d50ce5d37304612958f843009",
+        "stage2": "66077cf6182eaeaca2fd70d646d0230384bea8a4f31dc650423ff21b831cb69f",
+        "stage3": "7ea8b594a001283276563aefcac33b6944ffebf4ac71b434c7ea7613938fafd9",
+        "allBooksOpen": "24a18d4ef8668630ea6e02ca13109ed9db434cdf84f288452046fa758e82e422"
+      }
+    },
+    "fr": {
+      "title": "Cours d'ijaza du Coran | AL-Rahma Academy",
+      "description": "Obtenez une ijaza du Coran officielle avec un sanad continu jusqu'au Prophète ﷺ. Étudiez Matn Al-Jazariyyah, Al-Shatibiyyah et les sept qira'at auprès de savants certifiés d'Al-Azhar.",
+      "ogTitle": "Cours d'ijaza du Coran | AL-Rahma Academy",
+      "ogDescription": "Obtenez une ijaza du Coran officielle avec un sanad continu jusqu'au Prophète ﷺ. Étudiez Matn Al-Jazariyyah, Al-Shatibiyyah et les sept qira'at auprès de savants certifiés d'Al-Azhar.",
+      "htmlLang": "fr",
+      "htmlDir": "ltr",
+      "jsonLd": [
+        "{\"@context\":\"https://schema.org\",\"@type\":\"Course\",\"name\":\"Cours de certification d'ijaza du Coran\",\"description\":\"Obtenez une ijaza du Coran officielle avec un sanad continu jusqu'au Prophète ﷺ. Étudiez Matn Al-Jazariyyah, Al-Shatibiyyah et les sept qira'at auprès de savants certifiés d'Al-Azhar.\",\"provider\":{\"@type\":\"EducationalOrganization\",\"name\":\"Al-Rahma Academy\",\"sameAs\":\"https://al-rahmaacademy.com\"},\"educationalLevel\":\"Avancé\",\"inLanguage\":[\"en\",\"ar\"],\"teaches\":\"Ijaza du Coran, tajwid, Matn Al-Jazariyyah, Al-Shatibiyyah, sept qira'at\",\"hasCourseInstance\":{\"@type\":\"CourseInstance\",\"courseMode\":\"online\"}}",
+        "{\"@context\":\"https://schema.org\",\"@type\":\"BreadcrumbList\",\"itemListElement\":[{\"@type\":\"ListItem\",\"position\":1,\"name\":\"Accueil\",\"item\":\"https://al-rahmaacademy.com/fr/\"},{\"@type\":\"ListItem\",\"position\":2,\"name\":\"Cours\",\"item\":\"https://al-rahmaacademy.com/fr/courses\"},{\"@type\":\"ListItem\",\"position\":3,\"name\":\"Cours d'ijaza du Coran\",\"item\":\"https://al-rahmaacademy.com/fr/courses/ijazah\"}]}"
+      ],
+      "stageCount": 4,
+      "bookCount": 4,
+      "states": {
+        "initial": "7d6714feafc75c61c8c551cf397ff39e8a457d3a4d5357492b0f6d6ae41d1600",
+        "stage0": "bce24b70fb0f47da541572ce329f09f11ddcff975c0a354cbf9fc074ea65cebf",
+        "stage1": "bf6ae258510fe343d2faf747bc8360d95108152fa8d9938cad4d694d445e4392",
+        "stage2": "8a6ce4762f7023cfa23bd1dd18d33aadbb69b4da2a4ba26edcb13b177f5d7226",
+        "stage3": "72cd613ce6d1735da534ccc328c3a56e854d5ccf0eae215c1329d38257f62b9b",
+        "allBooksOpen": "dc5a504aee3c9e1731fcfac6c09c10fc093b6b4a15f26f61e9335a4ed7135a6d"
+      }
+    }
+  }
+}

@@ -258,8 +258,9 @@ export const PRERENDER_MANIFEST = [
   { route: '/courses/islamic-studies', locale: 'fr', status: 'published', indexable: true },
 
   // Italian wave (28 pages): it for every route below that already has real,
-  // reviewed Italian content. /courses/ijazah (it), /courses/islamic-studies (it),
-  // Blog, Enroll and every other /tools/* page stay out of scope.
+  // reviewed Italian content. /courses/islamic-studies (it), Blog, Enroll and
+  // every other /tools/* page stay out of scope. /courses/ijazah (it) joined
+  // afterwards in its own wave — see the Italian Ijazah entry below.
   { route: '/', locale: 'it', status: 'published', indexable: true },
   { route: '/courses', locale: 'it', status: 'published', indexable: true },
   { route: '/courses/quran', locale: 'it', status: 'published', indexable: true },
@@ -288,6 +289,17 @@ export const PRERENDER_MANIFEST = [
   { route: '/tools/tasbeeh', locale: 'it', status: 'published', indexable: true },
   { route: '/tools/arabic-alphabet', locale: 'it', status: 'published', indexable: true },
   { route: '/tools/adhkar', locale: 'it', status: 'published', indexable: true },
+
+  // Italian Ijazah SEO Publication (2026-09-30): /courses/ijazah, it, joined
+  // once its real Italian content landed on main (PR #158: hero, stats,
+  // lists, stage points, SEO metadata and Course JSON-LD text; religious
+  // source material — titles, authors, publisher, Arabic, terms — kept in
+  // source form, book descriptions/topics the literal English source, same
+  // as French). The page has no fetch/date/geolocation/localStorage
+  // dependency at initial render, so it prerenders like its en/ar/fr
+  // siblings. /courses/islamic-studies and /tools/tajweed-checker stay
+  // unpublished in Italian.
+  { route: '/courses/ijazah', locale: 'it', status: 'published', indexable: true },
 
   // Tajweed Checker SEO Publication Gate (2026-09-30): /tools/tajweed-checker,
   // en+ar+fr all at once. A dedicated read-only readiness audit found no real

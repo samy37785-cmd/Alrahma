@@ -1386,7 +1386,7 @@ describe.skipIf(!distExists)('Prerender output — literal dist/public paths (in
     // en+ar+fr only, Italian publication is out of its scope). Derived
     // from the literal fr href (always ORIGIN + '/fr' + route), not from
     // hreflangLinksFor(), so a bug in that helper is still caught.
-    const itPublished = !/\/fr\/(courses\/(ijazah|islamic-studies)|tools\/tajweed-checker)$/.test(expectedFrHref);
+    const itPublished = !/\/fr\/(courses\/islamic-studies|tools\/tajweed-checker)$/.test(expectedFrHref);
     const publishedLocales = itPublished ? ['en', 'ar', 'fr', 'it'] : ['en', 'ar', 'fr'];
     expect(hreflangEls.length, 'one hreflang per published locale + x-default, no more').toBe(publishedLocales.length + 1);
 
@@ -1573,5 +1573,86 @@ describe.skipIf(!distExists)('Adhkar prerender output — every category/card pr
 describe('outputRelPathFor() matches the literal dist/public paths above (no drift)', () => {
   it.each(LITERAL_FILES)('$route @ $locale -> $relPath', ({ route, locale, relPath }) => {
     expect(outputRelPathFor({ route, locale })).toBe(relPath);
+  });
+});
+
+// Italian Ijazah SEO Publication (2026-09-30): strict raw-HTML checks for
+// /it/courses/ijazah, plus proof that its en/ar/fr siblings now advertise
+// the Italian alternate too and that the still-unpublished Italian routes
+// stay out. Literal expectations, not derived from the manifest helpers.
+describe.skipIf(!distExists)('Italian Ijazah prerender (dist/public) — raw HTML before any JavaScript', () => {
+  const ORIGIN_ = 'https://al-rahmaacademy.com';
+  const load = (rel) => new JSDOM(readFileSync(path.join(distDir, rel), 'utf8')).window.document;
+
+  it('it/courses/ijazah/index.html: lang, canonical, og:locale, Italian title/description/H1', () => {
+    const doc = load('it/courses/ijazah/index.html');
+    expect(doc.documentElement.lang).toBe('it');
+    expect(doc.documentElement.dir).toBe('ltr');
+    expect(doc.querySelector('link[rel="canonical"]').getAttribute('href')).toBe(`${ORIGIN_}/it/courses/ijazah`);
+    expect(doc.querySelector('meta[property="og:locale"]').getAttribute('content')).toBe('it_IT');
+    expect(
+      [...doc.querySelectorAll('meta[property="og:locale:alternate"]')].map((m) => m.getAttribute('content')).sort(),
+    ).toEqual(['ar_EG', 'en_GB', 'fr_FR']);
+    expect(doc.title).toBe('Corso Ijazah del Corano | AL-Rahma Academy');
+    expect(doc.querySelector('meta[name="description"]').getAttribute('content')).toBe(
+      "Ottieni un'Ijazah coranica ufficiale con un Sanad ininterrotto fino al Profeta ﷺ. Studia Matn Al-Jazariyyah, Al-Shatibiyyah e le sette Qira'at con studiosi certificati di Al-Azhar.",
+    );
+    expect(doc.querySelector('h1').textContent.trim()).toBe('Corso Ijazah del Corano');
+  });
+
+  it('it/courses/ijazah: exactly five hreflang alternates (en, ar, fr, it, x-default)', () => {
+    const doc = load('it/courses/ijazah/index.html');
+    const links = [...doc.querySelectorAll('link[rel="alternate"][hreflang]')];
+    expect(links).toHaveLength(5);
+    expect(Object.fromEntries(links.map((l) => [l.getAttribute('hreflang'), l.getAttribute('href')]))).toEqual({
+      en: `${ORIGIN_}/courses/ijazah`,
+      ar: `${ORIGIN_}/ar/courses/ijazah`,
+      fr: `${ORIGIN_}/fr/courses/ijazah`,
+      it: `${ORIGIN_}/it/courses/ijazah`,
+      'x-default': `${ORIGIN_}/courses/ijazah`,
+    });
+  });
+
+  it('it/courses/ijazah: Italian Course JSON-LD and Italian BreadcrumbList', () => {
+    const doc = load('it/courses/ijazah/index.html');
+    const course = [...doc.querySelectorAll('script[type="application/ld+json"]')]
+      .map((s) => JSON.parse(s.textContent))
+      .flat()
+      .find((j) => j['@type'] === 'Course');
+    expect(course.name).toBe('Corso di certificazione Ijazah del Corano');
+    expect(course.educationalLevel).toBe('Avanzato');
+    expect(course.teaches).toBe("Ijazah del Corano, Tajweed, Matn Al-Jazariyyah, Al-Shatibiyyah, sette Qira'at");
+    expect(course.inLanguage).toEqual(['en', 'ar']);
+    const crumbs = JSON.parse(doc.querySelector('script[data-seo="breadcrumb"]').textContent);
+    expect(crumbs.itemListElement.map((i) => ({ name: i.name, item: i.item }))).toEqual([
+      { name: 'Pagina iniziale', item: `${ORIGIN_}/it/` },
+      { name: 'Corsi', item: `${ORIGIN_}/it/courses` },
+      { name: 'Corso Ijazah del Corano', item: `${ORIGIN_}/it/courses/ijazah` },
+    ]);
+  });
+
+  it.each([
+    ['courses/ijazah/index.html', 'en'],
+    ['ar/courses/ijazah/index.html', 'ar'],
+    ['fr/courses/ijazah/index.html', 'fr'],
+  ])('%s now advertises the Italian alternate too (five hreflangs, it_IT alternate)', (rel) => {
+    const doc = load(rel);
+    const byLang = Object.fromEntries(
+      [...doc.querySelectorAll('link[rel="alternate"][hreflang]')].map((l) => [l.getAttribute('hreflang'), l.getAttribute('href')]),
+    );
+    expect(Object.keys(byLang).sort()).toEqual(['ar', 'en', 'fr', 'it', 'x-default']);
+    expect(byLang.it).toBe(`${ORIGIN_}/it/courses/ijazah`);
+    expect(
+      [...doc.querySelectorAll('meta[property="og:locale:alternate"]')].map((m) => m.getAttribute('content')),
+    ).toContain('it_IT');
+  });
+
+  it('Islamic Studies and Tajweed Checker still have no Italian file and no Italian alternate', () => {
+    expect(existsSync(path.join(distDir, 'it/courses/islamic-studies/index.html'))).toBe(false);
+    expect(existsSync(path.join(distDir, 'it/tools/tajweed-checker/index.html'))).toBe(false);
+    for (const rel of ['courses/islamic-studies/index.html', 'tools/tajweed-checker/index.html']) {
+      const doc = load(rel);
+      expect(doc.querySelector('link[rel="alternate"][hreflang="it"]')).toBeNull();
+    }
   });
 });

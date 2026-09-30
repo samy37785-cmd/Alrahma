@@ -1,5 +1,6 @@
 import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useParams } from 'react-router-dom';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 import { AuthProvider } from './context/AuthContext';
 import { AdminAuthProvider } from './context/AdminAuthContext';
 import { LangProvider, useLang } from './context/LangContext';
@@ -117,6 +118,7 @@ export default function App({ basename = '' }) {
         <LiveChat />
         <ContentGuard />
         <LocalizedSkipLink />
+        <SpeedInsights />
         <Suspense fallback={<PageFallback />}>
         <Routes>
           {/* ── Home ── */}

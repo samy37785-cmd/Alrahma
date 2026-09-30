@@ -26,7 +26,7 @@ const doc = dom.window.document;
 
 const ORIGIN = 'https://al-rahmaacademy.com';
 
-// The 28 published route "slugs" (en path), written literally here rather
+// The 29 published route "slugs" (en path), written literally here rather
 // than imported — this suite must be able to catch a bug in
 // PRERENDER_MANIFEST or canonicalUrlFor() (a wrong route, a missing
 // teacher id, a locale mix-up), not merely confirm the sitemap agrees with
@@ -56,6 +56,11 @@ const ORIGIN = 'https://al-rahmaacademy.com';
 // fix/adhkar-initial-content (PR #117) fixed Adhkar.jsx to always mount
 // every category's cards (hiding only the non-selected ones), removing the
 // only real prerender blocker a read-only discovery pass had found.
+//
+// French SEO Publication Gate (2026-09-30): this same 29-route list gained
+// a third locale (fr) once French Localization Batch 1A-1E gave every one
+// of them real, reviewed French content — no route was added to or removed
+// from this list itself.
 const ROUTES = [
   '/',
   '/courses',
@@ -80,12 +85,17 @@ const ROUTES = [
 
 function pathForLocale(route, locale) {
   if (locale === 'en') return route;
-  return route === '/' ? '/ar/' : `/ar${route}`;
+  return route === '/' ? `/${locale}/` : `/${locale}${route}`;
 }
 
+// French SEO Publication Gate (2026-09-30): fr joined every one of these 29
+// routes (see scripts/prerender-routes.mjs's own "French wave" comment) —
+// the exact same ROUTES list above, now with a third locale, not a new/
+// different route set. it/es/de remain unpublished, unchanged.
 const EXPECTED_EN_URLS = ROUTES.map((route) => ORIGIN + pathForLocale(route, 'en'));
 const EXPECTED_AR_URLS = ROUTES.map((route) => ORIGIN + pathForLocale(route, 'ar'));
-const EXPECTED_URLS = [...EXPECTED_EN_URLS, ...EXPECTED_AR_URLS];
+const EXPECTED_FR_URLS = ROUTES.map((route) => ORIGIN + pathForLocale(route, 'fr'));
+const EXPECTED_URLS = [...EXPECTED_EN_URLS, ...EXPECTED_AR_URLS, ...EXPECTED_FR_URLS];
 
 function getLocUrls() {
   return [...doc.getElementsByTagName('loc')].map((node) => node.textContent);
@@ -113,17 +123,19 @@ describe('sitemap.xml — structure', () => {
   });
 });
 
-describe('sitemap.xml — exact 58-URL published-routes whitelist', () => {
-  it('contains exactly 58 <loc> entries', () => {
-    expect(getLocUrls()).toHaveLength(58);
+describe('sitemap.xml — exact 87-URL published-routes whitelist', () => {
+  it('contains exactly 87 <loc> entries', () => {
+    expect(getLocUrls()).toHaveLength(87);
   });
 
-  it('splits into exactly 29 EN and 29 AR URLs', () => {
+  it('splits into exactly 29 EN, 29 AR and 29 FR URLs', () => {
     const locs = getLocUrls();
     const arUrls = locs.filter((u) => u.startsWith(`${ORIGIN}/ar/`) || u === `${ORIGIN}/ar`);
-    const enUrls = locs.filter((u) => !arUrls.includes(u));
+    const frUrls = locs.filter((u) => u.startsWith(`${ORIGIN}/fr/`) || u === `${ORIGIN}/fr`);
+    const enUrls = locs.filter((u) => !arUrls.includes(u) && !frUrls.includes(u));
     expect(enUrls).toHaveLength(29);
     expect(arUrls).toHaveLength(29);
+    expect(frUrls).toHaveLength(29);
   });
 
   it('has no duplicate URLs', () => {
@@ -131,16 +143,15 @@ describe('sitemap.xml — exact 58-URL published-routes whitelist', () => {
     expect(new Set(locs).size).toBe(locs.length);
   });
 
-  it('matches the exact literal 58-URL whitelist, with nothing extra and nothing missing', () => {
+  it('matches the exact literal 87-URL whitelist, with nothing extra and nothing missing', () => {
     const locs = getLocUrls();
     expect([...locs].sort()).toEqual([...EXPECTED_URLS].sort());
   });
 
-  it('does not contain /it/, /fr/, /enroll, the remaining individual tools, Blog, Islamic Studies, or any other unpublished route', () => {
+  it('does not contain /it/, /es/, /de/, /enroll, the remaining individual tools, Blog, Islamic Studies, or any other unpublished route', () => {
     const locs = getLocUrls();
     for (const forbidden of [
       '/it/',
-      '/fr/',
       '/es/',
       '/de/',
       '/enroll',
@@ -157,7 +168,7 @@ describe('sitemap.xml — exact 58-URL published-routes whitelist', () => {
     ]) {
       expect(locs.some((u) => u.includes(forbidden))).toBe(false);
     }
-    // Belt-and-suspenders: every URL must be one of the 58 whitelisted ones.
+    // Belt-and-suspenders: every URL must be one of the 87 whitelisted ones.
     for (const loc of locs) {
       expect(EXPECTED_URLS).toContain(loc);
     }

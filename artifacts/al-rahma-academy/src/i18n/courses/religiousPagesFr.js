@@ -48,6 +48,11 @@ export const ISLAMIC_STUDIES_PAGE_FR = {
     { value: '6 langues', label: "Langues d'enseignement" },
   ],
   hadithLink: 'Lire le hadith complet — Sunnah.com ↗',
+  // SEO Publication Gate (2026-09-30): plain loading-state UI copy, shown
+  // only for the brief moment before the client picks today's hadith after
+  // hydration (see CourseIslamicStudies.jsx) — not hadith/narrator/book
+  // text, so the religious-content translation policy does not apply here.
+  hadithLoading: 'Chargement du hadith du jour…',
   enrollTitle: 'Études islamiques',
   enrollSub: '5 modules · Tous niveaux',
 };

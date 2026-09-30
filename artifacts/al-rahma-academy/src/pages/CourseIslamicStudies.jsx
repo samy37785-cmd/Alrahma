@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
@@ -33,11 +33,41 @@ export default function CourseIslamicStudies() {
   const isFr      = lang === 'fr';
   const [openModule, setOpenModule] = useState(null);
 
-  const hadith = useMemo(() => {
+  // SEO Publication Gate (2026-09-30): this page's static HTML is captured
+  // by scripts/prerender.mjs, which drives a REAL headless-Chromium session
+  // (Playwright) through the live app -- it is not a JS-free server render
+  // that simply skips effects. A plain useMemo/useEffect computing
+  // Date.now() would still execute during that one build-time capture and
+  // bake that exact day's hadith into the static file, which every future
+  // visitor's browser would then have to hydrate against -- and since a
+  // real visit almost never lands on the same calendar day as the last
+  // build, React's hydration would immediately detect a text mismatch
+  // against that frozen value (a hydration-mismatch warning on every
+  // single real visit, the same freezing bug this replaces, just moved
+  // from render-time to effect-time).
+  //
+  // `hadith` therefore starts as `null` on every render, everywhere,
+  // unconditionally -- this is exactly what prerender.mjs's Playwright
+  // page (and every real visitor's very first paint) both show, so
+  // hydration always matches. The effect below only ever promotes it to a
+  // real value outside of that one build capture: Playwright's browser
+  // (scripts/prerender.mjs's launchBrowser(), no stealth args) leaves
+  // Chromium's standard WebDriver automation flag (`navigator.webdriver`)
+  // at its default `true`; a real visitor's browser never sets it. This is
+  // the same signal ConsentBanner.jsx already relies on for the identical
+  // reason ("so the banner is never baked into static HTML"), not a new
+  // technique. Every real visit -- and Google's own later render pass --
+  // computes the hadith fresh from ITS OWN current date, the moment its
+  // page loads, so the page is never stuck showing a stale build-day
+  // hadith.
+  const [hadith, setHadith] = useState(null);
+
+  useEffect(() => {
+    if (navigator.webdriver) return;
     const dayOfYear = Math.floor(
       (Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86_400_000
     );
-    return HADITHS[dayOfYear % HADITHS.length];
+    setHadith(HADITHS[dayOfYear % HADITHS.length]);
   }, []);
 
   useSEO({
@@ -121,21 +151,29 @@ export default function CourseIslamicStudies() {
             {/* Hadith of the Day */}
             <Reveal className="cl__section">
               <h2 className="cl__section-title">{ui.hadithDay}</h2>
-              <div className="cl__hadith-card">
-                <p className="cl__hadith-arabic" dir="rtl">{hadith.arabic}</p>
-                <blockquote className="cl__hadith-text">
-                  {isAr ? hadith.ar : isFr ? hadith.fr : hadith.en}
-                </blockquote>
-                <div className="cl__hadith-meta">
-                  <span className="cl__hadith-narrator">— {isAr ? hadith.narrator.ar : isFr ? hadith.narrator.fr : hadith.narrator.en}</span>
-                  <span className="cl__hadith-source">{isAr ? hadith.source.ar : isFr ? hadith.source.fr : hadith.source.en}</span>
+              {hadith ? (
+                <div className="cl__hadith-card">
+                  <p className="cl__hadith-arabic" dir="rtl">{hadith.arabic}</p>
+                  <blockquote className="cl__hadith-text">
+                    {isAr ? hadith.ar : isFr ? hadith.fr : hadith.en}
+                  </blockquote>
+                  <div className="cl__hadith-meta">
+                    <span className="cl__hadith-narrator">— {isAr ? hadith.narrator.ar : isFr ? hadith.narrator.fr : hadith.narrator.en}</span>
+                    <span className="cl__hadith-source">{isAr ? hadith.source.ar : isFr ? hadith.source.fr : hadith.source.en}</span>
+                  </div>
+                  {hadith.url && (
+                    <a href={hadith.url} target="_blank" rel="noreferrer" className="cl__hadith-link">
+                      {isAr ? 'اقرأ الحديث كاملاً — Sunnah.com ↗' : isFr ? FR.hadithLink : 'Read full hadith — Sunnah.com ↗'}
+                    </a>
+                  )}
                 </div>
-                {hadith.url && (
-                  <a href={hadith.url} target="_blank" rel="noreferrer" className="cl__hadith-link">
-                    {isAr ? 'اقرأ الحديث كاملاً — Sunnah.com ↗' : isFr ? FR.hadithLink : 'Read full hadith — Sunnah.com ↗'}
-                  </a>
-                )}
-              </div>
+              ) : (
+                <div className="cl__hadith-card" data-testid="hadith-placeholder">
+                  <p className="cl__hadith-text">
+                    {isAr ? 'جارٍ تحميل حديث اليوم…' : isFr ? FR.hadithLoading : 'Loading today’s hadith…'}
+                  </p>
+                </div>
+              )}
             </Reveal>
 
             {/* Modules */}

@@ -230,6 +230,70 @@ const LITERAL_FILES = [
       { name: 'الحروف العربية', item: 'https://al-rahmaacademy.com/ar/courses/arabic' },
     ],
   },
+  // Islamic Studies SEO Publication Gate (2026-09-30): the only route this
+  // wave adds, en+ar+fr all at once — a dedicated readiness audit found the
+  // content already complete/policy-compliant in all three locales, with
+  // the page's one real blocker ("Hadith of the Day" freezing a
+  // Date.now()-computed value into this very file) fixed in
+  // CourseIslamicStudies.jsx. expectedTitle/expectedDescription are literal
+  // copies of that component's own useSEO() call; h1Text/breadcrumb are the
+  // literal strings it and i18n/courses/religiousPagesFr.js's FR object
+  // render — not re-derived from either, so a real regression in either
+  // file is still caught here.
+  {
+    route: '/courses/islamic-studies',
+    locale: 'en',
+    relPath: 'courses/islamic-studies/index.html',
+    expectedCanonical: 'https://al-rahmaacademy.com/courses/islamic-studies',
+    h1Text: 'Islamic Studies',
+    expectedEnHref: 'https://al-rahmaacademy.com/courses/islamic-studies',
+    expectedArHref: 'https://al-rahmaacademy.com/ar/courses/islamic-studies',
+    expectedFrHref: 'https://al-rahmaacademy.com/fr/courses/islamic-studies',
+    expectedTitle: 'Islamic Studies Course | AL-Rahma Academy',
+    expectedDescription:
+      'A comprehensive, source-based curriculum covering Aqeedah, Fiqh, Seerah, Hadith and Tafsir — 5 structured modules taught by certified scholars in your own language.',
+    breadcrumb: [
+      { name: 'Home', item: 'https://al-rahmaacademy.com/' },
+      { name: 'Courses', item: 'https://al-rahmaacademy.com/courses' },
+      { name: 'Islamic Studies Course', item: 'https://al-rahmaacademy.com/courses/islamic-studies' },
+    ],
+  },
+  {
+    route: '/courses/islamic-studies',
+    locale: 'ar',
+    relPath: 'ar/courses/islamic-studies/index.html',
+    expectedCanonical: 'https://al-rahmaacademy.com/ar/courses/islamic-studies',
+    h1Text: 'الدراسات الإسلامية',
+    expectedEnHref: 'https://al-rahmaacademy.com/courses/islamic-studies',
+    expectedArHref: 'https://al-rahmaacademy.com/ar/courses/islamic-studies',
+    expectedFrHref: 'https://al-rahmaacademy.com/fr/courses/islamic-studies',
+    expectedTitle: 'دورة الدراسات الإسلامية | AL-Rahma Academy',
+    expectedDescription:
+      'منهج شامل مبني على المصادر يغطي العقيدة والفقه والسيرة والحديث والتفسير — ٥ وحدات يدرّسها علماء معتمدون بلغتك.',
+    breadcrumb: [
+      { name: 'الرئيسية', item: 'https://al-rahmaacademy.com/ar/' },
+      { name: 'الدورات', item: 'https://al-rahmaacademy.com/ar/courses' },
+      { name: 'الدراسات الإسلامية', item: 'https://al-rahmaacademy.com/ar/courses/islamic-studies' },
+    ],
+  },
+  {
+    route: '/courses/islamic-studies',
+    locale: 'fr',
+    relPath: 'fr/courses/islamic-studies/index.html',
+    expectedCanonical: 'https://al-rahmaacademy.com/fr/courses/islamic-studies',
+    h1Text: 'Études islamiques',
+    expectedEnHref: 'https://al-rahmaacademy.com/courses/islamic-studies',
+    expectedArHref: 'https://al-rahmaacademy.com/ar/courses/islamic-studies',
+    expectedFrHref: 'https://al-rahmaacademy.com/fr/courses/islamic-studies',
+    expectedTitle: "Cours d'études islamiques | AL-Rahma Academy",
+    expectedDescription:
+      "Un programme complet, fondé sur les sources, couvrant l'aqida, le fiqh, la sira, le hadith et le tafsir — 5 modules structurés enseignés par des savants certifiés dans votre propre langue.",
+    breadcrumb: [
+      { name: 'Accueil', item: 'https://al-rahmaacademy.com/fr/' },
+      { name: 'Cours', item: 'https://al-rahmaacademy.com/fr/courses' },
+      { name: "Cours d'études islamiques", item: 'https://al-rahmaacademy.com/fr/courses/islamic-studies' },
+    ],
+  },
   // Academy trust pages (2026-09-22): /academy, /academy/about and
   // /academy/teachers joined the pilot once a read-only audit confirmed
   // all three are genuinely static (real, already-reviewed en/ar useSEO

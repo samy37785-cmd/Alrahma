@@ -1386,7 +1386,7 @@ describe.skipIf(!distExists)('Prerender output — literal dist/public paths (in
     // en+ar+fr only, Italian publication is out of its scope). Derived
     // from the literal fr href (always ORIGIN + '/fr' + route), not from
     // hreflangLinksFor(), so a bug in that helper is still caught.
-    const itPublished = !/\/fr\/(courses\/islamic-studies|tools\/tajweed-checker)$/.test(expectedFrHref);
+    const itPublished = !/\/fr\/courses\/islamic-studies$/.test(expectedFrHref);
     const publishedLocales = itPublished ? ['en', 'ar', 'fr', 'it'] : ['en', 'ar', 'fr'];
     expect(hreflangEls.length, 'one hreflang per published locale + x-default, no more').toBe(publishedLocales.length + 1);
 
@@ -1647,10 +1647,9 @@ describe.skipIf(!distExists)('Italian Ijazah prerender (dist/public) — raw HTM
     ).toContain('it_IT');
   });
 
-  it('Islamic Studies and Tajweed Checker still have no Italian file and no Italian alternate', () => {
+  it('Islamic Studies still has no Italian file and no Italian alternate', () => {
     expect(existsSync(path.join(distDir, 'it/courses/islamic-studies/index.html'))).toBe(false);
-    expect(existsSync(path.join(distDir, 'it/tools/tajweed-checker/index.html'))).toBe(false);
-    for (const rel of ['courses/islamic-studies/index.html', 'tools/tajweed-checker/index.html']) {
+    for (const rel of ['courses/islamic-studies/index.html']) {
       const doc = load(rel);
       expect(doc.querySelector('link[rel="alternate"][hreflang="it"]')).toBeNull();
     }

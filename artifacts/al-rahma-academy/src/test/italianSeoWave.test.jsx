@@ -22,6 +22,7 @@ const IT_ROUTES = [
   '/academy/privacy', '/academy/terms', '/academy/refund-policy',
   '/resources', '/resources/faq',
   '/tools', '/tools/prayer', '/tools/tasbeeh', '/tools/arabic-alphabet', '/tools/adhkar',
+  '/tools/tajweed-checker',
 ];
 
 describe('Italian copy gaps (resources / about / tasbeeh)', () => {
@@ -80,21 +81,21 @@ describe('Italian copy gaps (resources / about / tasbeeh)', () => {
 describe('Italian PRERENDER_MANIFEST entries', () => {
   const itEntries = PRERENDER_MANIFEST.filter((e) => e.locale === 'it');
 
-  it('is exactly the 29 published Italian routes, all published and indexable', () => {
+  it('is exactly the 30 published Italian routes, all published and indexable', () => {
     expect(itEntries.map((e) => e.route).sort()).toEqual([...IT_ROUTES].sort());
-    expect(itEntries).toHaveLength(29);
+    expect(itEntries).toHaveLength(30);
     for (const e of itEntries) {
       expect(e.status).toBe('published');
       expect(e.indexable).toBe(true);
     }
   });
 
-  it('excludes Islamic Studies, Blog, Enroll, Tajweed Checker and every other tool', () => {
+  it('excludes Islamic Studies, Blog, Enroll and every other tool', () => {
     const routes = itEntries.map((e) => e.route);
     for (const bad of [
       '/courses/islamic-studies', '/resources/blog', '/enroll',
       '/tools/quran-reader', '/tools/hadith', '/tools/prayer-times', '/tools/qibla',
-      '/tools/islamic-calendar', '/tools/verse-of-the-day', '/tools/tajweed-checker', '/tools/hifz-review',
+      '/tools/islamic-calendar', '/tools/verse-of-the-day', '/tools/hifz-review',
     ]) {
       expect(routes).not.toContain(bad);
     }
@@ -132,8 +133,17 @@ describe('Italian hreflang and og:locale', () => {
     }
   });
 
-  it('/courses/islamic-studies and /tools/tajweed-checker advertise no Italian alternate', () => {
-    for (const route of ['/courses/islamic-studies', '/tools/tajweed-checker']) {
+  it('/tools/tajweed-checker lists the Italian alternate, reciprocally in every locale', () => {
+    for (const locale of ['en', 'ar', 'fr', 'it']) {
+      const links = hreflangLinksFor({ route: '/tools/tajweed-checker', locale });
+      // Order follows the manifest; the set is what matters.
+      expect(links.map((l) => l.hreflang).sort()).toEqual(['ar', 'en', 'fr', 'it', 'x-default']);
+      expect(links.find((l) => l.hreflang === 'it').href).toBe('https://al-rahmaacademy.com/it/tools/tajweed-checker');
+    }
+  });
+
+  it('/courses/islamic-studies advertises no Italian alternate', () => {
+    for (const route of ['/courses/islamic-studies']) {
       const links = hreflangLinksFor({ route, locale: 'en' });
       expect(links.some((l) => l.hreflang === 'it')).toBe(false);
       expect(ogLocaleFor({ route, locale: 'en' }).alternates).not.toContain('it_IT');

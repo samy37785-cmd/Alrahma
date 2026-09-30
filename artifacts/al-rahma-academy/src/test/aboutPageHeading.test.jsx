@@ -76,11 +76,14 @@ describe('About page: exactly one visible H1, in the visitor\'s language', () =>
     expect(h2s.length).toBe(3);
   });
 
-  it('a legacy language without real page-heading copy (e.g. it) falls back to the English object, not an invented translation', () => {
-    expect(pickPageHeading('it')).toBe(PAGE_HEADING_TEXT.en);
+  it('a legacy language without real page-heading copy (e.g. es) falls back to the English object, not an invented translation', () => {
+    expect(pickPageHeading('es')).toBe(PAGE_HEADING_TEXT.en);
     expect(pickPageHeading('de')).toBe(PAGE_HEADING_TEXT.en);
     // French Localization Batch 1A added a real `fr` entry (see frenchBatch1aPages.test.jsx).
-    expect(Object.keys(PAGE_HEADING_TEXT)).toEqual(['en', 'ar', 'fr']);
+    // Italian SEO Publication Gate (2026-09-30) added a real `it` entry.
+    expect(pickPageHeading('it')).toBe(PAGE_HEADING_TEXT.it);
+    expect(pickPageHeading('it').h1).toBe('Chi siamo su Al-Rahma Academy');
+    expect(Object.keys(PAGE_HEADING_TEXT)).toEqual(['en', 'ar', 'fr', 'it']);
   });
 });
 

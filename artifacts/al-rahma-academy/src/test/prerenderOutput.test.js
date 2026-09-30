@@ -68,6 +68,7 @@ const LITERAL_FILES = [
     expectedEnHref: 'https://al-rahmaacademy.com/',
     expectedArHref: 'https://al-rahmaacademy.com/ar/',
     expectedFrHref: 'https://al-rahmaacademy.com/fr/',
+    expectedItHref: 'https://al-rahmaacademy.com/it/',
     breadcrumb: null,
   },
   {
@@ -79,6 +80,7 @@ const LITERAL_FILES = [
     expectedEnHref: 'https://al-rahmaacademy.com/',
     expectedArHref: 'https://al-rahmaacademy.com/ar/',
     expectedFrHref: 'https://al-rahmaacademy.com/fr/',
+    expectedItHref: 'https://al-rahmaacademy.com/it/',
     breadcrumb: null,
   },
   {
@@ -133,6 +135,7 @@ const LITERAL_FILES = [
     expectedEnHref: 'https://al-rahmaacademy.com/courses',
     expectedArHref: 'https://al-rahmaacademy.com/ar/courses',
     expectedFrHref: 'https://al-rahmaacademy.com/fr/courses',
+    expectedItHref: 'https://al-rahmaacademy.com/it/courses',
     expectedTitle: 'Courses | AL-Rahma Academy',
     expectedDescription:
       'Explore all online Quran and Islamic courses at Al-Rahma Academy — Tajweed, Hifz, Ijazah, Islamic Studies, Arabic Alphabet, and more.',
@@ -150,6 +153,7 @@ const LITERAL_FILES = [
     expectedEnHref: 'https://al-rahmaacademy.com/courses',
     expectedArHref: 'https://al-rahmaacademy.com/ar/courses',
     expectedFrHref: 'https://al-rahmaacademy.com/fr/courses',
+    expectedItHref: 'https://al-rahmaacademy.com/it/courses',
     expectedTitle: 'الدورات | AL-Rahma Academy',
     expectedDescription:
       'استكشف جميع دورات القرآن والعلوم الإسلامية أونلاين في أكاديمية الرحمة — تلاوة القرآن والتجويد، الحفظ، إجازة القرآن، الدراسات الإسلامية، الحروف العربية، والمزيد.',
@@ -167,6 +171,7 @@ const LITERAL_FILES = [
     expectedEnHref: 'https://al-rahmaacademy.com/courses/quran',
     expectedArHref: 'https://al-rahmaacademy.com/ar/courses/quran',
     expectedFrHref: 'https://al-rahmaacademy.com/fr/courses/quran',
+    expectedItHref: 'https://al-rahmaacademy.com/it/courses/quran',
     expectedTitle: 'Quran & Tajweed Courses | AL-Rahma Academy',
     expectedDescription:
       'Online Quran Reading, Tajweed, and Hifz (memorization) courses with certified Al-Azhar teachers — in 17 languages.',
@@ -185,6 +190,7 @@ const LITERAL_FILES = [
     expectedEnHref: 'https://al-rahmaacademy.com/courses/quran',
     expectedArHref: 'https://al-rahmaacademy.com/ar/courses/quran',
     expectedFrHref: 'https://al-rahmaacademy.com/fr/courses/quran',
+    expectedItHref: 'https://al-rahmaacademy.com/it/courses/quran',
     expectedTitle: 'دورات القرآن والتجويد | AL-Rahma Academy',
     expectedDescription:
       'دروس أونلاين في تلاوة القرآن والتجويد وحفظ القرآن الكريم مع معلمين معتمدين من الأزهر — دروس فردية مباشرة ترافقك خطوة بخطوة حتى إتقان التلاوة الصحيحة.',
@@ -203,6 +209,7 @@ const LITERAL_FILES = [
     expectedEnHref: 'https://al-rahmaacademy.com/courses/arabic',
     expectedArHref: 'https://al-rahmaacademy.com/ar/courses/arabic',
     expectedFrHref: 'https://al-rahmaacademy.com/fr/courses/arabic',
+    expectedItHref: 'https://al-rahmaacademy.com/it/courses/arabic',
     expectedTitle: 'Arabic Alphabet Course | AL-Rahma Academy',
     expectedDescription:
       'Learn the 28 Arabic letters with audio pronunciation and interactive exercises — ideal for beginners starting their Quran journey.',
@@ -221,6 +228,7 @@ const LITERAL_FILES = [
     expectedEnHref: 'https://al-rahmaacademy.com/courses/arabic',
     expectedArHref: 'https://al-rahmaacademy.com/ar/courses/arabic',
     expectedFrHref: 'https://al-rahmaacademy.com/fr/courses/arabic',
+    expectedItHref: 'https://al-rahmaacademy.com/it/courses/arabic',
     expectedTitle: 'دورة الحروف العربية | AL-Rahma Academy',
     expectedDescription:
       'تعلّم الحروف العربية الـ28 مع النطق الصوتي وتمارين تفاعلية مباشرة في المتصفح — الخطوة الأولى المثالية قبل قراءة القرآن الكريم.',
@@ -333,6 +341,7 @@ const LITERAL_FILES = [
     expectedEnHref: 'https://al-rahmaacademy.com/academy',
     expectedArHref: 'https://al-rahmaacademy.com/ar/academy',
     expectedFrHref: 'https://al-rahmaacademy.com/fr/academy',
+    expectedItHref: 'https://al-rahmaacademy.com/it/academy',
     expectedTitle: 'Academy | AL-Rahma Academy',
     expectedDescription:
       'Learn about Al-Rahma Academy — our mission, teachers, policies, and how to get started with a free trial lesson.',
@@ -350,6 +359,7 @@ const LITERAL_FILES = [
     expectedEnHref: 'https://al-rahmaacademy.com/academy',
     expectedArHref: 'https://al-rahmaacademy.com/ar/academy',
     expectedFrHref: 'https://al-rahmaacademy.com/fr/academy',
+    expectedItHref: 'https://al-rahmaacademy.com/it/academy',
     expectedTitle: 'الأكاديمية | AL-Rahma Academy',
     expectedDescription:
       'تعرّف على أكاديمية الرحمة — مهمتنا، معلمونا، سياساتنا، وكيفية البدء بحصة تجريبية مجانية.',
@@ -367,6 +377,7 @@ const LITERAL_FILES = [
     expectedEnHref: 'https://al-rahmaacademy.com/academy/about',
     expectedArHref: 'https://al-rahmaacademy.com/ar/academy/about',
     expectedFrHref: 'https://al-rahmaacademy.com/fr/academy/about',
+    expectedItHref: 'https://al-rahmaacademy.com/it/academy/about',
     expectedTitle: 'About us | AL-Rahma Academy',
     expectedDescription:
       'Al-Rahma Academy is a dedicated online platform connecting students around the world with the Holy Quran and the Arabic language. Our qualified native Egyptian tutors deliver personalised, one-to-one live lessons — for children and adults, from anywhere in the world.',
@@ -385,6 +396,7 @@ const LITERAL_FILES = [
     expectedEnHref: 'https://al-rahmaacademy.com/academy/about',
     expectedArHref: 'https://al-rahmaacademy.com/ar/academy/about',
     expectedFrHref: 'https://al-rahmaacademy.com/fr/academy/about',
+    expectedItHref: 'https://al-rahmaacademy.com/it/academy/about',
     expectedTitle: 'من نحن | AL-Rahma Academy',
     expectedDescription:
       'أكاديمية الرحمة منصة تعليمية متخصصة تربط الطلاب في جميع أنحاء العالم بالقرآن الكريم واللغة العربية. يقدم معلمونا المصريون المؤهلون حصصاً فردية مباشرة — للأطفال والكبار، من أي مكان في العالم.',
@@ -403,6 +415,7 @@ const LITERAL_FILES = [
     expectedEnHref: 'https://al-rahmaacademy.com/academy/teachers',
     expectedArHref: 'https://al-rahmaacademy.com/ar/academy/teachers',
     expectedFrHref: 'https://al-rahmaacademy.com/fr/academy/teachers',
+    expectedItHref: 'https://al-rahmaacademy.com/it/academy/teachers',
     expectedTitle: 'Al-Azhar Certified Quran Tutors | AL-Rahma Academy',
     expectedDescription:
       'Al-Rahma Academy has 30 teachers on our team — 11 of them are featured here. Every teacher is an Al-Azhar graduate holding a verified Ijazah with a continuous sanad, with identity verified by the academy.',
@@ -421,6 +434,7 @@ const LITERAL_FILES = [
     expectedEnHref: 'https://al-rahmaacademy.com/academy/teachers',
     expectedArHref: 'https://al-rahmaacademy.com/ar/academy/teachers',
     expectedFrHref: 'https://al-rahmaacademy.com/fr/academy/teachers',
+    expectedItHref: 'https://al-rahmaacademy.com/it/academy/teachers',
     expectedTitle: 'معلمونا المعتمدون من الأزهر | AL-Rahma Academy',
     expectedDescription:
       'تضم أكاديمية الرحمة 30 معلمًا، 11 منهم معروضون هنا. كل معلم خريج الأزهر ويحمل إجازة بسند متصل، وهويته موثقة لدى الأكاديمية.',
@@ -455,6 +469,7 @@ const LITERAL_FILES = [
     expectedEnHref: 'https://al-rahmaacademy.com/resources',
     expectedArHref: 'https://al-rahmaacademy.com/ar/resources',
     expectedFrHref: 'https://al-rahmaacademy.com/fr/resources',
+    expectedItHref: 'https://al-rahmaacademy.com/it/resources',
     expectedTitle: 'Resources | AL-Rahma Academy',
     expectedDescription:
       'Explore resources from Al-Rahma Academy: blog articles, FAQ, academy information, and teacher profiles.',
@@ -472,6 +487,7 @@ const LITERAL_FILES = [
     expectedEnHref: 'https://al-rahmaacademy.com/resources',
     expectedArHref: 'https://al-rahmaacademy.com/ar/resources',
     expectedFrHref: 'https://al-rahmaacademy.com/fr/resources',
+    expectedItHref: 'https://al-rahmaacademy.com/it/resources',
     expectedTitle: 'الموارد | AL-Rahma Academy',
     expectedDescription:
       'استكشف موارد أكاديمية الرحمة: مقالات المدونة، الأسئلة الشائعة، معلومات عن الأكاديمية، والتعرّف على معلمينا.',
@@ -489,6 +505,7 @@ const LITERAL_FILES = [
     expectedEnHref: 'https://al-rahmaacademy.com/tools',
     expectedArHref: 'https://al-rahmaacademy.com/ar/tools',
     expectedFrHref: 'https://al-rahmaacademy.com/fr/tools',
+    expectedItHref: 'https://al-rahmaacademy.com/it/tools',
     expectedTitle: 'Islamic Tools | AL-Rahma Academy',
     expectedDescription:
       'A growing collection of free Islamic tools to help you worship, learn, and grow — built with care by the Al-Rahma Academy team.',
@@ -506,6 +523,7 @@ const LITERAL_FILES = [
     expectedEnHref: 'https://al-rahmaacademy.com/tools',
     expectedArHref: 'https://al-rahmaacademy.com/ar/tools',
     expectedFrHref: 'https://al-rahmaacademy.com/fr/tools',
+    expectedItHref: 'https://al-rahmaacademy.com/it/tools',
     expectedTitle: 'أدوات إسلامية | AL-Rahma Academy',
     expectedDescription:
       'مجموعة متنامية من الأدوات الإسلامية المجانية لمساعدتك في العبادة والتعلم والنمو — بُنيت باهتمام من فريق أكاديمية الرحمة.',
@@ -544,6 +562,7 @@ const LITERAL_FILES = [
     expectedEnHref: 'https://al-rahmaacademy.com/academy/teachers/1',
     expectedArHref: 'https://al-rahmaacademy.com/ar/academy/teachers/1',
     expectedFrHref: 'https://al-rahmaacademy.com/fr/academy/teachers/1',
+    expectedItHref: 'https://al-rahmaacademy.com/it/academy/teachers/1',
     expectedTitle: 'Sami Mahmoud Abd Al-Aal | AL-Rahma Academy',
     breadcrumb: [
       { name: 'Home', item: 'https://al-rahmaacademy.com/' },
@@ -560,6 +579,7 @@ const LITERAL_FILES = [
     expectedEnHref: 'https://al-rahmaacademy.com/academy/teachers/1',
     expectedArHref: 'https://al-rahmaacademy.com/ar/academy/teachers/1',
     expectedFrHref: 'https://al-rahmaacademy.com/fr/academy/teachers/1',
+    expectedItHref: 'https://al-rahmaacademy.com/it/academy/teachers/1',
     expectedTitle: 'سامي محمود عبد العال | AL-Rahma Academy',
     breadcrumb: [
       { name: 'الرئيسية', item: 'https://al-rahmaacademy.com/ar/' },
@@ -576,6 +596,7 @@ const LITERAL_FILES = [
     expectedEnHref: 'https://al-rahmaacademy.com/academy/teachers/2',
     expectedArHref: 'https://al-rahmaacademy.com/ar/academy/teachers/2',
     expectedFrHref: 'https://al-rahmaacademy.com/fr/academy/teachers/2',
+    expectedItHref: 'https://al-rahmaacademy.com/it/academy/teachers/2',
     expectedTitle: 'Muhammad Abd Al-Maqsoud | AL-Rahma Academy',
     breadcrumb: [
       { name: 'Home', item: 'https://al-rahmaacademy.com/' },
@@ -592,6 +613,7 @@ const LITERAL_FILES = [
     expectedEnHref: 'https://al-rahmaacademy.com/academy/teachers/2',
     expectedArHref: 'https://al-rahmaacademy.com/ar/academy/teachers/2',
     expectedFrHref: 'https://al-rahmaacademy.com/fr/academy/teachers/2',
+    expectedItHref: 'https://al-rahmaacademy.com/it/academy/teachers/2',
     expectedTitle: 'محمد عبد المقصود | AL-Rahma Academy',
     breadcrumb: [
       { name: 'الرئيسية', item: 'https://al-rahmaacademy.com/ar/' },
@@ -608,6 +630,7 @@ const LITERAL_FILES = [
     expectedEnHref: 'https://al-rahmaacademy.com/academy/teachers/3',
     expectedArHref: 'https://al-rahmaacademy.com/ar/academy/teachers/3',
     expectedFrHref: 'https://al-rahmaacademy.com/fr/academy/teachers/3',
+    expectedItHref: 'https://al-rahmaacademy.com/it/academy/teachers/3',
     expectedTitle: 'Khairiyya Al-Muhammadi | AL-Rahma Academy',
     breadcrumb: [
       { name: 'Home', item: 'https://al-rahmaacademy.com/' },
@@ -624,6 +647,7 @@ const LITERAL_FILES = [
     expectedEnHref: 'https://al-rahmaacademy.com/academy/teachers/3',
     expectedArHref: 'https://al-rahmaacademy.com/ar/academy/teachers/3',
     expectedFrHref: 'https://al-rahmaacademy.com/fr/academy/teachers/3',
+    expectedItHref: 'https://al-rahmaacademy.com/it/academy/teachers/3',
     expectedTitle: 'خيرية المحمدي | AL-Rahma Academy',
     breadcrumb: [
       { name: 'الرئيسية', item: 'https://al-rahmaacademy.com/ar/' },
@@ -640,6 +664,7 @@ const LITERAL_FILES = [
     expectedEnHref: 'https://al-rahmaacademy.com/academy/teachers/4',
     expectedArHref: 'https://al-rahmaacademy.com/ar/academy/teachers/4',
     expectedFrHref: 'https://al-rahmaacademy.com/fr/academy/teachers/4',
+    expectedItHref: 'https://al-rahmaacademy.com/it/academy/teachers/4',
     expectedTitle: 'Omnia Abd Allah | AL-Rahma Academy',
     breadcrumb: [
       { name: 'Home', item: 'https://al-rahmaacademy.com/' },
@@ -656,6 +681,7 @@ const LITERAL_FILES = [
     expectedEnHref: 'https://al-rahmaacademy.com/academy/teachers/4',
     expectedArHref: 'https://al-rahmaacademy.com/ar/academy/teachers/4',
     expectedFrHref: 'https://al-rahmaacademy.com/fr/academy/teachers/4',
+    expectedItHref: 'https://al-rahmaacademy.com/it/academy/teachers/4',
     expectedTitle: 'أمنية عبد الله | AL-Rahma Academy',
     breadcrumb: [
       { name: 'الرئيسية', item: 'https://al-rahmaacademy.com/ar/' },
@@ -672,6 +698,7 @@ const LITERAL_FILES = [
     expectedEnHref: 'https://al-rahmaacademy.com/academy/teachers/5',
     expectedArHref: 'https://al-rahmaacademy.com/ar/academy/teachers/5',
     expectedFrHref: 'https://al-rahmaacademy.com/fr/academy/teachers/5',
+    expectedItHref: 'https://al-rahmaacademy.com/it/academy/teachers/5',
     expectedTitle: 'Abd Allah Ayman | AL-Rahma Academy',
     breadcrumb: [
       { name: 'Home', item: 'https://al-rahmaacademy.com/' },
@@ -688,6 +715,7 @@ const LITERAL_FILES = [
     expectedEnHref: 'https://al-rahmaacademy.com/academy/teachers/5',
     expectedArHref: 'https://al-rahmaacademy.com/ar/academy/teachers/5',
     expectedFrHref: 'https://al-rahmaacademy.com/fr/academy/teachers/5',
+    expectedItHref: 'https://al-rahmaacademy.com/it/academy/teachers/5',
     expectedTitle: 'عبد الله أيمن | AL-Rahma Academy',
     breadcrumb: [
       { name: 'الرئيسية', item: 'https://al-rahmaacademy.com/ar/' },
@@ -704,6 +732,7 @@ const LITERAL_FILES = [
     expectedEnHref: 'https://al-rahmaacademy.com/academy/teachers/6',
     expectedArHref: 'https://al-rahmaacademy.com/ar/academy/teachers/6',
     expectedFrHref: 'https://al-rahmaacademy.com/fr/academy/teachers/6',
+    expectedItHref: 'https://al-rahmaacademy.com/it/academy/teachers/6',
     expectedTitle: 'Mahmoud Sami | AL-Rahma Academy',
     breadcrumb: [
       { name: 'Home', item: 'https://al-rahmaacademy.com/' },
@@ -720,6 +749,7 @@ const LITERAL_FILES = [
     expectedEnHref: 'https://al-rahmaacademy.com/academy/teachers/6',
     expectedArHref: 'https://al-rahmaacademy.com/ar/academy/teachers/6',
     expectedFrHref: 'https://al-rahmaacademy.com/fr/academy/teachers/6',
+    expectedItHref: 'https://al-rahmaacademy.com/it/academy/teachers/6',
     expectedTitle: 'محمود سامي | AL-Rahma Academy',
     breadcrumb: [
       { name: 'الرئيسية', item: 'https://al-rahmaacademy.com/ar/' },
@@ -736,6 +766,7 @@ const LITERAL_FILES = [
     expectedEnHref: 'https://al-rahmaacademy.com/academy/teachers/7',
     expectedArHref: 'https://al-rahmaacademy.com/ar/academy/teachers/7',
     expectedFrHref: 'https://al-rahmaacademy.com/fr/academy/teachers/7',
+    expectedItHref: 'https://al-rahmaacademy.com/it/academy/teachers/7',
     expectedTitle: 'Aya | AL-Rahma Academy',
     breadcrumb: [
       { name: 'Home', item: 'https://al-rahmaacademy.com/' },
@@ -752,6 +783,7 @@ const LITERAL_FILES = [
     expectedEnHref: 'https://al-rahmaacademy.com/academy/teachers/7',
     expectedArHref: 'https://al-rahmaacademy.com/ar/academy/teachers/7',
     expectedFrHref: 'https://al-rahmaacademy.com/fr/academy/teachers/7',
+    expectedItHref: 'https://al-rahmaacademy.com/it/academy/teachers/7',
     expectedTitle: 'آية | AL-Rahma Academy',
     breadcrumb: [
       { name: 'الرئيسية', item: 'https://al-rahmaacademy.com/ar/' },
@@ -768,6 +800,7 @@ const LITERAL_FILES = [
     expectedEnHref: 'https://al-rahmaacademy.com/academy/teachers/8',
     expectedArHref: 'https://al-rahmaacademy.com/ar/academy/teachers/8',
     expectedFrHref: 'https://al-rahmaacademy.com/fr/academy/teachers/8',
+    expectedItHref: 'https://al-rahmaacademy.com/it/academy/teachers/8',
     expectedTitle: 'Fatima Al-Rashidi | AL-Rahma Academy',
     breadcrumb: [
       { name: 'Home', item: 'https://al-rahmaacademy.com/' },
@@ -784,6 +817,7 @@ const LITERAL_FILES = [
     expectedEnHref: 'https://al-rahmaacademy.com/academy/teachers/8',
     expectedArHref: 'https://al-rahmaacademy.com/ar/academy/teachers/8',
     expectedFrHref: 'https://al-rahmaacademy.com/fr/academy/teachers/8',
+    expectedItHref: 'https://al-rahmaacademy.com/it/academy/teachers/8',
     expectedTitle: 'فاطمة الراشدي | AL-Rahma Academy',
     breadcrumb: [
       { name: 'الرئيسية', item: 'https://al-rahmaacademy.com/ar/' },
@@ -800,6 +834,7 @@ const LITERAL_FILES = [
     expectedEnHref: 'https://al-rahmaacademy.com/academy/teachers/9',
     expectedArHref: 'https://al-rahmaacademy.com/ar/academy/teachers/9',
     expectedFrHref: 'https://al-rahmaacademy.com/fr/academy/teachers/9',
+    expectedItHref: 'https://al-rahmaacademy.com/it/academy/teachers/9',
     expectedTitle: 'Alaa Ragib | AL-Rahma Academy',
     breadcrumb: [
       { name: 'Home', item: 'https://al-rahmaacademy.com/' },
@@ -816,6 +851,7 @@ const LITERAL_FILES = [
     expectedEnHref: 'https://al-rahmaacademy.com/academy/teachers/9',
     expectedArHref: 'https://al-rahmaacademy.com/ar/academy/teachers/9',
     expectedFrHref: 'https://al-rahmaacademy.com/fr/academy/teachers/9',
+    expectedItHref: 'https://al-rahmaacademy.com/it/academy/teachers/9',
     expectedTitle: 'علاء رجب | AL-Rahma Academy',
     breadcrumb: [
       { name: 'الرئيسية', item: 'https://al-rahmaacademy.com/ar/' },
@@ -832,6 +868,7 @@ const LITERAL_FILES = [
     expectedEnHref: 'https://al-rahmaacademy.com/academy/teachers/10',
     expectedArHref: 'https://al-rahmaacademy.com/ar/academy/teachers/10',
     expectedFrHref: 'https://al-rahmaacademy.com/fr/academy/teachers/10',
+    expectedItHref: 'https://al-rahmaacademy.com/it/academy/teachers/10',
     expectedTitle: 'Islam Muhammad | AL-Rahma Academy',
     breadcrumb: [
       { name: 'Home', item: 'https://al-rahmaacademy.com/' },
@@ -848,6 +885,7 @@ const LITERAL_FILES = [
     expectedEnHref: 'https://al-rahmaacademy.com/academy/teachers/10',
     expectedArHref: 'https://al-rahmaacademy.com/ar/academy/teachers/10',
     expectedFrHref: 'https://al-rahmaacademy.com/fr/academy/teachers/10',
+    expectedItHref: 'https://al-rahmaacademy.com/it/academy/teachers/10',
     expectedTitle: 'إسلام محمد | AL-Rahma Academy',
     breadcrumb: [
       { name: 'الرئيسية', item: 'https://al-rahmaacademy.com/ar/' },
@@ -864,6 +902,7 @@ const LITERAL_FILES = [
     expectedEnHref: 'https://al-rahmaacademy.com/academy/teachers/11',
     expectedArHref: 'https://al-rahmaacademy.com/ar/academy/teachers/11',
     expectedFrHref: 'https://al-rahmaacademy.com/fr/academy/teachers/11',
+    expectedItHref: 'https://al-rahmaacademy.com/it/academy/teachers/11',
     expectedTitle: 'Gouda Al-Shobaki | AL-Rahma Academy',
     breadcrumb: [
       { name: 'Home', item: 'https://al-rahmaacademy.com/' },
@@ -880,6 +919,7 @@ const LITERAL_FILES = [
     expectedEnHref: 'https://al-rahmaacademy.com/academy/teachers/11',
     expectedArHref: 'https://al-rahmaacademy.com/ar/academy/teachers/11',
     expectedFrHref: 'https://al-rahmaacademy.com/fr/academy/teachers/11',
+    expectedItHref: 'https://al-rahmaacademy.com/it/academy/teachers/11',
     expectedTitle: 'جودة الشوبكي | AL-Rahma Academy',
     breadcrumb: [
       { name: 'الرئيسية', item: 'https://al-rahmaacademy.com/ar/' },
@@ -912,6 +952,7 @@ const LITERAL_FILES = [
     expectedEnHref: 'https://al-rahmaacademy.com/academy/privacy',
     expectedArHref: 'https://al-rahmaacademy.com/ar/academy/privacy',
     expectedFrHref: 'https://al-rahmaacademy.com/fr/academy/privacy',
+    expectedItHref: 'https://al-rahmaacademy.com/it/academy/privacy',
     expectedTitle: 'Privacy Policy | AL-Rahma Academy',
     expectedDescription:
       'Read the AL-Rahma Academy privacy policy to understand how we collect, use and protect your personal data.',
@@ -930,6 +971,7 @@ const LITERAL_FILES = [
     expectedEnHref: 'https://al-rahmaacademy.com/academy/privacy',
     expectedArHref: 'https://al-rahmaacademy.com/ar/academy/privacy',
     expectedFrHref: 'https://al-rahmaacademy.com/fr/academy/privacy',
+    expectedItHref: 'https://al-rahmaacademy.com/it/academy/privacy',
     expectedTitle: 'سياسة الخصوصية | AL-Rahma Academy',
     expectedDescription:
       'اقرأ سياسة خصوصية أكاديمية الرحمة لتعرف كيف نجمع بياناتك الشخصية ونستخدمها ونحميها.',
@@ -948,6 +990,7 @@ const LITERAL_FILES = [
     expectedEnHref: 'https://al-rahmaacademy.com/academy/terms',
     expectedArHref: 'https://al-rahmaacademy.com/ar/academy/terms',
     expectedFrHref: 'https://al-rahmaacademy.com/fr/academy/terms',
+    expectedItHref: 'https://al-rahmaacademy.com/it/academy/terms',
     expectedTitle: 'Terms of Service | AL-Rahma Academy',
     expectedDescription:
       "Terms and conditions governing your use of Al-Rahma Academy's online Quran and Islamic education services.",
@@ -966,6 +1009,7 @@ const LITERAL_FILES = [
     expectedEnHref: 'https://al-rahmaacademy.com/academy/terms',
     expectedArHref: 'https://al-rahmaacademy.com/ar/academy/terms',
     expectedFrHref: 'https://al-rahmaacademy.com/fr/academy/terms',
+    expectedItHref: 'https://al-rahmaacademy.com/it/academy/terms',
     expectedTitle: 'شروط الخدمة | AL-Rahma Academy',
     expectedDescription:
       'الشروط والأحكام التي تحكم استخدامك لخدمات أكاديمية الرحمة التعليمية عبر الإنترنت للقرآن الكريم والدراسات الإسلامية.',
@@ -984,6 +1028,7 @@ const LITERAL_FILES = [
     expectedEnHref: 'https://al-rahmaacademy.com/academy/refund-policy',
     expectedArHref: 'https://al-rahmaacademy.com/ar/academy/refund-policy',
     expectedFrHref: 'https://al-rahmaacademy.com/fr/academy/refund-policy',
+    expectedItHref: 'https://al-rahmaacademy.com/it/academy/refund-policy',
     expectedTitle: 'Refund Policy | AL-Rahma Academy',
     expectedDescription: 'You may request a refund within 24 days of payment. See our Refund Policy for how it works.',
     breadcrumb: [
@@ -1001,6 +1046,7 @@ const LITERAL_FILES = [
     expectedEnHref: 'https://al-rahmaacademy.com/academy/refund-policy',
     expectedArHref: 'https://al-rahmaacademy.com/ar/academy/refund-policy',
     expectedFrHref: 'https://al-rahmaacademy.com/fr/academy/refund-policy',
+    expectedItHref: 'https://al-rahmaacademy.com/it/academy/refund-policy',
     expectedTitle: 'سياسة الاسترداد | AL-Rahma Academy',
     expectedDescription:
       'يمكنك طلب استرداد المبلغ خلال 24 يومًا من الدفع. راجع سياسة الاسترداد لمعرفة كيفية عملها.',
@@ -1031,6 +1077,7 @@ const LITERAL_FILES = [
     expectedEnHref: 'https://al-rahmaacademy.com/resources/faq',
     expectedArHref: 'https://al-rahmaacademy.com/ar/resources/faq',
     expectedFrHref: 'https://al-rahmaacademy.com/fr/resources/faq',
+    expectedItHref: 'https://al-rahmaacademy.com/it/resources/faq',
     expectedTitle: 'Frequently Asked Questions | AL-Rahma Academy',
     expectedDescription: 'Everything you need to know about Al-Rahma Academy and our online Quran courses.',
     breadcrumb: [
@@ -1048,6 +1095,7 @@ const LITERAL_FILES = [
     expectedEnHref: 'https://al-rahmaacademy.com/resources/faq',
     expectedArHref: 'https://al-rahmaacademy.com/ar/resources/faq',
     expectedFrHref: 'https://al-rahmaacademy.com/fr/resources/faq',
+    expectedItHref: 'https://al-rahmaacademy.com/it/resources/faq',
     expectedTitle: 'الأسئلة الشائعة | AL-Rahma Academy',
     expectedDescription: 'كل ما تحتاج معرفته عن أكاديمية الرحمة ودوراتنا الإلكترونية في القرآن الكريم.',
     breadcrumb: [
@@ -1086,6 +1134,7 @@ const LITERAL_FILES = [
     expectedEnHref: 'https://al-rahmaacademy.com/tools/prayer',
     expectedArHref: 'https://al-rahmaacademy.com/ar/tools/prayer',
     expectedFrHref: 'https://al-rahmaacademy.com/fr/tools/prayer',
+    expectedItHref: 'https://al-rahmaacademy.com/it/tools/prayer',
     expectedTitle: 'Prayer & Islamic Tools | AL-Rahma Academy',
     expectedDescription:
       'Prayer times, Qibla compass, Islamic calendar, and Verse of the Day — four dedicated tools for daily worship.',
@@ -1104,6 +1153,7 @@ const LITERAL_FILES = [
     expectedEnHref: 'https://al-rahmaacademy.com/tools/prayer',
     expectedArHref: 'https://al-rahmaacademy.com/ar/tools/prayer',
     expectedFrHref: 'https://al-rahmaacademy.com/fr/tools/prayer',
+    expectedItHref: 'https://al-rahmaacademy.com/it/tools/prayer',
     expectedTitle: 'الصلاة والأدوات الإسلامية | AL-Rahma Academy',
     expectedDescription: 'مواقيت الصلاة وبوصلة القبلة والتقويم الإسلامي وآية اليوم — أربع أدوات للعبادة اليومية.',
     breadcrumb: [
@@ -1121,6 +1171,7 @@ const LITERAL_FILES = [
     expectedEnHref: 'https://al-rahmaacademy.com/tools/tasbeeh',
     expectedArHref: 'https://al-rahmaacademy.com/ar/tools/tasbeeh',
     expectedFrHref: 'https://al-rahmaacademy.com/fr/tools/tasbeeh',
+    expectedItHref: 'https://al-rahmaacademy.com/it/tools/tasbeeh',
     expectedTitle: 'Tasbeeh Counter | AL-Rahma Academy',
     expectedDescription:
       'Free digital tasbeeh counter. Count SubhanAllah, Alhamdulillah, AllahuAkbar and more with progress tracking.',
@@ -1139,6 +1190,7 @@ const LITERAL_FILES = [
     expectedEnHref: 'https://al-rahmaacademy.com/tools/tasbeeh',
     expectedArHref: 'https://al-rahmaacademy.com/ar/tools/tasbeeh',
     expectedFrHref: 'https://al-rahmaacademy.com/fr/tools/tasbeeh',
+    expectedItHref: 'https://al-rahmaacademy.com/it/tools/tasbeeh',
     expectedTitle: 'مسبحة رقمية | AL-Rahma Academy',
     expectedDescription: 'مسبحة رقمية مجانية: سبحان الله، الحمد لله، الله أكبر، لا إله إلا الله. تتبع أذكارك اليومية.',
     breadcrumb: [
@@ -1156,6 +1208,7 @@ const LITERAL_FILES = [
     expectedEnHref: 'https://al-rahmaacademy.com/tools/arabic-alphabet',
     expectedArHref: 'https://al-rahmaacademy.com/ar/tools/arabic-alphabet',
     expectedFrHref: 'https://al-rahmaacademy.com/fr/tools/arabic-alphabet',
+    expectedItHref: 'https://al-rahmaacademy.com/it/tools/arabic-alphabet',
     expectedTitle: 'Arabic Alphabet | AL-Rahma Academy',
     expectedDescription:
       'Learn the 28 Arabic letters with audio pronunciation and interactive exercises — free from Al-Rahma Academy.',
@@ -1174,6 +1227,7 @@ const LITERAL_FILES = [
     expectedEnHref: 'https://al-rahmaacademy.com/tools/arabic-alphabet',
     expectedArHref: 'https://al-rahmaacademy.com/ar/tools/arabic-alphabet',
     expectedFrHref: 'https://al-rahmaacademy.com/fr/tools/arabic-alphabet',
+    expectedItHref: 'https://al-rahmaacademy.com/it/tools/arabic-alphabet',
     expectedTitle: 'الأبجدية العربية | AL-Rahma Academy',
     expectedDescription: 'تعلّم الحروف العربية الـ٢٨ مع النطق الصوتي والتدريبات التفاعلية — مجاناً من أكاديمية الرحمة.',
     breadcrumb: [
@@ -1200,6 +1254,7 @@ const LITERAL_FILES = [
     expectedEnHref: 'https://al-rahmaacademy.com/tools/adhkar',
     expectedArHref: 'https://al-rahmaacademy.com/ar/tools/adhkar',
     expectedFrHref: 'https://al-rahmaacademy.com/fr/tools/adhkar',
+    expectedItHref: 'https://al-rahmaacademy.com/it/tools/adhkar',
     expectedTitle: "Adhkar & Du'a Library | AL-Rahma Academy",
     expectedDescription: 'Daily adhkar with full diacritics, virtues & sources',
     breadcrumb: [
@@ -1217,6 +1272,7 @@ const LITERAL_FILES = [
     expectedEnHref: 'https://al-rahmaacademy.com/tools/adhkar',
     expectedArHref: 'https://al-rahmaacademy.com/ar/tools/adhkar',
     expectedFrHref: 'https://al-rahmaacademy.com/fr/tools/adhkar',
+    expectedItHref: 'https://al-rahmaacademy.com/it/tools/adhkar',
     expectedTitle: 'مكتبة الأذكار والأدعية | AL-Rahma Academy',
     expectedDescription: 'أذكار يومية بتشكيل كامل مع الفضائل والمصادر',
     breadcrumb: [
@@ -1275,7 +1331,7 @@ describe.skipIf(distExists)('Prerender output — dist/public not present (expec
 // above — this reads real files too, so it needs dist/public to exist
 // just as much.
 describe.skipIf(!distExists)('Prerender output — literal dist/public paths (independent of outputRelPathFor)', () => {
-  it.each(LITERAL_FILES)('$relPath: correct raw HTML at the literal path', ({ locale, relPath, expectedCanonical, h1Text, expectedEnHref, expectedArHref, expectedFrHref, expectedTitle, expectedDescription, breadcrumb }) => {
+  it.each(LITERAL_FILES)('$relPath: correct raw HTML at the literal path', ({ locale, relPath, expectedCanonical, h1Text, expectedEnHref, expectedArHref, expectedFrHref, expectedItHref, expectedTitle, expectedDescription, breadcrumb }) => {
     const filePath = path.join(distDir, relPath);
     expect(existsSync(filePath), `missing prerendered file: ${filePath}`).toBe(true);
 
@@ -1309,14 +1365,20 @@ describe.skipIf(!distExists)('Prerender output — literal dist/public paths (in
     expect(heading.textContent.trim(), 'h1 must be the real page-specific heading, not empty/placeholder').toBe(h1Text);
 
     // hreflang fix (2026-09-21), extended for the French SEO Publication
-    // Gate (2026-09-30): the static SPA shell's inherited block must be
-    // fully replaced by the real, reciprocal set of alternates for every
-    // locale actually published for THIS route (en/ar/fr today) + x-default
-    // — nothing else, and nothing missing. expectedFrHref is present on
-    // every LITERAL_FILES entry (fr joined every route that already had
-    // en+ar), so this is unconditional, not an if-present check.
+    // Gate (2026-09-30) and the Italian SEO Publication Gate (2026-09-30):
+    // the static SPA shell's inherited block must be fully replaced by the
+    // real, reciprocal set of alternates for every locale actually
+    // published for THIS route + x-default — nothing else, nothing
+    // missing. expectedFrHref is present on every LITERAL_FILES entry (fr
+    // joined every route that already had en+ar); expectedItHref is present
+    // on every entry EXCEPT /courses/ijazah and /courses/islamic-studies
+    // (it did not join those two — see scripts/prerender-routes.mjs's own
+    // "Italian SEO Publication Gate" comment), so the hreflang set size and
+    // it-alternate presence are both derived from expectedItHref, not
+    // hardcoded to one fixed count.
     const hreflangEls = [...document.querySelectorAll('link[rel="alternate"][hreflang]')];
-    expect(hreflangEls.length, 'exactly 4 hreflang alternates (en, ar, fr, x-default), no more').toBe(4);
+    const expectedHreflangCount = expectedItHref ? 5 : 4;
+    expect(hreflangEls.length, `exactly ${expectedHreflangCount} hreflang alternates, no more`).toBe(expectedHreflangCount);
 
     const byHreflang = Object.fromEntries(hreflangEls.map((el) => [el.getAttribute('hreflang'), el.getAttribute('href')]));
     expect(byHreflang.en, 'hreflang=en must point at the English version of this same page').toBe(expectedEnHref);
@@ -1324,24 +1386,30 @@ describe.skipIf(!distExists)('Prerender output — literal dist/public paths (in
     expect(byHreflang.fr, 'hreflang=fr must point at the French version of this same page').toBe(expectedFrHref);
     expect(byHreflang['x-default'], 'hreflang=x-default must point at the English version').toBe(expectedEnHref);
 
-    expect(byHreflang.it, 'no hreflang=it — it is not a published language').toBeUndefined();
+    if (expectedItHref) {
+      expect(byHreflang.it, 'hreflang=it must point at the Italian version of this same page').toBe(expectedItHref);
+    } else {
+      expect(byHreflang.it, 'no hreflang=it — it is not published for this route').toBeUndefined();
+    }
     expect(byHreflang.es, 'no hreflang=es — es is not a published language').toBeUndefined();
     expect(byHreflang.de, 'no hreflang=de — de is not a published language').toBeUndefined();
 
-    // og:locale fix (French SEO Publication Gate, 2026-09-30): same
-    // reciprocal-set guarantee as hreflang above, via ogLocaleFor() —
-    // the static shell's inherited og:locale (always en_GB primary) and
-    // og:locale:alternate (it_IT/es_ES/de_DE/fr_FR, none reciprocal) must be
-    // fully replaced with this page's real self locale + real alternates.
-    const OG_LOCALE_BY_LOCALE = { en: 'en_GB', ar: 'ar_EG', fr: 'fr_FR' };
+    // og:locale fix (French SEO Publication Gate, 2026-09-30; extended for
+    // Italian, 2026-09-30): same reciprocal-set guarantee as hreflang
+    // above, via ogLocaleFor() — the static shell's inherited og:locale
+    // (always en_GB primary) and og:locale:alternate (it_IT/es_ES/de_DE/
+    // fr_FR, none reciprocal) must be fully replaced with this page's real
+    // self locale + real alternates.
+    const OG_LOCALE_BY_LOCALE = { en: 'en_GB', ar: 'ar_EG', fr: 'fr_FR', it: 'it_IT' };
     const ogLocaleEl = document.querySelector('meta[property="og:locale"]');
     expect(ogLocaleEl, 'meta[property="og:locale"] must exist').toBeTruthy();
     expect(ogLocaleEl.getAttribute('content'), 'og:locale must be this page\'s own locale').toBe(OG_LOCALE_BY_LOCALE[locale]);
 
     const ogAlternateEls = [...document.querySelectorAll('meta[property="og:locale:alternate"]')];
     const ogAlternates = ogAlternateEls.map((el) => el.getAttribute('content'));
-    const expectedOtherLocales = ['en', 'ar', 'fr'].filter((l) => l !== locale);
-    expect(ogAlternates.sort(), 'og:locale:alternate must list exactly the other 2 published locales for this route').toEqual(
+    const publishedLocalesForThisRoute = ['en', 'ar', 'fr', ...(expectedItHref ? ['it'] : [])];
+    const expectedOtherLocales = publishedLocalesForThisRoute.filter((l) => l !== locale);
+    expect(ogAlternates.sort(), 'og:locale:alternate must list exactly the other published locales for this route').toEqual(
       expectedOtherLocales.map((l) => OG_LOCALE_BY_LOCALE[l]).sort(),
     );
 
@@ -1368,6 +1436,110 @@ describe.skipIf(!distExists)('Prerender output — literal dist/public paths (in
         });
       }
     }
+  });
+});
+
+// Italian SEO Publication Gate (2026-09-30): every one of the 28 newly
+// published (route, 'it') pairs — structural checks derived directly from
+// PRERENDER_MANIFEST (not a hand-maintained literal list, unlike
+// LITERAL_FILES above), so a manifest edit (a route added/removed/
+// mis-excluded for it) is caught here automatically. Excludes
+// /courses/ijazah and /courses/islamic-studies by construction, since
+// PRERENDER_MANIFEST itself has no 'it' entry for either.
+describe.skipIf(!distExists)('Italian prerender output — raw HTML for all 28 published it pages', () => {
+  const itEntries = PRERENDER_MANIFEST.filter((entry) => entry.locale === 'it');
+
+  it('exactly 28 it entries are published, excluding /courses/ijazah and /courses/islamic-studies', () => {
+    expect(itEntries).toHaveLength(28);
+    expect(itEntries.some((e) => e.route === '/courses/ijazah')).toBe(false);
+    expect(itEntries.some((e) => e.route === '/courses/islamic-studies')).toBe(false);
+  });
+
+  it.each(itEntries)('$route @ it: lang=it, self canonical, og:locale=it_IT, reciprocal hreflang', (entry) => {
+    const filePath = path.join(distDir, outputRelPathFor(entry));
+    expect(existsSync(filePath), `missing prerendered file: ${filePath}`).toBe(true);
+
+    const html = readFileSync(filePath, 'utf8');
+    const dom = new JSDOM(html);
+    const { document } = dom.window;
+
+    expect(document.documentElement.lang, 'html[lang]').toBe('it');
+    expect(document.documentElement.dir, 'html[dir]').toBe('ltr');
+
+    const title = document.title;
+    expect(title, 'title must not be empty').toBeTruthy();
+    expect(title, 'title must not be the pre-hydration SPA shell').not.toBe(SHELL_TITLE);
+
+    const description = document.querySelector('meta[name="description"]')?.getAttribute('content');
+    expect(description, 'meta description must not be empty').toBeTruthy();
+    expect(description, 'meta description must not be the pre-hydration SPA shell').not.toBe(SHELL_DESCRIPTION);
+
+    const canonical = document.querySelector('link[rel="canonical"]')?.getAttribute('href');
+    expect(canonical, 'canonical must be this page\'s own it URL').toBe(canonicalUrlFor(entry));
+
+    const heading = document.querySelector('h1');
+    expect(heading, 'h1 must exist in body').toBeTruthy();
+    expect(heading.textContent.trim().length, 'h1 must have real hydrated text').toBeGreaterThan(0);
+
+    const main = document.querySelector('#main-content');
+    expect(main, '#main-content must exist').toBeTruthy();
+    expect(main.textContent.trim().length, '#main-content must have real hydrated text').toBeGreaterThan(0);
+
+    // Every route that publishes it also already publishes en/ar/fr (it
+    // never joins a route ahead of those three) — so every it page carries
+    // exactly 5 hreflang alternates: en, ar, fr, it (self), x-default.
+    const hreflangEls = [...document.querySelectorAll('link[rel="alternate"][hreflang]')];
+    expect(hreflangEls.length, 'exactly 5 hreflang alternates (en, ar, fr, it, x-default)').toBe(5);
+    const byHreflang = Object.fromEntries(hreflangEls.map((el) => [el.getAttribute('hreflang'), el.getAttribute('href')]));
+    expect(byHreflang.it, 'hreflang=it must point at this exact page (self-reference)').toBe(canonicalUrlFor(entry));
+    expect(byHreflang.en, 'hreflang=en must point at the English version').toBe(canonicalUrlFor({ ...entry, locale: 'en' }));
+    expect(byHreflang.ar, 'hreflang=ar must point at the Arabic version').toBe(canonicalUrlFor({ ...entry, locale: 'ar' }));
+    expect(byHreflang.fr, 'hreflang=fr must point at the French version').toBe(canonicalUrlFor({ ...entry, locale: 'fr' }));
+    expect(byHreflang['x-default'], 'hreflang=x-default must point at the English version').toBe(canonicalUrlFor({ ...entry, locale: 'en' }));
+    expect(byHreflang.es, 'no hreflang=es — es is not a published language').toBeUndefined();
+    expect(byHreflang.de, 'no hreflang=de — de is not a published language').toBeUndefined();
+
+    const ogLocaleEl = document.querySelector('meta[property="og:locale"]');
+    expect(ogLocaleEl, 'meta[property="og:locale"] must exist').toBeTruthy();
+    expect(ogLocaleEl.getAttribute('content'), 'og:locale must be it_IT on an Italian page').toBe('it_IT');
+
+    const ogAlternates = [...document.querySelectorAll('meta[property="og:locale:alternate"]')].map((el) => el.getAttribute('content'));
+    expect(ogAlternates.sort(), 'og:locale:alternate must list exactly en_GB, ar_EG, fr_FR').toEqual(['ar_EG', 'en_GB', 'fr_FR'].sort());
+  });
+
+  // Literal exact-text checks for the three content gaps this same PR filled
+  // (RESOURCES_SEO_TEXT.it, PAGE_HEADING_TEXT.it + FOUNDER_STORY_TEXT.it,
+  // TASBEEH_TEXT.it) — proving the new Italian strings actually reach the
+  // raw prerendered HTML, not just that they exist in the source file.
+  it('/it/resources: meta description is the new RESOURCES_SEO_TEXT.it string', () => {
+    const html = readFileSync(path.join(distDir, 'it/resources/index.html'), 'utf8');
+    const { document } = new JSDOM(html).window;
+    const description = document.querySelector('meta[name="description"]')?.getAttribute('content');
+    expect(description).toBe(
+      "Scopri le risorse di Al-Rahma Academy: articoli del blog, FAQ, informazioni sull'accademia e profili degli insegnanti.",
+    );
+  });
+
+  it('/it/academy/about: h1 is the new PAGE_HEADING_TEXT.it string, body carries the new founder story', () => {
+    const html = readFileSync(path.join(distDir, 'it/academy/about/index.html'), 'utf8');
+    const { document } = new JSDOM(html).window;
+    const heading = document.querySelector('h1');
+    expect(heading.textContent.trim()).toBe('Chi siamo su Al-Rahma Academy');
+    const body = document.querySelector('#main-content').textContent;
+    expect(body).toContain('Perché abbiamo creato Al-Rahma Academy');
+    expect(body).toContain("Non abbiamo costruito una piattaforma");
+  });
+
+  it('/it/tools/tasbeeh: title/H1/breadcrumb are the new TASBEEH_TEXT.it strings; dhikr wording stays untranslated', () => {
+    const html = readFileSync(path.join(distDir, 'it/tools/tasbeeh/index.html'), 'utf8');
+    const { document } = new JSDOM(html).window;
+    expect(document.title).toContain('Contatore Tasbeeh');
+    const heading = document.querySelector('h1');
+    expect(heading.textContent.trim()).toBe('Contatore Tasbeeh digitale');
+    const body = document.querySelector('#main-content').textContent;
+    expect(body).toContain('SubhanAllah');
+    expect(body).toContain('Alhamdulillah');
+    expect(body).toContain('AllahuAkbar');
   });
 });
 

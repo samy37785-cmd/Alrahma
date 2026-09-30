@@ -10,6 +10,9 @@ export const PAGE_HEADING_TEXT = {
   ar: { h1: 'من نحن' },
   // French Localization Batch 1A: faithful translation of the English H1.
   fr: { h1: "À propos d'Al-Rahma Academy" },
+  // Italian SEO Publication Gate (2026-09-30): faithful translation of the
+  // English H1, owner-approved verbatim per the task's own wording.
+  it: { h1: 'Chi siamo su Al-Rahma Academy' },
 };
 
 export function pickPageHeading(lang) {

@@ -2,9 +2,11 @@
 // (route, locale) pairs are prerendered to static HTML after `vite build`.
 // Deliberately tiny and explicit — no route is ever prerendered just
 // because it exists in scripts/seoRoutes.mjs or has a locale directory
-// under src/i18n/. Only en/ar/fr are "published" (see
-// docs/localization-audit.md — it/es/de still have real, undocumented
-// content gaps, not just missing routes, so they stay out entirely).
+// under src/i18n/. en/ar/fr are "published" for every route below; it is
+// "published" for the same routes EXCEPT /courses/ijazah (see the Italian
+// SEO Publication Gate comment further down for why) — es/de still have
+// real, undocumented content gaps, not just missing routes, so they stay
+// out entirely (see docs/localization-audit.md).
 //
 // French SEO Publication Gate (2026-09-30): fr joins every route that was
 // already published for en+ar, once the "French Localization Batch
@@ -256,6 +258,53 @@ export const PRERENDER_MANIFEST = [
   { route: '/courses/islamic-studies', locale: 'en', status: 'published', indexable: true },
   { route: '/courses/islamic-studies', locale: 'ar', status: 'published', indexable: true },
   { route: '/courses/islamic-studies', locale: 'fr', status: 'published', indexable: true },
+
+  // Italian SEO Publication Gate (2026-09-30, 28 pages): it for every route
+  // already published above for en/ar/fr, EXCEPT /courses/ijazah and
+  // /courses/islamic-studies. A dedicated read-only readiness audit found
+  // every other route's Italian content already real and already reviewed
+  // (main i18n dict, all 11 teacher bios, every legal page, every hub,
+  // every static tool page, FAQ) once three small, bounded content gaps
+  // were filled in this same PR: RESOURCES_SEO_TEXT.it (description),
+  // PAGE_HEADING_TEXT.it + FOUNDER_STORY_TEXT.it (/academy/about), and
+  // TASBEEH_TEXT.it (page shell only — the counter widget already had
+  // Italian via i18n/it.js). /courses/ijazah stays out: its entire
+  // curriculum content is hardcoded inline in CourseIjazah.jsx with only
+  // en/ar/fr branches (35 isAr/isFr occurrences, no isIt), a genuine
+  // content-volume gap needing a dedicated translation project, not a
+  // publish-time fix — see this file's own precedent for every prior
+  // exclusion above. /courses/islamic-studies stays out because it has its
+  // own separate, already-published en/ar/fr wave and its own independent
+  // publication track; this PR does not touch it. Listed in the same order
+  // as the en/ar blocks above for easy side-by-side review.
+  { route: '/', locale: 'it', status: 'published', indexable: true },
+  { route: '/courses', locale: 'it', status: 'published', indexable: true },
+  { route: '/courses/quran', locale: 'it', status: 'published', indexable: true },
+  { route: '/courses/arabic', locale: 'it', status: 'published', indexable: true },
+  { route: '/academy', locale: 'it', status: 'published', indexable: true },
+  { route: '/academy/about', locale: 'it', status: 'published', indexable: true },
+  { route: '/academy/teachers', locale: 'it', status: 'published', indexable: true },
+  { route: '/resources', locale: 'it', status: 'published', indexable: true },
+  { route: '/tools', locale: 'it', status: 'published', indexable: true },
+  { route: '/academy/teachers/1', locale: 'it', status: 'published', indexable: true },
+  { route: '/academy/teachers/2', locale: 'it', status: 'published', indexable: true },
+  { route: '/academy/teachers/3', locale: 'it', status: 'published', indexable: true },
+  { route: '/academy/teachers/4', locale: 'it', status: 'published', indexable: true },
+  { route: '/academy/teachers/5', locale: 'it', status: 'published', indexable: true },
+  { route: '/academy/teachers/6', locale: 'it', status: 'published', indexable: true },
+  { route: '/academy/teachers/7', locale: 'it', status: 'published', indexable: true },
+  { route: '/academy/teachers/8', locale: 'it', status: 'published', indexable: true },
+  { route: '/academy/teachers/9', locale: 'it', status: 'published', indexable: true },
+  { route: '/academy/teachers/10', locale: 'it', status: 'published', indexable: true },
+  { route: '/academy/teachers/11', locale: 'it', status: 'published', indexable: true },
+  { route: '/academy/privacy', locale: 'it', status: 'published', indexable: true },
+  { route: '/academy/terms', locale: 'it', status: 'published', indexable: true },
+  { route: '/academy/refund-policy', locale: 'it', status: 'published', indexable: true },
+  { route: '/resources/faq', locale: 'it', status: 'published', indexable: true },
+  { route: '/tools/prayer', locale: 'it', status: 'published', indexable: true },
+  { route: '/tools/tasbeeh', locale: 'it', status: 'published', indexable: true },
+  { route: '/tools/arabic-alphabet', locale: 'it', status: 'published', indexable: true },
+  { route: '/tools/adhkar', locale: 'it', status: 'published', indexable: true },
 ];
 
 // The URL path to navigate to for one manifest entry, e.g. "/ar/courses/ijazah".
@@ -302,7 +351,7 @@ export function hreflangLinksFor(entry) {
 // unpublished i18n locale file never silently changes prerendered og:locale
 // output — only a real PRERENDER_MANIFEST entry can do that, same guarantee
 // hreflangLinksFor already gives.
-const OG_LOCALE_BY_LANG = { en: 'en_GB', ar: 'ar_EG', fr: 'fr_FR' };
+const OG_LOCALE_BY_LANG = { en: 'en_GB', ar: 'ar_EG', fr: 'fr_FR', it: 'it_IT' };
 
 // The self og:locale plus every reciprocal og:locale:alternate for one
 // prerendered page — same "only real published (route, locale) pairs"

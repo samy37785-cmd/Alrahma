@@ -8,8 +8,13 @@
 //
 // French Localization Batch 1E adds `fr`, translated from the English shell
 // only (the counter widget itself already has full French via `t.tasbeeh`
-// in i18n/fr.js). it/es/de stay genuinely absent; the route stays 'legacy'
-// in translationStatus.js for those (see that file's own comment).
+// in i18n/fr.js). es/de stay genuinely absent.
+//
+// Italian SEO Publication Gate (2026-09-30) adds `it`, same shape: only the
+// page-shell text below (the counter widget itself already has full Italian
+// via `t.tasbeeh` in i18n/it.js). The dhikr wording itself — SubhanAllah,
+// Alhamdulillah, AllahuAkbar — is deliberately left untranslated in every
+// language here; it is a transliterated Arabic phrase, not English UI text.
 export const TASBEEH_TEXT = {
   en: {
     seo: {
@@ -45,6 +50,18 @@ export const TASBEEH_TEXT = {
     hero: {
       title: 'Compteur de tasbih numérique',
       sub: 'Comptez votre dhikr numériquement — SubhanAllah, Alhamdulillah, AllahuAkbar et plus.',
+    },
+  },
+  it: {
+    seo: {
+      title: 'Contatore Tasbeeh',
+      description: 'Contatore tasbeeh digitale gratuito. Conta SubhanAllah, Alhamdulillah, AllahuAkbar e altro, con monitoraggio dei progressi.',
+    },
+    breadcrumbs: { tools: 'Strumenti', current: 'Contatore Tasbeeh' },
+    eyebrow: 'Dhikr',
+    hero: {
+      title: 'Contatore Tasbeeh digitale',
+      sub: 'Conta i tuoi dhikr in digitale — SubhanAllah, Alhamdulillah, AllahuAkbar e altro.',
     },
   },
 };

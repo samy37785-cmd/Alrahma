@@ -384,23 +384,40 @@ describe('llms.txt and index.html stay in sync with siteFacts (static files, Par
     expect(frHomeEntry.status).toBe('published');
   });
 
-  // SEO Truth Correction (2026-09-29), still valid for every OTHER locale:
-  // /it/, /es/, /de/ were never added to PRERENDER_MANIFEST, so llms.txt
-  // must not claim a pre-rendered landing page for any of them. This check
-  // stays general (any still-unpublished locale, not just "it" by name) so
-  // it keeps catching this exact mistake if one of these joins later
-  // without llms.txt being updated to match.
-  it('llms.txt never claims a "pre-rendered" locale landing page for a locale that is not actually published in PRERENDER_MANIFEST', () => {
+  // SEO Truth Correction (2026-09-29), still valid for es/de: neither was
+  // ever added to PRERENDER_MANIFEST, so llms.txt must not claim a
+  // pre-rendered landing page for either. it was in this same "never
+  // published" set until the Italian SEO Publication Gate (2026-09-30) —
+  // see the dedicated truthful-claim test below for it's own assertion,
+  // mirroring the French one directly above.
+  it('llms.txt never claims a "pre-rendered" locale landing page for a locale that is not actually published in PRERENDER_MANIFEST (es, de)', () => {
     const txt = fs.readFileSync(path.join(REPO_ROOT, 'public', 'llms.txt'), 'utf8');
-    expect(txt).not.toMatch(/\/it\//);
-    expect(txt).not.toMatch(/Italian landing page/i);
+    expect(txt).not.toMatch(/\/es\//);
+    expect(txt).not.toMatch(/\/de\//);
 
     const publishedLocales = new Set(
       PRERENDER_MANIFEST.filter((entry) => entry.status === 'published').map((entry) => entry.locale),
     );
-    for (const loc of ['it', 'es', 'de']) {
+    for (const loc of ['es', 'de']) {
       expect(publishedLocales.has(loc)).toBe(false);
     }
+  });
+
+  // Italian SEO Publication Gate (2026-09-30): mirrors the French truthful-
+  // claim test above — it joined PRERENDER_MANIFEST for 28 of the 30
+  // currently-published routes (all except /courses/ijazah and
+  // /courses/islamic-studies, per scripts/prerender-routes.mjs's own
+  // comment), so llms.txt's "Locale pages (pre-rendered)" claim for
+  // Italian is now TRUE and must name a route genuinely 'published' for
+  // 'it'.
+  it('llms.txt\'s Italian landing page claim is truthful: /it/ is genuinely published in PRERENDER_MANIFEST', () => {
+    const txt = fs.readFileSync(path.join(REPO_ROOT, 'public', 'llms.txt'), 'utf8');
+    expect(txt).toMatch(/\/it\//);
+    expect(txt).toMatch(/Italian landing page/i);
+
+    const itHomeEntry = PRERENDER_MANIFEST.find((entry) => entry.route === '/' && entry.locale === 'it');
+    expect(itHomeEntry, 'the "/" route must have a real it manifest entry').toBeTruthy();
+    expect(itHomeEntry.status).toBe('published');
   });
 
   it('llms.txt is otherwise unchanged: every other link and every EN line is intact', () => {
@@ -408,28 +425,24 @@ describe('llms.txt and index.html stay in sync with siteFacts (static files, Par
     expect(txt).toContain('[Home](https://al-rahmaacademy.com/): Overview of courses, pricing and the free trial.');
     expect(txt).toContain('WhatsApp: +20 103 955 3264');
     expect(txt).toContain('Email: alrahmaacademy038@gmail.com');
-    expect(txt.match(/\(https:\/\/al-rahmaacademy\.com[^)]*\)/g)).toHaveLength(17);
+    expect(txt.match(/\(https:\/\/al-rahmaacademy\.com[^)]*\)/g)).toHaveLength(18);
   });
 
   // index.html's static SPA-shell hreflang block deliberately still carries
-  // no hreflang="fr"/"it" (SEO Truth Correction, PR #146) — this is now
-  // independent of fr's publish status: the static shell is the fallback
-  // for routes NOT in PRERENDER_MANIFEST, which never has a per-page
-  // alternate set to claim (real hreflang, including the new fr alternate,
-  // is written per prerendered file by scripts/prerender.mjs's
+  // no hreflang="fr"/"it" (SEO Truth Correction, PR #146) — independent of
+  // either locale's publish status: the static shell is the fallback for
+  // routes NOT in PRERENDER_MANIFEST, which never has a per-page alternate
+  // set to claim (real hreflang, including the fr/it alternates, is
+  // written per prerendered file by scripts/prerender.mjs's
   // fixHreflangLinks(), never baked into the static index.html source).
-  // hreflang="it" stays correlated to it's unpublished status, same as
-  // before; hreflang="fr" no longer is (fr IS published now), so that half
-  // of the correlation assertion is retired rather than inverted.
+  // Both "publishedLocales.has()" correlation assertions from the original
+  // comment are now retired: fr and it are both published, so this test
+  // only proves the static-shell/per-file split still holds, not an
+  // unpublished-locale correlation.
   it('index.html\'s static shell still carries no hreflang="fr" or hreflang="it" (real hreflang is per-prerendered-file, not baked into the shell)', () => {
     const html = fs.readFileSync(path.join(REPO_ROOT, 'index.html'), 'utf8');
     expect(html).not.toMatch(/hreflang=["']fr["']/);
     expect(html).not.toMatch(/hreflang=["']it["']/);
-
-    const publishedLocales = new Set(
-      PRERENDER_MANIFEST.filter((entry) => entry.status === 'published').map((entry) => entry.locale),
-    );
-    expect(publishedLocales.has('it')).toBe(false);
   });
 
   it('index.html still carries the real hreflang="en" and hreflang="x-default" alternates, untouched', () => {

@@ -68,6 +68,14 @@ const ORIGIN = 'https://al-rahmaacademy.com';
 // all three locales and CourseIslamicStudies.jsx's "Hadith of the Day" no
 // longer freezes a Date.now()-computed value into the prerendered file (see
 // scripts/prerender-routes.mjs's own comment on this entry).
+//
+// Italian SEO Publication Gate (2026-09-30): it joined 28 of these 30
+// routes — every one EXCEPT /courses/ijazah (content-volume gap, no isIt
+// branch in CourseIjazah.jsx) and /courses/islamic-studies (its own separate
+// publication track) — once three small content gaps (RESOURCES_SEO_TEXT.it,
+// PAGE_HEADING_TEXT.it + FOUNDER_STORY_TEXT.it, TASBEEH_TEXT.it) were filled
+// in this same PR. See scripts/prerender-routes.mjs's own "Italian SEO
+// Publication Gate" comment.
 const ROUTES = [
   '/',
   '/courses',
@@ -99,11 +107,16 @@ function pathForLocale(route, locale) {
 // French SEO Publication Gate (2026-09-30): fr joined every one of these 29
 // routes (see scripts/prerender-routes.mjs's own "French wave" comment) —
 // the exact same ROUTES list above, now with a third locale, not a new/
-// different route set. it/es/de remain unpublished, unchanged.
+// different route set. es/de remain unpublished, unchanged.
 const EXPECTED_EN_URLS = ROUTES.map((route) => ORIGIN + pathForLocale(route, 'en'));
 const EXPECTED_AR_URLS = ROUTES.map((route) => ORIGIN + pathForLocale(route, 'ar'));
 const EXPECTED_FR_URLS = ROUTES.map((route) => ORIGIN + pathForLocale(route, 'fr'));
-const EXPECTED_URLS = [...EXPECTED_EN_URLS, ...EXPECTED_AR_URLS, ...EXPECTED_FR_URLS];
+// Italian SEO Publication Gate (2026-09-30): it joins ROUTES minus the two
+// deliberately-excluded routes — never the full ROUTES list, unlike en/ar/fr.
+const IT_EXCLUDED_ROUTES = ['/courses/ijazah', '/courses/islamic-studies'];
+const IT_ROUTES = ROUTES.filter((route) => !IT_EXCLUDED_ROUTES.includes(route));
+const EXPECTED_IT_URLS = IT_ROUTES.map((route) => ORIGIN + pathForLocale(route, 'it'));
+const EXPECTED_URLS = [...EXPECTED_EN_URLS, ...EXPECTED_AR_URLS, ...EXPECTED_FR_URLS, ...EXPECTED_IT_URLS];
 
 function getLocUrls() {
   return [...doc.getElementsByTagName('loc')].map((node) => node.textContent);
@@ -131,19 +144,29 @@ describe('sitemap.xml — structure', () => {
   });
 });
 
-describe('sitemap.xml — exact 90-URL published-routes whitelist', () => {
-  it('contains exactly 90 <loc> entries', () => {
-    expect(getLocUrls()).toHaveLength(90);
+describe('sitemap.xml — exact 118-URL published-routes whitelist', () => {
+  it('contains exactly 118 <loc> entries', () => {
+    expect(getLocUrls()).toHaveLength(118);
   });
 
-  it('splits into exactly 30 EN, 30 AR and 30 FR URLs', () => {
+  it('splits into exactly 30 EN, 30 AR, 30 FR and 28 IT URLs', () => {
     const locs = getLocUrls();
     const arUrls = locs.filter((u) => u.startsWith(`${ORIGIN}/ar/`) || u === `${ORIGIN}/ar`);
     const frUrls = locs.filter((u) => u.startsWith(`${ORIGIN}/fr/`) || u === `${ORIGIN}/fr`);
-    const enUrls = locs.filter((u) => !arUrls.includes(u) && !frUrls.includes(u));
+    const itUrls = locs.filter((u) => u.startsWith(`${ORIGIN}/it/`) || u === `${ORIGIN}/it`);
+    const enUrls = locs.filter(
+      (u) => !arUrls.includes(u) && !frUrls.includes(u) && !itUrls.includes(u),
+    );
     expect(enUrls).toHaveLength(30);
     expect(arUrls).toHaveLength(30);
     expect(frUrls).toHaveLength(30);
+    expect(itUrls).toHaveLength(28);
+  });
+
+  it('does not contain /it/courses/ijazah or /it/courses/islamic-studies', () => {
+    const locs = getLocUrls();
+    expect(locs).not.toContain(`${ORIGIN}/it/courses/ijazah`);
+    expect(locs).not.toContain(`${ORIGIN}/it/courses/islamic-studies`);
   });
 
   it('has no duplicate URLs', () => {
@@ -151,15 +174,14 @@ describe('sitemap.xml — exact 90-URL published-routes whitelist', () => {
     expect(new Set(locs).size).toBe(locs.length);
   });
 
-  it('matches the exact literal 90-URL whitelist, with nothing extra and nothing missing', () => {
+  it('matches the exact literal 118-URL whitelist, with nothing extra and nothing missing', () => {
     const locs = getLocUrls();
     expect([...locs].sort()).toEqual([...EXPECTED_URLS].sort());
   });
 
-  it('does not contain /it/, /es/, /de/, /enroll, the remaining individual tools, Blog, or any other unpublished route', () => {
+  it('does not contain /es/, /de/, /enroll, the remaining individual tools, Blog, or any other unpublished route', () => {
     const locs = getLocUrls();
     for (const forbidden of [
-      '/it/',
       '/es/',
       '/de/',
       '/enroll',
@@ -175,7 +197,7 @@ describe('sitemap.xml — exact 90-URL published-routes whitelist', () => {
     ]) {
       expect(locs.some((u) => u.includes(forbidden))).toBe(false);
     }
-    // Belt-and-suspenders: every URL must be one of the 90 whitelisted ones.
+    // Belt-and-suspenders: every URL must be one of the 118 whitelisted ones.
     for (const loc of locs) {
       expect(EXPECTED_URLS).toContain(loc);
     }

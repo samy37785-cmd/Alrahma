@@ -242,10 +242,20 @@ describe('French text modules: complete, faithful, nothing invented', () => {
     }
   });
 
-  it('it/es/de are still not translated in founderStory.js (fall back to English)', async () => {
+  it('es/de are still not translated in founderStory.js (fall back to English)', async () => {
     const { pickFounderStory } = await import('../i18n/about/founderStory');
-    for (const lang of ['it', 'es', 'de']) {
+    for (const lang of ['es', 'de']) {
       expect(pickFounderStory(lang)).toBe(FOUNDER_STORY_TEXT.en);
     }
+  });
+
+  // Italian SEO Publication Gate (2026-09-30) added a real `it` entry to
+  // founderStory.js (see prerenderOutput.test.js's Italian describe block
+  // for the raw-HTML-level proof); `it` is therefore removed from the
+  // fallback check above.
+  it('it is now translated in founderStory.js (does not fall back to English)', async () => {
+    const { pickFounderStory } = await import('../i18n/about/founderStory');
+    expect(pickFounderStory('it')).not.toBe(FOUNDER_STORY_TEXT.en);
+    expect(pickFounderStory('it').title).toBe('Perché abbiamo creato Al-Rahma Academy');
   });
 });

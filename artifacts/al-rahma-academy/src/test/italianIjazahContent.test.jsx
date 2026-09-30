@@ -12,9 +12,8 @@ import { PRERENDER_MANIFEST } from '../../scripts/prerender-routes.mjs';
 // hydration. Religious/scholarly source material (book titles, authors, the
 // publisher, Arabic text, the ﷺ mark, the URL and every source term) stays in
 // its source form; the four book descriptions/topic lists stay the literal
-// English source, exactly like French. This batch does NOT publish the page:
-// no manifest / sitemap / hreflang change (a separate, later PR). EN/AR/FR
-// byte-identity is proven by italianIjazahEnArFrRegression.test.jsx.
+// English source, exactly like French. EN/AR/FR byte-identity is proven by
+// italianIjazahEnArFrRegression.test.jsx.
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 useFullPageEnvironment();
@@ -159,15 +158,20 @@ describe('/it/courses/ijazah — source material is preserved, not translated', 
   });
 });
 
-describe('scope guard: this batch does not publish /it/courses/ijazah', () => {
-  it('PRERENDER_MANIFEST has no Italian ijazah entry (and none for islamic-studies)', () => {
-    for (const route of ['/courses/ijazah', '/courses/islamic-studies']) {
+// The page itself was published afterwards, in the Italian Ijazah SEO
+// Publication PR; this guard now asserts that and that its siblings stay out.
+describe('publication guard: /it/courses/ijazah is published, Islamic Studies and Tajweed Checker are not', () => {
+  it('PRERENDER_MANIFEST has the Italian ijazah entry, and none for islamic-studies / tajweed-checker', () => {
+    expect(PRERENDER_MANIFEST.some((e) => e.route === '/courses/ijazah' && e.locale === 'it' && e.status === 'published')).toBe(true);
+    for (const route of ['/courses/islamic-studies', '/tools/tajweed-checker']) {
       expect(PRERENDER_MANIFEST.some((e) => e.route === route && e.locale === 'it')).toBe(false);
     }
   });
 
-  it('the sitemap on disk does not list /it/courses/ijazah', () => {
+  it('the sitemap on disk lists /it/courses/ijazah once, and neither unpublished Italian route', () => {
     const xml = fs.readFileSync(path.resolve(__dirname, '../../public/sitemap.xml'), 'utf8');
-    expect(xml).not.toContain('/it/courses/ijazah');
+    expect(xml.match(/<loc>https:\/\/al-rahmaacademy\.com\/it\/courses\/ijazah<\/loc>/g)).toHaveLength(1);
+    expect(xml).not.toContain('/it/courses/islamic-studies');
+    expect(xml).not.toContain('/it/tools/tajweed-checker');
   });
 });

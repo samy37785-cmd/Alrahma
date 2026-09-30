@@ -108,3 +108,31 @@ test('ipWhitelist: production + ADMIN_IP_WHITELIST set rejects a non-matching IP
     else process.env.ADMIN_IP_WHITELIST = prevList;
   }
 });
+
+// Signed Vercel-admin-proxy support (see adminProxySignature.js): when set,
+// req.trustedAdminClientIp takes priority over req.ip. This unit-tests only
+// ipWhitelist's own preference logic in isolation — see
+// tests/admin-proxy-signature.test.js for the full signature-verification
+// chain, including proof that an UNVERIFIED trustedAdminClientIp can never
+// reach this middleware in the first place.
+test('ipWhitelist: prefers req.trustedAdminClientIp over req.ip when set', async () => {
+  const prevEnv = process.env.NODE_ENV;
+  const prevList = process.env.ADMIN_IP_WHITELIST;
+  process.env.NODE_ENV = 'production';
+  process.env.ADMIN_IP_WHITELIST = '203.0.113.7';
+  try {
+    const ipWhitelist = await freshIpWhitelist();
+    // req.ip is some other, disallowed address (e.g. Vercel's own edge IP) —
+    // the verified trustedAdminClientIp is what must decide the outcome.
+    const req = { ...makeReq('198.51.100.9'), trustedAdminClientIp: '203.0.113.7' };
+    const res = makeRes();
+    let nextCalled = false;
+    ipWhitelist(req, res, () => { nextCalled = true; });
+    assert.equal(nextCalled, true);
+    assert.equal(res.statusCode, 200);
+  } finally {
+    process.env.NODE_ENV = prevEnv;
+    if (prevList === undefined) delete process.env.ADMIN_IP_WHITELIST;
+    else process.env.ADMIN_IP_WHITELIST = prevList;
+  }
+});

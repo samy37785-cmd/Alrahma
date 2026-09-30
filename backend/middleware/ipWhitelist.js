@@ -20,6 +20,13 @@
  * The whitelist is parsed once at module load, not on every request.
  * Under serverless each cold start pays the parse cost once and every
  * subsequent warm request reads from the cached array.
+ *
+ * IP source: prefers req.trustedAdminClientIp when adminProxySignature.js
+ * (mounted immediately before this middleware) has verified a signed
+ * Vercel-proxy header for this request; otherwise falls back to req.ip —
+ * see docs/admin-proxy-signing-runbook.md for why plain req.ip is
+ * currently unreliable for requests that reach this service through the
+ * Vercel rewrite.
  */
 
 function ipv4ToInt(ip) {
@@ -81,7 +88,12 @@ export function ipWhitelist(req, res, next) {
     return next(); // dev/test — allow all, unchanged from before
   }
 
-  const raw = req.ip || req.socket?.remoteAddress || '';
+  // req.trustedAdminClientIp is set only by adminProxySignature.js, and only
+  // after a fully valid HMAC signature — see that file and
+  // docs/admin-proxy-signing-runbook.md. Any unsigned or forged
+  // x-admin-proxy-ip header is never surfaced here: it falls straight
+  // through to req.ip, unchanged from before this field existed.
+  const raw = req.trustedAdminClientIp || req.ip || req.socket?.remoteAddress || '';
   const ip  = normalizeIp(raw);
 
   const allowed = _whitelist.some((entry) => ipMatchesEntry(ip, entry) || ipMatchesEntry(raw, entry));

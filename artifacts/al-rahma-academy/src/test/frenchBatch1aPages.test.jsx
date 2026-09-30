@@ -242,9 +242,9 @@ describe('French text modules: complete, faithful, nothing invented', () => {
     }
   });
 
-  it('it/es/de are still not translated in founderStory.js (fall back to English)', async () => {
+  it('es/de are still not translated in founderStory.js (fall back to English; it has its own entry since the Italian SEO wave)', async () => {
     const { pickFounderStory } = await import('../i18n/about/founderStory');
-    for (const lang of ['it', 'es', 'de']) {
+    for (const lang of ['es', 'de']) {
       expect(pickFounderStory(lang)).toBe(FOUNDER_STORY_TEXT.en);
     }
   });

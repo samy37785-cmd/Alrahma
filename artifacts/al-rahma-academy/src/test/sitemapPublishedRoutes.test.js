@@ -103,7 +103,12 @@ function pathForLocale(route, locale) {
 const EXPECTED_EN_URLS = ROUTES.map((route) => ORIGIN + pathForLocale(route, 'en'));
 const EXPECTED_AR_URLS = ROUTES.map((route) => ORIGIN + pathForLocale(route, 'ar'));
 const EXPECTED_FR_URLS = ROUTES.map((route) => ORIGIN + pathForLocale(route, 'fr'));
-const EXPECTED_URLS = [...EXPECTED_EN_URLS, ...EXPECTED_AR_URLS, ...EXPECTED_FR_URLS];
+// Italian SEO wave: it publishes every route above EXCEPT the two whose own
+// waves are separate (/courses/ijazah and /courses/islamic-studies).
+const IT_EXCLUDED_ROUTES = ['/courses/ijazah', '/courses/islamic-studies'];
+const IT_ROUTES = ROUTES.filter((route) => !IT_EXCLUDED_ROUTES.includes(route));
+const EXPECTED_IT_URLS = IT_ROUTES.map((route) => ORIGIN + pathForLocale(route, 'it'));
+const EXPECTED_URLS = [...EXPECTED_EN_URLS, ...EXPECTED_AR_URLS, ...EXPECTED_FR_URLS, ...EXPECTED_IT_URLS];
 
 function getLocUrls() {
   return [...doc.getElementsByTagName('loc')].map((node) => node.textContent);
@@ -131,19 +136,23 @@ describe('sitemap.xml — structure', () => {
   });
 });
 
-describe('sitemap.xml — exact 90-URL published-routes whitelist', () => {
-  it('contains exactly 90 <loc> entries', () => {
-    expect(getLocUrls()).toHaveLength(90);
+describe('sitemap.xml — exact published-routes whitelist', () => {
+  it('contains exactly the whitelisted <loc> entries (count derived, not hardcoded)', () => {
+    expect(getLocUrls()).toHaveLength(EXPECTED_URLS.length);
   });
 
-  it('splits into exactly 30 EN, 30 AR and 30 FR URLs', () => {
+  it('splits into exactly 30 EN, 30 AR, 30 FR and 28 IT URLs', () => {
     const locs = getLocUrls();
-    const arUrls = locs.filter((u) => u.startsWith(`${ORIGIN}/ar/`) || u === `${ORIGIN}/ar`);
-    const frUrls = locs.filter((u) => u.startsWith(`${ORIGIN}/fr/`) || u === `${ORIGIN}/fr`);
-    const enUrls = locs.filter((u) => !arUrls.includes(u) && !frUrls.includes(u));
-    expect(enUrls).toHaveLength(30);
-    expect(arUrls).toHaveLength(30);
-    expect(frUrls).toHaveLength(30);
+    const byPrefix = (l) => locs.filter((u) => u.startsWith(`${ORIGIN}/${l}/`) || u === `${ORIGIN}/${l}`);
+    const arUrls = byPrefix('ar');
+    const frUrls = byPrefix('fr');
+    const itUrls = byPrefix('it');
+    const enUrls = locs.filter((u) => !arUrls.includes(u) && !frUrls.includes(u) && !itUrls.includes(u));
+    expect(enUrls).toHaveLength(EXPECTED_EN_URLS.length);
+    expect(arUrls).toHaveLength(EXPECTED_AR_URLS.length);
+    expect(frUrls).toHaveLength(EXPECTED_FR_URLS.length);
+    expect(itUrls).toHaveLength(EXPECTED_IT_URLS.length);
+    expect(itUrls).toHaveLength(28);
   });
 
   it('has no duplicate URLs', () => {
@@ -151,15 +160,16 @@ describe('sitemap.xml — exact 90-URL published-routes whitelist', () => {
     expect(new Set(locs).size).toBe(locs.length);
   });
 
-  it('matches the exact literal 90-URL whitelist, with nothing extra and nothing missing', () => {
+  it('matches the exact literal whitelist, with nothing extra and nothing missing', () => {
     const locs = getLocUrls();
     expect([...locs].sort()).toEqual([...EXPECTED_URLS].sort());
   });
 
-  it('does not contain /it/, /es/, /de/, /enroll, the remaining individual tools, Blog, or any other unpublished route', () => {
+  it('does not contain /es/, /de/, /it/courses/ijazah, /it/courses/islamic-studies, /enroll, the remaining individual tools, Blog, or any other unpublished route', () => {
     const locs = getLocUrls();
     for (const forbidden of [
-      '/it/',
+      '/it/courses/ijazah',
+      '/it/courses/islamic-studies',
       '/es/',
       '/de/',
       '/enroll',
@@ -175,7 +185,7 @@ describe('sitemap.xml — exact 90-URL published-routes whitelist', () => {
     ]) {
       expect(locs.some((u) => u.includes(forbidden))).toBe(false);
     }
-    // Belt-and-suspenders: every URL must be one of the 90 whitelisted ones.
+    // Belt-and-suspenders: every URL must be one of the whitelisted ones.
     for (const loc of locs) {
       expect(EXPECTED_URLS).toContain(loc);
     }

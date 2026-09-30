@@ -97,7 +97,9 @@ describe('Resources hub SEO metadata: real Arabic, not an English fallback', () 
     expect(pickResourcesSeo('de')).toBe(RESOURCES_SEO_TEXT.en);
     // French Localization Batch 1D: French now has its own entry.
     expect(pickResourcesSeo('fr')).toBe(RESOURCES_SEO_TEXT.fr);
-    expect(Object.keys(RESOURCES_SEO_TEXT)).toEqual(['en', 'ar', 'fr']);
+    // Italian SEO wave: Italian now has its own entry.
+    expect(pickResourcesSeo('it')).toBe(RESOURCES_SEO_TEXT.it);
+    expect(Object.keys(RESOURCES_SEO_TEXT)).toEqual(['en', 'ar', 'fr', 'it']);
   });
 });
 

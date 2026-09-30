@@ -10,6 +10,8 @@ export const PAGE_HEADING_TEXT = {
   ar: { h1: 'من نحن' },
   // French Localization Batch 1A: faithful translation of the English H1.
   fr: { h1: "À propos d'Al-Rahma Academy" },
+  // Italian SEO wave: faithful translation of the English H1.
+  it: { h1: 'Chi siamo su Al-Rahma Academy' },
 };
 
 export function pickPageHeading(lang) {

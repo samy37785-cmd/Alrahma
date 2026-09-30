@@ -109,6 +109,32 @@ export const FOUNDER_STORY_TEXT = {
     sigLine: `${siteFacts.founder}, fondateur`,
     sigBrand: 'Al-Rahma Academy',
   },
+  // Italian SEO wave: a faithful Italian translation of the English story
+  // (English is the canonical source) — no event, claim, figure or promise
+  // added, same <strong> fragment and siteFacts numbers.
+  it: {
+    eyebrow: 'La nostra storia',
+    title: 'Perché abbiamo creato Al-Rahma Academy',
+    body1:
+      'Sono un educatore egiziano trasferitosi in Europa, e ho visto i miei figli faticare a ' +
+      'trovare un insegnante di Corano qualificato — qualcuno capace di insegnare in modo ' +
+      'corretto, di parlare la loro lingua e di comprendere il loro mondo. Ogni opzione che ' +
+      'trovavo era troppo costosa, poco affidabile o semplicemente non qualificata.',
+    body2Pre:
+      'Quella frustrazione è diventata Al-Rahma Academy. Siamo partiti con una manciata di ' +
+      'laureati di Al-Azhar scelti con cura e una regola chiara: ',
+    body2Strong: "ogni insegnante deve essere qualcuno a cui affiderei l'insegnamento dei miei stessi figli.",
+    body3Pre: 'Oggi ',
+    body3Mid: ' famiglie in ',
+    body3Post:
+      " paesi ci affidano la cosa più importante che possiedono — l'educazione coranica dei " +
+      "loro figli. Ogni insegnante possiede un'ijaza verificata. Ogni lezione è individuale. " +
+      "Ogni famiglia può cambiare insegnante, sospendere l'abbonamento o richiedere un " +
+      'rimborso — senza alcuna complicazione.',
+    body4: "Non abbiamo creato una piattaforma. Abbiamo creato l'accademia di cui avevamo bisogno e che non riuscivamo a trovare.",
+    sigLine: `${siteFacts.founder}, fondatore`,
+    sigBrand: 'Al-Rahma Academy',
+  },
 };
 
 export function pickFounderStory(lang) {

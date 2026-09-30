@@ -288,6 +288,25 @@ export const PRERENDER_MANIFEST = [
   { route: '/tools/tasbeeh', locale: 'it', status: 'published', indexable: true },
   { route: '/tools/arabic-alphabet', locale: 'it', status: 'published', indexable: true },
   { route: '/tools/adhkar', locale: 'it', status: 'published', indexable: true },
+
+  // Tajweed Checker SEO Publication Gate (2026-09-30): /tools/tajweed-checker,
+  // en+ar+fr all at once. A dedicated read-only readiness audit found no real
+  // blocker at all -- no fetch/geolocation/localStorage/session, and no
+  // Date.now() or other auto-running per-visit computation affecting initial
+  // render (unlike the Hadith-of-the-Day case above). The SpeechRecognition
+  // mic feature only ever starts on a user's own onClick; prerender.mjs never
+  // clicks anything, so transcript/score/listening state stays at its neutral
+  // initial value for the entire capture, every time -- nothing to freeze.
+  // French UI text was already complete (French Localization Batch 1E); the
+  // verse's English translation gloss is unconditionally shown on en+fr and
+  // hidden on ar by existing, already-reviewed policy (same "don't invent an
+  // unlicensed French translation of Quran text" rule CourseIslamicStudies.jsx
+  // follows for Hadith) -- untouched here. Absence from every earlier wave
+  // was a real gap, not a documented technical exclusion (confirmed: no
+  // prior mention of tajweed-checker anywhere in this file).
+  { route: '/tools/tajweed-checker', locale: 'en', status: 'published', indexable: true },
+  { route: '/tools/tajweed-checker', locale: 'ar', status: 'published', indexable: true },
+  { route: '/tools/tajweed-checker', locale: 'fr', status: 'published', indexable: true },
 ];
 
 // The URL path to navigate to for one manifest entry, e.g. "/ar/courses/ijazah".

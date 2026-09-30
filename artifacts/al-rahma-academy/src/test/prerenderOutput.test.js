@@ -1225,6 +1225,70 @@ const LITERAL_FILES = [
       { name: 'الأذكار', item: 'https://al-rahmaacademy.com/ar/tools/adhkar' },
     ],
   },
+  // Tajweed Checker SEO Publication Gate (2026-09-30): the only route this
+  // wave adds, en+ar+fr all at once — a dedicated readiness audit found no
+  // real blocker (no fetch/geolocation/localStorage/session/Date.now()
+  // affecting initial render; the SpeechRecognition mic only ever starts on
+  // a real user's own click, never during prerender.mjs's own automated
+  // page load, so transcript/score/listening state can never leak into this
+  // file). expectedTitle/expectedDescription/h1Text/breadcrumb are literal
+  // copies of TAJWEED_CHECKER_TEXT (i18n/tools/tajweedChecker.js)'s own
+  // seo/hero/breadcrumbs fields — this page's own breadcrumbs.tools label
+  // ("Tools"/"الأدوات"/"Outils") is a local field distinct from the global
+  // nav's t.nav.tools ("Islamic Tools"/"أدوات إسلامية") the /tools/adhkar
+  // entries above use, verified against the real live BreadcrumbList
+  // JSON-LD, not assumed.
+  {
+    route: '/tools/tajweed-checker',
+    locale: 'en',
+    relPath: 'tools/tajweed-checker/index.html',
+    expectedCanonical: 'https://al-rahmaacademy.com/tools/tajweed-checker',
+    h1Text: 'Tajweed Checker',
+    expectedEnHref: 'https://al-rahmaacademy.com/tools/tajweed-checker',
+    expectedArHref: 'https://al-rahmaacademy.com/ar/tools/tajweed-checker',
+    expectedFrHref: 'https://al-rahmaacademy.com/fr/tools/tajweed-checker',
+    expectedTitle: 'AI Tajweed Checker | AL-Rahma Academy',
+    expectedDescription: 'Practice Quran recitation and get instant AI feedback on your Tajweed',
+    breadcrumb: [
+      { name: 'Home', item: 'https://al-rahmaacademy.com/' },
+      { name: 'Tools', item: 'https://al-rahmaacademy.com/tools' },
+      { name: 'Tajweed Checker', item: 'https://al-rahmaacademy.com/tools/tajweed-checker' },
+    ],
+  },
+  {
+    route: '/tools/tajweed-checker',
+    locale: 'ar',
+    relPath: 'ar/tools/tajweed-checker/index.html',
+    expectedCanonical: 'https://al-rahmaacademy.com/ar/tools/tajweed-checker',
+    h1Text: 'مدقق التجويد',
+    expectedEnHref: 'https://al-rahmaacademy.com/tools/tajweed-checker',
+    expectedArHref: 'https://al-rahmaacademy.com/ar/tools/tajweed-checker',
+    expectedFrHref: 'https://al-rahmaacademy.com/fr/tools/tajweed-checker',
+    expectedTitle: 'مدقق التجويد بالذكاء الاصطناعي | AL-Rahma Academy',
+    expectedDescription: 'تدرّب على تلاوة القرآن الكريم واحصل على تقييم فوري بالذكاء الاصطناعي',
+    breadcrumb: [
+      { name: 'الرئيسية', item: 'https://al-rahmaacademy.com/ar/' },
+      { name: 'الأدوات', item: 'https://al-rahmaacademy.com/ar/tools' },
+      { name: 'مدقق التجويد', item: 'https://al-rahmaacademy.com/ar/tools/tajweed-checker' },
+    ],
+  },
+  {
+    route: '/tools/tajweed-checker',
+    locale: 'fr',
+    relPath: 'fr/tools/tajweed-checker/index.html',
+    expectedCanonical: 'https://al-rahmaacademy.com/fr/tools/tajweed-checker',
+    h1Text: 'Vérificateur de tajwid',
+    expectedEnHref: 'https://al-rahmaacademy.com/tools/tajweed-checker',
+    expectedArHref: 'https://al-rahmaacademy.com/ar/tools/tajweed-checker',
+    expectedFrHref: 'https://al-rahmaacademy.com/fr/tools/tajweed-checker',
+    expectedTitle: 'Vérificateur de tajwid par IA | AL-Rahma Academy',
+    expectedDescription: 'Entraînez-vous à réciter le Coran et recevez un retour instantané par IA sur votre tajwid',
+    breadcrumb: [
+      { name: 'Accueil', item: 'https://al-rahmaacademy.com/fr/' },
+      { name: 'Outils', item: 'https://al-rahmaacademy.com/fr/tools' },
+      { name: 'Vérificateur de tajwid', item: 'https://al-rahmaacademy.com/fr/tools/tajweed-checker' },
+    ],
+  },
 ];
 
 describe.skipIf(!distExists)('Prerender output (dist/public) — real files on disk, post-build only', () => {
@@ -1317,10 +1381,12 @@ describe.skipIf(!distExists)('Prerender output — literal dist/public paths (in
     // en+ar), so this is unconditional, not an if-present check.
     const hreflangEls = [...document.querySelectorAll('link[rel="alternate"][hreflang]')];
     // Italian SEO wave: it is published for every route here EXCEPT
-    // /courses/ijazah and /courses/islamic-studies (separate waves). Derived
+    // /courses/ijazah, /courses/islamic-studies (separate waves) and
+    // /tools/tajweed-checker (Tajweed Checker SEO Publication Gate is
+    // en+ar+fr only, Italian publication is out of its scope). Derived
     // from the literal fr href (always ORIGIN + '/fr' + route), not from
     // hreflangLinksFor(), so a bug in that helper is still caught.
-    const itPublished = !/\/fr\/courses\/(ijazah|islamic-studies)$/.test(expectedFrHref);
+    const itPublished = !/\/fr\/(courses\/(ijazah|islamic-studies)|tools\/tajweed-checker)$/.test(expectedFrHref);
     const publishedLocales = itPublished ? ['en', 'ar', 'fr', 'it'] : ['en', 'ar', 'fr'];
     expect(hreflangEls.length, 'one hreflang per published locale + x-default, no more').toBe(publishedLocales.length + 1);
 

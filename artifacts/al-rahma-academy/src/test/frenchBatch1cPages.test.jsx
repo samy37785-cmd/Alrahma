@@ -146,10 +146,21 @@ describe('French Batch 1C pages', () => {
     expect(wa.textContent).toBe('Écrivez-nous sur WhatsApp');
   });
 
-  it('other languages (it) still render the English enroll title and country names', async () => {
-    await mountFullPage('/it/enroll', Enroll);
+  it('other languages (es) still render the English enroll title and country names', async () => {
+    await mountFullPage('/es/enroll', Enroll);
     expect(document.title).toBe(`${ENROLL_SEO_TEXT.en.title} | AL-Rahma Academy`);
     expect(document.querySelector('#enroll-country option[value="Germany"]').textContent).toBe('Germany');
+  });
+
+  // Italian Batch 1B gave /it/enroll its own title and country names (see
+  // italianBatch1bPages.test.jsx for full coverage) -- this is a regression
+  // guard proving it's no longer the English fallback the test above covers
+  // for es.
+  it('/it/enroll: renders the Italian enroll title and country names, not the English fallback', async () => {
+    await mountFullPage('/it/enroll', Enroll);
+    expect(document.title).toBe(`${ENROLL_SEO_TEXT.it.title} | AL-Rahma Academy`);
+    expect(document.title).not.toBe(`${ENROLL_SEO_TEXT.en.title} | AL-Rahma Academy`);
+    expect(document.querySelector('#enroll-country option[value="Germany"]').textContent).toBe('Germania');
   });
 });
 

@@ -7,6 +7,18 @@
 // the English labels it already rendered: localizing the Arabic labels is
 // an EN/AR change and stays outside the French program, which must not
 // alter EN or AR output.
+//
+// Italian Batch 1B: `it` is added below for every ORDINARY label only.
+// `isnadSection`/`isnadChain` are the aria-labels of the homepage's Isnad
+// (hadith transmission chain) section -- religious content under the same
+// source-language policy as Italian Batch 0 (it.js hero.verseQuote/
+// verseRef, adhkarText.js meaning/fadl). Per that policy this file's `it`
+// entries for those two keys are the literal English source, byte-identical
+// to `en`, not a translation -- exactly the technique Batch 0 used, so a
+// screen reader on the Italian page still gets a real label instead of
+// `undefined` (pickA11yLabels returns a whole language object, not a
+// per-key merge, so an omitted key would leave aria-label empty rather than
+// falling back to English).
 export const A11Y_LABELS_TEXT = {
   en: {
     heroLiveBadge: 'Live sessions available now',
@@ -60,8 +72,38 @@ export const A11Y_LABELS_TEXT = {
     audioMuteTitle: 'Couper la récitation',
     audioDismiss: 'Fermer le lecteur audio',
   },
+  it: {
+    heroLiveBadge: 'Sessioni dal vivo disponibili ora',
+    heroScrollCue: 'Scorri per esplorare i corsi',
+    lessonDemo: 'Demo di lezione dal vivo',
+    closeVideo: 'Chiudi video',
+    tutorVideo: (name) => `Video di presentazione di ${name}`,
+    tutorVideoTitle: (name) => `Presentazione di ${name}`,
+    reviewCount: (count) => `${count} recensioni`,
+    carouselPrev: 'Precedente',
+    carouselNext: 'Successivo',
+    trustBar: 'Affidabile in tutto il mondo',
+    trustSignals: 'Garanzie di fiducia',
+    countriesRepresented: 'Paesi rappresentati',
+    quizSection: 'Trova il corso perfetto per te',
+    quizProgress: (step, total) => `Passo ${step} di ${total}`,
+    // Religious content -- literal English source, not a translation (see
+    // file header). Byte-identical to `en` on purpose.
+    isnadSection: 'The Isnad — unbroken chain of Quran transmission',
+    isnadChain: 'Chain of Quran transmission',
+    currencySelector: 'Selettore valuta',
+    footerTrust: 'Credenziali di fiducia',
+    audioRegion: 'Audio recitazione del Corano',
+    audioPlay: 'Riproduci la recitazione del Corano a basso volume',
+    audioMute: 'Disattiva la recitazione del Corano',
+    audioPlayTitle: 'Riproduci il Corano dolcemente',
+    audioMuteTitle: 'Disattiva la recitazione',
+    audioDismiss: 'Chiudi il lettore audio',
+  },
 };
 
 export function pickA11yLabels(lang) {
-  return lang === 'fr' ? A11Y_LABELS_TEXT.fr : A11Y_LABELS_TEXT.en;
+  if (lang === 'it') return A11Y_LABELS_TEXT.it;
+  if (lang === 'fr') return A11Y_LABELS_TEXT.fr;
+  return A11Y_LABELS_TEXT.en;
 }

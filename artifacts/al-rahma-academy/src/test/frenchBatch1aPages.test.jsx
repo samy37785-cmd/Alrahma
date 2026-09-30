@@ -187,7 +187,9 @@ describe('French text modules: complete, faithful, nothing invented', () => {
     expect(Object.keys(A11Y_LABELS_TEXT.fr).sort()).toEqual(Object.keys(A11Y_LABELS_TEXT.en).sort());
     const { pickA11yLabels } = await import('../i18n/a11yLabels');
     expect(pickA11yLabels('ar')).toBe(A11Y_LABELS_TEXT.en);
-    expect(pickA11yLabels('it')).toBe(A11Y_LABELS_TEXT.en);
+    // Italian Batch 1B added real `it` labels (see italianBatch1bPages.test.jsx)
+    // -- `it` no longer falls back to English here.
+    expect(pickA11yLabels('it')).toBe(A11Y_LABELS_TEXT.it);
     expect(pickA11yLabels('fr')).toBe(A11Y_LABELS_TEXT.fr);
   });
 

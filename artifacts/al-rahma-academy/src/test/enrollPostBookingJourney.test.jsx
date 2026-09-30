@@ -101,7 +101,10 @@ describe('Enroll SEO metadata: real Arabic, not an English fallback', () => {
     expect(pickEnrollSeo('de')).toBe(ENROLL_SEO_TEXT.en);
     // French Localization Batch 1C: French has its own entry.
     expect(pickEnrollSeo('fr')).toBe(ENROLL_SEO_TEXT.fr);
-    expect(Object.keys(ENROLL_SEO_TEXT)).toEqual(['en', 'ar', 'fr']);
+    // Italian Batch 1B: Italian now has its own entry too (see
+    // italianBatch1bPages.test.jsx for full coverage).
+    expect(pickEnrollSeo('it')).toBe(ENROLL_SEO_TEXT.it);
+    expect(Object.keys(ENROLL_SEO_TEXT)).toEqual(['en', 'ar', 'fr', 'it']);
   });
 });
 

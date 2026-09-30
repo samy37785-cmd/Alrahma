@@ -191,23 +191,24 @@ describe('2. Every structural id has a matching English text entry, and vice ver
 describe('2b. Arabic structural parity (Arabic Home Copy Implementation, 2026-09-18)', () => {
   // French Localization Batch 1A added `fr` to these modules; its parity is
   // covered in frenchBatch1aPages.test.jsx. Italian Batch 1A added `it` to
-  // LEVEL_QUIZ_TEXT/HOME_LEAKED_STRINGS_TEXT/COURSE_OPTION_LABELS_TEXT
-  // (not ISNAD_CHAIN_TEXT/COUNTRY_NAMES_TEXT); its parity is covered in
-  // italianBatch1aPages.test.jsx.
-  it('modules this batch did not touch have exactly "en", "ar" and "fr" -- no it/es/de key exists, nothing invented for them', () => {
+  // LEVEL_QUIZ_TEXT/HOME_LEAKED_STRINGS_TEXT/COURSE_OPTION_LABELS_TEXT, and
+  // Italian Batch 1B added `it` to COUNTRY_NAMES_TEXT too (not
+  // ISNAD_CHAIN_TEXT, which stays religious/out-of-scope); their parity is
+  // covered in italianBatch1aPages.test.jsx / italianBatch1bPages.test.jsx.
+  it('modules no Italian batch has touched have exactly "en", "ar" and "fr" -- no it/es/de key exists, nothing invented for them', () => {
     for (const [label, mod] of [
       ['ISNAD_CHAIN_TEXT', ISNAD_CHAIN_TEXT],
-      ['COUNTRY_NAMES_TEXT', COUNTRY_NAMES_TEXT],
     ]) {
       expect(Object.keys(mod).sort(), label).toEqual(['ar', 'en', 'fr']);
     }
   });
 
-  it('modules Italian Batch 1A touched now have exactly "en", "ar", "fr" and "it" -- no es/de key exists', () => {
+  it('modules Italian batches touched now have exactly "en", "ar", "fr" and "it" -- no es/de key exists', () => {
     for (const [label, mod] of [
       ['LEVEL_QUIZ_TEXT', LEVEL_QUIZ_TEXT],
       ['HOME_LEAKED_STRINGS_TEXT', HOME_LEAKED_STRINGS_TEXT],
       ['COURSE_OPTION_LABELS_TEXT', COURSE_OPTION_LABELS_TEXT],
+      ['COUNTRY_NAMES_TEXT', COUNTRY_NAMES_TEXT],
     ]) {
       expect(Object.keys(mod).sort(), label).toEqual(['ar', 'en', 'fr', 'it']);
     }
@@ -325,15 +326,14 @@ describe('2c. IsnadChain hadith citation (Mahmoud-approved, 2026-09-19): Sahih a
 
 describe('3. it/es/de are never invented, and lookups fall back to English, not to undefined/empty', () => {
   // Italian Batch 1A added real `it` entries to LEVEL_QUIZ_TEXT,
-  // HOME_LEAKED_STRINGS_TEXT and COURSE_OPTION_LABELS_TEXT (see
-  // italianBatch1aPages.test.jsx) -- `it` is therefore checked separately
-  // below, split from the modules this batch did not touch
-  // (ISNAD_CHAIN_TEXT, COUNTRY_NAMES_TEXT), where it/es/de all still fall
-  // back to English exactly as before.
-  it('it/es/de still have no key in any Home content module this batch did not touch (ISNAD_CHAIN_TEXT, COUNTRY_NAMES_TEXT) -- direct proof nothing was invented for them', () => {
+  // HOME_LEAKED_STRINGS_TEXT and COURSE_OPTION_LABELS_TEXT; Italian Batch 1B
+  // added `it` to COUNTRY_NAMES_TEXT too (see italianBatch1aPages.test.jsx /
+  // italianBatch1bPages.test.jsx) -- `it` is therefore checked separately
+  // below, split from ISNAD_CHAIN_TEXT (religious, no Italian batch touches
+  // it), where it/es/de all still fall back to English exactly as before.
+  it('it/es/de still have no key in ISNAD_CHAIN_TEXT (no Italian batch touches religious content) -- direct proof nothing was invented for it', () => {
     for (const [label, mod] of [
       ['ISNAD_CHAIN_TEXT', ISNAD_CHAIN_TEXT],
-      ['COUNTRY_NAMES_TEXT', COUNTRY_NAMES_TEXT],
     ]) {
       for (const lang of ['it', 'es', 'de']) {
         expect(mod[lang], `${label}.${lang} should not exist`).toBeUndefined();
@@ -341,11 +341,12 @@ describe('3. it/es/de are never invented, and lookups fall back to English, not 
     }
   });
 
-  it('es/de still have no key in LEVEL_QUIZ_TEXT/HOME_LEAKED_STRINGS_TEXT/COURSE_OPTION_LABELS_TEXT; it now does (Italian Batch 1A)', () => {
+  it('es/de still have no key in LEVEL_QUIZ_TEXT/HOME_LEAKED_STRINGS_TEXT/COURSE_OPTION_LABELS_TEXT/COUNTRY_NAMES_TEXT; it now does (Italian Batch 1A/1B)', () => {
     for (const [label, mod] of [
       ['LEVEL_QUIZ_TEXT', LEVEL_QUIZ_TEXT],
       ['HOME_LEAKED_STRINGS_TEXT', HOME_LEAKED_STRINGS_TEXT],
       ['COURSE_OPTION_LABELS_TEXT', COURSE_OPTION_LABELS_TEXT],
+      ['COUNTRY_NAMES_TEXT', COUNTRY_NAMES_TEXT],
     ]) {
       for (const lang of ['es', 'de']) {
         expect(mod[lang], `${label}.${lang} should not exist`).toBeUndefined();
@@ -354,7 +355,7 @@ describe('3. it/es/de are never invented, and lookups fall back to English, not 
     }
   });
 
-  it('it/es/de lookups on ISNAD_CHAIN_TEXT (not touched by this batch) still fall back to English text, never to undefined/empty', () => {
+  it('it/es/de lookups on ISNAD_CHAIN_TEXT (religious, no Italian batch touches it) still fall back to English text, never to undefined/empty', () => {
     for (const lang of ['it', 'es', 'de']) {
       expect(ISNAD_CHAIN_TEXT[lang] || ISNAD_CHAIN_TEXT.en).toBe(ISNAD_CHAIN_TEXT.en);
     }

@@ -11,17 +11,20 @@ import { HADITHS, MODULES, BOOKS, LEARN, FOR, PERKS } from '../data/islamicStudi
 import IslamicStudiesBookCard from '../components/features/courses/IslamicStudiesBookCard';
 import { site } from '../data/site';
 import { ISLAMIC_STUDIES_PAGE_FR as FR } from '../i18n/courses/religiousPagesFr';
+import { ISLAMIC_STUDIES_PAGE_IT as IT } from '../i18n/courses/islamicStudiesPageIt';
 
-// French Localization Batch 1B: the Course JSON-LD text fields in French;
-// every other field, inLanguage included, is left as it is.
-function localizeSchema(isFr, schema) {
-  if (!isFr) return schema;
+// French Localization Batch 1B / Italian Islamic Studies Content Batch: the
+// Course JSON-LD text fields in French or Italian; every other field,
+// inLanguage included, is left as it is.
+function localizeSchema(lang, schema) {
+  const T = lang === 'fr' ? FR : lang === 'it' ? IT : null;
+  if (!T) return schema;
   return {
     ...schema,
-    name: FR.schemaName,
-    description: FR.seoDescription,
-    educationalLevel: FR.schemaLevel,
-    teaches: FR.schemaTeaches,
+    name: T.schemaName,
+    description: T.seoDescription,
+    educationalLevel: T.schemaLevel,
+    teaches: T.schemaTeaches,
   };
 }
 
@@ -31,6 +34,7 @@ export default function CourseIslamicStudies() {
   const ui        = COURSE_UI[lang] || COURSE_UI.en;
   const isAr      = lang === 'ar';
   const isFr      = lang === 'fr';
+  const isIt      = lang === 'it';
   const [openModule, setOpenModule] = useState(null);
 
   // SEO Publication Gate (2026-09-30): this page's static HTML is captured
@@ -71,14 +75,15 @@ export default function CourseIslamicStudies() {
   }, []);
 
   useSEO({
-    title: isAr ? 'دورة الدراسات الإسلامية' : isFr ? FR.seoTitle : 'Islamic Studies Course',
+    title: isAr ? 'دورة الدراسات الإسلامية' : isFr ? FR.seoTitle : isIt ? IT.seoTitle : 'Islamic Studies Course',
     description: isAr
       ? 'منهج شامل مبني على المصادر يغطي العقيدة والفقه والسيرة والحديث والتفسير — ٥ وحدات يدرّسها علماء معتمدون بلغتك.'
       : isFr ? FR.seoDescription
+      : isIt ? IT.seoDescription
       : 'A comprehensive, source-based curriculum covering Aqeedah, Fiqh, Seerah, Hadith and Tafsir — 5 structured modules taught by certified scholars in your own language.',
     // French: the same Course object with its text fields in French;
     // inLanguage (language of instruction) is unchanged.
-    schema: localizeSchema(isFr, {
+    schema: localizeSchema(lang, {
       '@context': 'https://schema.org',
       '@type': 'Course',
       name: 'Islamic Studies Course',
@@ -91,25 +96,26 @@ export default function CourseIslamicStudies() {
     }),
   });
 
-  const learnList = isAr ? LEARN.ar : isFr ? LEARN.fr : LEARN.en;
-  const forList   = isAr ? FOR.ar   : isFr ? FOR.fr   : FOR.en;
-  const perks     = isAr ? PERKS.ar : isFr ? PERKS.fr : PERKS.en;
+  const learnList = isAr ? LEARN.ar : isFr ? LEARN.fr : isIt ? LEARN.it : LEARN.en;
+  const forList   = isAr ? FOR.ar   : isFr ? FOR.fr   : isIt ? FOR.it   : FOR.en;
+  const perks     = isAr ? PERKS.ar : isFr ? PERKS.fr : isIt ? PERKS.it : PERKS.en;
 
   return (
     <>
       <Header />
       <main id="main-content" dir={ui.dir}>
-        <Breadcrumbs items={[{ label: t.nav.courses, to: '/courses' }, { label: isAr ? 'الدراسات الإسلامية' : isFr ? FR.breadcrumb : 'Islamic Studies Course' }]} />
+        <Breadcrumbs items={[{ label: t.nav.courses, to: '/courses' }, { label: isAr ? 'الدراسات الإسلامية' : isFr ? FR.breadcrumb : isIt ? IT.breadcrumb : 'Islamic Studies Course' }]} />
 
         {/* Hero */}
         <section className="cl__hero" style={{ background: 'linear-gradient(145deg,#1e0a30,#7a3a8a)' }}>
           <div className="container cl__hero-inner">
-            <span className="cl__hero-badge">🕌 {isAr ? '٥ وحدات دراسية متكاملة' : isFr ? FR.badge : '5 Complete Modules'}</span>
-            <h1 className="cl__hero-title">{isAr ? 'الدراسات الإسلامية' : isFr ? FR.h1 : 'Islamic Studies'}</h1>
+            <span className="cl__hero-badge">🕌 {isAr ? '٥ وحدات دراسية متكاملة' : isFr ? FR.badge : isIt ? IT.badge : '5 Complete Modules'}</span>
+            <h1 className="cl__hero-title">{isAr ? 'الدراسات الإسلامية' : isFr ? FR.h1 : isIt ? IT.h1 : 'Islamic Studies'}</h1>
             <p className="cl__hero-sub">
               {isAr
                 ? 'منهج شامل مبني على المصادر يغطي العقيدة والفقه والسيرة والحديث والتفسير — يدرّسه علماء معتمدون بلغتك الخاصة.'
                 : isFr ? FR.heroSub
+                : isIt ? IT.heroSub
                 : 'A comprehensive, source-based curriculum covering Aqeedah, Fiqh, Seerah, Hadith and Tafsir — taught by certified scholars in your own language.'
               }
             </p>
@@ -125,11 +131,11 @@ export default function CourseIslamicStudies() {
         {/* Stats */}
         <div className="cl__stats" style={{ background: '#1e0a30' }}>
           <div className="container cl__stats-inner">
-            <div className="cl__stat"><strong>{isAr ? '٥' : isFr ? FR.stats[0].value : '5'}</strong><span>{isAr ? 'وحدات دراسية' : isFr ? FR.stats[0].label : 'Subject Modules'}</span></div>
-            <div className="cl__stat"><strong>{isAr ? 'جميع المستويات' : isFr ? FR.stats[1].value : 'All Levels'}</strong><span>{isAr ? 'مبتدئ ← متقدم' : isFr ? FR.stats[1].label : 'Beginner → Advanced'}</span></div>
-            <div className="cl__stat"><strong>{isAr ? 'فردي' : isFr ? FR.stats[2].value : '1-on-1'}</strong><span>{isAr ? 'حصص خاصة' : isFr ? FR.stats[2].label : 'Private Lessons'}</span></div>
-            <div className="cl__stat"><strong>{isAr ? '٤٠ أسبوعاً' : isFr ? FR.stats[3].value : '40 Weeks'}</strong><span>{isAr ? 'البرنامج الكامل' : isFr ? FR.stats[3].label : 'Full Program'}</span></div>
-            <div className="cl__stat"><strong>{isAr ? '٦ لغات' : isFr ? FR.stats[4].value : '6 Lang'}</strong><span>{isAr ? 'لغات التدريس' : isFr ? FR.stats[4].label : 'Instruction Languages'}</span></div>
+            <div className="cl__stat"><strong>{isAr ? '٥' : isFr ? FR.stats[0].value : isIt ? IT.stats[0].value : '5'}</strong><span>{isAr ? 'وحدات دراسية' : isFr ? FR.stats[0].label : isIt ? IT.stats[0].label : 'Subject Modules'}</span></div>
+            <div className="cl__stat"><strong>{isAr ? 'جميع المستويات' : isFr ? FR.stats[1].value : isIt ? IT.stats[1].value : 'All Levels'}</strong><span>{isAr ? 'مبتدئ ← متقدم' : isFr ? FR.stats[1].label : isIt ? IT.stats[1].label : 'Beginner → Advanced'}</span></div>
+            <div className="cl__stat"><strong>{isAr ? 'فردي' : isFr ? FR.stats[2].value : isIt ? IT.stats[2].value : '1-on-1'}</strong><span>{isAr ? 'حصص خاصة' : isFr ? FR.stats[2].label : isIt ? IT.stats[2].label : 'Private Lessons'}</span></div>
+            <div className="cl__stat"><strong>{isAr ? '٤٠ أسبوعاً' : isFr ? FR.stats[3].value : isIt ? IT.stats[3].value : '40 Weeks'}</strong><span>{isAr ? 'البرنامج الكامل' : isFr ? FR.stats[3].label : isIt ? IT.stats[3].label : 'Full Program'}</span></div>
+            <div className="cl__stat"><strong>{isAr ? '٦ لغات' : isFr ? FR.stats[4].value : isIt ? IT.stats[4].value : '6 Lang'}</strong><span>{isAr ? 'لغات التدريس' : isFr ? FR.stats[4].label : isIt ? IT.stats[4].label : 'Instruction Languages'}</span></div>
           </div>
         </div>
 
@@ -155,22 +161,22 @@ export default function CourseIslamicStudies() {
                 <div className="cl__hadith-card">
                   <p className="cl__hadith-arabic" dir="rtl">{hadith.arabic}</p>
                   <blockquote className="cl__hadith-text">
-                    {isAr ? hadith.ar : isFr ? hadith.fr : hadith.en}
+                    {isAr ? hadith.ar : isFr ? hadith.fr : isIt ? hadith.it : hadith.en}
                   </blockquote>
                   <div className="cl__hadith-meta">
-                    <span className="cl__hadith-narrator">— {isAr ? hadith.narrator.ar : isFr ? hadith.narrator.fr : hadith.narrator.en}</span>
-                    <span className="cl__hadith-source">{isAr ? hadith.source.ar : isFr ? hadith.source.fr : hadith.source.en}</span>
+                    <span className="cl__hadith-narrator">— {isAr ? hadith.narrator.ar : isFr ? hadith.narrator.fr : isIt ? hadith.narrator.it : hadith.narrator.en}</span>
+                    <span className="cl__hadith-source">{isAr ? hadith.source.ar : isFr ? hadith.source.fr : isIt ? hadith.source.it : hadith.source.en}</span>
                   </div>
                   {hadith.url && (
                     <a href={hadith.url} target="_blank" rel="noreferrer" className="cl__hadith-link">
-                      {isAr ? 'اقرأ الحديث كاملاً — Sunnah.com ↗' : isFr ? FR.hadithLink : 'Read full hadith — Sunnah.com ↗'}
+                      {isAr ? 'اقرأ الحديث كاملاً — Sunnah.com ↗' : isFr ? FR.hadithLink : isIt ? IT.hadithLink : 'Read full hadith — Sunnah.com ↗'}
                     </a>
                   )}
                 </div>
               ) : (
                 <div className="cl__hadith-card" data-testid="hadith-placeholder">
                   <p className="cl__hadith-text">
-                    {isAr ? 'جارٍ تحميل حديث اليوم…' : isFr ? FR.hadithLoading : 'Loading today’s hadith…'}
+                    {isAr ? 'جارٍ تحميل حديث اليوم…' : isFr ? FR.hadithLoading : isIt ? IT.hadithLoading : 'Loading today’s hadith…'}
                   </p>
                 </div>
               )}
@@ -189,17 +195,17 @@ export default function CourseIslamicStudies() {
                     <button className="cl__stage-header" onClick={() => setOpenModule(openModule === i ? null : i)}>
                       <span className="cl__stage-num" style={{ background: m.color }}>{m.icon}</span>
                       <div className="cl__stage-meta">
-                        <strong>{m.num}. {isAr ? m.title.ar : isFr ? m.title.fr : m.title.en}</strong>
-                        <span>{isAr ? m.duration.ar : isFr ? m.duration.fr : m.duration.en}</span>
+                        <strong>{m.num}. {isAr ? m.title.ar : isFr ? m.title.fr : isIt ? m.title.it : m.title.en}</strong>
+                        <span>{isAr ? m.duration.ar : isFr ? m.duration.fr : isIt ? m.duration.it : m.duration.en}</span>
                       </div>
                       <span className="cl__stage-source cl__stage-source--ar" dir="rtl">{m.sourceAr}</span>
                       <span className="cl__stage-chevron">{openModule === i ? '▲' : '▼'}</span>
                     </button>
                     {openModule === i && (
                       <div className="cl__stage-body">
-                        <p className="cl__stage-author">📚 {isAr ? m.source.ar : isFr ? m.source.fr : m.source.en}</p>
+                        <p className="cl__stage-author">📚 {isAr ? m.source.ar : isFr ? m.source.fr : isIt ? m.source.it : m.source.en}</p>
                         <ul className="cl__stage-points">
-                          {(isAr ? m.topics.ar : isFr ? m.topics.fr : m.topics.en).map((t) => <li key={t}>{t}</li>)}
+                          {(isAr ? m.topics.ar : isFr ? m.topics.fr : isIt ? m.topics.it : m.topics.en).map((t) => <li key={t}>{t}</li>)}
                         </ul>
                       </div>
                     )}
@@ -234,8 +240,8 @@ export default function CourseIslamicStudies() {
             <div className="cl__enroll-card">
               <div className="cl__enroll-card-top" style={{ background: 'linear-gradient(145deg,#1e0a30,#7a3a8a)' }}>
                 <span className="cl__enroll-icon">🕌</span>
-                <p className="cl__enroll-title">{isAr ? 'الدراسات الإسلامية' : isFr ? FR.enrollTitle : 'Islamic Studies'}</p>
-                <p className="cl__enroll-sub">{isAr ? '٥ وحدات · جميع المستويات' : isFr ? FR.enrollSub : '5 Modules · All Levels'}</p>
+                <p className="cl__enroll-title">{isAr ? 'الدراسات الإسلامية' : isFr ? FR.enrollTitle : isIt ? IT.enrollTitle : 'Islamic Studies'}</p>
+                <p className="cl__enroll-sub">{isAr ? '٥ وحدات · جميع المستويات' : isFr ? FR.enrollSub : isIt ? IT.enrollSub : '5 Modules · All Levels'}</p>
               </div>
               <div className="cl__enroll-body">
                 <p className="cl__enroll-trial">{ui.trialNote}</p>

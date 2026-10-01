@@ -112,12 +112,15 @@ describe('IslamicStudiesBookCard.jsx source: minimal, scoped diff', () => {
   it('does not touch author/module/desc/topics/link/libraryNote logic', () => {
     // French Localization Batch 1B added a French branch (isFr) between the
     // Arabic and English ones; Arabic and English still read the same fields.
-    expect(src).toMatch(/book\.author\.ar : isFr \? book\.author\.fr : book\.author\.en/);
-    expect(src).toMatch(/book\.module\.ar : isFr \? book\.module\.fr : book\.module\.en/);
-    expect(src).toMatch(/book\.desc\.ar : isFr \? book\.desc\.fr : book\.desc\.en/);
-    expect(src).toMatch(/book\.topics\.ar : isFr \? book\.topics\.fr : book\.topics\.en/);
-    expect(src).toMatch(/book\.linkLabel\.ar : isFr \? book\.linkLabel\.fr : book\.linkLabel\.en/);
-    expect(src).toMatch(/book\.libraryNote\.ar : isFr \? book\.libraryNote\.fr : book\.libraryNote\.en/);
+    // The Italian Islamic Studies batch inserted an Italian branch (isIt)
+    // before the English fallback; Arabic, French and English still read the
+    // same fields.
+    expect(src).toMatch(/book\.author\.ar : isFr \? book\.author\.fr : isIt \? book\.author\.it : book\.author\.en/);
+    expect(src).toMatch(/book\.module\.ar : isFr \? book\.module\.fr : isIt \? book\.module\.it : book\.module\.en/);
+    expect(src).toMatch(/book\.desc\.ar : isFr \? book\.desc\.fr : isIt \? book\.desc\.it : book\.desc\.en/);
+    expect(src).toMatch(/book\.topics\.ar : isFr \? book\.topics\.fr : isIt \? book\.topics\.it : book\.topics\.en/);
+    expect(src).toMatch(/book\.linkLabel\.ar : isFr \? book\.linkLabel\.fr : isIt \? book\.linkLabel\.it : book\.linkLabel\.en/);
+    expect(src).toMatch(/book\.libraryNote\.ar : isFr \? book\.libraryNote\.fr : isIt \? book\.libraryNote\.it : book\.libraryNote\.en/);
   });
 
   it('does not import from islamicStudiesData.js (book data is untouched)', () => {

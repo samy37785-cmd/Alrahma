@@ -179,7 +179,8 @@ export const HADITHS = [
     it: 'The best of people are those who are most beneficial to people.',
     narrator: { en: 'Jabir ibn Abdullah (RA)', ar: 'جابر بن عبد الله (رضي الله عنه)', fr: 'Jabir ibn Abdullah (RA)', it: 'Jabir ibn Abdullah (RA)' },
     source: { en: "Al-Mu'jam Al-Awsat — Al-Tabarani", ar: 'المعجم الأوسط — الطبراني', fr: "Al-Mu'jam Al-Awsat — Al-Tabarani", it: "Al-Mu'jam Al-Awsat — Al-Tabarani" },
-    url: 'https://sunnah.com/nawawi40',
+    // No `url`: this hadith is from Al-Mu'jam Al-Awsat, not Nawawi's Forty,
+    // and no verified direct link exists. The card hides the link when absent.
   },
 ];
 

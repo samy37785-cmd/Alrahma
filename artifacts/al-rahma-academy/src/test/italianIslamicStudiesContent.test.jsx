@@ -131,7 +131,7 @@ describe('/it/courses/islamic-studies — source material is preserved, not tran
       expect(h.narrator.it, h.source.en).toBe(h.narrator.en);
       expect(h.source.it, h.source.en).toBe(h.source.en);
       expect(h.arabic).toBeTruthy();
-      expect(h.url).toMatch(/^https:\/\/sunnah\.com\//);
+      if (h.url !== undefined) expect(h.url).toMatch(/^https:\/\/sunnah\.com\//);
     }
   });
 
@@ -240,8 +240,8 @@ describe('Hadith of the Day: Italian placeholder in prerender, no frozen hadith,
     expect(r.hadithCard).toContain(hadith.en);
     expect(r.hadithCard).toContain(`— ${hadith.narrator.en}`);
     expect(r.hadithCard).toContain(hadith.source.en);
-    expect(r.hadithLinkText).toBe(IT.hadithLink);
-    expect(r.hadithLinkHref).toBe(hadith.url);
+    expect(r.hadithLinkText).toBe(hadith.url ? IT.hadithLink : null);
+    expect(r.hadithLinkHref).toBe(hadith.url ?? null);
   }, 60000);
 
   it('the Italian placeholder/link are UI copy only (no religious text) and the component source still has no render-time Date.now', () => {

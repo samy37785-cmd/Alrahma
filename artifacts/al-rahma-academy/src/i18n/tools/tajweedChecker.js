@@ -16,9 +16,8 @@
 // any isAr/lang-based branching in the component.
 //
 // French Localization Batch 1E adds `fr`, translated from the English shell
-// only, with the house glossary term "tajwid". it/es/de stay genuinely
-// absent; the route stays 'legacy' in translationStatus.js for those (see
-// that file's own comment).
+// only, with the house glossary term "tajwid". Italian (below) was added in
+// its own wave; es/de stay genuinely absent.
 export const TAJWEED_CHECKER_TEXT = {
   en: {
     seo: {
@@ -99,6 +98,40 @@ export const TAJWEED_CHECKER_TEXT = {
       excellent: 'Excellent ! Votre récitation correspond bien.',
       good: 'Bon effort ! Réessayez pour plus de précision.',
       keepPractising: "Continuez à vous entraîner — écoutez attentivement et réessayez.",
+    },
+  },
+  // Italian Tajweed Checker Content + SEO Publication: translated from the
+  // English shell only (glossary: "Tajweed", the site's existing Italian
+  // spelling). The practice verses stay exactly as they are — Arabic text
+  // unchanged, the Latin transliteration and the English gloss untouched (no
+  // new Italian translation of Quran text is created; the gloss is shown as
+  // the English source, same as French). `{error}` is the SpeechRecognition
+  // error code token, replaced by the page component.
+  it: {
+    seo: {
+      title: 'Verificatore di Tajweed con IA',
+      description: "Esercitati nella recitazione del Corano e ricevi un feedback immediato dell'IA sul tuo Tajweed",
+    },
+    breadcrumbs: { tools: 'Strumenti', current: 'Verificatore di Tajweed' },
+    eyebrow: "Basato sull'IA",
+    hero: {
+      title: 'Verificatore di Tajweed',
+      sub: 'Leggi il versetto ad alta voce e ricevi un feedback immediato sulla tua recitazione',
+    },
+    startReciting: 'Inizia la recitazione',
+    stop: 'Ferma',
+    listeningHint: 'In ascolto… recita il versetto con chiarezza',
+    whatIHeard: 'Cosa ho sentito:',
+    tryAgain: 'Riprova',
+    errors: {
+      noSpeechInline: 'Il tuo browser non supporta il riconoscimento vocale. Prova Chrome.',
+      recognitionError: 'Errore di riconoscimento vocale: {error}',
+      noSpeechBanner: "Il riconoscimento vocale non è supportato da questo browser. Usa Chrome per un'esperienza ottimale.",
+    },
+    feedback: {
+      excellent: 'Ottimo! La tua recitazione corrisponde bene.',
+      good: 'Buon lavoro! Riprova per una maggiore precisione.',
+      keepPractising: 'Continua a esercitarti — ascolta con attenzione e riprova.',
     },
   },
 };

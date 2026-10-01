@@ -297,9 +297,18 @@ export const PRERENDER_MANIFEST = [
   // source form, book descriptions/topics the literal English source, same
   // as French). The page has no fetch/date/geolocation/localStorage
   // dependency at initial render, so it prerenders like its en/ar/fr
-  // siblings. /courses/islamic-studies and /tools/tajweed-checker stay
-  // unpublished in Italian.
+  // siblings. /courses/islamic-studies stays unpublished in Italian.
   { route: '/courses/ijazah', locale: 'it', status: 'published', indexable: true },
+
+  // Italian Tajweed Checker SEO Publication (2026-09-30): /tools/tajweed-checker,
+  // it, once its shell text (title, description, breadcrumb, hero, buttons,
+  // status/error messages, feedback) got real Italian copy. Same prerender
+  // safety as en/ar/fr: the SpeechRecognition mic only ever starts on a
+  // user's own click and prerender.mjs never clicks, so no transcript, score,
+  // listening state or device permission can reach the static HTML. Quran
+  // text, transliteration and the English gloss are untouched. Islamic
+  // Studies stays unpublished in Italian.
+  { route: '/tools/tajweed-checker', locale: 'it', status: 'published', indexable: true },
 
   // Tajweed Checker SEO Publication Gate (2026-09-30): /tools/tajweed-checker,
   // en+ar+fr all at once. A dedicated read-only readiness audit found no real

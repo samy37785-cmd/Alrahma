@@ -14,9 +14,9 @@ import { PRERENDER_MANIFEST } from '../../scripts/prerender-routes.mjs';
 // 17 hadiths with their narrators and references, book titles, authors,
 // publisher, Arabic, the honorific, source links, scholarly terms) stays in
 // its source form, and the nine book descriptions and 36 topic lists are the
-// literal English source, exactly like French. This batch does NOT publish
-// the page (no manifest / sitemap / hreflang change — a separate, later PR).
-// EN/AR/FR byte-identity is proven by
+// literal English source, exactly like French. The page was published in a
+// separate, later PR (Italian Islamic Studies SEO Publication); the guard at
+// the bottom now asserts that. EN/AR/FR byte-identity is proven by
 // italianIslamicStudiesEnArFrRegression.test.jsx.
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -256,13 +256,13 @@ describe('Hadith of the Day: Italian placeholder in prerender, no frozen hadith,
   });
 });
 
-describe('scope guard: this batch does not publish /it/courses/islamic-studies', () => {
-  it('PRERENDER_MANIFEST has no Italian islamic-studies entry', () => {
-    expect(PRERENDER_MANIFEST.some((e) => e.route === '/courses/islamic-studies' && e.locale === 'it')).toBe(false);
+describe('publication guard: /it/courses/islamic-studies is published (Italian Islamic Studies SEO Publication)', () => {
+  it('PRERENDER_MANIFEST has exactly one Italian islamic-studies entry', () => {
+    expect(PRERENDER_MANIFEST.filter((e) => e.route === '/courses/islamic-studies' && e.locale === 'it' && e.status === 'published')).toHaveLength(1);
   });
 
-  it('the sitemap on disk does not list /it/courses/islamic-studies', () => {
+  it('the sitemap on disk lists /it/courses/islamic-studies once', () => {
     const xml = fs.readFileSync(path.resolve(__dirname, '../../public/sitemap.xml'), 'utf8');
-    expect(xml).not.toContain('/it/courses/islamic-studies');
+    expect(xml.match(/<loc>https:\/\/al-rahmaacademy\.com\/it\/courses\/islamic-studies<\/loc>/g)).toHaveLength(1);
   });
 });

@@ -250,16 +250,14 @@ describe.skipIf(!distExists)('Italian Tajweed Checker prerender (dist/public) â€
 });
 
 describe('Italian publication scope', () => {
-  it('Tajweed Checker joins the Italian manifest once; Islamic Studies does not', () => {
+  it('Tajweed Checker joins the Italian manifest exactly once, with the five-hreflang set', () => {
     const it_ = PRERENDER_MANIFEST.filter((e) => e.locale === 'it');
     expect(it_.filter((e) => e.route === '/tools/tajweed-checker')).toHaveLength(1);
-    expect(it_.some((e) => e.route === '/courses/islamic-studies')).toBe(false);
-    expect(hreflangLinksFor({ route: '/courses/islamic-studies', locale: 'en' }).some((l) => l.hreflang === 'it')).toBe(false);
+    expect(hreflangLinksFor({ route: '/tools/tajweed-checker', locale: 'en' }).map((l) => l.hreflang).sort()).toEqual(['ar', 'en', 'fr', 'it', 'x-default']);
   });
 
-  it('the sitemap on disk lists /it/tools/tajweed-checker once and not Italian Islamic Studies', () => {
+  it('the sitemap on disk lists /it/tools/tajweed-checker once', () => {
     const xml = readFileSync(path.resolve(__dirname, '../../public/sitemap.xml'), 'utf8');
     expect(xml.match(/<loc>https:\/\/al-rahmaacademy\.com\/it\/tools\/tajweed-checker<\/loc>/g)).toHaveLength(1);
-    expect(xml).not.toContain('/it/courses/islamic-studies');
   });
 });

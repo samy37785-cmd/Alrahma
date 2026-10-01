@@ -310,6 +310,17 @@ export const PRERENDER_MANIFEST = [
   // Studies stays unpublished in Italian.
   { route: '/tools/tajweed-checker', locale: 'it', status: 'published', indexable: true },
 
+  // Italian Islamic Studies SEO Publication (2026-10-01): /courses/islamic-studies,
+  // it, once its real Italian content landed on main (PR #163: SEO, Course
+  // JSON-LD text, hero, stats, lists, module titles/topics, book UI labels,
+  // hadith placeholder/link; hadiths, narrators, references, book
+  // titles/authors/publisher, descriptions and topics kept in source form,
+  // like French). "Hadith of the Day" is the same locale-aware loading
+  // placeholder as en/ar/fr in the static file — the real hadith is only
+  // resolved client-side for a real visitor (navigator.webdriver gate), so
+  // nothing date-dependent is frozen into the prerendered HTML.
+  { route: '/courses/islamic-studies', locale: 'it', status: 'published', indexable: true },
+
   // Tajweed Checker SEO Publication Gate (2026-09-30): /tools/tajweed-checker,
   // en+ar+fr all at once. A dedicated read-only readiness audit found no real
   // blocker at all -- no fetch/geolocation/localStorage/session, and no

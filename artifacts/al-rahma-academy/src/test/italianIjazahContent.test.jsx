@@ -159,18 +159,14 @@ describe('/it/courses/ijazah — source material is preserved, not translated', 
 });
 
 // The page itself was published afterwards, in the Italian Ijazah SEO
-// Publication PR; this guard now asserts that and that its siblings stay out.
-describe('publication guard: /it/courses/ijazah is published, Islamic Studies is not', () => {
-  it('PRERENDER_MANIFEST has the Italian ijazah entry, and none for islamic-studies', () => {
-    expect(PRERENDER_MANIFEST.some((e) => e.route === '/courses/ijazah' && e.locale === 'it' && e.status === 'published')).toBe(true);
-    for (const route of ['/courses/islamic-studies']) {
-      expect(PRERENDER_MANIFEST.some((e) => e.route === route && e.locale === 'it')).toBe(false);
-    }
+// Publication PR; this guard now asserts that.
+describe('publication guard: /it/courses/ijazah is published', () => {
+  it('PRERENDER_MANIFEST has exactly one Italian ijazah entry', () => {
+    expect(PRERENDER_MANIFEST.filter((e) => e.route === '/courses/ijazah' && e.locale === 'it' && e.status === 'published')).toHaveLength(1);
   });
 
-  it('the sitemap on disk lists /it/courses/ijazah once, and not the unpublished Italian Islamic Studies', () => {
+  it('the sitemap on disk lists /it/courses/ijazah once', () => {
     const xml = fs.readFileSync(path.resolve(__dirname, '../../public/sitemap.xml'), 'utf8');
     expect(xml.match(/<loc>https:\/\/al-rahmaacademy\.com\/it\/courses\/ijazah<\/loc>/g)).toHaveLength(1);
-    expect(xml).not.toContain('/it/courses/islamic-studies');
   });
 });

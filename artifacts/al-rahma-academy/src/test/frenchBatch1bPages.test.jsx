@@ -180,8 +180,8 @@ describe('French Batch 1B pages', () => {
     expect(document.querySelector('.cl__hadith-link').getAttribute('href')).toBe(hadith.url);
   });
 
-  it('other languages (it) still render the English text (Islamic Studies only — Ijazah has its own Italian content since the Italian Ijazah batch)', async () => {
-    await mountFullPage('/it/courses/islamic-studies', CourseIslamicStudies);
+  it('other languages (es) still render the English text (Italian has its own Ijazah and Islamic Studies content since the Italian batches)', async () => {
+    await mountFullPage('/es/courses/islamic-studies', CourseIslamicStudies);
     expect(document.querySelector('h1').textContent).toBe('Islamic Studies');
   });
 });

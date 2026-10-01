@@ -133,12 +133,13 @@ describe('CourseIslamicStudies: Hadith of the Day is hydration-safe, never build
     dateSpy.mockRestore();
   });
 
-  it('placeholder text is locale-appropriate on en/ar/fr and never a religious/hadith string', () => {
+  it('placeholder text is locale-appropriate on en/ar/fr/it and never a religious/hadith string', () => {
     setWebdriver(true);
     const cases = [
       { route: '/courses/islamic-studies', expectSubstring: 'Loading' },
       { route: '/ar/courses/islamic-studies', expectSubstring: 'جارٍ تحميل' },
       { route: '/fr/courses/islamic-studies', expectSubstring: 'Chargement' },
+      { route: '/it/courses/islamic-studies', expectSubstring: 'Caricamento' },
     ];
     for (const { route, expectSubstring } of cases) {
       const { container, unmount } = renderHarness(route);

@@ -3,14 +3,19 @@
 // comment: admin mutations moved to /api/v1/admin/enrollments, MFA + RBAC +
 // audit-logged) and is out of scope here regardless of backend.
 //
-// Email notifications (config/mailer.js's sendMail calls in the Mongo
-// controller — admin notification + student confirmation) are intentionally
-// NOT reproduced here: email delivery is unchanged/deferred for the
-// Supabase path.
+// Email notifications: same two calls as the Mongo controller (admin
+// notification + student confirmation), same templates, same
+// fire-and-forget/await-but-never-fail semantics — see createEnrollment
+// below. Kept as a direct parity mirror rather than a shared helper so each
+// backend's controller stays independently readable; if the two ever drift,
+// grep both for `sendMail(` to find both call sites.
 import { asyncHandler } from '../../utils/asyncHandler.js';
 import { parsePagination, sendPaginated } from '../../utils/pagination.js';
 import { pickPublicBookingFields, normalizeWhatsapp } from '../../utils/enrollmentValidation.js';
 import { withAnonContext, withUserContext } from './client.js';
+import { sendMail, ADMIN_EMAIL } from '../../config/mailer.js';
+import { enrollmentAdminEmail, enrollmentStudentEmail } from '../../config/emailTemplates.js';
+import logger from '../../config/logger.js';
 
 // Field renames vs. Mongo (docs/option-a-mongo-supabase-parity-map.md,
 // "Enrollment" section): teacherId/teacherName -> preferred_teacher_key/
@@ -106,6 +111,34 @@ export const createEnrollment = asyncHandler(async (req, res) => {
     );
     return r.rows[0].ref;
   });
+
+  // Email notifications — only reached after submit_enrollment_booking()
+  // has already committed, exactly mirroring controllers/enrollmentController.js's
+  // placement (never sent if the RPC above throws, since asyncHandler would
+  // have already forwarded that rejection to the error handler before this
+  // line runs).
+  //
+  // Admin notification — fire-and-forget (non-critical).
+  const adminEmail = ADMIN_EMAIL();
+  if (adminEmail) {
+    sendMail({
+      to: adminEmail,
+      subject: `📋 New Booking Request — ${data.name} (${data.teacherName || 'no teacher yet'})`,
+      html: enrollmentAdminEmail({ ...data, whatsapp, times, subjects, bookingRef }),
+    });
+  }
+
+  // Student confirmation — await so we know it delivered; failure is logged
+  // but does not fail the request (the booking is already committed).
+  try {
+    await sendMail({
+      to: data.email,
+      subject: 'Your booking request — AL-Rahma Academy',
+      html: enrollmentStudentEmail({ name: data.name, teacherName: data.teacherName, plan: data.plan, bookingRef }),
+    });
+  } catch (err) {
+    logger.error('Failed to send enrollment confirmation email', { email: data.email, message: err.message });
+  }
 
   res.status(201).json({ message: 'Booking request received', id: null, bookingRef });
 });

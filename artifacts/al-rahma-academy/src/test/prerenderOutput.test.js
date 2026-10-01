@@ -1380,14 +1380,15 @@ describe.skipIf(!distExists)('Prerender output — literal dist/public paths (in
     // every LITERAL_FILES entry (fr joined every route that already had
     // en+ar), so this is unconditional, not an if-present check.
     const hreflangEls = [...document.querySelectorAll('link[rel="alternate"][hreflang]')];
-    // Italian SEO wave: it is published for every route here EXCEPT
-    // /courses/ijazah, /courses/islamic-studies (separate waves) and
-    // /tools/tajweed-checker (Tajweed Checker SEO Publication Gate is
-    // en+ar+fr only, Italian publication is out of its scope). Derived
-    // from the literal fr href (always ORIGIN + '/fr' + route), not from
-    // hreflangLinksFor(), so a bug in that helper is still caught.
-    const itPublished = !/\/fr\/courses\/islamic-studies$/.test(expectedFrHref);
-    const publishedLocales = itPublished ? ['en', 'ar', 'fr', 'it'] : ['en', 'ar', 'fr'];
+    // Italian SEO waves: it is published for every route in LITERAL_FILES
+    // (Ijazah, Tajweed Checker and Islamic Studies each joined in their own
+    // wave). The expected Italian href is derived from the literal fr href
+    // (always ORIGIN + '/fr' + route), not from hreflangLinksFor(), so a bug
+    // in that helper is still caught. Routes with no Italian page (Blog,
+    // Enroll, other tools) are not in this suite; the sitemap suite guards
+    // them.
+    const itPublished = true;
+    const publishedLocales = ['en', 'ar', 'fr', 'it'];
     expect(hreflangEls.length, 'one hreflang per published locale + x-default, no more').toBe(publishedLocales.length + 1);
 
     const byHreflang = Object.fromEntries(hreflangEls.map((el) => [el.getAttribute('hreflang'), el.getAttribute('href')]));
@@ -1647,11 +1648,99 @@ describe.skipIf(!distExists)('Italian Ijazah prerender (dist/public) — raw HTM
     ).toContain('it_IT');
   });
 
-  it('Islamic Studies still has no Italian file and no Italian alternate', () => {
-    expect(existsSync(path.join(distDir, 'it/courses/islamic-studies/index.html'))).toBe(false);
-    for (const rel of ['courses/islamic-studies/index.html']) {
+});
+
+// Italian Islamic Studies SEO Publication (2026-10-01): strict raw-HTML checks
+// for /it/courses/islamic-studies, including the Hadith of the Day placeholder
+// (the prerender capture never resolves a hadith, so the static file must
+// carry the Italian placeholder and no hadith/date). Literal expectations.
+describe.skipIf(!distExists)('Italian Islamic Studies prerender (dist/public) — raw HTML before any JavaScript', () => {
+  const ORIGIN_ = 'https://al-rahmaacademy.com';
+  const load = (rel) => new JSDOM(readFileSync(path.join(distDir, rel), 'utf8')).window.document;
+  const REL = 'it/courses/islamic-studies/index.html';
+
+  it('lang, canonical, og:locale, Italian title/description/H1', () => {
+    expect(existsSync(path.join(distDir, REL))).toBe(true);
+    const doc = load(REL);
+    expect(doc.documentElement.lang).toBe('it');
+    expect(doc.documentElement.dir).toBe('ltr');
+    expect(doc.querySelector('link[rel="canonical"]').getAttribute('href')).toBe(`${ORIGIN_}/it/courses/islamic-studies`);
+    expect(doc.querySelector('meta[property="og:locale"]').getAttribute('content')).toBe('it_IT');
+    expect(
+      [...doc.querySelectorAll('meta[property="og:locale:alternate"]')].map((m) => m.getAttribute('content')).sort(),
+    ).toEqual(['ar_EG', 'en_GB', 'fr_FR']);
+    expect(doc.title).toBe('Corso di Studi Islamici | AL-Rahma Academy');
+    expect(doc.querySelector('meta[name="description"]').getAttribute('content')).toBe(
+      'Un programma completo basato sulle fonti che copre Aqeedah, Fiqh, Seerah, Hadith e Tafsir — 5 moduli strutturati insegnati da studiosi certificati nella tua lingua.',
+    );
+    expect(doc.querySelector('h1').textContent.trim()).toBe('Studi Islamici');
+  });
+
+  it('exactly five hreflang alternates (en, ar, fr, it, x-default)', () => {
+    const links = [...load(REL).querySelectorAll('link[rel="alternate"][hreflang]')];
+    expect(links).toHaveLength(5);
+    expect(Object.fromEntries(links.map((l) => [l.getAttribute('hreflang'), l.getAttribute('href')]))).toEqual({
+      en: `${ORIGIN_}/courses/islamic-studies`,
+      ar: `${ORIGIN_}/ar/courses/islamic-studies`,
+      fr: `${ORIGIN_}/fr/courses/islamic-studies`,
+      it: `${ORIGIN_}/it/courses/islamic-studies`,
+      'x-default': `${ORIGIN_}/courses/islamic-studies`,
+    });
+  });
+
+  it('Italian Course JSON-LD and Italian BreadcrumbList', () => {
+    const doc = load(REL);
+    const course = [...doc.querySelectorAll('script[type="application/ld+json"]')]
+      .map((s) => JSON.parse(s.textContent))
+      .flat()
+      .find((j) => j['@type'] === 'Course');
+    expect(course.name).toBe('Corso di Studi Islamici');
+    expect(course.educationalLevel).toBe('Tutti i livelli');
+    expect(course.teaches).toBe('Aqeedah, Fiqh, Seerah, Hadith, Tafsir, Studi Islamici');
+    expect(course.inLanguage).toEqual(['en', 'ar']);
+    const crumbs = JSON.parse(doc.querySelector('script[data-seo="breadcrumb"]').textContent);
+    expect(crumbs.itemListElement.map((i) => ({ name: i.name, item: i.item }))).toEqual([
+      { name: 'Pagina iniziale', item: `${ORIGIN_}/it/` },
+      { name: 'Corsi', item: `${ORIGIN_}/it/courses` },
+      { name: 'Corso di Studi Islamici', item: `${ORIGIN_}/it/courses/islamic-studies` },
+    ]);
+  });
+
+  it('Hadith of the Day: the Italian placeholder is in the raw HTML; no real hadith, narrator, link or date is frozen in', () => {
+    const doc = load(REL);
+    const placeholder = doc.querySelector('[data-testid="hadith-placeholder"]');
+    expect(placeholder).not.toBeNull();
+    expect(placeholder.textContent.trim()).toBe("Caricamento dell'hadith del giorno…");
+    for (const sel of ['.cl__hadith-arabic', '.cl__hadith-narrator', '.cl__hadith-source', '.cl__hadith-link', 'blockquote.cl__hadith-text']) {
+      expect(doc.querySelector(sel), sel).toBeNull();
+    }
+    const html = readFileSync(path.join(distDir, REL), 'utf8');
+    expect(html).not.toContain('Leggi l\'hadith completo');
+    expect(html).not.toMatch(/sunnah\.com\/nawawi40:\d/);
+    // Only the unresolved card sits under "Hadith del giorno".
+    expect(doc.querySelectorAll('.cl__hadith-card')).toHaveLength(1);
+  });
+
+  it('the placeholder is the same locale-appropriate loading copy as en/ar/fr, with no hadith, in every prerendered Islamic Studies file', () => {
+    for (const [rel, text] of [
+      ['courses/islamic-studies/index.html', 'Loading today’s hadith…'],
+      ['ar/courses/islamic-studies/index.html', 'جارٍ تحميل حديث اليوم…'],
+      ['fr/courses/islamic-studies/index.html', 'Chargement du hadith du jour…'],
+      [REL, "Caricamento dell'hadith del giorno…"],
+    ]) {
       const doc = load(rel);
-      expect(doc.querySelector('link[rel="alternate"][hreflang="it"]')).toBeNull();
+      expect(doc.querySelector('[data-testid="hadith-placeholder"]').textContent.trim(), rel).toBe(text);
+      expect(doc.querySelector('.cl__hadith-arabic'), rel).toBeNull();
+      expect(
+        [...doc.querySelectorAll('link[rel="alternate"][hreflang]')].map((l) => l.getAttribute('hreflang')).sort(),
+        rel,
+      ).toEqual(['ar', 'en', 'fr', 'it', 'x-default']);
+    }
+  });
+
+  it('unpublished Italian routes still have no Italian file (blog, enroll, other tools)', () => {
+    for (const rel of ['it/resources/blog', 'it/enroll', 'it/tools/hadith', 'it/tools/quran-reader', 'it/tools/prayer-times', 'it/tools/qibla', 'it/tools/islamic-calendar', 'it/tools/verse-of-the-day', 'it/tools/hifz-review']) {
+      expect(existsSync(path.join(distDir, rel, 'index.html')), rel).toBe(false);
     }
   });
 });

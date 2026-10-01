@@ -111,11 +111,11 @@ function pathForLocale(route, locale) {
 const EXPECTED_EN_URLS = ROUTES.map((route) => ORIGIN + pathForLocale(route, 'en'));
 const EXPECTED_AR_URLS = ROUTES.map((route) => ORIGIN + pathForLocale(route, 'ar'));
 const EXPECTED_FR_URLS = ROUTES.map((route) => ORIGIN + pathForLocale(route, 'fr'));
-// Italian SEO wave: it publishes every route above EXCEPT the ones whose
-// own waves are separate (/courses/ijazah, /courses/islamic-studies) and
-// /tools/tajweed-checker (en+ar+fr only, per the Tajweed Checker SEO
-// Publication Gate — Italian publication is out of that wave's scope).
-const IT_EXCLUDED_ROUTES = ['/courses/islamic-studies'];
+// Italian SEO waves: it now publishes every route above (the Ijazah, Tajweed
+// Checker and Islamic Studies waves each joined after the main Italian wave),
+// so nothing is excluded here; routes outside this list (Blog, Enroll, the
+// remaining individual tools) stay out via the forbidden-route test below.
+const IT_EXCLUDED_ROUTES = [];
 const IT_ROUTES = ROUTES.filter((route) => !IT_EXCLUDED_ROUTES.includes(route));
 const EXPECTED_IT_URLS = IT_ROUTES.map((route) => ORIGIN + pathForLocale(route, 'it'));
 const EXPECTED_URLS = [...EXPECTED_EN_URLS, ...EXPECTED_AR_URLS, ...EXPECTED_FR_URLS, ...EXPECTED_IT_URLS];
@@ -151,7 +151,7 @@ describe('sitemap.xml — exact published-routes whitelist', () => {
     expect(getLocUrls()).toHaveLength(EXPECTED_URLS.length);
   });
 
-  it('splits into exactly 31 EN, 31 AR, 31 FR and 30 IT URLs', () => {
+  it('splits into exactly 31 EN, 31 AR, 31 FR and 31 IT URLs', () => {
     const locs = getLocUrls();
     const byPrefix = (l) => locs.filter((u) => u.startsWith(`${ORIGIN}/${l}/`) || u === `${ORIGIN}/${l}`);
     const arUrls = byPrefix('ar');
@@ -165,8 +165,8 @@ describe('sitemap.xml — exact published-routes whitelist', () => {
     expect(enUrls).toHaveLength(31);
     expect(arUrls).toHaveLength(31);
     expect(frUrls).toHaveLength(31);
-    expect(itUrls).toHaveLength(30);
-    expect(getLocUrls()).toHaveLength(123);
+    expect(itUrls).toHaveLength(31);
+    expect(getLocUrls()).toHaveLength(124);
   });
 
   it('has no duplicate URLs', () => {
@@ -179,10 +179,9 @@ describe('sitemap.xml — exact published-routes whitelist', () => {
     expect([...locs].sort()).toEqual([...EXPECTED_URLS].sort());
   });
 
-  it('does not contain /es/, /de/, /it/courses/islamic-studies, /enroll, the remaining individual tools, Blog, or any other unpublished route', () => {
+  it('does not contain /es/, /de/, /enroll, the remaining individual tools, Blog, or any other unpublished route', () => {
     const locs = getLocUrls();
     for (const forbidden of [
-      '/it/courses/islamic-studies',
       '/es/',
       '/de/',
       '/enroll',

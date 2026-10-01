@@ -2,6 +2,7 @@
 import { useSearchParams } from 'react-router-dom';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
+import Breadcrumbs from '../components/ui/Breadcrumbs';
 import useSEO from '../hooks/useSEO';
 import { submitEnrollment } from '../api/enrollmentApi';
 import { TEACHERS, plans } from '../data';
@@ -111,6 +112,31 @@ export default function Enroll() {
 
   return (
     <>
+      {/* French SEO Publication Wave (2026-09-30): Enroll never had a
+          visible breadcrumb bar by product design (a focused multi-step
+          booking flow, not a content page under a hub), which was fine
+          while this route was unpublished — but scripts/prerender.mjs's
+          waitForHydratedSeo() requires a real BreadcrumbList JSON-LD on
+          every non-Home route (entry.route !== '/'), with no exemption
+          list; a build attempt confirmed this empirically (timed out
+          waiting on exactly this page, the same single blocker
+          Quran.jsx's own comment already describes and fixes the same
+          way). Rendering <Breadcrumbs> inside .sr-only keeps the wizard's
+          visual design unchanged while giving screen readers a real trail
+          (closing a pre-existing a11y gap) and writing the JSON-LD every
+          other prerendered page already gets.
+          fr-gated (lang === 'fr'), not unconditional: only fr is actually
+          published here, and frenchBatch1cEnArRegression.test.jsx's own
+          byte-for-byte baseline exists specifically to guarantee French
+          work never changes en/ar's rendered output, even invisibly —
+          confirmed by a real test run (the baseline's body/JSON-LD hashes
+          for Enroll's en/ar states changed the moment this was rendered
+          unconditionally). */}
+      {lang === 'fr' && (
+        <div className="sr-only">
+          <Breadcrumbs items={[{ label: t.nav.trial }]} />
+        </div>
+      )}
       <Header />
       <main id="main-content" className="enroll__page">
         <div className="enroll__container">

@@ -38,7 +38,23 @@ export default function VerseOfTheDayPage() {
 
   const verseKey = DAILY_VERSE_KEYS[(new Date().getDate() - 1) % DAILY_VERSE_KEYS.length];
 
+  // French SEO Publication Wave (2026-09-30): this page's static HTML is
+  // captured by scripts/prerender.mjs, a REAL headless-Chromium session —
+  // a plain fetch here would still run during that one build-time capture
+  // and bake that exact build-day's verse into the static file, which
+  // every future visitor's browser (landing on a different calendar day
+  // almost every time) would then hydrate against, always mismatching.
+  // `verse` therefore stays `null` during that one capture — the same
+  // neutral spinner every visitor's very first paint already shows before
+  // its own fetch resolves, so hydration always matches. Guarded by
+  // `navigator.webdriver` (same signal ConsentBanner.jsx and
+  // CourseIslamicStudies.jsx's Hadith-of-the-Day already rely on for the
+  // identical reason): Playwright's browser (prerender.mjs's
+  // launchBrowser(), no stealth args) leaves Chromium's standard WebDriver
+  // flag at its default `true`; a real visitor's browser never sets it, so
+  // every real visit fetches ITS OWN day's verse fresh, the moment it loads.
   useEffect(() => {
+    if (navigator.webdriver) return;
     setVerseError(false);
     getVerse(verseKey, 20).then(setVerse).catch(() => setVerseError(true));
   }, [verseKey]);

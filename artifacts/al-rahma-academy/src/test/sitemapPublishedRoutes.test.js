@@ -99,6 +99,21 @@ const ROUTES = [
   '/tools/adhkar',
 ];
 
+// French SEO Publication Wave (2026-09-30): these 5 routes join the
+// sitemap for fr ONLY — never en/ar/it, per scripts/prerender-routes.mjs's
+// own comment on this exact wave. A separate list from ROUTES above (which
+// is always published in 3 locales, soon to be joined by a 4th for some
+// entries) rather than folding these into it with a per-route locale
+// exception, so a future en/ar publication of any one of them is a plain
+// addition to ROUTES instead of first having to be un-excepted here.
+const FR_ONLY_ROUTES = [
+  '/tools/verse-of-the-day',
+  '/tools/quran-reader',
+  '/tools/hadith',
+  '/tools/prayer-times',
+  '/enroll',
+];
+
 function pathForLocale(route, locale) {
   if (locale === 'en') return route;
   return route === '/' ? `/${locale}/` : `/${locale}${route}`;
@@ -110,7 +125,11 @@ function pathForLocale(route, locale) {
 // different route set. it/es/de remain unpublished, unchanged.
 const EXPECTED_EN_URLS = ROUTES.map((route) => ORIGIN + pathForLocale(route, 'en'));
 const EXPECTED_AR_URLS = ROUTES.map((route) => ORIGIN + pathForLocale(route, 'ar'));
-const EXPECTED_FR_URLS = ROUTES.map((route) => ORIGIN + pathForLocale(route, 'fr'));
+// French SEO Publication Wave (2026-09-30): FR_ONLY_ROUTES' 5 routes are
+// appended here, fr-only — this is the one and only place they affect the
+// expected URL set at all; EXPECTED_EN_URLS/EXPECTED_AR_URLS/
+// EXPECTED_IT_URLS above and below are deliberately untouched.
+const EXPECTED_FR_URLS = [...ROUTES, ...FR_ONLY_ROUTES].map((route) => ORIGIN + pathForLocale(route, 'fr'));
 // Italian SEO waves: it now publishes every route above (the Ijazah, Tajweed
 // Checker and Islamic Studies waves each joined after the main Italian wave),
 // so nothing is excluded here; routes outside this list (Blog, Enroll, the
@@ -151,7 +170,7 @@ describe('sitemap.xml — exact published-routes whitelist', () => {
     expect(getLocUrls()).toHaveLength(EXPECTED_URLS.length);
   });
 
-  it('splits into exactly 31 EN, 31 AR, 31 FR and 31 IT URLs', () => {
+  it('splits into exactly 31 EN, 31 AR, 36 FR and 31 IT URLs', () => {
     const locs = getLocUrls();
     const byPrefix = (l) => locs.filter((u) => u.startsWith(`${ORIGIN}/${l}/`) || u === `${ORIGIN}/${l}`);
     const arUrls = byPrefix('ar');
@@ -164,9 +183,12 @@ describe('sitemap.xml — exact published-routes whitelist', () => {
     expect(itUrls).toHaveLength(EXPECTED_IT_URLS.length);
     expect(enUrls).toHaveLength(31);
     expect(arUrls).toHaveLength(31);
-    expect(frUrls).toHaveLength(31);
+    // French SEO Publication Wave (2026-09-30): 31 (the pre-existing French
+    // wave, same route set as EN/AR) + 5 fr-only routes (FR_ONLY_ROUTES).
+    expect(frUrls).toHaveLength(36);
+    // Italian Islamic Studies SEO Publication (2026-09-30, concurrent PR):
+    // it now publishes every route in ROUTES, IT_EXCLUDED_ROUTES is empty.
     expect(itUrls).toHaveLength(31);
-    expect(getLocUrls()).toHaveLength(124);
   });
 
   it('has no duplicate URLs', () => {
@@ -179,19 +201,14 @@ describe('sitemap.xml — exact published-routes whitelist', () => {
     expect([...locs].sort()).toEqual([...EXPECTED_URLS].sort());
   });
 
-  it('does not contain /es/, /de/, /enroll, the remaining individual tools, Blog, or any other unpublished route', () => {
+  it('does not contain /es/, /de/, the remaining individual tools, Blog, or any other unpublished route', () => {
     const locs = getLocUrls();
     for (const forbidden of [
       '/es/',
       '/de/',
-      '/enroll',
       '/resources/blog',
-      '/tools/quran-reader',
-      '/tools/hadith',
-      '/tools/prayer-times',
       '/tools/qibla',
       '/tools/islamic-calendar',
-      '/tools/verse-of-the-day',
       '/tools/hifz-review',
     ]) {
       expect(locs.some((u) => u.includes(forbidden))).toBe(false);
@@ -199,6 +216,22 @@ describe('sitemap.xml — exact published-routes whitelist', () => {
     // Belt-and-suspenders: every URL must be one of the whitelisted ones.
     for (const loc of locs) {
       expect(EXPECTED_URLS).toContain(loc);
+    }
+  });
+
+  // French SEO Publication Wave (2026-09-30): FR_ONLY_ROUTES must appear
+  // for /fr/ ONLY — never en (unprefixed), /ar/ or /it/, since none of
+  // those locales have a real published PRERENDER_MANIFEST entry for any
+  // of these 5 routes (see scripts/prerender-routes.mjs's own comment on
+  // this exact wave for why: en/ar/it publication of these routes is a
+  // separate, un-revisited decision).
+  it('publishes verse-of-the-day, quran-reader, hadith, prayer-times and enroll for /fr/ only, never en/ar/it', () => {
+    const locs = getLocUrls();
+    for (const route of FR_ONLY_ROUTES) {
+      expect(locs).toContain(`${ORIGIN}/fr${route}`);
+      expect(locs).not.toContain(`${ORIGIN}${route}`);
+      expect(locs).not.toContain(`${ORIGIN}/ar${route}`);
+      expect(locs).not.toContain(`${ORIGIN}/it${route}`);
     }
   });
 });

@@ -1289,6 +1289,109 @@ const LITERAL_FILES = [
       { name: 'Vérificateur de tajwid', item: 'https://al-rahmaacademy.com/fr/tools/tajweed-checker' },
     ],
   },
+
+  // French SEO Publication Wave (2026-09-30): 5 fr-only routes — no en/ar
+  // entries here at all (unlike every LITERAL_FILES entry above), since
+  // en/ar are not published for any of these 5 (see
+  // scripts/prerender-routes.mjs's own comment on this exact wave).
+  // expectedEnHref/expectedArHref are still given (used only for the
+  // x-default and "no hreflang=ar" assertions above), literal per the same
+  // rule as expectedCanonical.
+  {
+    route: '/tools/verse-of-the-day',
+    locale: 'fr',
+    relPath: 'fr/tools/verse-of-the-day/index.html',
+    expectedCanonical: 'https://al-rahmaacademy.com/fr/tools/verse-of-the-day',
+    h1Text: 'Verset du jour',
+    expectedEnHref: 'https://al-rahmaacademy.com/tools/verse-of-the-day',
+    expectedArHref: 'https://al-rahmaacademy.com/ar/tools/verse-of-the-day',
+    expectedFrHref: 'https://al-rahmaacademy.com/fr/tools/verse-of-the-day',
+    expectedTitle: 'Verset du jour | AL-Rahma Academy',
+    expectedDescription: 'Un verset du Coran choisi chaque jour avec sa traduction — commencez la journée par les paroles d’Allah.',
+    breadcrumb: [
+      { name: 'Accueil', item: 'https://al-rahmaacademy.com/fr/' },
+      { name: 'Outils', item: 'https://al-rahmaacademy.com/fr/tools' },
+      { name: 'Outils de prière', item: 'https://al-rahmaacademy.com/fr/tools/prayer' },
+      { name: 'Verset du jour', item: 'https://al-rahmaacademy.com/fr/tools/verse-of-the-day' },
+    ],
+  },
+  {
+    route: '/tools/quran-reader',
+    locale: 'fr',
+    relPath: 'fr/tools/quran-reader/index.html',
+    expectedCanonical: 'https://al-rahmaacademy.com/fr/tools/quran-reader',
+    // Real h1 text at the moment this capture happens: the reader's own
+    // chapter fetch is deliberately skipped for this capture (see
+    // Quran.jsx's own comment), so QuranChapterHeader.jsx's fallback title
+    // (the reader's general page title, not a specific surah name yet) is
+    // what actually renders — see that component's own comment for why
+    // this fallback exists at all now.
+    h1Text: "Centre d'apprentissage du Coran",
+    expectedEnHref: 'https://al-rahmaacademy.com/tools/quran-reader',
+    expectedArHref: 'https://al-rahmaacademy.com/ar/tools/quran-reader',
+    expectedFrHref: 'https://al-rahmaacademy.com/fr/tools/quran-reader',
+    expectedTitle: 'Lire et écouter le Coran | AL-Rahma Academy',
+    expectedDescription: 'Lisez, écoutez et mémorisez le Saint Coran avec des traductions, le tafsir, le mode de mémorisation et des raccourcis clavier.',
+    breadcrumb: [
+      { name: 'Accueil', item: 'https://al-rahmaacademy.com/fr/' },
+      { name: 'Outils islamiques', item: 'https://al-rahmaacademy.com/fr/tools' },
+      { name: 'Lecteur du Coran', item: 'https://al-rahmaacademy.com/fr/tools/quran-reader' },
+    ],
+  },
+  {
+    route: '/tools/hadith',
+    locale: 'fr',
+    relPath: 'fr/tools/hadith/index.html',
+    expectedCanonical: 'https://al-rahmaacademy.com/fr/tools/hadith',
+    h1Text: 'Bibliothèque islamique de hadiths',
+    expectedEnHref: 'https://al-rahmaacademy.com/tools/hadith',
+    expectedArHref: 'https://al-rahmaacademy.com/ar/tools/hadith',
+    expectedFrHref: 'https://al-rahmaacademy.com/fr/tools/hadith',
+    expectedTitle: 'Bibliothèque des Hadiths | AL-Rahma Academy',
+    expectedDescription: 'Parcourez et recherchez 10 recueils de hadiths authentiques, dont Sahih al-Bukhari, Sahih Muslim et Sunan Abi Dawud.',
+    breadcrumb: [
+      { name: 'Accueil', item: 'https://al-rahmaacademy.com/fr/' },
+      { name: 'Outils islamiques', item: 'https://al-rahmaacademy.com/fr/tools' },
+      { name: 'Bibliothèque de hadiths', item: 'https://al-rahmaacademy.com/fr/tools/hadith' },
+    ],
+  },
+  {
+    route: '/tools/prayer-times',
+    locale: 'fr',
+    relPath: 'fr/tools/prayer-times/index.html',
+    expectedCanonical: 'https://al-rahmaacademy.com/fr/tools/prayer-times',
+    h1Text: 'Horaires de prière',
+    expectedEnHref: 'https://al-rahmaacademy.com/tools/prayer-times',
+    expectedArHref: 'https://al-rahmaacademy.com/ar/tools/prayer-times',
+    expectedFrHref: 'https://al-rahmaacademy.com/fr/tools/prayer-times',
+    expectedTitle: 'Horaires de prière | AL-Rahma Academy',
+    expectedDescription: 'Horaires de prière précis pour votre position, avec compte à rebours en direct, alertes de prière et calendrier mensuel complet.',
+    breadcrumb: [
+      { name: 'Accueil', item: 'https://al-rahmaacademy.com/fr/' },
+      { name: 'Outils', item: 'https://al-rahmaacademy.com/fr/tools' },
+      { name: 'Outils de prière', item: 'https://al-rahmaacademy.com/fr/tools/prayer' },
+      { name: 'Horaires de prière', item: 'https://al-rahmaacademy.com/fr/tools/prayer-times' },
+    ],
+  },
+  {
+    route: '/enroll',
+    locale: 'fr',
+    relPath: 'fr/enroll/index.html',
+    expectedCanonical: 'https://al-rahmaacademy.com/fr/enroll',
+    h1Text: 'Inscrivez-vous à Al-Rahma Academy',
+    expectedEnHref: 'https://al-rahmaacademy.com/enroll',
+    expectedArHref: 'https://al-rahmaacademy.com/ar/enroll',
+    expectedFrHref: 'https://al-rahmaacademy.com/fr/enroll',
+    expectedTitle: 'Réserver des cours d\'essai gratuits | AL-Rahma Academy',
+    expectedDescription: 'Un cours d\'essai de Coran individuel et gratuit — sans paiement, sans engagement. Choisissez vos matières, choisissez un enseignant certifié par Al-Azhar et réservez votre formule — nous confirmerons avec vous votre planning et le paiement sur WhatsApp.',
+    // Enroll.jsx now renders <Breadcrumbs> inside .sr-only (see its own
+    // comment) — a real build attempt confirmed waitForHydratedSeo()
+    // requires a BreadcrumbList on every non-Home route, no exemption.
+    breadcrumb: [
+      { name: 'Accueil', item: 'https://al-rahmaacademy.com/fr/' },
+      { name: 'Essai gratuit', item: 'https://al-rahmaacademy.com/fr/enroll' },
+    ],
+  },
 ];
 
 describe.skipIf(!distExists)('Prerender output (dist/public) — real files on disk, post-build only', () => {
@@ -1339,7 +1442,7 @@ describe.skipIf(distExists)('Prerender output — dist/public not present (expec
 // above — this reads real files too, so it needs dist/public to exist
 // just as much.
 describe.skipIf(!distExists)('Prerender output — literal dist/public paths (independent of outputRelPathFor)', () => {
-  it.each(LITERAL_FILES)('$relPath: correct raw HTML at the literal path', ({ locale, relPath, expectedCanonical, h1Text, expectedEnHref, expectedArHref, expectedFrHref, expectedTitle, expectedDescription, breadcrumb }) => {
+  it.each(LITERAL_FILES)('$relPath: correct raw HTML at the literal path', ({ route, locale, relPath, expectedCanonical, h1Text, expectedEnHref, expectedArHref, expectedFrHref, expectedTitle, expectedDescription, breadcrumb }) => {
     const filePath = path.join(distDir, relPath);
     expect(existsSync(filePath), `missing prerendered file: ${filePath}`).toBe(true);
 
@@ -1373,31 +1476,50 @@ describe.skipIf(!distExists)('Prerender output — literal dist/public paths (in
     expect(heading.textContent.trim(), 'h1 must be the real page-specific heading, not empty/placeholder').toBe(h1Text);
 
     // hreflang fix (2026-09-21), extended for the French SEO Publication
-    // Gate (2026-09-30): the static SPA shell's inherited block must be
-    // fully replaced by the real, reciprocal set of alternates for every
-    // locale actually published for THIS route (en/ar/fr today) + x-default
-    // — nothing else, and nothing missing. expectedFrHref is present on
-    // every LITERAL_FILES entry (fr joined every route that already had
-    // en+ar), so this is unconditional, not an if-present check.
+    // Gate (2026-09-30) and the French SEO Publication Wave (2026-09-30,
+    // /tools/verse-of-the-day, /tools/quran-reader, /tools/hadith,
+    // /tools/prayer-times, /enroll — fr-only, the first entries in this
+    // file where en/ar/it are NOT all published alongside fr): the static
+    // SPA shell's inherited block must be fully replaced by the real,
+    // reciprocal set of alternates for every locale ACTUALLY published for
+    // THIS route, per PRERENDER_MANIFEST itself — not a hardcoded
+    // [en,ar,fr(,it)] guess. A per-route regex here (this file's own prior
+    // approach) is exactly the kind of second, independently-maintained
+    // "which locales does this route publish" list that silently drifted
+    // out of sync with PRERENDER_MANIFEST when the Tajweed Checker and
+    // Italian waves landed through concurrent PRs the same day (caught only
+    // by CI's real dist build, not locally) — deriving straight from the
+    // manifest makes that whole bug class structurally impossible instead
+    // of fixing one more regex by hand.
     const hreflangEls = [...document.querySelectorAll('link[rel="alternate"][hreflang]')];
-    // Italian SEO waves: it is published for every route in LITERAL_FILES
-    // (Ijazah, Tajweed Checker and Islamic Studies each joined in their own
-    // wave). The expected Italian href is derived from the literal fr href
-    // (always ORIGIN + '/fr' + route), not from hreflangLinksFor(), so a bug
-    // in that helper is still caught. Routes with no Italian page (Blog,
-    // Enroll, other tools) are not in this suite; the sitemap suite guards
-    // them.
-    const itPublished = true;
-    const publishedLocales = ['en', 'ar', 'fr', 'it'];
+    const publishedLocales = PRERENDER_MANIFEST
+      .filter((e) => e.route === route && e.status === 'published')
+      .map((e) => e.locale);
     expect(hreflangEls.length, 'one hreflang per published locale + x-default, no more').toBe(publishedLocales.length + 1);
 
     const byHreflang = Object.fromEntries(hreflangEls.map((el) => [el.getAttribute('hreflang'), el.getAttribute('href')]));
-    expect(byHreflang.en, 'hreflang=en must point at the English version of this same page').toBe(expectedEnHref);
-    expect(byHreflang.ar, 'hreflang=ar must point at the Arabic version of this same page').toBe(expectedArHref);
-    expect(byHreflang.fr, 'hreflang=fr must point at the French version of this same page').toBe(expectedFrHref);
-    expect(byHreflang['x-default'], 'hreflang=x-default must point at the English version').toBe(expectedEnHref);
-
-    if (itPublished) {
+    // x-default always points at the English-path form of this route (see
+    // hreflangLinksFor()'s own comment) even when English itself is not a
+    // published locale for this exact route (the fr-only wave above) — the
+    // English URL still resolves (served by the generic SPA shell, just
+    // not prerendered), so it remains a valid, deliberate x-default target.
+    expect(byHreflang['x-default'], 'hreflang=x-default must point at the English-path URL').toBe(expectedEnHref);
+    if (publishedLocales.includes('en')) {
+      expect(byHreflang.en, 'hreflang=en must point at the English version of this same page').toBe(expectedEnHref);
+    } else {
+      expect(byHreflang.en, 'no hreflang=en — English is not published for this route').toBeUndefined();
+    }
+    if (publishedLocales.includes('ar')) {
+      expect(byHreflang.ar, 'hreflang=ar must point at the Arabic version of this same page').toBe(expectedArHref);
+    } else {
+      expect(byHreflang.ar, 'no hreflang=ar — Arabic is not published for this route').toBeUndefined();
+    }
+    if (publishedLocales.includes('fr')) {
+      expect(byHreflang.fr, 'hreflang=fr must point at the French version of this same page').toBe(expectedFrHref);
+    } else {
+      expect(byHreflang.fr, 'no hreflang=fr — French is not published for this route').toBeUndefined();
+    }
+    if (publishedLocales.includes('it')) {
       expect(byHreflang.it, 'hreflang=it must point at the Italian version of this same page').toBe(expectedFrHref.replace('/fr', '/it'));
     } else {
       expect(byHreflang.it, 'no hreflang=it — Italian is not published for this route').toBeUndefined();

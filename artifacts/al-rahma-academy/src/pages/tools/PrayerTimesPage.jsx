@@ -72,7 +72,26 @@ export default function PrayerTimesPage() {
     setError('');
   }, []);
 
+  // French SEO Publication Wave (2026-09-30): this page's static HTML is
+  // captured by scripts/prerender.mjs, a REAL headless-Chromium session —
+  // a geolocation request there would (headless Chromium auto-denies a
+  // permission prompt with no UI to answer it) almost always fail fast
+  // into the same `setLoading(false)` branch below regardless, but relying
+  // on that implicit browser behaviour for a build-time guarantee is
+  // exactly the kind of non-deterministic, environment-dependent state
+  // this wave's own instructions rule out for this page (no API result,
+  // no user location, ever, in the raw prerendered file). Skipping the
+  // call outright during that one capture makes the outcome certain
+  // instead of merely likely: `coords`/`prayerData` stay `null`, so the
+  // raw file always shows the same neutral "search your city" empty
+  // state, in French, matching every real visitor's very first paint
+  // before their own geolocation prompt (or denial) resolves.
+  // `navigator.webdriver` is the same signal ConsentBanner.jsx and
+  // CourseIslamicStudies.jsx's Hadith-of-the-Day already rely on: left at
+  // Chromium's default `true` by prerender.mjs's launchBrowser() (no
+  // stealth args), never set by a real visitor's browser.
   useEffect(() => {
+    if (navigator.webdriver) { setLoading(false); return; }
     if (!navigator.geolocation) { setLoading(false); return; }
     navigator.geolocation.getCurrentPosition(
       async ({ coords: c }) => {

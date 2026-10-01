@@ -339,6 +339,80 @@ export const PRERENDER_MANIFEST = [
   { route: '/tools/tajweed-checker', locale: 'en', status: 'published', indexable: true },
   { route: '/tools/tajweed-checker', locale: 'ar', status: 'published', indexable: true },
   { route: '/tools/tajweed-checker', locale: 'fr', status: 'published', indexable: true },
+
+  // French SEO Publication Wave (2026-09-30): /tools/verse-of-the-day,
+  // /tools/quran-reader, /tools/hadith, /tools/prayer-times and /enroll —
+  // fr ONLY, not en/ar/it (those stay exactly as documented in the Static
+  // tools wave comment above: fetch/geolocation/date-dependent blockers
+  // that this PR does not revisit for en/ar, and it/es/de have no reviewed
+  // content for these routes at all). Each real blocker the Static tools
+  // wave comment listed for these five was fixed, not worked around:
+  //   - verse-of-the-day: the daily-verse fetch (VerseOfTheDayPage.jsx) now
+  //     skips entirely when `navigator.webdriver` is set, so `verse` stays
+  //     `null` (the same neutral spinner every real visitor's own first
+  //     paint already shows) for this whole capture instead of racing
+  //     hydration timing and baking in whichever verse quran.com answered
+  //     with on the build machine that one day.
+  //   - quran-reader (Quran.jsx): same `navigator.webdriver` guard on all
+  //     three of its fetch effects (chapters, verses+chapter-audio,
+  //     per-verse Hifz audio), so the static file always shows the same
+  //     deterministic empty-reader shell, never a specific build-day
+  //     surah/translation/audio-URL. This page had two separate real
+  //     blockers beyond the fetch itself, both now fixed: no
+  //     id="main-content" anywhere (waitForHydratedSeo() requires it —
+  //     confirmed empirically the same way PR #109 found it for Teacher
+  //     profiles) and no <Breadcrumbs> at all (this immersive full-screen
+  //     reader intentionally has no visible breadcrumb bar, but
+  //     waitForHydratedSeo() requires a real BreadcrumbList JSON-LD on
+  //     every non-Home route) — fixed by rendering <Breadcrumbs> inside a
+  //     .sr-only wrapper, which keeps the reading UI visually unchanged
+  //     while giving screen readers a real trail (closing a pre-existing
+  //     a11y gap) and writing the JSON-LD every other page already gets.
+  //   - hadith (HadithLibrary.jsx): no code change needed. Its data fetch
+  //     only ever starts inside loadCollection(), itself only reachable
+  //     via a collection card's onClick — prerender.mjs never clicks
+  //     anything, so `selected` stays `null` (its real initial value,
+  //     everywhere, always) for the entire capture, same safety shape as
+  //     the Tajweed Checker gate above. Already had id="main-content" and
+  //     <Breadcrumbs>.
+  //   - prayer-times (PrayerTimesPage.jsx): the geolocation call is now
+  //     also skipped under `navigator.webdriver` (headless Chromium
+  //     auto-denies a geolocation prompt with no UI to answer it, so this
+  //     branch was very likely already being hit in practice — the guard
+  //     makes that a build-time certainty instead of an implicit browser
+  //     default this PR would otherwise be relying on). `coords`/
+  //     `prayerData` stay `null`, so the static file always shows the same
+  //     neutral French "search your city" empty state, never a real
+  //     visitor's location or a place-specific prayer time. Already had
+  //     id="main-content" and <Breadcrumbs>.
+  //   - enroll (Enroll.jsx): `done` starts `false` and stays `false` for
+  //     the whole capture (only set by a real booking submission, itself
+  //     gated behind explicit multi-step form validation no automated
+  //     capture ever completes); the canonical /enroll and /fr/enroll
+  //     URLs carry no ?teacher=/?plan= query string, so `form` resolves to
+  //     BLANK on every build. Already had id="main-content"; did NOT
+  //     already have <Breadcrumbs> (by product design — a focused
+  //     multi-step booking flow, not a content page under a hub), which a
+  //     real build attempt confirmed is a real blocker for ANY non-Home
+  //     route, not just this one (waitForHydratedSeo() requires a
+  //     BreadcrumbList unconditionally for entry.route !== '/', no
+  //     exemption) — fixed the same way as Quran.jsx above, rendering
+  //     <Breadcrumbs> inside a .sr-only wrapper.
+  // French content itself was already complete for all five pages before
+  // this PR (French Localization Batches 1A-1E, main i18n dict, and the
+  // HADITH_COLLECTIONS_TEXT/PRAYER_TIMES_TEXT/RELATED_TOOLS_TEXT/
+  // quranLangs.js modules) — this wave only removes the prerender-safety
+  // blockers, it adds no new translated copy.
+  //
+  // /tools/payment/success is deliberately NOT in this manifest and never
+  // was — it is a post-payment confirmation page with no evergreen public
+  // content to index, out of SEO scope entirely (see this PR's own
+  // description for the separate noindex follow-up under consideration).
+  { route: '/tools/verse-of-the-day', locale: 'fr', status: 'published', indexable: true },
+  { route: '/tools/quran-reader', locale: 'fr', status: 'published', indexable: true },
+  { route: '/tools/hadith', locale: 'fr', status: 'published', indexable: true },
+  { route: '/tools/prayer-times', locale: 'fr', status: 'published', indexable: true },
+  { route: '/enroll', locale: 'fr', status: 'published', indexable: true },
 ];
 
 // The URL path to navigate to for one manifest entry, e.g. "/ar/courses/ijazah".

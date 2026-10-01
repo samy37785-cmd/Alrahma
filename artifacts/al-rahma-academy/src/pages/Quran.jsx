@@ -6,6 +6,7 @@ import '../styles/hifz.css';
 import { loadArabicFontsNow } from '../utils/loadArabicFonts';
 import { useTheme } from '../context/ThemeContext';
 import { useLang } from '../context/LangContext';
+import Breadcrumbs from '../components/ui/Breadcrumbs';
 
 // Verse text is Arabic almost end-to-end here — trigger the Amiri font swap
 // immediately instead of waiting for the generic idle-callback in main.jsx.
@@ -38,7 +39,7 @@ const HIFZ_RECITERS = RECITERS.filter((r) => r.verseId != null);
 const NO_BASMALAH   = new Set([1, 9]);
 
 export default function Quran() {
-  const { lang: siteLang } = useLang();
+  const { lang: siteLang, t } = useLang();
   // The reader's interface follows the site language. Its translation picker
   // remains separate: readers may keep, for example, an Italian translation
   // while browsing the surrounding interface in another site language.
@@ -154,10 +155,30 @@ export default function Quran() {
   }, [activeId, navMode]);
 
   /* ── Load chapters ───────────────────────────────────────────── */
-  useEffect(() => { getChapters().then(setChapters).catch(() => {}); }, []);
+  // French SEO Publication Wave (2026-09-30): this page's static HTML is
+  // captured by scripts/prerender.mjs, a REAL headless-Chromium session —
+  // every fetch below would actually run and complete during that one
+  // build-time capture, baking that day's live quran.com response (chapter
+  // list, Surah 1 verses, a chapter-audio URL) into the static file. Unlike
+  // immutable Quranic text on a page that always shows the SAME fixed
+  // content, capture here races the page's own hydration timing (see
+  // waitForHydratedSeo() in prerender.mjs), so whether a fetch wins that
+  // race is non-deterministic build to build — the opposite of a
+  // reproducible static file. `navigator.webdriver` (same signal
+  // ConsentBanner.jsx and CourseIslamicStudies.jsx's Hadith-of-the-Day
+  // already rely on) is Playwright's standard automation flag, left at its
+  // Chromium default of `true` by prerender.mjs's own launchBrowser() (no
+  // stealth args) and never set by a real visitor's browser — so every
+  // real visit (and Google's own later render pass) fetches fresh, live
+  // quran.com data the moment the page loads, unconditionally.
+  useEffect(() => {
+    if (navigator.webdriver) return;
+    getChapters().then(setChapters).catch(() => {});
+  }, []);
 
   /* ── Load verses + chapter audio ────────────────────────────── */
   useEffect(() => {
+    if (navigator.webdriver) return;
     let alive = true;
     setLoading(true); setError(''); setVerses([]); setIsPlaying(false); setOpenTafsir({});
     const fetchV =
@@ -181,6 +202,7 @@ export default function Quran() {
 
   /* ── Load per-verse audio for Hifz ──────────────────────────── */
   useEffect(() => {
+    if (navigator.webdriver) return;
     if (tab !== 'hifz' || navMode !== 'surah') return;
     setLoadingVA(true);
     getVerseAudios(activeId, reciterId).then(setVerseAudios).catch(() => setVerseAudios([]))
@@ -333,6 +355,31 @@ export default function Quran() {
       style={{ '--reading-line-height': lineHeight, '--reading-max-width': CONTENT_WIDTHS[contentWidth] }}
     >
 
+      {/* French SEO Publication Wave (2026-09-30): this immersive reader
+          intentionally has no visible breadcrumb bar (see Breadcrumbs.jsx's
+          own comment on pages with no visible trail) -- Quran.jsx was one
+          of those pages by omission, not by design decision, which also
+          meant scripts/prerender.mjs's waitForHydratedSeo() (which requires
+          a real BreadcrumbList JSON-LD on every non-Home route) could never
+          succeed here. Rendering <Breadcrumbs> inside .sr-only keeps the
+          full-screen reading UI visually unchanged for sighted users while
+          giving screen readers a real trail (an accessibility gap this
+          also happens to close) and writing the same BreadcrumbList JSON-LD
+          every other page gets.
+          siteLang-gated ('fr' only), not unconditional: only fr is
+          actually published for this route, and Enroll.jsx's own identical
+          fix (see its comment) showed this would otherwise change en/ar/it
+          rendered output too -- Enroll's existing byte-for-byte en/ar
+          baseline test (frenchBatch1cEnArRegression.test.jsx) caught that
+          directly; Quran Reader has no equivalent baseline yet simply
+          because it has never been published before, not because such a
+          change would be safe. */}
+      {siteLang === 'fr' && (
+        <div className="sr-only">
+          <Breadcrumbs items={[{ label: t.nav.tools, to: '/tools' }, { label: t.nav.quranReader }]} />
+        </div>
+      )}
+
       <KbdSidePanel open={kbdPanelOpen} onToggle={() => setKbdPanelOpen((v) => !v)} />
 
       {showShortcuts && <ShortcutsModal onClose={() => setShowShortcuts(false)} />}
@@ -394,7 +441,7 @@ export default function Quran() {
           onNewKhatm={() => setKhatmDone([])}
         />
 
-        <main className="qlc__main" dir="ltr">
+        <main id="main-content" className="qlc__main" dir="ltr">
           <QuranChapterHeader
             navMode={navMode} activeChapter={activeChapter}
             juzNum={juzNum} pageNum={pageNum} hizbNum={hizbNum} ui={ui}

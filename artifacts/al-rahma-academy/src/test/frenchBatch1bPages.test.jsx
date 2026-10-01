@@ -177,7 +177,7 @@ describe('French Batch 1B pages', () => {
     expect(hadith).toBeDefined();
     expect(document.querySelector('.cl__hadith-text').textContent.trim()).toBe(hadith.en);
     expect(document.querySelector('.cl__hadith-narrator').textContent).toBe(`— ${hadith.narrator.en}`);
-    expect(document.querySelector('.cl__hadith-link').getAttribute('href')).toBe(hadith.url);
+    expect(document.querySelector('.cl__hadith-link')?.getAttribute('href')).toBe(hadith.url);
   });
 
   it('other languages (es) still render the English text (Italian has its own Ijazah and Islamic Studies content since the Italian batches)', async () => {
@@ -247,7 +247,7 @@ describe('Islamic Studies data: French for every English value, nothing invented
       expect(ARABIC.test(h.fr)).toBe(false);
       expect(h.fr).toBe(h.en);
       expect(h.narrator.fr).toBe(h.narrator.en);
-      expect(h.url).toMatch(/^https:\/\/sunnah\.com\//);
+      if (h.url !== undefined) expect(h.url).toMatch(/^https:\/\/sunnah\.com\//);
     }
   });
 

@@ -20,17 +20,30 @@ import path from 'node:path';
  *    with exactly one segment after the prefix in production --
  *    /api/v1/admin/enrollments worked, /api/v1/admin/auth/login (two
  *    segments, the actual login endpoint) got a platform 404 before the
- *    Function ever ran. A first attempt at fixing this with Vercel's named
- *    catch-all parameter syntax ("/api/v1/admin/:path*") reproduced the
- *    EXACT same one-segment-only limitation when verified live against a
- *    real Preview deployment -- so the fix uses a raw regex capture group
- *    instead ("^/api/v1/admin/?(.*)$" -> "/api/v1/admin-proxy?path=$1"),
- *    Vercel's other documented rewrite syntax (see the /articles/(\d{4})/...
- *    -> /archive?year=$1... example at
- *    https://vercel.com/docs/routing/rewrites), which is a structurally
- *    different code path in Vercel's router and was confirmed working for
- *    all 6 required paths live against a Preview deployment (see the PR
- *    description).
+ *    Function ever ran.
+ *
+ *    Two earlier attempts at fixing this were each verified live against a
+ *    real Preview deployment and found NOT to work, despite each being
+ *    Vercel's own documented syntax and matching correctly as a plain JS
+ *    RegExp locally:
+ *      - Named catch-all parameter: "/api/v1/admin/:path*" ->
+ *        "/api/v1/admin-proxy" -- reproduced the exact one-segment-only
+ *        limitation this fix is for.
+ *      - A single regex rule with an empty alternative to also cover the
+ *        bare /api/v1/admin case: "^/api/v1/admin(/.*|)$" ->
+ *        "/api/v1/admin-proxy?path=$1" -- matched NOTHING at all on
+ *        Vercel's actual edge, not even one segment, despite matching
+ *        correctly in Node locally -- Vercel's edge regex matching is not
+ *        plain JS RegExp and apparently doesn't accept this construct.
+ *
+ *    The working fix is two separate, simple rules, each structurally
+ *    identical in form to Vercel's own documented regex-capture example
+ *    (/articles/(\d{4})/(\d{2})/(.+) -> /archive?year=$1&month=$2&slug=$3,
+ *    see https://vercel.com/docs/routing/rewrites) with no alternation:
+ *    one exact-literal rule for the bare /api/v1/admin case, and one plain
+ *    "^.../(.*)$" capture rule for every path with a subpath. Confirmed
+ *    working for all 6 required paths live against a Preview deployment
+ *    (see the PR description).
  */
 
 const VERCEL_JSON_PATH = path.resolve(
@@ -66,15 +79,21 @@ function findRenderExternalRewrite(rewrites) {
   return rule;
 }
 
-function findAdminProxyRewrite(rewrites) {
-  const rule = rewrites.find((r) => r.source.includes('v1/admin') && r.destination.includes('admin-proxy'));
-  assert.ok(rule, 'expected a dedicated /api/v1/admin/* rewrite rule targeting admin-proxy');
+function findAdminBareRewrite(rewrites) {
+  const rule = rewrites.find((r) => r.source === '/api/v1/admin');
+  assert.ok(rule, 'expected an exact-literal rewrite rule for the bare /api/v1/admin path');
   return rule;
 }
 
-test('vercel.json declares exactly three rewrite rules (admin proxy, general Render, SPA)', () => {
+function findAdminSubpathRewrite(rewrites) {
+  const rule = rewrites.find((r) => r.source.startsWith('^/api/v1/admin/'));
+  assert.ok(rule, 'expected a regex-capture rewrite rule for /api/v1/admin/<subpath>');
+  return rule;
+}
+
+test('vercel.json declares exactly four rewrite rules (admin bare, admin subpath, general Render, SPA)', () => {
   const rewrites = loadRewrites();
-  assert.equal(rewrites.length, 3, 'rule count changed -- update this test deliberately if that was intended');
+  assert.equal(rewrites.length, 4, 'rule count changed -- update this test deliberately if that was intended');
 });
 
 test('no rewrite rule is a literal circular self-rewrite (source and destination identical)', () => {
@@ -88,31 +107,36 @@ test('no rewrite rule is a literal circular self-rewrite (source and destination
   }
 });
 
-test('the admin proxy rewrite destination is a different, concrete path -- not /api/v1/admin/* again', () => {
-  const rule = findAdminProxyRewrite(loadRewrites());
-  // Exact-segment check, not a loose substring match: "/api/v1/admin-proxy"
-  // contains the substring "v1/admin" too, but is a genuinely different
-  // endpoint, not a loop back into the same dynamic path space.
-  const destinationSegments = rule.destination.split('?')[0].split('/').filter(Boolean);
-  assert.notDeepEqual(destinationSegments.slice(0, 3), ['api', 'v1', 'admin']);
+test('both admin rewrite destinations are a different, concrete path -- not /api/v1/admin/* again', () => {
+  const rewrites = loadRewrites();
+  for (const rule of [findAdminBareRewrite(rewrites), findAdminSubpathRewrite(rewrites)]) {
+    // Exact-segment check, not a loose substring match: "/api/v1/admin-proxy"
+    // contains the substring "v1/admin" too, but is a genuinely different
+    // endpoint, not a loop back into the same dynamic path space.
+    const destinationSegments = rule.destination.split('?')[0].split('/').filter(Boolean);
+    assert.notDeepEqual(destinationSegments.slice(0, 3), ['api', 'v1', 'admin']);
+  }
 });
 
-test('the admin proxy rewrite source/destination are exactly the documented regex-capture form', () => {
-  const rule = findAdminProxyRewrite(loadRewrites());
-  assert.equal(rule.source, '^/api/v1/admin(/.*|)$');
-  assert.equal(rule.destination, '/api/v1/admin-proxy?path=$1');
+test('the admin rewrite rules are exactly the working, verified form (no alternation, no named catch-all)', () => {
+  const rewrites = loadRewrites();
+  assert.equal(findAdminBareRewrite(rewrites).destination, '/api/v1/admin-proxy');
+  const subpathRule = findAdminSubpathRewrite(rewrites);
+  assert.equal(subpathRule.source, '^/api/v1/admin/(.*)$');
+  assert.equal(subpathRule.destination, '/api/v1/admin-proxy?path=$1');
 });
 
-test('the admin proxy rewrite source regex matches every required admin path, at any depth', () => {
-  // Uses the rule's own source string directly as a RegExp -- this form is
-  // already a plain, anchored JS-compatible regex (no path-to-regexp
-  // named-parameter translation needed), per Vercel's own documented
-  // regex-capture rewrite syntax.
-  const rule = findAdminProxyRewrite(loadRewrites());
-  const matcher = new RegExp(rule.source);
+test('the two admin rewrite rules together match every required admin path, at any depth', () => {
+  // Uses each rule's own source string directly as a RegExp (the bare rule
+  // is an exact-literal match; the subpath rule is already a plain,
+  // anchored JS-compatible regex) -- mirrors how Vercel evaluates rewrites
+  // against a path: a request matches if EITHER rule's source matches it.
+  const rewrites = loadRewrites();
+  const bareSource = findAdminBareRewrite(rewrites).source;
+  const subpathMatcher = new RegExp(findAdminSubpathRewrite(rewrites).source);
 
   const requiredPaths = [
-    '/api/v1/admin', // zero segments -- the trailing "/?" makes this match too
+    '/api/v1/admin', // zero segments -- covered by the bare exact-literal rule
     '/api/v1/admin/enrollments',
     '/api/v1/admin/auth',
     '/api/v1/admin/auth/login',
@@ -121,12 +145,13 @@ test('the admin proxy rewrite source regex matches every required admin path, at
     '/api/v1/admin/teachers/123',
   ];
   for (const p of requiredPaths) {
-    assert.equal(matcher.test(p), true, `expected the admin proxy rewrite to match ${p}`);
+    const matched = p === bareSource || subpathMatcher.test(p);
+    assert.equal(matched, true, `expected an admin rewrite rule to match ${p}`);
   }
 });
 
-test('the admin proxy rewrite source regex does not match an unrelated path that merely starts similarly', () => {
-  const rule = findAdminProxyRewrite(loadRewrites());
+test('the admin subpath rewrite does not match an unrelated path that merely starts similarly', () => {
+  const rule = findAdminSubpathRewrite(loadRewrites());
   const matcher = new RegExp(rule.source);
   assert.equal(matcher.test('/api/v1/adminfoo'), false);
   assert.equal(matcher.test('/api/healthz'), false);

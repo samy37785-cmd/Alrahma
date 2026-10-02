@@ -43,7 +43,11 @@ export const HOME_SEO_TEXT = {
   // is still unpublished for SEO: no sitemap, hreflang or prerender entry.
   fr: {
     title: 'Apprendre le Coran en ligne',
-    description: `Cours particuliers de Coran, de tajwid et d'arabe en ligne avec des enseignants certifiés par Al-Azhar. ${siteFacts.totalStudents} élèves dans ${siteFacts.countriesServed} pays nous font confiance. Une leçon d'essai gratuite — sans aucun paiement.`,
+    // Shortened (French P2 metadata fix) from ~200 to ~140 characters so the
+    // snippet is not truncated and Bing's "description too long" flag clears:
+    // the student/country figures are dropped; every remaining claim is
+    // still one the English description makes.
+    description: "Cours particuliers de Coran, de tajwid et d'arabe en ligne avec des enseignants certifiés Al-Azhar. Une leçon d'essai gratuite, sans paiement.",
     keywords: 'apprendre le coran en ligne, cours de coran en ligne, professeur de coran, cours de tajwid, enseignant al-azhar, études islamiques en ligne, coran pour enfants, hifz en ligne',
   },
   // Italian Batch 1A: a faithful translation of the English entry above

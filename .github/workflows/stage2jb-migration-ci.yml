@@ -211,4 +211,8 @@ jobs:
       # assertions.
       - name: Prerender output verification (post-build, requires dist/)
         working-directory: artifacts/al-rahma-academy
-        run: npx vitest run src/test/prerenderOutput.test.js
+        run: |
+          npx vitest run src/test/prerenderOutput.test.js
+          # Verbose reporter so the log names each raw-prerender test and
+          # shows it passed (not skipped) now that dist/ exists.
+          npx vitest run src/test/frenchP2ContentMetadata.test.jsx --reporter=verbose

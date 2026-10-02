@@ -39,7 +39,7 @@ Baseline: `origin/main` @ `79561a4`, audited 2026-09-27 against production.
 | 15 | `/academy/terms` | `/ar/academy/terms` | `/fr/academy/terms` | 1C | draft-review | published | no | **owner-review-recommended** | Batch 1C: 5 fidelity fixes — "for any reason", "agree to be bound", "any subscription plan", "all tutor changes within 48 hours", glossary |
 | 16 | `/academy/refund-policy` | `/ar/academy/refund-policy` | `/fr/academy/refund-policy` | 1C | draft-review | published | no | **owner-review-recommended** | Batch 1C: plan display name « Ijaza » |
 | 17 | `/tools` | `/ar/tools` | `/fr/tools` | 3 | complete | published | no | no | Batch 1D verified: hub, badges and the free-trial modal (all validation, failure and success states) are French; no fix needed |
-| 18 | `/tools/adhkar` | `/ar/tools/adhkar` | `/fr/tools/adhkar` | 3 | complete | published | **yes** (dhikr meanings) | no | — |
+| 18 | `/tools/adhkar` | `/ar/tools/adhkar` | `/fr/tools/adhkar` | 3 | complete (UI); dhikr meanings/fadl intentionally English source text | published | **yes** (dhikr meanings) | no | UI is French; the 49 dhikr `meaning`/`fadl` strings are deliberately the English source text under the religious source-language policy (see `i18n/adhkarText.js`), not French translations |
 | 19 | `/tools/tasbeeh` | `/ar/tools/tasbeeh` | `/fr/tools/tasbeeh` | 1E | draft-review | published | owner may review | no | Batch 1E: SEO title/description, breadcrumb, hero. The counter widget itself was already fully French (`t.tasbeeh`, unrelated earlier work) |
 | 20 | `/tools/quran-reader` | `/ar/tools/quran-reader` | `/fr/tools/quran-reader` | 1E | draft-review | unpublished | **yes** (translation source, `external-content-language-gap` S15) | no | Batch 1E: settings panel, keyboard-shortcuts modal, verse-list copy/share tooltips, player and reading-control a11y labels (none previously read by any language). The reader UI itself (`data/quranLangs.js` `UI.fr`) was already fully French, from earlier unrelated work |
 | 21 | `/tools/hadith` | `/ar/tools/hadith` | `/fr/tools/hadith` | 1E | draft-review → blocked-review | unpublished | **yes** | no | Batch 1E: 10 collection-card author/note strings. The hadith text itself stays `external-content-language-gap` S16 (the CDN has no French edition). Page chrome (`t.hadith`) was already fully French |
@@ -197,7 +197,7 @@ Audited every route under `/tools/*` in `App.jsx` against this registry's 1D def
 | Template | Why no change was needed |
 |---|---|
 | `/tools/verse-of-the-day` | Its own `copy.fr` object already covers every string |
-| `/tools/adhkar` | `t.adhkar` (49/49 dhikr meanings in `i18n/adhkarText.js` `ADHKAR_TR.fr`) already complete |
+| `/tools/adhkar` | `t.adhkar` UI strings are already French. The 49 dhikr meanings/fadl in `i18n/adhkarText.js` `ADHKAR_TR.fr` are literal copies of the English source text, by owner-approved religious source-language policy (no in-project French translation of a dua meaning or hadith-based fadl without a licensed source) — they are not French translations |
 | `/tools/arabic-alphabet` | Its own `copy.fr` object, and the shared `AlphabetLearner` widget's `t.alphabet`, already complete |
 
 None of these three needed a source change; each was checked by rendering it and confirming no English leak, without adding a new French entry.

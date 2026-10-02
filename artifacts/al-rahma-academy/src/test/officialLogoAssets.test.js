@@ -216,7 +216,7 @@ describe('official logo — the four original source images', () => {
 describe('official logo — responsive derivatives of icon.png (what BrandIcon actually serves)', () => {
   // Brand-icon optimization: pages used to fetch the 400 KB 484x560 master
   // for a 31-66 px mark. They now fetch these. Same aspect, real alpha.
-  it.each([[66, 76, 12], [131, 152, 40], [197, 228, 70]])('icon-%i.png has the expected size, real RGBA transparency and a small file', (w, h, maxKb) => {
+  it.each([[66, 76, 12], [197, 228, 70]])('icon-%i.png has the expected size, real RGBA transparency and a small file', (w, h, maxKb) => {
     const file = path.join(BRAND, `icon-${w}.png`);
     const { width, height, data, channels } = decodePng(file);
     expect(width).toBe(w);
@@ -237,7 +237,7 @@ describe('official logo — responsive derivatives of icon.png (what BrandIcon a
 describe('official logo — public/brand contains exactly the documented file set (no drift, no leftovers)', () => {
   it('lists exactly the expected files, nothing extra and nothing missing', () => {
     const expected = [
-      'icon.png', 'icon-66.png', 'icon-131.png', 'icon-197.png',
+      'icon.png', 'icon-66.png', 'icon-197.png',
       'icon-tile-16.png', 'icon-tile-32.png', 'icon-tile-48.png', 'icon-tile-64.png',
       'icon-tile-96.png', 'icon-tile-128.png', 'icon-tile-180.png', 'icon-tile-192.png',
       'icon-tile-512.png', 'icon-tile-512-maskable.png',

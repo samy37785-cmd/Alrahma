@@ -175,10 +175,10 @@ async function main() {
 
   // Step 1b — responsive widths of the same transparent icon. icon.png itself is
   // the 484x560 master (~400 KB) but the app only ever shows it at ~31-66 px
-  // wide, so BrandIcon serves these via srcset instead (1x/2x/3x of the
+  // wide, so BrandIcon serves these via srcset instead (1x and 2x/3x of the
   // largest 66 px display width). Plain Lanczos-resized PNGs: no new format,
   // no new dependency, identical transparency/shape.
-  for (const w of [66, 131, 197]) {
+  for (const w of [66, 197]) {
     const h = Math.round((w * iconMeta.height) / iconMeta.width);
     await iconTrimmed.clone().resize(w, h, { kernel: 'lanczos3' }).png({ compressionLevel: 9, effort: 10, palette: false }).toFile(path.join(OUT, `icon-${w}.png`));
   }

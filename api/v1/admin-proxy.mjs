@@ -19,15 +19,20 @@ import { resolveAdminProxyRequest, ADMIN_MOUNT_PREFIX } from '../_lib/resolveAdm
  * requests with exactly ONE path segment after the prefix -- a request like
  * /api/v1/admin/auth/login (two segments) got a platform-level 404 before
  * this function ever ran, which is what silently broke admin login. This
- * file is now a plain, non-dynamic Function, reached via an explicit
- * vercel.json rewrite using a raw regex capture group
- * ("^/api/v1/admin(/.*|)$" -> "/api/v1/admin-proxy?path=$1") that works for
- * any depth; resolveAdminProxyRequest() (api/_lib/) undoes Vercel's
- * flattening of the captured subpath back into a real
+ * file is now a plain, non-dynamic Function, reached via two explicit
+ * vercel.json rewrites using a named parameter with an attached custom
+ * regex group -- the same syntax family the general Render rewrite below
+ * already uses successfully for arbitrarily deep non-admin paths:
+ *   "/api/v1/admin" -> "/api/v1/admin-proxy" (the bare case)
+ *   "/api/v1/admin/:subpath(.*)" -> "/api/v1/admin-proxy?path=:subpath"
+ * (two other, individually-documented Vercel rewrite forms -- a named
+ * catch-all parameter, and a bare anchored regex capture -- were each
+ * verified live and found NOT to work; see docs/admin-proxy-signing-runbook.md
+ * for the full diagnosis). resolveAdminProxyRequest() (api/_lib/) undoes
+ * Vercel's flattening of the captured subpath back into a real
  * /api/v1/admin/... path before anything below uses it. See
- * docs/admin-proxy-signing-runbook.md for the full diagnosis and the
- * general /api/:path* rewrite that still serves every other route
- * unchanged.
+ * docs/admin-proxy-signing-runbook.md for the general /api/:path* rewrite
+ * that still serves every other route unchanged.
  *
  * Same origin the general rewrite already points at — keep these two in
  * sync if the backend's Render URL ever changes.

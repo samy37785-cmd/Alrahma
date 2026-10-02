@@ -21,7 +21,9 @@ cryptographically signs the real client IP before forwarding to Render.
 
 ```
 Browser → al-rahmaacademy.com/api/v1/admin/*
-        → vercel.json rewrite: "^/api/v1/admin(/.*|)$" -> "/api/v1/admin-proxy?path=$1"
+        → vercel.json rewrites:
+              "/api/v1/admin" -> "/api/v1/admin-proxy"                     (bare case)
+              "/api/v1/admin/:subpath(.*)" -> "/api/v1/admin-proxy?path=:subpath"
         → Vercel Function (api/v1/admin-proxy.mjs)
               - resolveAdminProxyRequest() (api/_lib/) reconstructs the
                 real /api/v1/admin/... path + query string from the
@@ -58,24 +60,46 @@ application-log entries were recorded for any multi-segment admin path,
 confirming the request never left Vercel's edge.
 
 The fix stops relying on that zero-config convention. `api/v1/admin-proxy.mjs`
-is now a plain, non-dynamic Function. A first attempt reached it through
-Vercel's *named* catch-all parameter rewrite syntax
-(`"/api/v1/admin/:path*" -> "/api/v1/admin-proxy"`) — also documented, also
-intended for exactly this ("proxying deep paths") — but verified live
-against a real Preview deployment, it reproduced the **exact same**
-one-segment-only limitation this fix exists for. The actual fix uses
-Vercel's other documented rewrite syntax instead, a raw regex capture
-group (`"^/api/v1/admin(/.*|)$" -> "/api/v1/admin-proxy?path=$1"`, the same
-shape as their own `/articles/(\d{4})/(\d{2})/(.+)` ->
-`/archive?year=$1&month=$2&slug=$3` example — see
-https://vercel.com/docs/routing/rewrites), a structurally different code
-path in Vercel's router, confirmed working for every required depth. The
-captured subpath (`$1`, including its leading `/` when present, or `""` for
-the bare `/api/v1/admin` case) lands in the destination's query string
-instead of its path. `resolveAdminProxyRequest()`
-(`api/_lib/resolveAdminProxyRequest.mjs`) undoes that flattening before
-anything else in the function runs, so the HMAC signing, Render
-destination URL, and all forwarded headers are
+is now a plain, non-dynamic Function. Three rewrite forms were tried, in
+this order, each verified live against a real Preview deployment before
+moving to the next:
+
+1. Vercel's *named catch-all parameter* syntax
+   (`"/api/v1/admin/:path*" -> "/api/v1/admin-proxy"`) — documented,
+   intended for exactly this ("proxying deep paths"). Reproduced the
+   **exact same** one-segment-only limitation this fix exists for.
+2. A *bare, anchored regex capture group*
+   (`"^/api/v1/admin(/.*|)$" -> "/api/v1/admin-proxy?path=$1"`, the same
+   shape as Vercel's own `/articles/(\d{4})/(\d{2})/(.+)` ->
+   `/archive?year=$1&month=$2&slug=$3` example — see
+   https://vercel.com/docs/routing/rewrites). Matched **nothing at all**
+   on Vercel's actual edge — not even the previously-working one-segment
+   case — despite matching correctly as plain JS `RegExp` locally. Vercel's
+   edge regex matching is evidently not plain JS `RegExp` and doesn't
+   accept this construct, even in its simplified non-alternating form
+   (`"^/api/v1/admin/(.*)$"`), which also failed the same way.
+3. **The working fix**: the one syntax form already proven correct for
+   multi-segment matching in this exact project — a *named parameter with
+   an attached custom regex group*, the same family the general Render
+   rewrite above already uses and has used successfully for arbitrarily
+   deep non-admin paths all along (`"/api/v1/admin/:path((?!v1/admin(?:$|/)).*)"`,
+   whose own `.*` custom regex is proof this family handles multiple
+   segments on this platform). Two rules: an exact-literal rule for the
+   bare `/api/v1/admin` case, and
+   `"/api/v1/admin/:subpath(.*)" -> "/api/v1/admin-proxy?path=:subpath"`
+   for everything with a subpath.
+
+Confirmed live for all 6 required admin paths plus the bare root case.
+One further empirical finding while verifying: the resulting request this
+function receives carries the captured value under **two** query keys,
+not one — `path` (the literal text in the destination) *and* `subpath`
+(Vercel auto-appends every named capture under its own parameter name as
+well, regardless of whether it's also referenced elsewhere in the
+destination — observed directly in Render's own request logs). Both are
+stripped before anything else uses the query string.
+`resolveAdminProxyRequest()` (`api/_lib/resolveAdminProxyRequest.mjs`)
+does this reconstruction before anything else in the function runs, so
+the HMAC signing, Render destination URL, and all forwarded headers are
 constructed exactly as before this fix — nothing downstream of that one
 reconstruction step changed.
 

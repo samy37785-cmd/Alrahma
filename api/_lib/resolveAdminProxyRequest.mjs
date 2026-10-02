@@ -6,34 +6,45 @@
 // segment after /api/v1/admin/ in production — /api/v1/admin/enrollments
 // reached the function, but /api/v1/admin/auth/login (two segments) got a
 // platform-level 404 before the function ever ran. See
-// docs/admin-proxy-signing-runbook.md for the full diagnosis.
+// docs/admin-proxy-signing-runbook.md for the full diagnosis, including
+// two earlier fix attempts (Vercel's named catch-all parameter syntax, and
+// a bare anchored regex-capture rule) that each reproduced the bug or
+// matched nothing at all when verified live, despite being Vercel's own
+// documented syntax and matching correctly as plain JS RegExp locally.
 //
-// The fix routes every /api/v1/admin/* request through an explicit
-// vercel.json rewrite instead: `^/api/v1/admin(/.*|)$` ->
-// `/api/v1/admin-proxy?path=$1`, a raw regex capture group (Vercel's own
-// documented rewrite syntax -- see the /articles/(\d{4})/(\d{2})/(.+) ->
-// /archive?year=$1&month=$2&slug=$3 example at
-// https://vercel.com/docs/routing/rewrites). A first attempt using
-// Vercel's named catch-all parameter syntax ("/api/v1/admin/:path*")
-// reproduced the EXACT same one-segment-only limitation this fix is for,
-// confirmed live against a real Preview deployment -- the regex-capture
-// form is a structurally different code path in Vercel's router and was
-// confirmed working for every required depth (see the PR description).
-// The captured subpath ($1, including its leading "/" when present, or ""
-// for the bare /api/v1/admin case) lands in the destination's query
-// string instead of its path. This function undoes that flattening so the
-// rest of the handler can keep operating on a real /api/v1/admin/... path
-// exactly as before.
+// The working fix routes every /api/v1/admin/* request through two
+// vercel.json rewrites using the one syntax family proven correct for
+// multi-segment matching in this exact project (the same family the
+// general Render rewrite already uses):
+//   { "source": "/api/v1/admin", "destination": "/api/v1/admin-proxy" }
+//   { "source": "/api/v1/admin/:subpath(.*)", "destination": "/api/v1/admin-proxy?path=:subpath" }
+// Confirmed live (see the PR description) that the resulting request this
+// function receives carries the captured value under TWO query keys, not
+// one: "path" (from the literal "path=:subpath" text in the destination)
+// AND "subpath" (Vercel auto-appends every named capture under its own
+// parameter name as well, regardless of whether it was also referenced
+// elsewhere in the destination template — the same behavior as their
+// documented /resize/:width/:height -> /api/sharp example, which becomes
+// /api/sharp?width=800&height=800). Both are stripped before anything
+// else uses the query string, so Render never sees either as a leftover,
+// unexplained param.
 export const ADMIN_MOUNT_PREFIX = '/api/v1/admin';
 
-const ROUTING_PARAM = 'path';
+// "path": the literal query key this file's own vercel.json rule writes.
+// "subpath": Vercel's own auto-appended copy, under the rewrite's named
+// parameter (:subpath) — present whether or not :subpath is also used
+// elsewhere in the destination. Both carry the identical captured value;
+// only one is read (first one found with content), both are stripped.
+const PRIMARY_ROUTING_PARAM = 'path';
+const AUTO_APPENDED_ROUTING_PARAM = 'subpath';
 
 /**
  * @param {string} rawUrl - req.url as Vercel delivers it to the Function,
- *   e.g. "/api/v1/admin-proxy?path=%2Fauth%2Flogin&page=2" (the real format
- *   the vercel.json regex-capture rewrite produces) or
- *   "/api/v1/admin-proxy?path=auth&path=login" (handled too, defensively,
- *   in case the exact serialization ever changes).
+ *   e.g. "/api/v1/admin-proxy?path=auth%2Flogin&subpath=auth%2Flogin" (the
+ *   real format the vercel.json named-parameter rewrite produces for
+ *   /api/v1/admin/auth/login) or "/api/v1/admin-proxy" (the bare
+ *   /api/v1/admin case, routed by the separate exact-literal rule with no
+ *   query param at all).
  * @returns {{ fullPath: string, query: string }} fullPath always starts
  *   with ADMIN_MOUNT_PREFIX; query is '' or starts with '?'. Any other
  *   original query parameters (e.g. ?page=2) are preserved.
@@ -41,11 +52,17 @@ const ROUTING_PARAM = 'path';
 export function resolveAdminProxyRequest(rawUrl) {
   const url = new URL(rawUrl, 'http://internal.invalid');
 
-  const segments = url.searchParams
-    .getAll(ROUTING_PARAM)
+  // Both keys carry the identical captured value when both are present
+  // (see the comment above) -- read from whichever one is actually there
+  // rather than concatenating, which would duplicate every segment.
+  const primaryValues = url.searchParams.getAll(PRIMARY_ROUTING_PARAM);
+  const rawValues = primaryValues.length > 0 ? primaryValues : url.searchParams.getAll(AUTO_APPENDED_ROUTING_PARAM);
+  url.searchParams.delete(PRIMARY_ROUTING_PARAM);
+  url.searchParams.delete(AUTO_APPENDED_ROUTING_PARAM);
+
+  const segments = rawValues
     .flatMap((value) => value.split('/'))
     .filter((segment) => segment.length > 0);
-  url.searchParams.delete(ROUTING_PARAM);
 
   const fullPath = segments.length > 0 ? `${ADMIN_MOUNT_PREFIX}/${segments.join('/')}` : ADMIN_MOUNT_PREFIX;
 

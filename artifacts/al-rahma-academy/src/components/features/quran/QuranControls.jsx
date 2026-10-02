@@ -1,6 +1,7 @@
 import { useLang } from '../../../context/LangContext';
 import { pickQuranA11y } from '../../../i18n/quran/a11yLabels';
 import { pickControlsPanels } from '../../../i18n/quran/controlsPanels';
+import { pickKbdSidePanel } from '../../../i18n/quran/kbdSidePanel';
 
 export function CtrlItem({ icon, label, children }) {
   return (
@@ -11,36 +12,25 @@ export function CtrlItem({ icon, label, children }) {
   );
 }
 
-const SHORTCUTS = [
-  { key: 'Space', ar: 'تشغيل / إيقاف' },
-  { key: '← →',  ar: 'سورة سابقة / تالية' },
-  { key: '+ / −', ar: 'حجم الخط' },
-  { key: 'T',    ar: 'إظهار / إخفاء الترجمة' },
-  { key: 'D',    ar: 'الوضع الليلي' },
-  { key: 'G',    ar: 'الإعدادات' },
-  { key: '?',    ar: 'كل الاختصارات' },
-  { key: 'P',    ar: 'طباعة' },
-  { key: 'Esc',  ar: 'إغلاق / إيقاف' },
-];
-
 export function KbdSidePanel({ open, onToggle }) {
   const { lang } = useLang();
   const a11y = pickQuranA11y(lang);
+  const sp = pickKbdSidePanel(lang);
   return (
     <div className={`qlc__ksp${open ? ' open' : ''}`}>
       <button className="qlc__ksp-tab" onClick={onToggle} title={a11y.quranKbdShortcutsTab}>
         <span className="qlc__ksp-tab-icon">⌨</span>
-        <span className="qlc__ksp-tab-text">مفاتيح</span>
+        <span className="qlc__ksp-tab-text">{sp.tab}</span>
       </button>
-      <div className="qlc__ksp-body" dir="rtl">
-        <p className="qlc__ksp-title">⌨ اختصارات لوحة المفاتيح</p>
-        {SHORTCUTS.map(({ key, ar }) => (
+      <div className="qlc__ksp-body" dir={sp.dir}>
+        <p className="qlc__ksp-title">{sp.title}</p>
+        {Object.entries(sp.rows).map(([key, label]) => (
           <div key={key} className="qlc__ksp-row">
-            <span className="qlc__ksp-label">{ar}</span>
+            <span className="qlc__ksp-label">{label}</span>
             <kbd className="qlc__kbd">{key}</kbd>
           </div>
         ))}
-        <button className="qlc__ksp-close" onClick={onToggle}>إغلاق ✕</button>
+        <button className="qlc__ksp-close" onClick={onToggle}>{sp.close}</button>
       </div>
     </div>
   );

@@ -77,7 +77,8 @@ test('cross-implementation: a request signed here verifies successfully against 
     const method  = 'PUT';
     // Path AS Express's req.path sees it inside the mounted admin router —
     // i.e. with /api/v1/admin already stripped (see ADMIN_MOUNT_PREFIX in
-    // api/v1/admin/[...path].mjs). This is the exact value both ends must
+    // api/_lib/resolveAdminProxyRequest.mjs, consumed by
+    // api/v1/admin-proxy.mjs). This is the exact value both ends must
     // agree on for the signature to verify.
     const path    = '/enrollments/abc123';
     const clientIp = '203.0.113.9';

@@ -66,10 +66,10 @@ describe('/it/academy/privacy shows the Italian GA4 disclosure', () => {
     const { text, section } = await render('/it/academy/privacy');
     expect(document.documentElement.lang).toBe('it');
     expect(section).not.toBeNull();
-    expect(section.querySelector('h2').textContent).toBe('Cookie di analisi');
+    expect(section.querySelector('h2').textContent).toBe('Cookie analitici');
     expect(section.textContent).toContain(IT_WHAT);
-    expect(section.textContent).toContain('«Accept analytics»');
-    expect(section.textContent).toContain('«Reject»');
+    expect(section.textContent).toContain('«Accetta i cookie analitici»');
+    expect(section.textContent).toContain('«Rifiuta»');
     expect(section.textContent).toContain('Google Analytics 4');
     expect(text).not.toContain(OLD_EN);
     for (const s of ['With your permission', 'Analytics cookies', 'is loaded only after', 'We do not send', 'You can change or withdraw', 'How Google uses']) {

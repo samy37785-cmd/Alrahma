@@ -11,8 +11,8 @@ import { getMeasurementId } from '../analytics/ga';
 // English only, owner review recommended (see
 // docs/french-localization-registry.md). Other locales fall back to English
 // until their translation is approved.
-// Italian mirrors the English; the two quoted button names stay as the banner
-// shows them (the banner has no Italian copy yet, so it falls back to English).
+// Italian mirrors the English and quotes the Italian banner buttons verbatim
+// (CONSENT_COPY.it; a test keeps the two in step).
 export const ANALYTICS_PRIVACY_COPY = {
   en: {
     title: 'Analytics cookies',
@@ -39,9 +39,9 @@ export const ANALYTICS_PRIVACY_COPY = {
     google: 'Comment Google utilise les informations des sites qui utilisent ses services',
   },
   it: {
-    title: 'Cookie di analisi',
+    title: 'Cookie analitici',
     what: 'Con il tuo consenso, utilizziamo Google Analytics 4 per capire come i visitatori usano il nostro sito web, così da poterlo migliorare.',
-    when: 'Google Analytics viene caricato solo dopo che scegli «Accept analytics» nel banner dei cookie. Se scegli «Reject» o non fai alcuna scelta, non viene caricato.',
+    when: 'Google Analytics viene caricato solo dopo che scegli «Accetta i cookie analitici» nel banner dei cookie. Se scegli «Rifiuta» o non fai alcuna scelta, non viene caricato.',
     forms: 'Non inviamo a Google Analytics le informazioni che inserisci nei nostri moduli, come il tuo nome, il tuo indirizzo email o il tuo numero di telefono.',
     change: 'Puoi modificare o revocare la tua scelta in qualsiasi momento da',
     google: 'Come Google utilizza le informazioni dei siti che usano i suoi servizi',

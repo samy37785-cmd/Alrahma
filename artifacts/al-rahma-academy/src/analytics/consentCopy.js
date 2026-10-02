@@ -1,7 +1,8 @@
 // Owner-approved banner wording (EN/AR). French (Batch 1C) is translated
 // from the English only, owner review recommended (see
 // docs/french-localization-registry.md). Other locales fall back to English
-// until their own translation is approved.
+// until their own translation is approved. Italian mirrors the English; the
+// button names are quoted verbatim in ANALYTICS_PRIVACY_COPY.it (Privacy.jsx).
 export const CONSENT_COPY = {
   en: {
     region: 'Cookie consent',
@@ -26,6 +27,14 @@ export const CONSENT_COPY = {
     reject: 'Refuser',
     privacy: 'Politique de confidentialité',
     settings: 'Paramètres des cookies',
+  },
+  it: {
+    region: 'Consenso ai cookie',
+    message: 'Utilizziamo cookie analitici facoltativi per capire come i visitatori usano il nostro sito web e migliorarlo. Gli strumenti di analisi non vengono caricati a meno che tu non scelga di accettare.',
+    accept: 'Accetta i cookie analitici',
+    reject: 'Rifiuta',
+    privacy: 'Informativa sulla privacy',
+    settings: 'Impostazioni dei cookie',
   },
 };
 

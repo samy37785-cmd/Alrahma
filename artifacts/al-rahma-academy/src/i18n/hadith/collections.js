@@ -61,5 +61,23 @@ export const HADITH_COLLECTIONS_TEXT = {
     ibnmajah: { author: "L'imam Ibn Majah Al-Qazwini (m. 273 H)", note: 'Le sixième des six livres canoniques de hadiths — couvre tous les sujets majeurs du fiqh' },
     nasai:    { author: "L'imam Ahmad An-Nasa'i (m. 303 H)", note: "Connu pour ses conditions strictes d'acceptation des rapporteurs — l'un des « Kutub As-Sittah »" },
     malik:    { author: "L'imam Malik ibn Anas (m. 179 H)", note: "Le plus ancien grand recueil de hadiths — également le texte fondateur de l'école malikite" },
+  },  // Italian Hadith Library Content Wave: only the bibliographic author line
+  // and note are translated. Scholar and book names, the Arabic, the
+  // honorific (ﷺ), the "(d. N AH)" death marker (kept in the same source form
+  // as the Italian Islamic Studies and Ijazah pages) and the grading terms
+  // (Sahih/Hasan/Da'eef, Kutub Al-Sittah) stay as they are. Hadith text shown
+  // after a card is opened is the CDN source and is not translated.
+  it: {
+    dir: 'ltr',
+    nawawi:   { author: 'Imam Yahya Al-Nawawi (d. 676 AH)', note: 'I 42 hadith più essenziali — il fondamento di ogni studente musulmano' },
+    qudsi:    { author: 'Vari (parole di Allah riferite dal Profeta ﷺ)', note: 'Discorso divino riferito dal Profeta ﷺ — le parole di Allah al di fuori del Corano' },
+    dehlawi:  { author: 'Shah Waliullah Dehlawi (d. 1176 AH)', note: 'Selezionati dal grande studioso islamico indiano — riguardano fede, etica e culto' },
+    bukhari:  { author: 'Imam Muhammad ibn Ismail Al-Bukhari (d. 256 AH)', note: 'Il libro più autentico dopo il Corano — 7.589 hadith, 97 libri' },
+    muslim:   { author: 'Imam Muslim ibn Al-Hajjaj (d. 261 AH)', note: 'La seconda raccolta di hadith più autentica — apprezzata per la sua organizzazione superiore' },
+    abudawud: { author: 'Imam Abu Dawud Al-Sijistani (d. 275 AH)', note: "5.274 hadith incentrati sulla giurisprudenza islamica — il riferimento essenziale per lo studente di Fiqh" },
+    tirmidhi: { author: 'Imam Muhammad Al-Tirmidhi (d. 279 AH)', note: "Noto per la classificazione degli hadith (Sahih/Hasan/Da'eef) — essenziale per le scienze dell'hadith" },
+    ibnmajah: { author: 'Imam Ibn Majah Al-Qazwini (d. 273 AH)', note: 'Il sesto dei sei libri canonici di hadith — tratta tutti i principali argomenti di Fiqh' },
+    nasai:    { author: "Imam Ahmad An-Nasa'i (d. 303 AH)", note: "Noto per le rigorose condizioni di accettazione dei narratori — uno dei 'Kutub Al-Sittah'" },
+    malik:    { author: 'Imam Malik ibn Anas (d. 179 AH)', note: 'La più antica grande raccolta di hadith — anche il testo fondativo della scuola malikita' },
   },
 };

@@ -15,12 +15,12 @@
       "stageCount": 4,
       "bookCount": 4,
       "states": {
-        "initial": "22e713c491305be72be93ed2bb14d78814b2b812a11beb8778e916de08ee29fb",
-        "stage0": "4cfdc53741a27d7980a63a1e0bb4a06d0f81e7c5f9fe08f481863c304a6c3c69",
-        "stage1": "4828854509d1b878bc8347e7d418b6572b67e3a2474d73f40797dd5970bbe9f6",
-        "stage2": "699a763db6ce03d4e66c8d47ef7b59ad315dd78ccb20eb9063c603126b5452cc",
-        "stage3": "03513ca299083d7dce3d7a6986d81f2645785c1fd1477d3b6862a7195e44c70b",
-        "allBooksOpen": "11a70b48b8e0c161cc1703457c49248bcf2275480905f59768d5ab4fcb947851"
+        "initial": "a02b2a57c6b782e4fe51959ac8dc1dcda072eb38259a7fc004cf973beab7b8f7",
+        "stage0": "7d1954aa840e85836b24ec87a4a23642387517f4fadcfe874fcb6fb8e1df5fa0",
+        "stage1": "eb98c52668345c58d2146d7eeddae703a568f3c2efa29e937cbd0838d9fb395b",
+        "stage2": "4417fea5d19785bb7973e3549af527adf7f112bfe8eac3317a46a2f9c68b19e2",
+        "stage3": "ab8077b58b680e255de4691f6042716b2773473695190a7aa8c446a224c4871d",
+        "allBooksOpen": "633f40edd9b493d04765d4d8e3c95fb8dedee637a4e8564e324094da79b95091"
       }
     },
     "ar": {
@@ -37,12 +37,12 @@
       "stageCount": 4,
       "bookCount": 4,
       "states": {
-        "initial": "1627c71429b54868ec620f9cb11c0f1b48cf0d020d11067b6923d0a3270ab8a7",
-        "stage0": "e57ddf09ec405bc9c3c591dd6918d3b06c273b98f2644efc285430cae06c2e0d",
-        "stage1": "346721d2299b7c6602801b6738f1239791ee825d50ce5d37304612958f843009",
-        "stage2": "66077cf6182eaeaca2fd70d646d0230384bea8a4f31dc650423ff21b831cb69f",
-        "stage3": "7ea8b594a001283276563aefcac33b6944ffebf4ac71b434c7ea7613938fafd9",
-        "allBooksOpen": "24a18d4ef8668630ea6e02ca13109ed9db434cdf84f288452046fa758e82e422"
+        "initial": "96bef0b569d31be68ed4447f0f6b55c7d2a2700f9b924d3ee5502dfeda9e298d",
+        "stage0": "c65383f05cf08a916b9d3bddec2d5f03113b34333e3747f2881ca96f522877ab",
+        "stage1": "39531f50faf873dd91388d1faa2260d0cd1ef70088cb71b3c9a0984172faa038",
+        "stage2": "18e93bcde990367a4323ea8171f37f8f403f2afc1327a99cbc32d43f31cafc59",
+        "stage3": "f54c1f2a70a9f4b608b2d026140258307d2eebf778b5402ebd9ab56fd321da01",
+        "allBooksOpen": "9ac0861451581d466b0483a5b3bbbba32e8b6fe32d991991e07c98d6a705f1a3"
       }
     },
     "fr": {
@@ -59,12 +59,12 @@
       "stageCount": 4,
       "bookCount": 4,
       "states": {
-        "initial": "7d6714feafc75c61c8c551cf397ff39e8a457d3a4d5357492b0f6d6ae41d1600",
-        "stage0": "bce24b70fb0f47da541572ce329f09f11ddcff975c0a354cbf9fc074ea65cebf",
-        "stage1": "bf6ae258510fe343d2faf747bc8360d95108152fa8d9938cad4d694d445e4392",
-        "stage2": "8a6ce4762f7023cfa23bd1dd18d33aadbb69b4da2a4ba26edcb13b177f5d7226",
-        "stage3": "72cd613ce6d1735da534ccc328c3a56e854d5ccf0eae215c1329d38257f62b9b",
-        "allBooksOpen": "dc5a504aee3c9e1731fcfac6c09c10fc093b6b4a15f26f61e9335a4ed7135a6d"
+        "initial": "8b18854ca6fb0f008e70dcb121b2ec111ed6c6af688590107334ff8dffe165e8",
+        "stage0": "86370a63e4d33772c218cf3c3222107aff2153c7c9cda2c1d3fd60be7ab0d704",
+        "stage1": "c114d7f4971925d55717a3ef6736f8e2a610c8e9bc43553ae13561c2912f542d",
+        "stage2": "1c0e3b105195b86b5df738fc42566da93c1376ad9466ec61991a3357468f3797",
+        "stage3": "7d4eeebe7d7d106049ea67bbe5b277d77d9e3fefe97a47b4a11e665b7a5dd3fc",
+        "allBooksOpen": "fe0427e1e42c79f48eb54235e2e2d224bcdf7c9fadab16b5a351577d5fa72bda"
       }
     }
   }

@@ -17,10 +17,20 @@ describe('BrandIcon — tile vs transparent asset selection', () => {
     expect(pickedSize).toBeGreaterThanOrEqual(34 * 2);
   });
 
-  it('tile=false renders the transparent icon.png', () => {
+  it('tile=false renders the transparent icon via small responsive derivatives, never the 400 KB master', () => {
     const { container } = render(<BrandIcon size={40} tile={false} />);
     const img = container.querySelector('img');
-    expect(img.getAttribute('src')).toBe('/brand/icon.png');
+    expect(img.getAttribute('src')).toBe('/brand/icon-131.png');
+    expect(img.getAttribute('srcset')).toBe('/brand/icon-66.png 66w, /brand/icon-131.png 131w, /brand/icon-197.png 197w');
+    expect(img.getAttribute('sizes')).toBe(`${img.getAttribute('width')}px`);
+    expect(img.outerHTML).not.toContain("/brand/icon.png");
+  });
+
+  it('tile=true is unchanged: no srcset/sizes, tile asset only', () => {
+    const { container } = render(<BrandIcon size={40} />);
+    const img = container.querySelector('img');
+    expect(img.hasAttribute('srcset')).toBe(false);
+    expect(img.hasAttribute('sizes')).toBe(false);
   });
 
   it('never picks a tile size smaller than 2x the requested display size, even for a large size prop', () => {

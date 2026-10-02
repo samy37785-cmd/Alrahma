@@ -173,6 +173,16 @@ async function main() {
   console.log('icon.png final size:', iconMeta.width, 'x', iconMeta.height, '— update BrandIcon.jsx ICON_ASPECT + docs/official-logo-integration.md if this changed');
   await iconTrimmed.clone().png({ compressionLevel: 9 }).toFile(path.join(OUT, 'icon.png'));
 
+  // Step 1b — responsive widths of the same transparent icon. icon.png itself is
+  // the 484x560 master (~400 KB) but the app only ever shows it at ~31-66 px
+  // wide, so BrandIcon serves these via srcset instead (1x/2x/3x of the
+  // largest 66 px display width). Plain Lanczos-resized PNGs: no new format,
+  // no new dependency, identical transparency/shape.
+  for (const w of [66, 131, 197]) {
+    const h = Math.round((w * iconMeta.height) / iconMeta.width);
+    await iconTrimmed.clone().resize(w, h, { kernel: 'lanczos3' }).png({ compressionLevel: 9, effort: 10, palette: false }).toFile(path.join(OUT, `icon-${w}.png`));
+  }
+
   // Step 2 — self-contained tile icon: the same clean glyph composited onto a
   // designer-controlled rounded-square background (color sampled from
   // logo-icon-tile.png's own plate — see doc §2), sized per tier.

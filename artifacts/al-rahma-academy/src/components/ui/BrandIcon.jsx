@@ -4,8 +4,10 @@
  * variants — see docs/official-logo-integration.md for the full
  * source-to-asset pipeline, matte parameters, and how to rebuild these:
  *
- *   - transparent icon (public/brand/icon.png, 484x560, PNG only — no WebP
- *     variant exists, see the doc's "WebP decision") — the glyph alone,
+ *   - transparent icon (public/brand/icon.png, 484x560 master, PNG only — no
+ *     WebP variant exists, see the doc's "WebP decision"; pages load the
+ *     small icon-66/131/197.png derivatives via srcset, never the ~400 KB
+ *     master) — the glyph alone,
  *     alpha-matted with the flat render background removed via a
  *     border-flood-fill matte (not a flat color-distance threshold — see
  *     the doc for why that produced a shadow halo), for placements that
@@ -52,13 +54,21 @@ function pickTileSrc(size) {
   return `/brand/icon-tile-${best}.png`;
 }
 
+// Widths (px) of the resized derivatives of the transparent icon, emitted by
+// scripts/generate-brand-assets.mjs. 66 px is the largest CSS display width
+// anywhere (Hero lockup, 76 px tall), so 197 covers 3x devices.
+const ICON_WIDTHS = [66, 131, 197];
+const ICON_SRCSET = ICON_WIDTHS.map((w) => `/brand/icon-${w}.png ${w}w`).join(', ');
+
 const TONE_FILTER = {
   black: 'brightness(0)',
   white: 'brightness(0) invert(1)',
 };
 
 export default function BrandIcon({ size = 40, tile = true, tone = 'brand', alt = 'Al-Rahma Academy', className = '' }) {
-  const src = tile ? pickTileSrc(size) : '/brand/icon.png';
+  // tile=false: srcset + sizes so the browser fetches ~4-15 KB, not the
+  // 484x560 master; `src` is only the fallback for browsers without srcset.
+  const src = tile ? pickTileSrc(size) : '/brand/icon-131.png';
   const width = tile ? size : Math.round(size * ICON_ASPECT);
   const height = size;
   const style = TONE_FILTER[tone] ? { filter: TONE_FILTER[tone] } : undefined;
@@ -66,6 +76,8 @@ export default function BrandIcon({ size = 40, tile = true, tone = 'brand', alt 
   return (
     <img
       src={src}
+      srcSet={tile ? undefined : ICON_SRCSET}
+      sizes={tile ? undefined : `${width}px`}
       width={width}
       height={height}
       alt={alt}

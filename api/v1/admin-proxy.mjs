@@ -1,6 +1,7 @@
-import { readRawBody } from '../../_lib/readRawBody.mjs';
-import { buildSignedHeaders, extractTrustedClientIp } from '../../_lib/adminProxySigning.mjs';
-import { isPathTraversalAttempt } from '../../_lib/pathSafety.mjs';
+import { readRawBody } from '../_lib/readRawBody.mjs';
+import { buildSignedHeaders, extractTrustedClientIp } from '../_lib/adminProxySigning.mjs';
+import { isPathTraversalAttempt } from '../_lib/pathSafety.mjs';
+import { resolveAdminProxyRequest, ADMIN_MOUNT_PREFIX } from '../_lib/resolveAdminProxyRequest.mjs';
 
 /**
  * Signed admin proxy: the ONLY thing on the Vercel side allowed to add
@@ -10,25 +11,27 @@ import { isPathTraversalAttempt } from '../../_lib/pathSafety.mjs';
  * /api/* route uses (see vercel.json): that rewrite hides the real
  * browser client IP from Render behind Vercel's own outbound edge IP,
  * which broke ADMIN_IP_WHITELIST (see the "Admin IP Allowlist Proxy-Path
- * Diagnosis" audit this fix follows up on). This function is a Vercel
- * Function under /api/v1/admin/*, which the filesystem-routing layer
- * matches BEFORE vercel.json's rewrites are even considered — so it
- * "wins" for this one path automatically, with zero change to the
- * general /api/:path* rewrite that still serves every other route.
+ * Diagnosis" audit this fix follows up on).
+ *
+ * How it's reached: this file used to live at api/v1/admin/[...path].mjs,
+ * relying on Vercel's zero-config catch-all file convention to match every
+ * depth under /api/v1/admin/*. In production that convention only matched
+ * requests with exactly ONE path segment after the prefix -- a request like
+ * /api/v1/admin/auth/login (two segments) got a platform-level 404 before
+ * this function ever ran, which is what silently broke admin login. This
+ * file is now a plain, non-dynamic Function, reached via an explicit
+ * vercel.json rewrite ("/api/v1/admin/:path*" -> "/api/v1/admin-proxy")
+ * that works for any depth; resolveAdminProxyRequest() (api/_lib/) undoes
+ * Vercel's flattening of the captured segments back into a real
+ * /api/v1/admin/... path before anything below uses it. See
+ * docs/admin-proxy-signing-runbook.md for the full diagnosis and the
+ * general /api/:path* rewrite that still serves every other route
+ * unchanged.
  *
  * Same origin the general rewrite already points at — keep these two in
  * sync if the backend's Render URL ever changes.
  */
 const RENDER_BACKEND_ORIGIN = 'https://academy-backend-cxso.onrender.com';
-
-// Render mounts the admin router at this prefix (backend/app.js:
-// app.use('/api/v1/admin', adminRoutes)). Express's req.path INSIDE that
-// router is the pathname with this prefix already stripped — so the
-// signature must cover that same stripped path, not the full request URL,
-// or verifyAdminProxySignature() will always see a "different path" and
-// reject every request. The outgoing fetch() URL still uses the FULL path
-// (this constant below) since that's what actually selects the route.
-const ADMIN_MOUNT_PREFIX = '/api/v1/admin';
 
 // Node.js Function (not Edge): needs Node's full `fetch`/streams plus the
 // ability to read the untouched raw request body for hashing.
@@ -40,15 +43,6 @@ const STRIPPED_RESPONSE_HEADERS  = new Set(['content-encoding', 'content-length'
 // Never forward these from the incoming request even if a caller sent
 // them directly — this function is the only legitimate source of them.
 const RESERVED_PROXY_HEADERS = new Set(['x-admin-proxy-ip', 'x-admin-proxy-timestamp', 'x-admin-proxy-signature']);
-
-function buildTargetUrl(req) {
-  // req.url on a Vercel Node.js Function carries the full incoming
-  // pathname + query string as the browser sent it (e.g.
-  // "/api/v1/admin/enrollments?page=2") — this function is reached only
-  // via the /api/v1/admin/* filesystem route, so that prefix is always
-  // already present.
-  return `${RENDER_BACKEND_ORIGIN}${req.url}`;
-}
 
 function buildForwardHeaders(req) {
   const headers = new Headers();
@@ -62,10 +56,15 @@ function buildForwardHeaders(req) {
 }
 
 export default async function handler(req, res) {
+  // Undo Vercel's flattening of the rewrite-captured segments back into a
+  // real /api/v1/admin/... path + query string. Everything below operates
+  // on these exactly as the old filesystem-routed function did on
+  // req.url directly.
+  const { fullPath, query } = resolveAdminProxyRequest(req.url);
+
   // Checked before anything else — including reading the body — so a
   // traversal attempt never reaches fetch()'s URL construction at all.
-  const requestPathname = req.url.split('?')[0];
-  if (isPathTraversalAttempt(requestPathname)) {
+  if (isPathTraversalAttempt(fullPath)) {
     res.statusCode = 400;
     res.end(JSON.stringify({ message: 'Invalid path' }));
     return;
@@ -82,18 +81,13 @@ export default async function handler(req, res) {
 
   const method   = req.method || 'GET';
   const clientIp = extractTrustedClientIp(req.headers);
-  const fullPath = requestPathname;
-  // Matches Express's req.path inside the mounted admin router (see
-  // ADMIN_MOUNT_PREFIX above) — this is the path value that gets signed
-  // and later re-checked by verifyAdminProxySignature() on the Render side.
+  // Matches Express's req.path inside the mounted admin router (backend/
+  // app.js: app.use('/api/v1/admin', adminRoutes)) — this is the path
+  // value that gets signed and later re-checked by
+  // verifyAdminProxySignature() on the Render side.
   const path = fullPath.startsWith(ADMIN_MOUNT_PREFIX)
     ? (fullPath.slice(ADMIN_MOUNT_PREFIX.length) || '/')
     : fullPath;
-  // Raw query string including its leading '?', or '' — matches Express's
-  // req.url (minus req.path) on the Render side exactly, so a request
-  // cannot be replayed with a tampered query string under a still-valid
-  // signature (e.g. GET /enrollments?page=1 rewritten to ?page=2).
-  const query = req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
 
   const forwardHeaders = buildForwardHeaders(req);
 
@@ -114,7 +108,7 @@ export default async function handler(req, res) {
 
   let upstream;
   try {
-    upstream = await fetch(buildTargetUrl(req), {
+    upstream = await fetch(`${RENDER_BACKEND_ORIGIN}${fullPath}${query}`, {
       method,
       headers: forwardHeaders,
       body: hasBody ? rawBody : undefined,

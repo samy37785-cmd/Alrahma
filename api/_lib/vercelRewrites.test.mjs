@@ -5,15 +5,24 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
 /**
- * Guards the routing fix that lets /api/v1/admin/* reach the Vercel
- * Function api/v1/admin/[...path].mjs instead of being swallowed by the
- * general /api/:path* -> Render external rewrite (which is exactly what
- * happened before this fix: the Function was built and registered but had
- * 0 invocations in production because the broad external rewrite matched
- * admin paths first).
+ * Guards two separate routing fixes for /api/v1/admin/*, read from the
+ * real vercel.json rather than hardcoded, so an edit to the file itself
+ * trips these assertions:
  *
- * Reads the real vercel.json rather than hardcoding its contents, so an
- * edit to the file itself trips these assertions.
+ * 1. (original fix) /api/v1/admin/* must never be swallowed by the general
+ *    /api/:path* -> Render external rewrite -- that was the bug where the
+ *    Function was built and registered but had 0 invocations in production
+ *    because the broad external rewrite matched admin paths first.
+ *
+ * 2. (this fix) /api/v1/admin/* must reach api/v1/admin-proxy.mjs at ANY
+ *    depth, not just one path segment. Vercel's zero-config catch-all file
+ *    convention (the old api/v1/admin/[...path].mjs) only matched requests
+ *    with exactly one segment after the prefix in production --
+ *    /api/v1/admin/enrollments worked, /api/v1/admin/auth/login (two
+ *    segments, the actual login endpoint) got a platform 404 before the
+ *    Function ever ran. The fix is an explicit rewrite
+ *    ("/api/v1/admin/:path*" -> "/api/v1/admin-proxy") instead of relying
+ *    on that zero-config convention at all.
  */
 
 const VERCEL_JSON_PATH = path.resolve(
@@ -43,28 +52,83 @@ function compileNamedCustomRegexSource(source) {
   return new RegExp(`^${literalPrefix}(${customRegex})$`);
 }
 
+/**
+ * Translates Vercel's documented ":name*" catch-all parameter syntax
+ * (captures zero or more path segments -- see
+ * https://vercel.com/docs/routing/rewrites) into the equivalent anchored
+ * JS RegExp. Only needs to stay correct for this repo's one use of it.
+ */
+function compileCatchAllParamSource(source) {
+  const match = source.match(/^(.*)\/:([A-Za-z_$][A-Za-z0-9_$]*)\*$/);
+  assert.ok(match, `expected a "<prefix>/:name*" source, got: ${source}`);
+  const [, prefix] = match;
+  return new RegExp(`^${prefix}(?:/.*)?$`);
+}
+
 function findRenderExternalRewrite(rewrites) {
   const rule = rewrites.find((r) => r.destination.startsWith('https://academy-backend-cxso.onrender.com'));
   assert.ok(rule, 'expected a rewrite rule targeting the Render backend origin');
   return rule;
 }
 
-test('vercel.json still declares exactly two rewrite rules (no new rule was added)', () => {
+function findAdminProxyRewrite(rewrites) {
+  const rule = rewrites.find((r) => r.source.startsWith('/api/v1/admin/'));
+  assert.ok(rule, 'expected a dedicated /api/v1/admin/* rewrite rule');
+  return rule;
+}
+
+test('vercel.json declares exactly three rewrite rules (admin proxy, general Render, SPA)', () => {
   const rewrites = loadRewrites();
-  assert.equal(rewrites.length, 2, 'a third rewrite rule appeared -- check it is not a circular /api/v1/admin self-rewrite');
+  assert.equal(rewrites.length, 3, 'rule count changed -- update this test deliberately if that was intended');
 });
 
-test('no rewrite rule is a circular self-rewrite of /api/v1/admin back to itself', () => {
+test('no rewrite rule is a literal circular self-rewrite (source and destination identical)', () => {
   const rewrites = loadRewrites();
   for (const rule of rewrites) {
-    const sourceTargetsAdmin = rule.source.includes('v1/admin') || rule.source.includes('v1%2Fadmin');
-    const destinationTargetsAdminSamePath =
-      !rule.destination.startsWith('http') && rule.destination.includes('v1/admin');
-    assert.ok(
-      !(sourceTargetsAdmin && destinationTargetsAdminSamePath),
-      `rewrite rule looks like a circular /api/v1/admin self-rewrite: ${JSON.stringify(rule)}`
+    assert.notEqual(
+      rule.destination,
+      rule.source,
+      `rewrite rule is a literal no-op self-rewrite: ${JSON.stringify(rule)}`
     );
   }
+});
+
+test('the admin proxy rewrite destination is a different, concrete path -- not /api/v1/admin/* again', () => {
+  const rule = findAdminProxyRewrite(loadRewrites());
+  // Exact-segment check, not a loose substring match: "/api/v1/admin-proxy"
+  // contains the substring "v1/admin" too, but is a genuinely different
+  // endpoint, not a loop back into the same dynamic path space.
+  const destinationSegments = rule.destination.split('?')[0].split('/').filter(Boolean);
+  assert.notDeepEqual(destinationSegments.slice(0, 3), ['api', 'v1', 'admin']);
+  assert.equal(rule.destination.includes(':path'), false, 'destination must not echo the capture back into a path segment (would just re-trigger the same matching)');
+});
+
+test('the admin proxy rewrite matches every required admin path, at any depth', () => {
+  const rule = findAdminProxyRewrite(loadRewrites());
+  assert.equal(rule.source, '/api/v1/admin/:path*');
+  assert.equal(rule.destination, '/api/v1/admin-proxy');
+
+  const matcher = compileCatchAllParamSource(rule.source);
+  const requiredPaths = [
+    '/api/v1/admin', // zero segments -- :path* must match this too
+    '/api/v1/admin/enrollments',
+    '/api/v1/admin/auth',
+    '/api/v1/admin/auth/login',
+    '/api/v1/admin/auth/refresh',
+    '/api/v1/admin/auth/logout',
+    '/api/v1/admin/teachers/123',
+  ];
+  for (const p of requiredPaths) {
+    assert.equal(matcher.test(p), true, `expected the admin proxy rewrite to match ${p}`);
+  }
+});
+
+test('the admin proxy rewrite does not match an unrelated path that merely starts similarly', () => {
+  const rule = findAdminProxyRewrite(loadRewrites());
+  const matcher = compileCatchAllParamSource(rule.source);
+  assert.equal(matcher.test('/api/v1/adminfoo'), false);
+  assert.equal(matcher.test('/api/healthz'), false);
+  assert.equal(matcher.test('/api/courses'), false);
 });
 
 test('the general external rewrite to Render excludes /api/v1/admin and /api/v1/admin/*', () => {

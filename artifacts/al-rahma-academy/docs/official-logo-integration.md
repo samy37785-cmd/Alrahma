@@ -195,7 +195,7 @@ silently again.
 
 | File | Used by |
 |---|---|
-| `public/brand/icon.png` | `BrandIcon` with `tile={false}` — `BrandLockup` (Header, Hero), `Brand.jsx` (Footer/Auth/PageBar/QuranTopBar) |
+| `public/brand/icon-66.png`, `icon-197.png` (resized from `icon.png`; `icon.png` itself is the 484x560 master and is no longer fetched by pages) | `BrandIcon` with `tile={false}` via `srcset` — `BrandLockup` (Header, Hero), `Brand.jsx` (Footer/Auth/PageBar/QuranTopBar) |
 | `public/brand/icon-tile-{16,32,48,64,96,128}.png` | `BrandIcon` with `tile={true}` (default) — `DashboardLayout` sidebar (34px→picks 96), `InvoiceModal` (40px→picks 96) |
 | `public/brand/icon-tile-16.png`, `-32.png`, `-192.png` | `index.html` `<link rel="icon">` |
 | `public/brand/icon-tile-180.png` | `index.html` `<link rel="apple-touch-icon">` |

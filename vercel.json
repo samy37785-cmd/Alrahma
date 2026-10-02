@@ -4,7 +4,7 @@
   "outputDirectory": "artifacts/al-rahma-academy/dist/public",
   "rewrites": [
     { "source": "/api/v1/admin", "destination": "/api/v1/admin-proxy" },
-    { "source": "^/api/v1/admin/(.*)$", "destination": "/api/v1/admin-proxy?path=$1" },
+    { "source": "/api/v1/admin/:subpath(.*)", "destination": "/api/v1/admin-proxy?path=:subpath" },
     { "source": "/api/:path((?!v1/admin(?:$|/)).*)", "destination": "https://academy-backend-cxso.onrender.com/api/:path" },
     { "source": "/((?!api/|.*\\..*).*)", "destination": "/index.html" }
   ]

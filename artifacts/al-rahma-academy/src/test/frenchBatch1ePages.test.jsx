@@ -158,8 +158,8 @@ describe('French Batch 1E pages', () => {
     expect(grades.length).toBeGreaterThan(0);
   });
 
-  it('other languages (it) still render the English shell text', async () => {
-    await mountFullPage('/it/tools/prayer-times', PrayerTimesPage);
+  it('other languages (es) still render the English shell text (Italian has its own since the Italian Prayer Times content wave)', async () => {
+    await mountFullPage('/es/tools/prayer-times', PrayerTimesPage);
     expect(document.title).toBe(`${PRAYER_TIMES_TEXT.en.seo.title} | AL-Rahma Academy`);
   });
 });

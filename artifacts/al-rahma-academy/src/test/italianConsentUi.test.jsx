@@ -218,11 +218,11 @@ describe('behaviour is exactly as before (the GA script tag is inspected, never 
 });
 
 describe('SEO and publication are untouched', () => {
-  it('manifest keeps 31 Italian entries, /enroll unpublished, sitemap stays at 129 URLs', () => {
-    expect(PRERENDER_MANIFEST.filter((e) => e.locale === 'it')).toHaveLength(31);
+  it('manifest keeps 33 Italian entries, /enroll unpublished, sitemap stays at 131 URLs', () => {
+    expect(PRERENDER_MANIFEST.filter((e) => e.locale === 'it')).toHaveLength(33);
     expect(PRERENDER_MANIFEST.filter((e) => e.route === '/enroll' && e.locale === 'it')).toHaveLength(0);
     const sitemap = fs.readFileSync(path.resolve(__dirname, '../../public/sitemap.xml'), 'utf8');
-    expect((sitemap.match(/<loc>/g) || []).length).toBe(129);
+    expect((sitemap.match(/<loc>/g) || []).length).toBe(131);
     expect(sitemap).not.toContain('/it/enroll');
   });
 

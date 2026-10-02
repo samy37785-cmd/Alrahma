@@ -183,6 +183,6 @@ describe('the page itself: empty form, nothing submitted, not published', () => 
     expect(PRERENDER_MANIFEST.filter((e) => e.route === '/enroll' && e.locale === 'it')).toHaveLength(0);
     const sitemap = fs.readFileSync(path.resolve(__dirname, '../../public/sitemap.xml'), 'utf8');
     expect(sitemap).not.toContain('/it/enroll');
-    expect((sitemap.match(/<loc>/g) || []).length).toBe(129);
+    expect((sitemap.match(/<loc>/g) || []).length).toBe(131);
   });
 });

@@ -120,8 +120,8 @@ describe('/it/tools/hadith renders the Italian cards, with no fetch before a cli
   });
 });
 
-describe('publication guard: this PR publishes nothing', () => {
-  it('/tools/hadith has no Italian manifest entry', () => {
-    expect(PRERENDER_MANIFEST.filter((e) => e.route === '/tools/hadith' && e.locale === 'it')).toHaveLength(0);
+describe('publication state: published in wave 3 (see italianNextWavePublication.test.jsx)', () => {
+  it('/tools/hadith has its Italian manifest entry (wave 3)', () => {
+    expect(PRERENDER_MANIFEST.filter((e) => e.route === '/tools/hadith' && e.locale === 'it')).toHaveLength(1);
   });
 });

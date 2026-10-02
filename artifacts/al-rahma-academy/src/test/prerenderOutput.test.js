@@ -1373,6 +1373,43 @@ const LITERAL_FILES = [
       { name: 'Horaires de priÃ¨re', item: 'https://al-rahmaacademy.com/fr/tools/prayer-times' },
     ],
   },
+  // Italian SEO Publication Gate wave 3 (2026-10-03): /tools/hadith and
+  // /tools/prayer-times join fr; /enroll does not (frozen timezone).
+  {
+    route: '/tools/hadith',
+    locale: 'it',
+    relPath: 'it/tools/hadith/index.html',
+    expectedCanonical: 'https://al-rahmaacademy.com/it/tools/hadith',
+    h1Text: 'Biblioteca islamica degli Hadith',
+    expectedEnHref: 'https://al-rahmaacademy.com/tools/hadith',
+    expectedArHref: 'https://al-rahmaacademy.com/ar/tools/hadith',
+    expectedFrHref: 'https://al-rahmaacademy.com/fr/tools/hadith',
+    expectedTitle: 'Biblioteca degli Hadith | AL-Rahma Academy',
+    expectedDescription: 'Sfoglia e cerca 10 raccolte autentiche di hadith, tra cui Sahih al-Bukhari, Sahih Muslim, Sunan Abi Dawud e altre.',
+    breadcrumb: [
+      { name: 'Pagina iniziale', item: 'https://al-rahmaacademy.com/it/' },
+      { name: 'Strumenti Islamici', item: 'https://al-rahmaacademy.com/it/tools' },
+      { name: 'Biblioteca Hadith', item: 'https://al-rahmaacademy.com/it/tools/hadith' },
+    ],
+  },
+  {
+    route: '/tools/prayer-times',
+    locale: 'it',
+    relPath: 'it/tools/prayer-times/index.html',
+    expectedCanonical: 'https://al-rahmaacademy.com/it/tools/prayer-times',
+    h1Text: 'Orari di preghiera',
+    expectedEnHref: 'https://al-rahmaacademy.com/tools/prayer-times',
+    expectedArHref: 'https://al-rahmaacademy.com/ar/tools/prayer-times',
+    expectedFrHref: 'https://al-rahmaacademy.com/fr/tools/prayer-times',
+    expectedTitle: 'Orari di preghiera | AL-Rahma Academy',
+    expectedDescription: 'Orari di preghiera precisi per la tua posizione, con conto alla rovescia in diretta, avvisi di preghiera e calendario mensile completo.',
+    breadcrumb: [
+      { name: 'Pagina iniziale', item: 'https://al-rahmaacademy.com/it/' },
+      { name: 'Strumenti', item: 'https://al-rahmaacademy.com/it/tools' },
+      { name: 'Strumenti per la preghiera', item: 'https://al-rahmaacademy.com/it/tools/prayer' },
+      { name: 'Orari di preghiera', item: 'https://al-rahmaacademy.com/it/tools/prayer-times' },
+    ],
+  },
   {
     route: '/enroll',
     locale: 'fr',
@@ -1860,8 +1897,8 @@ describe.skipIf(!distExists)('Italian Islamic Studies prerender (dist/public) â€
     }
   });
 
-  it('unpublished Italian routes still have no Italian file (blog, enroll, other tools)', () => {
-    for (const rel of ['it/resources/blog', 'it/enroll', 'it/tools/hadith', 'it/tools/quran-reader', 'it/tools/prayer-times', 'it/tools/qibla', 'it/tools/islamic-calendar', 'it/tools/verse-of-the-day', 'it/tools/hifz-review']) {
+  it('unpublished Italian routes still have no Italian file (blog, enroll, other tools; hadith and prayer-times joined in wave 3)', () => {
+    for (const rel of ['it/resources/blog', 'it/enroll', 'it/tools/quran-reader', 'it/tools/qibla', 'it/tools/islamic-calendar', 'it/tools/verse-of-the-day', 'it/tools/hifz-review']) {
       expect(existsSync(path.join(distDir, rel, 'index.html')), rel).toBe(false);
     }
   });

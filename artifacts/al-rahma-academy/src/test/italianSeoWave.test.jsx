@@ -81,9 +81,9 @@ describe('Italian copy gaps (resources / about / tasbeeh)', () => {
 describe('Italian PRERENDER_MANIFEST entries', () => {
   const itEntries = PRERENDER_MANIFEST.filter((e) => e.locale === 'it');
 
-  it('is exactly the 31 published Italian routes, all published and indexable', () => {
-    expect(itEntries.map((e) => e.route).sort()).toEqual([...IT_ROUTES].sort());
-    expect(itEntries).toHaveLength(31);
+  it('is exactly the 31 earlier Italian routes plus hadith and prayer-times (wave 3), all published and indexable', () => {
+    expect(itEntries.map((e) => e.route).sort()).toEqual([...IT_ROUTES, '/tools/hadith', '/tools/prayer-times'].sort());
+    expect(itEntries).toHaveLength(33);
     for (const e of itEntries) {
       expect(e.status).toBe('published');
       expect(e.indexable).toBe(true);
@@ -94,7 +94,7 @@ describe('Italian PRERENDER_MANIFEST entries', () => {
     const routes = itEntries.map((e) => e.route);
     for (const bad of [
       '/resources/blog', '/enroll',
-      '/tools/quran-reader', '/tools/hadith', '/tools/prayer-times', '/tools/qibla',
+      '/tools/quran-reader', '/tools/qibla',
       '/tools/islamic-calendar', '/tools/verse-of-the-day', '/tools/hifz-review',
     ]) {
       expect(routes).not.toContain(bad);
@@ -151,7 +151,7 @@ describe('Italian hreflang and og:locale', () => {
   });
 
   it('routes with no Italian page advertise no Italian alternate', () => {
-    for (const route of ['/resources/blog', '/enroll', '/tools/hadith', '/tools/quran-reader', '/tools/prayer-times']) {
+    for (const route of ['/resources/blog', '/enroll', '/tools/quran-reader']) {
       const links = hreflangLinksFor({ route, locale: 'en' });
       expect(links.some((l) => l.hreflang === 'it'), route).toBe(false);
       expect(ogLocaleFor({ route, locale: 'en' }).alternates, route).not.toContain('it_IT');

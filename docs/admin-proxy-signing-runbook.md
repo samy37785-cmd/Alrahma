@@ -21,7 +21,7 @@ cryptographically signs the real client IP before forwarding to Render.
 
 ```
 Browser → al-rahmaacademy.com/api/v1/admin/*
-        → vercel.json rewrite: "/api/v1/admin/:path*" -> "/api/v1/admin-proxy"
+        → vercel.json rewrite: "^/api/v1/admin(/.*|)$" -> "/api/v1/admin-proxy?path=$1"
         → Vercel Function (api/v1/admin-proxy.mjs)
               - resolveAdminProxyRequest() (api/_lib/) reconstructs the
                 real /api/v1/admin/... path + query string from the
@@ -58,17 +58,24 @@ application-log entries were recorded for any multi-segment admin path,
 confirming the request never left Vercel's edge.
 
 The fix stops relying on that zero-config convention. `api/v1/admin-proxy.mjs`
-is now a plain, non-dynamic Function, reached through an explicit
-`vercel.json` rewrite (`"/api/v1/admin/:path*" -> "/api/v1/admin-proxy"`,
-Vercel's own documented syntax for proxying deep paths — see
-https://vercel.com/docs/routing/rewrites). Per Vercel's documented
-behavior for a rewrite whose destination has no `:path` placeholder of its
-own (the same shape as their `/resize/:width/:height` -> `/api/sharp`
-example, which becomes `/api/sharp?width=800&height=600`), the captured
-segments are flattened onto the destination's query string instead of its
-path. `resolveAdminProxyRequest()` (`api/_lib/resolveAdminProxyRequest.mjs`)
-undoes that flattening before anything else in the function runs, so the
-HMAC signing, Render destination URL, and all forwarded headers are
+is now a plain, non-dynamic Function. A first attempt reached it through
+Vercel's *named* catch-all parameter rewrite syntax
+(`"/api/v1/admin/:path*" -> "/api/v1/admin-proxy"`) — also documented, also
+intended for exactly this ("proxying deep paths") — but verified live
+against a real Preview deployment, it reproduced the **exact same**
+one-segment-only limitation this fix exists for. The actual fix uses
+Vercel's other documented rewrite syntax instead, a raw regex capture
+group (`"^/api/v1/admin(/.*|)$" -> "/api/v1/admin-proxy?path=$1"`, the same
+shape as their own `/articles/(\d{4})/(\d{2})/(.+)` ->
+`/archive?year=$1&month=$2&slug=$3` example — see
+https://vercel.com/docs/routing/rewrites), a structurally different code
+path in Vercel's router, confirmed working for every required depth. The
+captured subpath (`$1`, including its leading `/` when present, or `""` for
+the bare `/api/v1/admin` case) lands in the destination's query string
+instead of its path. `resolveAdminProxyRequest()`
+(`api/_lib/resolveAdminProxyRequest.mjs`) undoes that flattening before
+anything else in the function runs, so the HMAC signing, Render
+destination URL, and all forwarded headers are
 constructed exactly as before this fix — nothing downstream of that one
 reconstruction step changed.
 

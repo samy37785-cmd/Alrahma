@@ -9,26 +9,31 @@
 // docs/admin-proxy-signing-runbook.md for the full diagnosis.
 //
 // The fix routes every /api/v1/admin/* request through an explicit
-// vercel.json rewrite instead: `/api/v1/admin/:path*` -> `/api/v1/admin-proxy`
-// (no :path placeholder in the destination). Per Vercel's own documented
-// behavior for this shape of rewrite (see the /resize/:width/:height ->
-// /api/sharp example at https://vercel.com/docs/routing/rewrites, which
-// becomes /api/sharp?width=800&height=600), the captured segments are
-// flattened onto the destination's query string instead of its path. This
-// function undoes that flattening so the rest of the handler can keep
-// operating on a real /api/v1/admin/... path exactly as before.
+// vercel.json rewrite instead: `^/api/v1/admin(/.*|)$` ->
+// `/api/v1/admin-proxy?path=$1`, a raw regex capture group (Vercel's own
+// documented rewrite syntax -- see the /articles/(\d{4})/(\d{2})/(.+) ->
+// /archive?year=$1&month=$2&slug=$3 example at
+// https://vercel.com/docs/routing/rewrites). A first attempt using
+// Vercel's named catch-all parameter syntax ("/api/v1/admin/:path*")
+// reproduced the EXACT same one-segment-only limitation this fix is for,
+// confirmed live against a real Preview deployment -- the regex-capture
+// form is a structurally different code path in Vercel's router and was
+// confirmed working for every required depth (see the PR description).
+// The captured subpath ($1, including its leading "/" when present, or ""
+// for the bare /api/v1/admin case) lands in the destination's query
+// string instead of its path. This function undoes that flattening so the
+// rest of the handler can keep operating on a real /api/v1/admin/... path
+// exactly as before.
 export const ADMIN_MOUNT_PREFIX = '/api/v1/admin';
 
 const ROUTING_PARAM = 'path';
 
 /**
  * @param {string} rawUrl - req.url as Vercel delivers it to the Function,
- *   e.g. "/api/v1/admin-proxy?path=auth%2Flogin" or
- *   "/api/v1/admin-proxy?path=auth&path=login&page=2". Handles both
- *   plausible serializations of a multi-segment capture (a single
- *   slash-joined value, or one repeated `path=` per segment) since this is
- *   not pinned down by Vercel's own docs -- confirmed empirically against a
- *   real Preview deployment (see this file's test and the PR description).
+ *   e.g. "/api/v1/admin-proxy?path=%2Fauth%2Flogin&page=2" (the real format
+ *   the vercel.json regex-capture rewrite produces) or
+ *   "/api/v1/admin-proxy?path=auth&path=login" (handled too, defensively,
+ *   in case the exact serialization ever changes).
  * @returns {{ fullPath: string, query: string }} fullPath always starts
  *   with ADMIN_MOUNT_PREFIX; query is '' or starts with '?'. Any other
  *   original query parameters (e.g. ?page=2) are preserved.

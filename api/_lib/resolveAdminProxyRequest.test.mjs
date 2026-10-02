@@ -31,6 +31,17 @@ test('resolveAdminProxyRequest: multi-segment path, single slash-joined value (?
   });
 });
 
+test('resolveAdminProxyRequest: single value WITH a leading slash (actual vercel.json regex-capture format, e.g. ?path=/auth/login)', () => {
+  // This is exactly what the real rewrite rule
+  // ("^/api/v1/admin(/.*|)$" -> "/api/v1/admin-proxy?path=$1") produces --
+  // $1 includes the leading "/" when a subpath is present. Confirmed
+  // empirically against a real Preview deployment (see the PR description).
+  assert.deepEqual(resolveAdminProxyRequest('/api/v1/admin-proxy?path=%2Fauth%2Flogin'), {
+    fullPath: '/api/v1/admin/auth/login',
+    query: '',
+  });
+});
+
 test('resolveAdminProxyRequest: deeper nesting (three segments) works the same as two', () => {
   assert.deepEqual(resolveAdminProxyRequest('/api/v1/admin-proxy?path=teachers&path=123&path=schedule'), {
     fullPath: '/api/v1/admin/teachers/123/schedule',

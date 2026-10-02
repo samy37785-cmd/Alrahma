@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { resolveAdminProxyRequest, ADMIN_MOUNT_PREFIX } from './resolveAdminProxyRequest.mjs';
+import { resolveAdminProxyRequest, ADMIN_MOUNT_PREFIX, AdminProxyRoutingError } from './resolveAdminProxyRequest.mjs';
 
 test('resolveAdminProxyRequest: no routing param at all -> bare admin mount prefix, no query (the exact-literal rewrite rule case)', () => {
   assert.deepEqual(resolveAdminProxyRequest('/api/v1/admin-proxy'), {
@@ -20,27 +20,6 @@ test('resolveAdminProxyRequest: the real vercel.json format -- both "path" and "
   const result = resolveAdminProxyRequest('/api/v1/admin-proxy?path=auth%2Flogin&subpath=auth%2Flogin');
   assert.equal(result.fullPath, '/api/v1/admin/auth/login');
   assert.equal(result.query, '');
-});
-
-test('resolveAdminProxyRequest: "path" alone (defensive -- in case Vercel ever stops auto-appending "subpath")', () => {
-  assert.deepEqual(resolveAdminProxyRequest('/api/v1/admin-proxy?path=enrollments'), {
-    fullPath: '/api/v1/admin/enrollments',
-    query: '',
-  });
-});
-
-test('resolveAdminProxyRequest: "subpath" alone (defensive -- in case "path" is ever absent)', () => {
-  assert.deepEqual(resolveAdminProxyRequest('/api/v1/admin-proxy?subpath=enrollments'), {
-    fullPath: '/api/v1/admin/enrollments',
-    query: '',
-  });
-});
-
-test('resolveAdminProxyRequest: multi-segment path, repeated-key serialization (?path=auth&path=login)', () => {
-  assert.deepEqual(resolveAdminProxyRequest('/api/v1/admin-proxy?path=auth&path=login'), {
-    fullPath: '/api/v1/admin/auth/login',
-    query: '',
-  });
 });
 
 test('resolveAdminProxyRequest: deeper nesting (three segments) works the same as two', () => {
@@ -69,9 +48,8 @@ test('resolveAdminProxyRequest: zero-segment request with other query params kee
   });
 });
 
-test('resolveAdminProxyRequest: an empty path segment value does not produce a double slash', () => {
-  // Defensive: a stray empty `path=` param should never survive into fullPath.
-  assert.deepEqual(resolveAdminProxyRequest('/api/v1/admin-proxy?path='), {
+test('resolveAdminProxyRequest: both keys present but empty (legitimate trailing-slash capture) -> bare path', () => {
+  assert.deepEqual(resolveAdminProxyRequest('/api/v1/admin-proxy?path=&subpath='), {
     fullPath: ADMIN_MOUNT_PREFIX,
     query: '',
   });
@@ -81,7 +59,66 @@ test('resolveAdminProxyRequest: a raw ".." segment survives reconstruction unsan
   // This function only reconstructs the path -- it is NOT a safety check.
   // isPathTraversalAttempt() (pathSafety.mjs) is still responsible for
   // rejecting this; this test just guards that reconstruction itself
-  // doesn't silently swallow or mis-handle a ".." segment.
-  const result = resolveAdminProxyRequest('/api/v1/admin-proxy?path=..%2F..%2Fhealth');
+  // doesn't silently swallow or mis-handle a ".." segment. Both keys must
+  // still agree, exactly as any other legitimate request would arrive.
+  const result = resolveAdminProxyRequest('/api/v1/admin-proxy?path=..%2F..%2Fhealth&subpath=..%2F..%2Fhealth');
   assert.equal(result.fullPath, '/api/v1/admin/../../health');
+});
+
+// --- Query-routing collision: fail-closed behavior -----------------------
+//
+// Confirmed live against a real Preview deployment (see the PR
+// description) that a client appending its own "path"/"subpath" to a URL
+// matching the ":subpath(.*)" rewrite never survives -- Vercel's own
+// captured value silently overwrites it, so legitimate traffic always
+// arrives here as either "neither key" or "both keys, identical value".
+// Anything else is therefore evidence of either a direct, non-rewritten
+// call to this function's own public URL, or some other rewrite shape
+// this function has never been proven to receive -- reject it rather than
+// guess which value (if any) is the "real" one.
+
+test('resolveAdminProxyRequest: "path" alone, no "subpath" -- rejected (this is exactly what the bare /api/v1/admin exact-literal rule lets a client forge)', () => {
+  assert.throws(
+    () => resolveAdminProxyRequest('/api/v1/admin-proxy?path=enrollments'),
+    AdminProxyRoutingError
+  );
+});
+
+test('resolveAdminProxyRequest: "subpath" alone, no "path" -- rejected', () => {
+  assert.throws(
+    () => resolveAdminProxyRequest('/api/v1/admin-proxy?subpath=enrollments'),
+    AdminProxyRoutingError
+  );
+});
+
+test('resolveAdminProxyRequest: "path" and "subpath" both present but disagreeing -- rejected', () => {
+  assert.throws(
+    () => resolveAdminProxyRequest('/api/v1/admin-proxy?path=client-a&subpath=client-b'),
+    AdminProxyRoutingError
+  );
+});
+
+test('resolveAdminProxyRequest: repeated "path" key -- rejected, never treated as multiple segments', () => {
+  assert.throws(
+    () => resolveAdminProxyRequest('/api/v1/admin-proxy?path=auth&path=login&subpath=auth'),
+    AdminProxyRoutingError
+  );
+});
+
+test('resolveAdminProxyRequest: repeated "subpath" key, "path" absent -- rejected', () => {
+  assert.throws(
+    () => resolveAdminProxyRequest('/api/v1/admin-proxy?subpath=auth&subpath=login'),
+    AdminProxyRoutingError
+  );
+});
+
+test('resolveAdminProxyRequest: the live-reproduced attack -- bare /api/v1/admin + a client-forged "path" -- rejected, not silently routed to the forged path', () => {
+  // This exact request (GET /api/v1/admin?path=MARKD) was verified live:
+  // without this check, Render received "GET /api/v1/admin/MARKD" --
+  // i.e. the client fully controlled the destination sub-path by hitting
+  // the supposedly-fixed bare endpoint.
+  assert.throws(
+    () => resolveAdminProxyRequest('/api/v1/admin-proxy?path=MARKD'),
+    AdminProxyRoutingError
+  );
 });

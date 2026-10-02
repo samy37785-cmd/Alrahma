@@ -4,8 +4,9 @@ import crypto from 'crypto';
  * HMAC verification for the signed Vercel → Render admin proxy.
  *
  * Why this exists: /api/v1/admin/* is reached through a Vercel Function
- * (see api/v1/admin/[...path].js) rather than the plain external rewrite
- * used by every other /api/* route. That function is the one place that
+ * (see api/v1/admin-proxy.mjs, reached via the two /api/v1/admin* rewrites
+ * in vercel.json) rather than the plain external rewrite used by every
+ * other /api/* route. That function is the one place that
  * can observe the real browser client IP (via Vercel's own edge-set
  * x-forwarded-for — a value external clients cannot inject when talking
  * to a Vercel Function directly). It signs that IP, alongside the

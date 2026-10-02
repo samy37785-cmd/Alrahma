@@ -1,7 +1,7 @@
 import { readRawBody } from '../_lib/readRawBody.mjs';
 import { buildSignedHeaders, extractTrustedClientIp } from '../_lib/adminProxySigning.mjs';
 import { isPathTraversalAttempt } from '../_lib/pathSafety.mjs';
-import { resolveAdminProxyRequest, ADMIN_MOUNT_PREFIX } from '../_lib/resolveAdminProxyRequest.mjs';
+import { resolveAdminProxyRequest, ADMIN_MOUNT_PREFIX, AdminProxyRoutingError } from '../_lib/resolveAdminProxyRequest.mjs';
 
 /**
  * Signed admin proxy: the ONLY thing on the Vercel side allowed to add
@@ -30,9 +30,13 @@ import { resolveAdminProxyRequest, ADMIN_MOUNT_PREFIX } from '../_lib/resolveAdm
  * verified live and found NOT to work; see docs/admin-proxy-signing-runbook.md
  * for the full diagnosis). resolveAdminProxyRequest() (api/_lib/) undoes
  * Vercel's flattening of the captured subpath back into a real
- * /api/v1/admin/... path before anything below uses it. See
- * docs/admin-proxy-signing-runbook.md for the general /api/:path* rewrite
- * that still serves every other route unchanged.
+ * /api/v1/admin/... path before anything below uses it -- and fails
+ * closed (400) if "path"/"subpath" don't form a shape the two rewrites
+ * above can actually produce, since a client can otherwise make those
+ * query keys say anything it wants (see the SECURITY comment in that
+ * file). See docs/admin-proxy-signing-runbook.md for the general
+ * /api/:path((?!v1/admin(?:$|/)).*) rewrite that still serves every other
+ * route unchanged.
  *
  * Same origin the general rewrite already points at — keep these two in
  * sync if the backend's Render URL ever changes.
@@ -65,8 +69,22 @@ export default async function handler(req, res) {
   // Undo Vercel's flattening of the rewrite-captured segments back into a
   // real /api/v1/admin/... path + query string. Everything below operates
   // on these exactly as the old filesystem-routed function did on
-  // req.url directly.
-  const { fullPath, query } = resolveAdminProxyRequest(req.url);
+  // req.url directly. Rejected here (400), before any other work, if the
+  // "path"/"subpath" query keys don't form a shape the real rewrite rules
+  // can actually produce — see the SECURITY comment in
+  // resolveAdminProxyRequest.mjs for why that can otherwise let a client
+  // silently redirect the request to a path of their own choosing.
+  let fullPath, query;
+  try {
+    ({ fullPath, query } = resolveAdminProxyRequest(req.url));
+  } catch (err) {
+    if (err instanceof AdminProxyRoutingError) {
+      res.statusCode = 400;
+      res.end(JSON.stringify({ message: 'Invalid request routing' }));
+      return;
+    }
+    throw err;
+  }
 
   // Checked before anything else — including reading the body — so a
   // traversal attempt never reaches fetch()'s URL construction at all.

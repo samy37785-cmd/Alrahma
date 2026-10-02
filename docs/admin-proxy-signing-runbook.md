@@ -39,11 +39,13 @@ Browser → al-rahmaacademy.com/api/v1/admin/*
                 success does ipWhitelist.js trust the signed IP over req.ip
 ```
 
-Every other `/api/*` route is untouched — the dedicated admin rewrite is
-evaluated before the general `/api/:path*` -> Render rewrite, and the
-general rewrite's own negative-lookahead exclusion of `v1/admin` is kept
-as a second, defensive layer, so it keeps serving every other path exactly
-as before.
+Every other `/api/*` route is untouched — the dedicated admin rewrites are
+evaluated before the general rewrite
+(`/api/:path((?!v1/admin(?:$|/)).*)` -> `https://academy-backend-cxso.onrender.com/api/:path`),
+and that rewrite's own negative-lookahead exclusion of `v1/admin` (the
+`(?!v1/admin(?:$|/))` part of its source — not a path starting with
+`/api/v1/admin/`) is kept as a second, defensive layer, so it keeps
+serving every other path exactly as before.
 
 ## Multi-segment routing fix (this file's current form)
 
@@ -128,13 +130,13 @@ reconstruction step changed.
    `al-rahmaacademy.com` admin login, not just via direct-to-Render access.
 4. Rollback, if needed: remove/unset `ADMIN_PROXY_SIGNING_SECRET` on
    either side (or both) to fall back to today's exact behavior. Removing
-   the admin rewrite rule or `api/v1/admin-proxy.mjs` entirely is **not**
-   a safe rollback on its own — without the dedicated rewrite, admin
-   traffic falls through to the general `/api/:path*` -> Render rewrite,
-   which the general rewrite's own `v1/admin` exclusion deliberately keeps
-   from ever happening (see "Multi-segment routing fix" above); that
-   exclusion must be removed too if the dedicated admin path is ever
-   actually retired. Render's `adminProxySignature.js` no-ops harmlessly
+   the admin rewrite rules or `api/v1/admin-proxy.mjs` entirely is **not**
+   a safe rollback on its own — without the dedicated rewrites, admin
+   traffic falls through to the general rewrite
+   (`/api/:path((?!v1/admin(?:$|/)).*)` -> Render), whose own negative-lookahead
+   exclusion of `v1/admin` deliberately keeps that from ever happening (see
+   "Multi-segment routing fix" above); that exclusion must be removed too
+   if the dedicated admin path is ever actually retired. Render's `adminProxySignature.js` no-ops harmlessly
    either way (it only ever sets an optional field `ipWhitelist.js` may or
    may not use).
 

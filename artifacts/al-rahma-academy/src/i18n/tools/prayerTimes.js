@@ -53,4 +53,20 @@ export const PRAYER_TIMES_TEXT = {
     hijriEra: 'H',
     notifyToggleAria: 'Activer les alertes de prière',
   },
+  // Italian Content Wave (Prayer Times): translated from the English shell
+  // only. The Hijri era keeps "AH", as on the other Italian pages.
+  it: {
+    dir: 'ltr',
+    seo: {
+      title: 'Orari di preghiera',
+      description: 'Orari di preghiera precisi per la tua posizione, con conto alla rovescia in diretta, avvisi di preghiera e calendario mensile completo.',
+    },
+    breadcrumbs: { tools: 'Strumenti', prayerTools: 'Strumenti per la preghiera', current: 'Orari di preghiera' },
+    hero: {
+      title: 'Orari di preghiera',
+      sub: 'Orari precisi per la tua posizione, con un conto alla rovescia in diretta fino alla prossima preghiera, avvisi e un calendario mensile.',
+    },
+    hijriEra: 'AH',
+    notifyToggleAria: 'Attiva o disattiva gli avvisi di preghiera',
+  },
 };

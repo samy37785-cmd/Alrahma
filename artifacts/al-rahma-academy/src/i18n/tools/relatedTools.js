@@ -31,4 +31,12 @@ export const RELATED_TOOLS_TEXT = {
     calendar: 'Calendrier islamique',
     verse: 'Verset du jour',
   },
+  it: {
+    ariaLabel: 'Strumenti correlati',
+    alsoTry: 'Prova anche:',
+    prayerTimes: 'Orari di preghiera',
+    qibla: 'Direzione della Qibla',
+    calendar: 'Calendario islamico',
+    verse: 'Versetto del giorno',
+  },
 };

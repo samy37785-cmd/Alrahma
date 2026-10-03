@@ -450,18 +450,30 @@ function publishedLocalesForRoute(route) {
 // The hreflang alternates a prerendered page must carry: one per locale
 // actually published for this exact route (reciprocal — every locale
 // version of a route shares this same set, since it depends only on
-// entry.route, not entry.locale), plus x-default pointing at the English
-// version (the established convention already used in index.html's own
-// static block). A locale never appears here unless PRERENDER_MANIFEST has
-// a real 'published' entry for that (route, locale) pair — no alternate is
-// ever claimed for a page that has no real HTML behind it.
+// entry.route, not entry.locale), plus x-default. A locale never appears
+// here unless PRERENDER_MANIFEST has a real 'published' entry for that
+// (route, locale) pair — no alternate is ever claimed for a page that has
+// no real HTML behind it.
+//
+// x-default is always one of those published alternates: the English version
+// when it is published for this route (the established convention, also used
+// in index.html's own static block), else the French one, else the first
+// published locale in manifest order. It must never point at an unpublished
+// English URL: that URL is only the SPA shell, whose canonical is the home
+// page, so Google would treat the x-default as a non-canonical duplicate.
+export function xDefaultLocaleFor(route) {
+  const published = publishedLocalesForRoute(route);
+  if (published.includes('en')) return 'en';
+  if (published.includes('fr')) return 'fr';
+  return published[0] ?? 'en';
+}
+
 export function hreflangLinksFor(entry) {
-  const enHref = ORIGIN + pathFor(entry.route, 'en');
   const links = publishedLocalesForRoute(entry.route).map((locale) => ({
     hreflang: locale,
     href: ORIGIN + pathFor(entry.route, locale),
   }));
-  links.push({ hreflang: 'x-default', href: enHref });
+  links.push({ hreflang: 'x-default', href: ORIGIN + pathFor(entry.route, xDefaultLocaleFor(entry.route)) });
   return links;
 }
 

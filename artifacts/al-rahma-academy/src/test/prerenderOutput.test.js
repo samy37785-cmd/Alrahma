@@ -1535,12 +1535,14 @@ describe.skipIf(!distExists)('Prerender output — literal dist/public paths (in
     expect(hreflangEls.length, 'one hreflang per published locale + x-default, no more').toBe(publishedLocales.length + 1);
 
     const byHreflang = Object.fromEntries(hreflangEls.map((el) => [el.getAttribute('hreflang'), el.getAttribute('href')]));
-    // x-default always points at the English-path form of this route (see
-    // hreflangLinksFor()'s own comment) even when English itself is not a
-    // published locale for this exact route (the fr-only wave above) — the
-    // English URL still resolves (served by the generic SPA shell, just
-    // not prerendered), so it remains a valid, deliberate x-default target.
-    expect(byHreflang['x-default'], 'hreflang=x-default must point at the English-path URL').toBe(expectedEnHref);
+    // x-default points at a version that is really published for this route:
+    // English when published, else French, else the first published locale
+    // (see hreflangLinksFor()). Never at an unpublished English URL, which only
+    // serves the home-page SPA shell with a canonical to "/".
+    const expectedXDefaultLocale = publishedLocales.includes('en') ? 'en' : publishedLocales.includes('fr') ? 'fr' : publishedLocales[0];
+    const expectedXDefault = expectedXDefaultLocale === 'en' ? expectedEnHref : canonicalUrlFor(PRERENDER_MANIFEST.find((e) => e.route === route && e.locale === expectedXDefaultLocale));
+    expect(byHreflang['x-default'], 'hreflang=x-default must point at a published version of this page').toBe(expectedXDefault);
+    expect(Object.values(byHreflang), 'x-default must equal one of the published alternates').toContain(byHreflang['x-default']);
     if (publishedLocales.includes('en')) {
       expect(byHreflang.en, 'hreflang=en must point at the English version of this same page').toBe(expectedEnHref);
     } else {
@@ -1960,7 +1962,7 @@ describe.skipIf(!distExists)('Italian wave 3 (hadith, prayer-times) prerender (d
         expect(Object.fromEntries(links)).toEqual({
           fr: `${ORIGIN}/fr${page.route}`,
           it: `${ORIGIN}/it${page.route}`,
-          'x-default': `${ORIGIN}${page.route}`,
+          'x-default': `${ORIGIN}/fr${page.route}`,
         });
         expect(links).toHaveLength(3);
       });
@@ -2073,6 +2075,71 @@ describe.skipIf(!distExists)('/fr/enroll raw prerender HTML — neutral, determi
   });
 
   it('/it/enroll is still not prerendered', () => {
+    expect(existsSync(path.join(distDir, 'it/enroll/index.html'))).toBe(false);
+  });
+});
+
+// hreflang x-default fix: for every published prerendered page the x-default
+// target is a real prerendered file with a self canonical, index/follow, and is
+// never the home-page SPA shell.
+describe.skipIf(!distExists)('x-default targets are real, canonical, prerendered pages (dist/public)', () => {
+  const ORIGIN_X = 'https://al-rahmaacademy.com';
+  const rawOf = (entry) => readFileSync(path.join(distDir, outputRelPathFor(entry)), 'utf8');
+  const published_ = PRERENDER_MANIFEST.filter((e) => e.status === 'published');
+  const AFFECTED_X = {
+    '/enroll': ['fr'],
+    '/tools/quran-reader': ['fr'],
+    '/tools/verse-of-the-day': ['fr'],
+    '/tools/hadith': ['fr', 'it'],
+    '/tools/prayer-times': ['fr', 'it'],
+  };
+
+  it('every published page has exactly one x-default, equal to one of its published alternates', () => {
+    for (const entry of published_) {
+      const html = rawOf(entry);
+      const links = [...html.matchAll(/<link rel="alternate" hreflang="([^"]*)" href="([^"]*)"/g)].map((m) => [m[1], m[2]]);
+      const xs = links.filter(([h]) => h === 'x-default');
+      expect(xs, canonicalUrlFor(entry)).toHaveLength(1);
+      expect(links.filter(([h]) => h !== 'x-default').map(([, href]) => href), canonicalUrlFor(entry)).toContain(xs[0][1]);
+    }
+  });
+
+  it('the x-default target of every published page exists in dist, with a self canonical and index/follow, and is not the home shell', () => {
+    for (const entry of published_) {
+      const html = rawOf(entry);
+      const target = html.match(/hreflang="x-default" href="([^"]*)"/)[1];
+      const targetEntry = published_.find((e) => e.route === entry.route && canonicalUrlFor(e) === target);
+      expect(targetEntry, `${canonicalUrlFor(entry)} -> ${target}`).toBeTruthy();
+      expect(existsSync(path.join(distDir, outputRelPathFor(targetEntry)))).toBe(true);
+      const t = rawOf(targetEntry);
+      expect(t.match(/rel="canonical" href="([^"]*)"/)[1]).toBe(target);
+      expect(t.match(/name="robots" content="([^"]*)"/)[1]).toMatch(/^index, follow/);
+      if (entry.route !== '/') expect(target, 'not the home page').not.toBe(`${ORIGIN_X}/`);
+    }
+  });
+
+  it('the five routes without an English version point x-default at the French page, on every published locale', () => {
+    for (const [route, locales] of Object.entries(AFFECTED_X)) {
+      for (const locale of locales) {
+        const html = rawOf({ route, locale });
+        expect(html, `${route} @ ${locale}`).toContain(`<link rel="alternate" hreflang="x-default" href="${ORIGIN_X}/fr${route}">`);
+        const langs = [...html.matchAll(/<link rel="alternate" hreflang="([^"]*)"/g)].map((m) => m[1]).sort();
+        expect(langs).toEqual([...locales, 'x-default'].sort());
+      }
+    }
+  });
+
+  it('pages with an English version keep x-default on the English URL', () => {
+    for (const [route, loc] of [['/', 'it'], ['/courses/quran', 'it'], ['/courses/ijazah', 'it'], ['/courses/islamic-studies', 'it'], ['/tools/tajweed-checker', 'it'], ['/courses/quran', 'fr']]) {
+      const html = rawOf({ route, locale: loc });
+      const en = route === '/' ? `${ORIGIN_X}/` : `${ORIGIN_X}${route}`;
+      expect(html, `${route} @ ${loc}`).toContain(`hreflang="x-default" href="${en}"`);
+    }
+  });
+
+  it('the number of prerendered files and the Italian set are unchanged, and /it/enroll is absent', () => {
+    expect(published_).toHaveLength(131);
+    expect(published_.filter((e) => e.locale === 'it')).toHaveLength(33);
     expect(existsSync(path.join(distDir, 'it/enroll/index.html'))).toBe(false);
   });
 });

@@ -64,7 +64,8 @@ describe('hreflang and og:locale follow the locales actually published for each 
         expect(links.map((l) => l.hreflang).sort()).toEqual(['fr', 'it', 'x-default']);
         expect(links.find((l) => l.hreflang === 'it').href).toBe(`${ORIGIN}/it${route}`);
         expect(links.find((l) => l.hreflang === 'fr').href).toBe(`${ORIGIN}/fr${route}`);
-        expect(links.find((l) => l.hreflang === 'x-default').href).toBe(`${ORIGIN}${route}`);
+        // x-default is a published version (French), not the unpublished English URL.
+        expect(links.find((l) => l.hreflang === 'x-default').href).toBe(`${ORIGIN}/fr${route}`);
       }
       expect(ogLocaleFor({ route, locale: 'it' })).toEqual({ primary: 'it_IT', alternates: ['fr_FR'] });
       expect(ogLocaleFor({ route, locale: 'fr' })).toEqual({ primary: 'fr_FR', alternates: ['it_IT'] });

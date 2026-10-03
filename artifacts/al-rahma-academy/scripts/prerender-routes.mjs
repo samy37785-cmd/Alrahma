@@ -429,6 +429,15 @@ export const PRERENDER_MANIFEST = [
   // for fr and it only: no en/ar entry, so hreflang is fr + it + x-default
   // (-> /fr/enroll).
   { route: '/enroll', locale: 'it', status: 'published', indexable: true },
+
+  // Italian SEO Publication (2026-10-03): /tools/verse-of-the-day, it. The page UI
+  // is fully Italian; the Arabic verse and reference are source text, and the
+  // live Quran.com translation (id 20) stays the English source exactly as on
+  // fr and on the Italian Home/Tajweed pages (italianReligiousSourceLanguagePolicy).
+  // The daily verse is fetched only for a real visitor (navigator.webdriver gate),
+  // so nothing date-dependent is frozen into the static file. Published for fr and
+  // it only: hreflang fr + it + x-default (-> /fr/tools/verse-of-the-day).
+  { route: '/tools/verse-of-the-day', locale: 'it', status: 'published', indexable: true },
 ];
 
 // The URL path to navigate to for one manifest entry, e.g. "/ar/courses/ijazah".

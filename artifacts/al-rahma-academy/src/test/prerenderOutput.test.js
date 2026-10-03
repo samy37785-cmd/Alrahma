@@ -1447,6 +1447,25 @@ const LITERAL_FILES = [
       { name: 'Prova gratuita', item: 'https://al-rahmaacademy.com/it/enroll' },
     ],
   },
+  // Italian SEO Publication (2026-10-03): /tools/verse-of-the-day, fr + it only.
+  {
+    route: '/tools/verse-of-the-day',
+    locale: 'it',
+    relPath: 'it/tools/verse-of-the-day/index.html',
+    expectedCanonical: 'https://al-rahmaacademy.com/it/tools/verse-of-the-day',
+    h1Text: 'Versetto del giorno',
+    expectedEnHref: 'https://al-rahmaacademy.com/tools/verse-of-the-day',
+    expectedArHref: 'https://al-rahmaacademy.com/ar/tools/verse-of-the-day',
+    expectedFrHref: 'https://al-rahmaacademy.com/fr/tools/verse-of-the-day',
+    expectedTitle: 'Versetto del giorno | AL-Rahma Academy',
+    expectedDescription: 'Un versetto del Corano scelto ogni giorno con traduzione — inizia la giornata con le parole di Allah.',
+    breadcrumb: [
+      { name: 'Pagina iniziale', item: 'https://al-rahmaacademy.com/it/' },
+      { name: 'Strumenti', item: 'https://al-rahmaacademy.com/it/tools' },
+      { name: 'Strumenti per la preghiera', item: 'https://al-rahmaacademy.com/it/tools/prayer' },
+      { name: 'Versetto del giorno', item: 'https://al-rahmaacademy.com/it/tools/verse-of-the-day' },
+    ],
+  },
 ];
 
 describe.skipIf(!distExists)('Prerender output (dist/public) — real files on disk, post-build only', () => {
@@ -1917,8 +1936,8 @@ describe.skipIf(!distExists)('Italian Islamic Studies prerender (dist/public) �
     }
   });
 
-  it('unpublished Italian routes still have no Italian file (blog and other tools; hadith, prayer-times and enroll are published)', () => {
-    for (const rel of ['it/resources/blog', 'it/tools/quran-reader', 'it/tools/qibla', 'it/tools/islamic-calendar', 'it/tools/verse-of-the-day', 'it/tools/hifz-review']) {
+  it('unpublished Italian routes still have no Italian file (blog and other tools; hadith, prayer-times, enroll and verse-of-the-day are published)', () => {
+    for (const rel of ['it/resources/blog', 'it/tools/quran-reader', 'it/tools/qibla', 'it/tools/islamic-calendar', 'it/tools/hifz-review']) {
       expect(existsSync(path.join(distDir, rel, 'index.html')), rel).toBe(false);
     }
   });
@@ -2170,7 +2189,7 @@ describe.skipIf(!distExists)('x-default targets are real, canonical, prerendered
   const AFFECTED_X = {
     '/enroll': ['fr', 'it'],
     '/tools/quran-reader': ['fr'],
-    '/tools/verse-of-the-day': ['fr'],
+    '/tools/verse-of-the-day': ['fr', 'it'],
     '/tools/hadith': ['fr', 'it'],
     '/tools/prayer-times': ['fr', 'it'],
   };
@@ -2218,9 +2237,50 @@ describe.skipIf(!distExists)('x-default targets are real, canonical, prerendered
     }
   });
 
-  it('the number of prerendered files is 132 (en 31, ar 31, fr 36, it 34) and /it/enroll is present', () => {
-    expect(published_).toHaveLength(132);
-    expect(['en', 'ar', 'fr', 'it'].map((l) => published_.filter((e) => e.locale === l).length)).toEqual([31, 31, 36, 34]);
+  it('the number of prerendered files is 133 (en 31, ar 31, fr 36, it 35) and /it/enroll is present', () => {
+    expect(published_).toHaveLength(133);
+    expect(['en', 'ar', 'fr', 'it'].map((l) => published_.filter((e) => e.locale === l).length)).toEqual([31, 31, 36, 35]);
     expect(existsSync(path.join(distDir, 'it/enroll/index.html'))).toBe(true);
+  });
+});
+
+// Italian Verse of the Day publication: the raw static file carries the Italian
+// shell and a neutral spinner only; no verse, translation, reference or date.
+describe.skipIf(!distExists)('/it/tools/verse-of-the-day raw prerender HTML — nothing dated or fetched is frozen in', () => {
+  const file = path.join(distDir, 'it/tools/verse-of-the-day/index.html');
+  const html = existsSync(file) ? readFileSync(file, 'utf8') : '';
+  const doc = new JSDOM(html).window.document;
+
+  it('has lang=it dir=ltr, self canonical, index/follow, it_IT, Italian title/description/H1 and one breadcrumb', () => {
+    expect(html).toContain('<html lang="it" dir="ltr">');
+    expect(doc.querySelector('link[rel="canonical"]').getAttribute('href')).toBe('https://al-rahmaacademy.com/it/tools/verse-of-the-day');
+    expect(doc.querySelectorAll('link[rel="canonical"]')).toHaveLength(1);
+    expect(doc.querySelector('meta[name="robots"]').getAttribute('content')).toMatch(/^index, follow/);
+    expect(doc.querySelector('meta[property="og:locale"]').getAttribute('content')).toBe('it_IT');
+    expect(doc.title).toBe('Versetto del giorno | AL-Rahma Academy');
+    expect([...doc.querySelectorAll('h1')].map((h) => h.textContent.trim())).toEqual(['Versetto del giorno']);
+    expect(doc.querySelectorAll('script[data-seo="breadcrumb"]')).toHaveLength(1);
+    expect(html).not.toContain('<html lang="en"');
+  });
+
+  it('has exactly fr, it and one x-default (-> /fr/tools/verse-of-the-day)', () => {
+    const links = [...doc.querySelectorAll('link[rel="alternate"][hreflang]')].map((l) => [l.getAttribute('hreflang'), l.getAttribute('href')]);
+    expect(links).toEqual([
+      ['fr', 'https://al-rahmaacademy.com/fr/tools/verse-of-the-day'],
+      ['it', 'https://al-rahmaacademy.com/it/tools/verse-of-the-day'],
+      ['x-default', 'https://al-rahmaacademy.com/fr/tools/verse-of-the-day'],
+    ]);
+  });
+
+  it('has no verse text, translation, reference, share actions or date', () => {
+    expect(doc.querySelector('.it__spinner')).not.toBeNull();
+    for (const sel of ['.votd-card__arabic', '.votd-card__trans', '.votd-card__ref', '.votd-actions', '.votd-hint', '.it__empty']) {
+      expect(doc.querySelector(sel), sel).toBeNull();
+    }
+    const main = doc.querySelector('#main-content').textContent;
+    expect(main).not.toMatch(/\d{1,3}:\d{1,3}/);
+    expect(main).not.toMatch(/\b(19|20)\d{2}\b/);
+    expect(html).not.toMatch(/quran\.com|api\.quran/i);
+    expect(main).toContain('Prova anche:');
   });
 });

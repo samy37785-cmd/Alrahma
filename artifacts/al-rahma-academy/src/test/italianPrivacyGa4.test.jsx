@@ -110,9 +110,9 @@ describe('GA4 and consent behaviour are untouched', () => {
 describe('publication guard: manifest and sitemap are unchanged', () => {
   it('the Italian privacy page was already published; counts are the baseline', () => {
     expect(PRERENDER_MANIFEST.filter((e) => e.route === '/academy/privacy' && e.locale === 'it')).toHaveLength(1);
-    expect(PRERENDER_MANIFEST.filter((e) => e.locale === 'it')).toHaveLength(34);
+    expect(PRERENDER_MANIFEST.filter((e) => e.locale === 'it')).toHaveLength(35);
     const sitemap = fs.readFileSync(path.resolve(__dirname, '../../public/sitemap.xml'), 'utf8');
-    expect((sitemap.match(/<loc>/g) || []).length).toBe(132);
+    expect((sitemap.match(/<loc>/g) || []).length).toBe(133);
   });
 });
 

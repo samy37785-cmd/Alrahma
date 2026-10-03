@@ -2,6 +2,7 @@
 import useSpeech from '../../../hooks/useSpeech';
 import { useLang } from '../../../context/LangContext';
 import { alphabetGroups } from '../../../data';
+import '../../../styles/alphabet.css';
 
 const stripDiacritics = (s = '') => s.replace(/[ً-ْ]/g, '').trim();
 

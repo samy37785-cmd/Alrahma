@@ -116,7 +116,7 @@ describe('fr, en and ar are unchanged (SHA-256 of the rendered DOM and JSON-LD, 
     expect(crumbScripts()).toHaveLength(1);
     expect(crumb().itemListElement.map((i) => i.name)).toEqual(['Accueil', 'Essai gratuit']);
     cleanup();
-    expect(await snapshot('/fr/enroll')).toBe('a4d90cbf2a71a1dafa1b84ffc29b967570e35930a0c246239d7445c1333c6b0f');
+    expect(await snapshot('/fr/enroll')).toBe('e0f7a911f2c7e2b1e6914db16227a7ca7c63f3cf08f3bf38bc4baaa958f6080c');
   });
 
   it('/enroll (en) and /ar/enroll render no breadcrumb, and are byte-identical to before', async () => {
@@ -127,8 +127,8 @@ describe('fr, en and ar are unchanged (SHA-256 of the rendered DOM and JSON-LD, 
       expect(document.querySelectorAll('.sr-only'), p).toHaveLength(0);
       cleanup();
     }
-    expect(await snapshot('/enroll')).toBe('180e13b09a0617ebd9b9f4d0a3add0bfd6d36fc8c441b07eecf06df16e6d6373');
-    expect(await snapshot('/ar/enroll')).toBe('c29703bb40048d6ed2c4141c3463cf79f9739b9b4113f7e34845c43ba46ea43a');
+    expect(await snapshot('/enroll')).toBe('cbee4de982375a596819de4ee09466a641b06eaf135d67658efbf4744aa2148a');
+    expect(await snapshot('/ar/enroll')).toBe('4972c6c69cfe1f99579f5578e5a3915ce69a4d643c2d6f3351d0c037c0a1415f');
   });
 });
 

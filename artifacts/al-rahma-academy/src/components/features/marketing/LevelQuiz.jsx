@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLang } from '../../../context/LangContext';
 import { LEVEL_QUIZ_STEPS, LEVEL_QUIZ_RECOMMENDATIONS } from '../../../data/home/levelQuiz';
@@ -10,6 +10,7 @@ export default function LevelQuiz() {
   const { lang } = useLang();
   const t = LEVEL_QUIZ_TEXT[lang] || LEVEL_QUIZ_TEXT.en;
   const a11y = pickA11yLabels(lang);
+  const headingId = useId();
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState({});
   const [done, setDone] = useState(false);
@@ -39,9 +40,17 @@ export default function LevelQuiz() {
           {!done ? (
             <>
               <p className="eyebrow lq__eyebrow">{t.eyebrow}</p>
-              <h2 className="lq__heading">{t.heading}</h2>
+              <h2 className="lq__heading" id={headingId}>{t.heading}</h2>
 
-              <div className="lq__progress" aria-label={a11y.quizProgress(step + 1, LEVEL_QUIZ_STEPS.length)}>
+              <div
+                className="lq__progress"
+                role="progressbar"
+                aria-labelledby={headingId}
+                aria-valuemin={1}
+                aria-valuemax={LEVEL_QUIZ_STEPS.length}
+                aria-valuenow={step + 1}
+                aria-valuetext={a11y.quizProgress(step + 1, LEVEL_QUIZ_STEPS.length)}
+              >
                 {LEVEL_QUIZ_STEPS.map((_, i) => (
                   <div
                     key={i}

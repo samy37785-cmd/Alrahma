@@ -162,7 +162,7 @@ export default function Enroll() {
             <>
               {/* ── Emotional header ── */}
               <div className="enroll__header">
-                <p className="eyebrow" style={{ color: 'var(--gold)' }}>{e.eyebrow}</p>
+                <p className="eyebrow">{e.eyebrow}</p>
                 <h1>{e.heading}</h1>
                 <p className="enroll__tagline">{e.tagline}</p>
               </div>

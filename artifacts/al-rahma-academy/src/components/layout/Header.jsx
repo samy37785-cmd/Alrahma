@@ -177,7 +177,7 @@ export default function Header() {
     <>
       <header className={`header${scrolled ? " header--scrolled" : ""}`} id="top">
         <div className="container header__inner">
-          <a href={homeHref()} onClick={handleBrandClick} className="header__brand-link" aria-label={copy.home}>
+          <a href={homeHref()} onClick={handleBrandClick} className="header__brand-link">
             <BrandLockup orientation="horizontal" plain showBismillah={false} size={40} className="header__lockup" />
           </a>
 

@@ -297,15 +297,23 @@
 .alpha__close-btn:hover { border-color: var(--green); color: var(--green-deep); }
 
 /* Progress dots */
+/* Each button is a 24x24 touch target (WCAG 2.5.8); the visible 8px dot is
+   its ::before. The row wraps rather than overflowing on narrow screens. */
 .alpha__dots {
-  display: flex; justify-content: center; gap: 6px; margin-bottom: 8px;
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 0; margin-bottom: 8px;
 }
 .alpha__dot {
-  width: 8px; height: 8px; border-radius: 50%; border: none; cursor: pointer;
-  background: var(--line); padding: 0; transition: background .2s, transform .2s;
+  position: relative; width: 24px; height: 24px; border: none; cursor: pointer;
+  background: transparent; padding: 0; border-radius: 50%;
 }
-.alpha__dot--active { background: var(--green); transform: scale(1.4); }
-.alpha__dot:hover:not(.alpha__dot--active) { background: #a8d5c2; }
+.alpha__dot::before {
+  content: ''; position: absolute; top: 50%; left: 50%;
+  width: 8px; height: 8px; margin: -4px 0 0 -4px; border-radius: 50%;
+  background: var(--line); transition: background .2s, transform .2s;
+}
+.alpha__dot--active::before { background: var(--green); transform: scale(1.4); }
+.alpha__dot:hover:not(.alpha__dot--active)::before { background: #a8d5c2; }
+.alpha__dot:focus-visible { outline: 2px solid var(--green); outline-offset: -2px; }
 .alpha__group-label {
   text-align: center; font-size: .8rem; color: var(--muted);
   letter-spacing: .03em; margin: 0 0 18px; font-weight: 600;
@@ -416,7 +424,7 @@
 .qlc--dark .alpha__nav-count { color: #8fb6a3; }
 .qlc--dark .alpha__close-btn { border-color: #2a4035; color: #8fb6a3; }
 .qlc--dark .alpha__close-btn:hover { border-color: var(--green); color: #d5e8de; }
-.qlc--dark .alpha__dot { background: #2a4035; }
+.qlc--dark .alpha__dot::before { background: #2a4035; }
 .qlc--dark .alpha__recordings {
   background: linear-gradient(135deg, #13241c 0%, #16291f 100%); border-color: #1e3028;
 }

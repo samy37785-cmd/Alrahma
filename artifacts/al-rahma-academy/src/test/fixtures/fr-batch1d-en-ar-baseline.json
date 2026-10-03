@@ -13,7 +13,7 @@
           "htmlLang": "en",
           "htmlDir": "ltr",
           "jsonLd": "3afa227e05647886233dd677e55a4c95c3e1d94362eb7de995a4dd9824de8ec7",
-          "body": "0de7711683b34b28c991b30e4540141b2d29ed8e2f13603ea22490e13ac5431d"
+          "body": "f8b85e7110cd83ae09823d4ad01ce95e6b4639818a6de813d799fabbec148303"
         }
       },
       "ar": {
@@ -27,7 +27,7 @@
           "htmlLang": "ar",
           "htmlDir": "rtl",
           "jsonLd": "5619ac452cefc04c3cc2b3f22371f53fb5f01705163f42b67a65acbc44a1de82",
-          "body": "437d3beb3c9be2c69c442328006933ee23b80896741c2e910d190f08ba29bcf4"
+          "body": "78fcf92e5653de969cd70cd4bb81d0e56eb0e9c137e66cc5c5a499391be7ef94"
         }
       }
     },
@@ -43,7 +43,7 @@
           "htmlLang": "en",
           "htmlDir": "ltr",
           "jsonLd": "ba57e1a4df293c89f227abbf86cebc5e5206304960117c4c9e0b9ad60a49cb30",
-          "body": "a5ea42ded8093c9c97ecc97699f6418aaefef39908f2e2bcb12a1d5e1a62a967"
+          "body": "94768ae8e8542f49caec2dd03c82ec015df0557f577f150e08afbd36dfb2c5dd"
         },
         "trialOpen": {
           "title": "Islamic Tools | AL-Rahma Academy",
@@ -55,7 +55,7 @@
           "htmlLang": "en",
           "htmlDir": "ltr",
           "jsonLd": "ba57e1a4df293c89f227abbf86cebc5e5206304960117c4c9e0b9ad60a49cb30",
-          "body": "20d779fe21e85899c84c7040e52e7ad91b9871a702599d30a6ea834f088927bb"
+          "body": "71a871ca40b25288dd87d43b28b8800b538257dc244492dca13a991897a309fb"
         },
         "trialErrName": {
           "title": "Islamic Tools | AL-Rahma Academy",
@@ -67,7 +67,7 @@
           "htmlLang": "en",
           "htmlDir": "ltr",
           "jsonLd": "ba57e1a4df293c89f227abbf86cebc5e5206304960117c4c9e0b9ad60a49cb30",
-          "body": "3239b917fcb24b6afd93fc52be911de9d2860deecafc8dc0dfeeb4093a4f06d7"
+          "body": "6faf44e20383051cc6000701d5c0f6d429797c7111f7e461891b7a4996d2d683"
         },
         "trialErrEmail": {
           "title": "Islamic Tools | AL-Rahma Academy",
@@ -79,7 +79,7 @@
           "htmlLang": "en",
           "htmlDir": "ltr",
           "jsonLd": "ba57e1a4df293c89f227abbf86cebc5e5206304960117c4c9e0b9ad60a49cb30",
-          "body": "8e33ffaf0013e29e062b406588906f111e1f08cc87108a6a580d30194ec48d26"
+          "body": "a02b239c4ce65e66151877bb56e98966656573cddcb5b8958626f003357369f3"
         },
         "trialFailed": {
           "title": "Islamic Tools | AL-Rahma Academy",
@@ -91,7 +91,7 @@
           "htmlLang": "en",
           "htmlDir": "ltr",
           "jsonLd": "ba57e1a4df293c89f227abbf86cebc5e5206304960117c4c9e0b9ad60a49cb30",
-          "body": "58ea24f6b43744dabd5134946e30db23b00c983a0428e8fd730c8360157d0dbb"
+          "body": "e9db07c42d65f200555b9a043fd7e454cecee9a8c1dde47dfa5df992b8997380"
         },
         "trialDone": {
           "title": "Islamic Tools | AL-Rahma Academy",
@@ -103,7 +103,7 @@
           "htmlLang": "en",
           "htmlDir": "ltr",
           "jsonLd": "ba57e1a4df293c89f227abbf86cebc5e5206304960117c4c9e0b9ad60a49cb30",
-          "body": "77f7d4fc6b528f89c54121b4286d522e54ea4c01cc6fca69f9d17cad10eff27d"
+          "body": "d718ff81a90888ce4c664430e2004cc7ec7747fd20afef1654a6aa397f56ac57"
         }
       },
       "ar": {
@@ -117,7 +117,7 @@
           "htmlLang": "ar",
           "htmlDir": "rtl",
           "jsonLd": "c1749ffe37788c63090333270145832c982269ee1734ecb9dc79d42105fd8e68",
-          "body": "ffcb4b823b4bce4da34fb5b71b945fdd0dc84330068572a5e968f8b964f998ad"
+          "body": "ad6640b1019a917520b8dfd09d6b2a5d0f7dd9e02f67e99941b9d9ed53398427"
         },
         "trialOpen": {
           "title": "أدوات إسلامية | AL-Rahma Academy",
@@ -129,7 +129,7 @@
           "htmlLang": "ar",
           "htmlDir": "rtl",
           "jsonLd": "c1749ffe37788c63090333270145832c982269ee1734ecb9dc79d42105fd8e68",
-          "body": "6171fb1643bdaadd2d79c7739c31da59fc58cf12596ea2504432a4bc09050fe6"
+          "body": "6232eb8543f320a439adfb255e49f7d56e63c8573b8c832cbb7fa66282784b36"
         },
         "trialErrName": {
           "title": "أدوات إسلامية | AL-Rahma Academy",
@@ -141,7 +141,7 @@
           "htmlLang": "ar",
           "htmlDir": "rtl",
           "jsonLd": "c1749ffe37788c63090333270145832c982269ee1734ecb9dc79d42105fd8e68",
-          "body": "c2d81f1067304915b40180ad281caf004cabe56814f46a235b0841b2843435f0"
+          "body": "2542e7f3d3e281ccae817fe3bf0c4dc7b6371a64df874e782dae2b519b7a1fd6"
         },
         "trialErrEmail": {
           "title": "أدوات إسلامية | AL-Rahma Academy",
@@ -153,7 +153,7 @@
           "htmlLang": "ar",
           "htmlDir": "rtl",
           "jsonLd": "c1749ffe37788c63090333270145832c982269ee1734ecb9dc79d42105fd8e68",
-          "body": "b7cc27a51b87b568abbd92258558827e2e3da0c29497c98d37dea06e546b4ae7"
+          "body": "891428d56ecaa0a2f9f5a23d927bafd2056fb188dabd6ed9d983c5f78848ffd2"
         },
         "trialFailed": {
           "title": "أدوات إسلامية | AL-Rahma Academy",
@@ -165,7 +165,7 @@
           "htmlLang": "ar",
           "htmlDir": "rtl",
           "jsonLd": "c1749ffe37788c63090333270145832c982269ee1734ecb9dc79d42105fd8e68",
-          "body": "c550feda353de62aad1ea987b0db1d7eb6ddbe5708f8bac7407b7f8a891fc3af"
+          "body": "e674f85c1acbe5060c9d224d5bb549389da59bab25e60c87cd53d6c670cf1df1"
         },
         "trialDone": {
           "title": "أدوات إسلامية | AL-Rahma Academy",
@@ -177,7 +177,7 @@
           "htmlLang": "ar",
           "htmlDir": "rtl",
           "jsonLd": "c1749ffe37788c63090333270145832c982269ee1734ecb9dc79d42105fd8e68",
-          "body": "cc4894779578e2897e5b2783ab80da95f1eab95afede6feb947a64d9387e9889"
+          "body": "96e75dfdaa79a2486c490eb3a1e84e6a9a6d8a276a6929b2529880a689f14916"
         }
       }
     },
@@ -193,7 +193,7 @@
           "htmlLang": "en",
           "htmlDir": "ltr",
           "jsonLd": "45aa7a56fdb2b202e82d8b9b9c7c3fa28357828a9c4a9c404731e8dccf7cc7d9",
-          "body": "cf78c172d2e13077e7f3b7d26582d397c60af0dcb7801cbb6d584b25b4ebb136"
+          "body": "0703f7038df7e52f4b15acc6f9600b80c772e47ac91bc40960ea4aaaaa4cea96"
         }
       },
       "ar": {
@@ -207,7 +207,7 @@
           "htmlLang": "ar",
           "htmlDir": "rtl",
           "jsonLd": "616dfca019a6062ccc147636a31e525f986f1ddaa13942103cc723c696359cb6",
-          "body": "0d97b9331e09e03a6597f1f8ab6dd5949e745046990f33e3128da5b4bd305ab7"
+          "body": "1f1261e23f0655afae5e32cca01854fcc76bb737ee3c7c285dd449afc76e5bf8"
         }
       }
     },

@@ -61,11 +61,12 @@
 .nav > a:hover { color: var(--gold); background: rgba(255,255,255,.08); }
 .nav__active { color: var(--gold) !important; font-weight: 700; }
 .nav__cta {
-  background: var(--gold); color: #3a2e05 !important;
+  background: var(--gold); color: #241a02 !important; /* 5.55:1 on --gold (was 4.31:1) */
   padding: 9px 20px; border-radius: 999px; font-weight: 600;
   margin-left: 4px;
 }
-.nav__cta:hover { background: var(--gold-dark); }
+/* Hover lightens: the dark ink would drop to 3.9:1 on the darker --gold-dark. */
+.nav__cta:hover { background: var(--p-amber-400); }
 
 /* Skip link styles live in global.css — no duplicate here */
 

@@ -146,8 +146,9 @@ export default function Enroll() {
           work never changes en/ar's rendered output, even invisibly —
           confirmed by a real test run (the baseline's body/JSON-LD hashes
           for Enroll's en/ar states changed the moment this was rendered
-          unconditionally). */}
-      {lang === 'fr' && (
+          unconditionally). it is gated in too: waitForHydratedSeo() needs the same
+          BreadcrumbList for /it/enroll to be prerenderable. */}
+      {(lang === 'fr' || lang === 'it') && (
         <div className="sr-only">
           <Breadcrumbs items={[{ label: t.nav.trial }]} />
         </div>

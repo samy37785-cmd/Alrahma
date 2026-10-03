@@ -188,3 +188,13 @@ describeInBrowser('4. alphabet progress dots: real boxes', () => {
     await close();
   });
 });
+
+describeInBrowser('4b. the restored alphabet learner has no contrast regression', () => {
+  it('the pronunciation chip (.alpha__card-it) is at least 4.5:1', async () => {
+    const { page, close } = await newPage(1440);
+    await page.setContent(html('<div class="alpha"><div class="alpha__cards"><div class="alpha__card"><div class="alpha__card-it">Pronuncia: A</div></div></div></div>'));
+    const { fg, bg } = await colours(page, '.alpha__card-it');
+    expect(ratio(rgb(fg), rgb(bg))).toBeGreaterThanOrEqual(4.5);
+    await close();
+  });
+});

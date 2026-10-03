@@ -98,7 +98,7 @@
 }
 .alpha__card-name { font-weight: 700; font-size: .95rem; color: var(--ink); }
 .alpha__card-it {
-  font-size: .78rem; font-weight: 600; color: var(--gold-dark);
+  font-size: .78rem; font-weight: 600; color: var(--p-amber-700); /* 5.9:1 on #fdf6e3 (--gold-dark was 4.1:1) */
   background: #fdf6e3; border-radius: 6px; padding: 2px 8px;
 }
 .alpha__card-desc {

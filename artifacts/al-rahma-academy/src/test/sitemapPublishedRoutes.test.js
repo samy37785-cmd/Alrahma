@@ -138,8 +138,9 @@ const IT_EXCLUDED_ROUTES = [];
 const IT_ROUTES = ROUTES.filter((route) => !IT_EXCLUDED_ROUTES.includes(route));
 // Italian SEO Publication Gate wave 3 (2026-10-03): /tools/hadith and
 // /tools/prayer-times join it (on top of fr); /enroll joined in the final Italian
-// Enroll publication (2026-10-03). The other FR_ONLY_ROUTES stay unpublished for it.
-const IT_WAVE3_ROUTES = ['/tools/hadith', '/tools/prayer-times', '/enroll', '/tools/verse-of-the-day'];
+// Enroll publication, /tools/verse-of-the-day and /tools/quran-reader in their own
+// publications (all 2026-10-03). Every FR_ONLY_ROUTES entry is now published for it.
+const IT_WAVE3_ROUTES = ['/tools/hadith', '/tools/prayer-times', '/enroll', '/tools/verse-of-the-day', '/tools/quran-reader'];
 const EXPECTED_IT_URLS = [...IT_ROUTES, ...IT_WAVE3_ROUTES].map((route) => ORIGIN + pathForLocale(route, 'it'));
 const EXPECTED_URLS = [...EXPECTED_EN_URLS, ...EXPECTED_AR_URLS, ...EXPECTED_FR_URLS, ...EXPECTED_IT_URLS];
 
@@ -174,7 +175,7 @@ describe('sitemap.xml — exact published-routes whitelist', () => {
     expect(getLocUrls()).toHaveLength(EXPECTED_URLS.length);
   });
 
-  it('splits into exactly 31 EN, 31 AR, 36 FR and 35 IT URLs', () => {
+  it('splits into exactly 31 EN, 31 AR, 36 FR and 36 IT URLs', () => {
     const locs = getLocUrls();
     const byPrefix = (l) => locs.filter((u) => u.startsWith(`${ORIGIN}/${l}/`) || u === `${ORIGIN}/${l}`);
     const arUrls = byPrefix('ar');
@@ -192,8 +193,8 @@ describe('sitemap.xml — exact published-routes whitelist', () => {
     expect(frUrls).toHaveLength(36);
     // Italian Islamic Studies SEO Publication (2026-09-30, concurrent PR):
     // it now publishes every route in ROUTES, IT_EXCLUDED_ROUTES is empty.
-    expect(itUrls).toHaveLength(35);
-    expect(locs).toHaveLength(133);
+    expect(itUrls).toHaveLength(36);
+    expect(locs).toHaveLength(134);
   });
 
   it('has no duplicate URLs', () => {
@@ -230,7 +231,7 @@ describe('sitemap.xml — exact published-routes whitelist', () => {
   // of these 5 routes (see scripts/prerender-routes.mjs's own comment on
   // this exact wave for why: en/ar/it publication of these routes is a
   // separate, un-revisited decision).
-  it('publishes verse-of-the-day, quran-reader, hadith, prayer-times and enroll for /fr/, never en/ar; it only for hadith, prayer-times, enroll and verse-of-the-day', () => {
+  it('publishes verse-of-the-day, quran-reader, hadith, prayer-times and enroll for /fr/, never en/ar; it for all five too', () => {
     const locs = getLocUrls();
     for (const route of FR_ONLY_ROUTES) {
       expect(locs).toContain(`${ORIGIN}/fr${route}`);

@@ -19,7 +19,7 @@ const urlOf = (route, locale) => ORIGIN + (locale === 'en' ? route : route === '
 
 const AFFECTED = {
   '/enroll': ['fr', 'it'],
-  '/tools/quran-reader': ['fr'],
+  '/tools/quran-reader': ['fr', 'it'],
   '/tools/verse-of-the-day': ['fr', 'it'],
   '/tools/hadith': ['fr', 'it'],
   '/tools/prayer-times': ['fr', 'it'],
@@ -101,7 +101,7 @@ describe('publication is untouched', () => {
     const xml = fs.readFileSync(path.resolve(__dirname, '../../public/sitemap.xml'), 'utf8');
     const locs = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
     expect(locs.sort()).toEqual(published.map(canonicalUrlFor).sort());
-    expect(locs).toHaveLength(133);
-    expect(locs.filter((u) => u.startsWith(`${ORIGIN}/it/`))).toHaveLength(35);
+    expect(locs).toHaveLength(134);
+    expect(locs.filter((u) => u.startsWith(`${ORIGIN}/it/`))).toHaveLength(36);
   });
 });

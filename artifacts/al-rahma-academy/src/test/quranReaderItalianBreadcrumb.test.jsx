@@ -15,7 +15,7 @@ import { PRERENDER_MANIFEST } from '../../scripts/prerender-routes.mjs';
 // same visually-hidden breadcrumb as /fr/tools/quran-reader, which also writes the
 // BreadcrumbList JSON-LD that scripts/prerender.mjs's waitForHydratedSeo() requires on
 // every non-Home route (same pattern as /it/enroll). en, ar, es and de are unchanged.
-// Nothing is published here.
+// (Published afterwards by its own PR.)
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 useFullPageEnvironment();
@@ -161,14 +161,14 @@ describe('prerender safety: the new breadcrumb adds nothing dynamic', () => {
   });
 });
 
-describe('nothing is published by this change', () => {
-  it('/it/tools/quran-reader has no manifest entry and no sitemap URL; the sitemap is unchanged (133, IT 35)', () => {
-    expect(PRERENDER_MANIFEST.some((e) => e.route === '/tools/quran-reader' && e.locale === 'it')).toBe(false);
-    expect(PRERENDER_MANIFEST.filter((e) => e.route === '/tools/quran-reader').map((e) => e.locale)).toEqual(['fr']);
+describe('publication (done by the Italian Quran Reader SEO Publication, after this prerequisite)', () => {
+  it('/it/tools/quran-reader has exactly one manifest entry and one sitemap URL (134 total, IT 36)', () => {
+    expect(PRERENDER_MANIFEST.filter((e) => e.route === '/tools/quran-reader' && e.locale === 'it')).toHaveLength(1);
+    expect(PRERENDER_MANIFEST.filter((e) => e.route === '/tools/quran-reader').map((e) => e.locale)).toEqual(['fr', 'it']);
     const xml = fs.readFileSync(path.resolve(__dirname, '../../public/sitemap.xml'), 'utf8');
     const locs = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
-    expect(locs).toHaveLength(133);
-    expect(locs.filter((u) => u.includes('/it/'))).toHaveLength(35);
-    expect(locs.some((u) => u.endsWith('/it/tools/quran-reader'))).toBe(false);
+    expect(locs).toHaveLength(134);
+    expect(locs.filter((u) => u.includes('/it/'))).toHaveLength(36);
+    expect(locs.filter((u) => u.endsWith('/it/tools/quran-reader'))).toHaveLength(1);
   });
 });

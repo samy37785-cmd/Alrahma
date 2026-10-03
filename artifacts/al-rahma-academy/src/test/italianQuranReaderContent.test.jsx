@@ -16,8 +16,8 @@ import { VERSE_CARD_MODAL_TEXT } from '../i18n/quran/verseCardModal';
 import { KBD_SIDE_PANEL_TEXT, pickKbdSidePanel } from '../i18n/quran/kbdSidePanel';
 import { PRERENDER_MANIFEST } from '../../scripts/prerender-routes.mjs';
 
-// Italian Quran Reader content readiness. Content only: /it/tools/quran-reader
-// is NOT published here (no manifest entry, no sitemap URL). The Arabic verse
+// Italian Quran Reader content readiness (published later by its own SEO PR): /it/tools/quran-reader
+// was NOT published by the PR that added this file (no manifest entry, no sitemap URL). The Arabic verse
 // text, references, reciters, Quran.com endpoints and the audio/fetch/cache
 // logic are untouched; no Italian translation of the Quran is invented (the
 // reader keeps offering the existing Quran.com translation list, whose names
@@ -402,13 +402,16 @@ describe('Italian page metadata, loading and error states', () => {
   });
 });
 
-describe('nothing is published by this change', () => {
-  it('/it/tools/quran-reader has no manifest entry and no sitemap URL; sitemap stays 133 (IT 35)', () => {
-    expect(PRERENDER_MANIFEST.filter((e) => e.route === '/tools/quran-reader' && e.status === 'published').map((e) => e.locale)).toEqual(['fr']);
+describe('publication (Italian Quran Reader SEO Publication, after this content landed)', () => {
+  it('/it/tools/quran-reader has exactly one manifest entry and one sitemap URL (134 total, IT 36), next to fr', () => {
+    expect(PRERENDER_MANIFEST.filter((e) => e.route === '/tools/quran-reader' && e.status === 'published').map((e) => e.locale)).toEqual(['fr', 'it']);
     const xml = fs.readFileSync(path.resolve(__dirname, '../../public/sitemap.xml'), 'utf8');
     const locs = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
-    expect(locs).toHaveLength(133);
-    expect(locs.filter((u) => u.includes('/it/'))).toHaveLength(35);
-    expect(locs.filter((u) => u.endsWith('/tools/quran-reader'))).toEqual(['https://al-rahmaacademy.com/fr/tools/quran-reader']);
+    expect(locs).toHaveLength(134);
+    expect(locs.filter((u) => u.includes('/it/'))).toHaveLength(36);
+    expect(locs.filter((u) => u.endsWith('/tools/quran-reader')).sort()).toEqual([
+      'https://al-rahmaacademy.com/fr/tools/quran-reader',
+      'https://al-rahmaacademy.com/it/tools/quran-reader',
+    ]);
   });
 });

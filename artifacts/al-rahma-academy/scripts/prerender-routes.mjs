@@ -438,6 +438,14 @@ export const PRERENDER_MANIFEST = [
   // so nothing date-dependent is frozen into the static file. Published for fr and
   // it only: hreflang fr + it + x-default (-> /fr/tools/verse-of-the-day).
   { route: '/tools/verse-of-the-day', locale: 'it', status: 'published', indexable: true },
+
+  // Italian Quran Reader SEO Publication (2026-10-03): /tools/quran-reader, fr + it
+  // only. Content came from the Italian Quran Reader content readiness PR (#182) and
+  // the hidden-breadcrumb prerequisite from #183 (waitForHydratedSeo needs the
+  // BreadcrumbList). The reader fetches nothing under navigator.webdriver, so the
+  // static file is the neutral Italian shell: no verse, translation, tafsir, audio
+  // URL or user state. hreflang fr + it + x-default (-> /fr/tools/quran-reader).
+  { route: '/tools/quran-reader', locale: 'it', status: 'published', indexable: true },
 ];
 
 // The URL path to navigate to for one manifest entry, e.g. "/ar/courses/ijazah".

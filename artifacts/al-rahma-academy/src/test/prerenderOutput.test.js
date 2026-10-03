@@ -1466,6 +1466,26 @@ const LITERAL_FILES = [
       { name: 'Versetto del giorno', item: 'https://al-rahmaacademy.com/it/tools/verse-of-the-day' },
     ],
   },
+  // Italian SEO Publication (2026-10-03): /tools/quran-reader, fr + it only.
+  {
+    route: '/tools/quran-reader',
+    locale: 'it',
+    relPath: 'it/tools/quran-reader/index.html',
+    expectedCanonical: 'https://al-rahmaacademy.com/it/tools/quran-reader',
+    // The reader's own chapter fetch is skipped for this capture, so the general
+    // page title (not a surah name) is the h1, as on /fr/.
+    h1Text: 'Centro di apprendimento del Corano',
+    expectedEnHref: 'https://al-rahmaacademy.com/tools/quran-reader',
+    expectedArHref: 'https://al-rahmaacademy.com/ar/tools/quran-reader',
+    expectedFrHref: 'https://al-rahmaacademy.com/fr/tools/quran-reader',
+    expectedTitle: 'Leggi e ascolta il Corano | AL-Rahma Academy',
+    expectedDescription: 'Leggi, ascolta e memorizza il Sacro Corano con traduzioni, tafsir, modalità di memorizzazione e scorciatoie da tastiera.',
+    breadcrumb: [
+      { name: 'Pagina iniziale', item: 'https://al-rahmaacademy.com/it/' },
+      { name: 'Strumenti Islamici', item: 'https://al-rahmaacademy.com/it/tools' },
+      { name: 'Lettore del Corano', item: 'https://al-rahmaacademy.com/it/tools/quran-reader' },
+    ],
+  },
 ];
 
 describe.skipIf(!distExists)('Prerender output (dist/public) — real files on disk, post-build only', () => {
@@ -1936,8 +1956,8 @@ describe.skipIf(!distExists)('Italian Islamic Studies prerender (dist/public) �
     }
   });
 
-  it('unpublished Italian routes still have no Italian file (blog and other tools; hadith, prayer-times, enroll and verse-of-the-day are published)', () => {
-    for (const rel of ['it/resources/blog', 'it/tools/quran-reader', 'it/tools/qibla', 'it/tools/islamic-calendar', 'it/tools/hifz-review']) {
+  it('unpublished Italian routes still have no Italian file (blog and other tools; hadith, prayer-times, enroll, verse-of-the-day and quran-reader are published)', () => {
+    for (const rel of ['it/resources/blog', 'it/tools/qibla', 'it/tools/islamic-calendar', 'it/tools/hifz-review']) {
       expect(existsSync(path.join(distDir, rel, 'index.html')), rel).toBe(false);
     }
   });
@@ -2188,7 +2208,7 @@ describe.skipIf(!distExists)('x-default targets are real, canonical, prerendered
   const published_ = PRERENDER_MANIFEST.filter((e) => e.status === 'published');
   const AFFECTED_X = {
     '/enroll': ['fr', 'it'],
-    '/tools/quran-reader': ['fr'],
+    '/tools/quran-reader': ['fr', 'it'],
     '/tools/verse-of-the-day': ['fr', 'it'],
     '/tools/hadith': ['fr', 'it'],
     '/tools/prayer-times': ['fr', 'it'],
@@ -2237,9 +2257,9 @@ describe.skipIf(!distExists)('x-default targets are real, canonical, prerendered
     }
   });
 
-  it('the number of prerendered files is 133 (en 31, ar 31, fr 36, it 35) and /it/enroll is present', () => {
-    expect(published_).toHaveLength(133);
-    expect(['en', 'ar', 'fr', 'it'].map((l) => published_.filter((e) => e.locale === l).length)).toEqual([31, 31, 36, 35]);
+  it('the number of prerendered files is 134 (en 31, ar 31, fr 36, it 36) and /it/enroll is present', () => {
+    expect(published_).toHaveLength(134);
+    expect(['en', 'ar', 'fr', 'it'].map((l) => published_.filter((e) => e.locale === l).length)).toEqual([31, 31, 36, 36]);
     expect(existsSync(path.join(distDir, 'it/enroll/index.html'))).toBe(true);
   });
 });
@@ -2282,5 +2302,68 @@ describe.skipIf(!distExists)('/it/tools/verse-of-the-day raw prerender HTML — 
     expect(main).not.toMatch(/\b(19|20)\d{2}\b/);
     expect(html).not.toMatch(/quran\.com|api\.quran/i);
     expect(main).toContain('Prova anche:');
+  });
+});
+
+// Italian Quran Reader publication: the raw static file carries the Italian shell and
+// the Italian breadcrumb only; nothing the reader fetches, plays, records or stores
+// is frozen into it.
+describe.skipIf(!distExists)('/it/tools/quran-reader raw prerender HTML — nothing fetched, dated or user-specific is frozen in', () => {
+  const file = path.join(distDir, 'it/tools/quran-reader/index.html');
+  const html = existsSync(file) ? readFileSync(file, 'utf8') : '';
+  const doc = new JSDOM(html).window.document;
+  const frFile = path.join(distDir, 'fr/tools/quran-reader/index.html');
+  const frDoc = new JSDOM(existsSync(frFile) ? readFileSync(frFile, 'utf8') : '').window.document;
+  const alternates = (d) => [...d.querySelectorAll('link[rel="alternate"][hreflang]')].map((l) => [l.getAttribute('hreflang'), l.getAttribute('href')]);
+
+  it('has lang=it dir=ltr, self canonical, index/follow, it_IT, Italian title/description/H1 and is not the home shell', () => {
+    expect(html).toContain('<html lang="it" dir="ltr">');
+    expect(html).not.toContain('<html lang="en"');
+    expect(doc.querySelector('link[rel="canonical"]').getAttribute('href')).toBe('https://al-rahmaacademy.com/it/tools/quran-reader');
+    expect(doc.querySelectorAll('link[rel="canonical"]')).toHaveLength(1);
+    expect(doc.querySelector('meta[name="robots"]').getAttribute('content')).toMatch(/^index, follow/);
+    expect(doc.querySelector('meta[property="og:locale"]').getAttribute('content')).toBe('it_IT');
+    expect([...doc.querySelectorAll('meta[property="og:locale:alternate"]')].map((m) => m.getAttribute('content'))).toEqual(['fr_FR']);
+    expect([...frDoc.querySelectorAll('meta[property="og:locale:alternate"]')].map((m) => m.getAttribute('content'))).toEqual(['it_IT']);
+    expect(doc.title).toBe('Leggi e ascolta il Corano | AL-Rahma Academy');
+    expect(doc.querySelector('meta[name="description"]').getAttribute('content')).toMatch(/^Leggi, ascolta e memorizza il Sacro Corano/);
+    expect([...doc.querySelectorAll('h1')].map((h) => h.textContent.trim())).toEqual(['Centro di apprendimento del Corano']);
+    expect(doc.title).not.toMatch(/Learn the Quran Online/);
+  });
+
+  it('has exactly one Italian BreadcrumbList with valid JSON-LD', () => {
+    const scripts = [...doc.querySelectorAll('script[data-seo="breadcrumb"]')];
+    expect(scripts).toHaveLength(1);
+    const ld = JSON.parse(scripts[0].textContent);
+    expect(ld['@type']).toBe('BreadcrumbList');
+    expect(ld.itemListElement.map((i) => [i.name, i.item])).toEqual([
+      ['Pagina iniziale', 'https://al-rahmaacademy.com/it/'],
+      ['Strumenti Islamici', 'https://al-rahmaacademy.com/it/tools'],
+      ['Lettore del Corano', 'https://al-rahmaacademy.com/it/tools/quran-reader'],
+    ]);
+    for (const s of doc.querySelectorAll('script[type="application/ld+json"]')) expect(() => JSON.parse(s.textContent)).not.toThrow();
+  });
+
+  it('has exactly fr, it and one x-default (-> /fr/tools/quran-reader), identical on the French page', () => {
+    const expected = [
+      ['fr', 'https://al-rahmaacademy.com/fr/tools/quran-reader'],
+      ['it', 'https://al-rahmaacademy.com/it/tools/quran-reader'],
+      ['x-default', 'https://al-rahmaacademy.com/fr/tools/quran-reader'],
+    ];
+    expect(alternates(doc)).toEqual(expected);
+    expect(alternates(frDoc)).toEqual(expected);
+    expect(frDoc.querySelector('link[rel="canonical"]').getAttribute('href')).toBe('https://al-rahmaacademy.com/fr/tools/quran-reader');
+  });
+
+  it('has no fetched verse, translation, tafsir, audio, recording, progress, user state or build-day data', () => {
+    for (const sel of ['.qlc__arabic', '.qlc__chapter-ar', '.qlc__tafsir-panel', '.qlc__verse', 'audio', '.qlc__khatm', '.qlc__studio']) {
+      expect(doc.querySelector(sel), sel).toBeNull();
+    }
+    const body = doc.body.textContent;
+    expect(body).not.toMatch(/\d{1,3}:\d{1,3}/);
+    expect(body).not.toMatch(/\d+\/114/);
+    expect(body).not.toMatch(/\b(19|20)\d{2}\b/);
+    expect(html).not.toMatch(/quran\.com|quranicaudio|verses\.quran|api\.quran/i);
+    expect(doc.querySelector('input[type="search"], input[value]:not([value=""])')).toBeNull();
   });
 });

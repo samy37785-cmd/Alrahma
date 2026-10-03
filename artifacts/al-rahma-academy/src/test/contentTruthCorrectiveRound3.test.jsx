@@ -408,12 +408,14 @@ describe('llms.txt and index.html stay in sync with siteFacts (static files, Par
     }
   });
 
-  it('llms.txt is otherwise unchanged: every other link and every EN line is intact', () => {
+  // Multilingual llms.txt accuracy: the link COUNT is no longer pinned here (it is a curated
+  // list that changes with publication); llmsPublishedRoutes.test.js proves every link is a
+  // published, sitemap-listed route instead.
+  it('llms.txt keeps the English home line and the official contact lines', () => {
     const txt = fs.readFileSync(path.join(REPO_ROOT, 'public', 'llms.txt'), 'utf8');
     expect(txt).toContain('[Home](https://al-rahmaacademy.com/): Overview of courses, pricing and the free trial.');
     expect(txt).toContain('WhatsApp: +20 103 955 3264');
     expect(txt).toContain('Email: alrahmaacademy038@gmail.com');
-    expect(txt.match(/\(https:\/\/al-rahmaacademy\.com[^)]*\)/g)).toHaveLength(17);
   });
 
   // index.html's static SPA-shell hreflang block deliberately still carries

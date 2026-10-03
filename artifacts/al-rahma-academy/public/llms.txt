@@ -2,30 +2,76 @@
 
 > Al-Rahma Academy teaches the Holy Quran, Arabic and Islamic studies online through one-to-one live lessons with certified Al-Azhar tutors, for children and adults across Europe and worldwide. One free 60-minute trial lesson, flexible scheduling, female tutors available.
 
-## Main pages
-- [Home](https://al-rahmaacademy.com/): Overview of courses, pricing and the free trial.
+Canonical domain: https://al-rahmaacademy.com
+Complete list of published pages: https://al-rahmaacademy.com/sitemap.xml (this file is a short, hand-picked guide; the sitemap is the exhaustive list and the source of truth for which pages exist).
+
+## Published languages
+The site is published and indexable in four languages. Each non-English language has its own landing page and URL prefix.
+- [Home](https://al-rahmaacademy.com/): Overview of courses, pricing and the free trial. English is the default language.
+- [Arabic / العربية](https://al-rahmaacademy.com/ar/): Arabic landing page, right-to-left (تعلم القرآن الكريم أونلاين).
+- [French / Français](https://al-rahmaacademy.com/fr/): French landing page (Apprendre le Coran en ligne).
+- [Italian / Italiano](https://al-rahmaacademy.com/it/): Italian landing page (Impara il Corano online).
+
+Other interface languages are not published for search and are not listed here. A few pages are published only in French and Italian (the enrollment page and some tools); they are listed under those languages below.
+
+## Main pages (English)
 - [About](https://al-rahmaacademy.com/academy/about): Mission, vision and values of the academy.
 - [Teachers](https://al-rahmaacademy.com/academy/teachers): Certified Al-Azhar tutors and their specialties.
 - [FAQ](https://al-rahmaacademy.com/resources/faq): Answers about lessons, pricing, trials and certificates.
-- [Free Trial / Enrollment](https://al-rahmaacademy.com/enroll): Book your free trial lesson.
 
-## Courses
+## Courses (English)
 - [Courses Hub](https://al-rahmaacademy.com/courses): All available courses.
 - [Quran & Tajweed](https://al-rahmaacademy.com/courses/quran): Quran reading, Tajweed and Hifz programme.
-- [Arabic Language](https://al-rahmaacademy.com/courses/arabic): Modern Standard Arabic for all levels.
+- [Arabic](https://al-rahmaacademy.com/courses/arabic): Arabic alphabet course: the Arabic letters with audio pronunciation and exercises.
 - [Ijazah Certification](https://al-rahmaacademy.com/courses/ijazah): Quran memorization and recitation with a connected chain (sanad).
-- [Islamic Studies](https://al-rahmaacademy.com/courses/islamic-studies): Fiqh, Aqeedah, Seerah and Arabic.
+- [Islamic Studies](https://al-rahmaacademy.com/courses/islamic-studies): Aqeedah, Fiqh, Seerah, Hadith and Tafsir.
 
-## Tools
-- [Tools Hub](https://al-rahmaacademy.com/tools): All Islamic tools.
-- [Quran Reader](https://al-rahmaacademy.com/tools/quran-reader): Full Quran reader with Hifz tracker.
-- [Adhkar](https://al-rahmaacademy.com/tools/adhkar): Daily remembrances (Azkar).
-- [Hadith Library](https://al-rahmaacademy.com/tools/hadith): Searchable hadith collections.
-- [Prayer Times](https://al-rahmaacademy.com/tools/prayer): Prayer times, Qibla and Islamic calendar.
-- [Blog](https://al-rahmaacademy.com/resources/blog): Articles on Quran learning, Tajweed and Arabic.
+## Islamic tools (English)
+- [Tools Hub](https://al-rahmaacademy.com/tools): Free Islamic tools.
+- [Prayer & Islamic Tools](https://al-rahmaacademy.com/tools/prayer): Prayer times, Qibla compass, Islamic calendar and Verse of the Day.
+- [Adhkar & Du'a Library](https://al-rahmaacademy.com/tools/adhkar): Daily remembrances and supplications.
+- [Tajweed Checker](https://al-rahmaacademy.com/tools/tajweed-checker): AI Tajweed Checker for recitation practice.
+- [Tasbeeh Counter](https://al-rahmaacademy.com/tools/tasbeeh): Digital tasbeeh counter.
+- [Arabic Alphabet](https://al-rahmaacademy.com/tools/arabic-alphabet): Learn the Arabic letters.
 
-## Locale pages (pre-rendered)
-- [French landing page](https://al-rahmaacademy.com/fr/): Same academy, presented in French — one of 29 pages actually pre-rendered in French (see the site's sitemap.xml for the full list).
+## Academy and policies (English)
+- [Privacy Policy](https://al-rahmaacademy.com/academy/privacy)
+- [Terms of Service](https://al-rahmaacademy.com/academy/terms)
+- [Refund Policy](https://al-rahmaacademy.com/academy/refund-policy)
+
+## Arabic (العربية)
+- [Courses](https://al-rahmaacademy.com/ar/courses): الدورات.
+- [Quran & Tajweed](https://al-rahmaacademy.com/ar/courses/quran): القرآن والتجويد.
+- [Teachers](https://al-rahmaacademy.com/ar/academy/teachers): المعلمون.
+- [FAQ](https://al-rahmaacademy.com/ar/resources/faq): الأسئلة الشائعة.
+- [Tools Hub](https://al-rahmaacademy.com/ar/tools): الأدوات الإسلامية.
+- [Prayer & Islamic Tools](https://al-rahmaacademy.com/ar/tools/prayer): الصلاة والأدوات الإسلامية.
+- [Tajweed Checker](https://al-rahmaacademy.com/ar/tools/tajweed-checker): مدقق التجويد.
+
+## French (Français)
+- [Inscription / cours d'essai gratuit](https://al-rahmaacademy.com/fr/enroll): Réserver le cours d'essai gratuit.
+- [Cours](https://al-rahmaacademy.com/fr/courses): Cours de Coran et de sciences islamiques.
+- [Outils islamiques](https://al-rahmaacademy.com/fr/tools): Outils gratuits.
+- [Lecteur du Coran](https://al-rahmaacademy.com/fr/tools/quran-reader): Lire et écouter le Coran.
+- [Hadiths](https://al-rahmaacademy.com/fr/tools/hadith): Bibliothèque de hadiths.
+- [Horaires de prière](https://al-rahmaacademy.com/fr/tools/prayer-times)
+- [Verset du jour](https://al-rahmaacademy.com/fr/tools/verse-of-the-day)
+- [FAQ](https://al-rahmaacademy.com/fr/resources/faq): Questions fréquentes.
+
+## Italian (Italiano)
+- [Iscrizione / lezione di prova gratuita](https://al-rahmaacademy.com/it/enroll): Prenota la lezione di prova gratuita.
+- [Corsi](https://al-rahmaacademy.com/it/courses): Corsi di Corano e scienze islamiche.
+- [Strumenti Islamici](https://al-rahmaacademy.com/it/tools): Strumenti gratuiti.
+- [Lettore del Corano](https://al-rahmaacademy.com/it/tools/quran-reader): Leggi e ascolta il Corano.
+- [Hadith](https://al-rahmaacademy.com/it/tools/hadith): Biblioteca degli Hadith.
+- [Orari di preghiera](https://al-rahmaacademy.com/it/tools/prayer-times)
+- [Versetto del giorno](https://al-rahmaacademy.com/it/tools/verse-of-the-day)
+- [Domande frequenti](https://al-rahmaacademy.com/it/resources/faq): Domande frequenti.
+
+## Source and content notes
+- Arabic Quran text, translations, tafsir and recitation audio shown in the Quran tools are served live by external providers (for example the Quran.com API and alquran.cloud); the academy does not author them.
+- The hadith library loads its collections from a public open-source hadith dataset; the Arabic text is the classical original and the English text is a translation.
+- Tools are learning aids. They are not fatwas and do not replace a qualified teacher.
 
 ## Contact
 - WhatsApp: +20 103 955 3264

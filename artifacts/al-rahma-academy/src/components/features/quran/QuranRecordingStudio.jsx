@@ -78,7 +78,7 @@ export default function QuranRecordingStudio({ activeId, fromV, toV, verses, aud
         )}
       </div>
 
-      {error && <p className="qlc__studio-error">⚠ {error}</p>}
+      {error && <p className="qlc__studio-error">⚠ {ui.recordingErrors?.[error] || error}</p>}
 
       <ul className="qlc__studio-list">
         {recordings.length === 0 && (

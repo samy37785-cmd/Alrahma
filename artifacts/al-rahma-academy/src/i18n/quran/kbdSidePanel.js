@@ -5,9 +5,9 @@
 // (The ShortcutsModal beside it already reads from ./controlsPanels.js.)
 //
 // `ar` is the exact text the component rendered before this change, and
-// every language except French keeps seeing it (en/ar/it unchanged). Only
-// `fr` is new. Keys ('Space', '← →', ...) are the physical keys and are
-// never translated.
+// every language except French and Italian keeps seeing it (en/ar
+// unchanged). `fr` and `it` are new. Keys ('Space', '← →', ...) are the
+// physical keys and are never translated.
 export const KBD_SIDE_PANEL_TEXT = {
   ar: {
     dir: 'rtl',
@@ -43,8 +43,26 @@ export const KBD_SIDE_PANEL_TEXT = {
       'Esc': 'Fermer / Arrêter',
     },
   },
+  it: {
+    dir: 'ltr',
+    tab: 'Tasti',
+    title: '⌨ Scorciatoie da tastiera',
+    close: 'Chiudi ✕',
+    rows: {
+      'Space': 'Riproduci / Pausa',
+      '← →': 'Sura precedente / successiva',
+      '+ / −': 'Dimensione del testo',
+      'T': 'Mostra/nascondi la traduzione',
+      'D': 'Tema scuro',
+      'G': 'Impostazioni',
+      '?': 'Tutte le scorciatoie',
+      'P': 'Stampa',
+      'Esc': 'Chiudi / Ferma',
+    },
+  },
 };
 
 export function pickKbdSidePanel(lang) {
+  if (lang === 'it') return KBD_SIDE_PANEL_TEXT.it;
   return lang === 'fr' ? KBD_SIDE_PANEL_TEXT.fr : KBD_SIDE_PANEL_TEXT.ar;
 }

@@ -62,8 +62,8 @@ export default function QuranReadingControls({
             value={tafsirId}
             onChange={(e) => onTafsirChange(Number(e.target.value))}
           >
-            <option value={0}>— اختر تفسيراً —</option>
-            <optgroup label="تفاسير عربية">
+            <option value={0}>{ui.tafsirChoose || '— اختر تفسيراً —'}</option>
+            <optgroup label={ui.tafsirGroupArabic || 'تفاسير عربية'}>
               {TAFASEER.filter((t) => t.lang === 'ar').map((t) => (
                 <option key={t.id} value={t.id}>{t.name}</option>
               ))}

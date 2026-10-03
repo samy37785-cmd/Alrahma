@@ -4,7 +4,7 @@
 //
 // `en` is the exact text the component rendered before this change (`quran`
 // is the same "Quran ·" reference label used both inline and inside the
-// share text/printable card). Only `fr` is added; every other language
+// share text/printable card). `fr` and `it` are added; every other language
 // keeps seeing the same English text.
 export const VERSE_CARD_MODAL_TEXT = {
   en: {
@@ -27,8 +27,19 @@ export const VERSE_CARD_MODAL_TEXT = {
     linkCopied: 'Lien du verset copié !',
     quran: 'Coran',
   },
+  it: {
+    dialogLabel: 'Condividi questo versetto',
+    close: 'Chiudi',
+    share: '🔗 Condividi',
+    copyLink: '📋 Copia il link',
+    saveAsImage: '🖨️ Salva come immagine',
+    hint: 'Fai uno screenshot della scheda qui sopra per condividerla su Instagram o WhatsApp.',
+    linkCopied: 'Link del versetto copiato!',
+    quran: 'Corano',
+  },
 };
 
 export function pickVerseCardModal(lang) {
+  if (lang === 'it') return VERSE_CARD_MODAL_TEXT.it;
   return lang === 'fr' ? VERSE_CARD_MODAL_TEXT.fr : VERSE_CARD_MODAL_TEXT.en;
 }

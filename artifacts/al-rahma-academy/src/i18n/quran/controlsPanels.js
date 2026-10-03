@@ -7,8 +7,9 @@
 // of that per-page reading-controls `ui` object, scoped to just these two
 // panels.
 //
-// `en` is the exact text the components rendered before this change. Only
-// `fr` is added; every other language keeps seeing the same English text.
+// `en` is the exact text the components rendered before this change. `fr`
+// and `it` are added; every other language keeps seeing the same English
+// text.
 export const CONTROLS_PANELS_TEXT = {
   en: {
     settingsTitle: '⚙ Settings',
@@ -80,8 +81,44 @@ export const CONTROLS_PANELS_TEXT = {
       print: 'Imprimer',
     },
   },
+  it: {
+    settingsTitle: '⚙ Impostazioni',
+    arabicFontSize: 'Dimensione del testo arabo',
+    readingTheme: 'Tema di lettura',
+    lineSpacing: 'Interlinea',
+    contentWidth: 'Larghezza del contenuto',
+    widths: { narrow: 'Stretta', medium: 'Media', wide: 'Ampia' },
+    themes: { light: 'Chiaro', sepia: 'Seppia', dark: 'Scuro' },
+    appearance: 'Aspetto',
+    darkMode: '🌙 Tema scuro',
+    showTranslation: '🌐 Mostra la traduzione',
+    shortcutsHintPre: 'Premi',
+    shortcutsHintMid: 'per vedere tutte le scorciatoie ·',
+    shortcutsHintSide: 'pannello laterale',
+    shortcutsTitle: '⌨ Scorciatoie da tastiera',
+    groups: {
+      playback: 'Riproduzione',
+      navigation: 'Navigazione',
+      display: 'Visualizzazione',
+      panels: 'Pannelli',
+    },
+    items: {
+      playPause: 'Riproduci / Pausa',
+      stop: 'Ferma',
+      prevNextSurah: 'Sura precedente / successiva',
+      jumpToSurah: 'Vai a una sura',
+      fontSize: 'Dimensione del testo',
+      toggleTranslation: 'Mostra/nascondi la traduzione',
+      darkModeItem: 'Tema scuro',
+      shortcuts: 'Scorciatoie',
+      settings: 'Impostazioni',
+      sideShortcuts: 'Scorciatoie nel pannello laterale',
+      print: 'Stampa',
+    },
+  },
 };
 
 export function pickControlsPanels(lang) {
+  if (lang === 'it') return CONTROLS_PANELS_TEXT.it;
   return lang === 'fr' ? CONTROLS_PANELS_TEXT.fr : CONTROLS_PANELS_TEXT.en;
 }

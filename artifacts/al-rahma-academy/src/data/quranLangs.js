@@ -558,6 +558,27 @@ export const UI = {
     noResults: 'Nessun risultato',
     fontSize: 'Dimensione del testo',
     streak: 'Serie',
+    // Labels the reader used to hard-code (Arabic or English) for every
+    // language; the components fall back to those literals when a language
+    // does not define the key, so only Italian changes.
+    khatm: 'Khatm',
+    newKhatm: 'Nuovo khatm ↺',
+    khatmSurahs: 'sure',
+    tafsirChoose: '— Scegli un tafsir —',
+    tafsirGroupArabic: 'Tafsir in arabo',
+    tafsirGroupOther: 'Tafsir in altre lingue',
+    tafsirPickerTitle: 'Scegli il tafsir',
+    tafsirVerseTitle: 'Tafsir del versetto',
+    tafsirUnavailable: 'Tafsir non disponibile per questo versetto.',
+    tafsirDefaultName: 'Tafsir',
+    go: '↵ Vai',
+    toggleOn: 'Attivo',
+    toggleOff: 'Disattivo',
+    recordingErrors: {
+      'Recording is not supported in this browser': 'La registrazione non è supportata da questo browser.',
+      'Could not save the recording': 'Impossibile salvare la registrazione.',
+      'Microphone access was denied or is unavailable': 'L’accesso al microfono è stato negato o non è disponibile.',
+    },
   },
   tr: {
     title: 'Kuran Öğrenme Merkezi',

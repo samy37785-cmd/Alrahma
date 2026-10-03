@@ -18,15 +18,15 @@ const locs = [...sitemapXml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
 const published = PRERENDER_MANIFEST.filter((e) => e.status === 'published');
 
 describe('manifest and sitemap: baseline derived from the manifest, not a hard-coded total', () => {
-  it('sitemap equals the published manifest entries; Italian grew by exactly hadith, prayer-times, enroll and verse-of-the-day', () => {
+  it('sitemap equals the published manifest entries; Italian grew by exactly hadith, prayer-times, enroll, verse-of-the-day and quran-reader', () => {
     expect(locs).toHaveLength(published.length);
     const itPublished = published.filter((e) => e.locale === 'it');
     const itLocs = locs.filter((u) => u.startsWith(`${ORIGIN}/it/`));
     expect(itLocs).toHaveLength(itPublished.length);
     // Baseline before wave 3: 129 total, 31 Italian. Waves 3 + the final Enroll publication add exactly 3.
-    expect(published.length - 129).toBe(4);
-    expect(itPublished.length - 31).toBe(4);
-    expect(itPublished.map((e) => e.route)).toEqual(expect.arrayContaining(['/tools/hadith', '/tools/prayer-times', '/enroll', '/tools/verse-of-the-day']));
+    expect(published.length - 129).toBe(5);
+    expect(itPublished.length - 31).toBe(5);
+    expect(itPublished.map((e) => e.route)).toEqual(expect.arrayContaining(['/tools/hadith', '/tools/prayer-times', '/enroll', '/tools/verse-of-the-day', '/tools/quran-reader']));
     expect(locs).toContain(`${ORIGIN}/it/enroll`);
     expect(locs).toContain(`${ORIGIN}/it/tools/hadith`);
     expect(locs).toContain(`${ORIGIN}/it/tools/prayer-times`);
@@ -93,8 +93,8 @@ describe('/it/enroll is published for fr + it only', () => {
 });
 
 describe('the other unpublished Italian tools stay out', () => {
-  it('quran-reader, qibla, islamic-calendar, hifz-review and blog have no Italian entry or URL', () => {
-    for (const r of ['/tools/quran-reader', '/tools/qibla', '/tools/islamic-calendar', '/tools/hifz-review', '/resources/blog']) {
+  it('qibla, islamic-calendar, hifz-review and blog have no Italian entry or URL', () => {
+    for (const r of ['/tools/qibla', '/tools/islamic-calendar', '/tools/hifz-review', '/resources/blog']) {
       expect(PRERENDER_MANIFEST.filter((e) => e.route === r && e.locale === 'it'), r).toHaveLength(0);
       expect(locs.some((u) => u === `${ORIGIN}/it${r}`), r).toBe(false);
     }

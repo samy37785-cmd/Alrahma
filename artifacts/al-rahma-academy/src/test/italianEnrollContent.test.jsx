@@ -183,6 +183,6 @@ describe('the page itself: empty form, nothing submitted, not published', () => 
     expect(PRERENDER_MANIFEST.filter((e) => e.route === '/enroll' && e.locale === 'it')).toHaveLength(1);
     const sitemap = fs.readFileSync(path.resolve(__dirname, '../../public/sitemap.xml'), 'utf8');
     expect(sitemap).toContain('https://al-rahmaacademy.com/it/enroll');
-    expect((sitemap.match(/<loc>/g) || []).length).toBe(133);
+    expect((sitemap.match(/<loc>/g) || []).length).toBe(134);
   });
 });

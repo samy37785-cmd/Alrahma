@@ -413,6 +413,17 @@ export const PRERENDER_MANIFEST = [
   { route: '/tools/hadith', locale: 'fr', status: 'published', indexable: true },
   { route: '/tools/prayer-times', locale: 'fr', status: 'published', indexable: true },
   { route: '/enroll', locale: 'fr', status: 'published', indexable: true },
+
+  // Italian SEO Publication Gate, wave 3 (2026-10-03): /tools/hadith and
+  // /tools/prayer-times, it. Both already carried the French prerender-safety
+  // guarantees above (hadith fetches only on a card click; prayer-times skips
+  // geolocation under navigator.webdriver), and their Italian content landed
+  // in PRs #168/#169. /enroll is NOT published for it: its read-only timezone
+  // field is initialised from Intl at module load, so the static file freezes
+  // the build machine's timezone (the same defect is visible in /fr/enroll) —
+  // blocked until that field is neutral in the prerender.
+  { route: '/tools/hadith', locale: 'it', status: 'published', indexable: true },
+  { route: '/tools/prayer-times', locale: 'it', status: 'published', indexable: true },
 ];
 
 // The URL path to navigate to for one manifest entry, e.g. "/ar/courses/ijazah".

@@ -101,8 +101,8 @@ describe('/it/tools/prayer-times: Italian shell, source terms kept', () => {
   });
 });
 
-describe('publication guard: this PR publishes nothing', () => {
-  it('/tools/prayer-times has no Italian manifest entry', () => {
-    expect(PRERENDER_MANIFEST.filter((e) => e.route === '/tools/prayer-times' && e.locale === 'it')).toHaveLength(0);
+describe('publication state: published in wave 3 (see italianNextWavePublication.test.jsx)', () => {
+  it('/tools/prayer-times has its Italian manifest entry (wave 3)', () => {
+    expect(PRERENDER_MANIFEST.filter((e) => e.route === '/tools/prayer-times' && e.locale === 'it')).toHaveLength(1);
   });
 });

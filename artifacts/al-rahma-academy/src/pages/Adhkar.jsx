@@ -6,6 +6,7 @@ import useSEO from '../hooks/useSEO';
 import { useLang } from '../context/LangContext';
 import { ADHKAR_TR, sourceTr } from '../i18n/adhkarText';
 import { pickFrMetaDescription } from '../i18n/frMetaDescriptions';
+import { pickItMetaDescription } from '../i18n/itMetaDescriptions';
 
 import { ADHKAR, CATEGORY_KEYS } from '../data/adhkarData';
 import Breadcrumbs from '../components/ui/Breadcrumbs';
@@ -23,7 +24,7 @@ export default function Adhkar() {
 
   useSEO({
     title: a.heading,
-    description: pickFrMetaDescription('adhkar', lang, a.sub),
+    description: pickItMetaDescription('adhkar', lang, pickFrMetaDescription('adhkar', lang, a.sub)),
   });
 
   const [cat,    setCat]    = useState('sabah');

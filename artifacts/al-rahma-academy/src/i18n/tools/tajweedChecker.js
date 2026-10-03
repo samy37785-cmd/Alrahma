@@ -110,7 +110,7 @@ export const TAJWEED_CHECKER_TEXT = {
   it: {
     seo: {
       title: 'Verificatore di Tajweed con IA',
-      description: "Esercitati nella recitazione del Corano e ricevi un feedback immediato dell'IA sul tuo Tajweed",
+      description: "Strumento didattico per esercitarti col Tajweed: recita un versetto ad alta voce, vedi cosa ha riconosciuto il browser e ricevi un feedback.",
     },
     breadcrumbs: { tools: 'Strumenti', current: 'Verificatore di Tajweed' },
     eyebrow: "Basato sull'IA",

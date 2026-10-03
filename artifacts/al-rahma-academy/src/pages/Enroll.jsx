@@ -14,7 +14,10 @@ import { trackEvent } from '../analytics/ga';
 
 const BLANK = {
   name:'', email:'', whatsapp:'', country:'', city:'',
-  times:[], timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+  // Starts empty: the visitor's timezone is resolved after mount (see the effect
+  // in Enroll), never at module load, so the prerendered HTML never freezes the
+  // build machine's timezone.
+  times:[], timezone: '',
   subjects:[], lang:'en', level:'beginner', ageGroup:'adult', genderPref:'any',
   teacherId:null, teacherName:'',
   plan: null,
@@ -48,6 +51,18 @@ export default function Enroll() {
   const [done, setDone] = useState(false);
   const [error, setError] = useState('');
   const [bookingRef, setBookingRef] = useState('');
+
+  // Resolve the visitor's timezone after mount only. Skipped under
+  // navigator.webdriver (the build-time prerender) so the static HTML keeps the
+  // neutral empty value. Never overwrites a value that is already set, and an
+  // unavailable Intl leaves it empty. Safe to run twice (StrictMode).
+  useEffect(() => {
+    if (typeof navigator !== 'undefined' && navigator.webdriver) return;
+    let tz = '';
+    try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch { tz = ''; }
+    if (!tz) return;
+    setForm((prev) => (prev.timezone ? prev : { ...prev, timezone: tz }));
+  }, []);
 
   // Analytics (consent-gated inside trackEvent): the step number only —
   // never any form value.

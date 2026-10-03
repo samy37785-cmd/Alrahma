@@ -2039,3 +2039,40 @@ describe.skipIf(!distExists)('Italian wave 3 (hadith, prayer-times) prerender (d
     expect(fr).not.toContain('hreflang="it"');
   });
 });
+
+// Enroll prerender timezone safety: the read-only timezone field starts empty,
+// so the static file never freezes the build machine's timezone and is the same
+// on every build machine.
+describe.skipIf(!distExists)('/fr/enroll raw prerender HTML — neutral, deterministic form fields', () => {
+  const file = path.join(distDir, 'fr/enroll/index.html');
+  const html = existsSync(file) ? readFileSync(file, 'utf8') : '';
+  const doc = new JSDOM(html).window.document;
+
+  it('the timezone field is present and empty, with no zone name anywhere', () => {
+    const tz = doc.querySelector('input.field__readonly');
+    expect(tz, 'timezone input').toBeTruthy();
+    expect(tz.getAttribute('value') ?? '').toBe('');
+    expect(html).not.toMatch(/value="UTC"|Africa\/Cairo|Europe\/Rome|Europe\/Paris|America\/[A-Z]|Asia\/[A-Z]/);
+  });
+
+  it('every user input, select and textarea is empty (no form, stored or personal data)', () => {
+    for (const el of doc.querySelectorAll('main input:not([type="checkbox"]):not([type="radio"]), main textarea')) {
+      expect(el.getAttribute('value') ?? '', el.className || el.getAttribute('placeholder') || el.id).toBe('');
+    }
+    for (const sel of doc.querySelectorAll('main select')) {
+      expect(sel.querySelector('option[selected]'), sel.id).toBeNull();
+    }
+  });
+
+  it('lang, canonical, robots and hreflang are as before', () => {
+    expect(doc.documentElement.getAttribute('lang')).toBe('fr');
+    expect(doc.querySelector('link[rel="canonical"]').getAttribute('href')).toBe('https://al-rahmaacademy.com/fr/enroll');
+    expect(doc.querySelector('meta[name="robots"]').getAttribute('content')).toMatch(/^index, follow/);
+    const alts = [...doc.querySelectorAll('link[rel="alternate"][hreflang]')].map((l) => l.getAttribute('hreflang')).sort();
+    expect(alts).toEqual(['fr', 'x-default']);
+  });
+
+  it('/it/enroll is still not prerendered', () => {
+    expect(existsSync(path.join(distDir, 'it/enroll/index.html'))).toBe(false);
+  });
+});

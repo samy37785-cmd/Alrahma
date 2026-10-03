@@ -79,8 +79,8 @@ describe('Quran Reader: SettingsPanel (French Batch 1E)', () => {
     expect(text).not.toContain(CONTROLS_PANELS_TEXT.en.arabicFontSize);
   });
 
-  it('renders the exact original English under every other language (en, ar, it)', () => {
-    for (const path of ['/tools/quran-reader', '/ar/tools/quran-reader', '/it/tools/quran-reader']) {
+  it('renders the exact original English under every other language (en, ar, es; Italian now has its own text, see italianQuranReaderContent.test.jsx)', () => {
+    for (const path of ['/tools/quran-reader', '/ar/tools/quran-reader', '/es/tools/quran-reader']) {
       const { container, unmount } = withLang(path, <QuranControls.SettingsPanel {...props} />);
       const cp = CONTROLS_PANELS_TEXT.en;
       expect(container.textContent, path).toContain(cp.settingsTitle);
@@ -146,8 +146,8 @@ describe('Quran Reader: QuranPlayer (French Batch 1E)', () => {
     expect(container.querySelector('[aria-label="' + a11y.quranPlayerSpeedOption(1) + '"]')).toBeTruthy();
   });
 
-  it('every other language (en, ar, it) keeps the exact original English', () => {
-    for (const path of ['/tools/quran-reader', '/ar/tools/quran-reader', '/it/tools/quran-reader']) {
+  it('every other language (en, ar, es; Italian now has its own text, see italianQuranReaderContent.test.jsx) keeps the exact original English', () => {
+    for (const path of ['/tools/quran-reader', '/ar/tools/quran-reader', '/es/tools/quran-reader']) {
       const { container, unmount } = renderPlayer(path);
       const a11y = A11Y_LABELS_TEXT.en;
       expect(container.querySelector('[role="region"]').getAttribute('aria-label'), path).toBe(a11y.quranPlayerRegion);
@@ -233,7 +233,7 @@ describe('Quran Reader: VerseCardModal (French Batch 1E)', () => {
   });
 
   it('keeps the exact original English under every other language', () => {
-    for (const path of ['/tools/quran-reader', '/ar/tools/quran-reader', '/it/tools/quran-reader']) {
+    for (const path of ['/tools/quran-reader', '/ar/tools/quran-reader', '/es/tools/quran-reader']) {
       const { container, unmount } = withLang(path, <VerseCardModal verse={verse} chapterName="Al-Fatiha" onClose={() => {}} />);
       const vc = VERSE_CARD_MODAL_TEXT.en;
       expect(container.querySelector('[role="dialog"]').getAttribute('aria-label'), path).toBe(vc.dialogLabel);

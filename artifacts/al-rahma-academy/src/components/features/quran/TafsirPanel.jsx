@@ -32,6 +32,7 @@ export default function TafsirPanel({ verseKey, tafsirId, onClose, ui }) {
 
   const entry  = TAFASEER.find((t) => t.id === tafsirId);
   const isHtml = entry?.source !== 'cloud';
+  const unavailableMsg = ui.tafsirUnavailable || 'التفسير غير متوفر لهذه الآية.';
 
   useEffect(() => {
     let alive = true;
@@ -41,16 +42,16 @@ export default function TafsirPanel({ verseKey, tafsirId, onClose, ui }) {
       : getVerseTafsir(verseKey, tafsirId);
     fetchP
       .then((t) => { if (alive) setText(t); })
-      .catch(() => { if (alive) setErr('التفسير غير متوفر لهذه الآية.'); })
+      .catch(() => { if (alive) setErr(unavailableMsg); })
       .finally(() => { if (alive) setLoading(false); });
     return () => { alive = false; };
-  }, [verseKey, tafsirId, entry]);
+  }, [verseKey, tafsirId, entry, unavailableMsg]);
 
   return (
     <div className="qlc__tafsir-panel">
       <div className="qlc__tafsir-head">
         <div className="qlc__tafsir-head-left">
-          <span className="qlc__tafsir-name">📖 {entry?.name || 'تفسير'}</span>
+          <span className="qlc__tafsir-name">📖 {entry?.name || ui.tafsirDefaultName || 'تفسير'}</span>
           {entry?.nameEn && <span className="qlc__tafsir-name-en">{entry.nameEn}</span>}
         </div>
         <div className="qlc__tafsir-head-right">

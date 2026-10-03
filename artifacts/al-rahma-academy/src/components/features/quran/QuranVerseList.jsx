@@ -53,7 +53,7 @@ export default function QuranVerseList({
             onKeyDown={(e) => { if (e.key === 'Enter') onJump(jumpVerse); }}
           />
           <span className="qlc__jump-of">/ {displayVerses.length}</span>
-          <button className="qlc__jump-btn" onClick={() => onJump(jumpVerse)}>↵ Go</button>
+          <button className="qlc__jump-btn" onClick={() => onJump(jumpVerse)}>{ui.go || '↵ Go'}</button>
         </div>
       )}
 
@@ -198,7 +198,7 @@ export default function QuranVerseList({
                               onSetTafsirPicker(tafsirPicker === v.verse_key ? null : v.verse_key);
                             }
                           }}
-                          title="تفسير الآية"
+                          title={ui.tafsirVerseTitle || 'تفسير الآية'}
                         >
                           📚 {ui.tafsir}
                         </button>
@@ -251,6 +251,7 @@ export default function QuranVerseList({
 
                   {tafsirPicker === v.verse_key && !tafsirOn && (
                     <TafsirPicker
+                      ui={ui}
                       onSelect={(tid) => {
                         onSetTafsirId(tid, v.verse_key);
                         onSetTafsirPicker(null);

@@ -23,7 +23,7 @@ export default function QuranSidebar({
           { key: 'page',  label: ui.navPage  || 'Page' },
           { key: 'juz',   label: ui.navJuz   || 'Juz' },
           { key: 'hizb',  label: ui.navHizb  || (isAr ? AR_NAV_LABELS.navHizb : 'Hizb') },
-          { key: 'khatm', label: 'ختمة' },
+          { key: 'khatm', label: ui.khatm || 'ختمة' },
         ].map((m) => (
           <button
             key={m.key}
@@ -145,8 +145,8 @@ export default function QuranSidebar({
               <div className="qlc__khatm-fill" style={{ width: `${(khatmDone.length / 114) * 100}%` }} />
             </div>
             <div className="qlc__khatm-meta">
-              <span className="qlc__khatm-pct">{khatmDone.length}/114 سورة</span>
-              <button className="qlc__khatm-new" onClick={onNewKhatm}>ختمة جديدة ↺</button>
+              <span className="qlc__khatm-pct">{khatmDone.length}/114 {ui.khatmSurahs || 'سورة'}</span>
+              <button className="qlc__khatm-new" onClick={onNewKhatm}>{ui.newKhatm || 'ختمة جديدة ↺'}</button>
             </div>
           </div>
           <ul className="qlc__khatm-list">

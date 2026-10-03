@@ -13,8 +13,9 @@
 // Reader and Qibla routes, so it chunks with them alone, leaving every
 // other page's build output byte-for-byte unchanged.
 //
-// `en` is the exact text the components rendered before this change. Only
-// `fr` is added; every other language keeps getting the same English text.
+// `en` is the exact text the components rendered before this change. `fr`
+// and `it` are added; every other language keeps getting the same English
+// text.
 export const QURAN_A11Y_TEXT = {
   en: {
     quranStopMemorization: 'Stop memorization',
@@ -68,8 +69,35 @@ export const QURAN_A11Y_TEXT = {
     quranPrintTab: 'Imprimer (P)',
     qiblaDirectionAria: (deg) => `Direction de la Qibla : ${deg} degrés depuis le Nord`,
   },
+  it: {
+    quranStopMemorization: 'Interrompi la memorizzazione',
+    quranPlayerRegion: 'Lettore della recitazione della sura',
+    quranPlayerPosition: 'Posizione audio',
+    quranPlayerRewind: 'Indietro di 10 secondi',
+    quranPlayerForward: 'Avanti di 10 secondi',
+    quranPlayerLoadingLabel: 'Caricamento…',
+    quranPlayerPause: 'Pausa',
+    quranPlayerPlay: 'Riproduci',
+    quranPlayerLoadingAudio: 'Caricamento dell’audio',
+    quranPlayerSpeedGroup: 'Velocità di riproduzione',
+    quranPlayerSpeedOption: (s) => `Velocità ${s}×`,
+    quranOtherLanguages: 'Altre lingue',
+    quranDecreaseFont: 'Riduci la dimensione del testo',
+    quranIncreaseFont: 'Aumenta la dimensione del testo',
+    quranCopyVerseLink: 'Copia il link di questo versetto',
+    quranShareVerseCard: 'Condividi come scheda del versetto',
+    quranCopyVerseText: 'Copia il versetto (testo e traduzione)',
+    quranKbdShortcutsTab: 'Scorciatoie da tastiera (K)',
+    quranQuickNavTab: 'Navigazione rapida (/)',
+    quranSettingsTab: 'Impostazioni (G)',
+    quranKbdPanelTab: 'Pannello delle scorciatoie (K)',
+    quranDarkModeTab: 'Tema scuro (D)',
+    quranPrintTab: 'Stampa (P)',
+    qiblaDirectionAria: (deg) => `Direzione della Qibla: ${deg} gradi da nord`,
+  },
 };
 
 export function pickQuranA11y(lang) {
+  if (lang === 'it') return QURAN_A11Y_TEXT.it;
   return lang === 'fr' ? QURAN_A11Y_TEXT.fr : QURAN_A11Y_TEXT.en;
 }

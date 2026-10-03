@@ -75,7 +75,7 @@ describe('Quran Reader keyboard-shortcuts side panel', () => {
   it.each([
     ['/tools/quran-reader', 'en'],
     ['/ar/tools/quran-reader', 'ar'],
-    ['/it/tools/quran-reader', 'it'],
+    ['/es/tools/quran-reader', 'es'],
   ])('%s (%s) still renders the exact original Arabic panel, rtl', (pathname) => {
     const { container } = renderAt(pathname);
     expect(container.querySelector('.qlc__ksp-tab-text').textContent).toBe(ORIGINAL_ARABIC_SIDE_PANEL.tab);
@@ -86,9 +86,10 @@ describe('Quran Reader keyboard-shortcuts side panel', () => {
     expect([...container.querySelectorAll('.qlc__kbd')].map((e) => e.textContent)).toEqual(ORIGINAL_ARABIC_SIDE_PANEL.keys);
   });
 
-  it('only French selects the French strings', () => {
+  it('only French selects the French strings (Italian selects its own)', () => {
     expect(pickKbdSidePanel('fr')).toBe(KBD_SIDE_PANEL_TEXT.fr);
-    for (const l of ['en', 'ar', 'it', 'es', 'de']) expect(pickKbdSidePanel(l)).toBe(KBD_SIDE_PANEL_TEXT.ar);
+    for (const l of ['en', 'ar', 'es', 'de']) expect(pickKbdSidePanel(l)).toBe(KBD_SIDE_PANEL_TEXT.ar);
+    expect(pickKbdSidePanel('it')).toBe(KBD_SIDE_PANEL_TEXT.it); // Italian has its own panel (italianQuranReaderContent.test.jsx)
   });
 });
 

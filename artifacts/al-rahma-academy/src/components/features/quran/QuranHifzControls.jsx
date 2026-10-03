@@ -159,7 +159,7 @@ export default function QuranHifzControls({
                   checked={showTrans}
                   onChange={(e) => onShowTransChange(e.target.checked)}
                 />
-                <span>{showTrans ? 'ON' : 'OFF'}</span>
+                <span>{showTrans ? (ui.toggleOn || 'ON') : (ui.toggleOff || 'OFF')}</span>
               </label>
             </CtrlItem>
           </>

@@ -374,7 +374,9 @@ export default function Quran() {
           directly; Quran Reader has no equivalent baseline yet simply
           because it has never been published before, not because such a
           change would be safe. */}
-      {siteLang === 'fr' && (
+      {/* Italian Quran Reader breadcrumb prerequisite: 'it' joins 'fr' so the Italian
+          page writes the BreadcrumbList that waitForHydratedSeo() requires. */}
+      {(siteLang === 'fr' || siteLang === 'it') && (
         <div className="sr-only">
           <Breadcrumbs items={[{ label: t.nav.tools, to: '/tools' }, { label: t.nav.quranReader }]} />
         </div>

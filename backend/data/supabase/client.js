@@ -67,7 +67,7 @@ function getConnectionString() {
 // verification, it fails closed instead. Never logs or returns the PEM
 // contents on the error path, only the path and the underlying error's own
 // (content-free) message.
-export function loadCaCert() {
+function loadCaCert() {
   const caPath = process.env.SUPABASE_CA_CERT_PATH;
   if (!caPath) return undefined;
 
@@ -93,27 +93,58 @@ export function loadCaCert() {
   return pem;
 }
 
+// URL query parameters that control TLS or make pg read local files. pg
+// merges the parsed connection string OVER the explicit `ssl` option
+// (Object.assign in pg's ConnectionParameters), so any of these left in the
+// URL silently overrides the strict config below. Probed directly against
+// pg@8.23: sslmode=disable => ssl:false, sslmode=no-verify =>
+// rejectUnauthorized:false, sslmode=require => CA dropped. Stripped for
+// non-local hosts only; the local path keeps the connection string untouched.
+const TLS_URL_PARAM_RE = /^(ssl|uselibpqcompat)/i;
+
+// Builds the { connectionString, ssl } pair for a pg.Pool. Pure: never opens
+// a socket and never echoes the URL (credentials) or CA contents on error.
+//
+// Local hosts (localhost / 127.0.0.1 only, unchanged from before) get
+// ssl:false and the original string. Any other host gets
+// rejectUnauthorized:true unconditionally, with the CA (if configured) only
+// ADDED as a trusted root. A configured-but-empty CA fails closed instead of
+// silently falling back to the default trust store.
+export function buildPgPoolConfig(connectionString, loadCa = loadCaCert) {
+  let url;
+  try {
+    url = new URL(connectionString);
+  } catch {
+    throw new Error('Postgres connection string is not a parseable URL');
+  }
+  if (!url.hostname) {
+    throw new Error('Postgres connection string has no host');
+  }
+
+  const host = url.hostname;
+  if (host === 'localhost' || host === '127.0.0.1') {
+    return { connectionString, ssl: false };
+  }
+
+  const ca = loadCa();
+  if (ca === '') {
+    throw new Error('SUPABASE_CA_CERT_PATH resolved to an empty certificate; refusing to connect');
+  }
+
+  let effectiveString = connectionString;
+  const tlsKeys = [...url.searchParams.keys()].filter((k) => TLS_URL_PARAM_RE.test(k));
+  if (tlsKeys.length) {
+    for (const key of tlsKeys) url.searchParams.delete(key);
+    effectiveString = url.toString();
+  }
+
+  const ssl = ca === undefined ? { rejectUnauthorized: true } : { rejectUnauthorized: true, ca };
+  return { connectionString: effectiveString, ssl };
+}
+
 export function getPool() {
   if (!pool) {
-    const connectionString = getConnectionString();
-    const host = new URL(connectionString).hostname;
-    // The real Supabase project is never localhost — strict TLS (reject
-    // unauthorized certs, same rule the ops backup/restore tooling follows)
-    // is required for any non-local host. A local/rehearsal Postgres
-    // container (see docs/option-a-mongo-supabase-parity-map.md's rehearsal
-    // notes) has no TLS listener at all, so this is a structural check
-    // (impossible to point at the real project without TLS), not a flag
-    // someone could accidentally leave permissive in production.
-    const isLocal = host === 'localhost' || host === '127.0.0.1';
-    let ssl = false;
-    if (!isLocal) {
-      const ca = loadCaCert();
-      // rejectUnauthorized: true unconditionally — ca (when present) adds a
-      // trusted root on top of Node's default store, it never replaces or
-      // loosens verification. There is no code path here that can produce
-      // rejectUnauthorized: false for a non-local host.
-      ssl = ca ? { rejectUnauthorized: true, ca } : { rejectUnauthorized: true };
-    }
+    const { connectionString, ssl } = buildPgPoolConfig(getConnectionString());
     pool = new pg.Pool({ connectionString, ssl });
   }
   return pool;

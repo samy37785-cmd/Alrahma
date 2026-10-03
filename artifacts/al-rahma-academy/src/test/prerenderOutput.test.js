@@ -1374,7 +1374,8 @@ const LITERAL_FILES = [
     ],
   },
   // Italian SEO Publication Gate wave 3 (2026-10-03): /tools/hadith and
-  // /tools/prayer-times join fr; /enroll does not (frozen timezone).
+  // /tools/prayer-times join fr; /enroll joined in the final Italian Enroll
+  // publication (see the entry below).
   {
     route: '/tools/hadith',
     locale: 'it',
@@ -1427,6 +1428,23 @@ const LITERAL_FILES = [
     breadcrumb: [
       { name: 'Accueil', item: 'https://al-rahmaacademy.com/fr/' },
       { name: 'Essai gratuit', item: 'https://al-rahmaacademy.com/fr/enroll' },
+    ],
+  },
+  // Final Italian Enroll SEO publication (2026-10-03): fr + it only.
+  {
+    route: '/enroll',
+    locale: 'it',
+    relPath: 'it/enroll/index.html',
+    expectedCanonical: 'https://al-rahmaacademy.com/it/enroll',
+    h1Text: 'Iscriviti ad Al-Rahma Academy',
+    expectedEnHref: 'https://al-rahmaacademy.com/enroll',
+    expectedArHref: 'https://al-rahmaacademy.com/ar/enroll',
+    expectedFrHref: 'https://al-rahmaacademy.com/fr/enroll',
+    expectedTitle: 'Prenota lezioni di prova gratuite | AL-Rahma Academy',
+    expectedDescription: "Una lezione di prova gratuita individuale di Corano — senza pagamento, senza impegno. Scegli le tue materie, scegli un insegnante certificato Al-Azhar e prenota il tuo piano — confermeremo con te l'orario e il pagamento su WhatsApp.",
+    breadcrumb: [
+      { name: 'Pagina iniziale', item: 'https://al-rahmaacademy.com/it/' },
+      { name: 'Prova gratuita', item: 'https://al-rahmaacademy.com/it/enroll' },
     ],
   },
 ];
@@ -1899,8 +1917,8 @@ describe.skipIf(!distExists)('Italian Islamic Studies prerender (dist/public) �
     }
   });
 
-  it('unpublished Italian routes still have no Italian file (blog, enroll, other tools; hadith and prayer-times joined in wave 3)', () => {
-    for (const rel of ['it/resources/blog', 'it/enroll', 'it/tools/quran-reader', 'it/tools/qibla', 'it/tools/islamic-calendar', 'it/tools/verse-of-the-day', 'it/tools/hifz-review']) {
+  it('unpublished Italian routes still have no Italian file (blog and other tools; hadith, prayer-times and enroll are published)', () => {
+    for (const rel of ['it/resources/blog', 'it/tools/quran-reader', 'it/tools/qibla', 'it/tools/islamic-calendar', 'it/tools/verse-of-the-day', 'it/tools/hifz-review']) {
       expect(existsSync(path.join(distDir, rel, 'index.html')), rel).toBe(false);
     }
   });
@@ -2035,10 +2053,10 @@ describe.skipIf(!distExists)('Italian wave 3 (hadith, prayer-times) prerender (d
     }
   });
 
-  it('/it/enroll has no file in dist (blocked: frozen timezone), and /fr/enroll carries no Italian alternate', () => {
-    expect(existsSync(path.join(distDir, 'it/enroll/index.html'))).toBe(false);
+  it('/it/enroll is prerendered and /fr/enroll lists it as its Italian alternate', () => {
+    expect(existsSync(path.join(distDir, 'it/enroll/index.html'))).toBe(true);
     const fr = readFileSync(path.join(distDir, 'fr/enroll/index.html'), 'utf8');
-    expect(fr).not.toContain('hreflang="it"');
+    expect(fr).toContain('hreflang="it" href="https://al-rahmaacademy.com/it/enroll"');
   });
 });
 
@@ -2071,11 +2089,74 @@ describe.skipIf(!distExists)('/fr/enroll raw prerender HTML — neutral, determi
     expect(doc.querySelector('link[rel="canonical"]').getAttribute('href')).toBe('https://al-rahmaacademy.com/fr/enroll');
     expect(doc.querySelector('meta[name="robots"]').getAttribute('content')).toMatch(/^index, follow/);
     const alts = [...doc.querySelectorAll('link[rel="alternate"][hreflang]')].map((l) => l.getAttribute('hreflang')).sort();
-    expect(alts).toEqual(['fr', 'x-default']);
+    expect(alts).toEqual(['fr', 'it', 'x-default']);
+  });
+});
+
+// Final Italian Enroll publication: the raw static file is neutral, deterministic
+// and free of any user, form, build-machine or booking data.
+describe.skipIf(!distExists)('/it/enroll raw prerender HTML — safe before any JavaScript', () => {
+  const file = path.join(distDir, 'it/enroll/index.html');
+  const html = existsSync(file) ? readFileSync(file, 'utf8') : '';
+  const doc = new JSDOM(html).window.document;
+
+  it('exists with lang=it dir=ltr, self canonical, index/follow, it_IT and the Italian title/description/H1', () => {
+    expect(html.length).toBeGreaterThan(0);
+    expect(html).toContain('<html lang="it" dir="ltr">');
+    expect(doc.querySelector('link[rel="canonical"]').getAttribute('href')).toBe('https://al-rahmaacademy.com/it/enroll');
+    expect(doc.querySelectorAll('link[rel="canonical"]')).toHaveLength(1);
+    expect(doc.querySelector('meta[name="robots"]').getAttribute('content')).toMatch(/^index, follow/);
+    expect(doc.querySelector('meta[property="og:locale"]').getAttribute('content')).toBe('it_IT');
+    expect([...doc.querySelectorAll('meta[property="og:locale:alternate"]')].map((m) => m.getAttribute('content'))).toEqual(['fr_FR']);
+    expect(doc.title).toBe('Prenota lezioni di prova gratuite | AL-Rahma Academy');
+    expect(doc.querySelector('meta[name="description"]').getAttribute('content')).toMatch(/^Una lezione di prova gratuita/);
+    expect([...doc.querySelectorAll('h1')].map((h) => h.textContent.trim())).toEqual(['Iscriviti ad Al-Rahma Academy']);
   });
 
-  it('/it/enroll is still not prerendered', () => {
-    expect(existsSync(path.join(distDir, 'it/enroll/index.html'))).toBe(false);
+  it('has exactly fr, it and one x-default (-> /fr/enroll), and no en or ar alternate', () => {
+    const links = [...doc.querySelectorAll('link[rel="alternate"][hreflang]')].map((l) => [l.getAttribute('hreflang'), l.getAttribute('href')]);
+    expect(links).toEqual([
+      ['fr', 'https://al-rahmaacademy.com/fr/enroll'],
+      ['it', 'https://al-rahmaacademy.com/it/enroll'],
+      ['x-default', 'https://al-rahmaacademy.com/fr/enroll'],
+    ]);
+  });
+
+  it('has exactly one Italian BreadcrumbList and no SPA shell', () => {
+    const scripts = [...doc.querySelectorAll('script[data-seo="breadcrumb"]')];
+    expect(scripts).toHaveLength(1);
+    const ld = JSON.parse(scripts[0].textContent);
+    expect(ld['@type']).toBe('BreadcrumbList');
+    expect(ld.itemListElement.map((i) => [i.name, i.item])).toEqual([
+      ['Pagina iniziale', 'https://al-rahmaacademy.com/it/'],
+      ['Prova gratuita', 'https://al-rahmaacademy.com/it/enroll'],
+    ]);
+    expect(html).not.toContain('<html lang="en"');
+    expect(doc.title).not.toMatch(/Learn the Quran Online/);
+    expect(doc.querySelector('link[rel="canonical"]').getAttribute('href')).not.toBe('https://al-rahmaacademy.com/');
+  });
+
+  it('timezone is value="" and every user field is empty, with no preselected plan, teacher or country', () => {
+    const tz = doc.querySelector('input.field__readonly');
+    expect(tz.getAttribute('value') ?? '').toBe('');
+    for (const el of doc.querySelectorAll('main input:not([type="checkbox"]):not([type="radio"]), main textarea')) {
+      expect(el.getAttribute('value') ?? '', el.className || el.getAttribute('placeholder') || el.id).toBe('');
+    }
+    for (const sel of doc.querySelectorAll('main select')) expect(sel.querySelector('option[selected]'), sel.id).toBeNull();
+    expect(html).not.toMatch(/Africa\/|Europe\/|America\/[A-Z]|Asia\/[A-Z]|value="UTC"/);
+  });
+
+  it('is the first step of the form only: no success screen, booking reference or personal text', () => {
+    const main = doc.querySelector('#main-content').textContent;
+    expect(main).toContain('Raccontaci di te');
+    expect(main).not.toMatch(/AR-[A-Z0-9]{4,}/);
+    expect(html).not.toMatch(/api\/v1\/enrollments|submitEnrollment|Riferimento prenotazione|ho appena inviato una richiesta/i);
+  });
+
+  it('there is still no en or ar enroll file, and /fr/enroll exists', () => {
+    expect(existsSync(path.join(distDir, 'fr/enroll/index.html'))).toBe(true);
+    expect(existsSync(path.join(distDir, 'enroll/index.html'))).toBe(false);
+    expect(existsSync(path.join(distDir, 'ar/enroll/index.html'))).toBe(false);
   });
 });
 
@@ -2087,7 +2168,7 @@ describe.skipIf(!distExists)('x-default targets are real, canonical, prerendered
   const rawOf = (entry) => readFileSync(path.join(distDir, outputRelPathFor(entry)), 'utf8');
   const published_ = PRERENDER_MANIFEST.filter((e) => e.status === 'published');
   const AFFECTED_X = {
-    '/enroll': ['fr'],
+    '/enroll': ['fr', 'it'],
     '/tools/quran-reader': ['fr'],
     '/tools/verse-of-the-day': ['fr'],
     '/tools/hadith': ['fr', 'it'],
@@ -2137,9 +2218,9 @@ describe.skipIf(!distExists)('x-default targets are real, canonical, prerendered
     }
   });
 
-  it('the number of prerendered files and the Italian set are unchanged, and /it/enroll is absent', () => {
-    expect(published_).toHaveLength(131);
-    expect(published_.filter((e) => e.locale === 'it')).toHaveLength(33);
-    expect(existsSync(path.join(distDir, 'it/enroll/index.html'))).toBe(false);
+  it('the number of prerendered files is 132 (en 31, ar 31, fr 36, it 34) and /it/enroll is present', () => {
+    expect(published_).toHaveLength(132);
+    expect(['en', 'ar', 'fr', 'it'].map((l) => published_.filter((e) => e.locale === l).length)).toEqual([31, 31, 36, 34]);
+    expect(existsSync(path.join(distDir, 'it/enroll/index.html'))).toBe(true);
   });
 });

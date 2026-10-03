@@ -18,7 +18,7 @@ const localesOf = (route) => published.filter((e) => e.route === route).map((e) 
 const urlOf = (route, locale) => ORIGIN + (locale === 'en' ? route : route === '/' ? `/${locale}/` : `/${locale}${route}`);
 
 const AFFECTED = {
-  '/enroll': ['fr'],
+  '/enroll': ['fr', 'it'],
   '/tools/quran-reader': ['fr'],
   '/tools/verse-of-the-day': ['fr'],
   '/tools/hadith': ['fr', 'it'],
@@ -96,12 +96,12 @@ describe('x-default points at a published version of the same route', () => {
 });
 
 describe('publication is untouched', () => {
-  it('/it/enroll is not published; the sitemap equals the published manifest', () => {
-    expect(published.some((e) => e.route === '/enroll' && e.locale === 'it')).toBe(false);
+  it('/it/enroll is published (final publication); the sitemap equals the published manifest', () => {
+    expect(published.filter((e) => e.route === '/enroll' && e.locale === 'it')).toHaveLength(1);
     const xml = fs.readFileSync(path.resolve(__dirname, '../../public/sitemap.xml'), 'utf8');
     const locs = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
     expect(locs.sort()).toEqual(published.map(canonicalUrlFor).sort());
-    expect(locs).toHaveLength(131);
-    expect(locs.filter((u) => u.startsWith(`${ORIGIN}/it/`))).toHaveLength(33);
+    expect(locs).toHaveLength(132);
+    expect(locs.filter((u) => u.startsWith(`${ORIGIN}/it/`))).toHaveLength(34);
   });
 });

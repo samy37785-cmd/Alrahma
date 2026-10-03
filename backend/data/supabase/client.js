@@ -67,7 +67,7 @@ function getConnectionString() {
 // verification, it fails closed instead. Never logs or returns the PEM
 // contents on the error path, only the path and the underlying error's own
 // (content-free) message.
-function loadCaCert() {
+export function loadCaCert() {
   const caPath = process.env.SUPABASE_CA_CERT_PATH;
   if (!caPath) return undefined;
 

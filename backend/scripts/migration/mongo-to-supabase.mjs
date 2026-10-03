@@ -146,6 +146,7 @@ import { encodeCompositeTargetId, decodeCompositeTargetId } from './lib/composit
 import { verifyReadBack } from './lib/read-back-verify.mjs';
 import { assertLocalHostOrProductionAuthorized } from './lib/host-guard.mjs';
 import { loadAndVerifyProductionAuthorization } from './lib/production-authorization.mjs';
+import { loadCaCert } from '../../data/supabase/client.js';
 
 // Stage 2J-B, PR #70 review round 8, item 1 -- this script's own CLI was
 // still parsed by hand (a generic --key=value splitter, `v ?? true`) even
@@ -2189,7 +2190,21 @@ async function main() {
   // Postgres — it never needs Mongo (the source data isn't touched by any
   // operation this tool performs), so the connection is skipped entirely.
   if (!rollback) await mongoose.connect(mongoUri);
-  const pool = new pg.Pool({ connectionString: pgUri });
+  // Strict TLS for a non-local MIGRATION_DB_URL, same rule and same CA
+  // escape hatch as backend/data/supabase/client.js's getPool() — never
+  // reachable except in the production-authorized branch above, since
+  // MIGRATION_DB_URL is otherwise asserted local. rejectUnauthorized stays
+  // true unconditionally; SUPABASE_CA_CERT_PATH (when set) only adds a
+  // trusted root, it never loosens verification.
+  const pgHost = new URL(pgUri).hostname;
+  const pgIsLocal = pgHost === 'localhost' || pgHost === '127.0.0.1';
+  const pgSsl = pgIsLocal
+    ? false
+    : (() => {
+        const ca = loadCaCert();
+        return ca ? { rejectUnauthorized: true, ca } : { rejectUnauthorized: true };
+      })();
+  const pool = new pg.Pool({ connectionString: pgUri, ssl: pgSsl });
   const pgClient = await pool.connect();
 
   const results = [];

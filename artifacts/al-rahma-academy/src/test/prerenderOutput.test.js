@@ -1458,7 +1458,7 @@ const LITERAL_FILES = [
     expectedArHref: 'https://al-rahmaacademy.com/ar/tools/verse-of-the-day',
     expectedFrHref: 'https://al-rahmaacademy.com/fr/tools/verse-of-the-day',
     expectedTitle: 'Versetto del giorno | AL-Rahma Academy',
-    expectedDescription: 'Un versetto del Corano scelto ogni giorno con traduzione — inizia la giornata con le parole di Allah.',
+    expectedDescription: 'Un versetto del Corano ogni giorno: testo arabo, riferimento e traduzione da fonte esterna. Per iniziare la giornata con le parole di Allah.',
     breadcrumb: [
       { name: 'Pagina iniziale', item: 'https://al-rahmaacademy.com/it/' },
       { name: 'Strumenti', item: 'https://al-rahmaacademy.com/it/tools' },

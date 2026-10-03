@@ -51,8 +51,14 @@ async function capture(urlPath) {
 }
 
 describe('the component and its data source are unchanged', () => {
-  it('VerseOfTheDayPage.jsx, api/quran.js and islamicToolsUtils.js hash to origin/main', () => {
-    expect(shaFile('pages/tools/VerseOfTheDayPage.jsx')).toBe('234b3c98d308a7f66526d5940fdee0eea0278735067c7bdc98cfdd1daab02a05');
+  it('VerseOfTheDayPage.jsx, api/quran.js and islamicToolsUtils.js hash to origin/main (the Italian description line aside)', () => {
+    // Italian SEO Meta Descriptions Wave 1: the only change to this file is the `it` description
+    // string; it is mapped back to the origin/main text before hashing, so any other edit still fails.
+    const NEW_IT_DESC = "Un versetto del Corano ogni giorno: testo arabo, riferimento e traduzione da fonte esterna. Per iniziare la giornata con le parole di Allah.";
+    const OLD_IT_DESC = "Un versetto del Corano scelto ogni giorno con traduzione — inizia la giornata con le parole di Allah.";
+    const votd = fs.readFileSync(path.resolve(__dirname, '..', 'pages/tools/VerseOfTheDayPage.jsx'), 'utf8').replace(/\r\n/g, '\n');
+    expect(votd.split(NEW_IT_DESC)).toHaveLength(2);
+    expect(sha(votd.replace(NEW_IT_DESC, OLD_IT_DESC))).toBe('234b3c98d308a7f66526d5940fdee0eea0278735067c7bdc98cfdd1daab02a05');
     expect(shaFile('api/quran.js')).toBe('84ad13d403c5ee7f879365971a2140044c85c8c32db2d7c62c702692fd8d1c88');
     expect(shaFile('utils/islamicToolsUtils.js')).toBe('df31e29fbc2229194e12025a29cd9e34addead0155e47e81acc56898f344ce27');
   });
@@ -74,7 +80,7 @@ describe('/it/tools/verse-of-the-day: complete Italian shell, no English or Fren
     expect(document.documentElement.lang).toBe('it');
     expect(document.title).toBe('Versetto del giorno | AL-Rahma Academy');
     expect(document.querySelector('meta[name="description"]').getAttribute('content')).toBe(
-      'Un versetto del Corano scelto ogni giorno con traduzione — inizia la giornata con le parole di Allah.',
+      'Un versetto del Corano ogni giorno: testo arabo, riferimento e traduzione da fonte esterna. Per iniziare la giornata con le parole di Allah.',
     );
     expect([...document.querySelectorAll('h1')].map((h) => h.textContent)).toEqual(['Versetto del giorno']);
     const text = document.querySelector('#main-content').textContent;

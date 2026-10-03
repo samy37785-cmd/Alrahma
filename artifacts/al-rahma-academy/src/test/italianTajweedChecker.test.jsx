@@ -203,7 +203,7 @@ describe.skipIf(!distExists)('Italian Tajweed Checker prerender (dist/public) â€
     ).toEqual(['ar_EG', 'en_GB', 'fr_FR']);
     expect(doc.title).toBe('Verificatore di Tajweed con IA | AL-Rahma Academy');
     expect(doc.querySelector('meta[name="description"]').getAttribute('content')).toBe(
-      "Esercitati nella recitazione del Corano e ricevi un feedback immediato dell'IA sul tuo Tajweed",
+      "Strumento didattico per esercitarti col Tajweed: recita un versetto ad alta voce, vedi cosa ha riconosciuto il browser e ricevi un feedback.",
     );
     expect(doc.querySelector('h1').textContent.trim()).toBe('Verificatore di Tajweed');
     const crumbs = JSON.parse(doc.querySelector('script[data-seo="breadcrumb"]').textContent);

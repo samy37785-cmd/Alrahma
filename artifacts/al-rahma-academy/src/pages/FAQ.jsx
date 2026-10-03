@@ -7,12 +7,13 @@ import faqItems from '../data/faqItems';
 import { homeHref } from '../utils/localePath';
 import { site } from '../data/site';
 import { pickFrMetaDescription } from '../i18n/frMetaDescriptions';
+import { pickItMetaDescription } from '../i18n/itMetaDescriptions';
 import { trackEvent } from '../analytics/ga';
 
 export default function FAQ() {
   const { t, lang } = useLang();
   const pg = t.faqPg;
-  useSEO({ title: pg.heading, description: pickFrMetaDescription('faq', lang, pg.sub) });
+  useSEO({ title: pg.heading, description: pickItMetaDescription('faq', lang, pickFrMetaDescription('faq', lang, pg.sub)) });
   const [open, setOpen] = useState(null);
   const [showAll, setShowAll] = useState(false);
 

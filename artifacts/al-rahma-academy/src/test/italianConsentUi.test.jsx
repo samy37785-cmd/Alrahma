@@ -218,12 +218,11 @@ describe('behaviour is exactly as before (the GA script tag is inspected, never 
 });
 
 describe('SEO and publication are untouched', () => {
-  it('manifest keeps 33 Italian entries, /enroll unpublished, sitemap stays at 131 URLs', () => {
-    expect(PRERENDER_MANIFEST.filter((e) => e.locale === 'it')).toHaveLength(33);
-    expect(PRERENDER_MANIFEST.filter((e) => e.route === '/enroll' && e.locale === 'it')).toHaveLength(0);
+  it('manifest has 34 Italian entries (incl. /enroll after the final publication), sitemap 132 URLs', () => {
+    expect(PRERENDER_MANIFEST.filter((e) => e.locale === 'it')).toHaveLength(34);
+    expect(PRERENDER_MANIFEST.filter((e) => e.route === '/enroll' && e.locale === 'it')).toHaveLength(1);
     const sitemap = fs.readFileSync(path.resolve(__dirname, '../../public/sitemap.xml'), 'utf8');
-    expect((sitemap.match(/<loc>/g) || []).length).toBe(131);
-    expect(sitemap).not.toContain('/it/enroll');
+    expect((sitemap.match(/<loc>/g) || []).length).toBe(132);
   });
 
   it('the banner is never baked into prerendered HTML (webdriver hides it)', () => {

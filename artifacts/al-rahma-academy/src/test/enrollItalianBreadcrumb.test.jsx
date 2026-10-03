@@ -132,11 +132,11 @@ describe('fr, en and ar are unchanged (SHA-256 of the rendered DOM and JSON-LD, 
   });
 });
 
-describe('nothing is published by this change', () => {
-  it('/it/enroll has no manifest entry and no sitemap URL', () => {
-    expect(PRERENDER_MANIFEST.some((e) => e.route === '/enroll' && e.locale === 'it')).toBe(false);
+describe('publication state', () => {
+  it('/it/enroll is published (final SEO publication) with exactly one sitemap URL; the sitemap equals the published manifest', () => {
+    expect(PRERENDER_MANIFEST.filter((e) => e.route === '/enroll' && e.locale === 'it')).toHaveLength(1);
     const xml = fs.readFileSync(path.resolve(__dirname, '../../public/sitemap.xml'), 'utf8');
-    expect(xml).not.toContain('/it/enroll');
-    expect((xml.match(/<loc>/g) || []).length).toBe(131);
+    expect((xml.match(/https:\/\/al-rahmaacademy\.com\/it\/enroll</g) || [])).toHaveLength(1);
+    expect((xml.match(/<loc>/g) || []).length).toBe(PRERENDER_MANIFEST.filter((e) => e.status === 'published').length);
   });
 });

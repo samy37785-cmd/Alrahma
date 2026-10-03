@@ -137,10 +137,9 @@ const EXPECTED_FR_URLS = [...ROUTES, ...FR_ONLY_ROUTES].map((route) => ORIGIN + 
 const IT_EXCLUDED_ROUTES = [];
 const IT_ROUTES = ROUTES.filter((route) => !IT_EXCLUDED_ROUTES.includes(route));
 // Italian SEO Publication Gate wave 3 (2026-10-03): /tools/hadith and
-// /tools/prayer-times join it (on top of fr). /enroll stays unpublished for it
-// (its timezone field is frozen from the build machine), as do the other
-// FR_ONLY_ROUTES.
-const IT_WAVE3_ROUTES = ['/tools/hadith', '/tools/prayer-times'];
+// /tools/prayer-times join it (on top of fr); /enroll joined in the final Italian
+// Enroll publication (2026-10-03). The other FR_ONLY_ROUTES stay unpublished for it.
+const IT_WAVE3_ROUTES = ['/tools/hadith', '/tools/prayer-times', '/enroll'];
 const EXPECTED_IT_URLS = [...IT_ROUTES, ...IT_WAVE3_ROUTES].map((route) => ORIGIN + pathForLocale(route, 'it'));
 const EXPECTED_URLS = [...EXPECTED_EN_URLS, ...EXPECTED_AR_URLS, ...EXPECTED_FR_URLS, ...EXPECTED_IT_URLS];
 
@@ -175,7 +174,7 @@ describe('sitemap.xml — exact published-routes whitelist', () => {
     expect(getLocUrls()).toHaveLength(EXPECTED_URLS.length);
   });
 
-  it('splits into exactly 31 EN, 31 AR, 36 FR and 33 IT URLs', () => {
+  it('splits into exactly 31 EN, 31 AR, 36 FR and 34 IT URLs', () => {
     const locs = getLocUrls();
     const byPrefix = (l) => locs.filter((u) => u.startsWith(`${ORIGIN}/${l}/`) || u === `${ORIGIN}/${l}`);
     const arUrls = byPrefix('ar');
@@ -193,8 +192,8 @@ describe('sitemap.xml — exact published-routes whitelist', () => {
     expect(frUrls).toHaveLength(36);
     // Italian Islamic Studies SEO Publication (2026-09-30, concurrent PR):
     // it now publishes every route in ROUTES, IT_EXCLUDED_ROUTES is empty.
-    expect(itUrls).toHaveLength(33);
-    expect(locs).toHaveLength(131);
+    expect(itUrls).toHaveLength(34);
+    expect(locs).toHaveLength(132);
   });
 
   it('has no duplicate URLs', () => {

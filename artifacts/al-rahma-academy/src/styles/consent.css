@@ -38,7 +38,9 @@
 .consent-settings-link {
   background: none;
   border: 0;
-  padding: 0;
+  /* 24px minimum touch target (WCAG 2.5.8); the text and its size are unchanged. */
+  padding: 1px 0;
+  min-height: 24px;
   color: inherit;
   font: inherit;
   text-decoration: underline;

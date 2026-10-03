@@ -216,3 +216,15 @@ jobs:
           # Verbose reporter so the log names each raw-prerender test and
           # shows it passed (not skipped) now that dist/ exists.
           npx vitest run src/test/frenchP2ContentMetadata.test.jsx --reporter=verbose
+
+      # Real-browser layout tests (src/test/accessibilityWave*.layout.test.js).
+      # They skip themselves, visibly, in the browser-less "Frontend vitest"
+      # step above because Playwright's Chromium is only installed later, and
+      # the post-build step above only names two files. REQUIRE_CHROMIUM=1
+      # turns a missing browser into a failure here, so they cannot skip
+      # silently; the verbose reporter lists each test as passed.
+      - name: Real-browser layout tests (requires Chromium)
+        working-directory: artifacts/al-rahma-academy
+        env:
+          REQUIRE_CHROMIUM: '1'
+        run: npx vitest run src/test/accessibilityWave1.layout.test.js src/test/accessibilityWave2.layout.test.js --reporter=verbose

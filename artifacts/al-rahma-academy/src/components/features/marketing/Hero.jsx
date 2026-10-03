@@ -143,7 +143,7 @@ export default function Hero({ onTrialClick }) {
       </div>
 
       {/* Scroll indicator */}
-      <a href="#courses" className="hero__scroll-cue" aria-label={a11y.heroScrollCue}>
+      <a href="#courses" className="hero__scroll-cue">
         <span>{h.scroll}</span>
         <div className="hero__scroll-icon" />
       </a>

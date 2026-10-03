@@ -3,7 +3,7 @@ import { describe, it, expect, afterAll } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { chromium } from 'playwright';
+import { launchChromiumOrSkip } from './utils/launchChromium';
 import { alphabetGroups } from '../data';
 
 // Accessibility Wave 1 (real-browser half). jsdom has no layout engine, so the
@@ -13,7 +13,7 @@ import { alphabetGroups } from '../data';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // Some stylesheets start with a BOM, which would corrupt the first rule once concatenated.
-const css = (rel) => fs.readFileSync(path.resolve(__dirname, '..', 'styles', rel), 'utf8').replace(/^﻿/, '');
+const css = (rel) => fs.readFileSync(path.resolve(__dirname, '..', 'styles', rel), 'utf8').replace(/^\uFEFF/, '');
 const STYLES = ['tokens.css', 'global.css', 'layout/header.css', 'layout/enrollment.css', 'alphabet.css', 'responsive.css']
   .map(css)
   .join('\n');
@@ -23,15 +23,8 @@ const lum = ([r, g, b]) => 0.2126 * toLin(r) + 0.7152 * toLin(g) + 0.0722 * toLi
 const ratio = (a, b) => { const [hi, lo] = [lum(a), lum(b)].sort((x, y) => y - x); return (hi + 0.05) / (lo + 0.05); };
 const rgb = (s) => s.match(/\d+(\.\d+)?/g).slice(0, 3).map(Number);
 
-// Chromium is only present where Playwright browsers are installed (local
-// runs, and CI after its "Install Playwright Chromium" step). Without it these
-// tests are skipped visibly rather than failing the browser-less vitest step.
-let browser = null;
-try {
-  browser = await chromium.launch();
-} catch (error) {
-  console.warn(`[accessibilityWave1.layout] Chromium unavailable, layout tests skipped: ${String(error.message).split('\n')[0]}`);
-}
+// Skipped visibly where Chromium is not installed; an error when REQUIRE_CHROMIUM=1 (see utils/launchChromium.js).
+const browser = await launchChromiumOrSkip('accessibilityWave1.layout');
 afterAll(async () => { await browser?.close(); });
 const describeInBrowser = browser ? describe : describe.skip;
 

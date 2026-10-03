@@ -51,7 +51,6 @@ export default function QuranAudioPlayer() {
         type="button"
         className={`qap__btn${playing ? ' qap__btn--active' : ''}`}
         onClick={toggle}
-        aria-label={playing ? a11y.audioMute : a11y.audioPlay}
         title={playing ? a11y.audioMuteTitle : a11y.audioPlayTitle}
       >
         {loading ? (

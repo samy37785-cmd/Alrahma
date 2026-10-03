@@ -37,6 +37,21 @@ const CH = [1, 2, 3].map((id) => ({ id, name_simple: `Surah${id}`, name_arabic: 
 const V = [1, 2].map((n) => ({ id: n, verse_key: `1:${n}`, verse_number: n, text_uthmani: 'نص', page_number: 1, juz_number: 1, hizb_number: 1, translations: [{ text: 'trans' }] }));
 const sha = (s) => createHash('sha256').update(s).digest('hex');
 const shaFile = (rel) => sha(fs.readFileSync(path.resolve(__dirname, '..', rel), 'utf8').replace(/\r\n/g, '\n'));
+// pages/Quran.jsx is pinned to its origin/main content with ONE allowed difference: the
+// Italian breadcrumb prerequisite, i.e. the hidden-breadcrumb gate widened from 'fr' to
+// 'fr' + 'it' (quranReaderItalianBreadcrumb.test.jsx). That exact block is normalised back
+// to the original line before hashing; it must match exactly once, and any other
+// difference in the file still fails the hash.
+const BREADCRUMB_GATE_NEW = `      {/* Italian Quran Reader breadcrumb prerequisite: 'it' joins 'fr' so the Italian
+          page writes the BreadcrumbList that waitForHydratedSeo() requires. */}
+      {(siteLang === 'fr' || siteLang === 'it') && (
+`;
+const BREADCRUMB_GATE_OLD = "      {siteLang === 'fr' && (\n";
+const shaQuranPage = () => {
+  const text = fs.readFileSync(path.resolve(__dirname, '../pages/Quran.jsx'), 'utf8').replace(/\r\n/g, '\n');
+  expect(text.split(BREADCRUMB_GATE_NEW)).toHaveLength(2);
+  return sha(text.replace(BREADCRUMB_GATE_NEW, BREADCRUMB_GATE_OLD));
+};
 const fn = (o) => JSON.stringify(o, (k, v) => (typeof v === 'function' ? `fn:${v.toString()}` : v));
 const ARABIC = /[؀-ۿ]/;
 const BASMALAH = 'بِسۡمِ ٱللَّهِ ٱلرَّحۡمَٰنِ ٱلرَّحِيمِ';
@@ -71,7 +86,7 @@ describe('protected content and logic are untouched (SHA-256 baselines from orig
     expect({
       'api/quran.js': shaFile('api/quran.js'),
       'api/cache.js': shaFile('api/cache.js'),
-      'pages/Quran.jsx': shaFile('pages/Quran.jsx'),
+      'pages/Quran.jsx': shaQuranPage(),
       'hooks/useQuranHifz.js': shaFile('hooks/useQuranHifz.js'),
       'hooks/useQuranKeyboard.js': shaFile('hooks/useQuranKeyboard.js'),
       'hooks/useQuranRecorder.js': shaFile('hooks/useQuranRecorder.js'),

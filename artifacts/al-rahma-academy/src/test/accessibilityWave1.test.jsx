@@ -105,6 +105,14 @@ describe('3. LevelQuiz progress: a real progressbar with numeric values', () => 
   }
 });
 
+describe('4. alphabet learner stylesheet is loaded with the component', () => {
+  it('AlphabetLearner imports alphabet.css, and the alpha rules no longer live in the code-split hifz.css', () => {
+    expect(read('components/features/tools/AlphabetLearner.jsx')).toMatch(/import ['"]\.\.\/\.\.\/\.\.\/styles\/alphabet\.css['"]/);
+    expect(read('styles/alphabet.css')).toContain('.alpha__dot::before');
+    expect(read('styles/hifz.css')).not.toMatch(/\.alpha(__|\s|\{)/);
+  });
+});
+
 describe('4. alphabet progress dots: markup', () => {
   it('renders one button per group, in order, with the existing group labels', async () => {
     await mountFullPage('/it/tools/arabic-alphabet', () => <AlphabetLearner onClose={() => {}} />);

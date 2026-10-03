@@ -14,7 +14,7 @@ import { alphabetGroups } from '../data';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // Some stylesheets start with a BOM, which would corrupt the first rule once concatenated.
 const css = (rel) => fs.readFileSync(path.resolve(__dirname, '..', 'styles', rel), 'utf8').replace(/^﻿/, '');
-const STYLES = ['tokens.css', 'global.css', 'layout/header.css', 'layout/enrollment.css', 'hifz.css', 'responsive.css']
+const STYLES = ['tokens.css', 'global.css', 'layout/header.css', 'layout/enrollment.css', 'alphabet.css', 'responsive.css']
   .map(css)
   .join('\n');
 

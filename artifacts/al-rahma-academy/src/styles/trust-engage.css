@@ -583,7 +583,11 @@ html.dark .cancel-survey__danger:hover { background: rgba(239,68,68,.1); }
   .trust__grid { grid-template-columns: 1fr 1fr; gap: 12px; }
   .trust__badges-row { flex-direction: column; }
   .qap { bottom: 90px; right: 12px; }
-  .qap__label { display: none; }
+  /* Visually hidden, not display:none: it is the button's accessible name on mobile. */
+  .qap__label {
+    position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden;
+    clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; border: 0;
+  }
   .referral-card { flex-direction: column; }
   .cancel-survey__card { padding: 20px 16px; }
   .legal-page { padding: 40px 0 60px; }

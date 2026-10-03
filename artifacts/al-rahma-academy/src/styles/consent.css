@@ -38,7 +38,12 @@
 .consent-settings-link {
   background: none;
   border: 0;
+  /* 24px minimum touch target (WCAG 2.5.8); the text and its size are unchanged.
+     The 1px block margin keeps the box clear of the glyph boxes of links on the
+     adjacent footer line (Arabic text boxes are taller than the line pitch). */
   padding: 0;
+  min-height: 24px;
+  margin-block: 1px;
   color: inherit;
   font: inherit;
   text-decoration: underline;

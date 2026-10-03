@@ -173,7 +173,9 @@ describe('Accessibility labels (src/i18n/a11yLabels.js): ordinary Italian labels
 
   it('/it/: Hero, LevelQuiz, QuranAudioPlayer and TrustBar aria-labels are Italian', async () => {
     await mountFullPage('/it/', Home);
-    expect(document.querySelector('.hero__scroll-cue').getAttribute('aria-label')).toBe(A11Y_LABELS_TEXT.it.heroScrollCue);
+    // Accessibility Wave 2: the scroll cue is named by its (Italian) visible text, not an aria-label.
+    expect(document.querySelector('.hero__scroll-cue').hasAttribute('aria-label')).toBe(false);
+    expect(document.querySelector('.hero__scroll-cue').textContent.trim()).toBe('Scorri');
     expect(document.querySelector('.lq').getAttribute('aria-label')).toBe(A11Y_LABELS_TEXT.it.quizSection);
     expect(document.querySelector('.qap').getAttribute('aria-label')).toBe(A11Y_LABELS_TEXT.it.audioRegion);
     expect(document.querySelector('.trust-bar').getAttribute('aria-label')).toBe(A11Y_LABELS_TEXT.it.trustBar);

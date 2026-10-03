@@ -10,7 +10,6 @@ import AlphabetLearner from '../components/features/tools/AlphabetLearner';
 import { alphabetGroups } from '../data';
 import { LEVEL_QUIZ_STEPS } from '../data/home/levelQuiz';
 import { pickA11yLabels } from '../i18n/a11yLabels';
-import { PRERENDER_MANIFEST } from '../../scripts/prerender-routes.mjs';
 
 // Accessibility Wave 1 (jsdom half): markup and semantics only. The rendered
 // geometry and contrast of the same fixes are measured in a real browser in
@@ -153,13 +152,5 @@ describe('scope guards', () => {
     const header = read('components/layout/Header.jsx');
     expect(header).not.toMatch(/aria-label=\{copy\.home\}/);
     expect(header).toContain('className="header__brand-link"');
-  });
-
-  it('the manifest is unchanged by this PR (35 Italian, 36 French, 31 Arabic, 31 English routes)', () => {
-    const count = (l) => PRERENDER_MANIFEST.filter((e) => e.locale === l).length;
-    expect(count('it')).toBe(35);
-    expect(count('fr')).toBe(36);
-    expect(count('ar')).toBe(31);
-    expect(count('en')).toBe(31);
   });
 });

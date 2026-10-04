@@ -146,6 +146,7 @@ import { encodeCompositeTargetId, decodeCompositeTargetId } from './lib/composit
 import { verifyReadBack } from './lib/read-back-verify.mjs';
 import { assertLocalHostOrProductionAuthorized } from './lib/host-guard.mjs';
 import { loadAndVerifyProductionAuthorization } from './lib/production-authorization.mjs';
+import { buildPgPoolConfig } from '../../data/supabase/client.js';
 
 // Stage 2J-B, PR #70 review round 8, item 1 -- this script's own CLI was
 // still parsed by hand (a generic --key=value splitter, `v ?? true`) even
@@ -2189,7 +2190,12 @@ async function main() {
   // Postgres — it never needs Mongo (the source data isn't touched by any
   // operation this tool performs), so the connection is skipped entirely.
   if (!rollback) await mongoose.connect(mongoUri);
-  const pool = new pg.Pool({ connectionString: pgUri });
+  // Same TLS rule as backend/data/supabase/client.js's getPool() — both go
+  // through buildPgPoolConfig(), so there is exactly one place that decides
+  // SSL for this Postgres. Non-local MIGRATION_DB_URL only ever reaches here
+  // through the production-authorized branch above.
+  const pgPoolConfig = buildPgPoolConfig(pgUri);
+  const pool = new pg.Pool(pgPoolConfig);
   const pgClient = await pool.connect();
 
   const results = [];

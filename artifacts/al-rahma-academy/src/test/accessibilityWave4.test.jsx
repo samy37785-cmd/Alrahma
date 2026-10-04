@@ -82,7 +82,9 @@ describe('protected files are byte-identical to origin/main (3b44029)', () => {
       'src/components/features/quran/QuranControls.jsx': '632d50383d2320b936db51acd65d12f8a16347db711e73d6b66a6677aa724add',
       'src/components/features/quran/QuranFloatingBar.jsx': '4ca9988c516af36a7268cebbb1f981feae937003955d315f47e4d050ca03ce0a',
       'src/components/features/quran/QuranHifzControls.jsx': 'e45729fa182822ac545e73ac48fb5c8d71f3ff33ed3b3a85f773fc0cf3ca367b',
-      'src/components/features/quran/QuranMushafPage.jsx': 'bbf4e79f624571929126fc14e58f51782189a15bbc1d74f8c26edfdf10c4a3a1',
+      // Wave 5 (a11y): role="button" -> role="group" on the viewport, plus its comment. Nothing else;
+      // accessibilityWave5.test.jsx proves the file equals the old bbf4e79f... once that one change is undone.
+      'src/components/features/quran/QuranMushafPage.jsx': '0e74a994605cfa0a89e502d8e08b98706669048dfee3910ea53cc4ed1f0e6243',
       'src/components/features/quran/QuranPlayer.jsx': '68b95ebc8b5d04fdd35869a5af94182cedaef4e62365b73b6094e91dd9a07f7b',
       'src/components/features/quran/QuranQuickNav.jsx': '0f90851769995c31838f36c58696035601d458c78a35ba83f99561ae3b22fbd8',
       'src/components/features/quran/QuranReadingControls.jsx': 'a5aa5c582983131ad09a6811477a627074ea2f845bace0f7dea9c3835594aab2',

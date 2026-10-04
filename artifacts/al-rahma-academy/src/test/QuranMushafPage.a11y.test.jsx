@@ -44,9 +44,9 @@ function renderPage(props = {}) {
 }
 
 describe('QuranMushafPage keyboard accessibility', () => {
-  it('the reading viewport is a focusable, labeled, keyboard-operable control', () => {
+  it('the reading viewport is a focusable, labeled, keyboard-operable group (Wave 5: a group, not a button, because it wraps the whole page and its own buttons)', () => {
     renderPage();
-    const viewport = screen.getByRole('button', { name: /toggle reading view controls/i });
+    const viewport = screen.getByRole('group', { name: /toggle reading view controls/i });
     expect(viewport).toBeInTheDocument();
     expect(viewport).toHaveAttribute('tabIndex', '0');
   });
@@ -56,7 +56,7 @@ describe('QuranMushafPage keyboard accessibility', () => {
     const onToggleChrome = vi.fn();
     renderPage({ onToggleChrome });
 
-    const viewport = screen.getByRole('button', { name: /toggle reading view controls/i });
+    const viewport = screen.getByRole('group', { name: /toggle reading view controls/i });
     viewport.focus();
     await user.keyboard('{Enter}');
 
@@ -68,7 +68,7 @@ describe('QuranMushafPage keyboard accessibility', () => {
     const onToggleChrome = vi.fn();
     renderPage({ onToggleChrome });
 
-    const viewport = screen.getByRole('button', { name: /toggle reading view controls/i });
+    const viewport = screen.getByRole('group', { name: /toggle reading view controls/i });
     viewport.focus();
     await user.keyboard(' ');
 

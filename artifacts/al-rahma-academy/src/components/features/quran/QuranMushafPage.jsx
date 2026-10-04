@@ -86,6 +86,11 @@ export default function QuranMushafPage({
     }
   };
 
+  // role="group", not "button": this element wraps the whole page (verses, ayah-number buttons,
+  // the page-turn buttons), so as a button its visible text is a full Mushaf page that no
+  // accessible name can contain (axe label-content-name-mismatch), and its nested buttons are
+  // presentational children (nested-interactive). A labelled, focusable group keeps the existing
+  // name and the Enter/Space handler above, and exposes the inner buttons and the text.
   return (
     <div
       className={`mushaf-viewport${chromeHidden ? ' mushaf-viewport--immersive' : ''}`}
@@ -93,7 +98,7 @@ export default function QuranMushafPage({
       onKeyDown={handleViewportKeyDown}
       onTouchStart={swipeHandlers.onTouchStart}
       onTouchEnd={swipeHandlers.onTouchEnd}
-      role="button"
+      role="group"
       tabIndex={0}
       aria-label={ui.toggleReadingControls || 'Toggle reading view controls'}
     >

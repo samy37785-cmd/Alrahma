@@ -222,10 +222,10 @@ jobs:
       # step above because Playwright's Chromium is only installed later, and
       # the post-build step above only names two files. REQUIRE_CHROMIUM=1
       # turns a missing browser into a failure here, so they cannot skip
-      # silently; the verbose reporter lists each test as passed. Waves 3 and 4
+      # silently; the verbose reporter lists each test as passed. Waves 3, 4 and 5
       # test the built Home and Quran Reader (dist/public from the build step above).
       - name: Real-browser layout tests (requires Chromium)
         working-directory: artifacts/al-rahma-academy
         env:
           REQUIRE_CHROMIUM: '1'
-        run: npx vitest run src/test/accessibilityWave1.layout.test.js src/test/accessibilityWave2.layout.test.js src/test/accessibilityWave3.layout.test.js src/test/accessibilityWave4.layout.test.js --reporter=verbose
+        run: npx vitest run src/test/accessibilityWave1.layout.test.js src/test/accessibilityWave2.layout.test.js src/test/accessibilityWave3.layout.test.js src/test/accessibilityWave4.layout.test.js src/test/accessibilityWave5.layout.test.js --reporter=verbose

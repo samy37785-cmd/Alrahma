@@ -145,6 +145,16 @@ span.mushaf-ayah.qlc__verse--active {
 .mushaf-navbtn:disabled { opacity: 0 !important; cursor: default; }
 .mushaf-navbtn--prev { right: 4px; }
 .mushaf-navbtn--next { left: 4px; }
+/* Wave 5: the page-turn buttons are revealed by pointer hover (or, below 900px, faintly shown),
+   which left a keyboard user focusing an invisible - or 55%-faded, hence sub-3:1 - button.
+   Keyboard focus shows the enabled button fully with the reader's focus ring; the ring sits
+   1px off the edge so it stays inside the 4px gap to the viewport edge. Disabled buttons
+   cannot take focus and stay hidden. */
+.mushaf-viewport .mushaf-navbtn:focus-visible:not(:disabled) {
+  opacity: 1;
+  outline: var(--ring-width) solid var(--ring-color);
+  outline-offset: 1px;
+}
 
 @media (max-width: 900px) {
   /* On touch devices there's no hover to reveal the buttons — keep them

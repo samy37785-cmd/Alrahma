@@ -302,6 +302,12 @@
   transition: border-color .15s;
 }
 .qlc__cbar-select:focus { outline: none; border-color: var(--green); }
+/* Wave 5: keyboard focus must not rest on a 1.5px border colour alone (in dark the
+   themed border below even outranks the :focus colour, so nothing changed at all). */
+.qlc .qlc__cbar-select:focus-visible {
+  outline: var(--ring-width) solid var(--ring-color); outline-offset: var(--ring-offset);
+  border-color: var(--green);
+}
 .qlc__cbar-sep {
   width: 1px; background: #dce8e2; flex-shrink: 0; align-self: stretch; margin: 0;
 }
@@ -1205,6 +1211,9 @@
   .qlc__sidebar {
     position: fixed; top: 0; left: 0; bottom: 0; z-index: 60;
     width: min(84vw, 320px); height: 100vh;
+    /* Wave 5: a 46px head strip (8 + 30 + 8) that only the close button occupies, so it no
+       longer sits on top of the end nav tab (Khatm in LTR, the active Surah tab in RTL). */
+    padding-top: 46px;
     border-right: none; box-shadow: 10px 0 32px rgba(0,0,0,.28);
     transform: translateX(-100%);
     transition: transform .25s ease;

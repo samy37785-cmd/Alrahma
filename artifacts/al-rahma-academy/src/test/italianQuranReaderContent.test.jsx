@@ -52,6 +52,21 @@ const shaQuranPage = () => {
   expect(text.split(BREADCRUMB_GATE_NEW)).toHaveLength(2);
   return sha(text.replace(BREADCRUMB_GATE_NEW, BREADCRUMB_GATE_OLD));
 };
+// QuranMushafPage.jsx is pinned to its origin/main content with ONE allowed difference
+// (Accessibility Wave 5): the viewport is role="group" instead of role="button", with the
+// comment that says why. That exact change is normalised back before hashing (and must be
+// present exactly once); any other difference in the file still fails the hash.
+// accessibilityWave5.test.jsx pins the same thing.
+const MUSHAF_ROLE_COMMENT = /  \/\/ role="group", not "button"[\s\S]*?exposes the inner buttons and the text\.\n/;
+const shaMushafPage = () => {
+  const text = fs.readFileSync(path.resolve(__dirname, '../components/features/quran/QuranMushafPage.jsx'), 'utf8').replace(/\r\n/g, '\n');
+  expect(text).toMatch(MUSHAF_ROLE_COMMENT);
+  const withoutComment = text.replace(MUSHAF_ROLE_COMMENT, '');
+  expect(withoutComment.split('role="group"')).toHaveLength(2);
+  return sha(withoutComment.replace('role="group"', 'role="button"'));
+};
+// Same change in the rendered reader: the viewport's role attribute (serialised inside JSON).
+const normaliseMushafRole = (json) => json.replace(/(class=\\"mushaf-viewport[^"\\]*\\" )role=\\"group\\"/g, '$1role=\\"button\\"');
 const fn = (o) => JSON.stringify(o, (k, v) => (typeof v === 'function' ? `fn:${v.toString()}` : v));
 const ARABIC = /[؀-ۿ]/;
 const BASMALAH = 'بِسۡمِ ٱللَّهِ ٱلرَّحۡمَٰنِ ٱلرَّحِيمِ';
@@ -94,7 +109,7 @@ describe('protected content and logic are untouched (SHA-256 baselines from orig
       'QuranPlayer.jsx': shaFile('components/features/quran/QuranPlayer.jsx'),
       'QuranSyncPlayer.jsx': shaFile('components/features/quran/QuranSyncPlayer.jsx'),
       'QuranTopBar.jsx': shaFile('components/features/quran/QuranTopBar.jsx'),
-      'QuranMushafPage.jsx': shaFile('components/features/quran/QuranMushafPage.jsx'),
+      'QuranMushafPage.jsx': shaMushafPage(),
       'QuranQuickNav.jsx': shaFile('components/features/quran/QuranQuickNav.jsx'),
       'QuranFloatingBar.jsx': shaFile('components/features/quran/QuranFloatingBar.jsx'),
       'QuranControls.jsx': shaFile('components/features/quran/QuranControls.jsx'),
@@ -167,7 +182,8 @@ describe('protected content and logic are untouched (SHA-256 baselines from orig
       if (hifz) { await click(hifz); states.push(document.body.innerHTML); }
       // The Arabic page races its first load: some buttons are `disabled` for a moment.
       // That is unrelated to this change, so it is normalised away.
-      out[`${loc}.visitor`] = sha(JSON.stringify(states).replace(/ disabled=\\"\\"/g, ''));
+      // The Mushaf viewport's role (Accessibility Wave 5) is normalised back too: it is the only rendered difference.
+      out[`${loc}.visitor`] = sha(normaliseMushafRole(JSON.stringify(states)).replace(/ disabled=\\"\\"/g, ''));
       cleanup();
     }
     expect(out).toEqual({

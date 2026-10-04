@@ -110,6 +110,7 @@ import {
 } from './lib/production-approval.mjs';
 import { loadAndVerifyProductionAuthorization } from './lib/production-authorization.mjs';
 import { assertLocalHostOrProductionAuthorized } from './lib/host-guard.mjs';
+import { buildPgPoolConfig } from '../../data/supabase/client.js';
 
 // Production Enablement -- these four now live in lib/production-
 // approval.mjs (shared with the two worker scripts' own independent
@@ -1296,7 +1297,11 @@ async function main() {
   const productionAuthorization = loadAndVerifyProductionAuthorization();
   assertLocalHostOrProductionAuthorized(pgUri, 'MIGRATION_DB_URL', productionAuthorization);
 
-  const pool = new pg.Pool({ connectionString: pgUri });
+  // Same TLS rule as backend/data/supabase/client.js's getPool(): strict
+  // verification for any non-local host, TLS-weakening URL params stripped,
+  // and a missing/empty CA fails here -- before the pool or any connection
+  // exists. --plan connects too, so it gets exactly the same rule.
+  const pool = new pg.Pool(buildPgPoolConfig(pgUri));
   const pgClient = await pool.connect();
   try {
     await runPreflight(pgClient, {

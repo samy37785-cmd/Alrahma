@@ -8,6 +8,7 @@ import QuickTrialModal from '../../components/ui/QuickTrialModal';
 import { useLang } from '../../context/LangContext';
 import useSEO from '../../hooks/useSEO';
 import { TOOLS_HUB_TEXT, pick } from '../../i18n/content';
+import { IT_TAJWEED_HUB_CARD, IT_TAJWEED_ROUTE } from '../../i18n/itDiscoverability';
 
 const TOOL_ROUTES = [
   '/tools/quran-reader',
@@ -23,6 +24,9 @@ export default function ToolsHub() {
   const h  = t.hubs;
   const ht = h.tools;
   const hubText = pick(TOOLS_HUB_TEXT, lang);
+  // Italian also lists the published Tajweed Checker, which had no inbound link.
+  const cards = ht.cards.map((card, i) => ({ card, to: TOOL_ROUTES[i], i }));
+  if (lang === 'it') cards.push({ card: IT_TAJWEED_HUB_CARD, to: IT_TAJWEED_ROUTE, i: cards.length });
   const [trialOpen, setTrialOpen] = useState(false);
 
   useSEO({
@@ -48,8 +52,8 @@ export default function ToolsHub() {
         <section className="hub-cards section">
           <div className="container">
             <div className="hub-cards__grid">
-              {ht.cards.map((card, i) => (
-                <Link key={i} to={TOOL_ROUTES[i]} className="hub-card hub-card--stats">
+              {cards.map(({ card, to, i }) => (
+                <Link key={i} to={to} className="hub-card hub-card--stats">
                   {hubText.badges[i] && (
                     <span className={`hub-badge ${hubText.badges[i].cls}`}>
                       {hubText.badges[i].label}

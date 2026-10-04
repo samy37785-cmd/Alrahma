@@ -57,8 +57,16 @@ describe('the component and its data source are unchanged', () => {
     const NEW_IT_DESC = "Un versetto del Corano ogni giorno: testo arabo, riferimento e traduzione da fonte esterna. Per iniziare la giornata con le parole di Allah.";
     const OLD_IT_DESC = "Un versetto del Corano scelto ogni giorno con traduzione — inizia la giornata con le parole di Allah.";
     const votd = fs.readFileSync(path.resolve(__dirname, '..', 'pages/tools/VerseOfTheDayPage.jsx'), 'utf8').replace(/\r\n/g, '\n');
+    // Italian discoverability PR: the related-tools nav hides the unpublished Qibla/Calendar links in
+    // Italian and adds the Tajweed Checker link (two imports + the nav block). Those edits are mapped
+    // back to the origin/main text too, so every other edit to the file still fails this hash.
+    const NEW_IMPORTS = "import { isRouteHidden } from '../../utils/italianLinkPolicy';\nimport { IT_TAJWEED_ROUTE, IT_TAJWEED_RELATED_LABEL } from '../../i18n/itDiscoverability';\n";
+    const NEW_NAV = "            {!isRouteHidden(lang, '/tools/qibla') && <Link to=\"/tools/qibla\">🧭 {copy.qibla}</Link>}\n            {!isRouteHidden(lang, '/tools/islamic-calendar') && <Link to=\"/tools/islamic-calendar\">📅 {copy.calendar}</Link>}\n            <Link to=\"/tools/adhkar\">📿 {copy.adhkar}</Link>\n            {lang === 'it' && <Link to={IT_TAJWEED_ROUTE}>🎯 {IT_TAJWEED_RELATED_LABEL}</Link>}\n";
+    const OLD_NAV = "            <Link to=\"/tools/qibla\">🧭 {copy.qibla}</Link>\n            <Link to=\"/tools/islamic-calendar\">📅 {copy.calendar}</Link>\n            <Link to=\"/tools/adhkar\">📿 {copy.adhkar}</Link>\n";
     expect(votd.split(NEW_IT_DESC)).toHaveLength(2);
-    expect(sha(votd.replace(NEW_IT_DESC, OLD_IT_DESC))).toBe('234b3c98d308a7f66526d5940fdee0eea0278735067c7bdc98cfdd1daab02a05');
+    expect(votd.split(NEW_IMPORTS)).toHaveLength(2);
+    expect(votd.split(NEW_NAV)).toHaveLength(2);
+    expect(sha(votd.replace(NEW_IT_DESC, OLD_IT_DESC).replace(NEW_IMPORTS, '').replace(NEW_NAV, OLD_NAV))).toBe('234b3c98d308a7f66526d5940fdee0eea0278735067c7bdc98cfdd1daab02a05');
     expect(shaFile('api/quran.js')).toBe('84ad13d403c5ee7f879365971a2140044c85c8c32db2d7c62c702692fd8d1c88');
     expect(shaFile('utils/islamicToolsUtils.js')).toBe('df31e29fbc2229194e12025a29cd9e34addead0155e47e81acc56898f344ce27');
   });
@@ -84,9 +92,11 @@ describe('/it/tools/verse-of-the-day: complete Italian shell, no English or Fren
     );
     expect([...document.querySelectorAll('h1')].map((h) => h.textContent)).toEqual(['Versetto del giorno']);
     const text = document.querySelector('#main-content').textContent;
-    for (const s of ['Strumenti', 'Strumenti per la preghiera', 'Strumenti islamici', 'Un versetto scelto con cura', 'Prenota una lezione di prova gratuita', 'Nessuna carta di credito', 'Prova anche:', 'Orari di preghiera', 'Direzione della Qibla', 'Calendario islamico', 'Adhkar quotidiani']) {
+    for (const s of ['Strumenti', 'Strumenti per la preghiera', 'Strumenti islamici', 'Un versetto scelto con cura', 'Prenota una lezione di prova gratuita', 'Nessuna carta di credito', 'Prova anche:', 'Orari di preghiera', 'Adhkar quotidiani', 'Verificatore di Tajweed']) {
       expect(text, s).toContain(s);
     }
+    // Qibla and Calendar have no published Italian page, so they are not linked (italianInternalLinks.test.jsx).
+    for (const s of ['Direzione della Qibla', 'Calendario islamico']) expect(text, s).not.toContain(s);
     expect(document.querySelector('nav.it__also-try').getAttribute('aria-label')).toBe('Strumenti correlati');
     for (const s of ['Verse of the Day', 'Islamic Tools', 'Related tools', 'Also try', 'Prayer Times', 'Qibla Direction', 'Islamic Calendar', 'Daily Adhkar', 'Book a Free Trial', 'No credit card', 'Verset du jour', 'Outils']) {
       expect(text, s).not.toContain(s);

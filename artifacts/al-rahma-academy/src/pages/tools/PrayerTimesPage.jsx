@@ -7,6 +7,7 @@ import Breadcrumbs from '../../components/ui/Breadcrumbs';
 import WhatsappFab from '../../components/ui/WhatsappFab';
 import useSEO from '../../hooks/useSEO';
 import { useLang } from '../../context/LangContext';
+import { isRouteHidden } from '../../utils/italianLinkPolicy';
 import { TOOLS_TEXT, pick } from '../../i18n/content';
 import { PRAYER_TIMES_TEXT } from '../../i18n/tools/prayerTimes';
 import { RELATED_TOOLS_TEXT } from '../../i18n/tools/relatedTools';
@@ -395,8 +396,8 @@ export default function PrayerTimesPage() {
 
           <nav className="it__also-try" aria-label={rt.ariaLabel}>
             <span className="it__also-try__label">{rt.alsoTry}</span>
-            <Link to="/tools/qibla">🧭 {rt.qibla}</Link>
-            <Link to="/tools/islamic-calendar">📅 {rt.calendar}</Link>
+            {!isRouteHidden(lang, '/tools/qibla') && <Link to="/tools/qibla">🧭 {rt.qibla}</Link>}
+            {!isRouteHidden(lang, '/tools/islamic-calendar') && <Link to="/tools/islamic-calendar">📅 {rt.calendar}</Link>}
             <Link to="/tools/verse-of-the-day">🌟 {rt.verse}</Link>
           </nav>
         </div>

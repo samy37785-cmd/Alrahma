@@ -4,6 +4,7 @@ import Footer from '../../components/layout/Footer';
 import Breadcrumbs from '../../components/ui/Breadcrumbs';
 import WhatsappFab from '../../components/ui/WhatsappFab';
 import { useLang } from '../../context/LangContext';
+import { quranReaderRoute } from '../../utils/italianLinkPolicy';
 import useSEO from '../../hooks/useSEO';
 import { pickCoursesSeo } from '../../i18n/courses/seo';
 
@@ -66,7 +67,7 @@ export default function CoursesQuran() {
           <div className="container hub-related__inner">
             <h2>{hq.relatedHeading}</h2>
             <p>{hq.relatedDesc}</p>
-            <Link to="/tools/quran" className="btn btn--ghost">{hq.relatedBtn}</Link>
+            <Link to={quranReaderRoute(lang)} className="btn btn--ghost">{hq.relatedBtn}</Link>
           </div>
         </section>
       </main>

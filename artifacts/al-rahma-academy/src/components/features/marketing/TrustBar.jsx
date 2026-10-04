@@ -75,7 +75,7 @@ export default function TrustBar() {
               target="_blank"
               rel="noopener noreferrer"
               className="trust-bar__wa"
-              aria-label={tb.whatsappStatusAriaLabel}
+              title={tb.whatsappStatusAriaLabel}
             >
               <span
                 className={`trust-bar__wa-dot${waStatus === 'online' ? ' trust-bar__wa-dot--on' : ''}`}

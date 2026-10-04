@@ -245,7 +245,7 @@ export default function Header() {
             <button
               className="nav__mobile-search"
               onClick={() => { setCmdOpen(true); setMobileOpen(false); }}
-              aria-label={copy.searchPages}
+              title={copy.searchPages}
             >
               <span className="nav__mobile-search-icon"><SearchIcon size={16} /></span>
               <span>{copy.searchPrompt}</span>

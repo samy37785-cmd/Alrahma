@@ -356,7 +356,9 @@ const it = {
     "academy": "Accademia",
     "langAll": "Tutti",
     "seoTitle": "Insegnanti di Corano Certificati Al-Azhar",
-    "seoDescription": `Al-Rahma Academy conta ${siteFacts.totalTeachers} insegnanti nel nostro team — ${siteFacts.featuredTeacherCount} di loro sono presentati qui. Ogni insegnante è un laureato di Al-Azhar, titolare di un'Ijazah verificata con sanad continuo, con identità verificata dall'accademia.`,
+    // Italian SEO Meta Descriptions, long wave: meta description only (not rendered on the
+    // page); 222 -> 152 code points, without teacher counts.
+    "seoDescription": "Sfoglia i profili degli insegnanti di Al-Rahma Academy e filtra per materia, genere e lingua per scegliere chi seguirà le tue lezioni di Corano e arabo.",
     "eyebrow": "Conosci alcuni dei nostri insegnanti",
     "title": "I nostri insegnanti qualificati",
     "sub": "Ogni insegnante di Al-Rahma Academy è un laureato verificato dell'Università di Al-Azhar e possiede un'autentica Ijazah con una catena di trasmissione (Sanad) ininterrotta.",

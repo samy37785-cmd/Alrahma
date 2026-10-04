@@ -4,10 +4,11 @@ import About from '../components/features/marketing/About';
 import useSEO from '../hooks/useSEO';
 import Breadcrumbs from '../components/ui/Breadcrumbs';
 import { useLang } from '../context/LangContext';
+import { pickItMetaDescription } from '../i18n/itMetaDescriptions';
 
 export default function AboutPage() {
-  const { t } = useLang();
-  useSEO({ title: t.about.eyebrow, description: t.about.description });
+  const { t, lang } = useLang();
+  useSEO({ title: t.about.eyebrow, description: pickItMetaDescription('about', lang, t.about.description) });
 
   return (
     <>

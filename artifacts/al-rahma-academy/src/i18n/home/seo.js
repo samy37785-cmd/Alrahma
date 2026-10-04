@@ -59,7 +59,9 @@ export const HOME_SEO_TEXT = {
   // hreflang or prerender entry (unchanged by this batch).
   it: {
     title: 'Impara il Corano online',
-    description: `Lezioni individuali online di Corano, Tajweed e arabo con insegnanti certificati di Al-Azhar, di cui si fidano ${siteFacts.totalStudents} studenti in ${siteFacts.countriesServed} paesi. Una lezione di prova gratuita — senza alcun pagamento.`,
+    // Italian SEO Meta Descriptions, long wave: shortened from ~194 to 153 code points;
+    // the student/country figures are dropped (same choice as fr above).
+    description: 'Lezioni individuali online di Corano, Tajweed, arabo e studi islamici con insegnanti certificati di Al-Azhar. Una lezione di prova gratuita, senza carta.',
     keywords: 'imparare il corano online, corsi di corano online, insegnante di corano, lezioni di tajweed, insegnante al-azhar, studi islamici online, corano per bambini, hifz online',
   },
 };

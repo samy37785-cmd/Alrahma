@@ -127,7 +127,8 @@ describe('French meta descriptions', () => {
     expect(HOME_SEO_TEXT.en.description).toMatch(/^One-to-one online Quran, Tajweed and Arabic lessons with Al-Azhar certified tutors, trusted by /);
     expect(HOME_SEO_TEXT.en.description).toMatch(/One free trial lesson — no payment needed\.$/);
     expect(HOME_SEO_TEXT.ar.description).toMatch(/^دروس فردية مباشرة أونلاين/);
-    expect(HOME_SEO_TEXT.it.description).toMatch(/^Lezioni individuali online di Corano, Tajweed e arabo/);
+    // it was shortened later by the Italian long-description wave (italianMetadataLongPages.test.jsx).
+    expect(HOME_SEO_TEXT.it.description).toMatch(/^Lezioni individuali online di Corano, Tajweed, arabo/);
   });
 
   it('the visible French subtitles are unchanged (only <head> metadata moved)', () => {

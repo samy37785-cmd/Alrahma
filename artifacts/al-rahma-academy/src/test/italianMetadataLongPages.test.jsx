@@ -296,8 +296,11 @@ const BASE = {
 
 // SHA-256 of #main-content's textContent after mounting each Italian page in jsdom, computed
 // on the unmodified origin/main tree. Proves the visible copy did not move.
+// /it/ updated by the TrustBar deterministic-rendering fix: under navigator.webdriver the
+// WhatsApp status now shows the neutral "Scrivici su WhatsApp" + support hours instead of
+// "Supporto online…" (that one swap reproduces the previous hash, 44c2be0d…).
 const MOUNTED_TEXT = {
-  "/it/": "44c2be0d09ae09478e461ace53f9872fc1b55a9d82a22e0ebb0ba63d3cdf719d",
+  "/it/": "267ce8ad1bd5c6013ae9006dc38b4c80926c668f117b7c058d4bb149ee0ba409",
   "/it/academy/about": "f58105bdb93dc300c167773dc8f4a57946f2a9676a3b0357920798ba23574f1a",
   "/it/enroll": "ce332116a6206ef49917d6e81ba3831f980ea73b8ad7fd5cf521043ab8367283",
   "/it/academy/teachers": "cbe05d1a5135993cd1378dc9b3c5c69efab8329ad3ff9270413e901805b402e5"

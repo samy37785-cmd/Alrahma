@@ -6,33 +6,44 @@ import { TRUST_BAR_COUNTRIES } from '../../../data/home/countries';
 import { COUNTRY_NAMES_TEXT } from '../../../i18n/home/countries';
 import { pickLeakedString } from '../../../i18n/home/leakedStrings';
 import { pickA11yLabels } from '../../../i18n/a11yLabels';
+import { supportStatusAt, msUntilNextCheck } from '../../../utils/cairoSupportHours';
 
 const BADGE_ICONS = ['🔒', '💳', '🎓', '👩‍🏫', '🕐', '📄', '⚡'];
 
-function useIsBusinessHours() {
-  const [status, setStatus] = useState('checking');
+// The first render is always 'neutral' (no time claim), so the prerendered HTML does not
+// depend on the clock of the build machine. The live status is computed after mount, in
+// the visitor's browser, and re-checked with one timeout at each Cairo hour boundary.
+// Under navigator.webdriver (scripts/prerender.mjs, automated crawlers) nothing is
+// computed or scheduled, so the static file keeps the neutral text.
+function useSupportStatus() {
+  const [status, setStatus] = useState('neutral');
   useEffect(() => {
+    if (typeof navigator !== 'undefined' && navigator.webdriver) return undefined;
+    let id;
     const check = () => {
-      // Cairo time (UTC+2 / UTC+3 DST), approximate check
-      const cairo = new Date(new Date().toLocaleString('en-US', { timeZone: 'Africa/Cairo' }));
-      const h = cairo.getHours();
-      const day = cairo.getDay();
-      // Sun=0, Sat=6; available Sat-Thu 8am-11pm Cairo time
-      const workday = day !== 5; // Friday is rest day
-      setStatus(workday && h >= 8 && h < 23 ? 'online' : 'offline');
+      const now = new Date();
+      const s = supportStatusAt(now);
+      setStatus(s === 'unknown' ? 'neutral' : s);
+      id = setTimeout(check, msUntilNextCheck(now));
     };
     check();
-    const id = setInterval(check, 60000);
-    return () => clearInterval(id);
+    return () => clearTimeout(id);
   }, []);
   return status;
 }
 
 export default function TrustBar() {
   const trackRef = useRef(null);
-  const waStatus = useIsBusinessHours();
+  const waStatus = useSupportStatus();
   const { t, lang } = useLang();
   const tb = t.trustBar;
+  // Neutral (prerender / no live status): the existing footer strings, "WhatsApp us" and
+  // the published support hours, which are true at any time.
+  const waText = {
+    online: [tb.supportOnline, tb.repliesMinutes],
+    offline: [tb.leaveMessage, tb.repliesHours],
+    neutral: [t.footer.whatsapp, t.footer.supportHours],
+  }[waStatus];
   const countryNames = COUNTRY_NAMES_TEXT[lang] || COUNTRY_NAMES_TEXT.en;
 
   // Duplicate flags for seamless infinite scroll
@@ -57,7 +68,7 @@ export default function TrustBar() {
             business-hours status are kept — both are documented in
             TermsOfService.jsx (§3 refund policy; §13 response-time /
             business-hours policy, which this component's
-            useIsBusinessHours() mirrors exactly). */}
+            useSupportStatus() mirrors exactly, via utils/cairoSupportHours.js). */}
         <div className="trust-bar__stats">
           <div className="trust-bar__stat">
             <span className="trust-bar__stat-num" aria-hidden="true">✓</span>
@@ -82,10 +93,8 @@ export default function TrustBar() {
                 aria-hidden="true"
               />
               <span>
-                <strong>{waStatus === 'online' ? tb.supportOnline : tb.leaveMessage}</strong>
-                <span className="trust-bar__wa-sub">
-                  {waStatus === 'online' ? tb.repliesMinutes : tb.repliesHours}
-                </span>
+                <strong>{waText[0]}</strong>
+                <span className="trust-bar__wa-sub">{waText[1]}</span>
               </span>
             </a>
           </div>

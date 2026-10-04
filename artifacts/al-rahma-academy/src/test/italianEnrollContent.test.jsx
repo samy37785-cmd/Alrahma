@@ -112,8 +112,13 @@ describe('EN/AR/FR and data are unchanged (SHA-256 baselines from origin/main)',
     ]);
   });
 
-  it('the existing Italian SEO title and description are kept as they are', () => {
-    expect(sha(ENROLL_SEO_TEXT.it)).toBe('3db985028fa0f2357167465413962811fcd41fcdc45893f70cc645d4d90f7e23');
+  // Italian SEO Meta Descriptions, long wave: only the description changed; mapping it back
+  // to the origin/main text must reproduce the original hash (title and keywords intact).
+  it('the existing Italian SEO title and keywords are kept; only the description was shortened', () => {
+    expect(sha({
+      ...ENROLL_SEO_TEXT.it,
+      description: 'Una lezione di prova gratuita individuale di Corano — senza pagamento, senza impegno. Scegli le tue materie, scegli un insegnante certificato Al-Azhar e prenota il tuo piano — confermeremo con te l\'orario e il pagamento su WhatsApp.',
+    })).toBe('3db985028fa0f2357167465413962811fcd41fcdc45893f70cc645d4d90f7e23');
     expect(ENROLL_SEO_TEXT.it.title).toBe('Prenota lezioni di prova gratuite');
   });
 });

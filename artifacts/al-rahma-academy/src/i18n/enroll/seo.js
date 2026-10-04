@@ -39,7 +39,9 @@ export const ENROLL_SEO_TEXT = {
   // booking-first framing (free trial request, not an instant purchase).
   it: {
     title: 'Prenota lezioni di prova gratuite',
-    description: 'Una lezione di prova gratuita individuale di Corano — senza pagamento, senza impegno. Scegli le tue materie, scegli un insegnante certificato Al-Azhar e prenota il tuo piano — confermeremo con te l\'orario e il pagamento su WhatsApp.',
+    // Italian SEO Meta Descriptions, long wave: shortened from 232 to 155 code points and
+    // aligned with the visible four-step form and the WhatsApp follow-up.
+    description: 'Richiedi una lezione di prova gratuita di Corano in 4 passi: i tuoi dati, gli obiettivi, l\'insegnante e il piano. Il nostro team ti contatterà su WhatsApp.',
     keywords: 'lezione di prova gratuita del corano, iscrizione al corano online, prenota lezione di corano, prenotazione corso di corano',
   },
 };

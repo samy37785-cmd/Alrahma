@@ -1441,7 +1441,7 @@ const LITERAL_FILES = [
     expectedArHref: 'https://al-rahmaacademy.com/ar/enroll',
     expectedFrHref: 'https://al-rahmaacademy.com/fr/enroll',
     expectedTitle: 'Prenota lezioni di prova gratuite | AL-Rahma Academy',
-    expectedDescription: "Una lezione di prova gratuita individuale di Corano — senza pagamento, senza impegno. Scegli le tue materie, scegli un insegnante certificato Al-Azhar e prenota il tuo piano — confermeremo con te l'orario e il pagamento su WhatsApp.",
+    expectedDescription: "Richiedi una lezione di prova gratuita di Corano in 4 passi: i tuoi dati, gli obiettivi, l'insegnante e il piano. Il nostro team ti contatterà su WhatsApp.",
     breadcrumb: [
       { name: 'Pagina iniziale', item: 'https://al-rahmaacademy.com/it/' },
       { name: 'Prova gratuita', item: 'https://al-rahmaacademy.com/it/enroll' },
@@ -2148,7 +2148,7 @@ describe.skipIf(!distExists)('/it/enroll raw prerender HTML — safe before any 
     expect(doc.querySelector('meta[property="og:locale"]').getAttribute('content')).toBe('it_IT');
     expect([...doc.querySelectorAll('meta[property="og:locale:alternate"]')].map((m) => m.getAttribute('content'))).toEqual(['fr_FR']);
     expect(doc.title).toBe('Prenota lezioni di prova gratuite | AL-Rahma Academy');
-    expect(doc.querySelector('meta[name="description"]').getAttribute('content')).toMatch(/^Una lezione di prova gratuita/);
+    expect(doc.querySelector('meta[name="description"]').getAttribute('content')).toMatch(/^Richiedi una lezione di prova gratuita/);
     expect([...doc.querySelectorAll('h1')].map((h) => h.textContent.trim())).toEqual(['Iscriviti ad Al-Rahma Academy']);
   });
 

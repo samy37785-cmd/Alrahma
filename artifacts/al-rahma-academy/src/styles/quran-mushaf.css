@@ -21,8 +21,10 @@
   display: flex; justify-content: space-between; align-items: center;
   margin-bottom: 18px; direction: rtl;
 }
+/* Secondary Mushaf ink is #6a5620 (the page badge's colour): the former #8a7440 /
+   #8a6d1a fell to 3.6-4.4:1 on the cream surfaces (Accessibility Wave 4). */
 .mushaf-margin__badge {
-  font-size: .72rem; letter-spacing: .03em; color: #8a7440;
+  font-size: .72rem; letter-spacing: .03em; color: #6a5620;
   padding: 3px 10px; border: 1px solid #e7dcc0; border-radius: 999px;
   background: #fbf6e8;
 }
@@ -39,7 +41,7 @@
 .mushaf-surah-banner__ar {
   font-family: var(--serif); font-size: 1.7rem; color: #5a4816;
 }
-.mushaf-surah-banner__meta { font-size: .72rem; color: #8a7440; }
+.mushaf-surah-banner__meta { font-size: .72rem; color: #6a5620; }
 
 .mushaf-basmalah {
   text-align: center; font-family: var(--serif); font-size: 1.6rem;
@@ -61,7 +63,7 @@
   display: inline-flex; align-items: center; justify-content: center;
   min-width: 1.6em; height: 1.6em; padding: 0 3px;
   border: 1px solid #cdb96e; border-radius: 50%;
-  background: #fbf3da; color: #8a6d1a;
+  background: #fbf3da; color: #6a5620;
   font-size: .55em; line-height: 1; vertical-align: middle;
   cursor: pointer;
 }
@@ -73,7 +75,7 @@
   font-size: .88rem; color: #5a5040; line-height: 1.7;
 }
 .mushaf-translation p { margin: 0 0 8px; }
-.mushaf-translation b { color: #8a7440; font-weight: 700; margin-inline-end: 6px; }
+.mushaf-translation b { color: #6a5620; font-weight: 700; margin-inline-end: 6px; }
 
 /* Playing-verse highlight (class toggled by QuranSyncPlayer) reuses the
    existing .qlc__verse--active convention but Mushaf verses are inline
@@ -122,7 +124,7 @@ span.mushaf-ayah.qlc__verse--active {
 .mushaf-progress {
   position: sticky; top: 0; z-index: 4;
   display: inline-block; margin: 8px auto 4px; padding: 3px 12px;
-  font-size: .72rem; font-weight: 700; letter-spacing: .03em; color: #8a7440;
+  font-size: .72rem; font-weight: 700; letter-spacing: .03em; color: #6a5620;
   background: #fbf6e8ee; border: 1px solid #e7dcc0; border-radius: 999px;
   backdrop-filter: blur(3px);
   transition: opacity .25s ease;
@@ -132,7 +134,7 @@ span.mushaf-ayah.qlc__verse--active {
 .mushaf-navbtn {
   position: absolute; top: 50%; transform: translateY(-50%); z-index: 3;
   width: 40px; height: 40px; border-radius: 50%;
-  border: 1px solid #e7dcc0; background: #fffdf6cc; color: #8a7440;
+  border: 1px solid #e7dcc0; background: #fffdf6cc; color: #6a5620;
   font-size: 1.4rem; line-height: 1; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
   opacity: 0; transition: opacity .2s ease, background .15s ease;

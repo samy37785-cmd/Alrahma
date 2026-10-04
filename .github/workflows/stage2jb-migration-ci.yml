@@ -173,6 +173,15 @@ jobs:
         working-directory: backend
         run: npm test
 
+      # `npm test`'s unquoted tests/**/*.test.js is expanded by bash here, and
+      # without globstar `**` matches one directory level only: just the
+      # tests/*/ subfolders run, never the top-level tests/*.test.js files.
+      # Until that script is fixed, the Postgres TLS policy tests are named
+      # explicitly so CI really executes them. Spec reporter lists each test.
+      - name: Postgres TLS policy tests (explicit files, not the npm test glob)
+        working-directory: backend
+        run: node --test --test-reporter=spec tests/supabase-pg-tls-config.test.js tests/migration-tools-pg-tls.test.js
+
       - name: Migration targeted tests (disposable Docker Mongo/Postgres only, no real credentials)
         working-directory: backend
         run: npm run test:migration

@@ -341,7 +341,7 @@
 }
 .course-row__popular {
   font-size: .66rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em;
-  background: var(--gold); color: #3a2e05; padding: 3px 10px; border-radius: 999px;
+  background: var(--gold); color: #241a02; padding: 3px 10px; border-radius: 999px; /* 5.55:1 (was #3a2e05, 4.31:1) */
 }
 .course-row__badges { display: flex; gap: 8px; }
 .course-row__badge {
@@ -903,6 +903,13 @@
   position: relative;
   padding-bottom: 16px;
 }
+/* Section eyebrows: the global .eyebrow gold (--text-accent-dark, #b8941f) is
+   2.66:1 on cream and 2.87:1 on white; amber-700 is 5.89:1 and 6.40:1. Dark mode
+   keeps the existing light gold. A custom property so later per-section overrides
+   (e.g. .isnad__head .eyebrow) still win in both themes. */
+.section-head { --section-eyebrow-ink: var(--p-amber-700); }
+html.dark .section-head { --section-eyebrow-ink: var(--text-accent-dark); }
+.section-head .eyebrow { color: var(--section-eyebrow-ink); }
 .section-head h2::after {
   content: '';
   position: absolute;

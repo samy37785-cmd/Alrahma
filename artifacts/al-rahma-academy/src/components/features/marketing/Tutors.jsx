@@ -100,7 +100,7 @@ function TutorAvatar({ teacher, tp, initials, lang, size = 'md', onPlay }) {
       >
         <span className="tc3__initials" dir="rtl">{initials}</span>
       </Link>
-      <span className="tc3__verified" title={tp.alazharBadge} aria-label={tp.alazharBadge}>
+      <span className="tc3__verified" role="img" title={tp.alazharBadge} aria-label={tp.alazharBadge}>
         {CHECK_BADGE_ICON}
       </span>
       {teacher.videoUrl && (

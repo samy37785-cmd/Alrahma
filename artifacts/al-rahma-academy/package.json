@@ -65,6 +65,7 @@
     "@vitejs/plugin-react": "catalog:",
     "@vitest/coverage-v8": "^4.1.9",
     "@workspace/api-client-react": "workspace:*",
+    "axe-core": "4.10.2",
     "axios": "^1.17.0",
     "class-variance-authority": "catalog:",
     "clsx": "catalog:",

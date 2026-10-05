@@ -17,6 +17,9 @@
 //     filled;
 //   - unpreserved: the target table has no column for it at all. Declared
 //     per domain, never inferred, and counted by field name in the report.
+//   - excluded: deliberately not migrated, with a stated classification
+//     (e.g. users.resetTokenExpiry is security-ephemeral data,
+//     lib/security-ephemeral.mjs). Counted as intentionallyNotMigrated.
 // A top-level Date field that is none of these fails the document: a new
 // source date can never be dropped without a declaration.
 //
@@ -110,16 +113,22 @@ export function optionalSourceDate(doc, field, column, stats) {
 
 /**
  * The fail-closed accounting check. Every top-level Date field on `doc`
- * must be either consumed by the domain's transform (`mapped`) or declared
- * as having no destination column (`unpreserved`, counted in `stats`).
- * Anything else throws, naming the field only (never its value).
+ * must be either consumed by the domain's transform (`mapped`), declared
+ * as having no destination column (`unpreserved`), or deliberately
+ * excluded with a classification (`excluded`: { field: classification }),
+ * each counted in `stats`. Anything else throws, naming the field only
+ * (never its value).
  */
-export function accountForSourceDates(doc, { mapped = [], unpreserved = [] }, stats) {
+export function accountForSourceDates(doc, { mapped = [], unpreserved = [], excluded = {} }, stats) {
   const known = new Set(mapped);
   const declaredLoss = new Set(unpreserved);
   for (const [field, value] of Object.entries(doc ?? {})) {
     if (!(value instanceof Date)) continue;
     if (known.has(field)) continue;
+    if (Object.hasOwn(excluded, field)) {
+      bump(stats, 'intentionallyNotMigrated', field);
+      continue;
+    }
     if (declaredLoss.has(field)) {
       bump(stats, 'unpreserved', field);
       continue;

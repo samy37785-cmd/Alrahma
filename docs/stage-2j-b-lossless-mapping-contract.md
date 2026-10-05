@@ -40,12 +40,12 @@ Classification legend (exactly the six the task specifies):
 | `referralCode` | PRESERVED_EXACTLY | → `profiles.referral_code` (already exists, 0014) |
 | `googleId` | **BLOCKED** | Linking a real OAuth identity into `auth.identities` requires either the actual OAuth token exchange or careful use of the GoTrue Admin API's identity-linking — not a safe bulk data-only backfill. A user who signed in with Google before must re-link Google after migration. |
 | `xp`/`level`/`streak`/`lastStudyDate`/`badges` | PRESERVED_EXACTLY | All already exist on `profiles` (0014) — the profiles.ts source file's own doc comment claiming "no gamification" was stale; fixed in this stage. |
-| `resetToken`/`resetTokenExpiry` | **BLOCKED — by design** | A Mongo password-reset token is meaningless in GoTrue's own auth system; never migrated. |
+| `resetToken`/`resetTokenExpiry` | **INTENTIONALLY_NOT_MIGRATED_SECURITY_EPHEMERAL_DATA** (owner decision DECISION_RESET_TOKEN_EXPIRY) | A pending password-reset link of the old system; meaningless in GoTrue, which issues its own. Never migrated; counted by field in the user-migration report (`securityEphemeral`, and `dates.users.intentionallyNotMigrated` for the expiry). |
 | `tokenVersion` | **BLOCKED — by design** | Mongo's own JWT-invalidation counter; GoTrue manages its own session/refresh-token lifecycle independently. |
 | `createdAt`/`updatedAt` | PRESERVED_EXACTLY | → `profiles.created_at`/`updated_at` |
 | `subscription` (embedded object) | see §8 | Own section below — 6/7 real users carry one. |
 
-`RefreshToken` documents (0 real rows) — **NOT_APPLICABLE**: GoTrue owns its own refresh-token table; a Mongo `RefreshToken` document has no destination and none is needed.
+`RefreshToken` documents (0 real rows) — **INTENTIONALLY_NOT_MIGRATED_SECURITY_EPHEMERAL_DATA** (DECISION_RESET_TOKEN_EXPIRY): GoTrue issues its own sessions and every old session ends at cutover. The collection is counted in the user-migration report (`securityEphemeral.collections.refreshtokens`) and never read beyond that count.
 
 ## 2. `adminusers` (0 documents) → `auth.users` + `profiles` + `admin_role_assignments` + `role_permissions`/`user_extra_permissions`
 

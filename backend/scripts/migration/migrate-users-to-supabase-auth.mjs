@@ -61,6 +61,7 @@ import { buildPgPoolConfig } from '../../data/supabase/client.js';
 import { installRedactingConsole, redactDeep, fingerprint } from './lib/redact.mjs';
 import { computePasswordHashProblems, emailConfirmationFor, isBcryptHash } from './lib/auth-import.mjs';
 import { sourceTimestamps, accountForSourceDates, restoreSourceTimestamps } from './lib/source-dates.mjs';
+import { SECURITY_EPHEMERAL_CLASSIFICATION, SECURITY_EPHEMERAL_COLLECTIONS, securityEphemeralReport } from './lib/security-ephemeral.mjs';
 
 // Review round 6, item 3: this script never went through migration_source_
 // ledger before this round (it predates that table, and auth.users/
@@ -224,13 +225,14 @@ const ADMIN_ROLE_MAP = { admin: 'admin', editor: 'editor', viewer: 'viewer' };
 // Source date fields on a users/adminusers document, beyond the
 // createdAt/updatedAt pair restored onto profiles. Every other top-level
 // Date fails the document (lib/source-dates.mjs accountForSourceDates()).
-const USER_SOURCE_DATES = {
+export const USER_SOURCE_DATES = {
   // lastStudyDate -> profiles.last_study_date (applyPersona); subscription
   // dates are nested and handled by migrateSubscription().
   mapped: ['createdAt', 'updatedAt', 'lastStudyDate'],
-  // A pending password-reset token's expiry: the token itself is never
-  // migrated, so its expiry has nothing to belong to.
-  unpreserved: ['resetTokenExpiry'],
+  // DECISION_RESET_TOKEN_EXPIRY: a pending password-reset link's expiry,
+  // like the token itself, is security-ephemeral and never migrated
+  // (lib/security-ephemeral.mjs); reported under that classification.
+  excluded: { resetTokenExpiry: SECURITY_EPHEMERAL_CLASSIFICATION },
 };
 const ADMIN_SOURCE_DATES = {
   mapped: ['createdAt', 'updatedAt'],
@@ -1843,11 +1845,17 @@ async function main() {
     emailConfirmation: {},
     // lib/source-dates.mjs accounting for users/adminusers documents.
     dates: { users: {}, admins: {}, problems: [] },
+    securityEphemeral: null,
   };
 
   try {
     const users = await db.collection('users').find({}).toArray();
     const admins = await db.collection('adminusers').find({}).toArray();
+    // DECISION_RESET_TOKEN_EXPIRY: counted (presence only) and reported as
+    // INTENTIONALLY_NOT_MIGRATED_SECURITY_EPHEMERAL_DATA, never migrated.
+    const ephemeralCounts = {};
+    for (const name of SECURITY_EPHEMERAL_COLLECTIONS) ephemeralCounts[name] = await db.collection(name).countDocuments();
+    report.securityEphemeral = securityEphemeralReport(users, ephemeralCounts);
 
     // ===================================================================
     // Phase A -- FULL deterministic validation, zero writes, identical in

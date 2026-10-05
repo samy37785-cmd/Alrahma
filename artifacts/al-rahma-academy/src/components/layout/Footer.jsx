@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import Brand from "./Brand";
 import { useLang } from "../../context/LangContext";
+import { isRouteHidden } from "../../utils/italianLinkPolicy";
 import { site, socials } from "../../data";
 import { ShieldIcon, BookOpenIcon, GlobeIcon, StarIcon, CalendarIcon } from '../ui/Icons';
 import CookieSettingsButton from '../ui/CookieSettingsButton';
@@ -88,7 +89,7 @@ export default function Footer() {
         <div className="footer__col">
           <h3>{f.resourcesCol}</h3>
           <ul>
-            <li><Link to="/resources/blog">{f.blogLink}</Link></li>
+            {!isRouteHidden(lang, "/resources/blog") && <li><Link to="/resources/blog">{f.blogLink}</Link></li>}
             <li><Link to="/resources/faq">{f.faqLink}</Link></li>
             <li><Link to="/enroll">{f.freeTrialLink}</Link></li>
           </ul>

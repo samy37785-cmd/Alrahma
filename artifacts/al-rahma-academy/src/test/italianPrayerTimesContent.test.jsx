@@ -65,9 +65,11 @@ describe('/it/tools/prayer-times: Italian shell, source terms kept', () => {
     expect(headMeta('meta[name="description"]')).toBe(PRAYER_TIMES_TEXT.it.seo.description);
     expect(document.querySelector('h1').textContent).toBe('Orari di preghiera');
     const text = document.querySelector('#main-content').textContent;
-    for (const s of ['Strumenti', 'Strumenti per la preghiera', 'Metodo di calcolo', 'Formato ora', 'Prova anche:', 'Direzione della Qibla', 'Calendario islamico', 'Versetto del giorno']) {
+    for (const s of ['Strumenti', 'Strumenti per la preghiera', 'Metodo di calcolo', 'Formato ora', 'Prova anche:', 'Versetto del giorno']) {
       expect(text, s).toContain(s);
     }
+    // Qibla and Calendar have no published Italian page, so they are not linked (italianInternalLinks.test.jsx).
+    for (const s of ['Direzione della Qibla', 'Calendario islamico']) expect(text, s).not.toContain(s);
     for (const s of ['Prayer Times', 'Prayer Tools', 'Also try', 'Qibla Direction', 'Islamic Calendar', 'Verse of the Day', 'Accurate times', 'Calculation method']) {
       expect(text, s).not.toContain(s);
     }

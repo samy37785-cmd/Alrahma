@@ -7,6 +7,8 @@ import Breadcrumbs from '../../components/ui/Breadcrumbs';
 import WhatsappFab from '../../components/ui/WhatsappFab';
 import useSEO from '../../hooks/useSEO';
 import { useLang } from '../../context/LangContext';
+import { isRouteHidden } from '../../utils/italianLinkPolicy';
+import { IT_TAJWEED_ROUTE, IT_TAJWEED_RELATED_LABEL } from '../../i18n/itDiscoverability';
 import { getVerse } from '../../api/quran';
 import { DAILY_VERSE_KEYS } from '../../utils/islamicToolsUtils';
 
@@ -222,9 +224,10 @@ export default function VerseOfTheDayPage() {
           <nav className="it__also-try" aria-label={copy.related}>
             <span className="it__also-try__label">{copy.also}</span>
             <Link to="/tools/prayer-times">🕌 {copy.prayer}</Link>
-            <Link to="/tools/qibla">🧭 {copy.qibla}</Link>
-            <Link to="/tools/islamic-calendar">📅 {copy.calendar}</Link>
+            {!isRouteHidden(lang, '/tools/qibla') && <Link to="/tools/qibla">🧭 {copy.qibla}</Link>}
+            {!isRouteHidden(lang, '/tools/islamic-calendar') && <Link to="/tools/islamic-calendar">📅 {copy.calendar}</Link>}
             <Link to="/tools/adhkar">📿 {copy.adhkar}</Link>
+            {lang === 'it' && <Link to={IT_TAJWEED_ROUTE}>🎯 {IT_TAJWEED_RELATED_LABEL}</Link>}
           </nav>
         </div>
       </main>

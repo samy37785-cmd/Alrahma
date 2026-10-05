@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAdminAuth } from '../../context/AdminAuthContext';
 import { useLang } from '../../context/LangContext';
 import { getExperienceText } from '../../i18n/experience';
+import { isRouteHidden } from '../../utils/italianLinkPolicy';
+import { IT_PALETTE_ALIASES, IT_TAJWEED_PALETTE, IT_TAJWEED_ROUTE } from '../../i18n/itDiscoverability';
 
 // Stage 2A (see docs/user-admin-auth-contract.md): no teacher/parent
 // destinations any more - /teacher and /parent just redirect to the
@@ -43,17 +45,35 @@ export default function CommandPalette({ onClose }) {
   const copy = getExperienceText(lang).command;
 
   const role = isAdmin ? 'admin' : 'user';
-  const items = STATIC_ITEMS.map((item) => ({
-    ...item,
-    group: copy.groups[item.group],
-    label: copy.items[item.label],
-  }));
+  // Pages that are not published in the visitor's language are not offered
+  // (Italian: qibla, calendar, blog), and Italian gets the Tajweed Checker plus
+  // extra search terms - see utils/italianLinkPolicy.js, i18n/itDiscoverability.js.
+  const items = STATIC_ITEMS
+    .filter((item) => !isRouteHidden(lang, item.to))
+    .map((item) => ({
+      ...item,
+      group: copy.groups[item.group],
+      label: copy.items[item.label],
+      aliases: lang === 'it' ? IT_PALETTE_ALIASES[item.label] || [] : [],
+    }));
+  if (lang === 'it') {
+    const at = items.findIndex((item) => item.to === '/tools/arabic-alphabet');
+    items.splice(at + 1, 0, {
+      group: copy.groups.tools,
+      icon: '🎯',
+      label: IT_TAJWEED_PALETTE.label,
+      to: IT_TAJWEED_ROUTE,
+      aliases: IT_TAJWEED_PALETTE.aliases,
+    });
+  }
 
   const filtered = items.filter((item) => {
     if (item.role && item.role !== role) return false;
     if (!query) return true;
-    return item.label.toLowerCase().includes(query.toLowerCase()) ||
-           item.group.toLowerCase().includes(query.toLowerCase());
+    const q = query.toLowerCase();
+    return item.label.toLowerCase().includes(q) ||
+           item.group.toLowerCase().includes(q) ||
+           (item.aliases || []).some((alias) => alias.includes(q));
   });
 
   // Group results

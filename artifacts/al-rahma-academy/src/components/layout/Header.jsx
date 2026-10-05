@@ -7,6 +7,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useAdminAuth } from "../../context/AdminAuthContext";
 import { useLang, withLanguage } from "../../context/LangContext";
 import { homeHref } from "../../utils/localePath";
+import { isRouteHidden } from "../../utils/italianLinkPolicy";
 import { useTheme } from "../../context/ThemeContext";
 import { useEscapeKey } from "../../hooks/useEscapeKey";
 import LangSwitcher from "../ui/LangSwitcher";
@@ -155,16 +156,16 @@ export default function Header() {
     { to: localizedTo("/tools/adhkar"),            label: n.adhkar,          Icon: BeadsIcon },
     { to: localizedTo("/tools/hadith"),            label: n.hadith,          Icon: LibraryIcon },
     { to: localizedTo("/tools/prayer-times"),      label: n.prayerTimes,     Icon: MosqueIcon },
-    { to: localizedTo("/tools/qibla"),             label: n.qibla,           Icon: CompassIcon },
-    { to: localizedTo("/tools/islamic-calendar"),  label: n.islamicCalendar, Icon: CalendarIcon },
+    ...(isRouteHidden(lang, "/tools/qibla") ? [] : [{ to: localizedTo("/tools/qibla"), label: n.qibla, Icon: CompassIcon }]),
+    ...(isRouteHidden(lang, "/tools/islamic-calendar") ? [] : [{ to: localizedTo("/tools/islamic-calendar"), label: n.islamicCalendar, Icon: CalendarIcon }]),
     { to: localizedTo("/tools/verse-of-the-day"),  label: n.verseOfDay,      Icon: VerseIcon },
     { to: localizedTo("/tools/tasbeeh"),           label: n.tasbeehCounter,  Icon: HandIcon },
     { to: localizedTo("/tools/arabic-alphabet"),   label: n.arabicAlphabet,  Icon: AlphabetIcon },
-  ], [localizedTo, n]);
+  ], [localizedTo, n, lang]);
   const RESOURCES_ITEMS = useMemo(() => [
-    { to: localizedTo("/resources/blog"), label: n.blog, Icon: EditIcon },
+    ...(isRouteHidden(lang, "/resources/blog") ? [] : [{ to: localizedTo("/resources/blog"), label: n.blog, Icon: EditIcon }]),
     { to: localizedTo("/resources/faq"),  label: n.faq,  Icon: MessageIcon },
-  ], [localizedTo, n]);
+  ], [localizedTo, n, lang]);
   const ACADEMY_ITEMS = useMemo(() => [
     { to: localizedTo("/academy/about"),    label: n.about,    Icon: AboutIcon },
     { to: localizedTo("/academy/teachers"), label: n.teachers, Icon: TeacherIcon },
@@ -291,9 +292,15 @@ export default function Header() {
                 <LogoutIcon size={ICON_SIZE} /> {n.logout}
               </button>
             ) : (
-              <Link to={localizedTo("/login")} className="nav__mobile-login-link" onClick={closeAll}>
-                {n.login}
-              </Link>
+              isRouteHidden(lang, "/login") ? (
+                <button type="button" className="nav__mobile-login-link" onClick={() => { closeAll(); navigate(localizedTo("/login")); }}>
+                  {n.login}
+                </button>
+              ) : (
+                <Link to={localizedTo("/login")} className="nav__mobile-login-link" onClick={closeAll}>
+                  {n.login}
+                </Link>
+              )
             )}
           </nav>
 
@@ -385,7 +392,11 @@ export default function Header() {
                 )}
               </div>
             ) : (
-              <Link to={localizedTo("/login")} className="btn btn--ghost-inv btn--sm">{n.login}</Link>
+              isRouteHidden(lang, "/login") ? (
+                <button type="button" className="btn btn--ghost-inv btn--sm" onClick={() => navigate(localizedTo("/login"))}>{n.login}</button>
+              ) : (
+                <Link to={localizedTo("/login")} className="btn btn--ghost-inv btn--sm">{n.login}</Link>
+              )
             )}
 
             {/* Search / Command Palette — desktop only; mobile has its own in the drawer */}

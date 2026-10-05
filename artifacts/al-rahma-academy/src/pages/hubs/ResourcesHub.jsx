@@ -6,6 +6,7 @@ import WhatsappFab from '../../components/ui/WhatsappFab';
 import { useLang } from '../../context/LangContext';
 import useSEO from '../../hooks/useSEO';
 import { pickResourcesSeo } from '../../i18n/resources/content';
+import { isRouteHidden } from '../../utils/italianLinkPolicy';
 
 const RESOURCE_ROUTES = ['/resources/blog', '/resources/faq', '/academy/about', '/academy/teachers'];
 
@@ -37,14 +38,14 @@ export default function ResourcesHub() {
         <section className="hub-cards section">
           <div className="container">
             <div className="hub-cards__grid hub-cards__grid--4">
-              {hr.cards.map((card, i) => (
+              {hr.cards.map((card, i) => (isRouteHidden(lang, RESOURCE_ROUTES[i]) ? null : (
                 <Link key={i} to={RESOURCE_ROUTES[i]} className="hub-card">
                   <span className="hub-card__icon">{card.icon}</span>
                   <h3 className="hub-card__title">{card.title}</h3>
                   <p className="hub-card__desc">{card.desc}</p>
                   <span className="hub-card__link">{h.browse} →</span>
                 </Link>
-              ))}
+              )))}
             </div>
           </div>
         </section>

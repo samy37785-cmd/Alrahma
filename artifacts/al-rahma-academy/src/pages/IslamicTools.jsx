@@ -6,6 +6,7 @@ import WhatsappFab from '../components/ui/WhatsappFab';
 import useSEO from '../hooks/useSEO';
 import { useLang } from '../context/LangContext';
 import { TOOLS_TEXT, pick } from '../i18n/content';
+import { isRouteHidden } from '../utils/italianLinkPolicy';
 import '../styles/islamic-tools.css';
 
 const PRAYER_TOOL_CARDS = [
@@ -61,7 +62,7 @@ export default function IslamicTools() {
         <section className="hub-cards section">
           <div className="container">
             <div className="hub-cards__grid hub-cards__grid--4">
-              {PRAYER_TOOL_CARDS.map((card) => (
+              {PRAYER_TOOL_CARDS.filter((card) => !isRouteHidden(lang, card.to)).map((card) => (
                 <Link key={card.to} to={card.to} className="hub-card">
                   <span className="hub-card__icon">{card.icon}</span>
                   <h3 className="hub-card__title">{tx.tabs[card.key]}</h3>

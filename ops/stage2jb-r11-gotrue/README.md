@@ -9,8 +9,16 @@ GoTrue instance, not just a hand-seeded Postgres row.
 
 **Never connects to the real Supabase project, to `ops/option-a-rehearsal`'s
 stack, or to `ops/stage2f-authtest`'s stack.** Distinct container names
-(`supabase_*_stage2jb-r11-gotrue`), distinct ports (55440-55449), distinct
-Docker volumes.
+(`supabase_*_stage2jb-r11-gotrue`), distinct ports (29440-29449), distinct
+Docker volumes. The ports sit below Linux's ephemeral range (32768-60999):
+in that range a CI runner's own outgoing connections can already hold the
+port, and `supabase start` then fails with "address already in use".
+
+`backend/scripts/migration/real-gotrue-correlation.test.mjs` does not use
+this directory directly: each run copies `supabase/config.toml` into a temp
+workdir with a unique `project_id` and random free ports in 20000-32767
+(`backend/scripts/migration/lib/disposable-supabase-stack.mjs`), so its
+containers, volumes and ports belong to that run alone.
 
 Storage, Realtime, Studio, Analytics, Edge Runtime, and the local mail
 catcher are all disabled — this stack only ever needs Postgres + GoTrue

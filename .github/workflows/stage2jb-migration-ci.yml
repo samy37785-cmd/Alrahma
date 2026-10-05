@@ -17,7 +17,7 @@ name: Stage 2J-B migration verification
 #     start and tear down.
 #
 # This is the ONLY place `npm run test:migration` runs in CI -- the plain
-# `npm test` step below runs backend/tests/**/*.test.js only, a
+# `npm test` step below runs backend/tests/**/*.test.{js,mjs} only, a
 # structurally disjoint glob from backend/scripts/migration/*.test.mjs, so
 # a green `npm test` here (or anywhere) has never meant, and still does
 # not mean, "the migration tests ran".
@@ -169,18 +169,24 @@ jobs:
         working-directory: backend
         run: npm run lint
 
-      - name: Backend tests (backend/tests/**/*.test.js only -- never the migration suite)
+      # `npm test` is scripts/run-backend-tests.mjs: it finds every
+      # backend/tests/**/*.test.{js,mjs} itself (the old unquoted shell glob
+      # ran only the 6 files under tests/*/), fails unless the file
+      # inventory matches what that script declares, and runs every
+      # non-contract file with test-only secrets and an in-memory MongoDB.
+      # Each file must exit 0, run at least one test and skip none. This
+      # includes the Postgres TLS policy tests that used to be listed here
+      # by hand.
+      - name: Backend tests (every non-contract backend/tests file; inventory and no-skip enforced)
         working-directory: backend
         run: npm test
 
-      # `npm test`'s unquoted tests/**/*.test.js is expanded by bash here, and
-      # without globstar `**` matches one directory level only: just the
-      # tests/*/ subfolders run, never the top-level tests/*.test.js files.
-      # Until that script is fixed, the Postgres TLS policy tests are named
-      # explicitly so CI really executes them. Spec reporter lists each test.
-      - name: Postgres TLS policy tests (explicit files, not the npm test glob)
+      # The Supabase contract files skip themselves without a database, so
+      # each runs through its gate script, which starts a disposable Docker
+      # Postgres with the repo schema. Same rules: >0 tests, none skipped.
+      - name: Backend contract gates (disposable Docker Postgres, no real credentials)
         working-directory: backend
-        run: node --test --test-reporter=spec tests/supabase-pg-tls-config.test.js tests/migration-tools-pg-tls.test.js
+        run: npm run test:contract
 
       - name: Migration targeted tests (disposable Docker Mongo/Postgres only, no real credentials)
         working-directory: backend

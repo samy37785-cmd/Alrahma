@@ -81,10 +81,21 @@ const PII = {
   phones: ['+201000111222', '+201000333444'],
 };
 const T = (n) => new Date(Date.UTC(2026, 5, 14, 10, 11, n, 345));
+// DECISION_RESET_TOKEN_EXPIRY: security-ephemeral source values that must
+// never reach the target (lib/security-ephemeral.mjs).
+const EPHEMERAL = {
+  resetToken: `reset-fixture-${crypto.randomBytes(8).toString('hex')}`,
+  refreshTokenHash: `refresh-fixture-${crypto.randomBytes(8).toString('hex')}`,
+  resetTokenExpiry: new Date(Date.UTC(2026, 5, 14, 10, 12, 29, 345)),
+  refreshExpiresAt: new Date(Date.UTC(2026, 5, 14, 10, 12, 30, 345)),
+};
 
 const SOURCE = {
   users: [
-    { _id: U1, email: PII.emails[0], name: PII.names[0], role: 'student', password: HASH, createdAt: T(1), updatedAt: T(2) },
+    {
+      _id: U1, email: PII.emails[0], name: PII.names[0], role: 'student', password: HASH, createdAt: T(1), updatedAt: T(2),
+      resetToken: EPHEMERAL.resetToken, resetTokenExpiry: EPHEMERAL.resetTokenExpiry,
+    },
     { _id: U2, email: PII.emails[1], name: PII.names[1], role: 'student', password: HASH, createdAt: T(3), updatedAt: T(4) },
   ],
   courses: [{ _id: COURSE, title: 'Course A', description: 'desc', level: 'Beginner', price: 10, published: true, createdAt: T(5), updatedAt: T(6) }],
@@ -118,6 +129,7 @@ const SOURCE = {
     { _id: id(), user: U1, lastPosition: { surah: 2 }, streak: { current: 3, longest: 5, lastReadDate: '2026-06-13' }, createdAt: T(23), updatedAt: T(24) },
     { _id: id(), user: U2, lastPosition: {}, streak: { current: 0 } },
   ],
+  refreshtokens: [{ _id: id(), user: U1, tokenHash: EPHEMERAL.refreshTokenHash, family: 'fixture-family', expiresAt: EPHEMERAL.refreshExpiresAt }],
   quranmemorizationstats: [{ _id: id(), user: U2, stats: { totalRecordings: 2 }, streak: { current: 1 }, createdAt: T(25), updatedAt: T(26) }],
 };
 
@@ -230,6 +242,15 @@ async function main() {
     assert.equal(usersReport.passwords.importableHashes, 2);
     assert.deepEqual(usersReport.passwords.problems, []);
     assert.deepEqual(usersReport.emailConfirmation, { source_had_no_verification_step: 2 });
+    // DECISION_RESET_TOKEN_EXPIRY: named, counted, classified -- not a silent omission.
+    assert.deepEqual(usersReport.securityEphemeral, {
+      classification: 'INTENTIONALLY_NOT_MIGRATED_SECURITY_EPHEMERAL_DATA',
+      migrated: false,
+      fields: { 'users.resetToken': 1, 'users.resetTokenExpiry': 1 },
+      collections: { refreshtokens: 1 },
+    });
+    assert.deepEqual(usersReport.dates.users.intentionallyNotMigrated, { resetTokenExpiry: 1 });
+    assert.equal(usersReport.dates.users.unpreserved, undefined, 'no user date is a generic, unclassified loss');
 
     const plan = run(DOMAIN_SCRIPT, ['--domain=all', '--dry-run']);
     assert.equal(plan.code, 0, plan.stderr);
@@ -283,7 +304,8 @@ async function main() {
     assert.deepEqual(pay.rows[0].raw_payload.createdAt, { $date: iso(T(13)) });
 
     // Users are accounts, not domain rows (migrate-users ledgers those).
-    const domainDocs = Object.entries(SOURCE).filter(([c]) => c !== 'users').reduce((n, [, docs]) => n + docs.length, 0);
+    // users go to the user migration; refreshtokens are never migrated.
+    const domainDocs = Object.entries(SOURCE).filter(([c]) => c !== 'users' && c !== 'refreshtokens').reduce((n, [, docs]) => n + docs.length, 0);
     assert.equal(await count('auth.users'), SOURCE.users.length, 'exactly the source accounts -- no service identity');
     assert.equal(await count('admin_role_assignments'), 0, 'no admin role was granted to anything');
     const ledger = await pool.query(`SELECT status, count(*)::int AS n FROM migration_source_ledger GROUP BY status`);
@@ -332,6 +354,27 @@ async function main() {
       assert.equal(r.dates.generated, undefined, `${r.domain} generated a date although every source document had one`);
       assert.equal(r.dates.unpreserved, undefined, `${r.domain} reported a source date as lost (DATES_MUST_BE_PRESERVED)`);
     }
+  });
+
+  await test('DECISION_RESET_TOKEN_EXPIRY: no reset token, reset expiry or refresh token reached any table', async () => {
+    const tables = (await pool.query(`SELECT table_schema AS s, table_name AS t FROM information_schema.tables
+      WHERE table_schema IN ('public', 'auth') AND table_type = 'BASE TABLE'`)).rows;
+    const tsColumns = (await pool.query(`SELECT table_schema AS s, table_name AS t, column_name AS c FROM information_schema.columns
+      WHERE table_schema IN ('public', 'auth') AND data_type = 'timestamp with time zone'`)).rows;
+    let scanned = 0;
+    for (const { s: schema, t } of tables) {
+      const hits = await pool.query(
+        `SELECT count(*)::int AS n FROM "${schema}"."${t}" x WHERE strpos(to_jsonb(x)::text, $1) > 0 OR strpos(to_jsonb(x)::text, $2) > 0`,
+        [EPHEMERAL.resetToken, EPHEMERAL.refreshTokenHash]
+      );
+      assert.equal(hits.rows[0].n, 0, `${schema}.${t} holds a token value`);
+      scanned += 1;
+    }
+    for (const { s: schema, t, c } of tsColumns) {
+      const hits = await pool.query(`SELECT count(*)::int AS n FROM "${schema}"."${t}" WHERE "${c}" IN ($1, $2)`, [EPHEMERAL.resetTokenExpiry, EPHEMERAL.refreshExpiresAt]);
+      assert.equal(hits.rows[0].n, 0, `${schema}.${t}.${c} holds a token expiry`);
+    }
+    assert.ok(scanned > 30, `every table was scanned (${scanned})`);
   });
 
   await test('rerun: nothing new is written, nothing is duplicated, every document reports unchanged', async () => {
@@ -407,7 +450,7 @@ async function main() {
     ];
     assert.ok(files.length >= 3, 'report and checkpoint files were produced and are scanned');
     const haystacks = [...outputs, ...files.map((f) => fs.readFileSync(f, 'utf8'))];
-    const needles = [...PII.emails, ...PII.names, ...PII.phones, HASH, pgUri, mongoUri, 'postgres:postgres@'];
+    const needles = [...PII.emails, ...PII.names, ...PII.phones, HASH, pgUri, mongoUri, 'postgres:postgres@', EPHEMERAL.resetToken, EPHEMERAL.refreshTokenHash];
     for (const needle of needles) {
       const hit = haystacks.findIndex((h) => h.toLowerCase().includes(needle.toLowerCase()));
       assert.equal(hit, -1, `found a seeded sensitive value (${needle.slice(0, 6)}...) in output/file #${hit}`);

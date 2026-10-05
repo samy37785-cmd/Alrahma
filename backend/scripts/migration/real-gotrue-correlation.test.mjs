@@ -45,10 +45,16 @@ import { createClient } from '@supabase/supabase-js';
 import pg from 'pg';
 import { verifyReadBack, jsonPathEqual } from './lib/read-back-verify.mjs';
 import { migrateOneUser, correlationIdFor } from './migrate-users-to-supabase-auth.mjs';
+import { prepareIsolatedStack } from './lib/disposable-supabase-stack.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, '..', '..', '..');
-const STACK_WORKDIR = path.join(REPO_ROOT, 'ops', 'stage2jb-r11-gotrue');
+// The committed stack definition is only a template: every run starts its
+// own copy with a unique project_id and random free host ports
+// (lib/disposable-supabase-stack.mjs), so it can never collide with another
+// stack, a leftover container, or a port the host already holds.
+const STACK_TEMPLATE = path.join(REPO_ROOT, 'ops', 'stage2jb-r11-gotrue');
+let stack = null;
 const RUN_MIGRATIONS_REAL_GOTRUE = path.join(REPO_ROOT, 'lib', 'db', 'test', 'run-migrations-real-gotrue.mjs');
 const SUPABASE_CLI = 'supabase@2.116.0';
 
@@ -69,7 +75,7 @@ function runSupabaseCli(args, { timeout = 300_000 } = {}) {
   // spawnSync cannot exec directly -- every argument here is a fixed,
   // hardcoded literal (never user input), so the well-known shell-arg-
   // escaping caveat that flag implies does not apply.
-  return spawnSync('npx', ['--yes', SUPABASE_CLI, ...args, '--workdir', STACK_WORKDIR], {
+  return spawnSync('npx', ['--yes', SUPABASE_CLI, ...args, '--workdir', stack.workdir], {
     shell: true, encoding: 'utf8', timeout,
   });
 }
@@ -98,9 +104,9 @@ function parseEnvOutput(stdout) {
   return env;
 }
 
-function startStack() {
-  const stopFirst = runSupabaseCli(['stop', '--no-backup']); // best-effort; fine if nothing was running
-  void stopFirst;
+async function startStack() {
+  stack = await prepareIsolatedStack(STACK_TEMPLATE, { prefix: 'r11-gotrue' });
+  console.log(`isolated stack: project_id=${stack.projectId} ports=${JSON.stringify(stack.ports)}`);
   const start = runSupabaseCli(['start']);
   if (start.status !== 0) {
     throw new Error(`supabase start failed (exit ${start.status}): ${start.stderr}\n${start.stdout}`);
@@ -129,12 +135,18 @@ function applyRepoSchema(dbUrl) {
 }
 
 function stopStack() {
+  if (!stack) return;
   runSupabaseCli(['stop', '--no-backup']); // best-effort cleanup, never throws
+  const left = spawnSync('docker', ['ps', '-a', '--filter', `name=${stack.projectId}`, '--format', '{{.Names}}'], { encoding: 'utf8' });
+  console.log(left.stdout.trim() ? `WARNING: containers left for ${stack.projectId}:
+${left.stdout}` : `cleanup verified: no container left for ${stack.projectId}`);
+  stack.remove();
+  stack = null;
 }
 
 async function main() {
   console.log('=== SETUP: disposable real Supabase-CLI stack (real Postgres + real GoTrue + Kong) ===');
-  const { dbUrl, apiUrl, serviceRoleKey } = startStack();
+  const { dbUrl, apiUrl, serviceRoleKey } = await startStack();
   console.log(`stack up: API_URL=${apiUrl}`);
   applyRepoSchema(dbUrl);
   console.log('repo schema applied on top of the real GoTrue-managed auth schema.');

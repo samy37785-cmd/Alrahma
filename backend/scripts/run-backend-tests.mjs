@@ -162,7 +162,11 @@ function report(label, rows) {
     console.log(`\n----- ${r.name}: ${r.problem} -----\n${r.output.trimEnd()}\n----- end ${r.name} -----`);
   }
   const tests = rows.reduce((n, r) => n + (r.summary.pass ?? 0), 0);
+  const skipped = rows.reduce((n, r) => n + (r.summary.skipped ?? 0), 0);
+  const noSummary = rows.filter((r) => r.summary.tests === null).length;
+  const zeroTests = rows.filter((r) => r.summary.tests === 0).length;
   console.log(`\n${label}: ${rows.length - failed.length}/${rows.length} files passed, ${tests} tests passed`);
+  console.log(`${label} counters: skipped=${skipped} files_without_summary=${noSummary} zero_test_files=${zeroTests}`);
   for (const r of rows) console.log(`  ${r.problem ? 'FAIL' : 'ok  '}  ${r.name}  (${r.summary.pass ?? 0}/${r.summary.tests ?? '?'})${r.problem ? `  -- ${r.problem}` : ''}`);
   return failed.length === 0;
 }

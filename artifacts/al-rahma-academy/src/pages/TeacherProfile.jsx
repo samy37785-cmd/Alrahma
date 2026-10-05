@@ -2,6 +2,7 @@
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 import useSEO from '../hooks/useSEO';
+import { pickItTeacherMetaDescription } from '../i18n/itMetaDescriptions';
 import Breadcrumbs from '../components/ui/Breadcrumbs';
 import { TEACHERS, TEACHER_CREDENTIALS } from '../data';
 import { useLang } from '../context/LangContext';
@@ -44,7 +45,7 @@ export default function TeacherProfile() {
   // fallback title; English and Arabic keep their existing 'Teacher'.
   useSEO({
     title: teacher ? displayName : lang === 'fr' ? tp.instructor : 'Teacher',
-    description: bio,
+    description: pickItTeacherMetaDescription(teacher?.id, lang, bio),
   });
 
   if (!teacher) {

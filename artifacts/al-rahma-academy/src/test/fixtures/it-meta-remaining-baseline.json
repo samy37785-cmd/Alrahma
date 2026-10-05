@@ -1,0 +1,322 @@
+{
+  "/en/courses/quran": {
+    "desc": "Online Quran Reading, Tajweed, and Hifz (memorization) courses with certified Al-Azhar teachers — in 17 languages.",
+    "title": "Quran & Tajweed Courses | AL-Rahma Academy",
+    "h1": "Quran & Tajweed Courses"
+  },
+  "/ar/courses/quran": {
+    "desc": "دروس أونلاين في تلاوة القرآن والتجويد وحفظ القرآن الكريم مع معلمين معتمدين من الأزهر — دروس فردية مباشرة ترافقك خطوة بخطوة حتى إتقان التلاوة الصحيحة.",
+    "title": "دورات القرآن والتجويد | AL-Rahma Academy",
+    "h1": "دورات القرآن والتجويد"
+  },
+  "/fr/courses/quran": {
+    "desc": "Cours en ligne de lecture du Coran, de tajwid et de hifz (mémorisation) avec des enseignants certifiés par Al-Azhar — en 17 langues.",
+    "title": "Cours de Coran et de tajwid | AL-Rahma Academy",
+    "h1": "Cours de Coran et de tajwid"
+  },
+  "/it/courses/quran": {
+    "desc": "Corsi online di lettura del Corano, Tajweed e Hifz (memorizzazione) con insegnanti certificati Al-Azhar — in 17 lingue.",
+    "title": "Corsi di Corano e Tajweed | AL-Rahma Academy",
+    "h1": "Corsi di Corano e Tajweed"
+  },
+  "/en/academy/teachers/1": {
+    "desc": "Al-Azhar University graduate holding an Ijazah with a connected sanad. He specialises in advanced Tajweed across the Hafs and Warsh recitations, Quran memorization, the Ijazah programme and Quranic Tafsir.",
+    "title": "Sami Mahmoud Abd Al-Aal | AL-Rahma Academy",
+    "h1": "Sami Mahmoud Abd Al-Aal"
+  },
+  "/ar/academy/teachers/1": {
+    "desc": "خريج جامعة الأزهر الشريف، حامل إجازة بسند متصل. متخصص في التجويد المتقدم برواية حفص وورش، وحفظ القرآن الكريم، وبرنامج الإجازة، وتفسير القرآن الكريم.",
+    "title": "سامي محمود عبد العال | AL-Rahma Academy",
+    "h1": "سامي محمود عبد العال"
+  },
+  "/fr/academy/teachers/1": {
+    "desc": "Diplômé de l'Université d'Al-Azhar, titulaire d'une ijaza à sanad ininterrompu. Spécialisé en tajwid avancé dans les lectures de Hafs et Warsh, la mémorisation du Coran, le programme d'ijaza et le Tafsir du Coran.",
+    "title": "Sami Mahmoud Abd Al-Aal | AL-Rahma Academy",
+    "h1": "Sami Mahmoud Abd Al-Aal"
+  },
+  "/it/academy/teachers/1": {
+    "desc": "Laureato all'Università di Al-Azhar, titolare di un'Ijazah con sanad connesso. Specializzato in Tajweed avanzato nelle letture Hafs e Warsh, memorizzazione del Corano, programma Ijazah e Tafsir coranico.",
+    "title": "Sami Mahmoud Abd Al-Aal | AL-Rahma Academy",
+    "h1": "Sami Mahmoud Abd Al-Aal"
+  },
+  "/en/academy/teachers/2": {
+    "desc": "Al-Azhar University graduate holding an Ijazah with a connected sanad. He specialises in Islamic jurisprudence (Fiqh), the Prophetic Seerah, Arabic language and Quranic Tafsir.",
+    "title": "Muhammad Abd Al-Maqsoud | AL-Rahma Academy",
+    "h1": "Muhammad Abd Al-Maqsoud"
+  },
+  "/ar/academy/teachers/2": {
+    "desc": "خريج جامعة الأزهر الشريف، حامل إجازة بسند متصل. متخصص في الفقه الإسلامي والسيرة النبوية واللغة العربية وتفسير القرآن الكريم.",
+    "title": "محمد عبد المقصود | AL-Rahma Academy",
+    "h1": "محمد عبد المقصود"
+  },
+  "/fr/academy/teachers/2": {
+    "desc": "Diplômé de l'Université d'Al-Azhar, titulaire d'une ijaza à sanad ininterrompu. Spécialisé en jurisprudence islamique (Fiqh), Sira prophétique, langue arabe et Tafsir du Coran.",
+    "title": "Muhammad Abd Al-Maqsoud | AL-Rahma Academy",
+    "h1": "Muhammad Abd Al-Maqsoud"
+  },
+  "/it/academy/teachers/2": {
+    "desc": "Laureato all'Università di Al-Azhar, titolare di un'Ijazah con sanad connesso. Specializzato in giurisprudenza islamica (Fiqh), Sira profetica, lingua araba e Tafsir coranico.",
+    "title": "Muhammad Abd Al-Maqsoud | AL-Rahma Academy",
+    "h1": "Muhammad Abd Al-Maqsoud"
+  },
+  "/en/academy/teachers/3": {
+    "desc": "Al-Azhar University graduate holding an Ijazah with a connected sanad. She specialises in teaching Quran to children, Noorani Qaida and Noor Al-Bayan, Tajweed and the Arabic alphabet.",
+    "title": "Khairiyya Al-Muhammadi | AL-Rahma Academy",
+    "h1": "Khairiyya Al-Muhammadi"
+  },
+  "/ar/academy/teachers/3": {
+    "desc": "خريجة جامعة الأزهر الشريف، حاملة إجازة بسند متصل. متخصصة في تعليم القرآن الكريم للأطفال، والقاعدة النورانية ونور البيان، والتجويد، والحروف العربية.",
+    "title": "خيرية المحمدي | AL-Rahma Academy",
+    "h1": "خيرية المحمدي"
+  },
+  "/fr/academy/teachers/3": {
+    "desc": "Diplômée de l'Université d'Al-Azhar, titulaire d'une ijaza à sanad ininterrompu. Spécialisée dans l'enseignement du Coran aux enfants, la Qaida Nourania et Noor Al-Bayan, le tajwid et l'alphabet arabe.",
+    "title": "Khairiyya Al-Muhammadi | AL-Rahma Academy",
+    "h1": "Khairiyya Al-Muhammadi"
+  },
+  "/it/academy/teachers/3": {
+    "desc": "Laureata all'Università di Al-Azhar, titolare di un'Ijazah con sanad connesso. Specializzata nell'insegnamento del Corano ai bambini, Qaida Noorani e Noor Al-Bayan, Tajweed e alfabeto arabo.",
+    "title": "Khairiyya Al-Muhammadi | AL-Rahma Academy",
+    "h1": "Khairiyya Al-Muhammadi"
+  },
+  "/en/academy/teachers/4": {
+    "desc": "Al-Azhar University graduate holding an Ijazah with a connected sanad. She specialises in Quran memorization (Hifz), Quran revision (Muraja'ah), Tajweed and the Prophetic Seerah.",
+    "title": "Omnia Abd Allah | AL-Rahma Academy",
+    "h1": "Omnia Abd Allah"
+  },
+  "/ar/academy/teachers/4": {
+    "desc": "خريجة جامعة الأزهر الشريف، حاملة إجازة بسند متصل. متخصصة في حفظ القرآن الكريم ومراجعته والتجويد والسيرة النبوية.",
+    "title": "أمنية عبد الله | AL-Rahma Academy",
+    "h1": "أمنية عبد الله"
+  },
+  "/fr/academy/teachers/4": {
+    "desc": "Diplômée de l'Université d'Al-Azhar, titulaire d'une ijaza à sanad ininterrompu. Spécialisée dans la mémorisation du Coran (Hifz), la révision du Coran (Murajaʿah), le tajwid et la Sira prophétique.",
+    "title": "Omnia Abd Allah | AL-Rahma Academy",
+    "h1": "Omnia Abd Allah"
+  },
+  "/it/academy/teachers/4": {
+    "desc": "Laureata all'Università di Al-Azhar, titolare di un'Ijazah con sanad connesso. Specializzata in memorizzazione del Corano (Hifz), ripasso del Corano (Murajaʿah), Tajweed e Sira profetica.",
+    "title": "Omnia Abd Allah | AL-Rahma Academy",
+    "h1": "Omnia Abd Allah"
+  },
+  "/en/academy/teachers/5": {
+    "desc": "Al-Azhar University graduate holding an Ijazah with a connected sanad. He specialises in Classical Arabic, Arabic grammar (Nahw), Quranic Arabic and Islamic Studies.",
+    "title": "Abd Allah Ayman | AL-Rahma Academy",
+    "h1": "Abd Allah Ayman"
+  },
+  "/ar/academy/teachers/5": {
+    "desc": "خريج جامعة الأزهر الشريف، حامل إجازة بسند متصل. متخصص في العربية الفصحى والنحو العربي وعربية القرآن الكريم والدراسات الإسلامية.",
+    "title": "عبد الله أيمن | AL-Rahma Academy",
+    "h1": "عبد الله أيمن"
+  },
+  "/fr/academy/teachers/5": {
+    "desc": "Diplômé de l'Université d'Al-Azhar, titulaire d'une ijaza à sanad ininterrompu. Spécialisé en arabe classique, grammaire arabe (Nahw), arabe coranique et études islamiques.",
+    "title": "Abd Allah Ayman | AL-Rahma Academy",
+    "h1": "Abd Allah Ayman"
+  },
+  "/it/academy/teachers/5": {
+    "desc": "Laureato all'Università di Al-Azhar, titolare di un'Ijazah con sanad connesso. Specializzato in arabo classico, grammatica araba (Nahw), arabo coranico e studi islamici.",
+    "title": "Abd Allah Ayman | AL-Rahma Academy",
+    "h1": "Abd Allah Ayman"
+  },
+  "/en/academy/teachers/6": {
+    "desc": "Al-Azhar University graduate holding an Ijazah with a connected sanad. He specialises in Quranic Tafsir, Islamic Creed (Aqeedah), Tajweed and Islamic jurisprudence.",
+    "title": "Mahmoud Sami | AL-Rahma Academy",
+    "h1": "Mahmoud Sami"
+  },
+  "/ar/academy/teachers/6": {
+    "desc": "خريج جامعة الأزهر الشريف، حامل إجازة بسند متصل. متخصص في تفسير القرآن الكريم والعقيدة الإسلامية والتجويد والفقه الإسلامي.",
+    "title": "محمود سامي | AL-Rahma Academy",
+    "h1": "محمود سامي"
+  },
+  "/fr/academy/teachers/6": {
+    "desc": "Diplômé de l'Université d'Al-Azhar, titulaire d'une ijaza à sanad ininterrompu. Spécialisé en Tafsir du Coran, croyance islamique (Aqida), tajwid et jurisprudence islamique.",
+    "title": "Mahmoud Sami | AL-Rahma Academy",
+    "h1": "Mahmoud Sami"
+  },
+  "/it/academy/teachers/6": {
+    "desc": "Laureato all'Università di Al-Azhar, titolare di un'Ijazah con sanad connesso. Specializzato in Tafsir coranico, credo islamico (Aqida), Tajweed e giurisprudenza islamica.",
+    "title": "Mahmoud Sami | AL-Rahma Academy",
+    "h1": "Mahmoud Sami"
+  },
+  "/en/academy/teachers/7": {
+    "desc": "Al-Azhar University graduate holding an Ijazah with a connected sanad. She specialises in the Ijazah programme, Tajweed, Quran memorization and Arabic language.",
+    "title": "Aya | AL-Rahma Academy",
+    "h1": "Aya"
+  },
+  "/ar/academy/teachers/7": {
+    "desc": "خريجة جامعة الأزهر الشريف، حاملة إجازة بسند متصل. متخصصة في برنامج الإجازة والتجويد وحفظ القرآن الكريم واللغة العربية.",
+    "title": "آية | AL-Rahma Academy",
+    "h1": "آية"
+  },
+  "/fr/academy/teachers/7": {
+    "desc": "Diplômée de l'Université d'Al-Azhar, titulaire d'une ijaza à sanad ininterrompu. Spécialisée dans le programme d'ijaza, le tajwid, la mémorisation du Coran et la langue arabe.",
+    "title": "Aya | AL-Rahma Academy",
+    "h1": "Aya"
+  },
+  "/it/academy/teachers/7": {
+    "desc": "Laureata all'Università di Al-Azhar, titolare di un'Ijazah con sanad connesso. Specializzata nel programma Ijazah, Tajweed, memorizzazione del Corano e lingua araba.",
+    "title": "Aya | AL-Rahma Academy",
+    "h1": "Aya"
+  },
+  "/en/academy/teachers/8": {
+    "desc": "Al-Azhar University graduate holding an Ijazah with a connected sanad. She specialises in Quran for students with special needs, beginner Quran, Noorani Qaida, Tajweed and Arabic basics.",
+    "title": "Fatima Al-Rashidi | AL-Rahma Academy",
+    "h1": "Fatima Al-Rashidi"
+  },
+  "/ar/academy/teachers/8": {
+    "desc": "خريجة جامعة الأزهر الشريف، حاملة إجازة بسند متصل. متخصصة في تعليم القرآن لذوي الاحتياجات الخاصة والمبتدئين والقاعدة النورانية والتجويد وأساسيات اللغة العربية.",
+    "title": "فاطمة الراشدي | AL-Rahma Academy",
+    "h1": "فاطمة الراشدي"
+  },
+  "/fr/academy/teachers/8": {
+    "desc": "Diplômée de l'Université d'Al-Azhar, titulaire d'une ijaza à sanad ininterrompu. Spécialisée dans le Coran pour élèves à besoins particuliers, le Coran pour débutants, la Qaida Nourania, le tajwid et les bases de l'arabe.",
+    "title": "Fatima Al-Rashidi | AL-Rahma Academy",
+    "h1": "Fatima Al-Rashidi"
+  },
+  "/it/academy/teachers/8": {
+    "desc": "Laureata all'Università di Al-Azhar, titolare di un'Ijazah con sanad connesso. Specializzata nel Corano per studenti con bisogni speciali, Corano per principianti, Qaida Noorani, Tajweed e basi di arabo.",
+    "title": "Fatima Al-Rashidi | AL-Rahma Academy",
+    "h1": "Fatima Al-Rashidi"
+  },
+  "/en/academy/teachers/10": {
+    "desc": "Al-Azhar University graduate holding an Ijazah with a connected sanad. He specialises in Quran memorization (Hifz), Quran recitation, Tajweed and Quran revision (Muraja'ah).",
+    "title": "Islam Muhammad | AL-Rahma Academy",
+    "h1": "Islam Muhammad"
+  },
+  "/ar/academy/teachers/10": {
+    "desc": "خريج جامعة الأزهر الشريف، حامل إجازة بسند متصل. متخصص في حفظ القرآن الكريم وتلاوته والتجويد ومراجعة القرآن الكريم.",
+    "title": "إسلام محمد | AL-Rahma Academy",
+    "h1": "إسلام محمد"
+  },
+  "/fr/academy/teachers/10": {
+    "desc": "Diplômé de l'Université d'Al-Azhar, titulaire d'une ijaza à sanad ininterrompu. Spécialisé dans la mémorisation du Coran (Hifz), la récitation du Coran, le tajwid et la révision du Coran (Murajaʿah).",
+    "title": "Islam Muhammad | AL-Rahma Academy",
+    "h1": "Islam Muhammad"
+  },
+  "/it/academy/teachers/10": {
+    "desc": "Laureato all'Università di Al-Azhar, titolare di un'Ijazah con sanad connesso. Specializzato in memorizzazione del Corano (Hifz), recitazione del Corano, Tajweed e ripasso del Corano (Murajaʿah).",
+    "title": "Islam Muhammad | AL-Rahma Academy",
+    "h1": "Islam Muhammad"
+  },
+  "/en/academy/terms": {
+    "desc": "Terms and conditions governing your use of Al-Rahma Academy's online Quran and Islamic education services.",
+    "title": "Terms of Service | AL-Rahma Academy",
+    "h1": "Terms of Service"
+  },
+  "/ar/academy/terms": {
+    "desc": "الشروط والأحكام التي تحكم استخدامك لخدمات أكاديمية الرحمة التعليمية عبر الإنترنت للقرآن الكريم والدراسات الإسلامية.",
+    "title": "شروط الخدمة | AL-Rahma Academy",
+    "h1": "شروط الخدمة"
+  },
+  "/fr/academy/terms": {
+    "desc": "Conditions régissant l’utilisation des services en ligne d’enseignement du Coran et d’éducation islamique d’Al-Rahma Academy.",
+    "title": "Conditions d’utilisation | AL-Rahma Academy",
+    "h1": "Conditions d’utilisation"
+  },
+  "/it/academy/terms": {
+    "desc": "Termini e condizioni che regolano l’uso dei servizi online di istruzione coranica e islamica di Al-Rahma Academy.",
+    "title": "Termini di servizio | AL-Rahma Academy",
+    "h1": "Termini di servizio"
+  },
+  "/en/academy/refund-policy": {
+    "desc": "You may request a refund within 24 days of payment. See our Refund Policy for how it works.",
+    "title": "Refund Policy | AL-Rahma Academy",
+    "h1": "24-Day Refund Window"
+  },
+  "/ar/academy/refund-policy": {
+    "desc": "يمكنك طلب استرداد المبلغ خلال 24 يومًا من الدفع. راجع سياسة الاسترداد لمعرفة كيفية عملها.",
+    "title": "سياسة الاسترداد | AL-Rahma Academy",
+    "h1": "نافذة استرداد لمدة 24 يومًا"
+  },
+  "/fr/academy/refund-policy": {
+    "desc": "Vous pouvez demander un remboursement dans les 24 jours suivant le paiement. Consultez notre politique de remboursement pour en savoir plus.",
+    "title": "Politique de remboursement | AL-Rahma Academy",
+    "h1": "Fenêtre de remboursement de 24 jours"
+  },
+  "/it/academy/refund-policy": {
+    "desc": "Puoi richiedere un rimborso entro 24 giorni dal pagamento. Consulta la nostra politica di rimborso per i dettagli.",
+    "title": "Politica di rimborso | AL-Rahma Academy",
+    "h1": "Finestra di rimborso di 24 giorni"
+  },
+  "/en/resources": {
+    "desc": "Explore resources from Al-Rahma Academy: blog articles, FAQ, academy information, and teacher profiles.",
+    "title": "Resources | AL-Rahma Academy",
+    "h1": "Everything You Need to Get Started"
+  },
+  "/ar/resources": {
+    "desc": "استكشف موارد أكاديمية الرحمة: مقالات المدونة، الأسئلة الشائعة، معلومات عن الأكاديمية، والتعرّف على معلمينا.",
+    "title": "الموارد | AL-Rahma Academy",
+    "h1": "كل ما تحتاجه للبدء"
+  },
+  "/fr/resources": {
+    "desc": "Découvrez les ressources d'Al-Rahma Academy : articles de blog, FAQ, informations sur l'académie et profils des enseignants.",
+    "title": "Ressources | AL-Rahma Academy",
+    "h1": "Tout ce dont vous avez besoin pour commencer"
+  },
+  "/it/resources": {
+    "desc": "Scopri le risorse di Al-Rahma Academy: articoli del blog, FAQ, informazioni sull'accademia e profili degli insegnanti.",
+    "title": "Risorse | AL-Rahma Academy",
+    "h1": "Tutto ciò di cui hai bisogno per iniziare"
+  },
+  "/en/courses/ijazah": {
+    "desc": "Earn a formal Quran Ijazah with a continuous Sanad to the Prophet ﷺ. Study Matn Al-Jazariyyah, Al-Shatibiyyah and the Seven Qira'at with certified Al-Azhar scholars.",
+    "title": "Quran Ijazah Course | AL-Rahma Academy",
+    "h1": "Quran Ijazah Course"
+  },
+  "/ar/courses/ijazah": {
+    "desc": "احصل على إجازة قرآنية رسمية بسند متصل إلى النبي ﷺ. ادرس متن الجزرية والشاطبية مع علماء أزهريين معتمدين.",
+    "title": "دورة إجازة القرآن الكريم | AL-Rahma Academy",
+    "h1": "دورة إجازة القرآن الكريم"
+  },
+  "/fr/courses/ijazah": {
+    "desc": "Obtenez une ijaza du Coran officielle avec un sanad continu jusqu'au Prophète ﷺ. Étudiez Matn Al-Jazariyyah, Al-Shatibiyyah et les sept qira'at auprès de savants certifiés d'Al-Azhar.",
+    "title": "Cours d'ijaza du Coran | AL-Rahma Academy",
+    "h1": "Cours d'ijaza du Coran"
+  },
+  "/it/courses/ijazah": {
+    "desc": "Ottieni un'Ijazah coranica ufficiale con un Sanad ininterrotto fino al Profeta ﷺ. Studia Matn Al-Jazariyyah, Al-Shatibiyyah e le sette Qira'at con studiosi certificati di Al-Azhar.",
+    "title": "Corso Ijazah del Corano | AL-Rahma Academy",
+    "h1": "Corso Ijazah del Corano"
+  },
+  "/en/courses/islamic-studies": {
+    "desc": "A comprehensive, source-based curriculum covering Aqeedah, Fiqh, Seerah, Hadith and Tafsir — 5 structured modules taught by certified scholars in your own language.",
+    "title": "Islamic Studies Course | AL-Rahma Academy",
+    "h1": "Islamic Studies"
+  },
+  "/ar/courses/islamic-studies": {
+    "desc": "منهج شامل مبني على المصادر يغطي العقيدة والفقه والسيرة والحديث والتفسير — ٥ وحدات يدرّسها علماء معتمدون بلغتك.",
+    "title": "دورة الدراسات الإسلامية | AL-Rahma Academy",
+    "h1": "الدراسات الإسلامية"
+  },
+  "/fr/courses/islamic-studies": {
+    "desc": "Un programme complet, fondé sur les sources, couvrant l'aqida, le fiqh, la sira, le hadith et le tafsir — 5 modules structurés enseignés par des savants certifiés dans votre propre langue.",
+    "title": "Cours d'études islamiques | AL-Rahma Academy",
+    "h1": "Études islamiques"
+  },
+  "/it/courses/islamic-studies": {
+    "desc": "Un programma completo basato sulle fonti che copre Aqeedah, Fiqh, Seerah, Hadith e Tafsir — 5 moduli strutturati insegnati da studiosi certificati nella tua lingua.",
+    "title": "Corso di Studi Islamici | AL-Rahma Academy",
+    "h1": "Studi Islamici"
+  },
+  "/en/tools/hadith": {
+    "desc": "One-to-one online Quran, Tajweed and Arabic lessons with Al-Azhar certified tutors, trusted by 1,500+ students in 10 countries. One free trial lesson — no payment needed.",
+    "title": "Learn the Quran Online | AL-Rahma Academy",
+    "h1": "Give Your Child the Gift of the Quran"
+  },
+  "/ar/tools/hadith": {
+    "desc": "One-to-one online Quran, Tajweed and Arabic lessons with Al-Azhar certified tutors, trusted by 1,500+ students in 10 countries. One free trial lesson — no payment needed.",
+    "title": "Learn the Quran Online | AL-Rahma Academy",
+    "h1": "Give Your Child the Gift of the Quran"
+  },
+  "/fr/tools/hadith": {
+    "desc": "Parcourez et recherchez 10 recueils de hadiths authentiques, dont Sahih al-Bukhari, Sahih Muslim et Sunan Abi Dawud.",
+    "title": "Bibliothèque des Hadiths | AL-Rahma Academy",
+    "h1": "Bibliothèque islamique de hadiths"
+  },
+  "/it/tools/hadith": {
+    "desc": "Sfoglia e cerca 10 raccolte autentiche di hadith, tra cui Sahih al-Bukhari, Sahih Muslim, Sunan Abi Dawud e altre.",
+    "title": "Biblioteca degli Hadith | AL-Rahma Academy",
+    "h1": "Biblioteca islamica degli Hadith"
+  }
+}

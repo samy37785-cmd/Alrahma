@@ -1386,7 +1386,7 @@ const LITERAL_FILES = [
     expectedArHref: 'https://al-rahmaacademy.com/ar/tools/hadith',
     expectedFrHref: 'https://al-rahmaacademy.com/fr/tools/hadith',
     expectedTitle: 'Biblioteca degli Hadith | AL-Rahma Academy',
-    expectedDescription: 'Sfoglia e cerca 10 raccolte autentiche di hadith, tra cui Sahih al-Bukhari, Sahih Muslim, Sunan Abi Dawud e altre.',
+    expectedDescription: 'Sfoglia e cerca 10 raccolte autentiche di hadith, tra cui Sahih al-Bukhari, Sahih Muslim e Sunan Abi Dawud, in arabo e inglese.',
     breadcrumb: [
       { name: 'Pagina iniziale', item: 'https://al-rahmaacademy.com/it/' },
       { name: 'Strumenti Islamici', item: 'https://al-rahmaacademy.com/it/tools' },
@@ -1814,7 +1814,7 @@ describe.skipIf(!distExists)('Italian Ijazah prerender (dist/public) — raw HTM
     ).toEqual(['ar_EG', 'en_GB', 'fr_FR']);
     expect(doc.title).toBe('Corso Ijazah del Corano | AL-Rahma Academy');
     expect(doc.querySelector('meta[name="description"]').getAttribute('content')).toBe(
-      "Ottieni un'Ijazah coranica ufficiale con un Sanad ininterrotto fino al Profeta ﷺ. Studia Matn Al-Jazariyyah, Al-Shatibiyyah e le sette Qira'at con studiosi certificati di Al-Azhar.",
+      "Ottieni un’Ijazah coranica con sanad ininterrotto fino al Profeta ﷺ: studia Matn Al-Jazariyyah, Al-Shatibiyyah e le sette Qira’at con studiosi di Al-Azhar.",
     );
     expect(doc.querySelector('h1').textContent.trim()).toBe('Corso Ijazah del Corano');
   });
@@ -1889,7 +1889,7 @@ describe.skipIf(!distExists)('Italian Islamic Studies prerender (dist/public) �
     ).toEqual(['ar_EG', 'en_GB', 'fr_FR']);
     expect(doc.title).toBe('Corso di Studi Islamici | AL-Rahma Academy');
     expect(doc.querySelector('meta[name="description"]').getAttribute('content')).toBe(
-      'Un programma completo basato sulle fonti che copre Aqeedah, Fiqh, Seerah, Hadith e Tafsir — 5 moduli strutturati insegnati da studiosi certificati nella tua lingua.',
+      'Studi islamici basati sulle fonti: Aqeedah, Fiqh, Seerah, Hadith e Tafsir in 5 moduli strutturati, con studiosi certificati e lezioni nella tua lingua.',
     );
     expect(doc.querySelector('h1').textContent.trim()).toBe('Studi Islamici');
   });
@@ -1971,7 +1971,7 @@ describe.skipIf(!distExists)('Italian wave 3 (hadith, prayer-times) prerender (d
       route: '/tools/hadith',
       file: 'it/tools/hadith/index.html',
       title: 'Biblioteca degli Hadith | AL-Rahma Academy',
-      description: 'Sfoglia e cerca 10 raccolte autentiche di hadith, tra cui Sahih al-Bukhari, Sahih Muslim, Sunan Abi Dawud e altre.',
+      description: 'Sfoglia e cerca 10 raccolte autentiche di hadith, tra cui Sahih al-Bukhari, Sahih Muslim e Sunan Abi Dawud, in arabo e inglese.',
       h1: 'Biblioteca islamica degli Hadith',
       crumbs: ['Pagina iniziale', 'Strumenti Islamici', 'Biblioteca Hadith'],
     },

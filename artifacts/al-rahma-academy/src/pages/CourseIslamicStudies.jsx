@@ -4,6 +4,7 @@ import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 import Reveal from '../components/ui/Reveal';
 import useSEO from '../hooks/useSEO';
+import { pickItPageMetaDescription } from '../i18n/itMetaDescriptions';
 import Breadcrumbs from '../components/ui/Breadcrumbs';
 import { useLang, withLanguage } from '../context/LangContext';
 import { COURSE_UI } from '../i18n/coursePages';
@@ -79,7 +80,7 @@ export default function CourseIslamicStudies() {
     description: isAr
       ? 'منهج شامل مبني على المصادر يغطي العقيدة والفقه والسيرة والحديث والتفسير — ٥ وحدات يدرّسها علماء معتمدون بلغتك.'
       : isFr ? FR.seoDescription
-      : isIt ? IT.seoDescription
+      : isIt ? pickItPageMetaDescription('islamicStudies', lang, IT.seoDescription)
       : 'A comprehensive, source-based curriculum covering Aqeedah, Fiqh, Seerah, Hadith and Tafsir — 5 structured modules taught by certified scholars in your own language.',
     // French: the same Course object with its text fields in French;
     // inLanguage (language of instruction) is unchanged.

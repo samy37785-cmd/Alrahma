@@ -1153,7 +1153,7 @@ const it = {
         { "icon": "📖", "title": "Lettore del Corano", "desc": "Leggi e ascolta il Corano completo con più recitatori, traduzioni, Tafsir e modalità Hifz." },
         { "icon": "📿", "title": "Adhkar & Suppliche", "desc": "Adhkar del mattino e della sera, dhikr dopo la preghiera e du'a per ogni occasione." },
         { "icon": "📚", "title": "Biblioteca di Hadith", "desc": "Sfoglia Al-Arba'een Al-Nawawiyyah, Hadith Qudsi e altre raccolte di hadith." },
-        { "icon": "🕌", "title": "Preghiera & Strumenti Islamici", "desc": "Orari di preghiera, bussola Qibla, calendario islamico e Versetto del Giorno — quattro strumenti per l'adorazione quotidiana." },
+        { "icon": "🕌", "title": "Preghiera & Strumenti Islamici", "desc": "Orari di preghiera per la tua posizione e Versetto del Giorno: due strumenti gratuiti per accompagnare l'adorazione quotidiana, subito online." },
         { "icon": "✋", "title": "Contatore Tasbeeh", "desc": "Contatore digitale di dhikr per SubhanAllah, Alhamdulillah, Allahu Akbar e altro, con monitoraggio dei progressi." },
         { "icon": "🔤", "title": "Alfabeto Arabo", "desc": "Impara le 28 lettere arabe con pronuncia audio, pratica microfono e registrazioni complete." }
       ]

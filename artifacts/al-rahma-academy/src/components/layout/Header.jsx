@@ -291,16 +291,10 @@ export default function Header() {
               <button className="nav__mobile-logout" onClick={handleLogout}>
                 <LogoutIcon size={ICON_SIZE} /> {n.logout}
               </button>
-            ) : (
-              isRouteHidden(lang, "/login") ? (
-                <button type="button" className="nav__mobile-login-link" onClick={() => { closeAll(); navigate(localizedTo("/login")); }}>
-                  {n.login}
-                </button>
-              ) : (
-                <Link to={localizedTo("/login")} className="nav__mobile-login-link" onClick={closeAll}>
-                  {n.login}
-                </Link>
-              )
+            ) : isRouteHidden(lang, "/login") ? null : (
+              <Link to={localizedTo("/login")} className="nav__mobile-login-link" onClick={closeAll}>
+                {n.login}
+              </Link>
             )}
           </nav>
 
@@ -391,12 +385,8 @@ export default function Header() {
                   </ul>
                 )}
               </div>
-            ) : (
-              isRouteHidden(lang, "/login") ? (
-                <button type="button" className="btn btn--ghost-inv btn--sm" onClick={() => navigate(localizedTo("/login"))}>{n.login}</button>
-              ) : (
-                <Link to={localizedTo("/login")} className="btn btn--ghost-inv btn--sm">{n.login}</Link>
-              )
+            ) : isRouteHidden(lang, "/login") ? null : (
+              <Link to={localizedTo("/login")} className="btn btn--ghost-inv btn--sm">{n.login}</Link>
             )}
 
             {/* Search / Command Palette — desktop only; mobile has its own in the drawer */}

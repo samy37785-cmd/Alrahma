@@ -36,6 +36,8 @@ const TEST_FILES = [
   'lib/redact.test.mjs',
   'lib/auth-import.test.mjs',
   'lib/no-service-identity.test.mjs',
+  'lib/email-collision.test.mjs',
+  'lib/bootstrap-manifest.test.mjs',
   'mongo-to-supabase-cli.test.mjs',
   'migrate-users-to-supabase-auth.test.mjs',
   'unrecorded-data-preflight.test.mjs',
@@ -44,6 +46,8 @@ const TEST_FILES = [
   'production-enablement-cli.test.mjs',
   'resume-rollback-integrity.test.mjs',
   'lossless-import.test.mjs',
+  'bootstrap-allowlist.test.mjs',
+  'super-admin-email-collision.test.mjs',
   // Real, disposable Supabase-CLI stack (real Postgres + real GoTrue +
   // Kong) -- deliberately last: by far the slowest file here (a full
   // multi-container stack start/stop), so every fast/cheap file's own

@@ -35,6 +35,13 @@
 //      right projectRef string is not proof this RUN's own SUPABASE_URL
 //      env var actually points at that same real project.
 //
+// SUPER_ADMIN_SAFETY_GATE: the caller states the scope it is about to run
+// ('plan' or 'execute'; omitted means 'execute', the strictest). A
+// plan-scope manifest never authorizes 'execute', and an expired manifest,
+// one whose allowlist no longer matches its approved sha256, or one
+// approved for another commit or backup fails here -- before the caller
+// opens any Postgres connection at all.
+//
 // This module never reads MIGRATION_DB_URL/MIGRATION_MONGO_URI itself and
 // never decides what counts as "local" -- that stays lib/host-guard.mjs's
 // job. This module answers exactly one question: "has a genuine,
@@ -45,7 +52,7 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { TARGET_SUPABASE_REF, verifyApprovalManifest, verifyFreshBackup } from './production-approval.mjs';
+import { TARGET_SUPABASE_REF, manifestFileSha256, verifyApprovalManifest, verifyFreshBackup } from './production-approval.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, '..', '..', '..', '..');
@@ -85,7 +92,10 @@ export function extractSupabaseProjectRef(supabaseUrl) {
  *   gitSha: string,
  *   backupHash: string,
  *   approvalManifestPath: string,
+ *   approvalManifestSha256: string,
  *   backupManifestPath: string,
+ *   scope: 'plan' | 'execute',
+ *   bootstrapAllowlist: object,
  * }}
  */
 export function loadAndVerifyProductionAuthorization({
@@ -93,6 +103,7 @@ export function loadAndVerifyProductionAuthorization({
   verifyApprovalManifestFn = verifyApprovalManifest,
   verifyFreshBackupFn = verifyFreshBackup,
   currentGitShaFn = currentGitSha,
+  requestedScope = 'execute',
 } = {}) {
   if (env.MIGRATION_PRODUCTION_MODE !== '1') return null;
 
@@ -112,7 +123,7 @@ export function loadAndVerifyProductionAuthorization({
   const gitSha = currentGitShaFn();
   const backup = verifyFreshBackupFn(backupManifestPath);
   const manifest = JSON.parse(fs.readFileSync(approvalManifestPath, 'utf8'));
-  verifyApprovalManifestFn(manifest, { gitSha, backupHash: backup.sha256 });
+  verifyApprovalManifestFn(manifest, { gitSha, backupHash: backup.sha256, requiredScope: requestedScope });
 
   return {
     verified: true,
@@ -120,6 +131,10 @@ export function loadAndVerifyProductionAuthorization({
     gitSha,
     backupHash: backup.sha256,
     approvalManifestPath,
+    approvalManifestSha256: manifestFileSha256(approvalManifestPath),
     backupManifestPath,
+    scope: manifest.scope,
+    requestedScope,
+    bootstrapAllowlist: manifest.bootstrapAllowlist,
   };
 }

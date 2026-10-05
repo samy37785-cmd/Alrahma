@@ -55,7 +55,8 @@ import { fileURLToPath } from 'node:url';
 import mongoose from 'mongoose';
 import pg from 'pg';
 import { runCommand } from '../../../lib/db/test/orchestrator-lib.mjs';
-import { TARGET_SUPABASE_REF, computeConfirmToken } from './production-import-orchestrator.mjs';
+import { signedTestManifest } from './lib/manifest-test-fixture.mjs';
+import { collectBootstrapAllowlist } from './lib/bootstrap-allowlist.mjs';
 import { CANONICAL_PLANS } from './lib/plan-catalog.mjs';
 import { contentHashOf } from './lib/source-ledger.mjs';
 import { correlationIdFor } from './migrate-users-to-supabase-auth.mjs';
@@ -118,8 +119,14 @@ async function main() {
   // fixture (a direct insert, standing in for the admin flow). plans has
   // no foreign keys, so resetAll()'s TRUNCATE ... CASCADE leaves them.
   for (const plan of CANONICAL_PLANS) {
-    await pgPool.query('INSERT INTO plans (slug, name, amount_minor) VALUES ($1, $2, $3)', [plan.slug, plan.name, plan.amountMinor]);
+    await pgPool.query('INSERT INTO plans (slug, name, amount_minor, currency, billing_interval) VALUES ($1, $2, $3, $4, $5)', [plan.slug, plan.name, plan.amountMinor, plan.currency, plan.billingInterval]);
   }
+  // The approval manifest's bootstrap allowlist (SUPER_ADMIN_SAFETY_GATE):
+  // no Super Admin in these local fixtures, the three plans above by id +
+  // fingerprint, no audit rows -- collected once by the real collector.
+  const collectClient = await pgPool.connect();
+  const { allowlist: approvedAllowlist } = await collectBootstrapAllowlist(collectClient, { requireSuperAdmin: false });
+  collectClient.release();
   const setCanonicalPlansActive = (active) =>
     pgPool.query('UPDATE plans SET active = $1 WHERE slug = ANY($2::text[])', [active, CANONICAL_PLANS.map((p) => p.slug)]);
 
@@ -134,15 +141,11 @@ async function main() {
     }));
     return sidecarPath;
   }
-  function writeApprovalManifest() {
+  function writeApprovalManifest(bootstrapAllowlist = approvedAllowlist) {
     const gitSha = currentGitShaSync();
     const backupHash = sha256File(backupFile);
     const manifestPath = path.join(tmpDir, `approval-${crypto.randomUUID()}.json`);
-    fs.writeFileSync(manifestPath, JSON.stringify({
-      projectRef: TARGET_SUPABASE_REF, gitSha, backupHash,
-      confirmToken: computeConfirmToken({ projectRef: TARGET_SUPABASE_REF, gitSha, backupHash }),
-      approvedBy: 'test-operator', approvedAt: new Date().toISOString(),
-    }));
+    fs.writeFileSync(manifestPath, JSON.stringify(signedTestManifest({ gitSha, backupHash, bootstrapAllowlist })));
     return manifestPath;
   }
   function writeDispositions(items, overrides = {}) {
@@ -153,9 +156,9 @@ async function main() {
     return filePath;
   }
 
-  function runOrchestratorCLI(args, envOverrides = {}) {
+  function runOrchestratorCLI(args, envOverrides = {}, { bootstrapAllowlist } = {}) {
     const backupManifestPath = writeBackupManifest();
-    const approvalManifestPath = writeApprovalManifest();
+    const approvalManifestPath = writeApprovalManifest(bootstrapAllowlist);
     const result = spawnSync(process.execPath, [
       ORCHESTRATOR_SCRIPT, ...args,
       `--backup-manifest=${backupManifestPath}`, `--approval-manifest=${approvalManifestPath}`,
@@ -359,13 +362,14 @@ async function main() {
     assert.equal(runExecute.json, null, 'an unknown row must still crash the preflight BEFORE any JSON result is ever printed');
     assert.equal(runExecute.code, 1);
     assert.match(runExecute.stderr, /FATAL/);
-    assert.match(runExecute.stderr, /not attributable to this migration/);
+    // SUPER_ADMIN_SAFETY_GATE: refused by the bootstrap-state check, which runs first.
+    assert.match(runExecute.stderr, /BOOTSTRAP_STATE_REJECTED: [\s\S]*profiles: 1 row\(s\) not created by this migration and not the approved Super Admin/);
 
     const runCompensate = runOrchestratorCLI(['--compensate', '--execute']);
     assert.equal(runCompensate.json, null, 'the SAME unattributed-data refusal must apply to --compensate -- it is not a bypass');
     assert.equal(runCompensate.code, 1);
     assert.match(runCompensate.stderr, /FATAL/);
-    assert.match(runCompensate.stderr, /not attributable to this migration/);
+    assert.match(runCompensate.stderr, /BOOTSTRAP_STATE_REJECTED: [\s\S]*profiles: 1 row\(s\) not created by this migration and not the approved Super Admin/);
   });
 
   await test('round 6 item 1: --compensate --execute with mixed valid + normalized-invalid users performs zero writes', async () => {
@@ -437,6 +441,41 @@ async function main() {
     assert.ok(stale.json, stale.stderr);
     assert.equal(stale.json.failedAt, 'users_and_relationships_preflight');
     assert.match(stale.json.stderr, /matched no real problem/);
+  });
+
+  await test('SUPER_ADMIN_SAFETY_GATE: execute refuses a pre-existing Super Admin it was not told about, accepts the approved one, and migrates exactly the source accounts around it', async () => {
+    await resetAll();
+    // The owner's bootstrap: account, admin profile, super-admin role, one login audit row.
+    const superAdminId = crypto.randomUUID();
+    await pgPool.query('INSERT INTO auth.users (id, email) VALUES ($1, $2)', [superAdminId, 'owner-super-admin@example.invalid']);
+    await pgPool.query(`UPDATE profiles SET role = 'admin' WHERE id = $1`, [superAdminId]);
+    await pgPool.query(`INSERT INTO admin_role_assignments (user_id, role, assigned_by) VALUES ($1, 'super-admin', NULL)`, [superAdminId]);
+    await pgPool.query(
+      `INSERT INTO admin_audit_log (actor_admin_id, action, resource_type, resource_id, severity) VALUES ($1, 'auth.login_stage1', 'AdminAuth', $2, 'info')`,
+      [superAdminId, superAdminId]
+    );
+    const sourceDoc = { password: FIXTURE_PASSWORD_HASH, _id: new mongoose.Types.ObjectId(), email: 'gate-learner@example.invalid', role: 'student' };
+    await seedLedgeredAccount(sourceDoc, 'mongodb');
+    await mongoose.connection.collection('users').insertOne(sourceDoc);
+    const collector = await pgPool.connect();
+    const { allowlist: withSuperAdmin } = await collectBootstrapAllowlist(collector);
+    collector.release();
+    assert.equal(withSuperAdmin.superAdmin.userId, superAdminId);
+
+    const refused = runOrchestratorCLI(['--execute']);
+    assert.equal(refused.json, null, 'refused in the preflight, before any step ran');
+    assert.notEqual(refused.code, 0);
+    assert.match(refused.stderr, /BOOTSTRAP_STATE_REJECTED[\s\S]*auth\.users: 1 row\(s\) not created by this migration and not the approved Super Admin/);
+
+    const run = runOrchestratorCLI(['--execute'], {}, { bootstrapAllowlist: withSuperAdmin });
+    assert.ok(run.json, run.stderr);
+    assert.equal(run.code, 0, run.stderr);
+    assert.equal(run.json.ok, true);
+    assert.equal(run.json.targetState.superAdmin.preExisting, 1);
+    assert.equal(run.json.targetState.superAdmin.approved, true);
+    assert.equal(await authUserCount(), 2, 'the source account + the approved Super Admin, nothing else');
+    const roles = (await pgPool.query('SELECT user_id::text AS id, role::text AS role FROM admin_role_assignments')).rows;
+    assert.deepEqual(roles, [{ id: superAdminId, role: 'super-admin' }], 'the Super Admin keeps its role; no other role was granted');
   });
 
   await pgPool.end();

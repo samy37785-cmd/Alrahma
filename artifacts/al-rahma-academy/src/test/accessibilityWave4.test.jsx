@@ -106,7 +106,8 @@ describe('protected files are byte-identical to origin/main (3b44029)', () => {
       'src/hooks/useQuranProgress.js': 'a70c2f2c0752682a6d1c8f32c2eb4ad25d4852e1d31b1cbe0cb696adf43d32c9',
       'src/hooks/useQuranRecorder.js': '67313e3e6f0901a0e7f3dce93d188930070548c56ff52247fe6958da1e6161fe',
       'src/hooks/useQuranVerseActions.js': '62db82585fc6e1916d1141da0e8d4a8e43dbe137fa02cceb93ba9de726a54316',
-      'src/hooks/useSEO.js': '7151e6f9de41af46474cd61bc860e46f67fc225c8c532655e73051e9f140eb02',
+      // Social/schema PR: the only change is DEFAULT_IMAGE (/og-cover.svg -> /og-cover.png); nothing else in the hook moved.
+      'src/hooks/useSEO.js': '64590f68293e825bb190a37d99c9dd5eea036552bc74e84c554571d43c8d382d',
       'src/i18n/quran/a11yLabels.js': 'f6508c7e1f7249ac06a07269efcf2a2358c42004ac8e5ea5751d45fd5091926c',
       'src/i18n/quran/arabicNavigationLabels.js': '16b9a08d86930bc1bbf4f7794516d5db23fb226036421ea77b6ab837fc139015',
       'src/i18n/quran/controlsPanels.js': '3f9c11e87de7b32d0e685580882a489c0bf7f10afa639f6641fac10891680654',

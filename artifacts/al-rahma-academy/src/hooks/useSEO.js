@@ -21,7 +21,7 @@ import { ORIGIN } from '../utils/localePath';
  */
 
 const SITE = 'AL-Rahma Academy';
-const DEFAULT_IMAGE = `${ORIGIN}/og-cover.svg`;
+const DEFAULT_IMAGE = `${ORIGIN}/og-cover.png`;
 
 function setMeta(attr, key, value) {
   let el = document.head.querySelector(`meta[${attr}="${key}"]`);

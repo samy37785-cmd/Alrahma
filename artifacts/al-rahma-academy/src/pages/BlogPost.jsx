@@ -119,7 +119,7 @@ export default function BlogPost() {
       datePublished: post.date,
       articleSection: post.category,
       inLanguage: 'en',
-      image: `${site.origin}/og-cover.svg`,
+      image: `${site.origin}/og-cover.png`,
       author: { '@type': 'Organization', name: 'Al-Rahma Academy', url: site.origin },
       publisher: {
         '@type': 'Organization',

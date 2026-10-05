@@ -150,6 +150,8 @@ import { encodeCompositeTargetId, decodeCompositeTargetId } from './lib/composit
 import { verifyReadBack } from './lib/read-back-verify.mjs';
 import { assertLocalHostOrProductionAuthorized } from './lib/host-guard.mjs';
 import { loadAndVerifyProductionAuthorization } from './lib/production-authorization.mjs';
+import { verifyBootstrapState } from './lib/bootstrap-allowlist.mjs';
+import { assertSessionReadOnly, makePoolReadOnly } from './lib/read-only-session.mjs';
 import { buildPgPoolConfig } from '../../data/supabase/client.js';
 
 // Stage 2J-B, PR #70 review round 8, item 1 -- this script's own CLI was
@@ -2405,7 +2407,10 @@ async function main() {
   // authorization.mjs's own header for exactly what that requires. Absent
   // MIGRATION_PRODUCTION_MODE=1, this behaves EXACTLY like the old
   // unconditional assertLocalHost() call it replaces.
-  const productionAuthorization = loadAndVerifyProductionAuthorization();
+  // --dry-run plans; a real run and --rollback write. A plan-scope
+  // manifest only ever authorizes the former (SUPER_ADMIN_SAFETY_GATE).
+  const writesRequested = !args['dry-run'] || !!args.rollback;
+  const productionAuthorization = loadAndVerifyProductionAuthorization({ requestedScope: writesRequested ? 'execute' : 'plan' });
   assertLocalHostOrProductionAuthorized(pgUri, 'MIGRATION_DB_URL', productionAuthorization);
 
   const requestedAll = args.domain === 'all' || !args.domain;
@@ -2446,10 +2451,17 @@ async function main() {
   // through the production-authorized branch above.
   const pgPoolConfig = buildPgPoolConfig(pgUri);
   const pool = new pg.Pool(pgPoolConfig);
+  // A dry run writes nothing, and Postgres enforces it: read-only session.
+  if (!writesRequested) makePoolReadOnly(pool);
   const pgClient = await pool.connect();
 
   const results = [];
   try {
+    if (!writesRequested) await assertSessionReadOnly(pgClient);
+    // Run directly against an authorized production target (not only via
+    // the orchestrator): the pre-existing bootstrap rows must still be
+    // exactly the approved ones before this worker reads or writes.
+    if (productionAuthorization) await verifyBootstrapState(pgClient, productionAuthorization.bootstrapAllowlist);
     // NO_MIGRATION_SERVICE_IDENTITY: the canonical plans must already exist.
     // Checked once, before the first domain runs, so a missing catalog
     // stops --dry-run and a real run alike with nothing written anywhere

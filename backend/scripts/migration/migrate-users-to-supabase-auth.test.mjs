@@ -471,7 +471,7 @@ async function main() {
   // insert standing in for the admin flow). plans has no foreign keys, so
   // resetAll()'s TRUNCATE ... CASCADE leaves them in place.
   for (const plan of CANONICAL_PLANS) {
-    await pgPool.query('INSERT INTO plans (slug, name, amount_minor) VALUES ($1, $2, $3)', [plan.slug, plan.name, plan.amountMinor]);
+    await pgPool.query('INSERT INTO plans (slug, name, amount_minor, currency, billing_interval) VALUES ($1, $2, $3, $4, $5)', [plan.slug, plan.name, plan.amountMinor, plan.currency, plan.billingInterval]);
   }
 
   function runUserMigrationCLI(args) {

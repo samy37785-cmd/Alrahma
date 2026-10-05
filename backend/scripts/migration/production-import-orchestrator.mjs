@@ -104,10 +104,13 @@ import { encodeCompositeTargetId } from './lib/composite-target-id.mjs';
 import {
   TARGET_SUPABASE_REF,
   computeConfirmToken,
+  manifestFileSha256,
   verifyApprovalManifest,
   verifyFreshBackup,
 } from './lib/production-approval.mjs';
 import { loadAndVerifyProductionAuthorization } from './lib/production-authorization.mjs';
+import { approvedBootstrapIds, verifyBootstrapState } from './lib/bootstrap-allowlist.mjs';
+import { assertSessionReadOnly, makePoolReadOnly } from './lib/read-only-session.mjs';
 import { assertLocalHostOrProductionAuthorized } from './lib/host-guard.mjs';
 import { buildPgPoolConfig } from '../../data/supabase/client.js';
 import { installRedactingConsole, redactDeep } from './lib/redact.mjs';
@@ -610,8 +613,16 @@ export async function verifySignupsOff(supabaseUrl, serviceRoleKey) {
 // shapes they each cover.
 const LEDGER_AND_PROVENANCE_SPECS = { ...LEDGER_BACKED_TARGET_SPECS, profiles: {}, subscriptions: {} };
 
-export async function verifyNoUnrecordedData(pgClient) {
+// SUPER_ADMIN_SAFETY_GATE: `bootstrapAllowlist` (from the verified
+// approval manifest) names the Super Admin bootstrap's rows by id. They
+// are skipped here ONLY after verifyBootstrapState() has proven the target
+// holds exactly those rows, each matching its approved fingerprint --
+// runPreflight() always calls that first. Every other unledgered row still
+// fails closed.
+export async function verifyNoUnrecordedData(pgClient, { bootstrapAllowlist = null } = {}) {
   const problems = [];
+  const approved = approvedBootstrapIds(bootstrapAllowlist);
+  const skipIds = { profiles: approved.users, admin_audit_log: approved.auditRows };
 
   for (const [table, spec] of Object.entries(LEDGER_AND_PROVENANCE_SPECS)) {
     let unrecordedCount;
@@ -620,7 +631,8 @@ export async function verifyNoUnrecordedData(pgClient) {
     } else {
       const { rows } = await pgClient.query(`
         select count(*)::int as n from public.${table} t
-        where not exists (
+        where not (${targetIdentityExpr(spec)} = any($3::text[]))
+          and not exists (
           select 1 from public.migration_source_ledger l
           where l.target_table = $1
             and l.source_system = 'mongodb'
@@ -632,7 +644,7 @@ export async function verifyNoUnrecordedData(pgClient) {
             and l.target_id is not null
             and l.target_id = ${targetIdentityExpr(spec)}
         );
-      `, [table, SOURCE_DATABASE]);
+      `, [table, SOURCE_DATABASE, skipIds[table] ?? []]);
       unrecordedCount = rows[0].n;
     }
     if (unrecordedCount > 0) {
@@ -663,7 +675,8 @@ export async function verifyNoUnrecordedData(pgClient) {
   const { rows: authOrphanRows } = await pgClient.query(
     `select count(*)::int as n
        from auth.users u
-      where (
+      where not (u.id::text = any($2::text[]))
+        and (
           not exists (select 1 from public.profiles p where p.id = u.id)
           or not exists (
             select 1 from public.migration_source_ledger l
@@ -678,7 +691,7 @@ export async function verifyNoUnrecordedData(pgClient) {
               and l.target_id = u.id::text
           )
         )`,
-    [SOURCE_DATABASE]
+    [SOURCE_DATABASE, approved.users]
   );
   if (authOrphanRows[0].n > 0) {
     problems.push(`auth.users: ${authOrphanRows[0].n} row(s) orphaned (no profiles row) or not attributable to this migration`);
@@ -931,30 +944,56 @@ export async function releaseAdvisoryLock(pgClient) {
 // after acquiring it (state can change in the gap between the two).
 // ---------------------------------------------------------------------
 
-async function runPreflight(pgClient, { execute, approvalManifestPath, backupManifestPath, supabaseUrl, serviceRoleKey }) {
+/**
+ * Execute needs a verified approval manifest (scope 'execute', not
+ * expired, for this commit and this backup, allowlist intact). Called
+ * BEFORE main() opens any Postgres connection, and again inside the
+ * preflight. When a production authorization is in force, the manifest
+ * given on the command line must be byte-identical to the one that
+ * authorization verified (MIGRATION_APPROVAL_MANIFEST).
+ */
+export function verifyExecuteApproval({ approvalManifestPath, backupManifestPath, productionAuthorization = null, gitSha = currentGitSha() }) {
+  if (!approvalManifestPath) fail('--execute requires --approval-manifest=<path>');
+  if (!backupManifestPath) fail('--execute requires --backup-manifest=<path>');
+  if (!fs.existsSync(approvalManifestPath)) fail('the approval manifest given with --approval-manifest does not exist');
+  const backup = verifyFreshBackup(backupManifestPath);
+  const manifest = JSON.parse(fs.readFileSync(approvalManifestPath, 'utf8'));
+  verifyApprovalManifest(manifest, { gitSha, backupHash: backup.sha256, requiredScope: 'execute' });
+  if (productionAuthorization && manifestFileSha256(approvalManifestPath) !== productionAuthorization.approvalManifestSha256) {
+    fail('--approval-manifest is not the same file content as MIGRATION_APPROVAL_MANIFEST -- one manifest must authorize the whole run');
+  }
+  return { backup, manifest };
+}
+
+async function runPreflight(pgClient, { execute, approvalManifestPath, backupManifestPath, supabaseUrl, serviceRoleKey, productionAuthorization = null }) {
   const gitSha = currentGitSha();
   await verifyMigrationJournal(pgClient);
 
   if (!execute) {
-    // --plan never needs an approval manifest or a live GoTrue call —
-    // it's read-only against Postgres and Mongo, safe to run any time.
-    return { gitSha, mode: 'plan' };
+    // --plan never needs a live GoTrue call and runs on a read-only
+    // session. It still checks the target's pre-existing state
+    // (SUPER_ADMIN_SAFETY_GATE) against the allowlist of the production
+    // authorization in force, or against none locally, so a plan never
+    // reports ok for a target execute would refuse.
+    const targetState = await verifyBootstrapState(pgClient, productionAuthorization?.bootstrapAllowlist ?? null);
+    return { gitSha, mode: 'plan', targetState };
   }
 
-  const backup = verifyFreshBackup(backupManifestPath);
-  const manifest = JSON.parse(fs.readFileSync(approvalManifestPath, 'utf8'));
-  verifyApprovalManifest(manifest, { gitSha, backupHash: backup.sha256 });
+  const { backup, manifest } = verifyExecuteApproval({ approvalManifestPath, backupManifestPath, productionAuthorization, gitSha });
   await verifySignupsOff(supabaseUrl, serviceRoleKey);
+  // SUPER_ADMIN_SAFETY_GATE: the pre-existing bootstrap rows must be
+  // exactly the approved ones before anything else may skip them.
+  const targetState = await verifyBootstrapState(pgClient, manifest.bootstrapAllowlist);
   // Round 7, item 4: BOTH directions of ledger integrity are checked, not
   // just Target -> Ledger (verifyNoUnrecordedData). Round 7, item 6:
   // relationship provenance (profiles.teacher_id specifically;
   // parent_student_links is already covered generically by both of the
   // functions above via LEDGER_AND_PROVENANCE_SPECS).
-  await verifyNoUnrecordedData(pgClient);
+  await verifyNoUnrecordedData(pgClient, { bootstrapAllowlist: manifest.bootstrapAllowlist });
   await verifyLedgerPointsToRealTargets(pgClient);
   await verifyTeacherLinkProvenance(pgClient);
   await verifyLedgerRowIntegrity(pgClient);
-  return { gitSha, mode: 'execute', backup, manifest };
+  return { gitSha, mode: 'execute', backup, manifest, targetState };
 }
 
 // ---------------------------------------------------------------------
@@ -1250,41 +1289,51 @@ async function main() {
   // check runs for BOTH --plan and --execute (--plan legitimately needs to
   // read the real target's real schema/ledger state to plan against it;
   // "read-only" is not the same as "safe to point anywhere").
-  const productionAuthorization = loadAndVerifyProductionAuthorization();
+  const writes = execute; // --compensate without --execute only plans too
+  const productionAuthorization = loadAndVerifyProductionAuthorization({ requestedScope: writes ? 'execute' : 'plan' });
   assertLocalHostOrProductionAuthorized(pgUri, 'MIGRATION_DB_URL', productionAuthorization);
+  // A missing, expired, mismatched or plan-scope manifest stops an execute
+  // run here, before any Postgres connection is opened.
+  if (writes) {
+    verifyExecuteApproval({ approvalManifestPath: args['approval-manifest'], backupManifestPath: args['backup-manifest'], productionAuthorization });
+  }
 
   // Same TLS rule as backend/data/supabase/client.js's getPool(): strict
   // verification for any non-local host, TLS-weakening URL params stripped,
   // and a missing/empty CA fails here -- before the pool or any connection
   // exists. --plan connects too, so it gets exactly the same rule.
   const pool = new pg.Pool(buildPgPoolConfig(pgUri));
+  if (!writes) makePoolReadOnly(pool);
   const pgClient = await pool.connect();
   try {
+    if (!writes) await assertSessionReadOnly(pgClient);
     await runPreflight(pgClient, {
       execute,
       approvalManifestPath: args['approval-manifest'],
       backupManifestPath: args['backup-manifest'],
       supabaseUrl,
       serviceRoleKey,
+      productionAuthorization,
     });
 
     await acquireAdvisoryLock(pgClient);
     try {
       // Re-preflight UNDER the lock — state may have changed in the gap
       // between the check above and actually holding the lock.
-      await runPreflight(pgClient, {
+      const preflight = await runPreflight(pgClient, {
         execute,
         approvalManifestPath: args['approval-manifest'],
         backupManifestPath: args['backup-manifest'],
         supabaseUrl,
         serviceRoleKey,
+        productionAuthorization,
       });
 
       const result = compensateMode
         ? await compensate({ pgClient, execute, approvedDispositionsPath })
         : await runImport({ pgClient, execute, faultStage: process.env.MIGRATION_FAULT_INJECT_STAGE, deferDomains, approvedDispositionsPath });
 
-      console.log(JSON.stringify(result, null, 2));
+      console.log(JSON.stringify({ ...result, targetState: preflight.targetState }, null, 2));
       if (!result.ok) process.exitCode = 1;
     } finally {
       await releaseAdvisoryLock(pgClient);

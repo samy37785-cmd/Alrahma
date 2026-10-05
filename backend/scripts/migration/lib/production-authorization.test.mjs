@@ -15,7 +15,8 @@ import {
   loadAndVerifyProductionAuthorization,
   extractSupabaseProjectRef,
 } from './production-authorization.mjs';
-import { verifyApprovalManifest, verifyFreshBackup, computeConfirmToken, TARGET_SUPABASE_REF } from './production-approval.mjs';
+import { verifyApprovalManifest, verifyFreshBackup, TARGET_SUPABASE_REF } from './production-approval.mjs';
+import { signedTestManifest } from './manifest-test-fixture.mjs';
 
 const results = [];
 function test(name, fn) {
@@ -160,11 +161,7 @@ test('MIGRATION_PRODUCTION_MODE=1 with a stale/invalid backup (verifyFreshBackup
 
 test('MIGRATION_PRODUCTION_MODE=1 with a manifest that fails verifyApprovalManifest (wrong gitSha): propagates the real failure', () => {
   const tmpManifest = path.join(os.tmpdir(), `approval-${crypto.randomUUID()}.json`);
-  fs.writeFileSync(tmpManifest, JSON.stringify({
-    projectRef: TARGET_SUPABASE_REF, gitSha: 'c'.repeat(40), backupHash: REAL_BACKUP_HASH,
-    confirmToken: computeConfirmToken({ projectRef: TARGET_SUPABASE_REF, gitSha: 'c'.repeat(40), backupHash: REAL_BACKUP_HASH }),
-    approvedBy: 'test-operator', approvedAt: new Date().toISOString(),
-  }));
+  fs.writeFileSync(tmpManifest, JSON.stringify(signedTestManifest({ gitSha: 'c'.repeat(40), backupHash: REAL_BACKUP_HASH })));
   try {
     assert.throws(
       () => loadAndVerifyProductionAuthorization({
@@ -182,11 +179,7 @@ test('MIGRATION_PRODUCTION_MODE=1 with a manifest that fails verifyApprovalManif
 
 test('MIGRATION_PRODUCTION_MODE=1 with EVERY precondition genuinely satisfied: returns the fully verified authorization object', () => {
   const tmpManifest = path.join(os.tmpdir(), `approval-${crypto.randomUUID()}.json`);
-  fs.writeFileSync(tmpManifest, JSON.stringify({
-    projectRef: TARGET_SUPABASE_REF, gitSha: REAL_GIT_SHA, backupHash: REAL_BACKUP_HASH,
-    confirmToken: computeConfirmToken({ projectRef: TARGET_SUPABASE_REF, gitSha: REAL_GIT_SHA, backupHash: REAL_BACKUP_HASH }),
-    approvedBy: 'test-operator', approvedAt: new Date().toISOString(),
-  }));
+  fs.writeFileSync(tmpManifest, JSON.stringify(signedTestManifest({ gitSha: REAL_GIT_SHA, backupHash: REAL_BACKUP_HASH })));
   try {
     const result = loadAndVerifyProductionAuthorization({
       env: baseEnv({ MIGRATION_APPROVAL_MANIFEST: tmpManifest }),
@@ -218,11 +211,7 @@ test('end-to-end with REAL verifyFreshBackup() and REAL verifyApprovalManifest()
   fs.writeFileSync(backupManifest, JSON.stringify({ filePath: backupFile, sha256: backupHash, createdAt: new Date().toISOString() }));
 
   const approvalManifest = path.join(tmpDir, 'approval.json');
-  fs.writeFileSync(approvalManifest, JSON.stringify({
-    projectRef: TARGET_SUPABASE_REF, gitSha: REAL_GIT_SHA, backupHash,
-    confirmToken: computeConfirmToken({ projectRef: TARGET_SUPABASE_REF, gitSha: REAL_GIT_SHA, backupHash }),
-    approvedBy: 'test-operator', approvedAt: new Date().toISOString(),
-  }));
+  fs.writeFileSync(approvalManifest, JSON.stringify(signedTestManifest({ gitSha: REAL_GIT_SHA, backupHash: backupHash })));
 
   try {
     const result = loadAndVerifyProductionAuthorization({
@@ -249,11 +238,7 @@ test('end-to-end: a backup file tampered with AFTER the manifest was written is 
   fs.writeFileSync(backupFile, 'tampered bytes -- a different dump entirely');
 
   const approvalManifest = path.join(tmpDir, 'approval.json');
-  fs.writeFileSync(approvalManifest, JSON.stringify({
-    projectRef: TARGET_SUPABASE_REF, gitSha: REAL_GIT_SHA, backupHash: originalHash,
-    confirmToken: computeConfirmToken({ projectRef: TARGET_SUPABASE_REF, gitSha: REAL_GIT_SHA, backupHash: originalHash }),
-    approvedBy: 'test-operator', approvedAt: new Date().toISOString(),
-  }));
+  fs.writeFileSync(approvalManifest, JSON.stringify(signedTestManifest({ gitSha: REAL_GIT_SHA, backupHash: originalHash })));
 
   try {
     assert.throws(
@@ -280,11 +265,7 @@ test('end-to-end: a stale (>24h) backup is caught by the REAL verifyFreshBackup(
   fs.writeFileSync(backupManifest, JSON.stringify({ filePath: backupFile, sha256: backupHash, createdAt: staleCreatedAt }));
 
   const approvalManifest = path.join(tmpDir, 'approval.json');
-  fs.writeFileSync(approvalManifest, JSON.stringify({
-    projectRef: TARGET_SUPABASE_REF, gitSha: REAL_GIT_SHA, backupHash,
-    confirmToken: computeConfirmToken({ projectRef: TARGET_SUPABASE_REF, gitSha: REAL_GIT_SHA, backupHash }),
-    approvedBy: 'test-operator', approvedAt: new Date().toISOString(),
-  }));
+  fs.writeFileSync(approvalManifest, JSON.stringify(signedTestManifest({ gitSha: REAL_GIT_SHA, backupHash: backupHash })));
 
   try {
     assert.throws(

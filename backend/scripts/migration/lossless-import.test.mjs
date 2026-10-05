@@ -215,7 +215,7 @@ async function main() {
   // The plans exist from here on, as a local fixture standing in for the
   // admin flow that creates them before a real migration.
   for (const plan of CANONICAL_PLANS) {
-    await pool.query('INSERT INTO plans (slug, name, amount_minor) VALUES ($1, $2, $3)', [plan.slug, plan.name, plan.amountMinor]);
+    await pool.query('INSERT INTO plans (slug, name, amount_minor, currency, billing_interval) VALUES ($1, $2, $3, $4, $5)', [plan.slug, plan.name, plan.amountMinor, plan.currency, plan.billingInterval]);
   }
 
   await test('plan against an empty target: users + all domains plan cleanly, 0 rows written, 0 GoTrue requests', async () => {

@@ -47,6 +47,7 @@ import pg from 'pg';
 import { verifyReadBack, jsonPathEqual } from './lib/read-back-verify.mjs';
 import { migrateOneUser, correlationIdFor } from './migrate-users-to-supabase-auth.mjs';
 import { prepareIsolatedStack } from './lib/disposable-supabase-stack.mjs';
+import { readBootstrapState } from './lib/bootstrap-allowlist.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, '..', '..', '..');
@@ -349,6 +350,42 @@ async function main() {
       assert.match(result.message, /no importable bcrypt password hash/);
       const rows = await client.query('SELECT 1 FROM auth.users WHERE email = $1', [email]);
       assert.equal(rows.rows.length, 0, 'no GoTrue account was created');
+    });
+
+    // SUPER_ADMIN_SAFETY_GATE on the real GoTrue auth schema: the approved
+    // Super Admin's row fingerprints must not change because the owner
+    // signs in (last_sign_in_at, sessions, refresh tokens), but must change
+    // when the account itself changes (here: a ban).
+    await test('bootstrap allowlist on real GoTrue: Super Admin fingerprints survive a real sign-in, and a ban changes them', async () => {
+      const email = `super-admin-${crypto.randomUUID()}@example.invalid`;
+      const password = crypto.randomBytes(18).toString('base64url');
+      const created = await supabaseAdmin.auth.admin.createUser({ email, password, email_confirm: true });
+      assert.equal(created.error, null, created.error?.message);
+      const id = created.data.user.id;
+      await client.query(`UPDATE profiles SET role = 'admin' WHERE id = $1`, [id]);
+      await client.query(`INSERT INTO admin_role_assignments (user_id, role, assigned_by) VALUES ($1, 'super-admin', NULL)`, [id]);
+      const fingerprints = async () => {
+        const state = await readBootstrapState(client);
+        return {
+          authUser: state.authUsers.find((u) => u.id === id)?.fingerprint,
+          profile: state.profiles.find((p) => p.id === id)?.fingerprint,
+          role: state.roleAssignments.find((r) => r.user_id === id)?.fingerprint,
+        };
+      };
+      const before = await fingerprints();
+      for (const [k, v] of Object.entries(before)) assert.match(String(v), /^sha256:[0-9a-f]{64}$/, k);
+
+      const signIn = await anon().auth.signInWithPassword({ email, password });
+      assert.equal(signIn.error, null, signIn.error?.message);
+      const lastSignIn = await client.query('SELECT last_sign_in_at FROM auth.users WHERE id = $1', [id]);
+      assert.ok(lastSignIn.rows[0].last_sign_in_at, 'the sign-in really happened');
+      assert.deepEqual(await fingerprints(), before, 'a sign-in must not change the approved fingerprints');
+
+      const ban = await supabaseAdmin.auth.admin.updateUserById(id, { ban_duration: '24h' });
+      assert.equal(ban.error, null, ban.error?.message);
+      const banned = await fingerprints();
+      assert.notEqual(banned.authUser, before.authUser, 'a ban is a change to the approved account');
+      assert.equal(banned.role, before.role);
     });
   } finally {
     client.release();

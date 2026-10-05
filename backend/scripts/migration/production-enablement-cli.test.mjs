@@ -26,7 +26,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { computeConfirmToken } from './lib/production-approval.mjs';
+import { signedTestManifest } from './lib/manifest-test-fixture.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, '..', '..', '..');
@@ -66,11 +66,7 @@ function makeValidProductionArtifacts(tmpDir) {
   fs.writeFileSync(backupManifest, JSON.stringify({ filePath: backupFile, sha256: backupHash, createdAt: new Date().toISOString() }));
 
   const approvalManifest = path.join(tmpDir, 'approval.json');
-  fs.writeFileSync(approvalManifest, JSON.stringify({
-    projectRef: TARGET_SUPABASE_REF, gitSha, backupHash,
-    confirmToken: computeConfirmToken({ projectRef: TARGET_SUPABASE_REF, gitSha, backupHash }),
-    approvedBy: 'test-operator', approvedAt: new Date().toISOString(),
-  }));
+  fs.writeFileSync(approvalManifest, JSON.stringify(signedTestManifest({ gitSha: gitSha, backupHash })));
 
   return { approvalManifest, backupManifest };
 }
@@ -176,11 +172,7 @@ function main() {
       fs.writeFileSync(backupManifest, JSON.stringify({ filePath: backupFile, sha256: backupHash, createdAt: new Date().toISOString() }));
       const wrongSha = 'f'.repeat(40);
       const approvalManifest = path.join(tmpDir, 'approval.json');
-      fs.writeFileSync(approvalManifest, JSON.stringify({
-        projectRef: TARGET_SUPABASE_REF, gitSha: wrongSha, backupHash,
-        confirmToken: computeConfirmToken({ projectRef: TARGET_SUPABASE_REF, gitSha: wrongSha, backupHash }),
-        approvedBy: 'test-operator', approvedAt: new Date().toISOString(),
-      }));
+      fs.writeFileSync(approvalManifest, JSON.stringify(signedTestManifest({ gitSha: wrongSha, backupHash })));
 
       const run = runScript(ORCHESTRATOR, [], {
         MIGRATION_DB_URL: FAKE_PG_URI,

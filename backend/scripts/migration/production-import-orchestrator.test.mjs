@@ -12,6 +12,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { signedTestManifest } from './lib/manifest-test-fixture.mjs';
 import {
   TARGET_SUPABASE_REF,
   SOURCE_DATABASE,
@@ -48,65 +49,43 @@ async function main() {
     assert.equal(SOURCE_DATABASE, 'al-rahma');
   });
 
-  await test('computeConfirmToken is deterministic and changes with any one input', () => {
-    const base = { projectRef: 'ref1', gitSha: 'sha1', backupHash: 'hash1' };
+  await test('computeConfirmToken is deterministic and changes with any one bound input', () => {
+    const base = { projectRef: 'ref1', scope: 'execute', gitSha: 'sha1', backupHash: 'hash1', expiresAt: '2026-10-06T00:00:00.000Z', bootstrapAllowlistSha256: 'h1' };
     const a = computeConfirmToken(base);
-    const b = computeConfirmToken(base);
-    assert.equal(a, b);
-    assert.notEqual(a, computeConfirmToken({ ...base, projectRef: 'ref2' }));
-    assert.notEqual(a, computeConfirmToken({ ...base, gitSha: 'sha2' }));
-    assert.notEqual(a, computeConfirmToken({ ...base, backupHash: 'hash2' }));
+    assert.equal(a, computeConfirmToken(base));
+    for (const [k, v] of Object.entries({ projectRef: 'ref2', scope: 'plan', gitSha: 'sha2', backupHash: 'hash2', expiresAt: '2026-10-07T00:00:00.000Z', bootstrapAllowlistSha256: 'h2' })) {
+      assert.notEqual(a, computeConfirmToken({ ...base, [k]: v }), k);
+    }
   });
 
-  await test('verifyApprovalManifest accepts a correctly-constructed manifest', () => {
-    const projectRef = TARGET_SUPABASE_REF;
+  await test('verifyApprovalManifest accepts a manifest signed by the real signing code', () => {
     const gitSha = 'deadbeef'.repeat(5);
-    const backupHash = 'cafebabe'.repeat(5);
-    const manifest = {
-      projectRef, gitSha, backupHash,
-      confirmToken: computeConfirmToken({ projectRef, gitSha, backupHash }),
-      approvedBy: 'test-operator', approvedAt: new Date().toISOString(),
-    };
-    assert.equal(verifyApprovalManifest(manifest, { gitSha, backupHash }), true);
+    const backupHash = 'cafebabe'.repeat(8);
+    assert.equal(verifyApprovalManifest(signedTestManifest({ gitSha, backupHash }), { gitSha, backupHash }), true);
   });
 
   await test('verifyApprovalManifest rejects a manifest for the wrong project ref', () => {
     const gitSha = 'a'.repeat(40), backupHash = 'b'.repeat(64);
-    const manifest = {
-      projectRef: 'some-other-project', gitSha, backupHash,
-      confirmToken: computeConfirmToken({ projectRef: 'some-other-project', gitSha, backupHash }),
-      approvedBy: 'x', approvedAt: new Date().toISOString(),
-    };
+    const manifest = { ...signedTestManifest({ gitSha, backupHash }), projectRef: 'some-other-project' };
+    manifest.confirmToken = computeConfirmToken(manifest);
     assert.throws(() => verifyApprovalManifest(manifest, { gitSha, backupHash }), /projectRef/);
   });
 
   await test('verifyApprovalManifest rejects a manifest approved for a different git SHA than HEAD', () => {
-    const projectRef = TARGET_SUPABASE_REF, backupHash = 'c'.repeat(64);
-    const manifest = {
-      projectRef, gitSha: 'old-sha', backupHash,
-      confirmToken: computeConfirmToken({ projectRef, gitSha: 'old-sha', backupHash }),
-      approvedBy: 'x', approvedAt: new Date().toISOString(),
-    };
-    assert.throws(() => verifyApprovalManifest(manifest, { gitSha: 'current-sha', backupHash }), /git SHA/);
+    const backupHash = 'c'.repeat(64);
+    const manifest = signedTestManifest({ gitSha: '0'.repeat(40), backupHash });
+    assert.throws(() => verifyApprovalManifest(manifest, { gitSha: '1'.repeat(40), backupHash }), /git SHA/);
   });
 
   await test('verifyApprovalManifest rejects a manifest whose backupHash does not match the backup actually present', () => {
-    const projectRef = TARGET_SUPABASE_REF, gitSha = 'd'.repeat(40);
-    const manifest = {
-      projectRef, gitSha, backupHash: 'approved-hash',
-      confirmToken: computeConfirmToken({ projectRef, gitSha, backupHash: 'approved-hash' }),
-      approvedBy: 'x', approvedAt: new Date().toISOString(),
-    };
-    assert.throws(() => verifyApprovalManifest(manifest, { gitSha, backupHash: 'different-hash' }), /backupHash/);
+    const gitSha = 'd'.repeat(40);
+    const manifest = signedTestManifest({ gitSha, backupHash: 'e'.repeat(64) });
+    assert.throws(() => verifyApprovalManifest(manifest, { gitSha, backupHash: 'f'.repeat(64) }), /backupHash/);
   });
 
   await test('verifyApprovalManifest rejects a hand-edited manifest whose confirmToken no longer matches', () => {
-    const projectRef = TARGET_SUPABASE_REF, gitSha = 'e'.repeat(40), backupHash = 'f'.repeat(64);
-    const manifest = {
-      projectRef, gitSha, backupHash,
-      confirmToken: 'not-the-real-token',
-      approvedBy: 'x', approvedAt: new Date().toISOString(),
-    };
+    const gitSha = 'e'.repeat(40), backupHash = 'f'.repeat(64);
+    const manifest = { ...signedTestManifest({ gitSha, backupHash }), confirmToken: 'not-the-real-token' };
     assert.throws(() => verifyApprovalManifest(manifest, { gitSha, backupHash }), /confirmToken/);
   });
 

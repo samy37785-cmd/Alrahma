@@ -55,6 +55,8 @@ import { jsonPathEqual } from './lib/read-back-verify.mjs';
 import { verifyThenReconcile } from './lib/reconcile.mjs';
 import { assertLocalHostOrProductionAuthorized } from './lib/host-guard.mjs';
 import { loadAndVerifyProductionAuthorization } from './lib/production-authorization.mjs';
+import { verifyBootstrapState } from './lib/bootstrap-allowlist.mjs';
+import { assertSessionReadOnly, makePoolReadOnly } from './lib/read-only-session.mjs';
 import { buildPgPoolConfig } from '../../data/supabase/client.js';
 import { installRedactingConsole, redactDeep, fingerprint } from './lib/redact.mjs';
 import { computePasswordHashProblems, emailConfirmationFor, isBcryptHash } from './lib/auth-import.mjs';
@@ -1794,7 +1796,9 @@ async function main() {
   // remains deliberately NOT host-checked here (see this file's own
   // header, rule #3) -- production authorization instead verifies
   // SUPABASE_URL's project ref matches the one hardcoded real target.
-  const productionAuthorization = loadAndVerifyProductionAuthorization();
+  // A plan-scope manifest only ever authorizes the read-only plan
+  // (SUPER_ADMIN_SAFETY_GATE).
+  const productionAuthorization = loadAndVerifyProductionAuthorization({ requestedScope: execute ? 'execute' : 'plan' });
   assertLocalHostOrProductionAuthorized(pgUri, 'MIGRATION_DB_URL', productionAuthorization);
 
   // Same TLS rule as backend/data/supabase/client.js's getPool(): strict
@@ -1808,8 +1812,15 @@ async function main() {
   // Postgres before Mongo, so a target that refuses the strict TLS config
   // stops the run before the source is ever read.
   const pool = new pg.Pool(pgPoolConfig);
+  // The plan writes nothing, and Postgres enforces it: read-only session.
+  if (!execute) makePoolReadOnly(pool);
   const pgClient = await pool.connect();
   try {
+    if (!execute) await assertSessionReadOnly(pgClient);
+    // Run directly against an authorized production target (not only via
+    // the orchestrator): the pre-existing bootstrap rows must still be
+    // exactly the approved ones before this worker reads or writes.
+    if (productionAuthorization) await verifyBootstrapState(pgClient, productionAuthorization.bootstrapAllowlist);
     await mongoose.connect(mongoUri);
   } catch (err) {
     pgClient.release();

@@ -7,7 +7,8 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { spawn, execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { TARGET_SUPABASE_REF, computeConfirmToken } from '../scripts/migration/lib/production-approval.mjs';
+import { TARGET_SUPABASE_REF } from '../scripts/migration/lib/production-approval.mjs';
+import { signedTestManifest } from '../scripts/migration/lib/manifest-test-fixture.mjs';
 
 // Direct tests of the Postgres TLS policy inside the two migration tools that
 // can be pointed at production: production-import-orchestrator.mjs and
@@ -125,14 +126,8 @@ before(async () => {
   fs.writeFileSync(backupManifest, JSON.stringify({ filePath: backupFile, sha256: backupHash, createdAt: new Date().toISOString() }));
   const gitSha = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: BACKEND, encoding: 'utf8' }).trim();
   const approvalManifest = path.join(tmp, 'approval-manifest.json');
-  fs.writeFileSync(approvalManifest, JSON.stringify({
-    projectRef: TARGET_SUPABASE_REF,
-    gitSha,
-    backupHash,
-    confirmToken: computeConfirmToken({ projectRef: TARGET_SUPABASE_REF, gitSha, backupHash }),
-    approvedBy: 'test-fixture (not a real approval)',
-    approvedAt: new Date().toISOString(),
-  }));
+  // A manifest signed by the real signing code (scope execute also covers plan).
+  fs.writeFileSync(approvalManifest, JSON.stringify(signedTestManifest({ gitSha, backupHash })));
   authEnv = {
     MIGRATION_PRODUCTION_MODE: '1',
     MIGRATION_APPROVAL_MANIFEST: approvalManifest,

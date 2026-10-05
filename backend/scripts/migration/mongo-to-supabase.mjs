@@ -138,8 +138,12 @@ import { fileURLToPath } from 'node:url';
 import { findLedgerEntry, markPlanned, markCreated, markFailed, contentHashOf } from './lib/source-ledger.mjs';
 import { stableContentHash } from './lib/canonical-hash.mjs';
 import { verifyThenReconcile } from './lib/reconcile.mjs';
-import { resolvePlanSlug, seedCanonicalPlans } from './lib/plan-catalog.mjs';
-import { withImpersonatedAdmin, withImpersonatedAdminContext, ensureMigrationSeedAdmin } from './lib/admin-rpc.mjs';
+import { resolvePlanSlug, requireCanonicalPlans } from './lib/plan-catalog.mjs';
+import { installRedactingConsole, redactDeep } from './lib/redact.mjs';
+import { plannedId } from './lib/planned-ids.mjs';
+import {
+  sourceTimestamps, requiredSourceDate, optionalSourceDate, accountForSourceDates, restoreSourceTimestamps,
+} from './lib/source-dates.mjs';
 import { throwIfFaultStage } from './lib/fault-injection.mjs';
 import { parseStrictCliArgs } from './lib/cli-args.mjs';
 import { encodeCompositeTargetId, decodeCompositeTargetId } from './lib/composite-target-id.mjs';
@@ -220,6 +224,18 @@ function hashOf(obj) {
   return stableContentHash(obj).slice(0, 16);
 }
 
+// The created_at/updated_at values of `row` that came from the source.
+// A generated fallback is left to the database: restoring it would only
+// replace one migration-time stamp with another.
+function preservedTimestamps(row) {
+  const generated = new Set(row.__generatedFields ?? []);
+  const out = {};
+  for (const col of ['created_at', 'updated_at']) {
+    if (row[col] !== undefined && !generated.has(col)) out[col] = row[col];
+  }
+  return out;
+}
+
 function loadCheckpoint(domain) {
   const file = path.join(CHECKPOINT_DIR, `${domain}.json`);
   if (fs.existsSync(file)) return { file, data: JSON.parse(fs.readFileSync(file, 'utf8')) };
@@ -248,26 +264,78 @@ function saveCheckpoint(file, data) {
 // profiles row (not yet migrated/signed-up under Supabase) is a genuine,
 // expected skip, not a bug — reported via the normal `failed` counter with
 // a clear reason string, same as any other unresolvable row.
-const courseIdCache = new Map(); // domainName -> {mongoId: pgId}
-function resolveCoursePgId(mongoCourseId) {
-  if (!mongoCourseId) return null;
-  if (!courseIdCache.has('courses')) {
-    const { data } = loadCheckpoint('courses');
-    courseIdCache.set('courses', Object.fromEntries(Object.entries(data).map(([k, v]) => [k, v.pgId])));
+//
+// Owner decision PLAN_MODE_DECISION=FIX: every resolver below takes the
+// per-domain ctx. In --dry-run a reference whose target exists in the
+// SOURCE but has not been written yet resolves to a deterministic planned
+// id (lib/planned-ids.mjs) instead of failing, so a plan against an empty
+// target validates every relation without writing anything. A reference
+// to a document that is not in the source at all fails in every mode.
+// Error messages carry source ids only, never the email used to bridge.
+
+// Domains whose rows other domains reference, and the Mongo collection
+// each one is exported from.
+const REFERENCE_SOURCE_COLLECTION = { courses: 'courses', coupons: 'coupons', payments: 'payments' };
+
+const referenceCheckpointCache = new Map(); // domainName -> {mongoId: pgId}
+const sourceIdCache = new Map(); // collection -> Promise<Set<string>>
+
+function loadSourceIds(collection) {
+  if (!sourceIdCache.has(collection)) {
+    sourceIdCache.set(collection, (async () => {
+      const docs = await mongoose.connection.collection(collection).find({}, { projection: { _id: 1 } }).toArray();
+      return new Set(docs.map((d) => String(d._id)));
+    })());
   }
-  const map = courseIdCache.get('courses');
-  const pgId = map[String(mongoCourseId)];
-  if (!pgId) throw new Error(`course ${mongoCourseId} has not been migrated yet — run --domain=courses first`);
-  return pgId;
+  return sourceIdCache.get(collection);
 }
 
+/**
+ * Resolves a reference to a document this tool migrates in another domain:
+ * the local checkpoint first, then the DB-side ledger (so a lost checkpoint
+ * or another machine still resolves), then -- in --dry-run only -- a planned
+ * id when the referenced document exists in the source.
+ */
+async function resolveMigratedReference(ctx, domainName, mongoId) {
+  if (!mongoId) return null;
+  const sourceId = String(mongoId);
+  if (!referenceCheckpointCache.has(domainName)) {
+    const { data } = loadCheckpoint(domainName);
+    referenceCheckpointCache.set(domainName, Object.fromEntries(Object.entries(data).map(([k, v]) => [k, v.pgId])));
+  }
+  const fromCheckpoint = referenceCheckpointCache.get(domainName)[sourceId];
+  if (fromCheckpoint) return fromCheckpoint;
+
+  // A ledger target is used only when its row is live right now -- the
+  // ledger alone is never trusted as proof the target still exists.
+  const ledger = await findLedgerEntry(ctx.pgClient, {
+    sourceDatabase: SOURCE_DATABASE, sourceCollection: domainName, sourceDocumentId: sourceId,
+    targetTable: DOMAINS[domainName].targetTable,
+  });
+  const ledgerWritten = ledger?.target_id && ['created', 'reconciled'].includes(ledger.status);
+  if (ledgerWritten && (await verifyTargetRowExists(ctx.pgClient, ROLLBACK_SPEC[domainName], ledger.target_id))) {
+    return ledger.target_id;
+  }
+
+  const collection = REFERENCE_SOURCE_COLLECTION[domainName];
+  if (!(await loadSourceIds(collection)).has(sourceId)) {
+    throw new Error(`referenced ${domainName} document ${sourceId} does not exist in the source ${collection} collection`);
+  }
+  if (ctx.dryRun) return plannedId(domainName, sourceId);
+  throw new Error(`${domainName} document ${sourceId} has not been migrated yet — run --domain=${domainName} first`);
+}
+
+const resolveCoursePgId = (ctx, mongoCourseId) => resolveMigratedReference(ctx, 'courses', mongoCourseId);
+
+// Same normalization as migrate-users-to-supabase-auth.mjs (lowercase +
+// trim), so the email bridge matches the account that tool created.
 let userEmailMapPromise;
 async function loadUserEmailMap() {
   if (!userEmailMapPromise) {
     userEmailMapPromise = (async () => {
       const User = mongoose.connection.collection('users');
       const users = await User.find({}, { projection: { email: 1 } }).toArray();
-      return new Map(users.map((u) => [String(u._id), String(u.email).toLowerCase()]));
+      return new Map(users.map((u) => [String(u._id), String(u.email).toLowerCase().trim()]));
     })();
   }
   return userEmailMapPromise;
@@ -283,43 +351,33 @@ async function loadAdminEmailMap() {
     adminEmailMapPromise = (async () => {
       const AdminUser = mongoose.connection.collection('adminusers');
       const admins = await AdminUser.find({}, { projection: { email: 1 } }).toArray();
-      return new Map(admins.map((a) => [String(a._id), String(a.email).toLowerCase()]));
+      return new Map(admins.map((a) => [String(a._id), String(a.email).toLowerCase().trim()]));
     })();
   }
   return adminEmailMapPromise;
 }
-async function resolveAdminProfileId(pgClient, adminEmailMap, mongoAdminId) {
+async function resolveAdminProfileId(ctx, adminEmailMap, mongoAdminId) {
   if (!mongoAdminId) return null;
-  const email = adminEmailMap.get(String(mongoAdminId));
-  if (!email) throw new Error(`Mongo admin ${mongoAdminId} not found in the adminusers collection`);
-  const r = await pgClient.query('SELECT id FROM profiles WHERE email = $1', [email]);
-  if (!r.rows[0]) throw new Error(`admin ${mongoAdminId} (${email}) has no migrated Supabase account yet`);
-  return r.rows[0].id;
+  const sourceId = String(mongoAdminId);
+  const email = adminEmailMap.get(sourceId);
+  if (!email) throw new Error(`referenced admin ${sourceId} does not exist in the source adminusers collection`);
+  const r = await ctx.pgClient.query('SELECT id FROM profiles WHERE email = $1', [email]);
+  if (r.rows[0]) return r.rows[0].id;
+  if (ctx.dryRun) return plannedId('adminusers', sourceId);
+  throw new Error(`admin ${sourceId} has no migrated Supabase account yet`);
 }
 
-// Stage 2J-B — coupon_redemptions' coupon_id resolution, same pattern as
-// resolveCoursePgId() (loads the coupons domain's own checkpoint).
-const couponIdCachePromise = { current: null };
-function resolveCouponPgId(mongoCouponId) {
-  if (!mongoCouponId) return null;
-  if (!couponIdCachePromise.current) {
-    const { data } = loadCheckpoint('coupons');
-    couponIdCachePromise.current = Object.fromEntries(Object.entries(data).map(([k, v]) => [k, v.pgId]));
-  }
-  const pgId = couponIdCachePromise.current[String(mongoCouponId)];
-  if (!pgId) throw new Error(`coupon ${mongoCouponId} has not been migrated yet — run --domain=coupons first`);
-  return pgId;
-}
+const resolveCouponPgId = (ctx, mongoCouponId) => resolveMigratedReference(ctx, 'coupons', mongoCouponId);
 
-async function resolveProfileId(pgClient, userEmailMap, mongoUserId) {
+async function resolveProfileId(ctx, mongoUserId) {
   if (!mongoUserId) return null;
-  const email = userEmailMap.get(String(mongoUserId));
-  if (!email) throw new Error(`Mongo user ${mongoUserId} not found in the users collection`);
-  const r = await pgClient.query('SELECT id FROM profiles WHERE email = $1', [email]);
-  if (!r.rows[0]) {
-    throw new Error(`user ${mongoUserId} (${email}) has no migrated Supabase account yet — sign-up/user migration must run first`);
-  }
-  return r.rows[0].id;
+  const sourceId = String(mongoUserId);
+  const email = ctx.userEmailMap.get(sourceId);
+  if (!email) throw new Error(`referenced user ${sourceId} does not exist in the source users collection`);
+  const r = await ctx.pgClient.query('SELECT id FROM profiles WHERE email = $1', [email]);
+  if (r.rows[0]) return r.rows[0].id;
+  if (ctx.dryRun) return plannedId('users', sourceId);
+  throw new Error(`user ${sourceId} has no migrated Supabase account yet — the user migration must run first`);
 }
 
 // --- Domain definitions: export shape (Mongo) -> transform -> import shape (Postgres) ---
@@ -331,11 +389,17 @@ async function resolveProfileId(pgClient, userEmailMap, mongoUserId) {
 export const DOMAINS = {
   trial_requests: {
     targetTable: "trial_requests",
+    // `sourceDates` (lib/source-dates.mjs): `mapped` are the top-level
+    // source dates transform() writes to a column; `unpreserved` are the
+    // ones this table has no column for -- counted in the report by name,
+    // never dropped silently. Any other Date field fails the document.
+    sourceDates: { mapped: ['createdAt'], unpreserved: ['updatedAt'] },
     async export() {
       const TrialRequest = mongoose.connection.collection('trialrequests');
       return TrialRequest.find({}).toArray();
     },
-    transform(doc) {
+    transform(doc, ctx) {
+      const ts = sourceTimestamps(doc, { createdAt: 'created_at' }, ctx.dateStats);
       return {
         name: doc.name,
         email: doc.email,
@@ -343,6 +407,8 @@ export const DOMAINS = {
         course: doc.course ?? null,
         message: doc.message ?? null,
         status: ['new', 'contacted', 'scheduled'].includes(doc.status) ? doc.status : 'new',
+        ...ts.fields,
+        __generatedFields: ts.generated,
       };
     },
     validate(row) {
@@ -352,15 +418,15 @@ export const DOMAINS = {
       const existingPgId = checkpoint[String(sourceId)]?.pgId;
       if (existingPgId) {
         await client.query(
-          `UPDATE trial_requests SET name=$1, email=$2, phone=$3, course=$4, message=$5, status=$6 WHERE id=$7`,
-          [row.name, row.email, row.phone, row.course, row.message, row.status, existingPgId]
+          `UPDATE trial_requests SET name=$1, email=$2, phone=$3, course=$4, message=$5, status=$6, created_at=$7 WHERE id=$8`,
+          [row.name, row.email, row.phone, row.course, row.message, row.status, row.created_at, existingPgId]
         );
         return existingPgId;
       }
       const r = await client.query(
-        `INSERT INTO trial_requests (name, email, phone, course, message, status)
-         VALUES ($1,$2,$3,$4,$5,$6) RETURNING id`,
-        [row.name, row.email, row.phone, row.course, row.message, row.status]
+        `INSERT INTO trial_requests (name, email, phone, course, message, status, created_at)
+         VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id`,
+        [row.name, row.email, row.phone, row.course, row.message, row.status, row.created_at]
       );
       return r.rows[0].id;
     },
@@ -371,12 +437,14 @@ export const DOMAINS = {
 
   subscribers: {
     targetTable: "subscribers",
+    sourceDates: { mapped: ['createdAt'], unpreserved: ['updatedAt'] },
     async export() {
       const Subscriber = mongoose.connection.collection('subscribers');
       return Subscriber.find({}).toArray();
     },
-    transform(doc) {
-      return { email: String(doc.email).toLowerCase(), status: 'subscribed' };
+    transform(doc, ctx) {
+      const ts = sourceTimestamps(doc, { createdAt: 'created_at' }, ctx.dateStats);
+      return { email: String(doc.email).toLowerCase(), status: 'subscribed', ...ts.fields, __generatedFields: ts.generated };
     },
     validate(row) {
       if (!row.email) throw new Error('subscribers row missing email');
@@ -384,10 +452,10 @@ export const DOMAINS = {
     async upsert(client, sourceId, row, checkpoint) {
       const existingPgId = checkpoint[String(sourceId)]?.pgId;
       const r = await client.query(
-        `INSERT INTO subscribers (email, status) VALUES ($1,$2)
-         ON CONFLICT ((lower(email))) DO UPDATE SET status = EXCLUDED.status
+        `INSERT INTO subscribers (email, status, created_at) VALUES ($1,$2,$3)
+         ON CONFLICT ((lower(email))) DO UPDATE SET status = EXCLUDED.status, created_at = EXCLUDED.created_at
          RETURNING id`,
-        [row.email, row.status]
+        [row.email, row.status, row.created_at]
       );
       return r.rows[0]?.id ?? existingPgId;
     },
@@ -398,11 +466,12 @@ export const DOMAINS = {
 
   blogs: {
     targetTable: "blogs",
+    sourceDates: { mapped: ['createdAt', 'publishedAt'], unpreserved: ['updatedAt'] },
     async export() {
       const Blog = mongoose.connection.collection('blogs');
       return Blog.find({}).toArray();
     },
-    transform(doc) {
+    transform(doc, ctx) {
       // Stage 2J-B / docs/stage-2j-b-lossless-mapping-contract.md §13:
       // category/readTime/coverImage/seo.canonicalUrl have no column on
       // the current `blogs` table (a real, pre-existing gap — see
@@ -427,6 +496,18 @@ export const DOMAINS = {
           `See docs/stage-2j-b-lossless-mapping-contract.md §13.`
         );
       }
+      const ts = sourceTimestamps(doc, { createdAt: 'created_at' }, ctx.dateStats);
+      const published = !!doc.published;
+      // PR #70 review round 10, item 1: a published post with no source
+      // publishedAt gets the migration time, marked in __generatedFields so
+      // read-back exempts ONLY this field on ONLY this call, and counted in
+      // the run report. A post that carries publishedAt always keeps it.
+      let publishedAt = optionalSourceDate(doc, 'publishedAt', 'published_at', ctx.dateStats);
+      const generated = [...ts.generated];
+      if (published && !publishedAt) {
+        publishedAt = requiredSourceDate(doc, 'publishedAt', 'published_at', ctx.dateStats).value;
+        generated.push('published_at');
+      }
       return {
         title: doc.title,
         slug: doc.slug,
@@ -436,37 +517,31 @@ export const DOMAINS = {
         author_name: doc.author?.name ?? null,
         author_role: doc.author?.role ?? null,
         author_image: doc.author?.image ?? null,
-        published: !!doc.published,
+        published,
         views: doc.views ?? 0,
-        published_at: doc.publishedAt ?? null,
+        published_at: publishedAt,
         seo_title: doc.seo?.metaTitle ?? null,
         seo_description: doc.seo?.metaDescription ?? null,
+        ...ts.fields,
+        __generatedFields: generated,
       };
     },
     validate(row) {
       if (!row.title || !row.slug || !row.content) throw new Error('blogs row missing title/slug/content');
-      // PR #70 review round 10, item 1: this generated fallback (no
-      // source publishedAt, but published=true) is marked explicitly so
-      // read-back exempts ONLY this field, ONLY on a call where it was
-      // genuinely generated -- never a blanket "timestamps aren't
-      // checked" exemption. See lib/read-back-verify.mjs's own header.
-      if (row.published && !row.published_at) {
-        row.published_at = new Date().toISOString();
-        row.__generatedFields = [...(row.__generatedFields ?? []), 'published_at'];
-      }
     },
     async upsert(client, sourceId, row) {
       const r = await client.query(
-        `INSERT INTO blogs (title, slug, content, excerpt, tags, author_name, author_role, author_image, published, views, published_at, seo_title, seo_description)
-         VALUES ($1,$2,$3,$4,$5::jsonb,$6,$7,$8,$9,$10,$11,$12,$13)
+        `INSERT INTO blogs (title, slug, content, excerpt, tags, author_name, author_role, author_image, published, views, published_at, seo_title, seo_description, created_at)
+         VALUES ($1,$2,$3,$4,$5::jsonb,$6,$7,$8,$9,$10,$11,$12,$13,$14)
          ON CONFLICT (slug) DO UPDATE SET
            title=EXCLUDED.title, content=EXCLUDED.content, excerpt=EXCLUDED.excerpt,
            tags=EXCLUDED.tags, author_name=EXCLUDED.author_name, author_role=EXCLUDED.author_role,
            author_image=EXCLUDED.author_image, published=EXCLUDED.published, views=EXCLUDED.views,
-           published_at=EXCLUDED.published_at, seo_title=EXCLUDED.seo_title, seo_description=EXCLUDED.seo_description
+           published_at=EXCLUDED.published_at, seo_title=EXCLUDED.seo_title, seo_description=EXCLUDED.seo_description,
+           created_at=EXCLUDED.created_at
          RETURNING id`,
         [row.title, row.slug, row.content, row.excerpt, row.tags, row.author_name, row.author_role,
-         row.author_image, row.published, row.views, row.published_at, row.seo_title, row.seo_description]
+         row.author_image, row.published, row.views, row.published_at, row.seo_title, row.seo_description, row.created_at]
       );
       return r.rows[0].id;
     },
@@ -484,12 +559,16 @@ export const DOMAINS = {
 
   courses: {
     targetTable: "courses",
+    sourceDates: { mapped: ['createdAt', 'updatedAt'] },
     async export() {
       return mongoose.connection.collection('courses').find({}).toArray();
     },
-    transform(doc) {
+    transform(doc, ctx) {
       const level = ['Beginner', 'Intermediate', 'Advanced', 'All levels'].includes(doc.level) ? doc.level : 'All levels';
+      const ts = sourceTimestamps(doc, { createdAt: 'created_at', updatedAt: 'updated_at' }, ctx.dateStats);
       return {
+        ...ts.fields,
+        __generatedFields: ts.generated,
         title: doc.title,
         description: doc.description,
         icon: doc.icon || '📘',
@@ -520,12 +599,16 @@ export const DOMAINS = {
              tags=$6::jsonb, resources=$7::jsonb, modules=$8::jsonb, published=$9 WHERE id=$10`,
           [row.title, row.description, row.icon, row.level, row.price_minor, row.tags, row.resources, row.modules, row.published, existingPgId]
         );
+        await restoreSourceTimestamps(client, { table: 'courses', id: existingPgId, values: preservedTimestamps(row), inTransaction: true });
         return existingPgId;
       }
+      // set_updated_at() is BEFORE UPDATE only: an INSERT keeps both
+      // source timestamps exactly as given.
       const r = await client.query(
-        `INSERT INTO courses (title, description, icon, level, price_minor, tags, resources, modules, published)
-         VALUES ($1,$2,$3,$4,$5,$6::jsonb,$7::jsonb,$8::jsonb,$9) RETURNING id`,
-        [row.title, row.description, row.icon, row.level, row.price_minor, row.tags, row.resources, row.modules, row.published]
+        `INSERT INTO courses (title, description, icon, level, price_minor, tags, resources, modules, published, created_at, updated_at)
+         VALUES ($1,$2,$3,$4,$5,$6::jsonb,$7::jsonb,$8::jsonb,$9,$10,$11) RETURNING id`,
+        [row.title, row.description, row.icon, row.level, row.price_minor, row.tags, row.resources, row.modules, row.published,
+         row.created_at, row.updated_at]
       );
       return r.rows[0].id;
     },
@@ -536,10 +619,12 @@ export const DOMAINS = {
 
   contact_messages: {
     targetTable: "contact_messages",
+    sourceDates: { mapped: ['createdAt', 'repliedAt'], unpreserved: ['updatedAt'] },
     async export() {
       return mongoose.connection.collection('contactmessages').find({}).toArray();
     },
-    transform(doc) {
+    transform(doc, ctx) {
+      const ts = sourceTimestamps(doc, { createdAt: 'created_at' }, ctx.dateStats);
       return {
         name: doc.name,
         email: doc.email,
@@ -550,6 +635,9 @@ export const DOMAINS = {
         // value exists in the Mongo source (it stored the raw ipAddress),
         // so this is left null rather than migrating unanonymized data.
         status: ['new', 'in_progress', 'resolved', 'spam'].includes(doc.status) ? doc.status : 'new',
+        replied_at: optionalSourceDate(doc, 'repliedAt', 'replied_at', ctx.dateStats),
+        ...ts.fields,
+        __generatedFields: ts.generated,
       };
     },
     validate(row) {
@@ -559,15 +647,15 @@ export const DOMAINS = {
       const existingPgId = checkpoint[sourceId]?.pgId;
       if (existingPgId) {
         await client.query(
-          `UPDATE contact_messages SET name=$1, email=$2, phone=$3, subject=$4, message=$5, status=$6 WHERE id=$7`,
-          [row.name, row.email, row.phone, row.subject, row.message, row.status, existingPgId]
+          `UPDATE contact_messages SET name=$1, email=$2, phone=$3, subject=$4, message=$5, status=$6, replied_at=$7, created_at=$8 WHERE id=$9`,
+          [row.name, row.email, row.phone, row.subject, row.message, row.status, row.replied_at, row.created_at, existingPgId]
         );
         return existingPgId;
       }
       const r = await client.query(
-        `INSERT INTO contact_messages (name, email, phone, subject, message, status)
-         VALUES ($1,$2,$3,$4,$5,$6) RETURNING id`,
-        [row.name, row.email, row.phone, row.subject, row.message, row.status]
+        `INSERT INTO contact_messages (name, email, phone, subject, message, status, replied_at, created_at)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id`,
+        [row.name, row.email, row.phone, row.subject, row.message, row.status, row.replied_at, row.created_at]
       );
       return r.rows[0].id;
     },
@@ -578,11 +666,17 @@ export const DOMAINS = {
 
   system_config: {
     targetTable: "system_config",
+    sourceDates: { mapped: ['updatedAt'], unpreserved: ['createdAt'] },
     async export() {
       return mongoose.connection.collection('systemconfigs').find({}).toArray();
     },
-    transform(doc) {
-      return { key: doc.key, value: doc.encrypted ? null : doc._value, description: doc.description ?? null, encrypted: !!doc.encrypted };
+    transform(doc, ctx) {
+      const ts = sourceTimestamps(doc, { createdAt: null, updatedAt: 'updated_at' }, ctx.dateStats);
+      return {
+        key: doc.key, value: doc.encrypted ? null : doc._value, description: doc.description ?? null, encrypted: !!doc.encrypted,
+        ...ts.fields,
+        __generatedFields: ts.generated,
+      };
     },
     validate(row) {
       if (!row.key) throw new Error('system_config row missing key');
@@ -598,9 +692,9 @@ export const DOMAINS = {
     },
     async upsert(client, sourceId, row) {
       await client.query(
-        `INSERT INTO system_config (key, value, description) VALUES ($1,$2,$3)
-         ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, description = EXCLUDED.description`,
-        [row.key, row.value, row.description]
+        `INSERT INTO system_config (key, value, description, updated_at) VALUES ($1,$2,$3,$4)
+         ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, description = EXCLUDED.description, updated_at = EXCLUDED.updated_at`,
+        [row.key, row.value, row.description, row.updated_at]
       );
       return row.key;
     },
@@ -612,6 +706,10 @@ export const DOMAINS = {
   wishlists: {
     targetTable: "wishlists",
     needsUserMap: true,
+    // The parent list's own timestamps ride along on each flattened item so
+    // they are counted as unpreserved (wishlists rows have only added_at)
+    // instead of vanishing with the container document.
+    sourceDates: { mapped: ['addedAt'], unpreserved: ['listCreatedAt', 'listUpdatedAt'] },
     async export() {
       const docs = await mongoose.connection.collection('wishlists').find({}).toArray();
       const flat = [];
@@ -622,19 +720,23 @@ export const DOMAINS = {
       // framework (checkpointing, hashing, idempotency) applies unchanged.
       for (const w of docs) {
         for (const item of w.courses || []) {
-          flat.push({ _id: `${w._id}:${item.course}`, user: w.user, course: item.course, addedAt: item.addedAt });
+          flat.push({
+            _id: `${w._id}:${item.course}`, user: w.user, course: item.course, addedAt: item.addedAt,
+            listCreatedAt: w.createdAt, listUpdatedAt: w.updatedAt,
+          });
         }
       }
       return flat;
     },
     async transform(doc, ctx) {
+      const addedAt = requiredSourceDate(doc, 'addedAt', 'added_at', ctx.dateStats);
       return {
-        user_id: await resolveProfileId(ctx.pgClient, ctx.userEmailMap, doc.user),
-        course_id: resolveCoursePgId(doc.course),
-        added_at: doc.addedAt ?? new Date(),
+        user_id: await resolveProfileId(ctx, doc.user),
+        course_id: await resolveCoursePgId(ctx, doc.course),
+        added_at: addedAt.value,
         // Round 10, item 1: per-field generated-fallback marker -- see
         // lib/read-back-verify.mjs's own header comment.
-        __generatedFields: doc.addedAt == null ? ['added_at'] : [],
+        __generatedFields: addedAt.generated ? ['added_at'] : [],
       };
     },
     validate() {},
@@ -654,18 +756,20 @@ export const DOMAINS = {
   hifz_progress: {
     targetTable: "hifz_progress",
     needsUserMap: true,
+    sourceDates: { mapped: ['lastRevised'], unpreserved: ['createdAt', 'updatedAt'] },
     async export() {
       return mongoose.connection.collection('hifzprogresses').find({}).toArray();
     },
     async transform(doc, ctx) {
+      const lastRevised = requiredSourceDate(doc, 'lastRevised', 'last_revised', ctx.dateStats);
       return {
-        user_id: await resolveProfileId(ctx.pgClient, ctx.userEmailMap, doc.user),
+        user_id: await resolveProfileId(ctx, doc.user),
         chapter_id: doc.chapterId,
         chapter_name: doc.chapterName || null,
         total_verses: doc.totalVerses ?? 0,
         memorized_verses: JSON.stringify(doc.memorizedVerses ?? []),
-        last_revised: doc.lastRevised ?? new Date(),
-        __generatedFields: doc.lastRevised == null ? ['last_revised'] : [],
+        last_revised: lastRevised.value,
+        __generatedFields: lastRevised.generated ? ['last_revised'] : [],
       };
     },
     validate(row) {
@@ -690,23 +794,27 @@ export const DOMAINS = {
   certificates: {
     targetTable: "certificates",
     needsUserMap: true,
+    sourceDates: { mapped: ['issuedAt', 'createdAt'], unpreserved: ['updatedAt'] },
     async export() {
       return mongoose.connection.collection('certificates').find({}).toArray();
     },
     async transform(doc, ctx) {
+      const issuedAt = requiredSourceDate(doc, 'issuedAt', 'issued_at', ctx.dateStats);
+      const ts = sourceTimestamps(doc, { createdAt: 'created_at' }, ctx.dateStats);
       return {
         certificate_number: doc.certificateNumber,
-        user_id: await resolveProfileId(ctx.pgClient, ctx.userEmailMap, doc.user),
+        user_id: await resolveProfileId(ctx, doc.user),
         student_name: doc.studentName,
         type: ['ijazah', 'completion', 'hifz', 'attendance'].includes(doc.type) ? doc.type : 'completion',
         title: doc.title,
-        course_id: doc.course ? resolveCoursePgId(doc.course) : null,
+        course_id: doc.course ? await resolveCoursePgId(ctx, doc.course) : null,
         issued_by: doc.issuedBy || null,
         grade: doc.grade || null,
         notes: doc.notes || null,
-        issued_at: doc.issuedAt ?? new Date(),
+        issued_at: issuedAt.value,
         revoked: !!doc.revoked,
-        __generatedFields: doc.issuedAt == null ? ['issued_at'] : [],
+        ...ts.fields,
+        __generatedFields: [...(issuedAt.generated ? ['issued_at'] : []), ...ts.generated],
       };
     },
     validate(row) {
@@ -716,13 +824,14 @@ export const DOMAINS = {
     },
     async upsert(client, sourceId, row) {
       const r = await client.query(
-        `INSERT INTO certificates (certificate_number, user_id, student_name, type, title, course_id, issued_by, grade, notes, issued_at, revoked)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+        `INSERT INTO certificates (certificate_number, user_id, student_name, type, title, course_id, issued_by, grade, notes, issued_at, revoked, created_at)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
          ON CONFLICT (certificate_number) DO UPDATE SET
            student_name = EXCLUDED.student_name, title = EXCLUDED.title, grade = EXCLUDED.grade,
-           notes = EXCLUDED.notes, revoked = EXCLUDED.revoked
+           notes = EXCLUDED.notes, revoked = EXCLUDED.revoked, created_at = EXCLUDED.created_at
          RETURNING id`,
-        [row.certificate_number, row.user_id, row.student_name, row.type, row.title, row.course_id, row.issued_by, row.grade, row.notes, row.issued_at, row.revoked]
+        [row.certificate_number, row.user_id, row.student_name, row.type, row.title, row.course_id, row.issued_by, row.grade, row.notes,
+         row.issued_at, row.revoked, row.created_at]
       );
       return r.rows[0].id;
     },
@@ -734,19 +843,23 @@ export const DOMAINS = {
   reviews: {
     targetTable: "reviews",
     needsUserMap: true,
+    sourceDates: { mapped: ['createdAt', 'updatedAt'] },
     async export() {
       return mongoose.connection.collection('reviews').find({}).toArray();
     },
     async transform(doc, ctx) {
+      const ts = sourceTimestamps(doc, { createdAt: 'created_at', updatedAt: 'updated_at' }, ctx.dateStats);
       return {
-        student_id: await resolveProfileId(ctx.pgClient, ctx.userEmailMap, doc.student),
-        teacher_id: doc.teacher ? await resolveProfileId(ctx.pgClient, ctx.userEmailMap, doc.teacher) : null,
-        course_id: doc.course ? resolveCoursePgId(doc.course) : null,
+        student_id: await resolveProfileId(ctx, doc.student),
+        teacher_id: doc.teacher ? await resolveProfileId(ctx, doc.teacher) : null,
+        course_id: doc.course ? await resolveCoursePgId(ctx, doc.course) : null,
         rating: doc.rating,
         title: doc.title || null,
         body: doc.body,
         status: ['pending', 'approved', 'rejected'].includes(doc.status) ? doc.status : 'pending',
         helpful: doc.helpful ?? 0,
+        ...ts.fields,
+        __generatedFields: ts.generated,
       };
     },
     validate(row) {
@@ -760,12 +873,13 @@ export const DOMAINS = {
           `UPDATE reviews SET rating=$1, title=$2, body=$3, status=$4, helpful=$5 WHERE id=$6`,
           [row.rating, row.title, row.body, row.status, row.helpful, existingPgId]
         );
+        await restoreSourceTimestamps(client, { table: 'reviews', id: existingPgId, values: preservedTimestamps(row), inTransaction: true });
         return existingPgId;
       }
       const r = await client.query(
-        `INSERT INTO reviews (student_id, teacher_id, course_id, rating, title, body, status, helpful)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id`,
-        [row.student_id, row.teacher_id, row.course_id, row.rating, row.title, row.body, row.status, row.helpful]
+        `INSERT INTO reviews (student_id, teacher_id, course_id, rating, title, body, status, helpful, created_at, updated_at)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING id`,
+        [row.student_id, row.teacher_id, row.course_id, row.rating, row.title, row.body, row.status, row.helpful, row.created_at, row.updated_at]
       );
       return r.rows[0].id;
     },
@@ -777,17 +891,21 @@ export const DOMAINS = {
   referrals: {
     targetTable: "referrals",
     needsUserMap: true,
+    sourceDates: { mapped: ['convertedAt', 'rewardedAt', 'createdAt'], unpreserved: ['updatedAt'] },
     async export() {
       return mongoose.connection.collection('referrals').find({}).toArray();
     },
     async transform(doc, ctx) {
+      const ts = sourceTimestamps(doc, { createdAt: 'created_at' }, ctx.dateStats);
       return {
-        referrer_id: await resolveProfileId(ctx.pgClient, ctx.userEmailMap, doc.referrer),
-        referee_id: doc.referee ? await resolveProfileId(ctx.pgClient, ctx.userEmailMap, doc.referee) : null,
+        referrer_id: await resolveProfileId(ctx, doc.referrer),
+        referee_id: doc.referee ? await resolveProfileId(ctx, doc.referee) : null,
         code: doc.code,
         status: ['pending', 'converted', 'rewarded', 'expired'].includes(doc.status) ? doc.status : 'pending',
-        converted_at: doc.convertedAt ?? null,
-        rewarded_at: doc.rewardedAt ?? null,
+        converted_at: optionalSourceDate(doc, 'convertedAt', 'converted_at', ctx.dateStats),
+        rewarded_at: optionalSourceDate(doc, 'rewardedAt', 'rewarded_at', ctx.dateStats),
+        ...ts.fields,
+        __generatedFields: ts.generated,
       };
     },
     validate(row) {
@@ -797,15 +915,15 @@ export const DOMAINS = {
       const existingPgId = checkpoint[sourceId]?.pgId;
       if (existingPgId) {
         await client.query(
-          `UPDATE referrals SET status=$1, converted_at=$2, rewarded_at=$3 WHERE id=$4`,
-          [row.status, row.converted_at, row.rewarded_at, existingPgId]
+          `UPDATE referrals SET status=$1, converted_at=$2, rewarded_at=$3, created_at=$4 WHERE id=$5`,
+          [row.status, row.converted_at, row.rewarded_at, row.created_at, existingPgId]
         );
         return existingPgId;
       }
       const r = await client.query(
-        `INSERT INTO referrals (referrer_id, referee_id, code, status, converted_at, rewarded_at)
-         VALUES ($1,$2,$3,$4,$5,$6) RETURNING id`,
-        [row.referrer_id, row.referee_id, row.code, row.status, row.converted_at, row.rewarded_at]
+        `INSERT INTO referrals (referrer_id, referee_id, code, status, converted_at, rewarded_at, created_at)
+         VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id`,
+        [row.referrer_id, row.referee_id, row.code, row.status, row.converted_at, row.rewarded_at, row.created_at]
       );
       return r.rows[0].id;
     },
@@ -817,16 +935,18 @@ export const DOMAINS = {
   course_progress: {
     targetTable: "course_progress",
     needsUserMap: true,
+    sourceDates: { mapped: ['lastActivity'], unpreserved: ['createdAt', 'updatedAt'] },
     async export() {
       return mongoose.connection.collection('courseprogresses').find({}).toArray();
     },
     async transform(doc, ctx) {
+      const lastActivity = requiredSourceDate(doc, 'lastActivity', 'last_activity', ctx.dateStats);
       return {
-        user_id: await resolveProfileId(ctx.pgClient, ctx.userEmailMap, doc.user),
-        course_id: resolveCoursePgId(doc.course),
+        user_id: await resolveProfileId(ctx, doc.user),
+        course_id: await resolveCoursePgId(ctx, doc.course),
         completed: JSON.stringify(doc.completed ?? []),
-        last_activity: doc.lastActivity ?? new Date(),
-        __generatedFields: doc.lastActivity == null ? ['last_activity'] : [],
+        last_activity: lastActivity.value,
+        __generatedFields: lastActivity.generated ? ['last_activity'] : [],
       };
     },
     validate() {},
@@ -846,19 +966,25 @@ export const DOMAINS = {
   live_classes: {
     targetTable: "live_classes",
     needsUserMap: true,
+    sourceDates: { mapped: ['startsAt', 'createdAt', 'updatedAt'] },
     async export() {
       return mongoose.connection.collection('liveclasses').find({}).toArray();
     },
     async transform(doc, ctx) {
+      const ts = sourceTimestamps(doc, { createdAt: 'created_at', updatedAt: 'updated_at' }, ctx.dateStats);
       return {
-        teacher_id: await resolveProfileId(ctx.pgClient, ctx.userEmailMap, doc.teacher),
-        student_id: await resolveProfileId(ctx.pgClient, ctx.userEmailMap, doc.student),
+        teacher_id: await resolveProfileId(ctx, doc.teacher),
+        student_id: await resolveProfileId(ctx, doc.student),
         title: doc.title,
-        starts_at: doc.startsAt,
+        // NOT NULL with no sensible default: a class without a start time
+        // fails validate() below rather than being given one.
+        starts_at: optionalSourceDate(doc, 'startsAt', 'starts_at', ctx.dateStats),
         duration_min: doc.durationMin ?? 30,
         meeting_url: doc.meetingUrl || null,
         notes: doc.notes || null,
         status: ['scheduled', 'cancelled', 'completed'].includes(doc.status) ? doc.status : 'scheduled',
+        ...ts.fields,
+        __generatedFields: ts.generated,
       };
     },
     validate(row) {
@@ -871,12 +997,14 @@ export const DOMAINS = {
           `UPDATE live_classes SET title=$1, starts_at=$2, duration_min=$3, meeting_url=$4, notes=$5, status=$6 WHERE id=$7`,
           [row.title, row.starts_at, row.duration_min, row.meeting_url, row.notes, row.status, existingPgId]
         );
+        await restoreSourceTimestamps(client, { table: 'live_classes', id: existingPgId, values: preservedTimestamps(row), inTransaction: true });
         return existingPgId;
       }
       const r = await client.query(
-        `INSERT INTO live_classes (teacher_id, student_id, title, starts_at, duration_min, meeting_url, notes, status)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id`,
-        [row.teacher_id, row.student_id, row.title, row.starts_at, row.duration_min, row.meeting_url, row.notes, row.status]
+        `INSERT INTO live_classes (teacher_id, student_id, title, starts_at, duration_min, meeting_url, notes, status, created_at, updated_at)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING id`,
+        [row.teacher_id, row.student_id, row.title, row.starts_at, row.duration_min, row.meeting_url, row.notes, row.status,
+         row.created_at, row.updated_at]
       );
       return r.rows[0].id;
     },
@@ -888,17 +1016,19 @@ export const DOMAINS = {
   messages: {
     targetTable: "messages",
     needsUserMap: true,
+    sourceDates: { mapped: ['readAt', 'createdAt'], unpreserved: ['updatedAt'] },
     async export() {
       return mongoose.connection.collection('messages').find({}).toArray();
     },
     async transform(doc, ctx) {
+      const ts = sourceTimestamps(doc, { createdAt: 'created_at' }, ctx.dateStats);
       return {
-        from_user_id: await resolveProfileId(ctx.pgClient, ctx.userEmailMap, doc.from),
-        to_user_id: await resolveProfileId(ctx.pgClient, ctx.userEmailMap, doc.to),
+        from_user_id: await resolveProfileId(ctx, doc.from),
+        to_user_id: await resolveProfileId(ctx, doc.to),
         body: doc.body,
-        read_at: doc.readAt ?? null,
-        created_at: doc.createdAt ?? new Date(),
-        __generatedFields: doc.createdAt == null ? ['created_at'] : [],
+        read_at: optionalSourceDate(doc, 'readAt', 'read_at', ctx.dateStats),
+        ...ts.fields,
+        __generatedFields: ts.generated,
       };
     },
     validate(row) {
@@ -907,7 +1037,7 @@ export const DOMAINS = {
     async upsert(client, sourceId, row, checkpoint) {
       const existingPgId = checkpoint[sourceId]?.pgId;
       if (existingPgId) {
-        await client.query(`UPDATE messages SET read_at=$1 WHERE id=$2`, [row.read_at, existingPgId]);
+        await client.query(`UPDATE messages SET read_at=$1, created_at=$2 WHERE id=$3`, [row.read_at, row.created_at, existingPgId]);
         return existingPgId;
       }
       const r = await client.query(
@@ -924,16 +1054,20 @@ export const DOMAINS = {
   student_records: {
     targetTable: "student_records",
     needsUserMap: true,
+    sourceDates: { mapped: ['date', 'createdAt'], unpreserved: ['updatedAt'] },
     async export() {
       return mongoose.connection.collection('studentrecords').find({}).toArray();
     },
     async transform(doc, ctx) {
+      const recordDate = requiredSourceDate(doc, 'date', 'record_date', ctx.dateStats);
+      const ts = sourceTimestamps(doc, { createdAt: 'created_at' }, ctx.dateStats);
       return {
-        student_id: await resolveProfileId(ctx.pgClient, ctx.userEmailMap, doc.student),
-        teacher_id: await resolveProfileId(ctx.pgClient, ctx.userEmailMap, doc.teacher),
-        course_id: doc.course ? resolveCoursePgId(doc.course) : null,
-        record_date: doc.date ?? new Date(),
-        __generatedFields: doc.date == null ? ['record_date'] : [],
+        student_id: await resolveProfileId(ctx, doc.student),
+        teacher_id: await resolveProfileId(ctx, doc.teacher),
+        course_id: doc.course ? await resolveCoursePgId(ctx, doc.course) : null,
+        record_date: recordDate.value,
+        ...ts.fields,
+        __generatedFields: [...(recordDate.generated ? ['record_date'] : []), ...ts.generated],
         grade: doc.grade ?? null,
         grade_label: doc.gradeLabel || null,
         attendance: ['present', 'absent', 'late', 'excused'].includes(doc.attendance) ? doc.attendance : 'unmarked',
@@ -952,16 +1086,19 @@ export const DOMAINS = {
       const existingPgId = checkpoint[sourceId]?.pgId;
       if (existingPgId) {
         await client.query(
-          `UPDATE student_records SET grade=$1, grade_label=$2, attendance=$3, memo_from=$4, memo_to=$5, review=$6, tajweed=$7, homework=$8, note=$9 WHERE id=$10`,
-          [row.grade, row.grade_label, row.attendance, row.memo_from, row.memo_to, row.review, row.tajweed, row.homework, row.note, existingPgId]
+          `UPDATE student_records SET grade=$1, grade_label=$2, attendance=$3, memo_from=$4, memo_to=$5, review=$6, tajweed=$7, homework=$8, note=$9,
+             record_date=$10, created_at=$11 WHERE id=$12`,
+          [row.grade, row.grade_label, row.attendance, row.memo_from, row.memo_to, row.review, row.tajweed, row.homework, row.note,
+           row.record_date, row.created_at, existingPgId]
         );
         return existingPgId;
       }
       const r = await client.query(
         `INSERT INTO student_records
-           (student_id, teacher_id, course_id, record_date, grade, grade_label, attendance, memo_from, memo_to, review, tajweed, homework, note)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING id`,
-        [row.student_id, row.teacher_id, row.course_id, row.record_date, row.grade, row.grade_label, row.attendance, row.memo_from, row.memo_to, row.review, row.tajweed, row.homework, row.note]
+           (student_id, teacher_id, course_id, record_date, grade, grade_label, attendance, memo_from, memo_to, review, tajweed, homework, note, created_at)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING id`,
+        [row.student_id, row.teacher_id, row.course_id, row.record_date, row.grade, row.grade_label, row.attendance, row.memo_from, row.memo_to,
+         row.review, row.tajweed, row.homework, row.note, row.created_at]
       );
       return r.rows[0].id;
     },
@@ -978,24 +1115,34 @@ export const DOMAINS = {
     targetTable: 'payments',
     needsUserMap: true,
     needsPlanCatalog: true,
+    sourceDates: { mapped: ['createdAt', 'updatedAt'] },
     async export() {
       return mongoose.connection.collection('payments').find({}).toArray();
     },
+    // Owner decision PAYMENTS_DECISION=MIGRATE_ALL: every source payment
+    // is imported as the historical record it is -- same status (a
+    // 'pending' stays 'pending'; nothing is settled, failed, retried or
+    // re-sent), same amount, currency, plan, gateway ids and dates. No
+    // trigger on payments fires billing, a webhook or a notification on
+    // INSERT; status changes go only through
+    // enforce_payment_status_transition(), which this never calls for.
+    // Error messages name fields, never their values.
     async transform(doc, ctx) {
       throwIfFaultStage('during_payments');
       const statusMap = { pending: 'pending', paid: 'succeeded', failed: 'failed' };
       const status = statusMap[doc.status];
       if (!status) throw new Error(`payments row has unmapped status "${doc.status}" — not pending/paid/failed`);
 
-      if (!['stripe', 'paypal'].includes(doc.gateway)) {
+      // 'paymob' is in payment_gateway since 0028 (historical, import-only).
+      if (!['stripe', 'paypal', 'paymob'].includes(doc.gateway)) {
         throw new Error(`payments row has unsupported gateway "${doc.gateway}"`);
       }
       if (String(doc.currency ?? 'EUR') !== 'EUR') {
-        throw new Error(`payments row currency "${doc.currency}" is not EUR — currency conversion is never performed silently`);
+        throw new Error('payments row currency is not EUR — currency conversion is never performed silently');
       }
       const cents = Number(doc.amount) * 100;
       if (!Number.isFinite(cents) || Math.abs(cents - Math.round(cents)) > 1e-6) {
-        throw new Error(`payments row amount ${doc.amount} does not convert cleanly to integer minor units`);
+        throw new Error('payments row amount does not convert cleanly to integer minor units');
       }
       const amountMinor = Math.round(cents);
 
@@ -1003,12 +1150,17 @@ export const DOMAINS = {
       if (doc.plan) {
         const slug = ctx.resolvePlanSlug(doc.plan);
         if (!slug || !ctx.planSlugToId?.has(slug)) {
-          throw new Error(`payments row plan "${doc.plan}" does not resolve to a known plan slug`);
+          throw new Error('payments row plan does not resolve to a known plan slug');
         }
         planId = ctx.planSlugToId.get(slug);
       }
 
-      const userId = doc.userId ? await resolveProfileId(ctx.pgClient, ctx.userEmailMap, doc.userId).catch(() => null) : null;
+      // A payment that names a user must land linked to that user: an
+      // unresolvable reference fails this document (it used to be
+      // swallowed into an unlinked guest payment). Only a payment with no
+      // userId at all is a genuine guest charge.
+      const userId = doc.userId ? await resolveProfileId(ctx, doc.userId) : null;
+      const ts = sourceTimestamps(doc, { createdAt: 'created_at', updatedAt: 'updated_at' }, ctx.dateStats);
 
       return {
         user_id: userId,
@@ -1023,10 +1175,25 @@ export const DOMAINS = {
         customer_name_snapshot: doc.customer?.name || null,
         customer_email_snapshot: doc.customer?.email || null,
         customer_phone_snapshot: doc.customer?.phone || null,
-        created_at: doc.createdAt ?? new Date(),
-        updated_at: doc.updatedAt ?? new Date(),
-        _raw: doc.raw ?? null,
+        ...ts.fields,
+        __generatedFields: ts.generated,
+        // The whole source document as relaxed Extended JSON (ObjectId and
+        // Date keep their type markers), so fields payments has no column
+        // for -- method, __v, anything a gateway added -- are kept
+        // verbatim in payment_source_snapshots, never dropped.
+        _raw: mongoose.mongo.BSON.EJSON.serialize(doc, { relaxed: true }),
       };
+    },
+    // payment_source_snapshots is written in the same transaction, so it
+    // is read back before the ledger row is reconciled, like the payment.
+    extraReadBacks(row, pgId, sourceId) {
+      return [{
+        spec: { table: 'payment_source_snapshots', pkColumn: 'payment_id' },
+        targetId: pgId,
+        expectedFields: {
+          payment_id: pgId, source_system: 'mongodb', source_collection: 'payments', source_document_id: sourceId, raw_payload: row._raw,
+        },
+      }];
     },
     validate(row) {
       if (row.amount_minor < 0) throw new Error('payments row has negative amount_minor');
@@ -1040,6 +1207,7 @@ export const DOMAINS = {
           `UPDATE payments SET status=$1, customer_name_snapshot=$2, customer_email_snapshot=$3, customer_phone_snapshot=$4 WHERE id=$5`,
           [row.status, row.customer_name_snapshot, row.customer_email_snapshot, row.customer_phone_snapshot, existingPgId]
         );
+        await restoreSourceTimestamps(client, { table: 'payments', id: existingPgId, values: preservedTimestamps(row), inTransaction: true });
         pgId = existingPgId;
       } else {
         const r = await client.query(
@@ -1059,8 +1227,8 @@ export const DOMAINS = {
       await client.query(
         `INSERT INTO payment_source_snapshots (payment_id, source_system, source_collection, source_document_id, raw_payload)
          VALUES ($1, 'mongodb', 'payments', $2, $3::jsonb)
-         ON CONFLICT (payment_id) DO NOTHING`,
-        [pgId, sourceId, row._raw ? JSON.stringify(row._raw) : null]
+         ON CONFLICT (payment_id) DO UPDATE SET raw_payload = EXCLUDED.raw_payload`,
+        [pgId, sourceId, JSON.stringify(row._raw)]
       );
       return pgId;
     },
@@ -1071,10 +1239,11 @@ export const DOMAINS = {
 
   enrollments: {
     targetTable: 'enrollments',
+    sourceDates: { mapped: ['createdAt', 'updatedAt', 'paidAt', 'renewalAt'] },
     async export() {
       return mongoose.connection.collection('enrollments').find({}).toArray();
     },
-    transform(doc) {
+    transform(doc, ctx) {
       // Booking-First Enrollment (models/Enrollment.js) widened the Mongo
       // enum to add 'awaiting_payment'/'paid' between 'contacted' and
       // 'enrolled' — 0025_booking_first_enrollment.sql widened the Postgres
@@ -1087,7 +1256,10 @@ export const DOMAINS = {
       };
       const status = statusMap[doc.status];
       if (!status) throw new Error(`enrollments row has unmapped status "${doc.status}"`);
+      const ts = sourceTimestamps(doc, { createdAt: 'created_at', updatedAt: 'updated_at' }, ctx?.dateStats);
       return {
+        ...ts.fields,
+        __generatedFields: ts.generated,
         name: doc.name,
         email: doc.email,
         whatsapp: doc.whatsapp || null,
@@ -1112,8 +1284,8 @@ export const DOMAINS = {
         agreed_amount: doc.agreedAmount ?? null,
         currency: doc.currency || null,
         payment_method_external: doc.paymentMethodExternal || null,
-        paid_at: doc.paidAt || null,
-        renewal_at: doc.renewalAt || null,
+        paid_at: optionalSourceDate(doc, 'paidAt', 'paid_at', ctx?.dateStats),
+        renewal_at: optionalSourceDate(doc, 'renewalAt', 'renewal_at', ctx?.dateStats),
         admin_note: doc.adminNote ?? null,
       };
     },
@@ -1131,17 +1303,19 @@ export const DOMAINS = {
           [row.status, row.notes, row.booking_ref, row.agreed_amount, row.currency,
            row.payment_method_external, row.paid_at, row.renewal_at, row.admin_note, existingPgId]
         );
+        await restoreSourceTimestamps(client, { table: 'enrollments', id: existingPgId, values: preservedTimestamps(row), inTransaction: true });
         return existingPgId;
       }
       const r = await client.query(
         `INSERT INTO enrollments
            (name, email, whatsapp, country, city, timezone, times, subjects, lang, level, age_group, gender_pref,
             preferred_teacher_key, preferred_teacher_name, requested_plan_slug, status, notes,
-            booking_ref, agreed_amount, currency, payment_method_external, paid_at, renewal_at, admin_note)
-         VALUES ($1,$2,$3,$4,$5,$6,$7::jsonb,$8::jsonb,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24) RETURNING id`,
+            booking_ref, agreed_amount, currency, payment_method_external, paid_at, renewal_at, admin_note, created_at, updated_at)
+         VALUES ($1,$2,$3,$4,$5,$6,$7::jsonb,$8::jsonb,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26) RETURNING id`,
         [row.name, row.email, row.whatsapp, row.country, row.city, row.timezone, row.times, row.subjects, row.lang, row.level,
          row.age_group, row.gender_pref, row.preferred_teacher_key, row.preferred_teacher_name, row.requested_plan_slug, row.status, row.notes,
-         row.booking_ref, row.agreed_amount, row.currency, row.payment_method_external, row.paid_at, row.renewal_at, row.admin_note]
+         row.booking_ref, row.agreed_amount, row.currency, row.payment_method_external, row.paid_at, row.renewal_at, row.admin_note,
+         row.created_at, row.updated_at]
       );
       return r.rows[0].id;
     },
@@ -1153,18 +1327,22 @@ export const DOMAINS = {
   quran_bookmarks: {
     targetTable: 'quran_bookmarks',
     needsUserMap: true,
+    sourceDates: { mapped: ['createdAt'], unpreserved: ['updatedAt'] },
     async export() {
       return mongoose.connection.collection('quranbookmarks').find({}).toArray();
     },
     async transform(doc, ctx) {
       throwIfFaultStage('during_quran_import');
+      const ts = sourceTimestamps(doc, { createdAt: 'created_at' }, ctx.dateStats);
       return {
-        user_id: await resolveProfileId(ctx.pgClient, ctx.userEmailMap, doc.user),
+        user_id: await resolveProfileId(ctx, doc.user),
         verse_key: doc.verseKey,
         chapter_id: doc.chapterId,
         verse_num: doc.verseNum,
         note: doc.note || null,
         color: doc.color || null,
+        ...ts.fields,
+        __generatedFields: ts.generated,
       };
     },
     validate(row) {
@@ -1172,10 +1350,10 @@ export const DOMAINS = {
     },
     async upsert(client, sourceId, row) {
       await client.query(
-        `INSERT INTO quran_bookmarks (user_id, verse_key, chapter_id, verse_num, note, color)
-         VALUES ($1,$2,$3,$4,$5,$6)
-         ON CONFLICT (user_id, verse_key) DO UPDATE SET note = EXCLUDED.note, color = EXCLUDED.color`,
-        [row.user_id, row.verse_key, row.chapter_id, row.verse_num, row.note, row.color]
+        `INSERT INTO quran_bookmarks (user_id, verse_key, chapter_id, verse_num, note, color, created_at)
+         VALUES ($1,$2,$3,$4,$5,$6,$7)
+         ON CONFLICT (user_id, verse_key) DO UPDATE SET note = EXCLUDED.note, color = EXCLUDED.color, created_at = EXCLUDED.created_at`,
+        [row.user_id, row.verse_key, row.chapter_id, row.verse_num, row.note, row.color, row.created_at]
       );
       return encodeCompositeTargetId([row.user_id, row.verse_key]);
     },
@@ -1187,6 +1365,9 @@ export const DOMAINS = {
   quran_reading_progress: {
     targetTable: 'quran_reading_progress',
     needsUserMap: true,
+    // No timestamp columns on this table (lastReadDate is a 'YYYY-MM-DD'
+    // string kept verbatim in last_read_date).
+    sourceDates: { unpreserved: ['createdAt', 'updatedAt'] },
     async export() {
       return mongoose.connection.collection('quranreadingprogresses').find({}).toArray();
     },
@@ -1197,7 +1378,7 @@ export const DOMAINS = {
         throw new Error(`quran_reading_progress row has unmapped dailyGoal.type "${goalType}"`);
       }
       return {
-        user_id: await resolveProfileId(ctx.pgClient, ctx.userEmailMap, doc.user),
+        user_id: await resolveProfileId(ctx, doc.user),
         resume: JSON.stringify(doc.lastPosition ?? {}),
         goal: doc.dailyGoal?.target ?? null,
         goal_type: goalType || null,
@@ -1227,6 +1408,8 @@ export const DOMAINS = {
   quran_memorization_stats: {
     targetTable: 'quran_memorization_stats',
     needsUserMap: true,
+    // No timestamp columns on this table (lastPracticeDate is a string).
+    sourceDates: { unpreserved: ['createdAt', 'updatedAt'] },
     async export() {
       return mongoose.connection.collection('quranmemorizationstats').find({}).toArray();
     },
@@ -1248,7 +1431,7 @@ export const DOMAINS = {
         throw new Error(`quran_memorization_stats row: streak.lastReadDate ("${a}") and stats.lastPracticeDate ("${b}") disagree — cannot losslessly collapse to one column`);
       }
       return {
-        user_id: await resolveProfileId(ctx.pgClient, ctx.userEmailMap, doc.user),
+        user_id: await resolveProfileId(ctx, doc.user),
         goal: doc.dailyGoal?.target ?? null,
         goal_type: goalType || null,
         total_recordings: doc.stats?.totalRecordings ?? 0,
@@ -1279,10 +1462,12 @@ export const DOMAINS = {
 
   coupons: {
     targetTable: 'coupons',
+    // coupons has expires_at only: no valid_from, created_at or updated_at.
+    sourceDates: { mapped: ['validUntil'], unpreserved: ['validFrom', 'createdAt', 'updatedAt'] },
     async export() {
       return mongoose.connection.collection('coupons').find({}).toArray();
     },
-    transform(doc) {
+    transform(doc, ctx) {
       if (!['percent', 'fixed'].includes(doc.discountType)) {
         throw new Error(`coupons row has unmapped discountType "${doc.discountType}"`);
       }
@@ -1301,7 +1486,7 @@ export const DOMAINS = {
         discount_scope: 'first_payment_only',
         discount_duration_cycles: null,
         max_uses: doc.maxUses ?? null,
-        expires_at: doc.validUntil ?? null,
+        expires_at: optionalSourceDate(doc, 'validUntil', 'expires_at', ctx?.dateStats),
         active: !!doc.active,
       };
     },
@@ -1330,6 +1515,7 @@ export const DOMAINS = {
   coupon_redemptions: {
     targetTable: 'coupon_redemptions',
     needsUserMap: true,
+    sourceDates: { mapped: ['usedAt'] },
     async export() {
       const docs = await mongoose.connection.collection('coupons').find({}).toArray();
       const flat = [];
@@ -1341,11 +1527,12 @@ export const DOMAINS = {
       return flat;
     },
     async transform(doc, ctx) {
+      const usedAt = requiredSourceDate(doc, 'usedAt', 'used_at', ctx.dateStats);
       return {
-        coupon_id: resolveCouponPgId(doc.coupon),
-        user_id: await resolveProfileId(ctx.pgClient, ctx.userEmailMap, doc.user),
-        used_at: doc.usedAt ?? new Date(),
-        __generatedFields: doc.usedAt == null ? ['used_at'] : [],
+        coupon_id: await resolveCouponPgId(ctx, doc.coupon),
+        user_id: await resolveProfileId(ctx, doc.user),
+        used_at: usedAt.value,
+        __generatedFields: usedAt.generated ? ['used_at'] : [],
       };
     },
     validate() {},
@@ -1364,6 +1551,7 @@ export const DOMAINS = {
   manual_payments: {
     targetTable: 'manual_payments',
     needsUserMap: true,
+    sourceDates: { mapped: ['createdAt', 'updatedAt'] },
     async export() {
       return mongoose.connection.collection('manualpayments').find({}).toArray();
     },
@@ -1380,25 +1568,22 @@ export const DOMAINS = {
       }
       const cents = Number(doc.amount) * 100;
       if (!Number.isFinite(cents) || Math.abs(cents - Math.round(cents)) > 1e-6) {
-        throw new Error(`manual_payments row amount ${doc.amount} does not convert cleanly to integer minor units`);
+        throw new Error('manual_payments row amount does not convert cleanly to integer minor units');
       }
       if (String(doc.currency ?? 'EUR') !== 'EUR') {
-        throw new Error(`manual_payments row currency "${doc.currency}" is not EUR`);
+        throw new Error('manual_payments row currency is not EUR');
       }
+      const ts = sourceTimestamps(doc, { createdAt: 'created_at', updatedAt: 'updated_at' }, ctx.dateStats);
       return {
-        user_id: await resolveProfileId(ctx.pgClient, ctx.userEmailMap, doc.userId),
+        user_id: await resolveProfileId(ctx, doc.userId),
         amount_minor: Math.round(cents),
         method: doc.method,
         reference: doc.reference || null,
         notes: doc.notes || null,
         status: doc.status,
         admin_note: doc.adminNote || null,
-        created_at: doc.createdAt ?? new Date(),
-        updated_at: doc.updatedAt ?? new Date(),
-        __generatedFields: [
-          ...(doc.createdAt == null ? ['created_at'] : []),
-          ...(doc.updatedAt == null ? ['updated_at'] : []),
-        ],
+        ...ts.fields,
+        __generatedFields: ts.generated,
       };
     },
     validate(row) {
@@ -1408,6 +1593,7 @@ export const DOMAINS = {
       const existingPgId = checkpoint[sourceId]?.pgId;
       if (existingPgId) {
         await client.query(`UPDATE manual_payments SET status=$1, admin_note=$2 WHERE id=$3`, [row.status, row.admin_note, existingPgId]);
+        await restoreSourceTimestamps(client, { table: 'manual_payments', id: existingPgId, values: preservedTimestamps(row), inTransaction: true });
         return existingPgId;
       }
       const r = await client.query(
@@ -1425,55 +1611,29 @@ export const DOMAINS = {
   invoices: {
     targetTable: 'invoices',
     needsUserMap: true,
+    // Consumed by the fail-closed check in transform() below, not mapped.
+    sourceDates: { mapped: ['createdAt', 'updatedAt'] },
     async export() {
       return mongoose.connection.collection('invoices').find({}).toArray();
     },
-    async transform(doc, ctx) {
-      if (!doc.payment) throw new Error('invoices row has no linked payment — issue_invoice_from_payment() requires one');
-      const paymentLedger = await findLedgerEntry(ctx.pgClient, {
-        sourceDatabase: SOURCE_DATABASE, sourceCollection: 'payments', sourceDocumentId: String(doc.payment), targetTable: 'payments',
-      });
-      if (!paymentLedger || !paymentLedger.target_id) {
-        throw new Error(`invoices row references payment ${doc.payment}, which has not been migrated yet — run --domain=payments first`);
-      }
-      return { payment_id: paymentLedger.target_id };
+    // Owner decision NO_MIGRATION_SERVICE_IDENTITY: an invoice can only be
+    // issued through issue_invoice_from_payment(), which is
+    // is_admin_aal2()-gated -- the tool used to impersonate an automatic
+    // admin identity for it, and that identity is no longer allowed. It
+    // also stamps its own created_at and invoices are immutable, so a
+    // source invoice's dates could not be preserved either
+    // (DATES_DECISION). Every invoice document therefore fails here, by
+    // name, before anything is written. The source has 0 invoices today; a
+    // fresh backup that has some stops the run until this is decided.
+    async transform() {
+      throw new Error(
+        'invoices cannot be imported: issue_invoice_from_payment() needs an admin identity the migration may not create ' +
+        '(NO_MIGRATION_SERVICE_IDENTITY), and it cannot keep the source dates -- refusing'
+      );
     },
-    validate(row) {
-      if (!row.payment_id) throw new Error('invoices row could not resolve payment_id');
-    },
-    // Review round 4: MUST use the context-only helper, never the
-    // transaction-OWNING withImpersonatedAdmin() -- this upsert() is
-    // called from INSIDE migrateDomain()'s own already-open BEGIN
-    // (together with markCreated(), as one atomic unit — see that
-    // function's own comment). withImpersonatedAdmin() would issue its
-    // own nested BEGIN/COMMIT, and Postgres does not support real nested
-    // transactions: its COMMIT would silently commit the OUTER
-    // transaction too, immediately after the invoice write and BEFORE
-    // markCreated() ever runs — a real, previously-shipped bug (see
-    // lib/admin-rpc.mjs's own comment on withImpersonatedAdminContext()
-    // for the full story). withImpersonatedAdminContext() sets up/tears
-    // down the impersonation only, leaving BEGIN/COMMIT/ROLLBACK entirely
-    // to the caller, exactly as this call site now needs.
-    // Review round 4: also fixes a real, previously-undetected bug found
-    // WHILE proving the transaction fix above with a live invoice (this
-    // domain has 0 real documents in the actual dump, so this exact code
-    // path had never been exercised end-to-end before). `issue_invoice_
-    // from_payment` returns a composite `public.invoices` row; `pg` does
-    // NOT auto-parse an arbitrary composite type into a JS object (no
-    // type parser is registered for it), so `SELECT f($1) AS invoice`
-    // came back as an opaque string and `r.rows[0].invoice.id` was
-    // silently `undefined` -- markCreated() then received `undefined`
-    // and stored target_id as NULL (its own documented behavior for a
-    // missing id), yet the process still reported success and the ledger
-    // row still reached 'reconciled'. Fixed by extracting the one field
-    // actually needed directly in SQL via Postgres's composite field-
-    // access syntax `(f($1)).id`, which `pg` parses as a plain scalar
-    // column like any other.
-    async upsert(client, sourceId, row) {
-      return withImpersonatedAdminContext(client, async (c) => {
-        const r = await c.query(`SELECT (issue_invoice_from_payment($1)).id AS id`, [row.payment_id]);
-        return r.rows[0].id;
-      });
+    validate() {},
+    async upsert() {
+      throw new Error('invoices are never written by this tool (see transform())');
     },
     async countPg(client) {
       return Number((await client.query('SELECT count(*) FROM invoices')).rows[0].count);
@@ -1483,6 +1643,7 @@ export const DOMAINS = {
   notifications: {
     targetTable: 'notifications',
     needsUserMap: true,
+    sourceDates: { mapped: ['createdAt'], unpreserved: ['updatedAt'] },
     async export() {
       return mongoose.connection.collection('notifications').find({}).toArray();
     },
@@ -1495,16 +1656,17 @@ export const DOMAINS = {
       if (!allowed.includes(doc.type)) {
         throw new Error(`notifications row has type "${doc.type}", not in the new (LMS-free) notification_type vocabulary — no destination`);
       }
+      const ts = sourceTimestamps(doc, { createdAt: 'created_at' }, ctx.dateStats);
       return {
-        user_id: await resolveProfileId(ctx.pgClient, ctx.userEmailMap, doc.recipient),
+        user_id: await resolveProfileId(ctx, doc.recipient),
         type: doc.type,
         title: doc.title,
         body: doc.body || null,
         link: doc.link || null,
         read: !!doc.read,
         meta: doc.data ? JSON.stringify(doc.data) : null,
-        created_at: doc.createdAt ?? new Date(),
-        __generatedFields: doc.createdAt == null ? ['created_at'] : [],
+        ...ts.fields,
+        __generatedFields: ts.generated,
       };
     },
     validate(row) {
@@ -1540,6 +1702,7 @@ export const DOMAINS = {
 
   system_audit_logs: {
     targetTable: 'admin_audit_log',
+    sourceDates: { mapped: ['createdAt'], unpreserved: ['updatedAt'] },
     async export() {
       return mongoose.connection.collection('systemauditlogs').find({}).toArray();
     },
@@ -1551,16 +1714,17 @@ export const DOMAINS = {
         throw new Error(`system_audit_logs row has unmapped severity "${doc.severity}"`);
       }
       const adminEmailMap = ctx.adminEmailMap ?? (ctx.adminEmailMap = await loadAdminEmailMap());
+      const ts = sourceTimestamps(doc, { createdAt: 'created_at' }, ctx.dateStats);
       return {
-        actor_admin_id: await resolveAdminProfileId(ctx.pgClient, adminEmailMap, doc.adminId),
+        actor_admin_id: await resolveAdminProfileId(ctx, adminEmailMap, doc.adminId),
         action: doc.action,
         resource_type: doc.resource,
         resource_id: doc.resourceId != null ? String(doc.resourceId) : null,
         before: doc.before ? JSON.stringify(doc.before) : null,
         after: doc.after ? JSON.stringify(doc.after) : null,
         severity: doc.severity,
-        created_at: doc.createdAt ?? new Date(),
-        __generatedFields: doc.createdAt == null ? ['created_at'] : [],
+        ...ts.fields,
+        __generatedFields: ts.generated,
       };
     },
     validate(row) {
@@ -1592,6 +1756,7 @@ export const DOMAINS = {
 
   document_counters: {
     targetTable: 'document_counters',
+    sourceDates: {},
     async export() {
       return mongoose.connection.collection('counters').find({}).toArray();
     },
@@ -1861,7 +2026,7 @@ async function verifyTargetRowExists(pgClient, spec, targetId) {
   return r.rowCount > 0;
 }
 
-async function migrateDomain(domainName, { dryRun, resetCheckpoint, pgClient }) {
+async function migrateDomain(domainName, { dryRun, resetCheckpoint, pgClient, planSlugToId }) {
   const domain = DOMAINS[domainName];
   if (!domain) throw new Error(`Unknown domain: ${domainName}`);
 
@@ -1874,26 +2039,36 @@ async function migrateDomain(domainName, { dryRun, resetCheckpoint, pgClient }) 
 
   // Only built when a domain actually needs it (loadUserEmailMap does one
   // Mongo query and caches the result across every domain in this run).
-  const ctx = { pgClient, userEmailMap: domain.needsUserMap ? await loadUserEmailMap() : null };
+  const ctx = { pgClient, dryRun, userEmailMap: domain.needsUserMap ? await loadUserEmailMap() : null };
   if (domain.needsPlanCatalog) {
-    if (!dryRun) await ensureMigrationSeedAdmin(pgClient);
-    ctx.planSlugToId = dryRun ? null : await seedCanonicalPlans(pgClient, { withImpersonatedAdmin });
+    // Verified by main() before ANY domain ran (requireCanonicalPlans()):
+    // the plans already exist; this tool never creates them.
+    if (!planSlugToId) throw new Error(`[${domainName}] internal: the plan catalog was not verified before the run`);
+    ctx.planSlugToId = planSlugToId;
     ctx.resolvePlanSlug = resolvePlanSlug;
   }
 
   let imported = 0;
   let skippedUnchanged = 0;
   let failed = 0;
+  // Date accounting for the documents that made it through (see
+  // lib/source-dates.mjs): preserved / derivedFromCreatedAt / generated
+  // per target column, unpreserved per source field.
+  const dates = {};
 
   for (const doc of mongoDocs) {
     const sourceId = String(doc._id);
     let ledgerId = null;
+    const docDates = {};
+    ctx.dateStats = docDates;
     try {
+      accountForSourceDates(doc, domain.sourceDates ?? {}, docDates);
       const row = await domain.transform(doc, ctx);
       domain.validate(row);
       const contentHash = hashOf(row);
       const fullHash = contentHashOf(row);
-      const spec = ROLLBACK_SPEC[domainName];
+      const spec = readBackSpec(ROLLBACK_SPEC[domainName]);
+      const extraReadBacks = (pgId) => domain.extraReadBacks?.(row, pgId, sourceId) ?? [];
 
       // Stage 2J-B Part H fix (review round 2): a ledger row is ONLY ever
       // treated as "nothing to do" when it is FULLY reconciled -- status
@@ -1949,9 +2124,14 @@ async function migrateDomain(domainName, { dryRun, resetCheckpoint, pgClient }) 
           // could still be silently re-reported as "unchanged" without
           // that same check. Fixed: the exact same exact read-back a fresh
           // write gets, before this document is allowed to be skipped.
-          const fastPathReadBack = await verifyReadBack(pgClient, spec, resumeTargetId, row, { exemptFields: row.__generatedFields ?? [] });
+          let fastPathReadBack = await verifyReadBack(pgClient, spec, resumeTargetId, row, { exemptFields: row.__generatedFields ?? [] });
+          for (const extra of extraReadBacks(resumeTargetId)) {
+            if (!fastPathReadBack.ok) break;
+            fastPathReadBack = await verifyReadBack(pgClient, extra.spec, extra.targetId, extra.expectedFields, extra.options);
+          }
           if (fastPathReadBack.ok) {
             skippedUnchanged += 1;
+            mergeDateStats(dates, docDates);
             checkpoint[sourceId] = { pgId: resumeTargetId, hash: contentHash, migratedAt: new Date().toISOString() };
             continue;
           }
@@ -1971,6 +2151,7 @@ async function migrateDomain(domainName, { dryRun, resetCheckpoint, pgClient }) 
       if (dryRun) {
         console.log(`[${domainName}] DRY-RUN would upsert sourceId=${sourceId} hash=${contentHash}`);
         imported += 1;
+        mergeDateStats(dates, docDates);
         continue;
       }
 
@@ -2101,9 +2282,11 @@ async function migrateDomain(domainName, { dryRun, resetCheckpoint, pgClient }) 
       // anywhere in this file; see that module's own header for why.
       const reconcileResult = await verifyThenReconcile(pgClient, ledgerId, [
         { spec, targetId: pgId, expectedFields: row, options: { exemptFields: row.__generatedFields ?? [] } },
+        ...extraReadBacks(pgId),
       ]);
       if (!reconcileResult.ok) throw new Error(reconcileResult.reason);
       imported += 1;
+      mergeDateStats(dates, docDates);
     } catch (err) {
       failed += 1;
       if (ledgerId) await markFailed(pgClient, ledgerId, err.message).catch(() => {});
@@ -2123,6 +2306,13 @@ async function migrateDomain(domainName, { dryRun, resetCheckpoint, pgClient }) 
     `[${domainName}] done: mongo=${mongoDocs.length} imported=${imported} unchanged=${skippedUnchanged} failed=${failed}` +
       (pgCount !== null ? ` postgresRowCount=${pgCount}` : ' (dry-run, no write)')
   );
+  // Never silent: a date that got the migration time, or a source date
+  // this table has no column for, is named here and in the report.
+  for (const [bucket, label] of [['generated', 'GENERATED (source had no value)'], ['unpreserved', 'NOT MIGRATED (no destination column)']]) {
+    if (dates[bucket]) {
+      console.log(`[${domainName}] dates ${label}: ${Object.entries(dates[bucket]).map(([f, n]) => `${f}x${n}`).join(', ')}`);
+    }
+  }
 
   return {
     domain: domainName,
@@ -2131,10 +2321,29 @@ async function migrateDomain(domainName, { dryRun, resetCheckpoint, pgClient }) 
     skippedUnchanged,
     failed,
     postgresRowCount: pgCount,
+    dates,
   };
 }
 
+function mergeDateStats(total, doc) {
+  for (const [bucket, fields] of Object.entries(doc)) {
+    total[bucket] ??= {};
+    for (const [field, n] of Object.entries(fields)) total[bucket][field] = (total[bucket][field] ?? 0) + n;
+  }
+}
+
+// Every domain's row may carry the `__generatedFields` marker (lib/source-
+// dates.mjs), which is bookkeeping, never a column.
+function readBackSpec(spec) {
+  if (!spec) return spec;
+  return { ...spec, nonColumnFields: [...new Set([...(spec.nonColumnFields ?? []), '__generatedFields'])] };
+}
+
 async function main() {
+  // LOGGING_DECISION=REDACT: everything printed from here on goes through
+  // lib/redact.mjs, so an email, hash, token or connection string that
+  // slips into a message (a driver error, say) is still masked.
+  installRedactingConsole();
   const args = parseStrictCliArgs(process.argv.slice(2), CLI_SPEC);
   validateCliArgs(args);
 
@@ -2181,8 +2390,8 @@ async function main() {
   const resetCheckpoint = !!args['reset-checkpoint'];
   const rollback = !!args.rollback;
 
-  console.log(`[migrate] mongo=${mongoUri.replace(/:[^:@]*@/, ':***@')}`);
-  console.log(`[migrate] postgres=${pgUri.replace(/:[^:@]*@/, ':***@')}`);
+  // Which kind of target this is, never the connection string itself.
+  console.log(`[migrate] source=local mongo target=${productionAuthorization ? 'production-authorized postgres' : 'local postgres'}`);
   console.log(`[migrate] domains=${requested.join(',')} dryRun=${dryRun} resetCheckpoint=${resetCheckpoint} rollback=${rollback}`);
   if (excludeList.length > 0) console.log(`[migrate] excluded domains (not touched this run): ${excludeList.join(',')}`);
 
@@ -2200,11 +2409,17 @@ async function main() {
 
   const results = [];
   try {
+    // NO_MIGRATION_SERVICE_IDENTITY: the canonical plans must already exist.
+    // Checked once, before the first domain runs, so a missing catalog
+    // stops --dry-run and a real run alike with nothing written anywhere
+    // (lib/plan-catalog.mjs requireCanonicalPlans(): PLAN_CATALOG_MISSING).
+    const needsPlans = !rollback && requested.some((d) => DOMAINS[d].needsPlanCatalog);
+    const planSlugToId = needsPlans ? await requireCanonicalPlans(pgClient) : null;
     for (const domainName of requested) {
       results.push(
         rollback
           ? await rollbackDomain(domainName, { pgClient })
-          : await migrateDomain(domainName, { dryRun, resetCheckpoint, pgClient })
+          : await migrateDomain(domainName, { dryRun, resetCheckpoint, pgClient, planSlugToId })
       );
     }
   } finally {
@@ -2215,7 +2430,7 @@ async function main() {
 
   fs.mkdirSync(OUT_DIR, { recursive: true });
   const reportPath = path.join(OUT_DIR, `migration-report-${Date.now()}.json`);
-  fs.writeFileSync(reportPath, JSON.stringify({ ranAt: new Date().toISOString(), dryRun, results }, null, 2));
+  fs.writeFileSync(reportPath, JSON.stringify(redactDeep({ ranAt: new Date().toISOString(), dryRun, results }), null, 2));
   console.log(`\n[migrate] report written to ${reportPath}`);
 
   // Stage 2J-B Part H fix: per-document failures inside migrateDomain()'s

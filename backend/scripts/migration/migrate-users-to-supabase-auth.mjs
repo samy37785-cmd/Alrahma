@@ -5,15 +5,22 @@
 // creation (Stage 2F's original scope) but the full persona/role,
 // relationship, and subscription state that accompanies each account.
 //
-// Hard rules this script enforces structurally, not just by convention
-// (unchanged from the original, Stage 2F version):
-//   1. NEVER reads or copies a Mongo password hash or an AdminUser TOTP
-//      secret — accounts are created with a fresh, random, throwaway
-//      password nobody is ever told; admins ALWAYS start with zero MFA
-//      factors (re-enroll on first supabase-mode login).
+// Hard rules this script enforces structurally, not just by convention:
+//   1. Owner decision PASSWORD_DECISION=IMPORT_BCRYPT_HASHES (replaces the
+//      original "random throwaway password" rule): each account is created
+//      with the source document's own bcrypt hash via GoTrue's admin
+//      `password_hash`, so people keep signing in with the password they
+//      already have. Phase A validates every hash before any write; a
+//      missing or non-bcrypt hash stops the run -- there is no random-
+//      password fallback. The hash is never printed, logged or stored
+//      anywhere but GoTrue. An AdminUser TOTP secret is still never read:
+//      admins ALWAYS start with zero MFA factors (re-enroll on first
+//      supabase-mode login). Email confirmation follows the source-data
+//      contract in lib/auth-import.mjs's emailConfirmationFor().
 //   2. NEVER sends a real email. `--plan` (the default) computes what a
 //      password-reset/invite wave WOULD send via GoTrue's admin
 //      generateLink (mints a valid recovery link WITHOUT emailing it).
+//      No reset is needed at all with imported hashes.
 //   3. Same assertLocalHost discipline as every other script in this
 //      directory for MIGRATION_DB_URL. SUPABASE_URL (GoTrue admin API
 //      target) is read but not host-checked — pointing this at a real
@@ -40,8 +47,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { createClient } from '@supabase/supabase-js';
-import { resolvePlanSlug, seedCanonicalPlans } from './lib/plan-catalog.mjs';
-import { withImpersonatedAdmin, ensureMigrationSeedAdmin } from './lib/admin-rpc.mjs';
+import { resolvePlanSlug, requireCanonicalPlans, PLAN_CATALOG_MISSING } from './lib/plan-catalog.mjs';
 import { throwIfFaultStage } from './lib/fault-injection.mjs';
 import { findLedgerEntry, markPlanned, markCreated, markFailed, contentHashOf } from './lib/source-ledger.mjs';
 import { parseStrictCliArgs } from './lib/cli-args.mjs';
@@ -50,6 +56,9 @@ import { verifyThenReconcile } from './lib/reconcile.mjs';
 import { assertLocalHostOrProductionAuthorized } from './lib/host-guard.mjs';
 import { loadAndVerifyProductionAuthorization } from './lib/production-authorization.mjs';
 import { buildPgPoolConfig } from '../../data/supabase/client.js';
+import { installRedactingConsole, redactDeep, fingerprint } from './lib/redact.mjs';
+import { computePasswordHashProblems, emailConfirmationFor, isBcryptHash } from './lib/auth-import.mjs';
+import { sourceTimestamps, accountForSourceDates, restoreSourceTimestamps } from './lib/source-dates.mjs';
 
 // Review round 6, item 3: this script never went through migration_source_
 // ledger before this round (it predates that table, and auth.users/
@@ -189,10 +198,6 @@ function assertLocalHost(uri, label) {
   }
 }
 
-function randomThrowawayPassword() {
-  return crypto.randomBytes(24).toString('base64url');
-}
-
 const CHECKPOINT_DIR = path.join(process.cwd(), '.checkpoints');
 const CHECKPOINT_FILE = path.join(CHECKPOINT_DIR, 'users-auth-migration.json');
 
@@ -208,8 +213,50 @@ function saveCheckpoint(cp) {
 // Mirrors lib/db/drizzle/0013_admin_rbac.sql's header-comment mapping —
 // the authoritative old-AdminUser-role -> admin_role_assignments-role
 // table, for REAL AdminUser documents (not the coarse `users.role`
-// ad-hoc admin marker fixed below).
-const ADMIN_ROLE_MAP = { 'super-admin': 'super-admin', admin: 'admin', editor: 'editor', viewer: 'viewer' };
+// ad-hoc admin marker fixed below). Owner decision ROLE_DECISION:
+// 'super-admin' is deliberately absent -- this tool never grants it. The
+// first Super Admin is created outside this tool, under its own approval;
+// an AdminUser document with that role fails Phase A before any write.
+const ADMIN_ROLE_MAP = { admin: 'admin', editor: 'editor', viewer: 'viewer' };
+
+// Source date fields on a users/adminusers document, beyond the
+// createdAt/updatedAt pair restored onto profiles. Every other top-level
+// Date fails the document (lib/source-dates.mjs accountForSourceDates()).
+const USER_SOURCE_DATES = {
+  // lastStudyDate -> profiles.last_study_date (applyPersona); subscription
+  // dates are nested and handled by migrateSubscription().
+  mapped: ['createdAt', 'updatedAt', 'lastStudyDate'],
+  // A pending password-reset token's expiry: the token itself is never
+  // migrated, so its expiry has nothing to belong to.
+  unpreserved: ['resetTokenExpiry'],
+};
+const ADMIN_SOURCE_DATES = {
+  mapped: ['createdAt', 'updatedAt'],
+  // Lockout and last-login state of the old admin login; Supabase Auth
+  // keeps its own, starting fresh.
+  unpreserved: ['lockedUntil', 'lastLoginAt'],
+};
+
+/**
+ * Restores the source createdAt/updatedAt onto the profile GoTrue's
+ * handle_new_user() trigger created (stamped with the migration time) and
+ * that applyPersona() then updated (set_updated_at() stamps now() again).
+ * Returns the fields to read back; a field with no source value is left to
+ * the database and listed as generated.
+ */
+async function restoreProfileTimestamps(pgClient, profileId, sourceDoc, dateStats) {
+  const ts = sourceTimestamps(sourceDoc, { createdAt: 'created_at', updatedAt: 'updated_at' }, dateStats);
+  const values = {};
+  for (const [col, value] of Object.entries(ts.fields)) {
+    if (!ts.generated.includes(col)) values[col] = value;
+  }
+  await restoreSourceTimestamps(pgClient, { table: 'profiles', id: profileId, values, inTransaction: false });
+  return values;
+}
+
+function bumpCount(counter, key) {
+  counter[key] = (counter[key] ?? 0) + 1;
+}
 
 // ---------------------------------------------------------------------
 // Phase 1 — account + persona (Mapping Contract §1, §6, §7).
@@ -366,8 +413,9 @@ const PROFILE_READBACK_SPEC = { table: 'profiles' };
 const ADMIN_ROLE_READBACK_SPEC = { table: 'admin_role_assignments', pkColumn: 'user_id' };
 const AUTH_USER_READBACK_SPEC = { table: 'auth.users' };
 
-export async function migrateOneUser(supabaseAdmin, pgClient, mongoUser, { execute }) {
+export async function migrateOneUser(supabaseAdmin, pgClient, mongoUser, { execute, dateStats }) {
   const email = String(mongoUser.email).toLowerCase().trim();
+  const emailConfirmation = emailConfirmationFor(mongoUser);
   const correlationId = correlationIdFor({ sourceCollection: 'users', sourceDocumentId: mongoUser._id, sourceValue: mongoUser });
 
   const existingRes = await pgClient.query(`SELECT id, raw_app_meta_data FROM auth.users WHERE email = $1`, [email]);
@@ -375,7 +423,7 @@ export async function migrateOneUser(supabaseAdmin, pgClient, mongoUser, { execu
   let profileId = existingRow?.id ?? null;
   let status = profileId ? 'already_exists' : 'would_create';
 
-  if (!execute) return { status, id: profileId };
+  if (!execute) return { status, id: profileId, emailConfirmationBasis: emailConfirmation.basis };
 
   // Review round 6, item 3: a 'planned' ledger row before any write is
   // attempted -- the same Saga-first-state discipline every domain table
@@ -401,19 +449,27 @@ export async function migrateOneUser(supabaseAdmin, pgClient, mongoUser, { execu
     if (existingCorrelationId !== correlationId) {
       await markFailed(
         pgClient, ledgerId,
-        `an auth.users account with email ${email} already exists but its migration_correlation_id does not match ` +
+        `an auth.users account with this source document's email already exists but its migration_correlation_id does not match ` +
         `this source document's expected identity -- refusing to link, read, or modify a foreign/external account`
       ).catch(() => {});
       return {
         status: 'blocked_foreign_account_same_email',
-        message: `auth.users account for ${email} exists but is not provably this migration's own account ` +
-          `(correlation ID mismatch or absent) -- refusing to attribute or overwrite it`,
+        message: `auth.users account for source user ${String(mongoUser._id)} (email ${fingerprint(email)}) exists but is not ` +
+          `provably this migration's own account (correlation ID mismatch or absent) -- refusing to attribute or overwrite it`,
       };
     }
   }
 
   if (!profileId) {
     throwIfFaultStage('during_user_creation');
+    // Phase A already stops a run on any unusable hash; this guards a
+    // direct caller too. Never create an account without the person's own
+    // password hash.
+    if (!isBcryptHash(mongoUser.password)) {
+      const reason = 'source user has no importable bcrypt password hash -- refusing to create an account without it';
+      await markFailed(pgClient, ledgerId, reason).catch(() => {});
+      return { status: 'error', message: reason };
+    }
     // PR #70 review round 7, item 2: "handle ambiguous success/network
     // timeout". createUser() previously had no try/catch at all -- if the
     // underlying HTTP call itself threw (a network timeout or connection
@@ -438,8 +494,10 @@ export async function migrateOneUser(supabaseAdmin, pgClient, mongoUser, { execu
     try {
       createResult = await supabaseAdmin.auth.admin.createUser({
         email,
-        password: randomThrowawayPassword(),
-        email_confirm: true,
+        // PASSWORD_DECISION=IMPORT_BCRYPT_HASHES: the person's own bcrypt
+        // hash, validated in Phase A (computePasswordHashProblems()).
+        password_hash: mongoUser.password,
+        email_confirm: emailConfirmation.confirm,
         user_metadata: { migrated_from: 'mongodb', migrated_at: new Date().toISOString() },
         // Round 8, item 2 / round 9, item 2: migration_correlation_id is
         // the ONLY thing a later resume trusts to prove an
@@ -500,8 +558,14 @@ export async function migrateOneUser(supabaseAdmin, pgClient, mongoUser, { execu
   // failure mode in this file (createUser()'s own try/catch above,
   // computeExitFailure()'s per-document error reporting elsewhere).
   let persona;
+  let profileTimestamps;
   try {
     persona = await applyPersona(pgClient, profileId, mongoUser);
+    // DATES_DECISION=PRESERVE_EXACTLY: the profile carries the source
+    // account's own createdAt/updatedAt, not the migration time.
+    // auth.users.created_at stays GoTrue's own (when the identity was
+    // created in GoTrue); profiles.created_at is the account's history.
+    profileTimestamps = await restoreProfileTimestamps(pgClient, profileId, mongoUser, dateStats);
   } catch (err) {
     await markFailed(pgClient, ledgerId, err.message).catch(() => {});
     return { status: 'error', message: err.message };
@@ -529,7 +593,7 @@ export async function migrateOneUser(supabaseAdmin, pgClient, mongoUser, { execu
       spec: AUTH_USER_READBACK_SPEC, targetId: profileId,
       expectedFields: { id: profileId, email, raw_app_meta_data: jsonPathEqual(['migration_correlation_id'], correlationId) },
     },
-    { spec: PROFILE_READBACK_SPEC, targetId: profileId, expectedFields: persona.expectedProfileFields },
+    { spec: PROFILE_READBACK_SPEC, targetId: profileId, expectedFields: { ...persona.expectedProfileFields, ...profileTimestamps } },
     ...(persona.isAdmin
       ? [{ spec: ADMIN_ROLE_READBACK_SPEC, targetId: profileId, expectedFields: persona.expectedAdminRoleFields }]
       : []),
@@ -538,13 +602,14 @@ export async function migrateOneUser(supabaseAdmin, pgClient, mongoUser, { execu
     await markFailed(pgClient, ledgerId, reconcileResult.reason).catch(() => {});
     return { status: 'error', message: reconcileResult.reason };
   }
-  return { status, id: profileId, persona };
+  return { status, id: profileId, persona, emailConfirmationBasis: emailConfirmation.basis };
 }
 
-export async function migrateOneAdmin(supabaseAdmin, pgClient, mongoAdmin, { execute }) {
+export async function migrateOneAdmin(supabaseAdmin, pgClient, mongoAdmin, { execute, dateStats }) {
   const email = String(mongoAdmin.email).toLowerCase().trim();
   const mappedRole = ADMIN_ROLE_MAP[mongoAdmin.role];
-  if (!mappedRole) return { status: 'error', message: `unmapped AdminUser role: ${mongoAdmin.role}` };
+  if (!mappedRole) return { status: 'error', message: adminRoleProblemReason(mongoAdmin.role) };
+  const emailConfirmation = emailConfirmationFor(mongoAdmin);
   const correlationId = correlationIdFor({ sourceCollection: 'adminusers', sourceDocumentId: mongoAdmin._id, sourceValue: mongoAdmin });
 
   const existingRes = await pgClient.query(`SELECT id, raw_app_meta_data FROM auth.users WHERE email = $1`, [email]);
@@ -574,18 +639,23 @@ export async function migrateOneAdmin(supabaseAdmin, pgClient, mongoAdmin, { exe
     if (existingCorrelationId !== correlationId) {
       await markFailed(
         pgClient, ledgerId,
-        `an auth.users account with email ${email} already exists but its migration_correlation_id does not match ` +
+        `an auth.users account with this source document's email already exists but its migration_correlation_id does not match ` +
         `this source document's expected identity -- refusing to link, read, or modify a foreign/external account`
       ).catch(() => {});
       return {
         status: 'blocked_foreign_account_same_email',
-        message: `auth.users account for ${email} exists but is not provably this migration's own account ` +
-          `(correlation ID mismatch or absent) -- refusing to attribute or overwrite it`,
+        message: `auth.users account for source admin ${String(mongoAdmin._id)} (email ${fingerprint(email)}) exists but is not ` +
+          `provably this migration's own account (correlation ID mismatch or absent) -- refusing to attribute or overwrite it`,
       };
     }
   }
 
   if (!userId) {
+    if (!isBcryptHash(mongoAdmin.password)) {
+      const reason = 'source admin has no importable bcrypt password hash -- refusing to create an account without it';
+      await markFailed(pgClient, ledgerId, reason).catch(() => {});
+      return { status: 'error', message: reason };
+    }
     // PR #70 review round 7, item 2: same createUser() try/catch and
     // kill-window fault stage as migrateOneUser() -- see that function's
     // own comment for the full "ambiguous success/network timeout"
@@ -595,8 +665,8 @@ export async function migrateOneAdmin(supabaseAdmin, pgClient, mongoAdmin, { exe
     try {
       createResult = await supabaseAdmin.auth.admin.createUser({
         email,
-        password: randomThrowawayPassword(),
-        email_confirm: true,
+        password_hash: mongoAdmin.password,
+        email_confirm: emailConfirmation.confirm,
         user_metadata: { migrated_from: 'mongodb_adminuser', migrated_at: new Date().toISOString() },
         // Round 9, item 2: see migrateOneUser()'s own comment -- app_metadata,
         // never user_metadata, for the same admin-only-provenance reason.
@@ -633,6 +703,13 @@ export async function migrateOneAdmin(supabaseAdmin, pgClient, mongoAdmin, { exe
     await markFailed(pgClient, ledgerId, reason).catch(() => {});
     return { status: 'error', message: reason };
   }
+  let profileTimestamps;
+  try {
+    profileTimestamps = await restoreProfileTimestamps(pgClient, userId, mongoAdmin, dateStats);
+  } catch (err) {
+    await markFailed(pgClient, ledgerId, err.message).catch(() => {});
+    return { status: 'error', message: err.message };
+  }
   await markCreated(pgClient, ledgerId, userId);
 
   // PR #70 review round 10, item 3: same exact, independent read-back
@@ -645,7 +722,7 @@ export async function migrateOneAdmin(supabaseAdmin, pgClient, mongoAdmin, { exe
       spec: AUTH_USER_READBACK_SPEC, targetId: userId,
       expectedFields: { id: userId, email, raw_app_meta_data: jsonPathEqual(['migration_correlation_id'], correlationId) },
     },
-    { spec: PROFILE_READBACK_SPEC, targetId: userId, expectedFields: { id: userId, name: mongoAdmin.name || null, role: 'admin' } },
+    { spec: PROFILE_READBACK_SPEC, targetId: userId, expectedFields: { id: userId, name: mongoAdmin.name || null, role: 'admin', ...profileTimestamps } },
     { spec: ADMIN_ROLE_READBACK_SPEC, targetId: userId, expectedFields: { user_id: userId, role: mappedRole } },
   ]);
   if (!reconcileResult.ok) {
@@ -653,7 +730,10 @@ export async function migrateOneAdmin(supabaseAdmin, pgClient, mongoAdmin, { exe
     return { status: 'error', message: reconcileResult.reason };
   }
 
-  return { status: existingRow ? 'role_assigned_existing_account' : 'created', id: userId, role: mappedRole };
+  return {
+    status: existingRow ? 'role_assigned_existing_account' : 'created', id: userId, role: mappedRole,
+    emailConfirmationBasis: emailConfirmation.basis,
+  };
 }
 
 // ---------------------------------------------------------------------
@@ -893,7 +973,15 @@ async function applyTeacherLink(pgClient, { studentMongoId, studentProfileId, te
   const ledgerId = prior?.id ?? await markPlanned(pgClient, { ...ledgerKey, contentHash });
   try {
     await pgClient.query('BEGIN');
+    // The link is part of the same source document whose updatedAt
+    // migrateOneUser() already restored onto this profile; the trigger's
+    // now() from this UPDATE is put back to that value in the same
+    // transaction (DATES_DECISION=PRESERVE_EXACTLY).
+    const before = await pgClient.query('SELECT updated_at FROM profiles WHERE id = $1 FOR UPDATE', [studentProfileId]);
     await pgClient.query('UPDATE profiles SET teacher_id = $2 WHERE id = $1', [studentProfileId, teacherProfileId]);
+    await restoreSourceTimestamps(pgClient, {
+      table: 'profiles', id: studentProfileId, values: { updated_at: before.rows[0].updated_at }, inTransaction: true,
+    });
     throwIfFaultStage('after_relationship_write_before_marked_created');
     await markCreated(pgClient, ledgerId, targetId);
     await pgClient.query('COMMIT');
@@ -1082,10 +1170,10 @@ function deriveSubscriptionStatus(mongoSub) {
 // a structural fact about the Mongo document itself, checkable in --plan
 // mode exactly as reliably as in --execute mode. CANONICAL_PLANS
 // (lib/plan-catalog.mjs) is the one hardcoded, data-independent source of
-// truth resolvePlanSlug() resolves against, so a slug it returns is
-// always seedable later -- a --plan run never needs planSlugToId (which
-// only exists post-seed, an --execute-only side effect) to know whether
-// a subscription's plan name and provider are valid.
+// truth resolvePlanSlug() resolves against, so a slug it returns always
+// names one of the plans Phase A requires to exist (requireCanonicalPlans())
+// -- this check needs no database to know whether a subscription's plan
+// name and provider are valid.
 export function validateSubscriptionPlan(sub) {
   if (!sub || !sub.plan) return { ok: true, skip: true };
   const slug = resolvePlanSlug(sub.plan);
@@ -1193,12 +1281,18 @@ export function computeInvalidDocIds(identityProblems) {
 // them over the WHOLE batch up front, before any write anywhere, instead
 // of discovering document N's bad role/plan only after documents 1..N-1
 // already wrote real accounts/subscriptions.
+function adminRoleProblemReason(role) {
+  return role === 'super-admin'
+    ? 'AdminUser role super-admin is never granted by this migration (ROLE_DECISION) -- the first Super Admin is created separately'
+    : `unmapped AdminUser role: ${role}`;
+}
+
 export function computeAdminRoleMappingProblems(admins) {
   const problems = [];
   admins.forEach((a, i) => {
     const id = String(a?._id ?? `admin#${i}`);
     if (!ADMIN_ROLE_MAP[a?.role]) {
-      problems.push({ id, email: a?.email ?? null, role: a?.role ?? null, reason: `unmapped AdminUser role: ${a?.role}` });
+      problems.push({ id, email: a?.email ?? null, role: a?.role ?? null, reason: adminRoleProblemReason(a?.role) });
     }
   });
   return problems;
@@ -1222,11 +1316,46 @@ export function computeSubscriptionProblems(users) {
 // Each problem/skip has a stable signature; a disposition matches by
 // signature only, so approving one specific known issue can never
 // accidentally blanket-approve a different, unreviewed one.
+// LOGGING_DECISION=REDACT: a signature carries the email's fingerprint
+// (lib/redact.mjs), never the address -- operators copy signatures from
+// the printed report, which never shows an address. Each problem/skip in
+// the report carries its own `signature`, computed here from the real
+// value, so a copied signature always matches.
 export function emailProblemSignature(p) {
-  return `email:${p.kind}:${p.reason}:${p.email ?? 'null'}:${p.id}`;
+  if (typeof p.signature === 'string') return p.signature;
+  return `email:${p.kind}:${p.reason}:${p.email ? fingerprint(p.email) : 'null'}:${p.id}`;
 }
 export function relationshipSkipSignature(s) {
-  return `relationship:${s.kind}:${s.studentEmail}:${s.targetMongoId}`;
+  if (typeof s.signature === 'string') return s.signature;
+  return `relationship:${s.kind}:${fingerprint(s.studentEmail)}:${s.targetMongoId}`;
+}
+
+/**
+ * The report as printed: every email field replaced by its fingerprint and
+ * each problem/skip given its signature. Internal matching never uses this
+ * copy, only the real values.
+ */
+export function reportForOutput(report) {
+  const fp = (value) => (value === null || value === undefined ? value : fingerprint(value));
+  const out = JSON.parse(JSON.stringify(report));
+  if (out.identity?.problems) {
+    out.identity.problems = report.identity.problems.map((p) => ({
+      ...p, email: fp(p.email), ...(p.rawEmail !== undefined ? { rawEmail: fp(p.rawEmail) } : {}),
+      signature: emailProblemSignature(p),
+    }));
+  }
+  if (out.relationships?.skipped) {
+    out.relationships.skipped = report.relationships.skipped.map((s) => ({
+      ...s, studentEmail: fp(s.studentEmail), signature: relationshipSkipSignature(s),
+    }));
+  }
+  if (out.relationships?.writeErrors) {
+    out.relationships.writeErrors = report.relationships.writeErrors.map((e) => ({ ...e, studentEmail: fp(e.studentEmail) }));
+  }
+  for (const list of [out.users?.errors, out.admins?.errors, out.subscriptions?.failed, out.invitePlan]) {
+    for (const item of list ?? []) if ('email' in item) item.email = fp(item.email);
+  }
+  return redactDeep(out);
 }
 
 export function partitionByDisposition(items, signatureFn, approvedSignatures) {
@@ -1347,10 +1476,10 @@ export async function migrateSubscription(pgClient, profileId, mongoUser, planSl
   const slug = validation.slug;
   if (!planSlugToId.has(slug)) {
     // Should be unreachable in practice (CANONICAL_PLANS is exactly what
-    // seedCanonicalPlans() seeds, and validateSubscriptionPlan() only
+    // requireCanonicalPlans() verifies, and validateSubscriptionPlan() only
     // ever resolves a slug FROM that same list) -- kept as a genuine
     // fail-closed guard rather than assumed, not a silent default.
-    return { status: 'FAIL', reason: `plan slug "${slug}" resolved but was not seeded -- not migrated, not defaulted` };
+    return { status: 'FAIL', reason: `plan slug "${slug}" resolved but has no active plan -- not migrated, not defaulted` };
   }
   const planId = planSlugToId.get(slug);
   const derived = deriveSubscriptionStatus(sub);
@@ -1617,6 +1746,9 @@ const CLI_SPEC = {
 };
 
 async function main() {
+  // LOGGING_DECISION=REDACT: the JSON report below is printed through this,
+  // so emails, hashes, tokens and connection strings never reach stdout.
+  installRedactingConsole();
   const args = parseStrictCliArgs(process.argv.slice(2), CLI_SPEC);
   const execute = !!args.execute;
   const withInvitePlan = !!args['with-invite-plan'];
@@ -1693,6 +1825,13 @@ async function main() {
     identity: null,
     relationships: null,
     subscriptions: { migrated: 0, skipped: 0, wouldMigrate: 0, failed: [] },
+    // PASSWORD_DECISION: how many accounts carry an importable bcrypt hash,
+    // and every one that does not (source id + reason, never the hash).
+    passwords: null,
+    // Email-confirmation contract (lib/auth-import.mjs), counted per basis.
+    emailConfirmation: {},
+    // lib/source-dates.mjs accounting for users/adminusers documents.
+    dates: { users: {}, admins: {}, problems: [] },
   };
 
   try {
@@ -1744,6 +1883,48 @@ async function main() {
     const adminRoleProblems = computeAdminRoleMappingProblems(admins);
     const subscriptionProblems = computeSubscriptionProblems(users);
 
+    // NO_MIGRATION_SERVICE_IDENTITY: the canonical plans are created
+    // beforehand through the admin flow; this tool never creates plans or
+    // the admin identity create_plan_version() would need. Required for
+    // every run, so a target without them stops here -- plan and execute
+    // alike -- before a single account exists. Read-only.
+    let planSlugToId = null;
+    try {
+      planSlugToId = await requireCanonicalPlans(pgClient);
+      report.planCatalog = { ok: true, missing: [] };
+    } catch (err) {
+      if (err.code !== PLAN_CATALOG_MISSING) throw err;
+      report.planCatalog = { ok: false, code: PLAN_CATALOG_MISSING, missing: err.missing, message: err.message };
+      console.error(err.message);
+    }
+
+    // PASSWORD_DECISION=IMPORT_BCRYPT_HASHES: every account must carry a
+    // hash GoTrue can import, checked here before any write. A document
+    // already excluded for an identity problem is not counted twice.
+    const passwordProblems = computePasswordHashProblems(users, admins)
+      .filter((p) => !invalidDocIds.has(`${p.kind}:${p.id}`));
+    report.passwords = {
+      importableHashes: [...users.map((u) => ['user', u]), ...admins.map((a) => ['admin', a])]
+        .filter(([kind, doc]) => !invalidDocIds.has(`${kind}:${String(doc._id)}`) && isBcryptHash(doc.password)).length,
+      problems: passwordProblems,
+    };
+
+    // Every top-level source date is mapped or declared unpreserved; an
+    // undeclared one stops the run here, before any write.
+    const sourceDateProblems = [];
+    const accountDates = (kind, docs, declaration, stats) => {
+      for (const doc of docs) {
+        try {
+          accountForSourceDates(doc, declaration, stats);
+        } catch (err) {
+          sourceDateProblems.push({ kind, id: String(doc._id), reason: err.message });
+        }
+      }
+    };
+    accountDates('user', users, USER_SOURCE_DATES, report.dates.users);
+    accountDates('admin', admins, ADMIN_SOURCE_DATES, report.dates.admins);
+    report.dates.problems = sourceDateProblems;
+
     // Review round 6, item 2: "reject ... unused/unknown signatures" --
     // an approved-dispositions entry that matched nothing real in this
     // run is a hard, fail-closed error in BOTH modes (a stale/typo'd
@@ -1765,13 +1946,16 @@ async function main() {
       identityDisposition.unapproved.length > 0 ||
       relationshipDisposition.unapproved.length > 0 ||
       adminRoleProblems.length > 0 ||
-      subscriptionProblems.length > 0;
+      subscriptionProblems.length > 0 ||
+      passwordProblems.length > 0 ||
+      sourceDateProblems.length > 0 ||
+      !report.planCatalog.ok;
 
     if (execute && hasUnapprovedValidationFailure) {
       // Zero-write-on-validation-failure: nothing below this block has
       // run yet -- no migrateOneUser()/migrateOneAdmin(),
-      // applyRelationships(), plan-catalog seeding, or migrateSubscription()
-      // call has ever been made. The report is still fully populated from
+      // applyRelationships() or migrateSubscription() call has ever been
+      // made. The report is still fully populated from
       // what Phase A already found, so a caller never loses visibility
       // into WHY the run refused to write.
       for (const p of adminRoleProblems) report.admins.errors.push({ email: p.email, message: p.reason });
@@ -1781,7 +1965,7 @@ async function main() {
         reason: 'zero-write-on-validation-failure: deterministic validation found an unapproved problem before any write was attempted',
         consistent: false,
       };
-      console.log(JSON.stringify(report, null, 2));
+      console.log(JSON.stringify(reportForOutput(report), null, 2));
       process.exitCode = 1;
       return;
     }
@@ -1791,10 +1975,14 @@ async function main() {
     // or when --execute AND Phase A found zero unapproved problems.
     // ===================================================================
 
+    // The local checkpoint is keyed by source id and keeps only status and
+    // target id -- never an email or the persona's personal fields.
+    const profileDates = {};
     for (const u of users) {
       if (invalidDocIds.has(`user:${String(u._id)}`)) continue; // recorded in report.identity above, never silently processed
-      const result = await migrateOneUser(supabaseAdmin, pgClient, u, { execute });
-      checkpoint[`user:${u.email}`] = { ...result, at: new Date().toISOString() };
+      const result = await migrateOneUser(supabaseAdmin, pgClient, u, { execute, dateStats: profileDates });
+      checkpoint[`user:${String(u._id)}`] = { status: result.status, id: result.id ?? null, at: new Date().toISOString() };
+      if (result.emailConfirmationBasis) bumpCount(report.emailConfirmation, result.emailConfirmationBasis);
       if (result.status === 'created') report.users.created++;
       else if (result.status === 'already_exists') report.users.alreadyExists++;
       else if (result.status === 'would_create') report.users.wouldCreate++;
@@ -1803,8 +1991,9 @@ async function main() {
 
     for (const a of admins) {
       if (invalidDocIds.has(`admin:${String(a._id)}`)) continue; // recorded in report.identity above, never silently processed
-      const result = await migrateOneAdmin(supabaseAdmin, pgClient, a, { execute });
-      checkpoint[`admin:${a.email}`] = { ...result, at: new Date().toISOString() };
+      const result = await migrateOneAdmin(supabaseAdmin, pgClient, a, { execute, dateStats: profileDates });
+      checkpoint[`admin:${String(a._id)}`] = { status: result.status, id: result.id ?? null, at: new Date().toISOString() };
+      if (result.emailConfirmationBasis) bumpCount(report.emailConfirmation, result.emailConfirmationBasis);
       if (result.status === 'created') report.admins.created++;
       else if (result.status === 'role_assigned_existing_account') report.admins.roleAssignedExisting = (report.admins.roleAssignedExisting ?? 0) + 1;
       else if (result.status?.startsWith('already_exists')) report.admins.alreadyExists++;
@@ -1833,8 +2022,6 @@ async function main() {
 
       const usersWithSubscription = users.filter((u) => u.subscription && u.subscription.plan);
       if (usersWithSubscription.length > 0) {
-        await ensureMigrationSeedAdmin(pgClient);
-        const planSlugToId = await seedCanonicalPlans(pgClient, { withImpersonatedAdmin });
         for (const u of usersWithSubscription) {
           const profileId = emailToProfileId.get(String(u.email).toLowerCase().trim());
           if (!profileId) continue;
@@ -1894,12 +2081,15 @@ async function main() {
     };
 
     if (execute && withInvitePlan) {
-      const created = users.filter((u) => checkpoint[`user:${u.email}`]?.status === 'created').map((u) => u.email);
+      const created = users.filter((u) => checkpoint[`user:${String(u._id)}`]?.status === 'created').map((u) => u.email);
       report.invitePlan = await generateInvitePlan(supabaseAdmin, created);
     }
+    // profiles.created_at/updated_at outcome (preserved / derived /
+    // generated), counted only for accounts actually written this run.
+    if (execute) report.dates.profiles = profileDates;
 
     saveCheckpoint(checkpoint);
-    console.log(JSON.stringify(report, null, 2));
+    console.log(JSON.stringify(reportForOutput(report), null, 2));
     // Review round 4 (extended round 5): document-level failures were
     // previously only ever logged inside `report` -- this process's own
     // exit code stayed 0 as long as nothing THREW, exactly the same class
@@ -1951,6 +2141,12 @@ export function computeExitFailure(report, execute) {
     // a plan-time skip -- execute-only, since writeErrors can only ever be
     // populated once Phase B has actually run.
     (report.relationships?.writeErrors?.length ?? 0) > 0 ||
+    // PASSWORD_DECISION / DATES_DECISION: a missing or unimportable hash,
+    // or an undeclared source date, fails the run in both modes.
+    (report.passwords?.problems?.length ?? 0) > 0 ||
+    (report.dates?.problems?.length ?? 0) > 0 ||
+    // NO_MIGRATION_SERVICE_IDENTITY: the canonical plans must already exist.
+    report.planCatalog?.ok === false ||
     (execute && report.reconciliation?.consistent !== true)
   );
 }

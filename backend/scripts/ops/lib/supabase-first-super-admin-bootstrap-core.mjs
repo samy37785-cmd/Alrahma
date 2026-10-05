@@ -212,10 +212,7 @@ export async function runBootstrap({ email, confirmPromoteExisting, inviteUser, 
 
       // Re-verify from scratch before this transaction is allowed to
       // commit — never assume the two statements above did what they
-      // claimed, the same discipline
-      // backend/scripts/migration/lib/admin-rpc.mjs's
-      // ensureMigrationSeedAdmin() already established for this exact
-      // kind of multi-table identity write.
+      // claimed (a multi-table identity write is checked as a whole).
       const profileCheck = await client.query('SELECT role FROM profiles WHERE id = $1', [userId]);
       const roleCheck     = await client.query('SELECT role FROM admin_role_assignments WHERE user_id = $1', [userId]);
       if (profileCheck.rows[0]?.role !== 'admin' || roleCheck.rows[0]?.role !== 'super-admin') {

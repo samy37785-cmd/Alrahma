@@ -98,7 +98,6 @@ import path from 'node:path';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import pg from 'pg';
-import { MIGRATION_SEED_ADMIN_ID, MIGRATION_SEED_ADMIN_EMAIL } from './lib/admin-rpc.mjs';
 import { parseApprovedDispositions } from './migrate-users-to-supabase-auth.mjs';
 import { parseStrictCliArgs } from './lib/cli-args.mjs';
 import { encodeCompositeTargetId } from './lib/composite-target-id.mjs';
@@ -111,6 +110,7 @@ import {
 import { loadAndVerifyProductionAuthorization } from './lib/production-authorization.mjs';
 import { assertLocalHostOrProductionAuthorized } from './lib/host-guard.mjs';
 import { buildPgPoolConfig } from '../../data/supabase/client.js';
+import { installRedactingConsole, redactDeep } from './lib/redact.mjs';
 
 // Production Enablement -- these four now live in lib/production-
 // approval.mjs (shared with the two worker scripts' own independent
@@ -332,8 +332,8 @@ async function countGhostLedgerComposite(pgClient, table, spec) {
 // does not depend on payments being named anywhere in this file at all.
 const DEFERRED_DOMAIN_REASONS = {
   payments:
-    'real records use gateway "paymob", not supported by mongo-to-supabase.mjs\'s ' +
-    'payments adapter (stripe/paypal only). Not migrated, not modified; original ' +
+    'historical "paymob" records (importable as-is since 0028 added the gateway value). ' +
+    'Deferred by the operator for this run: not migrated, not modified; original ' +
     'Mongo data untouched.',
 };
 
@@ -550,10 +550,8 @@ export async function verifySignupsOff(supabaseUrl, serviceRoleKey) {
  * SOURCE_DATABASE) with a real, non-null target_id. A row with no such
  * matching ledger entry means something wrote to this table outside this
  * tooling's own bookkeeping — refuse rather than risk silently
- * overwriting or double-counting it. `profiles` and `subscriptions` carry
- * one additional, narrow exemption for the migration-seed admin's own
- * identity (see below) — every other row in those two tables is checked
- * exactly like a domain table.
+ * overwriting or double-counting it. `profiles` and `subscriptions` are
+ * checked exactly like a domain table.
  *
  * Review round 5, item 3: the ledger-backed check used to match purely on
  * `target_table` + `target_id`, with no `source_system`/`source_database`
@@ -587,19 +585,12 @@ export async function verifySignupsOff(supabaseUrl, serviceRoleKey) {
  * transitive-trust hole: each subscription needs its OWN ledger entry,
  * not merely an attributable owner.
  *
- * The one narrow exception is the migration-seed admin's own profile
- * (MIGRATION_SEED_ADMIN_ID, lib/admin-rpc.mjs) — created directly by
- * ensureMigrationSeedAdmin(), never through migrateOneUser()/
- * migrateOneAdmin(), so it never gets a ledger row of its own; without an
- * exemption, that single row would block every later run the moment ANY
- * domain needing plan-catalog seeding runs. Round 5's version exempted it
- * by id alone; a reviewer correctly flagged that as accepting a UUID
- * collision/mismatch without verifying the rest of the identity. Fixed:
- * the exemption now requires the COMPLETE expected identity — this exact
- * id, AND its owning auth.users row has exactly MIGRATION_SEED_ADMIN_EMAIL,
- * AND profiles.role='admin', AND a matching admin_role_assignments row
- * with role='admin' — any single mismatch is NOT exempted and fails
- * closed like any other unrecorded row.
+ * There is no exception any more. The migration-seed admin identity this
+ * check used to exempt is gone (owner decision NO_MIGRATION_SERVICE_
+ * IDENTITY): the tools never create an account outside migrateOneUser()/
+ * migrateOneAdmin(), so a profile or auth.users row without a ledger
+ * entry is unrecorded data, whoever made it -- including a leftover
+ * identity from an older run, which therefore fails closed here.
  *
  * This reduces to exactly strict-pristine behavior on a genuinely fresh
  * target (zero rows is vacuously "every row is attributable"); permits
@@ -622,45 +613,11 @@ const LEDGER_AND_PROVENANCE_SPECS = { ...LEDGER_BACKED_TARGET_SPECS, profiles: {
 export async function verifyNoUnrecordedData(pgClient) {
   const problems = [];
 
-  // The seed identity is optional on a pristine target. Once either its
-  // reserved UUID or reserved email exists, however, the whole identity
-  // must match exactly; a partial/colliding row is not a seed exemption.
-  const { rows: seedRows } = await pgClient.query(
-    `select u.id, u.email, p.id as profile_id, p.email as profile_email,
-            p.role as profile_role, a.role as admin_role
-       from auth.users u
-       left join public.profiles p on p.id = u.id
-       left join public.admin_role_assignments a on a.user_id = u.id
-      where u.id = $1 or u.email = $2`,
-    [MIGRATION_SEED_ADMIN_ID, MIGRATION_SEED_ADMIN_EMAIL]
-  );
-  if (seedRows.length > 0) {
-    const exact = seedRows.length === 1 &&
-      String(seedRows[0].id) === MIGRATION_SEED_ADMIN_ID &&
-      seedRows[0].email === MIGRATION_SEED_ADMIN_EMAIL &&
-      String(seedRows[0].profile_id) === MIGRATION_SEED_ADMIN_ID &&
-      seedRows[0].profile_email === MIGRATION_SEED_ADMIN_EMAIL &&
-      seedRows[0].profile_role === 'admin' &&
-      seedRows[0].admin_role === 'admin';
-    if (!exact) problems.push('migration seed-admin identity collides with or differs from the complete expected auth/profile/admin-role identity');
-  }
-
   for (const [table, spec] of Object.entries(LEDGER_AND_PROVENANCE_SPECS)) {
     let unrecordedCount;
     if (spec.composite) {
-      // profiles/subscriptions are never composite, so the seed-admin
-      // exemption below never applies to a composite table -- no branch
-      // needed for it here.
       unrecordedCount = await countUnrecordedComposite(pgClient, table, spec);
     } else {
-      const isSeedAdminExempt = table === 'profiles'
-        ? `and not (
-             t.id = $3
-             and t.role = 'admin'
-             and exists (select 1 from auth.users su where su.id = t.id and su.email = $4)
-             and exists (select 1 from admin_role_assignments sr where sr.user_id = t.id and sr.role = 'admin')
-           )`
-        : '';
       const { rows } = await pgClient.query(`
         select count(*)::int as n from public.${table} t
         where not exists (
@@ -674,18 +631,14 @@ export async function verifyNoUnrecordedData(pgClient) {
             and l.status in ('created', 'reconciled', 'failed')
             and l.target_id is not null
             and l.target_id = ${targetIdentityExpr(spec)}
-        )
-        ${isSeedAdminExempt};
-      `, table === 'profiles'
-        ? [table, SOURCE_DATABASE, MIGRATION_SEED_ADMIN_ID, MIGRATION_SEED_ADMIN_EMAIL]
-        : [table, SOURCE_DATABASE]);
+        );
+      `, [table, SOURCE_DATABASE]);
       unrecordedCount = rows[0].n;
     }
     if (unrecordedCount > 0) {
       problems.push(
         table === 'profiles' || table === 'subscriptions'
-          ? `${table}: ${unrecordedCount} row(s) not attributable to this migration (no matching migration_source_ledger entry` +
-            (table === 'profiles' ? ', and not a fully-verified migration-seed admin identity)' : ')')
+          ? `${table}: ${unrecordedCount} row(s) not attributable to this migration (no matching migration_source_ledger entry)`
           : `${table}: ${unrecordedCount} row(s) with no matching migration_source_ledger entry`
       );
     }
@@ -706,19 +659,17 @@ export async function verifyNoUnrecordedData(pgClient) {
   // not ledger-attributed -- redundant with the profiles-table check
   // above by construction, kept anyway as a genuinely independent,
   // defense-in-depth verification of the same fact from the other side of
-  // the relationship) -- excluding only the fully-verified migration
-  // seed-admin identity, same exemption as the profiles check above.
+  // the relationship). No exemption: see this function's header.
   const { rows: authOrphanRows } = await pgClient.query(
     `select count(*)::int as n
        from auth.users u
-      where not (u.id = $1 and u.email = $2)
-        and (
+      where (
           not exists (select 1 from public.profiles p where p.id = u.id)
           or not exists (
             select 1 from public.migration_source_ledger l
             where l.target_table = 'profiles'
               and l.source_system = 'mongodb'
-              and l.source_database = $3
+              and l.source_database = $1
               and btrim(l.source_collection) <> ''
               and btrim(l.source_document_id) <> ''
               and l.source_content_hash ~ '^[0-9a-f]{64}$'
@@ -727,10 +678,10 @@ export async function verifyNoUnrecordedData(pgClient) {
               and l.target_id = u.id::text
           )
         )`,
-    [MIGRATION_SEED_ADMIN_ID, MIGRATION_SEED_ADMIN_EMAIL, SOURCE_DATABASE]
+    [SOURCE_DATABASE]
   );
   if (authOrphanRows[0].n > 0) {
-    problems.push(`auth.users: ${authOrphanRows[0].n} row(s) orphaned (no profiles row) or not attributable to this migration, and not the migration-seed admin identity`);
+    problems.push(`auth.users: ${authOrphanRows[0].n} row(s) orphaned (no profiles row) or not attributable to this migration`);
   }
 
   if (problems.length > 0) {
@@ -1018,7 +969,9 @@ function newSagaLog(runId) {
   const state = { runId, startedAt: new Date().toISOString(), steps: [] };
   const save = () => {
     fs.mkdirSync(OUT_DIR, { recursive: true });
-    fs.writeFileSync(filePath, JSON.stringify(state, null, 2));
+    // Steps can carry a worker's stderr; the file on disk is redacted
+    // like everything else this tool emits (LOGGING_DECISION=REDACT).
+    fs.writeFileSync(filePath, JSON.stringify(redactDeep(state), null, 2));
   };
   return {
     filePath,
@@ -1255,6 +1208,9 @@ export function parseCliArgs(argv) {
 }
 
 async function main() {
+  // The final JSON result embeds each worker's stdout/stderr; printing it
+  // through the redacting console keeps those redacted here as well.
+  installRedactingConsole();
   const args = parseCliArgs(process.argv.slice(2));
   const execute = !!args.execute;
   const compensateMode = !!args.compensate;

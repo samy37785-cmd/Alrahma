@@ -47,13 +47,6 @@ export const FAULT_STAGES = Object.freeze([
   // and markCreated() are now one real transaction per relationship link,
   // mirroring the same pattern.
   'after_relationship_write_before_marked_created',
-  // Round 7, item 7 -- ensureMigrationSeedAdmin() now writes auth.users +
-  // profiles + admin_role_assignments inside ONE transaction; one stage
-  // per statement so a test can prove a crash after ANY of the three
-  // leaves the whole identity rolled back, never a partial seed admin.
-  'after_seed_admin_auth_user_insert',
-  'after_seed_admin_profile_insert',
-  'after_seed_admin_role_assignment_insert',
 ]);
 
 export function throwIfFaultStage(stage) {

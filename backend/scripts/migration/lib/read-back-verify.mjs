@@ -74,6 +74,20 @@
 // Missing/null/wrong at that exact path is still a hard failure, same as
 // any other mismatch.
 import { decodeCompositeTargetId } from './composite-target-id.mjs';
+import { fingerprint } from './redact.mjs';
+
+// A mismatch message is printed, and stored in migration_source_ledger.
+// error_reason, so it never carries the compared values themselves (an
+// email, a name, an amount): only their kind and a fingerprint, enough to
+// tell "different" from "absent" and to match the same value across lines.
+// Timestamps are not personal data and are kept readable, since they are
+// exactly what a date-parity failure needs to show.
+function describeValue(value) {
+  if (value === null || value === undefined) return 'null';
+  if (value instanceof Date) return Number.isNaN(value.getTime()) ? 'invalid-date' : value.toISOString();
+  if (typeof value === 'boolean') return String(value);
+  return `${Array.isArray(value) ? 'array' : typeof value} ${fingerprint(normalizeForCompare(value))}`;
+}
 
 function toEpochMillis(value) {
   if (value instanceof Date) {
@@ -243,14 +257,14 @@ export async function verifyReadBack(pgClient, spec, targetId, expectedFields, {
       const actualAtPath = getAtPath(dbRow[key], expectedValue.path);
       if (!fieldsMatch(expectedValue.value, actualAtPath)) {
         mismatches.push(
-          `${key}.${expectedValue.path.join('.')} (expected ${JSON.stringify(expectedValue.value)}, found ${JSON.stringify(actualAtPath)} ` +
+          `${key}.${expectedValue.path.join('.')} (expected ${describeValue(expectedValue.value)}, found ${describeValue(actualAtPath)} ` +
           `within ${key} -- only this exact path is required to match; other keys in ${key} are allowed to differ)`
         );
       }
       continue;
     }
     if (!fieldsMatch(expectedValue, dbRow[key])) {
-      mismatches.push(`${key} (expected ${JSON.stringify(expectedValue)}, found ${JSON.stringify(dbRow[key])})`);
+      mismatches.push(`${key} (expected ${describeValue(expectedValue)}, found ${describeValue(dbRow[key])})`);
     }
   }
   if (mismatches.length > 0) {

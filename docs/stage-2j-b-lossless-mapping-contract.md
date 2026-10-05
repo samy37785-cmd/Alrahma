@@ -109,11 +109,15 @@ zero MFA factors exist post-migration by design).
 | `cancelAtPeriodEnd` | PRESERVED_EXACTLY | → `subscriptions.cancel_at_period_end` |
 | `renewalReminderSentFor` | PRESERVED_EXACTLY | → `subscriptions.renewal_reminder_sent_for` (added by 0020, backfilled into the `.ts` source this stage) |
 
-`plans` themselves are seeded once, deterministically and idempotently,
-via `create_plan_version()` (the schema's own sanctioned RPC — raw
-INSERT into `plans` is not possible, RLS forbids it) from a fixed,
-version-controlled list derived from the live site's real pricing, never
-invented at migration time.
+`plans` themselves are **not** created by the migration (owner decision
+NO_MIGRATION_SERVICE_IDENTITY). The three active plans (Starter,
+Standard, Premium — the fixed, version-controlled list in
+`backend/scripts/migration/lib/plan-catalog.mjs`) must already exist,
+created by a real admin through the normal admin flow. The migration only
+reads them; if any is missing, both plan and execute stop before any
+write with `PLAN_CATALOG_MISSING`, naming only the plan slugs. The
+migration never creates an auth identity, admin or otherwise, to create
+plans with.
 
 ## 9. `payments` (15) → `payments` (+ `payment_source_snapshots`)
 

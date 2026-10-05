@@ -23,27 +23,33 @@ export function resolvePlanSlug(mongoPlanName) {
   return PLAN_NAME_TO_SLUG.get(key) ?? null;
 }
 
+export const PLAN_CATALOG_MISSING = 'PLAN_CATALOG_MISSING';
+
 /**
- * Seeds the canonical plan catalog via the real create_plan_version() RPC
- * (the only INSERT path plans.ts's RLS allows) — deterministic and
- * idempotent: a plan whose slug already has an active row is left alone.
+ * Owner decision NO_MIGRATION_SERVICE_IDENTITY: the migration never
+ * creates plans. create_plan_version() is is_admin_aal2()-gated, and the
+ * only way the tool could call it was an automatic admin identity in
+ * auth.users -- which is not allowed. The three canonical plans are
+ * created beforehand through the normal admin flow; this only reads them.
+ *
+ * Returns slug -> id for every canonical plan with an active row. If any is
+ * missing it throws an error whose `code` is PLAN_CATALOG_MISSING and
+ * whose message names the required slugs only. Read-only: one SELECT.
  */
-export async function seedCanonicalPlans(pgClient, { withImpersonatedAdmin }) {
-  const slugToId = new Map();
-  for (const plan of CANONICAL_PLANS) {
-    const existing = await pgClient.query('SELECT id FROM plans WHERE slug = $1 AND active = true', [plan.slug]);
-    if (existing.rows[0]) {
-      slugToId.set(plan.slug, existing.rows[0].id);
-      continue;
-    }
-    const id = await withImpersonatedAdmin(pgClient, async (client) => {
-      const r = await client.query(
-        `SELECT create_plan_version($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) AS id`,
-        [null, plan.slug, plan.name, plan.amountMinor, plan.currency, plan.billingInterval, null, null, null, null, null, 0]
-      );
-      return r.rows[0].id;
-    });
-    slugToId.set(plan.slug, id);
+export async function requireCanonicalPlans(pgClient) {
+  const slugs = CANONICAL_PLANS.map((p) => p.slug);
+  const { rows } = await pgClient.query('SELECT slug, id FROM plans WHERE active = true AND slug = ANY($1::text[])', [slugs]);
+  const slugToId = new Map(rows.map((r) => [r.slug, r.id]));
+  const missing = slugs.filter((s) => !slugToId.has(s));
+  if (missing.length > 0) {
+    const err = new Error(
+      `${PLAN_CATALOG_MISSING}: the migration needs these active plans to exist first: ${slugs.join(', ')} ` +
+      `(missing: ${missing.join(', ')}). Create them through the admin flow; the migration never creates plans ` +
+      'or an admin identity. Nothing was written.'
+    );
+    err.code = PLAN_CATALOG_MISSING;
+    err.missing = missing;
+    throw err;
   }
   return slugToId;
 }

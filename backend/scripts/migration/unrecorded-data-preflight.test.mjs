@@ -27,8 +27,9 @@
 //
 // Review round 5 additions:
 //   item 1 -- profiles/subscriptions moved from "must be completely
-//     empty" to provenance-aware (migration-seed admin identity, or an
-//     auth.users migrated_from tag). Tests below prove an attributable
+//     empty" to provenance-aware (an auth.users migrated_from tag; the
+//     old migration-seed admin exemption is gone with
+//     NO_MIGRATION_SERVICE_IDENTITY). Tests below prove an attributable
 //     row is never flagged and a genuinely unrelated/untagged row still
 //     fails closed.
 //   item 3 -- the ledger-backed check now also requires
@@ -45,7 +46,6 @@ import { fileURLToPath } from 'node:url';
 import pg from 'pg';
 import { runCommand } from '../../../lib/db/test/orchestrator-lib.mjs';
 import { verifyNoUnrecordedData, verifyLedgerPointsToRealTargets, verifyTeacherLinkProvenance, verifyLedgerRowIntegrity, verifyMigrationJournal } from './production-import-orchestrator.mjs';
-import { MIGRATION_SEED_ADMIN_ID, MIGRATION_SEED_ADMIN_EMAIL, ensureMigrationSeedAdmin } from './lib/admin-rpc.mjs';
 import { encodeCompositeTargetId } from './lib/composite-target-id.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -297,13 +297,10 @@ async function main() {
   // -----------------------------------------------------------------
   // Review round 5, item 1: profiles/subscriptions used to require the
   // table be completely empty -- this broke every resume, broke
-  // --compensate, and could be tripped by nothing more than
-  // ensureMigrationSeedAdmin()'s own seed-admin profile row. Fixed:
-  // provenance-aware -- a profiles row is allowed iff it IS the
-  // migration-seed admin identity OR its owning auth.users row carries a
-  // migrated_from tag; a subscriptions row is allowed iff its owning
-  // profile satisfies the same test. Genuinely unattributed rows must
-  // still fail closed.
+  // --compensate. Fixed: provenance-aware -- a profiles or subscriptions
+  // row is allowed iff it has its own source-scoped ledger entry (round 6).
+  // There is no identity exemption any more (NO_MIGRATION_SERVICE_IDENTITY).
+  // Genuinely unattributed rows must still fail closed.
   // -----------------------------------------------------------------
 
   async function insertAuthUser(id, email, rawUserMetaData) {
@@ -364,91 +361,26 @@ async function main() {
     }
   });
 
-  await test('round 6: only the complete exact migration-seed admin identity is exempt; UUID/email collision fails closed', async () => {
+  // Owner decision NO_MIGRATION_SERVICE_IDENTITY: the migration no longer
+  // creates (or exempts) an automatic admin identity. One left behind by an
+  // older run of the tools -- the reserved id/email they used to write,
+  // complete with an admin role -- is now ordinary unrecorded data.
+  await test('NO_MIGRATION_SERVICE_IDENTITY: a leftover migration-tool admin identity is unrecorded data and fails closed', async () => {
+    const LEGACY_ID = '00000000-0000-4000-8000-000000000099';
+    const LEGACY_EMAIL = 'stage2jb-migration-tool@rehearsal.local';
     const client = await pgPool.connect();
     try {
-      // PR #70 review round 7, item 7: ensureMigrationSeedAdmin() now
-      // opens its own real transaction (BEGIN/COMMIT/ROLLBACK) -- it MUST
-      // be called with a single checked-out client, never a bare Pool
-      // (Pool.query() acquires/releases a connection per call, so BEGIN
-      // and the writes that follow it could silently land on DIFFERENT
-      // connections, breaking the very atomicity this function exists to
-      // guarantee).
-      await ensureMigrationSeedAdmin(client);
-      assert.equal(await verifyNoUnrecordedData(client), true);
-      await deleteAuthUser(MIGRATION_SEED_ADMIN_ID);
-      await insertAuthUser(MIGRATION_SEED_ADMIN_ID, 'collision@example.invalid', {});
-      await assert.rejects(() => verifyNoUnrecordedData(client), /seed-admin identity collides/);
+      await insertAuthUser(LEGACY_ID, LEGACY_EMAIL, {});
+      await pgPool.query(`UPDATE profiles SET role = 'admin' WHERE id = $1`, [LEGACY_ID]);
+      await pgPool.query(`INSERT INTO admin_role_assignments (user_id, role) VALUES ($1, 'admin')`, [LEGACY_ID]);
+      await assert.rejects(() => verifyNoUnrecordedData(client), (err) => {
+        assert.match(err.message, /profiles: 1 row\(s\) not attributable/);
+        assert.match(err.message, /auth\.users: 1 row\(s\) orphaned \(no profiles row\) or not attributable/);
+        return true;
+      });
     } finally {
-      await deleteAuthUser(MIGRATION_SEED_ADMIN_ID);
-      await pgPool.query('DELETE FROM auth.users WHERE email = $1', [MIGRATION_SEED_ADMIN_EMAIL]);
+      await deleteAuthUser(LEGACY_ID);
       client.release();
-    }
-  });
-
-  // Round 6 (PR #70 blockers, item 3): "الهوية الصحيحة والاصطدامات الجزئية
-  // والكاملة" -- the ONE collision variant above (reserved UUID, wrong
-  // email) is not the only way an incomplete/mismatched identity can occur.
-  // Each case below plants a DIFFERENT kind of partial match and proves
-  // verifyNoUnrecordedData() (and, separately, ensureMigrationSeedAdmin()
-  // itself) still fails closed rather than treating "close enough" as the
-  // exempted seed identity.
-  await test('round 6: the reserved seed-admin EMAIL under a DIFFERENT uuid is a collision too, not just the reverse', async () => {
-    const client = await pgPool.connect();
-    const otherId = crypto.randomUUID();
-    try {
-      await insertAuthUser(otherId, MIGRATION_SEED_ADMIN_EMAIL, {});
-      await assert.rejects(() => verifyNoUnrecordedData(client), /seed-admin identity collides/);
-      await assert.rejects(() => ensureMigrationSeedAdmin(client), /collides with an incomplete or mismatched/);
-    } finally {
-      await deleteAuthUser(otherId);
-      client.release();
-    }
-  });
-
-  await test('round 6: exact id+email but profiles.role has been changed away from admin is a partial collision', async () => {
-    const client = await pgPool.connect();
-    try {
-      await ensureMigrationSeedAdmin(client);
-      assert.equal(await verifyNoUnrecordedData(client), true, 'setup: the real seed-admin identity is exempt before tampering');
-      await pgPool.query(`UPDATE profiles SET role = 'user' WHERE id = $1`, [MIGRATION_SEED_ADMIN_ID]);
-      await assert.rejects(() => verifyNoUnrecordedData(client), /seed-admin identity collides/);
-      await assert.rejects(() => ensureMigrationSeedAdmin(client), /collides with an incomplete or mismatched/);
-    } finally {
-      await deleteAuthUser(MIGRATION_SEED_ADMIN_ID);
-      client.release();
-    }
-  });
-
-  await test('round 6: exact id+email+profiles.role=admin but no matching admin_role_assignments row is a partial collision', async () => {
-    const client = await pgPool.connect();
-    try {
-      await ensureMigrationSeedAdmin(client);
-      assert.equal(await verifyNoUnrecordedData(client), true, 'setup: the real seed-admin identity is exempt before tampering');
-      await pgPool.query(`DELETE FROM admin_role_assignments WHERE user_id = $1`, [MIGRATION_SEED_ADMIN_ID]);
-      await assert.rejects(() => verifyNoUnrecordedData(client), /seed-admin identity collides/);
-      await assert.rejects(() => ensureMigrationSeedAdmin(client), /collides with an incomplete or mismatched/);
-    } finally {
-      await deleteAuthUser(MIGRATION_SEED_ADMIN_ID);
-      client.release();
-    }
-  });
-
-  await test('round 6: ensureMigrationSeedAdmin never uses ON CONFLICT to convert a conflicting identity into the seed admin', async () => {
-    // A row that already holds the reserved UUID with a foreign email must
-    // stay exactly as it was -- ensureMigrationSeedAdmin() must throw
-    // BEFORE its own INSERT .. ON CONFLICT DO NOTHING is ever reached, not
-    // silently leave the foreign row in place while reporting success, and
-    // never overwrite it into the seed identity either.
-    await insertAuthUser(MIGRATION_SEED_ADMIN_ID, 'foreign-identity@example.invalid', {});
-    const client = await pgPool.connect();
-    try {
-      await assert.rejects(() => ensureMigrationSeedAdmin(client), /collides with an incomplete or mismatched/);
-      const row = await pgPool.query('SELECT email FROM auth.users WHERE id = $1', [MIGRATION_SEED_ADMIN_ID]);
-      assert.equal(row.rows[0].email, 'foreign-identity@example.invalid', 'the foreign row must be untouched -- never overwritten into the seed identity');
-    } finally {
-      client.release();
-      await deleteAuthUser(MIGRATION_SEED_ADMIN_ID);
     }
   });
 
@@ -456,7 +388,7 @@ async function main() {
     const client = await pgPool.connect();
     const id = crypto.randomUUID();
     try {
-      // No migrated_from tag, not the seed-admin identity -- this is
+      // No migrated_from tag -- this is
       // exactly the "unknown pre-existing row" case that must remain
       // rejected no matter which mode (fresh/resume/compensate) is about
       // to run.
@@ -464,7 +396,7 @@ async function main() {
       await assert.rejects(
         () => verifyNoUnrecordedData(client),
         /profiles: 1 row\(s\) not attributable to this migration/,
-        'an untagged, non-seed-admin profiles row must still fail closed'
+        'an untagged profiles row must still fail closed'
       );
     } finally {
       await deleteAuthUser(id);
@@ -526,7 +458,7 @@ async function main() {
       await assert.rejects(
         () => verifyNoUnrecordedData(client),
         /profiles: 1 row\(s\) not attributable to this migration/,
-        'a subscription owned by an untagged, non-seed-admin profile must fail closed'
+        'a subscription owned by an untagged profile must fail closed'
       );
     } finally {
       await deleteAuthUser(taggedId);

@@ -11,10 +11,14 @@ import { pgEnum } from "drizzle-orm/pg-core";
  * (see profiles.ts's trigger comment) — never via signup or client RPC. */
 export const accountRoleEnum = pgEnum("account_role", ["user", "admin"]);
 
+/** `paymob` is historical and import-only (0028_payment_gateway_paymob.sql):
+ * it exists so migrated Mongo payments keep their real gateway. No live
+ * code path writes it. */
 export const paymentGatewayEnum = pgEnum("payment_gateway", [
   "stripe",
   "paypal",
   "manual",
+  "paymob",
 ]);
 
 /** A `payments` row is either the charge itself or a refund of one —

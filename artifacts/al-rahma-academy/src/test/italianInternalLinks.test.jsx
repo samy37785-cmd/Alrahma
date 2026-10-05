@@ -84,9 +84,45 @@ describe('Italian pages: Tajweed Checker is reachable, unpublished routes are no
     expect(hasHref('/it/resources/faq')).toBe(true);
   });
 
-  it('the header login stays usable for Italian visitors (a button that navigates, not a crawlable link)', async () => {
+  // /it/login is not a published page (it serves the SPA shell), so the Italian UI offers no login control at all:
+  // no link, no button that navigates, no window.location.
+  it.each([
+    ['/it/tools', ToolsHub],
+    ['/it/tools/prayer', IslamicTools],
+    ['/it/resources', ResourcesHub],
+  ])('%s: no Italian login control in the header or the mobile drawer', async (url, Page) => {
+    await mountFullPage(url, Page);
+    expect(hasHref('/it/login')).toBe(false);
+    expect(document.querySelector('.nav__mobile-login-link')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Accedi' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Accedi' })).toBeNull();
+    expect(document.querySelector('header')?.textContent).not.toMatch(/Accedi/);
+    expect(document.querySelector('.header__right')).not.toBeNull();
+  });
+
+  it('the Header source has no navigate-to-login fallback and no window.location', () => {
+    const src = fs.readFileSync(path.resolve(__dirname, '../components/layout/Header.jsx'), 'utf8');
+    expect(src).not.toMatch(/window\.location/);
+    expect(src).not.toMatch(/navigate\(\s*localizedTo\(\s*["']\/login/);
+  });
+
+  it('the Italian tools card only describes published tools', async () => {
     await mountFullPage('/it/tools', ToolsHub);
-    expect(screen.getAllByRole('button', { name: 'Accedi' }).length).toBeGreaterThan(0);
+    const card = document.querySelector('a.hub-card[href="/it/tools/prayer"]');
+    expect(card.querySelector('.hub-card__title').textContent).toBe('Preghiera & Strumenti Islamici');
+    const desc = card.querySelector('.hub-card__desc').textContent;
+    expect(desc).toMatch(/Orari di preghiera/);
+    expect(desc).toMatch(/Versetto del Giorno/);
+    expect(desc).not.toMatch(/qibla|bussola|calendario|quattro/i);
+    expect([...desc].length).toBeGreaterThanOrEqual(125);
+    expect([...desc].length).toBeLessThanOrEqual(155);
+  });
+
+  it('/it/tools/prayer (which reuses that card text) shows it without Qibla or calendar claims', async () => {
+    await mountFullPage('/it/tools/prayer', IslamicTools);
+    const hero = document.querySelector('.it__hero-sub').textContent;
+    expect(hero).not.toMatch(/qibla|bussola|calendario|quattro/i);
+    expect(document.querySelector('meta[name="description"]').getAttribute('content')).toBe(hero);
   });
 
   it('/it/resources keeps FAQ, About and Teachers but not the Blog card', async () => {
@@ -215,6 +251,30 @@ describe.skipIf(!distExists)('Italian internal link crawl (dist/public)', () => 
     const from = inbound.get('/it/tools/tajweed-checker') || new Set();
     expect(from.has('/it/tools')).toBe(true);
     expect(from.has('/it/tools/verse-of-the-day')).toBe(true);
+  });
+
+  it('no Italian page carries a login control; EN/AR/FR still do', () => {
+    const withLogin = [];
+    for (const e of itPages) {
+      const html = fs.readFileSync(fileFor(e), 'utf8');
+      const body = html.slice(html.indexOf('<body'));
+      if (/href="[^"]*\/login"|nav__mobile-login-link|>Accedi</.test(body)) withLogin.push(e.route);
+    }
+    expect(withLogin).toEqual([]);
+    for (const [p, href] of [['', '/login'], ['/ar', '/ar/login'], ['/fr', '/fr/login']]) {
+      const html = fs.readFileSync(path.join(DIST, p, 'index.html'), 'utf8');
+      expect(html, p || 'en').toContain(`href="${href}"`);
+    }
+  });
+
+  it('no Italian page claims the unpublished Qibla compass or Islamic calendar tools', () => {
+    const claims = [];
+    for (const e of itPages) {
+      const body = fs.readFileSync(fileFor(e), 'utf8');
+      const m = body.match(/[^<>]*(bussola Qibla|calendario islamico)[^<>]*/i);
+      if (m) claims.push(`${e.route}: ${m[0].slice(0, 80)}`);
+    }
+    expect(claims).toEqual([]);
   });
 
   it('the FAQ stays linked from header, footer and the resources hub', () => {

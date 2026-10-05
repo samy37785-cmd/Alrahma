@@ -220,8 +220,9 @@ await test('every domain declares its source dates, and every Date it maps is co
   assert.deepEqual(DOMAINS.quran_memorization_stats.sourceDates.unpreserved, ['createdAt', 'updatedAt']);
 });
 
-await test('invoices transform: source dates it cannot preserve fail the document instead of becoming the migration time', async () => {
-  await assert.rejects(DOMAINS.invoices.transform({ payment: 'p1', createdAt: CREATED }, planCtx()), /cannot preserve/);
+await test('invoices transform: every invoice fails by name (no admin identity to issue it; its dates could not be kept either)', async () => {
+  await assert.rejects(DOMAINS.invoices.transform({ payment: 'p1', createdAt: CREATED }, planCtx()), /invoices cannot be imported: .*NO_MIGRATION_SERVICE_IDENTITY/);
+  await assert.rejects(DOMAINS.invoices.transform({ payment: 'p1' }, planCtx()), /invoices cannot be imported/);
 });
 
 await test('plannedId: deterministic, UUID-shaped, distinct per kind and per source id', () => {

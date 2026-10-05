@@ -138,8 +138,7 @@ import { fileURLToPath } from 'node:url';
 import { findLedgerEntry, markPlanned, markCreated, markFailed, contentHashOf } from './lib/source-ledger.mjs';
 import { stableContentHash } from './lib/canonical-hash.mjs';
 import { verifyThenReconcile } from './lib/reconcile.mjs';
-import { resolvePlanSlug, seedCanonicalPlans, readCanonicalPlanIds } from './lib/plan-catalog.mjs';
-import { withImpersonatedAdmin, withImpersonatedAdminContext, ensureMigrationSeedAdmin } from './lib/admin-rpc.mjs';
+import { resolvePlanSlug, requireCanonicalPlans } from './lib/plan-catalog.mjs';
 import { installRedactingConsole, redactDeep } from './lib/redact.mjs';
 import { plannedId } from './lib/planned-ids.mjs';
 import {
@@ -1617,57 +1616,24 @@ export const DOMAINS = {
     async export() {
       return mongoose.connection.collection('invoices').find({}).toArray();
     },
-    async transform(doc, ctx) {
-      // DATES_DECISION=PRESERVE_EXACTLY: issue_invoice_from_payment()
-      // stamps its own created_at/updated_at and forbid_invoice_mutation()
-      // blocks every later UPDATE, so a source invoice's own dates cannot
-      // be carried over. Such a document fails here instead of silently
-      // getting the migration time (the real source has 0 invoices).
-      if (doc.createdAt != null || doc.updatedAt != null) {
-        throw new Error(
-          'invoices row carries source createdAt/updatedAt, which issue_invoice_from_payment() cannot preserve ' +
-          '(it stamps its own time and invoices are immutable afterwards) -- refusing to replace them with the migration time'
-        );
-      }
-      if (!doc.payment) throw new Error('invoices row has no linked payment — issue_invoice_from_payment() requires one');
-      return { payment_id: await resolveMigratedReference(ctx, 'payments', doc.payment) };
+    // Owner decision NO_MIGRATION_SERVICE_IDENTITY: an invoice can only be
+    // issued through issue_invoice_from_payment(), which is
+    // is_admin_aal2()-gated -- the tool used to impersonate an automatic
+    // admin identity for it, and that identity is no longer allowed. It
+    // also stamps its own created_at and invoices are immutable, so a
+    // source invoice's dates could not be preserved either
+    // (DATES_DECISION). Every invoice document therefore fails here, by
+    // name, before anything is written. The source has 0 invoices today; a
+    // fresh backup that has some stops the run until this is decided.
+    async transform() {
+      throw new Error(
+        'invoices cannot be imported: issue_invoice_from_payment() needs an admin identity the migration may not create ' +
+        '(NO_MIGRATION_SERVICE_IDENTITY), and it cannot keep the source dates -- refusing'
+      );
     },
-    validate(row) {
-      if (!row.payment_id) throw new Error('invoices row could not resolve payment_id');
-    },
-    // Review round 4: MUST use the context-only helper, never the
-    // transaction-OWNING withImpersonatedAdmin() -- this upsert() is
-    // called from INSIDE migrateDomain()'s own already-open BEGIN
-    // (together with markCreated(), as one atomic unit — see that
-    // function's own comment). withImpersonatedAdmin() would issue its
-    // own nested BEGIN/COMMIT, and Postgres does not support real nested
-    // transactions: its COMMIT would silently commit the OUTER
-    // transaction too, immediately after the invoice write and BEFORE
-    // markCreated() ever runs — a real, previously-shipped bug (see
-    // lib/admin-rpc.mjs's own comment on withImpersonatedAdminContext()
-    // for the full story). withImpersonatedAdminContext() sets up/tears
-    // down the impersonation only, leaving BEGIN/COMMIT/ROLLBACK entirely
-    // to the caller, exactly as this call site now needs.
-    // Review round 4: also fixes a real, previously-undetected bug found
-    // WHILE proving the transaction fix above with a live invoice (this
-    // domain has 0 real documents in the actual dump, so this exact code
-    // path had never been exercised end-to-end before). `issue_invoice_
-    // from_payment` returns a composite `public.invoices` row; `pg` does
-    // NOT auto-parse an arbitrary composite type into a JS object (no
-    // type parser is registered for it), so `SELECT f($1) AS invoice`
-    // came back as an opaque string and `r.rows[0].invoice.id` was
-    // silently `undefined` -- markCreated() then received `undefined`
-    // and stored target_id as NULL (its own documented behavior for a
-    // missing id), yet the process still reported success and the ledger
-    // row still reached 'reconciled'. Fixed by extracting the one field
-    // actually needed directly in SQL via Postgres's composite field-
-    // access syntax `(f($1)).id`, which `pg` parses as a plain scalar
-    // column like any other.
-    async upsert(client, sourceId, row) {
-      return withImpersonatedAdminContext(client, async (c) => {
-        const r = await c.query(`SELECT (issue_invoice_from_payment($1)).id AS id`, [row.payment_id]);
-        return r.rows[0].id;
-      });
+    validate() {},
+    async upsert() {
+      throw new Error('invoices are never written by this tool (see transform())');
     },
     async countPg(client) {
       return Number((await client.query('SELECT count(*) FROM invoices')).rows[0].count);
@@ -2060,7 +2026,7 @@ async function verifyTargetRowExists(pgClient, spec, targetId) {
   return r.rowCount > 0;
 }
 
-async function migrateDomain(domainName, { dryRun, resetCheckpoint, pgClient }) {
+async function migrateDomain(domainName, { dryRun, resetCheckpoint, pgClient, planSlugToId }) {
   const domain = DOMAINS[domainName];
   if (!domain) throw new Error(`Unknown domain: ${domainName}`);
 
@@ -2075,12 +2041,10 @@ async function migrateDomain(domainName, { dryRun, resetCheckpoint, pgClient }) 
   // Mongo query and caches the result across every domain in this run).
   const ctx = { pgClient, dryRun, userEmailMap: domain.needsUserMap ? await loadUserEmailMap() : null };
   if (domain.needsPlanCatalog) {
-    // --dry-run reads the catalog and plans the missing canonical plans;
-    // only a real run creates them (and the seed admin create_plan_version()
-    // needs, only when a plan is actually missing).
-    ctx.planSlugToId = dryRun
-      ? await readCanonicalPlanIds(pgClient, { plannedIdFor: (slug) => plannedId('plans', slug) })
-      : await seedCanonicalPlans(pgClient, { withImpersonatedAdmin, ensureSeedAdmin: () => ensureMigrationSeedAdmin(pgClient) });
+    // Verified by main() before ANY domain ran (requireCanonicalPlans()):
+    // the plans already exist; this tool never creates them.
+    if (!planSlugToId) throw new Error(`[${domainName}] internal: the plan catalog was not verified before the run`);
+    ctx.planSlugToId = planSlugToId;
     ctx.resolvePlanSlug = resolvePlanSlug;
   }
 
@@ -2445,11 +2409,17 @@ async function main() {
 
   const results = [];
   try {
+    // NO_MIGRATION_SERVICE_IDENTITY: the canonical plans must already exist.
+    // Checked once, before the first domain runs, so a missing catalog
+    // stops --dry-run and a real run alike with nothing written anywhere
+    // (lib/plan-catalog.mjs requireCanonicalPlans(): PLAN_CATALOG_MISSING).
+    const needsPlans = !rollback && requested.some((d) => DOMAINS[d].needsPlanCatalog);
+    const planSlugToId = needsPlans ? await requireCanonicalPlans(pgClient) : null;
     for (const domainName of requested) {
       results.push(
         rollback
           ? await rollbackDomain(domainName, { pgClient })
-          : await migrateDomain(domainName, { dryRun, resetCheckpoint, pgClient })
+          : await migrateDomain(domainName, { dryRun, resetCheckpoint, pgClient, planSlugToId })
       );
     }
   } finally {

@@ -15,13 +15,10 @@
 //   - any retry after subscriptions were created failed identically;
 //   - --compensate -- whose entire purpose is a safe re-run after a
 //     partial prior attempt -- was blocked by the exact same check;
-//   - ensureMigrationSeedAdmin()'s own seed-admin profile row (created
-//     the moment any domain needing plan-catalog seeding runs) could
-//     alone block every later run, for any domain.
 //
 // Fixed: verifyNoUnrecordedData() is now provenance-aware for profiles/
-// subscriptions (migration-seed admin identity, or an auth.users
-// migrated_from tag -- see that function's own comment), and the
+// subscriptions (an auth.users migrated_from tag -- see that
+// function's own comment; no identity is exempt), and the
 // ledger-backed check is now scoped to source_system/source_database
 // (round 5 item 3, exercised together with item 1 here since every real
 // run touches both).
@@ -59,7 +56,7 @@ import mongoose from 'mongoose';
 import pg from 'pg';
 import { runCommand } from '../../../lib/db/test/orchestrator-lib.mjs';
 import { TARGET_SUPABASE_REF, computeConfirmToken } from './production-import-orchestrator.mjs';
-import { ensureMigrationSeedAdmin, MIGRATION_SEED_ADMIN_ID } from './lib/admin-rpc.mjs';
+import { CANONICAL_PLANS } from './lib/plan-catalog.mjs';
 import { contentHashOf } from './lib/source-ledger.mjs';
 import { correlationIdFor } from './migrate-users-to-supabase-auth.mjs';
 import { fingerprint } from './lib/redact.mjs';
@@ -116,6 +113,15 @@ async function main() {
 
   await mongoose.connect(mongoUri);
   const pgPool = new pg.Pool({ connectionString: pgUri });
+  // NO_MIGRATION_SERVICE_IDENTITY: the tools require the canonical plans
+  // to exist and never create them, so the target gets them as a local
+  // fixture (a direct insert, standing in for the admin flow). plans has
+  // no foreign keys, so resetAll()'s TRUNCATE ... CASCADE leaves them.
+  for (const plan of CANONICAL_PLANS) {
+    await pgPool.query('INSERT INTO plans (slug, name, amount_minor) VALUES ($1, $2, $3)', [plan.slug, plan.name, plan.amountMinor]);
+  }
+  const setCanonicalPlansActive = (active) =>
+    pgPool.query('UPDATE plans SET active = $1 WHERE slug = ANY($2::text[])', [active, CANONICAL_PLANS.map((p) => p.slug)]);
 
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'stage2jb-orch-resume-test-'));
   const backupFile = path.join(tmpDir, 'mongo-al-rahma.archive');
@@ -250,15 +256,10 @@ async function main() {
     assert.equal(run.code, 0, run.stderr);
     assert.equal(run.json.ok, true);
     assert.equal(run.json.status, 'reconciled');
-    // A real domain run checks the canonical plan catalog every time, but
-    // seedCanonicalPlans() creates the migration-seed admin only when a
-    // plan is actually missing (an earlier test in this file may already
-    // have created them). So the run leaves the one pre-existing (resumed,
-    // not duplicated) user, plus the seed admin if and only if it was
-    // needed. This is exactly the scenario item 1's fix targets: that
-    // seed-admin row must never itself block a later run.
-    const seedAdmin = await pgPool.query('SELECT 1 FROM profiles WHERE id = $1', [MIGRATION_SEED_ADMIN_ID]);
-    assert.equal(await profileCount(), 1 + seedAdmin.rows.length, 'expected exactly the resumed user profile (+ the seed admin when created) -- no duplicate of either');
+    // NO_MIGRATION_SERVICE_IDENTITY: exactly the one resumed account --
+    // no duplicate of it, and no identity of the tool's own.
+    assert.equal(await profileCount(), 1, 'expected exactly the resumed user profile -- no duplicate, no service identity');
+    assert.equal(await authUserCount(), 1);
     const stillThere = await pgPool.query('SELECT 1 FROM profiles WHERE id = $1', [preExistingId]);
     assert.equal(stillThere.rows.length, 1, 'the pre-existing user profile must be the exact same row -- resumed, not duplicated');
   });
@@ -297,29 +298,29 @@ async function main() {
     assert.equal(trialRowsAfterResume.rows[0].n, 1, 'the resumed run must have completed the domain write exactly once');
   });
 
-  await test('item 1: the migration-seed admin profile alone (ensureMigrationSeedAdmin, no domain data at all) never blocks a later run', async () => {
+  await test('NO_MIGRATION_SERVICE_IDENTITY: canonical plans missing -> plan and execute both stop with PLAN_CATALOG_MISSING; 0 accounts, 0 writes', async () => {
     await resetAll();
-    // Exactly what a prior run's plan-catalog seeding (today: payments)
-    // would have left behind -- created directly here via the same real
-    // exported helper, without touching payments at all.
-    // PR #70 review round 7, item 7: ensureMigrationSeedAdmin() now opens
-    // its own real transaction -- must be called with a single
-    // checked-out client, never a bare Pool.
-    {
-      const seedAdminClient = await pgPool.connect();
-      try {
-        await ensureMigrationSeedAdmin(seedAdminClient);
-      } finally {
-        seedAdminClient.release();
+    const sourceDoc = { password: FIXTURE_PASSWORD_HASH, _id: new mongoose.Types.ObjectId(), email: 'no-plans@example.invalid', role: 'student' };
+    await mongoose.connection.collection('users').insertOne(sourceDoc);
+    await mongoose.connection.collection('trialrequests').insertOne({ name: 'No Plans', email: 'trial-no-plans@example.invalid', status: 'new' });
+    await setCanonicalPlansActive(false);
+    try {
+      const before = await migrationWriteCounts();
+      for (const args of [[], ['--execute']]) {
+        const run = runOrchestratorCLI(args);
+        assert.notEqual(run.code, 0, `${args.join(' ') || '--plan'} must fail`);
+        assert.equal(run.json?.ok, false, `${args.join(' ') || '--plan'} must report failure -- stderr: ${run.stderr}`);
+        assert.equal(run.json.failedAt, 'users_and_relationships_preflight', 'stopped at the first preflight, before any write step');
+        // The user-migration worker's stderr, as the orchestrator reports it.
+        assert.match(run.json.stderr, /PLAN_CATALOG_MISSING: .*Starter, Standard, Premium/);
+        assert.doesNotMatch(run.json.stderr, /@example.invalid/, 'the message names plans only, never an email');
       }
+      assert.deepEqual(await migrationWriteCounts(), before, 'nothing was written by either run');
+      assert.equal(await authUserCount(), 0, 'no account of any kind was created');
+      assert.equal((await pgPool.query('SELECT count(*)::int AS n FROM trial_requests')).rows[0].n, 0);
+    } finally {
+      await setCanonicalPlansActive(true);
     }
-    assert.equal(await profileCount(), 1, 'setup: the seed-admin profile row must exist before this run starts');
-
-    const run = runOrchestratorCLI(['--execute']);
-    assert.ok(run.json, `OLD BUG: the seed-admin's own profile row alone blocked the run -- stderr: ${run.stderr}`);
-    assert.equal(run.code, 0, run.stderr);
-    assert.equal(run.json.ok, true);
-    assert.equal(run.json.status, 'reconciled');
   });
 
   await test('item 1: --compensate now actually reaches compensation with pre-existing attributable data, and removes nothing', async () => {
@@ -349,7 +350,7 @@ async function main() {
 
   await test('item 1 + item 3: an UNKNOWN, unattributed pre-existing row still fails closed -- in BOTH --execute and --compensate --execute', async () => {
     await resetAll();
-    // Not tagged migrated_from, not the migration-seed admin identity --
+    // Not tagged migrated_from --
     // exactly the kind of real, unrelated pre-existing account this
     // preflight exists to protect against.
     await seedUntaggedAccount('unknown-preexisting@example.invalid');

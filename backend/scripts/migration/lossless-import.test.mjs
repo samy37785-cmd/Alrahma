@@ -3,7 +3,12 @@
 // LOGGING_DECISION, proven end to end against real, disposable Mongo +
 // Postgres (the full drizzle schema) through the real CLIs:
 //
-//   1. plan against an EMPTY target: migrate-users --plan and
+//   0. no canonical plans on the target: both tools stop with
+//      PLAN_CATALOG_MISSING in plan AND execute mode before anything is
+//      written -- no account, no row (NO_MIGRATION_SERVICE_IDENTITY: the
+//      tools never create plans or an identity to create them with);
+//   1. plan against an EMPTY target (plans present as a local fixture):
+//      migrate-users --plan and
 //      mongo-to-supabase --domain=all --dry-run both succeed with every
 //      relation planned; zero rows change anywhere in public/auth (row
 //      counts AND pg_stat write counters), and zero HTTP requests reach a
@@ -32,6 +37,7 @@ import mongoose from 'mongoose';
 import pg from 'pg';
 import { runCommand } from '../../../lib/db/test/orchestrator-lib.mjs';
 import { DOMAINS } from './mongo-to-supabase.mjs';
+import { CANONICAL_PLANS } from './lib/plan-catalog.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, '..', '..', '..');
@@ -174,6 +180,31 @@ async function main() {
     }
   }
 
+  await test('no canonical plans: users --plan, domains --dry-run and domains execute all stop with PLAN_CATALOG_MISSING; 0 writes, 0 accounts, 0 GoTrue requests', async () => {
+    const countsBefore = await tableCounts();
+    const writesBefore = await writeCounter();
+    const requestsBefore = await gotrueRequestLines();
+    const users = run(USERS_SCRIPT, [], usersCwd);
+    assert.equal(users.code, 1);
+    assert.equal(JSON.parse(users.stdout).planCatalog.code, 'PLAN_CATALOG_MISSING');
+    for (const args of [['--domain=all', '--dry-run'], ['--domain=all']]) {
+      const r = run(DOMAIN_SCRIPT, args);
+      assert.equal(r.code, 1, `${args.join(' ')} must fail`);
+      assert.match(r.stderr, /PLAN_CATALOG_MISSING: .*Starter, Standard, Premium/);
+      assert.equal(r.report, null, 'it stopped before the first domain, so no run report was written');
+    }
+    assert.deepEqual(await tableCounts(), countsBefore, 'a row count changed');
+    assert.equal(await writeCounter(), writesBefore, 'a tuple was written');
+    assert.equal(countsBefore['auth.users'], 0, 'no account exists');
+    assert.equal(await gotrueRequestLines(), requestsBefore, 'GoTrue was contacted');
+  });
+
+  // The plans exist from here on, as a local fixture standing in for the
+  // admin flow that creates them before a real migration.
+  for (const plan of CANONICAL_PLANS) {
+    await pool.query('INSERT INTO plans (slug, name, amount_minor) VALUES ($1, $2, $3)', [plan.slug, plan.name, plan.amountMinor]);
+  }
+
   await test('plan against an empty target: users + all domains plan cleanly, 0 rows written, 0 GoTrue requests', async () => {
     const countsBefore = await tableCounts();
     const writesBefore = await writeCounter();
@@ -240,6 +271,8 @@ async function main() {
 
     // Users are accounts, not domain rows (migrate-users ledgers those).
     const domainDocs = Object.entries(SOURCE).filter(([c]) => c !== 'users').reduce((n, [, docs]) => n + docs.length, 0);
+    assert.equal(await count('auth.users'), SOURCE.users.length, 'exactly the source accounts -- no service identity');
+    assert.equal(await count('admin_role_assignments'), 0, 'no admin role was granted to anything');
     const ledger = await pool.query(`SELECT status, count(*)::int AS n FROM migration_source_ledger GROUP BY status`);
     assert.deepEqual(ledger.rows, [{ status: 'reconciled', n: domainDocs }], 'every imported document is reconciled in the ledger');
   });
@@ -286,6 +319,7 @@ async function main() {
       assert.equal(r.skippedUnchanged, r.mongoCount, `${r.domain} did not report every document unchanged`);
     }
     assert.deepEqual(await tableCounts(), before, 'a rerun changed a row count (duplicate or loss)');
+    assert.equal(before['auth.users'], SOURCE.users.length, 'still only the source accounts after the rerun');
   });
 
   await test('a changed source document takes the UPDATE path and keeps the source updatedAt despite set_updated_at()', async () => {

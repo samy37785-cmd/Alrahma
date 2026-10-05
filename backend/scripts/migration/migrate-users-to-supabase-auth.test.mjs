@@ -76,6 +76,7 @@ import {
 import { contentHashOf, findLedgerEntry } from './lib/source-ledger.mjs';
 import { parseStrictCliArgs } from './lib/cli-args.mjs';
 import { fingerprint } from './lib/redact.mjs';
+import { CANONICAL_PLANS } from './lib/plan-catalog.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, '..', '..', '..');
@@ -465,6 +466,13 @@ async function main() {
 
   await mongoose.connect(mongoUri);
   const pgPool = new pg.Pool({ connectionString: pgUri });
+  // NO_MIGRATION_SERVICE_IDENTITY: the tool requires the canonical plans and
+  // never creates them; the target gets them as a local fixture (a direct
+  // insert standing in for the admin flow). plans has no foreign keys, so
+  // resetAll()'s TRUNCATE ... CASCADE leaves them in place.
+  for (const plan of CANONICAL_PLANS) {
+    await pgPool.query('INSERT INTO plans (slug, name, amount_minor) VALUES ($1, $2, $3)', [plan.slug, plan.name, plan.amountMinor]);
+  }
 
   function runUserMigrationCLI(args) {
     const result = spawnSync(process.execPath, [USER_MIGRATION_SCRIPT, ...args], {
@@ -827,6 +835,28 @@ async function main() {
     for (const name of names) counts[name] = (await pgPool.query(`SELECT count(*)::int AS n FROM ${name}`)).rows[0].n;
     return counts;
   }
+
+  await test('NO_MIGRATION_SERVICE_IDENTITY: canonical plans missing -> --plan and --execute stop with PLAN_CATALOG_MISSING; 0 accounts, 0 writes', async () => {
+    await resetAll();
+    await mongoose.connection.collection('users').insertOne({ password: FIXTURE_PASSWORD_HASH, email: 'plans-missing@example.invalid', role: 'student' });
+    const slugs = CANONICAL_PLANS.map((p) => p.slug);
+    await pgPool.query('UPDATE plans SET active = false WHERE slug = ANY($1::text[])', [slugs]);
+    try {
+      const before = await writeCounts();
+      for (const args of [[], ['--execute']]) {
+        const run = runUserMigrationCLI(args);
+        assert.equal(run.code, 1, `${args[0] ?? '--plan'} must fail`);
+        assert.equal(run.report.planCatalog.code, 'PLAN_CATALOG_MISSING');
+        assert.deepEqual(run.report.planCatalog.missing, slugs);
+        assert.match(run.stderr, /PLAN_CATALOG_MISSING: .*Starter, Standard, Premium/);
+        assert.doesNotMatch(run.stderr, /@example.invalid/);
+      }
+      assert.deepEqual(await writeCounts(), before, 'neither run wrote anything');
+      assert.equal(before['auth.users'], 0, 'and no account exists');
+    } finally {
+      await pgPool.query('UPDATE plans SET active = true WHERE slug = ANY($1::text[])', [slugs]);
+    }
+  });
 
   await test('--execute: mixed valid + case/whitespace-invalid source fails before every auth/profile/relationship/plan/subscription write', async () => {
     await resetAll();

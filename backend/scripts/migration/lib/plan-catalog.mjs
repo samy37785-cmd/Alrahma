@@ -23,53 +23,33 @@ export function resolvePlanSlug(mongoPlanName) {
   return PLAN_NAME_TO_SLUG.get(key) ?? null;
 }
 
-/**
- * Seeds the canonical plan catalog via the real create_plan_version() RPC
- * (the only INSERT path plans.ts's RLS allows) — deterministic and
- * idempotent: a plan whose slug already has an active row is left alone.
- * `ensureSeedAdmin`, when given, runs once before the first plan that
- * actually has to be created, so a target whose catalog is already
- * complete never gets the migration seed-admin identity at all.
- */
-export async function seedCanonicalPlans(pgClient, { withImpersonatedAdmin, ensureSeedAdmin }) {
-  const slugToId = new Map();
-  let seedAdminReady = false;
-  for (const plan of CANONICAL_PLANS) {
-    const existing = await pgClient.query('SELECT id FROM plans WHERE slug = $1 AND active = true', [plan.slug]);
-    if (existing.rows[0]) {
-      slugToId.set(plan.slug, existing.rows[0].id);
-      continue;
-    }
-    if (ensureSeedAdmin && !seedAdminReady) {
-      await ensureSeedAdmin();
-      seedAdminReady = true;
-    }
-    const id = await withImpersonatedAdmin(pgClient, async (client) => {
-      // create_plan_version() returns a whole public.plans row; pg has no
-      // parser for that composite type and would hand back its text form,
-      // so the id is extracted in SQL (same fix as invoices' upsert).
-      const r = await client.query(
-        `SELECT (create_plan_version($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)).id AS id`,
-        [null, plan.slug, plan.name, plan.amountMinor, plan.currency, plan.billingInterval, null, null, null, null, null, 0]
-      );
-      return r.rows[0].id;
-    });
-    slugToId.set(plan.slug, id);
-  }
-  return slugToId;
-}
+export const PLAN_CATALOG_MISSING = 'PLAN_CATALOG_MISSING';
 
 /**
- * Plan mode's read-only view of the same catalog: the real id of each
- * canonical plan that already has an active row, and a deterministic
- * planned id (lib/planned-ids.mjs) for each one a real run would create.
- * Never writes.
+ * Owner decision NO_MIGRATION_SERVICE_IDENTITY: the migration never
+ * creates plans. create_plan_version() is is_admin_aal2()-gated, and the
+ * only way the tool could call it was an automatic admin identity in
+ * auth.users -- which is not allowed. The three canonical plans are
+ * created beforehand through the normal admin flow; this only reads them.
+ *
+ * Returns slug -> id for every canonical plan with an active row. If any is
+ * missing it throws an error whose `code` is PLAN_CATALOG_MISSING and
+ * whose message names the required slugs only. Read-only: one SELECT.
  */
-export async function readCanonicalPlanIds(pgClient, { plannedIdFor }) {
-  const slugToId = new Map();
-  for (const plan of CANONICAL_PLANS) {
-    const existing = await pgClient.query('SELECT id FROM plans WHERE slug = $1 AND active = true', [plan.slug]);
-    slugToId.set(plan.slug, existing.rows[0]?.id ?? plannedIdFor(plan.slug));
+export async function requireCanonicalPlans(pgClient) {
+  const slugs = CANONICAL_PLANS.map((p) => p.slug);
+  const { rows } = await pgClient.query('SELECT slug, id FROM plans WHERE active = true AND slug = ANY($1::text[])', [slugs]);
+  const slugToId = new Map(rows.map((r) => [r.slug, r.id]));
+  const missing = slugs.filter((s) => !slugToId.has(s));
+  if (missing.length > 0) {
+    const err = new Error(
+      `${PLAN_CATALOG_MISSING}: the migration needs these active plans to exist first: ${slugs.join(', ')} ` +
+      `(missing: ${missing.join(', ')}). Create them through the admin flow; the migration never creates plans ` +
+      'or an admin identity. Nothing was written.'
+    );
+    err.code = PLAN_CATALOG_MISSING;
+    err.missing = missing;
+    throw err;
   }
   return slugToId;
 }

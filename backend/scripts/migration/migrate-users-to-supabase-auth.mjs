@@ -47,8 +47,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { createClient } from '@supabase/supabase-js';
-import { resolvePlanSlug, seedCanonicalPlans } from './lib/plan-catalog.mjs';
-import { withImpersonatedAdmin, ensureMigrationSeedAdmin } from './lib/admin-rpc.mjs';
+import { resolvePlanSlug, requireCanonicalPlans, PLAN_CATALOG_MISSING } from './lib/plan-catalog.mjs';
 import { throwIfFaultStage } from './lib/fault-injection.mjs';
 import { findLedgerEntry, markPlanned, markCreated, markFailed, contentHashOf } from './lib/source-ledger.mjs';
 import { parseStrictCliArgs } from './lib/cli-args.mjs';
@@ -1171,10 +1170,10 @@ function deriveSubscriptionStatus(mongoSub) {
 // a structural fact about the Mongo document itself, checkable in --plan
 // mode exactly as reliably as in --execute mode. CANONICAL_PLANS
 // (lib/plan-catalog.mjs) is the one hardcoded, data-independent source of
-// truth resolvePlanSlug() resolves against, so a slug it returns is
-// always seedable later -- a --plan run never needs planSlugToId (which
-// only exists post-seed, an --execute-only side effect) to know whether
-// a subscription's plan name and provider are valid.
+// truth resolvePlanSlug() resolves against, so a slug it returns always
+// names one of the plans Phase A requires to exist (requireCanonicalPlans())
+// -- this check needs no database to know whether a subscription's plan
+// name and provider are valid.
 export function validateSubscriptionPlan(sub) {
   if (!sub || !sub.plan) return { ok: true, skip: true };
   const slug = resolvePlanSlug(sub.plan);
@@ -1477,10 +1476,10 @@ export async function migrateSubscription(pgClient, profileId, mongoUser, planSl
   const slug = validation.slug;
   if (!planSlugToId.has(slug)) {
     // Should be unreachable in practice (CANONICAL_PLANS is exactly what
-    // seedCanonicalPlans() seeds, and validateSubscriptionPlan() only
+    // requireCanonicalPlans() verifies, and validateSubscriptionPlan() only
     // ever resolves a slug FROM that same list) -- kept as a genuine
     // fail-closed guard rather than assumed, not a silent default.
-    return { status: 'FAIL', reason: `plan slug "${slug}" resolved but was not seeded -- not migrated, not defaulted` };
+    return { status: 'FAIL', reason: `plan slug "${slug}" resolved but has no active plan -- not migrated, not defaulted` };
   }
   const planId = planSlugToId.get(slug);
   const derived = deriveSubscriptionStatus(sub);
@@ -1884,6 +1883,21 @@ async function main() {
     const adminRoleProblems = computeAdminRoleMappingProblems(admins);
     const subscriptionProblems = computeSubscriptionProblems(users);
 
+    // NO_MIGRATION_SERVICE_IDENTITY: the canonical plans are created
+    // beforehand through the admin flow; this tool never creates plans or
+    // the admin identity create_plan_version() would need. Required for
+    // every run, so a target without them stops here -- plan and execute
+    // alike -- before a single account exists. Read-only.
+    let planSlugToId = null;
+    try {
+      planSlugToId = await requireCanonicalPlans(pgClient);
+      report.planCatalog = { ok: true, missing: [] };
+    } catch (err) {
+      if (err.code !== PLAN_CATALOG_MISSING) throw err;
+      report.planCatalog = { ok: false, code: PLAN_CATALOG_MISSING, missing: err.missing, message: err.message };
+      console.error(err.message);
+    }
+
     // PASSWORD_DECISION=IMPORT_BCRYPT_HASHES: every account must carry a
     // hash GoTrue can import, checked here before any write. A document
     // already excluded for an identity problem is not counted twice.
@@ -1934,13 +1948,14 @@ async function main() {
       adminRoleProblems.length > 0 ||
       subscriptionProblems.length > 0 ||
       passwordProblems.length > 0 ||
-      sourceDateProblems.length > 0;
+      sourceDateProblems.length > 0 ||
+      !report.planCatalog.ok;
 
     if (execute && hasUnapprovedValidationFailure) {
       // Zero-write-on-validation-failure: nothing below this block has
       // run yet -- no migrateOneUser()/migrateOneAdmin(),
-      // applyRelationships(), plan-catalog seeding, or migrateSubscription()
-      // call has ever been made. The report is still fully populated from
+      // applyRelationships() or migrateSubscription() call has ever been
+      // made. The report is still fully populated from
       // what Phase A already found, so a caller never loses visibility
       // into WHY the run refused to write.
       for (const p of adminRoleProblems) report.admins.errors.push({ email: p.email, message: p.reason });
@@ -2007,9 +2022,6 @@ async function main() {
 
       const usersWithSubscription = users.filter((u) => u.subscription && u.subscription.plan);
       if (usersWithSubscription.length > 0) {
-        const planSlugToId = await seedCanonicalPlans(pgClient, {
-          withImpersonatedAdmin, ensureSeedAdmin: () => ensureMigrationSeedAdmin(pgClient),
-        });
         for (const u of usersWithSubscription) {
           const profileId = emailToProfileId.get(String(u.email).toLowerCase().trim());
           if (!profileId) continue;
@@ -2133,6 +2145,8 @@ export function computeExitFailure(report, execute) {
     // or an undeclared source date, fails the run in both modes.
     (report.passwords?.problems?.length ?? 0) > 0 ||
     (report.dates?.problems?.length ?? 0) > 0 ||
+    // NO_MIGRATION_SERVICE_IDENTITY: the canonical plans must already exist.
+    report.planCatalog?.ok === false ||
     (execute && report.reconciliation?.consistent !== true)
   );
 }

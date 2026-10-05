@@ -111,7 +111,9 @@ created. **This is an architectural upgrade, not a gap** — the Supabase adapte
 plan pricing from the `plans` table instead of the static file. One real requirement:
 the `plans` table must be seeded (via `create_plan_version`) with rows matching the
 current Starter/Standard/Premium pricing before the adapter can price anything —
-handled by the migration/seed tooling, not a code gap.
+created by a real admin through the admin flow before the migration runs
+(the migration tooling only reads them and stops with `PLAN_CATALOG_MISSING`
+if any is missing), not a code gap.
 
 ### 5. Payment → payments
 

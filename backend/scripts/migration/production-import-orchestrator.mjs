@@ -111,6 +111,7 @@ import {
 import { loadAndVerifyProductionAuthorization } from './lib/production-authorization.mjs';
 import { assertLocalHostOrProductionAuthorized } from './lib/host-guard.mjs';
 import { buildPgPoolConfig } from '../../data/supabase/client.js';
+import { installRedactingConsole, redactDeep } from './lib/redact.mjs';
 
 // Production Enablement -- these four now live in lib/production-
 // approval.mjs (shared with the two worker scripts' own independent
@@ -332,8 +333,8 @@ async function countGhostLedgerComposite(pgClient, table, spec) {
 // does not depend on payments being named anywhere in this file at all.
 const DEFERRED_DOMAIN_REASONS = {
   payments:
-    'real records use gateway "paymob", not supported by mongo-to-supabase.mjs\'s ' +
-    'payments adapter (stripe/paypal only). Not migrated, not modified; original ' +
+    'historical "paymob" records (importable as-is since 0028 added the gateway value). ' +
+    'Deferred by the operator for this run: not migrated, not modified; original ' +
     'Mongo data untouched.',
 };
 
@@ -1018,7 +1019,9 @@ function newSagaLog(runId) {
   const state = { runId, startedAt: new Date().toISOString(), steps: [] };
   const save = () => {
     fs.mkdirSync(OUT_DIR, { recursive: true });
-    fs.writeFileSync(filePath, JSON.stringify(state, null, 2));
+    // Steps can carry a worker's stderr; the file on disk is redacted
+    // like everything else this tool emits (LOGGING_DECISION=REDACT).
+    fs.writeFileSync(filePath, JSON.stringify(redactDeep(state), null, 2));
   };
   return {
     filePath,
@@ -1255,6 +1258,9 @@ export function parseCliArgs(argv) {
 }
 
 async function main() {
+  // The final JSON result embeds each worker's stdout/stderr; printing it
+  // through the redacting console keeps those redacted here as well.
+  installRedactingConsole();
   const args = parseCliArgs(process.argv.slice(2));
   const execute = !!args.execute;
   const compensateMode = !!args.compensate;

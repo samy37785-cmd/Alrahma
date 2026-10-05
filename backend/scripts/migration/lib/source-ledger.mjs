@@ -7,6 +7,7 @@
 // source_collection, source_document_id, target_table) is the actual
 // duplicate-import guard; this module is a thin, typed wrapper around it.
 import { stableContentHash } from './canonical-hash.mjs';
+import { redactText } from './redact.mjs';
 
 // PR #70 review round 11, item 3: delegates to the one shared, canonical
 // hash representation (lib/canonical-hash.mjs) -- object-key-order
@@ -87,11 +88,15 @@ export async function markReconciled(pgClient, ledgerId) {
   assertExactlyOneRowAffected('markReconciled', ledgerId, r.rowCount);
 }
 
-/** Records a genuine, surfaced failure — never a silent skip. */
+/**
+ * Records a genuine, surfaced failure — never a silent skip. The reason is
+ * redacted before it is stored: error_reason is a durable table column,
+ * so an email, hash or token in an error text would otherwise persist.
+ */
 export async function markFailed(pgClient, ledgerId, reason) {
   const r = await pgClient.query(
     `UPDATE migration_source_ledger SET status = 'failed', error_reason = $2 WHERE id = $1`,
-    [ledgerId, String(reason).slice(0, 2000)]
+    [ledgerId, redactText(String(reason)).slice(0, 2000)]
   );
   assertExactlyOneRowAffected('markFailed', ledgerId, r.rowCount);
 }

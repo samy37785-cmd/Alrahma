@@ -75,9 +75,14 @@ import {
 } from './migrate-users-to-supabase-auth.mjs';
 import { contentHashOf, findLedgerEntry } from './lib/source-ledger.mjs';
 import { parseStrictCliArgs } from './lib/cli-args.mjs';
+import { fingerprint } from './lib/redact.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, '..', '..', '..');
+// PASSWORD_DECISION=IMPORT_BCRYPT_HASHES: every source account must carry a
+// bcrypt hash or Phase A stops the run. A cost-4 bcryptjs hash of a
+// throwaway fixture password, the same `$2a$` format the old backend writes.
+const FIXTURE_PASSWORD_HASH = '$2a$04$RI/NjbXHyr4JLF1rz.4j8ODfZjwVClmGT6rCBmHHygLezXAeoRN3C';
 const USER_MIGRATION_SCRIPT = path.join(__dirname, 'migrate-users-to-supabase-auth.mjs');
 const RUN_MIGRATIONS = path.join(REPO_ROOT, 'lib', 'db', 'test', 'run-migrations.mjs');
 
@@ -300,7 +305,7 @@ async function main() {
   });
 
   await test('admin-role and subscription structural validation are pure and complete before writes', () => {
-    assert.equal(computeAdminRoleMappingProblems([{ _id: 'a1', email: 'a@example.invalid', role: 'bogus' }]).length, 1);
+    assert.equal(computeAdminRoleMappingProblems([{ password: FIXTURE_PASSWORD_HASH, _id: 'a1', email: 'a@example.invalid', role: 'bogus' }]).length, 1);
     assert.equal(computeSubscriptionProblems([{ _id: 'u1', email: 'u@example.invalid', subscription: { plan: 'unknown' } }]).length, 1);
   });
 
@@ -528,7 +533,7 @@ async function main() {
 
   await test('--plan: an unmapped AdminUser role is a document-level error detectable without any write, and fails the whole run closed', async () => {
     await resetAll();
-    await mongoose.connection.collection('adminusers').insertOne({ email: 'badrole@example.invalid', role: 'bogus-role' });
+    await mongoose.connection.collection('adminusers').insertOne({ password: FIXTURE_PASSWORD_HASH, email: 'badrole@example.invalid', role: 'bogus-role' });
 
     const run = runUserMigrationCLI([]);
     assert.equal(run.code, 1, 'a --plan run with a detectable document-level error must exit non-zero');
@@ -540,7 +545,7 @@ async function main() {
   await test('--plan: an unresolvable subscription plan name is now ALSO detected (was previously invisible to --plan entirely)', async () => {
     await resetAll();
     await mongoose.connection.collection('users').insertOne({
-      email: 'subuser@example.invalid', role: 'student', subscription: { plan: 'Definitely Not A Real Plan' },
+      password: FIXTURE_PASSWORD_HASH, email: 'subuser@example.invalid', role: 'student', subscription: { plan: 'Definitely Not A Real Plan' },
     });
 
     const run = runUserMigrationCLI([]);
@@ -553,7 +558,7 @@ async function main() {
   await test('--plan: a resolvable subscription plan is correctly reported as wouldMigrate, not a failure', async () => {
     await resetAll();
     await mongoose.connection.collection('users').insertOne({
-      email: 'gooduser@example.invalid', role: 'student', subscription: { plan: 'Starter' },
+      password: FIXTURE_PASSWORD_HASH, email: 'gooduser@example.invalid', role: 'student', subscription: { plan: 'Starter' },
     });
 
     const run = runUserMigrationCLI([]);
@@ -567,7 +572,7 @@ async function main() {
     const email = 'execsubuser@example.invalid';
     await seedExistingProfile(email);
     await mongoose.connection.collection('users').insertOne({
-      email, role: 'student', subscription: { plan: 'Definitely Not A Real Plan' },
+      password: FIXTURE_PASSWORD_HASH, email, role: 'student', subscription: { plan: 'Definitely Not A Real Plan' },
     });
 
     const run = runUserMigrationCLI(['--execute']);
@@ -586,7 +591,7 @@ async function main() {
     // that exist" and "profiles rows this run actually expected/produced".
     const email = 'stale-profile-errored-admin@example.invalid';
     await seedExistingProfile(email);
-    await mongoose.connection.collection('adminusers').insertOne({ email, role: 'bogus-role' });
+    await mongoose.connection.collection('adminusers').insertOne({ password: FIXTURE_PASSWORD_HASH, email, role: 'bogus-role' });
 
     const run = runUserMigrationCLI(['--execute']);
     assert.equal(run.code, 1);
@@ -596,7 +601,7 @@ async function main() {
   await test('--execute: a fully clean run (valid admin role, valid subscription) exits 0 with consistent=true', async () => {
     await resetAll();
     const email = 'cleanadmin@example.invalid';
-    const sourceDoc = { _id: new mongoose.Types.ObjectId(), email, role: 'admin' };
+    const sourceDoc = { password: FIXTURE_PASSWORD_HASH, _id: new mongoose.Types.ObjectId(), email, role: 'admin' };
     await seedExistingProfile(email);
     const existing = await pgPool.query('SELECT id FROM auth.users WHERE email = $1', [email]);
     await addProfileLedger(sourceDoc, existing.rows[0].id, 'adminusers');
@@ -612,7 +617,7 @@ async function main() {
     await resetAll();
     const email = 'resume-subscription@example.invalid';
     const sourceDoc = {
-      _id: new mongoose.Types.ObjectId(), email, role: 'student',
+      password: FIXTURE_PASSWORD_HASH, _id: new mongoose.Types.ObjectId(), email, role: 'student',
       subscription: { plan: 'Starter', status: 'inactive', validUntil: '2025-01-01T00:00:00.000Z' },
     };
     const profileId = await seedExistingProfile(email);
@@ -672,7 +677,7 @@ async function main() {
     await resetAll();
     const email = 'conflicting-active-subscription@example.invalid';
     const sourceDoc = {
-      _id: new mongoose.Types.ObjectId(), email, role: 'student',
+      password: FIXTURE_PASSWORD_HASH, _id: new mongoose.Types.ObjectId(), email, role: 'student',
       subscription: { plan: 'Starter', status: 'active', validUntil: '2999-01-01T00:00:00.000Z' },
     };
     const profileId = await seedExistingProfile(email);
@@ -712,7 +717,7 @@ async function main() {
     await resetAll();
     const email = 'planned-null-target-existing-row@example.invalid';
     const sourceDoc = {
-      _id: new mongoose.Types.ObjectId(), email, role: 'student',
+      password: FIXTURE_PASSWORD_HASH, _id: new mongoose.Types.ObjectId(), email, role: 'student',
       subscription: { plan: 'Starter', status: 'active', validUntil: '2999-01-01T00:00:00.000Z' },
     };
     const profileId = await seedExistingProfile(email);
@@ -759,7 +764,7 @@ async function main() {
 
   await test('--plan: a user with a missing email is reported and fails plan closed, never silently skipped', async () => {
     await resetAll();
-    await mongoose.connection.collection('users').insertOne({ role: 'student' }); // no email at all
+    await mongoose.connection.collection('users').insertOne({ password: FIXTURE_PASSWORD_HASH, role: 'student' }); // no email at all
 
     const run = runUserMigrationCLI([]);
     assert.equal(run.code, 1, 'a --plan run with a missing-email user must exit non-zero, detectable without any write');
@@ -770,7 +775,7 @@ async function main() {
 
   await test('--plan: an admin with an invalid-format email is reported and fails plan closed', async () => {
     await resetAll();
-    await mongoose.connection.collection('adminusers').insertOne({ email: 'not-an-email', role: 'admin' });
+    await mongoose.connection.collection('adminusers').insertOne({ password: FIXTURE_PASSWORD_HASH, email: 'not-an-email', role: 'admin' });
 
     const run = runUserMigrationCLI([]);
     assert.equal(run.code, 1);
@@ -781,8 +786,8 @@ async function main() {
   await test('--plan: two users sharing one email (conflicting/duplicate) fails plan closed, before any write', async () => {
     await resetAll();
     await mongoose.connection.collection('users').insertMany([
-      { email: 'dup@example.invalid', role: 'student' },
-      { email: 'DUP@example.invalid ', role: 'student' },
+      { password: FIXTURE_PASSWORD_HASH, email: 'dup@example.invalid', role: 'student' },
+      { password: FIXTURE_PASSWORD_HASH, email: 'DUP@example.invalid ', role: 'student' },
     ]);
 
     const run = runUserMigrationCLI([]);
@@ -794,7 +799,7 @@ async function main() {
   await test('--plan: a teacher relationship that would be skipped for lack of a target fails plan closed (relationships are now computed in --plan too)', async () => {
     await resetAll();
     await mongoose.connection.collection('users').insertOne({
-      email: 'student-dangling-teacher@example.invalid', role: 'student', teacher: 'does-not-exist-in-source',
+      password: FIXTURE_PASSWORD_HASH, email: 'student-dangling-teacher@example.invalid', role: 'student', teacher: 'does-not-exist-in-source',
     });
 
     const run = runUserMigrationCLI([]);
@@ -808,7 +813,7 @@ async function main() {
     await resetAll();
     const email = 'student-dangling-teacher-exec@example.invalid';
     await seedExistingProfile(email);
-    await mongoose.connection.collection('users').insertOne({ email, role: 'student', teacher: 'does-not-exist-in-source' });
+    await mongoose.connection.collection('users').insertOne({ password: FIXTURE_PASSWORD_HASH, email, role: 'student', teacher: 'does-not-exist-in-source' });
 
     const run = runUserMigrationCLI(['--execute']);
     assert.equal(run.code, 1, 'execute must not report success while a real relationship was skipped');
@@ -826,22 +831,24 @@ async function main() {
   await test('--execute: mixed valid + case/whitespace-invalid source fails before every auth/profile/relationship/plan/subscription write', async () => {
     await resetAll();
     await mongoose.connection.collection('users').insertMany([
-      { email: 'valid-before-invalid@example.invalid', role: 'student', subscription: { plan: 'Starter' } },
-      { email: ' BAD-EMAIL ', role: 'student' },
+      { password: FIXTURE_PASSWORD_HASH, email: 'valid-before-invalid@example.invalid', role: 'student', subscription: { plan: 'Starter' } },
+      { password: FIXTURE_PASSWORD_HASH, email: ' BAD-EMAIL ', role: 'student' },
     ]);
     const before = await writeCounts();
     const run = runUserMigrationCLI(['--execute']);
     const after = await writeCounts();
     assert.equal(run.code, 1);
-    assert.equal(run.report.identity.problems[0].email, 'bad-email');
+    // The printed report never shows an address, only its fingerprint
+    // (LOGGING_DECISION=REDACT); the normalized value is what is fingerprinted.
+    assert.equal(run.report.identity.problems[0].email, fingerprint('bad-email'));
     assert.deepEqual(after, before, 'validation failure must leave every writable target and ledger unchanged');
   });
 
   await test('--execute: dangling relationship fails before every auth/profile/relationship/plan/subscription write', async () => {
     await resetAll();
     await mongoose.connection.collection('users').insertMany([
-      { email: 'valid-a@example.invalid', role: 'student', teacher: 'missing-source-id' },
-      { email: 'valid-b@example.invalid', role: 'student', subscription: { plan: 'Starter' } },
+      { password: FIXTURE_PASSWORD_HASH, email: 'valid-a@example.invalid', role: 'student', teacher: 'missing-source-id' },
+      { password: FIXTURE_PASSWORD_HASH, email: 'valid-b@example.invalid', role: 'student', subscription: { plan: 'Starter' } },
     ]);
     const before = await writeCounts();
     const run = runUserMigrationCLI(['--execute']);
@@ -870,7 +877,7 @@ async function main() {
   await test('--approved-dispositions: an explicitly approved, reviewed skip no longer fails the run (but is still fully reported, never silently dropped)', async () => {
     await resetAll();
     await mongoose.connection.collection('users').insertOne({
-      email: 'student-approved-gap@example.invalid', role: 'student', teacher: 'does-not-exist-in-source',
+      password: FIXTURE_PASSWORD_HASH, email: 'student-approved-gap@example.invalid', role: 'student', teacher: 'does-not-exist-in-source',
     });
 
     // First, WITHOUT any dispositions: confirm it fails closed and
@@ -928,7 +935,7 @@ async function main() {
 
   await test('CLI: a real --execute=false on the command line never performs a real execute run (live proof, not just the pure parser)', async () => {
     await resetAll();
-    await mongoose.connection.collection('users').insertOne({ email: 'execfalse@example.invalid', role: 'student' });
+    await mongoose.connection.collection('users').insertOne({ password: FIXTURE_PASSWORD_HASH, email: 'execfalse@example.invalid', role: 'student' });
     const run = runUserMigrationCLI(['--execute=false']);
     assert.notEqual(run.code, 0, 'a rejected flag must fail the process, never silently fall back to --plan either');
     assert.match(run.stderr, /boolean flag/);
@@ -951,7 +958,7 @@ async function main() {
   await test('GoTrue crash recovery: createUser() succeeds, crash BEFORE markCreated -- resume finds the real account and links it, never a duplicate', async () => {
     await resetAll();
     const fakeUserId = crypto.randomUUID();
-    const mongoUser = { _id: new mongoose.Types.ObjectId(), email: 'gotrue-kill-window@example.invalid', role: 'student' };
+    const mongoUser = { password: FIXTURE_PASSWORD_HASH, _id: new mongoose.Types.ObjectId(), email: 'gotrue-kill-window@example.invalid', role: 'student' };
     const supabaseAdmin = fakeSupabaseAdmin(async () => ({ data: { user: { id: fakeUserId } }, error: null }));
 
     const client = await pgPool.connect();
@@ -1004,7 +1011,7 @@ async function main() {
   await test('GoTrue crash recovery: the SAME kill window and resume contract holds for adminusers', async () => {
     await resetAll();
     const fakeUserId = crypto.randomUUID();
-    const mongoAdmin = { _id: new mongoose.Types.ObjectId(), email: 'gotrue-kill-window-admin@example.invalid', role: 'admin' };
+    const mongoAdmin = { password: FIXTURE_PASSWORD_HASH, _id: new mongoose.Types.ObjectId(), email: 'gotrue-kill-window-admin@example.invalid', role: 'admin' };
     const supabaseAdmin = fakeSupabaseAdmin(async () => ({ data: { user: { id: fakeUserId } }, error: null }));
 
     const client = await pgPool.connect();
@@ -1036,7 +1043,7 @@ async function main() {
 
   await test('GoTrue crash recovery: createUser() THROWING (ambiguous network timeout) is caught, reported, and never crashes the caller', async () => {
     await resetAll();
-    const mongoUser = { _id: new mongoose.Types.ObjectId(), email: 'ambiguous-timeout@example.invalid', role: 'student' };
+    const mongoUser = { password: FIXTURE_PASSWORD_HASH, _id: new mongoose.Types.ObjectId(), email: 'ambiguous-timeout@example.invalid', role: 'student' };
     const supabaseAdmin = fakeSupabaseAdmin(async () => { throw new Error('ETIMEDOUT: connect timed out'); });
 
     const client = await pgPool.connect();
@@ -1058,7 +1065,7 @@ async function main() {
   await test('GoTrue crash recovery: a ledger claiming a target that no longer exists fails closed -- never auto-creates a replacement account', async () => {
     await resetAll();
     const goneId = crypto.randomUUID();
-    const mongoUser = { _id: new mongoose.Types.ObjectId(), email: 'ghost-target@example.invalid', role: 'student' };
+    const mongoUser = { password: FIXTURE_PASSWORD_HASH, _id: new mongoose.Types.ObjectId(), email: 'ghost-target@example.invalid', role: 'student' };
     const client = await pgPool.connect();
     try {
       // A ledger row claiming this document already has a target -- but
@@ -1095,7 +1102,7 @@ async function main() {
   await test('round 8: an external account with the SAME email but NO migration_correlation_id is rejected on resume, never linked or overwritten', async () => {
     await resetAll();
     const foreignId = crypto.randomUUID();
-    const mongoUser = { _id: new mongoose.Types.ObjectId(), email: 'foreign-account-same-email@example.invalid', role: 'student', name: 'Mongo Name' };
+    const mongoUser = { password: FIXTURE_PASSWORD_HASH, _id: new mongoose.Types.ObjectId(), email: 'foreign-account-same-email@example.invalid', role: 'student', name: 'Mongo Name' };
     const client = await pgPool.connect();
     try {
       // Simulate an ambiguous timeout: the ledger is still 'planned' (no
@@ -1143,7 +1150,7 @@ async function main() {
   await test('round 8: an external account with a DIFFERENT migration_correlation_id (not just absent) is also rejected', async () => {
     await resetAll();
     const foreignId = crypto.randomUUID();
-    const mongoUser = { _id: new mongoose.Types.ObjectId(), email: 'foreign-account-different-correlation@example.invalid', role: 'student' };
+    const mongoUser = { password: FIXTURE_PASSWORD_HASH, _id: new mongoose.Types.ObjectId(), email: 'foreign-account-different-correlation@example.invalid', role: 'student' };
     const client = await pgPool.connect();
     try {
       await client.query(
@@ -1178,7 +1185,7 @@ async function main() {
   await test('round 8: the SAME foreign-account rejection holds for migrateOneAdmin', async () => {
     await resetAll();
     const foreignId = crypto.randomUUID();
-    const mongoAdmin = { _id: new mongoose.Types.ObjectId(), email: 'foreign-admin-same-email@example.invalid', role: 'admin' };
+    const mongoAdmin = { password: FIXTURE_PASSWORD_HASH, _id: new mongoose.Types.ObjectId(), email: 'foreign-admin-same-email@example.invalid', role: 'admin' };
     const client = await pgPool.connect();
     try {
       await client.query(
@@ -1206,7 +1213,7 @@ async function main() {
   await test('round 8: happy path -- a genuine resume (matching migration_correlation_id) still succeeds and reconciles normally', async () => {
     await resetAll();
     const realId = crypto.randomUUID();
-    const mongoUser = { _id: new mongoose.Types.ObjectId(), email: 'genuine-resume@example.invalid', role: 'student', name: 'Real Migrated Name' };
+    const mongoUser = { password: FIXTURE_PASSWORD_HASH, _id: new mongoose.Types.ObjectId(), email: 'genuine-resume@example.invalid', role: 'student', name: 'Real Migrated Name' };
     const client = await pgPool.connect();
     try {
       await client.query(
@@ -1258,7 +1265,7 @@ async function main() {
   await test('round 9, item 2: writing the CORRECT migration_correlation_id to raw_user_meta_data alone does NOT forge the check -- app_metadata is what is actually trusted', async () => {
     await resetAll();
     const foreignId = crypto.randomUUID();
-    const mongoUser = { _id: new mongoose.Types.ObjectId(), email: 'forged-via-user-metadata@example.invalid', role: 'student', name: 'Mongo Name' };
+    const mongoUser = { password: FIXTURE_PASSWORD_HASH, _id: new mongoose.Types.ObjectId(), email: 'forged-via-user-metadata@example.invalid', role: 'student', name: 'Mongo Name' };
     const client = await pgPool.connect();
     try {
       await client.query(
@@ -1306,7 +1313,7 @@ async function main() {
   await test('round 9, item 2: the SAME user_metadata-cannot-forge property holds for migrateOneAdmin', async () => {
     await resetAll();
     const foreignId = crypto.randomUUID();
-    const mongoAdmin = { _id: new mongoose.Types.ObjectId(), email: 'forged-via-user-metadata-admin@example.invalid', role: 'admin' };
+    const mongoAdmin = { password: FIXTURE_PASSWORD_HASH, _id: new mongoose.Types.ObjectId(), email: 'forged-via-user-metadata-admin@example.invalid', role: 'admin' };
     const client = await pgPool.connect();
     try {
       await client.query(
@@ -1365,7 +1372,7 @@ async function main() {
   await test('round 10, item 3: a trigger that silently rewrites `profiles.name` is caught by exact read-back -- never reconciled, reported as error', async () => {
     await resetAll();
     const realId = crypto.randomUUID();
-    const mongoUser = { _id: new mongoose.Types.ObjectId(), email: 'profile-tamper@example.invalid', role: 'student', name: 'Real Migrated Name' };
+    const mongoUser = { password: FIXTURE_PASSWORD_HASH, _id: new mongoose.Types.ObjectId(), email: 'profile-tamper@example.invalid', role: 'student', name: 'Real Migrated Name' };
     const client = await pgPool.connect();
     try {
       await seedResumableUserLedger(client, mongoUser, realId);
@@ -1402,7 +1409,7 @@ async function main() {
   await test('round 10, item 3: a trigger that RETURNs NULL (vetoing the profiles UPDATE entirely) is caught by rowCount, not silently treated as success', async () => {
     await resetAll();
     const realId = crypto.randomUUID();
-    const mongoUser = { _id: new mongoose.Types.ObjectId(), email: 'profile-veto@example.invalid', role: 'student', name: 'Real Migrated Name' };
+    const mongoUser = { password: FIXTURE_PASSWORD_HASH, _id: new mongoose.Types.ObjectId(), email: 'profile-veto@example.invalid', role: 'student', name: 'Real Migrated Name' };
     const client = await pgPool.connect();
     try {
       await seedResumableUserLedger(client, mongoUser, realId);
@@ -1443,7 +1450,7 @@ async function main() {
   await test('round 10, item 3: a trigger that rewrites admin_role_assignments.role to a WRONG (but valid) role is caught by exact read-back', async () => {
     await resetAll();
     const realId = crypto.randomUUID();
-    const mongoUser = { _id: new mongoose.Types.ObjectId(), email: 'admin-role-tamper@example.invalid', role: 'admin', name: 'Admin Person' };
+    const mongoUser = { password: FIXTURE_PASSWORD_HASH, _id: new mongoose.Types.ObjectId(), email: 'admin-role-tamper@example.invalid', role: 'admin', name: 'Admin Person' };
     const client = await pgPool.connect();
     try {
       await seedResumableUserLedger(client, mongoUser, realId);
@@ -1483,7 +1490,7 @@ async function main() {
   await test('round 10, item 3: a trigger that DELETES admin_role_assignments right after insert (missing role) is caught -- "no row found"', async () => {
     await resetAll();
     const realId = crypto.randomUUID();
-    const mongoUser = { _id: new mongoose.Types.ObjectId(), email: 'admin-role-missing@example.invalid', role: 'admin', name: 'Admin Person' };
+    const mongoUser = { password: FIXTURE_PASSWORD_HASH, _id: new mongoose.Types.ObjectId(), email: 'admin-role-missing@example.invalid', role: 'admin', name: 'Admin Person' };
     const client = await pgPool.connect();
     try {
       await seedResumableUserLedger(client, mongoUser, realId);
@@ -1527,7 +1534,7 @@ async function main() {
     // the ledger already points at this exact profile.
     await resetAll();
     const realId = crypto.randomUUID();
-    const mongoUser = { _id: new mongoose.Types.ObjectId(), email: 'resumed-then-tampered-correlation@example.invalid', role: 'student', name: 'Real Migrated Name' };
+    const mongoUser = { password: FIXTURE_PASSWORD_HASH, _id: new mongoose.Types.ObjectId(), email: 'resumed-then-tampered-correlation@example.invalid', role: 'student', name: 'Real Migrated Name' };
     const client = await pgPool.connect();
     try {
       await client.query('INSERT INTO auth.users (id, email, raw_app_meta_data) VALUES ($1, $2, $3::jsonb)', [
@@ -1574,7 +1581,7 @@ async function main() {
     await resetAll();
     const email = 'subscription-kill-window@example.invalid';
     const sourceDoc = {
-      _id: new mongoose.Types.ObjectId(), email, role: 'student',
+      password: FIXTURE_PASSWORD_HASH, _id: new mongoose.Types.ObjectId(), email, role: 'student',
       subscription: { plan: 'Starter', status: 'active', validUntil: '2999-01-01T00:00:00.000Z' },
     };
     const profileId = await seedExistingProfile(email);
@@ -1612,7 +1619,7 @@ async function main() {
     await resetAll();
     const email = 'subscription-ghost-target@example.invalid';
     const sourceDoc = {
-      _id: new mongoose.Types.ObjectId(), email, role: 'student',
+      password: FIXTURE_PASSWORD_HASH, _id: new mongoose.Types.ObjectId(), email, role: 'student',
       subscription: { plan: 'Starter', status: 'active', validUntil: '2999-01-01T00:00:00.000Z' },
     };
     const profileId = await seedExistingProfile(email);
@@ -1648,7 +1655,7 @@ async function main() {
     await resetAll();
     const email = 'subscription-readback-tamper@example.invalid';
     const sourceDoc = {
-      _id: new mongoose.Types.ObjectId(), email, role: 'student',
+      password: FIXTURE_PASSWORD_HASH, _id: new mongoose.Types.ObjectId(), email, role: 'student',
       subscription: { plan: 'Starter', status: 'active', validUntil: '2999-01-01T00:00:00.000Z' },
     };
     const profileId = await seedExistingProfile(email);
@@ -1723,7 +1730,7 @@ async function main() {
     await resetAll();
     const email = 'drift-subscription@example.invalid';
     const sourceDoc = {
-      _id: new mongoose.Types.ObjectId(), email, role: 'student',
+      password: FIXTURE_PASSWORD_HASH, _id: new mongoose.Types.ObjectId(), email, role: 'student',
       subscription: { plan: 'Starter', status: 'active', validUntil: '2099-01-01T00:00:00.000Z' },
     };
     const profileId = await seedExistingProfile(email);
@@ -1780,10 +1787,10 @@ async function main() {
     const studentEmail = 'rel-student@example.invalid';
     const parentEmail = 'rel-parent@example.invalid';
     const childEmail = 'rel-child@example.invalid';
-    const teacherDoc = { _id: new mongoose.Types.ObjectId(), email: teacherEmail, role: 'teacher' };
-    const childDoc = { _id: new mongoose.Types.ObjectId(), email: childEmail, role: 'student' };
-    const studentDoc = { _id: new mongoose.Types.ObjectId(), email: studentEmail, role: 'student', teacher: teacherDoc._id };
-    const parentDoc = { _id: new mongoose.Types.ObjectId(), email: parentEmail, role: 'parent', children: [childDoc._id] };
+    const teacherDoc = { password: FIXTURE_PASSWORD_HASH, _id: new mongoose.Types.ObjectId(), email: teacherEmail, role: 'teacher' };
+    const childDoc = { password: FIXTURE_PASSWORD_HASH, _id: new mongoose.Types.ObjectId(), email: childEmail, role: 'student' };
+    const studentDoc = { password: FIXTURE_PASSWORD_HASH, _id: new mongoose.Types.ObjectId(), email: studentEmail, role: 'student', teacher: teacherDoc._id };
+    const parentDoc = { password: FIXTURE_PASSWORD_HASH, _id: new mongoose.Types.ObjectId(), email: parentEmail, role: 'parent', children: [childDoc._id] };
     await mongoose.connection.collection('users').insertMany([teacherDoc, childDoc, studentDoc, parentDoc]);
     // This test file's SUPABASE_URL is deliberately unreachable (no real
     // GoTrue) -- every account must be pre-seeded directly so
@@ -1825,8 +1832,8 @@ async function main() {
     await resetAll();
     const teacherEmail = 'rel-teacher-2@example.invalid';
     const studentEmail = 'rel-student-2@example.invalid';
-    const teacherDoc = { _id: new mongoose.Types.ObjectId(), email: teacherEmail, role: 'teacher' };
-    const studentDoc = { _id: new mongoose.Types.ObjectId(), email: studentEmail, role: 'student', teacher: teacherDoc._id };
+    const teacherDoc = { password: FIXTURE_PASSWORD_HASH, _id: new mongoose.Types.ObjectId(), email: teacherEmail, role: 'teacher' };
+    const studentDoc = { password: FIXTURE_PASSWORD_HASH, _id: new mongoose.Types.ObjectId(), email: studentEmail, role: 'student', teacher: teacherDoc._id };
     await mongoose.connection.collection('users').insertMany([teacherDoc, studentDoc]);
 
     // Pre-existing profile for the student with a teacher_id ALREADY set
@@ -1866,8 +1873,8 @@ async function main() {
     await resetAll();
     const teacherEmail = 'rel-teacher-exactmatch@example.invalid';
     const studentEmail = 'rel-student-exactmatch@example.invalid';
-    const teacherDoc = { _id: new mongoose.Types.ObjectId(), email: teacherEmail, role: 'teacher' };
-    const studentDoc = { _id: new mongoose.Types.ObjectId(), email: studentEmail, role: 'student', teacher: teacherDoc._id };
+    const teacherDoc = { password: FIXTURE_PASSWORD_HASH, _id: new mongoose.Types.ObjectId(), email: teacherEmail, role: 'teacher' };
+    const studentDoc = { password: FIXTURE_PASSWORD_HASH, _id: new mongoose.Types.ObjectId(), email: studentEmail, role: 'student', teacher: teacherDoc._id };
     await mongoose.connection.collection('users').insertMany([teacherDoc, studentDoc]);
 
     const teacherProfileId = await seedExistingProfile(teacherEmail);
@@ -1899,8 +1906,8 @@ async function main() {
     await resetAll();
     const parentEmail = 'rel-parent-preexisting@example.invalid';
     const childEmail = 'rel-child-preexisting@example.invalid';
-    const childDoc = { _id: new mongoose.Types.ObjectId(), email: childEmail, role: 'student' };
-    const parentDoc = { _id: new mongoose.Types.ObjectId(), email: parentEmail, role: 'parent', children: [childDoc._id] };
+    const childDoc = { password: FIXTURE_PASSWORD_HASH, _id: new mongoose.Types.ObjectId(), email: childEmail, role: 'student' };
+    const parentDoc = { password: FIXTURE_PASSWORD_HASH, _id: new mongoose.Types.ObjectId(), email: parentEmail, role: 'parent', children: [childDoc._id] };
     await mongoose.connection.collection('users').insertMany([childDoc, parentDoc]);
 
     const parentProfileId = await seedExistingProfile(parentEmail);
@@ -1937,8 +1944,8 @@ async function main() {
     await resetAll();
     const parentEmail = 'rel-parent-resume@example.invalid';
     const childEmail = 'rel-child-resume@example.invalid';
-    const childDoc = { _id: new mongoose.Types.ObjectId(), email: childEmail, role: 'student' };
-    const parentDoc = { _id: new mongoose.Types.ObjectId(), email: parentEmail, role: 'parent', children: [childDoc._id] };
+    const childDoc = { password: FIXTURE_PASSWORD_HASH, _id: new mongoose.Types.ObjectId(), email: childEmail, role: 'student' };
+    const parentDoc = { password: FIXTURE_PASSWORD_HASH, _id: new mongoose.Types.ObjectId(), email: parentEmail, role: 'parent', children: [childDoc._id] };
     await mongoose.connection.collection('users').insertMany([childDoc, parentDoc]);
     for (const doc of [childDoc, parentDoc]) {
       const id = await seedExistingProfile(doc.email);
@@ -1956,8 +1963,8 @@ async function main() {
     await resetAll();
     const teacherEmail = 'rel-teacher-3@example.invalid';
     const studentEmail = 'rel-student-3@example.invalid';
-    const teacherDoc = { _id: new mongoose.Types.ObjectId(), email: teacherEmail, role: 'teacher' };
-    const studentDoc = { _id: new mongoose.Types.ObjectId(), email: studentEmail, role: 'student', teacher: teacherDoc._id };
+    const teacherDoc = { password: FIXTURE_PASSWORD_HASH, _id: new mongoose.Types.ObjectId(), email: teacherEmail, role: 'teacher' };
+    const studentDoc = { password: FIXTURE_PASSWORD_HASH, _id: new mongoose.Types.ObjectId(), email: studentEmail, role: 'student', teacher: teacherDoc._id };
     await mongoose.connection.collection('users').insertMany([teacherDoc, studentDoc]);
     for (const doc of [teacherDoc, studentDoc]) {
       const id = await seedExistingProfile(doc.email);
@@ -1994,8 +2001,8 @@ async function main() {
     const teacherEmail = 'rel-teacher-drift@example.invalid';
     const studentEmail = 'rel-student-drift@example.invalid';
     const otherTeacherEmail = 'rel-teacher-drift-other@example.invalid';
-    const teacherDoc = { _id: new mongoose.Types.ObjectId(), email: teacherEmail, role: 'teacher' };
-    const studentDoc = { _id: new mongoose.Types.ObjectId(), email: studentEmail, role: 'student', teacher: teacherDoc._id };
+    const teacherDoc = { password: FIXTURE_PASSWORD_HASH, _id: new mongoose.Types.ObjectId(), email: teacherEmail, role: 'teacher' };
+    const studentDoc = { password: FIXTURE_PASSWORD_HASH, _id: new mongoose.Types.ObjectId(), email: studentEmail, role: 'student', teacher: teacherDoc._id };
     await mongoose.connection.collection('users').insertMany([teacherDoc, studentDoc]);
     for (const doc of [teacherDoc, studentDoc]) {
       const id = await seedExistingProfile(doc.email);
@@ -2031,8 +2038,8 @@ async function main() {
     await resetAll();
     const parentEmail = 'rel-parent-drift@example.invalid';
     const childEmail = 'rel-child-drift@example.invalid';
-    const childDoc = { _id: new mongoose.Types.ObjectId(), email: childEmail, role: 'student' };
-    const parentDoc = { _id: new mongoose.Types.ObjectId(), email: parentEmail, role: 'parent', children: [childDoc._id] };
+    const childDoc = { password: FIXTURE_PASSWORD_HASH, _id: new mongoose.Types.ObjectId(), email: childEmail, role: 'student' };
+    const parentDoc = { password: FIXTURE_PASSWORD_HASH, _id: new mongoose.Types.ObjectId(), email: parentEmail, role: 'parent', children: [childDoc._id] };
     await mongoose.connection.collection('users').insertMany([childDoc, parentDoc]);
     for (const doc of [childDoc, parentDoc]) {
       const id = await seedExistingProfile(doc.email);
@@ -2069,8 +2076,8 @@ async function main() {
     await resetAll();
     const teacherEmail = 'rel-teacher-4@example.invalid';
     const studentEmail = 'rel-student-4@example.invalid';
-    const teacherDoc = { _id: new mongoose.Types.ObjectId(), email: teacherEmail, role: 'teacher' };
-    const studentDoc = { _id: new mongoose.Types.ObjectId(), email: studentEmail, role: 'student', teacher: teacherDoc._id };
+    const teacherDoc = { password: FIXTURE_PASSWORD_HASH, _id: new mongoose.Types.ObjectId(), email: teacherEmail, role: 'teacher' };
+    const studentDoc = { password: FIXTURE_PASSWORD_HASH, _id: new mongoose.Types.ObjectId(), email: studentEmail, role: 'student', teacher: teacherDoc._id };
     await mongoose.connection.collection('users').insertMany([teacherDoc, studentDoc]);
     for (const doc of [teacherDoc, studentDoc]) {
       const id = await seedExistingProfile(doc.email);

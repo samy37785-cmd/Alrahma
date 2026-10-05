@@ -42,6 +42,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { createClient } from '@supabase/supabase-js';
+import bcrypt from 'bcryptjs';
 import pg from 'pg';
 import { verifyReadBack, jsonPathEqual } from './lib/read-back-verify.mjs';
 import { migrateOneUser, correlationIdFor } from './migrate-users-to-supabase-auth.mjs';
@@ -116,12 +117,12 @@ async function startStack() {
     throw new Error(`supabase status -o env failed (exit ${statusRun.status}): ${statusRun.stderr}\n${statusRun.stdout}`);
   }
   const env = parseEnvOutput(statusRun.stdout);
-  if (!env.DB_URL || !env.API_URL || !env.SERVICE_ROLE_KEY) {
-    throw new Error(`supabase status -o env did not produce the expected DB_URL/API_URL/SERVICE_ROLE_KEY keys:\n${statusRun.stdout}`);
+  if (!env.DB_URL || !env.API_URL || !env.SERVICE_ROLE_KEY || !env.ANON_KEY) {
+    throw new Error('supabase status -o env did not produce the expected DB_URL/API_URL/SERVICE_ROLE_KEY/ANON_KEY keys');
   }
   assertLocalHost(env.DB_URL, 'DB_URL');
   assertLocalHost(env.API_URL, 'API_URL');
-  return { dbUrl: env.DB_URL, apiUrl: env.API_URL, serviceRoleKey: env.SERVICE_ROLE_KEY };
+  return { dbUrl: env.DB_URL, apiUrl: env.API_URL, serviceRoleKey: env.SERVICE_ROLE_KEY, anonKey: env.ANON_KEY };
 }
 
 function applyRepoSchema(dbUrl) {
@@ -146,7 +147,7 @@ ${left.stdout}` : `cleanup verified: no container left for ${stack.projectId}`);
 
 async function main() {
   console.log('=== SETUP: disposable real Supabase-CLI stack (real Postgres + real GoTrue + Kong) ===');
-  const { dbUrl, apiUrl, serviceRoleKey } = await startStack();
+  const { dbUrl, apiUrl, serviceRoleKey, anonKey } = await startStack();
   console.log(`stack up: API_URL=${apiUrl}`);
   applyRepoSchema(dbUrl);
   console.log('repo schema applied on top of the real GoTrue-managed auth schema.');
@@ -192,6 +193,7 @@ async function main() {
         email: `r11-e2e-${crypto.randomUUID()}@example.invalid`,
         role: 'student',
         name: 'Round 11 Real GoTrue E2E',
+        password: bcrypt.hashSync(`fixture-${crypto.randomUUID()}`, 4),
       };
       const result = await migrateOneUser(supabaseAdmin, client, mongoUser, { execute: true });
       assert.equal(result.status, 'created', result.message);
@@ -281,6 +283,72 @@ async function main() {
         raw_app_meta_data: jsonPathEqual(['migration_correlation_id'], correctCorrelationId),
       });
       assert.equal(readBack.ok, false, 'raw_user_meta_data must NEVER be consulted -- only raw_app_meta_data is admin-only/unforgeable');
+    });
+    // PASSWORD_DECISION=IMPORT_BCRYPT_HASHES, against real GoTrue: the
+    // account is created from the source bcrypt hash (the same bcryptjs
+    // cost-12 `$2a$` format the old backend writes), and the person signs
+    // in with their ORIGINAL password through the normal public endpoint.
+    // No password is generated, no reset is sent.
+    const anon = () => createClient(apiUrl, anonKey, { auth: { persistSession: false, autoRefreshToken: false } });
+    const ORIGINAL_PASSWORD = `Original-${crypto.randomUUID()}`;
+    const sourceHash = bcrypt.hashSync(ORIGINAL_PASSWORD, 12);
+
+    await test('bcrypt login fixture: the original password signs in after migration; a wrong one is refused', async () => {
+      const createdAt = new Date('2025-11-02T09:08:07.654Z');
+      const updatedAt = new Date('2026-03-04T05:06:07.890Z');
+      const mongoUser = {
+        _id: `bcrypt-login-${crypto.randomUUID()}`,
+        email: `bcrypt-login-${crypto.randomUUID()}@example.invalid`,
+        role: 'student',
+        name: 'Bcrypt Login Fixture',
+        password: sourceHash,
+        createdAt,
+        updatedAt,
+      };
+      const result = await migrateOneUser(supabaseAdmin, client, mongoUser, { execute: true });
+      assert.equal(result.status, 'created', result.message);
+      assert.equal(result.emailConfirmationBasis, 'source_had_no_verification_step');
+
+      const authRow = await client.query('SELECT encrypted_password, email_confirmed_at FROM auth.users WHERE id = $1', [result.id]);
+      assert.equal(authRow.rows[0].encrypted_password, sourceHash, 'GoTrue stores the imported hash verbatim -- nothing re-hashed or generated');
+      assert.ok(authRow.rows[0].email_confirmed_at, 'confirmed per the source-data contract (the old system had no verification step)');
+
+      const ok = await anon().auth.signInWithPassword({ email: mongoUser.email, password: ORIGINAL_PASSWORD });
+      assert.equal(ok.error, null, `the original password must sign in: ${ok.error?.message}`);
+      assert.ok(ok.data.session?.access_token, 'a real session is issued');
+      assert.equal(ok.data.user.id, result.id);
+
+      const bad = await anon().auth.signInWithPassword({ email: mongoUser.email, password: `${ORIGINAL_PASSWORD}-wrong` });
+      assert.ok(bad.error, 'a wrong password must be refused');
+      assert.equal(bad.data.session, null);
+
+      const profile = await client.query('SELECT created_at, updated_at FROM profiles WHERE id = $1', [result.id]);
+      assert.equal(profile.rows[0].created_at.toISOString(), createdAt.toISOString(), 'profiles.created_at is the source createdAt');
+      assert.equal(profile.rows[0].updated_at.toISOString(), updatedAt.toISOString(), 'profiles.updated_at is the source updatedAt, not the trigger stamp');
+    });
+
+    await test('bcrypt login fixture: $2b$ and $2y$ spellings of the same hash also import and sign in', async () => {
+      for (const prefix of ['$2b$', '$2y$']) {
+        const mongoUser = {
+          _id: `bcrypt-variant-${crypto.randomUUID()}`,
+          email: `bcrypt-variant-${crypto.randomUUID()}@example.invalid`,
+          role: 'student',
+          password: `${prefix}${sourceHash.slice(4)}`,
+        };
+        const result = await migrateOneUser(supabaseAdmin, client, mongoUser, { execute: true });
+        assert.equal(result.status, 'created', `${prefix}: ${result.message}`);
+        const ok = await anon().auth.signInWithPassword({ email: mongoUser.email, password: ORIGINAL_PASSWORD });
+        assert.equal(ok.error, null, `${prefix}: the original password must sign in: ${ok.error?.message}`);
+      }
+    });
+
+    await test('no importable hash -> no account at all (never a generated password)', async () => {
+      const email = `bcrypt-missing-${crypto.randomUUID()}@example.invalid`;
+      const result = await migrateOneUser(supabaseAdmin, client, { _id: `bcrypt-missing-${crypto.randomUUID()}`, email, role: 'student' }, { execute: true });
+      assert.equal(result.status, 'error');
+      assert.match(result.message, /no importable bcrypt password hash/);
+      const rows = await client.query('SELECT 1 FROM auth.users WHERE email = $1', [email]);
+      assert.equal(rows.rows.length, 0, 'no GoTrue account was created');
     });
   } finally {
     client.release();

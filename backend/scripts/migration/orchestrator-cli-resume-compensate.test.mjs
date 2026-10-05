@@ -59,14 +59,18 @@ import mongoose from 'mongoose';
 import pg from 'pg';
 import { runCommand } from '../../../lib/db/test/orchestrator-lib.mjs';
 import { TARGET_SUPABASE_REF, computeConfirmToken } from './production-import-orchestrator.mjs';
-import { ensureMigrationSeedAdmin } from './lib/admin-rpc.mjs';
+import { ensureMigrationSeedAdmin, MIGRATION_SEED_ADMIN_ID } from './lib/admin-rpc.mjs';
 import { contentHashOf } from './lib/source-ledger.mjs';
 import { correlationIdFor } from './migrate-users-to-supabase-auth.mjs';
+import { fingerprint } from './lib/redact.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, '..', '..', '..');
 const RUN_MIGRATIONS = path.join(REPO_ROOT, 'lib', 'db', 'test', 'run-migrations.mjs');
 const ORCHESTRATOR_SCRIPT = path.join(__dirname, 'production-import-orchestrator.mjs');
+// Every source account carries a bcrypt hash (PASSWORD_DECISION=IMPORT_BCRYPT_HASHES):
+// a cost-4 bcryptjs hash of a throwaway fixture password.
+const FIXTURE_PASSWORD_HASH = '$2a$04$RI/NjbXHyr4JLF1rz.4j8ODfZjwVClmGT6rCBmHHygLezXAeoRN3C';
 
 const SUFFIX = crypto.randomBytes(4).toString('hex');
 const MONGO_NAME = `stage2jb-h-orchresumetest-mongo-${SUFFIX}`;
@@ -237,7 +241,7 @@ async function main() {
   await test('item 1: partial user migration (profiles/auth.users already populated, migration-tagged) -> rerun resumes safely, no longer blocked by the old pristine-only preflight', async () => {
     await resetAll();
     const email = 'resume-user@example.invalid';
-    const sourceDoc = { _id: new mongoose.Types.ObjectId(), email, role: 'student' };
+    const sourceDoc = { password: FIXTURE_PASSWORD_HASH, _id: new mongoose.Types.ObjectId(), email, role: 'student' };
     const preExistingId = await seedLedgeredAccount(sourceDoc, 'mongodb');
     await mongoose.connection.collection('users').insertOne(sourceDoc);
 
@@ -246,15 +250,15 @@ async function main() {
     assert.equal(run.code, 0, run.stderr);
     assert.equal(run.json.ok, true);
     assert.equal(run.json.status, 'reconciled');
-    // Every real (non-dry-run) domain migration run seeds the canonical
-    // plan catalog unconditionally (mongo-to-supabase.mjs always calls
-    // ensureMigrationSeedAdmin()/seedCanonicalPlans() once real domain
-    // writes start, not only when subscription/payment data exists) --
-    // so a fully successful run here is expected to leave exactly TWO
-    // profiles: the one pre-existing (resumed, not duplicated) user, and
-    // the migration-seed admin. This is exactly the scenario item 1's fix
-    // targets: that seed-admin row must never itself block a later run.
-    assert.equal(await profileCount(), 2, 'expected exactly the resumed user profile + the seed-admin profile -- no duplicate of either');
+    // A real domain run checks the canonical plan catalog every time, but
+    // seedCanonicalPlans() creates the migration-seed admin only when a
+    // plan is actually missing (an earlier test in this file may already
+    // have created them). So the run leaves the one pre-existing (resumed,
+    // not duplicated) user, plus the seed admin if and only if it was
+    // needed. This is exactly the scenario item 1's fix targets: that
+    // seed-admin row must never itself block a later run.
+    const seedAdmin = await pgPool.query('SELECT 1 FROM profiles WHERE id = $1', [MIGRATION_SEED_ADMIN_ID]);
+    assert.equal(await profileCount(), 1 + seedAdmin.rows.length, 'expected exactly the resumed user profile (+ the seed admin when created) -- no duplicate of either');
     const stillThere = await pgPool.query('SELECT 1 FROM profiles WHERE id = $1', [preExistingId]);
     assert.equal(stillThere.rows.length, 1, 'the pre-existing user profile must be the exact same row -- resumed, not duplicated');
   });
@@ -262,7 +266,7 @@ async function main() {
   await test('item 1 + item 3: partial domain failure -> rerun resumes safely (real fault injection, real rollback, real resume)', async () => {
     await resetAll();
     const email = 'resume-domain-user@example.invalid';
-    const sourceDoc = { _id: new mongoose.Types.ObjectId(), email, role: 'student' };
+    const sourceDoc = { password: FIXTURE_PASSWORD_HASH, _id: new mongoose.Types.ObjectId(), email, role: 'student' };
     await seedLedgeredAccount(sourceDoc, 'mongodb');
     await mongoose.connection.collection('users').insertOne(sourceDoc);
     await mongoose.connection.collection('trialrequests').insertOne({ name: 'Resume Test', email: 'trial-resume@example.invalid', status: 'new' });
@@ -321,7 +325,7 @@ async function main() {
   await test('item 1: --compensate now actually reaches compensation with pre-existing attributable data, and removes nothing', async () => {
     await resetAll();
     const email = 'compensate-user@example.invalid';
-    const sourceDoc = { _id: new mongoose.Types.ObjectId(), email, role: 'student' };
+    const sourceDoc = { password: FIXTURE_PASSWORD_HASH, _id: new mongoose.Types.ObjectId(), email, role: 'student' };
     const id = await seedLedgeredAccount(sourceDoc, 'mongodb');
     await mongoose.connection.collection('users').insertOne(sourceDoc);
 
@@ -366,8 +370,8 @@ async function main() {
   await test('round 6 item 1: --compensate --execute with mixed valid + normalized-invalid users performs zero writes', async () => {
     await resetAll();
     await mongoose.connection.collection('users').insertMany([
-      { email: 'valid-compensate@example.invalid', role: 'student', subscription: { plan: 'Starter' } },
-      { email: ' BAD-EMAIL ', role: 'student' },
+      { password: FIXTURE_PASSWORD_HASH, email: 'valid-compensate@example.invalid', role: 'student', subscription: { plan: 'Starter' } },
+      { password: FIXTURE_PASSWORD_HASH, email: ' BAD-EMAIL ', role: 'student' },
     ]);
     const before = await migrationWriteCounts();
     const run = runOrchestratorCLI(['--compensate', '--execute']);
@@ -381,7 +385,7 @@ async function main() {
   await test('round 6 item 1: --compensate --execute with a dangling relationship performs zero writes', async () => {
     await resetAll();
     await mongoose.connection.collection('users').insertOne({
-      email: 'dangling-compensate@example.invalid', role: 'student', teacher: 'missing-source-id',
+      password: FIXTURE_PASSWORD_HASH, email: 'dangling-compensate@example.invalid', role: 'student', teacher: 'missing-source-id',
     });
     const before = await migrationWriteCounts();
     const run = runOrchestratorCLI(['--compensate', '--execute']);
@@ -396,11 +400,11 @@ async function main() {
     for (const mode of modes) {
       await resetAll();
       const email = `approved-${mode.join('-') || 'plan'}@example.invalid`;
-      const sourceDoc = { _id: new mongoose.Types.ObjectId(), email, role: 'student', teacher: 'missing-source-id' };
+      const sourceDoc = { password: FIXTURE_PASSWORD_HASH, _id: new mongoose.Types.ObjectId(), email, role: 'student', teacher: 'missing-source-id' };
       if (mode.includes('--execute')) await seedLedgeredAccount(sourceDoc);
       await mongoose.connection.collection('users').insertOne(sourceDoc);
       const dispositions = writeDispositions([{
-        signature: `relationship:teacher:${email}:missing-source-id`, reason: 'reviewed fixture gap',
+        signature: `relationship:teacher:${fingerprint(email)}:missing-source-id`, reason: 'reviewed fixture gap',
       }]);
       const run = runOrchestratorCLI([...mode, `--approved-dispositions=${dispositions}`]);
       assert.ok(run.json, run.stderr);

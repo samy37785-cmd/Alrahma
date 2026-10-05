@@ -237,7 +237,8 @@ async function main() {
     });
 
     await test('the collector refuses a non-local database that is not the target project', async () => {
-      await assert.rejects(collectCandidate({ dbUrl: 'postgresql://u:p@db.someotherproject.supabase.co:5432/postgres', gitSha: 'a'.repeat(40) }), /neither local nor the target Supabase project/);
+      // No credentials in the URL: the CI secret scan rejects any user:password@...supabase literal.
+      await assert.rejects(collectCandidate({ dbUrl: 'postgresql://db.someotherproject.supabase.co:5432/postgres', gitSha: 'a'.repeat(40) }), /neither local nor the target Supabase project/);
     });
 
     // --- the orchestrator refuses a bad manifest before any connection ---

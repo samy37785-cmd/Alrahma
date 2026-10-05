@@ -136,7 +136,8 @@ export function canonicalCatalogComplete(plans) {
   return CANONICAL_PLANS.every((c) => plans.some((p) => p.slug === c.slug && p.active === true));
 }
 
-function catalogMismatch(plan) {
+/** Why a plans row differs from its canonical definition, or null when it matches. */
+export function catalogMismatch(plan) {
   const expected = CANONICAL_PLANS.find((p) => p.slug === plan.slug);
   if (!expected) return 'is not a canonical plan slug';
   const diffs = [];

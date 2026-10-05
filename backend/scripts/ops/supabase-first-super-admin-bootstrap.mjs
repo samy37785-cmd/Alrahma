@@ -1,108 +1,96 @@
 #!/usr/bin/env node
-// Ops tool: bootstraps the FIRST Supabase-native super-admin identity
-// (auth.users + profiles.role='admin' + admin_role_assignments.role=
-// 'super-admin'), for the eventual DATA_BACKEND=supabase cutover. Never
-// run as part of the task that added this file — see
-// docs/supabase-first-super-admin-bootstrap-runbook.md for the full,
-// separately-authorized operational procedure this tool is meant to run
-// under.
+// Ops tool: creates the FIRST Supabase-native super-admin identity
+// (auth.users by invite + profiles.role='admin' + one
+// admin_role_assignments 'super-admin' row). Run it yourself, in an
+// interactive PowerShell window -- see
+// docs/supabase-first-super-admin-bootstrap-runbook.md.
 //
-// Why this exists: admin_set_admin_role() (lib/db/drizzle/
-// 0013_admin_rbac.sql) — the normal, in-app way to grant an admin role —
-// itself requires the CALLER to already be a super-admin with AAL2. There
-// is deliberately no self-service or ordinary-admin-gated way to create
-// the very first one; this offline, operator-run tool is that one
-// exception, exactly analogous to backend/scripts/createAdminUser.js on
-// the Mongo side.
+//   node supabase-first-super-admin-bootstrap.mjs                (dry-run: reads nothing, connects nowhere)
+//   node supabase-first-super-admin-bootstrap.mjs --apply --confirm-create-first-super-admin \
+//        --target=production --backup-manifest=<fresh backup manifest>
 //
-// Hard rules this script enforces structurally, not just by convention:
-//   1. Default is --dry-run (no flags at all): validates configuration
-//      only, connects to nothing, writes nothing.
-//   2. NEVER accepts, generates, or prints a password. The new identity is
-//      created via supabase.auth.admin.inviteUserByEmail() — Supabase Auth
-//      itself emails a real invite link; the owner sets their own password
-//      by following it. No password of any kind ever exists inside this
-//      tool's process.
-//   3. --apply requires ALL FIVE of: --apply, --confirm-create-first-
-//      super-admin, ALLOW_SUPABASE_SUPER_ADMIN_BOOTSTRAP=1,
-//      --target=staging|production matching SUPABASE_BOOTSTRAP_TARGET_ENV,
-//      and an explicit --email=<address>. See resolveRunConfig() in the
-//      core module — this is the ONLY place these gates are checked, and
-//      it runs before any client is constructed.
-//   4. Fails closed if ANY admin_role_assignments row already exists, or
-//      if profiles has an orphaned role='admin' row — never silently
-//      "fixes" an ambiguous state, never promotes a second admin.
-//   5. If the target email already has an auth.users account, refuses to
-//      touch it unless --confirm-promote-existing-account is ALSO passed
-//      — a second, separate acknowledgement from --confirm-create-first-
-//      super-admin.
-//   6. If account creation succeeds but the profile/role write fails, the
-//      newly-created auth identity (and ONLY that one, by the exact id
-//      this run itself just created it with) is deleted again — never an
-//      existing account this run did not create.
-//   7. Every log line is a mode/status/count — never an email, password,
-//      token, link, or secret value.
-import 'dotenv/config';
+// Why it exists: admin_set_admin_role() (lib/db/drizzle/0013_admin_rbac.sql)
+// requires the caller to already be an AAL2 super-admin, so the very first
+// one needs this offline, owner-run exception.
+//
+// The email, the database URL and the service key are never flags: they
+// come from a hidden prompt (or, for the two secrets, the environment), so
+// none of them can reach PowerShell history, the process arguments or a
+// log. No .env file is read. The run itself is
+// lib/supabase-first-super-admin-bootstrap-core.mjs's runBootstrapCli();
+// this file only wires the real terminal, git, the Mongo collision check,
+// the Supabase Auth Admin client and Postgres.
+import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { parseStrictCliArgs } from '../migration/lib/cli-args.mjs';
-import { CLI_SPEC, resolveRunConfig, runBootstrap } from './lib/supabase-first-super-admin-bootstrap-core.mjs';
-import { withServiceRole } from '../../data/supabase/client.js';
-import { getAdminClient } from '../../data/supabase/authClients.js';
+import pg from 'pg';
+import { createClient } from '@supabase/supabase-js';
+import { buildPgPoolConfig } from '../../data/supabase/client.js';
+import { verifyFreshBackup } from '../migration/lib/production-approval.mjs';
+import { runCollisionCheck } from '../migration/check-super-admin-email-collision.mjs';
+import { TOOL, runBootstrapCli } from './lib/supabase-first-super-admin-bootstrap-core.mjs';
+import { describeError, gitState, makeRedactor, makeTerminalIo } from './lib/operator-io.mjs';
 
-const CLIENT_URL = () => process.env.CLIENT_URL || null;
+const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 
-async function inviteUser(email) {
-  const client = getAdminClient();
-  const redirectTo = CLIENT_URL() ? `${CLIENT_URL()}/admin/login` : undefined;
-  const { data, error } = await client.auth.admin.inviteUserByEmail(email, redirectTo ? { redirectTo } : undefined);
-  return { data, error };
+export function createAuthAdmin(url, serviceKey) {
+  const client = createClient(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } });
+  return {
+    inviteUser: (email) => client.auth.admin.inviteUserByEmail(email),
+    deleteUser: async (userId) => {
+      const { error } = await client.auth.admin.deleteUser(userId);
+      if (error) throw new Error('compensation failed: the invited account could not be deleted -- remove it by hand');
+    },
+  };
 }
 
-async function deleteUser(userId) {
-  const client = getAdminClient();
-  await client.auth.admin.deleteUser(userId);
+/** readOnly runs as the connecting user inside BEGIN READ ONLY; inTransaction as service_role. */
+export function createDb(dbUrl) {
+  const pool = new pg.Pool({ ...buildPgPoolConfig(dbUrl), max: 1 });
+  const run = async (begin, fn) => {
+    const client = await pool.connect();
+    try {
+      for (const sql of begin) await client.query(sql);
+      const out = await fn(client);
+      await client.query('COMMIT');
+      return out;
+    } catch (err) {
+      await client.query('ROLLBACK').catch(() => {});
+      throw err;
+    } finally {
+      client.release();
+    }
+  };
+  return {
+    readOnly: (fn) => run(['BEGIN READ ONLY'], fn),
+    inTransaction: (fn) => run(['BEGIN', 'SET LOCAL ROLE service_role'], fn),
+    end: () => pool.end(),
+  };
 }
 
 async function main() {
-  const args = parseStrictCliArgs(process.argv.slice(2), CLI_SPEC);
-  const config = resolveRunConfig({ args, env: process.env });
-
-  console.log(`[supabase-super-admin-bootstrap] mode=${config.apply ? 'apply' : 'dry-run'}`);
-
-  if (!config.apply) {
-    console.log('[supabase-super-admin-bootstrap] dry-run only — no connection was made, no write performed.');
-    console.log(
-      '[supabase-super-admin-bootstrap] to apply: --apply --confirm-create-first-super-admin ' +
-      '--target=<staging|production> --email=<address>, with ALLOW_SUPABASE_SUPER_ADMIN_BOOTSTRAP=1 and ' +
-      'SUPABASE_BOOTSTRAP_TARGET_ENV matching --target both set in the environment.'
-    );
-    return;
-  }
-
-  console.log(`[supabase-super-admin-bootstrap] target=${config.target}`);
-
-  const result = await runBootstrap({
-    email: config.email,
-    confirmPromoteExisting: config.confirmPromoteExisting,
-    inviteUser,
-    deleteUser,
-    runInServiceRoleTransaction: withServiceRole,
-  });
-
-  console.log('[supabase-super-admin-bootstrap] result:', JSON.stringify({
-    status: result.status,
-    createdByThisRun: result.createdByThisRun,
-    promoted: result.promoted,
-  }));
-
-  if (result.status !== 'success') {
+  const redactor = makeRedactor();
+  const io = makeTerminalIo(redactor);
+  try {
+    const result = await runBootstrapCli({
+      argv: process.argv.slice(2),
+      env: process.env,
+      io,
+      redactor,
+      deps: {
+        gitState: () => gitState(REPO_ROOT),
+        verifyFreshBackup: (p) => verifyFreshBackup(p),
+        collisionCheck: runCollisionCheck,
+        createAuthAdmin,
+        createDb,
+      },
+    });
+    if (!['success', 'dry-run'].includes(result.status)) process.exitCode = 1;
+  } catch (err) {
+    process.stderr.write(`[${TOOL}] STOPPED ${describeError(err, redactor)}\n`);
     process.exitCode = 1;
   }
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  main().catch((err) => {
-    console.error('[supabase-super-admin-bootstrap] FATAL:', err.code ? `${err.code}: ${err.message}` : err.message);
-    process.exitCode = 1;
-  });
+  main();
 }

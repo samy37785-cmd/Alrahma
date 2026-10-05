@@ -5,7 +5,9 @@
 //   node check-super-admin-email-collision.mjs --backup-manifest=<path>
 //
 // Run it yourself, in an interactive terminal. It:
-//   1. checks the backup archive against its manifest's sha256;
+//   1. checks the backup is fresh (createdAt at most 24h ago -- an older
+//      backup can miss an email added since) and the archive matches its
+//      manifest's sha256;
 //   2. asks for the email twice, without echoing it;
 //   3. restores the backup into a throwaway local mongo:7 container
 //      (127.0.0.1 only, backup folder mounted read-only);
@@ -27,6 +29,7 @@ import { extractEmailsDeep, formatResult, hasEmailConflict, isEmailShaped, norma
 
 const CLI_SPEC = { flags: { 'backup-manifest': { type: 'string' } } };
 const SOURCE_DATABASE = 'al-rahma';
+export const COLLISION_BACKUP_MAX_AGE_HOURS = 24;
 
 class CheckError extends Error {}
 
@@ -40,6 +43,10 @@ export function verifyBackupArchive(manifestPath) {
   if (!manifestPath || !fs.existsSync(manifestPath)) throw new CheckError('backup manifest not found');
   const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
   if (!manifest.filePath || !/^[0-9a-f]{64}$/.test(String(manifest.sha256))) throw new CheckError('backup manifest has no filePath/sha256');
+  const ageHours = (Date.now() - new Date(manifest.createdAt).getTime()) / 3_600_000;
+  if (!(ageHours >= 0) || ageHours > COLLISION_BACKUP_MAX_AGE_HOURS) {
+    throw new CheckError('the backup is older than 24h (or has no valid createdAt) -- take a fresh backup for the email check');
+  }
   if (!fs.existsSync(manifest.filePath)) throw new CheckError('the backup archive named by the manifest does not exist');
   const actual = crypto.createHash('sha256').update(fs.readFileSync(manifest.filePath)).digest('hex');
   if (actual !== manifest.sha256) throw new CheckError('the backup archive does not match its manifest sha256');

@@ -49,6 +49,7 @@ import { jsonPathEqual } from './lib/read-back-verify.mjs';
 import { verifyThenReconcile } from './lib/reconcile.mjs';
 import { assertLocalHostOrProductionAuthorized } from './lib/host-guard.mjs';
 import { loadAndVerifyProductionAuthorization } from './lib/production-authorization.mjs';
+import { buildPgPoolConfig } from '../../data/supabase/client.js';
 
 // Review round 6, item 3: this script never went through migration_source_
 // ledger before this round (it predates that table, and auth.users/
@@ -1664,12 +1665,26 @@ async function main() {
   const productionAuthorization = loadAndVerifyProductionAuthorization();
   assertLocalHostOrProductionAuthorized(pgUri, 'MIGRATION_DB_URL', productionAuthorization);
 
+  // Same TLS rule as backend/data/supabase/client.js's getPool(): strict
+  // verification for any non-local host, TLS-weakening URL params stripped,
+  // and a missing/empty CA fails here -- before Mongo, Postgres or GoTrue is
+  // contacted at all. --plan connects too, so it gets exactly the same rule.
+  const pgPoolConfig = buildPgPoolConfig(pgUri);
+
   const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, { auth: { persistSession: false, autoRefreshToken: false } });
 
-  await mongoose.connect(mongoUri);
-  const db = mongoose.connection;
-  const pool = new pg.Pool({ connectionString: pgUri });
+  // Postgres before Mongo, so a target that refuses the strict TLS config
+  // stops the run before the source is ever read.
+  const pool = new pg.Pool(pgPoolConfig);
   const pgClient = await pool.connect();
+  try {
+    await mongoose.connect(mongoUri);
+  } catch (err) {
+    pgClient.release();
+    await pool.end();
+    throw err;
+  }
+  const db = mongoose.connection;
 
   const checkpoint = loadCheckpoint();
   const report = {

@@ -1,0 +1,22 @@
+-- Adds 'paymob' to public.payment_gateway so the historical Mongo payments
+-- can be migrated losslessly. The production Mongo source holds 15 payments
+-- with gateway "paymob" (all status "pending", none completed, created
+-- 2026-06-14..2026-06-17), from a gateway the live backend no longer
+-- integrates. Without this value the migration can only drop them.
+--
+-- 'paymob' is a historical, import-only value:
+--   - No live code path writes it: the only callers of the provider-typed
+--     RPCs pass literals ('stripe' in stripeController.js, 'paypal' in
+--     paypalController.js), and there is no paymob webhook or controller.
+--   - service_apply_subscription_update() already rejects every provider
+--     except 'stripe', so it rejects 'paymob' unchanged.
+--
+-- Forward-only and additive: no existing value, row, column, default,
+-- constraint, function or grant changes. Postgres cannot drop an enum
+-- value, so there is deliberately no down migration; a value nothing uses
+-- is harmless.
+--
+-- IF NOT EXISTS keeps a re-run a no-op. ADD VALUE is allowed inside the
+-- migration transaction (Postgres 12+); the new value is only usable after
+-- commit, and nothing in this migration uses it.
+ALTER TYPE "public"."payment_gateway" ADD VALUE IF NOT EXISTS 'paymob';

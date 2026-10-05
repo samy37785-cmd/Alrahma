@@ -18,6 +18,7 @@ import { HOME_LEAKED_STRINGS_TEXT, COURSE_OPTION_LABELS_TEXT } from '../i18n/hom
 import { COUNTRY_NAMES_TEXT } from '../i18n/home/countries';
 import { A11Y_LABELS_TEXT } from '../i18n/a11yLabels';
 import { TEACHERS } from '../data';
+import { IT_PAGE_META_DESCRIPTIONS } from '../i18n/itMetaDescriptions';
 
 // Italian Batch 1A — Home, Standard SEO Copy & English-Leak Fixes: /it/,
 // /it/courses, /it/courses/quran, /it/courses/arabic and /it/academy now
@@ -40,7 +41,7 @@ useFullPageEnvironment();
 const PAGES = [
   { path: '/', Page: Home, title: HOME_SEO_TEXT.it.title, description: HOME_SEO_TEXT.it.description, h1: itLocale.hero.title },
   { path: '/courses', Page: CoursesHub, title: COURSES_SEO_TEXT.hub.it.title, description: COURSES_SEO_TEXT.hub.it.description, h1: itLocale.hubs.courses.heading },
-  { path: '/courses/quran', Page: CoursesQuran, title: COURSES_SEO_TEXT.quran.it.title, description: COURSES_SEO_TEXT.quran.it.description, h1: itLocale.hubs.quran.heading },
+  { path: '/courses/quran', Page: CoursesQuran, title: COURSES_SEO_TEXT.quran.it.title, description: IT_PAGE_META_DESCRIPTIONS.coursesQuran, h1: itLocale.hubs.quran.heading },
   { path: '/courses/arabic', Page: CoursesArabic, title: COURSES_SEO_TEXT.arabic.it.title, description: COURSES_SEO_TEXT.arabic.it.description, h1: itLocale.hubs.arabic.heading },
   { path: '/academy', Page: AcademyHub, title: itLocale.nav.academy, description: ACADEMY_SEO_TEXT.it.description, h1: itLocale.hubs.academy.heading },
 ];

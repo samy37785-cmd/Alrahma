@@ -4,6 +4,7 @@ import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 import Reveal from '../components/ui/Reveal';
 import useSEO from '../hooks/useSEO';
+import { pickItPageMetaDescription } from '../i18n/itMetaDescriptions';
 import Breadcrumbs from '../components/ui/Breadcrumbs';
 import { useLang, withLanguage } from '../context/LangContext';
 import { COURSE_UI } from '../i18n/coursePages';
@@ -429,7 +430,7 @@ export default function CourseIjazah() {
     description: isAr
       ? 'احصل على إجازة قرآنية رسمية بسند متصل إلى النبي ﷺ. ادرس متن الجزرية والشاطبية مع علماء أزهريين معتمدين.'
       : isFr ? FR.seoDescription
-      : isIt ? IT.seoDescription
+      : isIt ? pickItPageMetaDescription('ijazah', lang, IT.seoDescription)
       : "Earn a formal Quran Ijazah with a continuous Sanad to the Prophet ﷺ. Study Matn Al-Jazariyyah, Al-Shatibiyyah and the Seven Qira'at with certified Al-Azhar scholars.",
     // French: the same Course object with its text fields in French;
     // inLanguage (language of instruction) is unchanged.

@@ -6,6 +6,7 @@ import WhatsappFab from '../../components/ui/WhatsappFab';
 import { useLang } from '../../context/LangContext';
 import { quranReaderRoute } from '../../utils/italianLinkPolicy';
 import useSEO from '../../hooks/useSEO';
+import { pickItPageMetaDescription } from '../../i18n/itMetaDescriptions';
 import { pickCoursesSeo } from '../../i18n/courses/seo';
 
 export default function CoursesQuran() {
@@ -16,7 +17,7 @@ export default function CoursesQuran() {
 
   useSEO({
     title: seo.title,
-    description: seo.description,
+    description: pickItPageMetaDescription('coursesQuran', lang, seo.description),
     keywords: seo.keywords,
   });
 

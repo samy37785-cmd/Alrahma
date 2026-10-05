@@ -18,3 +18,38 @@ export const IT_META_DESCRIPTIONS = {
 export function pickItMetaDescription(key, lang, fallback) {
   return lang === 'it' ? IT_META_DESCRIPTIONS[key] : fallback;
 }
+
+// Remaining Italian wave: 16 pages whose description was outside 120-160 code points (teacher profiles up to 203,
+// terms/refund/resources/hadith about 114-118). Head description only: every visible text, title and H1 is unchanged.
+// Teachers 9 and 11 already fit and keep their on-page bio. The resources text no longer mentions the blog, which has no
+// published Italian page.
+export const IT_PAGE_META_DESCRIPTIONS = {
+  coursesQuran: "Corsi online di Corano, Tajweed e Hifz (memorizzazione) con insegnanti certificati Al-Azhar: lezioni individuali e prova gratuita per ogni livello.",
+  terms: "Termini di servizio di Al-Rahma Academy: abbonamenti e pagamento, rimborso entro 24 giorni, disdetta, prova gratuita, lezioni, tutor e protezione dei dati.",
+  refund: "Politica di rimborso di Al-Rahma Academy: rimborso del primo periodo entro 24 giorni dal primo pagamento. Come funziona, cosa copre e come richiederlo.",
+  resources: "Risorse di Al-Rahma Academy: domande frequenti, informazioni sull’accademia e profili degli insegnanti certificati Al-Azhar per le lezioni di Corano.",
+  ijazah: "Ottieni un’Ijazah coranica con sanad ininterrotto fino al Profeta ﷺ: studia Matn Al-Jazariyyah, Al-Shatibiyyah e le sette Qira’at con studiosi di Al-Azhar.",
+  islamicStudies: "Studi islamici basati sulle fonti: Aqeedah, Fiqh, Seerah, Hadith e Tafsir in 5 moduli strutturati, con studiosi certificati e lezioni nella tua lingua.",
+  hadith: "Sfoglia e cerca 10 raccolte autentiche di hadith, tra cui Sahih al-Bukhari, Sahih Muslim e Sunan Abi Dawud, in arabo e inglese.",
+};
+
+export const IT_TEACHER_META_DESCRIPTIONS = {
+  1: "Sami Mahmoud Abd Al-Aal, specialista in Corano e Tajweed avanzato: laureato di Al-Azhar con Ijazah e sanad connesso. Lezioni individuali online.",
+  2: "Muhammad Abd Al-Maqsoud, istruttore di Fiqh e studi islamici: laureato di Al-Azhar con Ijazah e sanad connesso. Lezioni individuali online.",
+  3: "Khairiyya Al-Muhammadi, istruttrice di Corano per bambini: laureata di Al-Azhar con Ijazah e sanad connesso. Lezioni individuali online.",
+  4: "Omnia Abd Allah, coach di Hifz e ripasso del Corano: laureata di Al-Azhar con Ijazah e sanad connesso. Lezioni individuali online su Al-Rahma Academy.",
+  5: "Abd Allah Ayman, specialista in lingua araba e arabo coranico: laureato di Al-Azhar con Ijazah e sanad connesso. Lezioni individuali online.",
+  6: "Mahmoud Sami, istruttore di Tafsir e Aqeedah: laureato di Al-Azhar con Ijazah e sanad connesso. Lezioni individuali online su Al-Rahma Academy.",
+  7: "Aya, istruttrice di Corano e Ijazah: laureata di Al-Azhar con Ijazah e sanad connesso. Lezioni individuali online su Al-Rahma Academy.",
+  8: "Fatima Al-Rashidi, istruttrice di Corano per bisogni speciali e principianti: laureata di Al-Azhar con Ijazah e sanad connesso. Lezioni individuali online.",
+  10: "Islam Muhammad, istruttore di memorizzazione e recitazione del Corano: laureato di Al-Azhar con Ijazah e sanad connesso. Lezioni individuali online.",
+};
+
+export function pickItPageMetaDescription(key, lang, fallback) {
+  return lang === 'it' ? IT_PAGE_META_DESCRIPTIONS[key] : fallback;
+}
+
+/** Italian teacher-profile description; teachers without an entry keep their on-page bio. */
+export function pickItTeacherMetaDescription(id, lang, fallback) {
+  return lang === 'it' ? IT_TEACHER_META_DESCRIPTIONS[id] ?? fallback : fallback;
+}

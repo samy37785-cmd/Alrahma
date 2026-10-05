@@ -5,6 +5,7 @@ import Breadcrumbs from '../../components/ui/Breadcrumbs';
 import WhatsappFab from '../../components/ui/WhatsappFab';
 import { useLang } from '../../context/LangContext';
 import useSEO from '../../hooks/useSEO';
+import { pickItPageMetaDescription } from '../../i18n/itMetaDescriptions';
 import { pickResourcesSeo } from '../../i18n/resources/content';
 import { isRouteHidden } from '../../utils/italianLinkPolicy';
 
@@ -18,7 +19,7 @@ export default function ResourcesHub() {
 
   useSEO({
     title: t.nav.resources,
-    description: seo.description,
+    description: pickItPageMetaDescription('resources', lang, seo.description),
   });
 
   return (

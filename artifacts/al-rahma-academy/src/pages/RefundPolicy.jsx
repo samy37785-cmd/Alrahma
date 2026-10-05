@@ -2,6 +2,7 @@ import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 import Breadcrumbs from '../components/ui/Breadcrumbs';
 import useSEO from '../hooks/useSEO';
+import { pickItPageMetaDescription } from '../i18n/itMetaDescriptions';
 import { useLang } from '../context/LangContext';
 import { site } from '../data/site';
 
@@ -133,7 +134,7 @@ export default function RefundPolicy() {
 
   useSEO({
     title: content.seoTitle,
-    description: content.seoDescription,
+    description: pickItPageMetaDescription('refund', lang, content.seoDescription),
   });
 
   return (

@@ -4,6 +4,7 @@ import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 import Reveal from '../components/ui/Reveal';
 import useSEO from '../hooks/useSEO';
+import { pickItPageMetaDescription } from '../i18n/itMetaDescriptions';
 import Breadcrumbs from '../components/ui/Breadcrumbs';
 import { useLang } from '../context/LangContext';
 import { HADITH_COLLECTIONS } from '../data/hadith/collections';
@@ -42,7 +43,7 @@ export default function HadithLibrary() {
 
   useSEO({
     title: h.pageTitle,
-    description: h.pageDesc,
+    description: pickItPageMetaDescription('hadith', lang, h.pageDesc),
   });
 
   const loadCollection = useCallback(async (col) => {

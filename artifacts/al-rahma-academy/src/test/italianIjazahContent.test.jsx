@@ -7,6 +7,7 @@ import { useFullPageEnvironment, mountFullPage, headMeta } from './utils/fullPag
 import CourseIjazah, { BOOKS } from '../pages/CourseIjazah';
 import { IJAZAH_PAGE_IT as IT } from '../i18n/courses/ijazahPageIt';
 import { PRERENDER_MANIFEST } from '../../scripts/prerender-routes.mjs';
+import { IT_PAGE_META_DESCRIPTIONS } from '../i18n/itMetaDescriptions';
 
 // Italian Ijazah Content Batch: /it/courses/ijazah is a full Italian UI after
 // hydration. Religious/scholarly source material (book titles, authors, the
@@ -53,7 +54,7 @@ describe('/it/courses/ijazah — Italian UI after hydration', () => {
     const r = await italianTexts();
     expect(r.meta.lang).toBe('it');
     expect(r.meta.title).toContain(IT.seoTitle);
-    expect(r.meta.description).toBe(IT.seoDescription);
+    expect(r.meta.description).toBe(IT_PAGE_META_DESCRIPTIONS.ijazah);
     expect(r.meta.h1).toBe(IT.h1);
     const course = r.jsonLd.flat().find((j) => j['@type'] === 'Course');
     expect(course.name).toBe(IT.schemaName);

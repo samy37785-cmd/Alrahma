@@ -8,6 +8,7 @@ import CourseIslamicStudies from '../pages/CourseIslamicStudies';
 import { HADITHS, MODULES, BOOKS, LEARN, FOR, PERKS } from '../data/islamicStudiesData';
 import { ISLAMIC_STUDIES_PAGE_IT as IT } from '../i18n/courses/islamicStudiesPageIt';
 import { PRERENDER_MANIFEST } from '../../scripts/prerender-routes.mjs';
+import { IT_PAGE_META_DESCRIPTIONS } from '../i18n/itMetaDescriptions';
 
 // Italian Islamic Studies Content Batch: /it/courses/islamic-studies is a
 // full Italian UI after hydration. Religious/scholarly source material (the
@@ -67,7 +68,7 @@ describe('/it/courses/islamic-studies — Italian UI after hydration', () => {
     const r = await italianTexts();
     expect(r.meta.lang).toBe('it');
     expect(r.meta.title).toContain(IT.seoTitle);
-    expect(r.meta.description).toBe(IT.seoDescription);
+    expect(r.meta.description).toBe(IT_PAGE_META_DESCRIPTIONS.islamicStudies);
     expect(r.meta.h1).toBe(IT.h1);
     const course = r.jsonLd.flat().find((j) => j['@type'] === 'Course');
     expect(course.name).toBe(IT.schemaName);

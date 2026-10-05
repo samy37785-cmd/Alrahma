@@ -16,7 +16,9 @@
 //   2. execute: every source document lands, payments as historical
 //      'paymob'/'pending' rows linked to their user with the whole source
 //      document in payment_source_snapshots, and every source date equal to
-//      the source instant (to the millisecond);
+//      the source instant (to the millisecond) -- including the columns
+//      0029 added (DATES_MUST_BE_PRESERVED), which stay NULL where the
+//      source document has no date; no domain reports a date as lost;
 //   3. rerun: nothing new is written, nothing is duplicated;
 //   4. a changed source document goes through the UPDATE path and keeps
 //      the source updatedAt despite the set_updated_at() trigger;
@@ -101,10 +103,21 @@ const SOURCE = {
       gatewayOrderId: 'order-fixture-2', customer: { name: PII.names[1], email: PII.emails[1] }, createdAt: T(15), updatedAt: T(16), __v: 0,
     },
   ],
-  trialrequests: [{ _id: id(), name: PII.names[2], email: PII.emails[2], phone: PII.phones[0], status: 'new', createdAt: T(17), updatedAt: T(18) }],
+  // The second document of a pair has no updatedAt (or no dates at all):
+  // the nullable 0029 columns must stay NULL for it, never the migration time.
+  trialrequests: [
+    { _id: id(), name: PII.names[2], email: PII.emails[2], phone: PII.phones[0], status: 'new', createdAt: T(17), updatedAt: T(18) },
+    { _id: id(), name: PII.names[1], email: PII.emails[1], status: 'contacted', createdAt: T(27) },
+  ],
   subscribers: [{ _id: id(), email: PII.emails[3], createdAt: T(19), updatedAt: T(20) }],
-  quranbookmarks: [{ _id: id(), user: U1, verseKey: '2:255', chapterId: 2, verseNum: 255, createdAt: T(21), updatedAt: T(22) }],
-  quranreadingprogresses: [{ _id: id(), user: U1, lastPosition: { surah: 2 }, streak: { current: 3, longest: 5, lastReadDate: '2026-06-13' }, createdAt: T(23), updatedAt: T(24) }],
+  quranbookmarks: [
+    { _id: id(), user: U1, verseKey: '2:255', chapterId: 2, verseNum: 255, createdAt: T(21), updatedAt: T(22) },
+    { _id: id(), user: U2, verseKey: '1:1', chapterId: 1, verseNum: 1, createdAt: T(28) },
+  ],
+  quranreadingprogresses: [
+    { _id: id(), user: U1, lastPosition: { surah: 2 }, streak: { current: 3, longest: 5, lastReadDate: '2026-06-13' }, createdAt: T(23), updatedAt: T(24) },
+    { _id: id(), user: U2, lastPosition: {}, streak: { current: 0 } },
+  ],
   quranmemorizationstats: [{ _id: id(), user: U2, stats: { totalRecordings: 2 }, streak: { current: 1 }, createdAt: T(25), updatedAt: T(26) }],
 };
 
@@ -223,7 +236,7 @@ async function main() {
     const byDomain = Object.fromEntries(plan.report.results.map((r) => [r.domain, r]));
     for (const r of plan.report.results) assert.equal(r.failed, 0, `${r.domain} failed in plan mode`);
     assert.equal(byDomain.payments.imported, 2, 'both payments plan against planned accounts and planned plans');
-    assert.equal(byDomain.quran_bookmarks.imported, 1);
+    assert.equal(byDomain.quran_bookmarks.imported, SOURCE.quranbookmarks.length);
     assert.equal(byDomain.enrollments.imported, 2);
 
     assert.deepEqual(await tableCounts(), countsBefore, 'plan mode changed a row count');
@@ -249,10 +262,10 @@ async function main() {
     assert.equal(await count('payment_source_snapshots'), 2);
     assert.equal(await count('enrollments'), 2);
     assert.equal(await count('courses'), 1);
-    assert.equal(await count('trial_requests'), 1);
+    assert.equal(await count('trial_requests'), 2);
     assert.equal(await count('subscribers'), 1);
-    assert.equal(await count('quran_bookmarks'), 1);
-    assert.equal(await count('quran_reading_progress'), 1);
+    assert.equal(await count('quran_bookmarks'), 2);
+    assert.equal(await count('quran_reading_progress'), 2);
     assert.equal(await count('quran_memorization_stats'), 1);
 
     const pay = await pool.query(
@@ -277,7 +290,7 @@ async function main() {
     assert.deepEqual(ledger.rows, [{ status: 'reconciled', n: domainDocs }], 'every imported document is reconciled in the ledger');
   });
 
-  await test('execute: every source date equals the source instant exactly; tables without a column report the loss by name', async () => {
+  await test('execute: every source date equals the source instant exactly; a source without a date keeps NULL; no date is reported lost', async () => {
     const expectDate = async (sql, params, expected, label) => {
       const r = await pool.query(sql, params);
       assert.equal(r.rows.length, 1, `${label}: exactly one row`);
@@ -292,21 +305,33 @@ async function main() {
       { created_at: T(11), updated_at: T(12), paid_at: T(9), renewal_at: T(10) }, 'enrollments[paid]');
     await expectDate('SELECT created_at, updated_at FROM payments WHERE gateway_order_id = $1', ['order-fixture-1'], { created_at: T(13), updated_at: T(14) }, 'payments[1]');
     await expectDate('SELECT created_at, updated_at FROM payments WHERE gateway_order_id = $1', ['order-fixture-2'], { created_at: T(15), updated_at: T(16) }, 'payments[2]');
-    await expectDate('SELECT created_at FROM trial_requests', [], { created_at: T(17) }, 'trial_requests');
-    await expectDate('SELECT created_at FROM subscribers', [], { created_at: T(19) }, 'subscribers');
-    await expectDate('SELECT created_at FROM quran_bookmarks', [], { created_at: T(21) }, 'quran_bookmarks');
-    const progress = await pool.query('SELECT last_read_date FROM quran_reading_progress');
+    // 0029's columns: the source instant, or NULL when the source has none.
+    await expectDate('SELECT created_at, updated_at FROM trial_requests WHERE status = $1', ['new'], { created_at: T(17), updated_at: T(18) }, 'trial_requests[1]');
+    await expectDate('SELECT created_at, updated_at FROM trial_requests WHERE status = $1', ['contacted'], { created_at: T(27), updated_at: null }, 'trial_requests[no updatedAt]');
+    await expectDate('SELECT created_at, updated_at FROM subscribers', [], { created_at: T(19), updated_at: T(20) }, 'subscribers');
+    await expectDate('SELECT created_at, updated_at FROM quran_bookmarks WHERE verse_key = $1', ['2:255'], { created_at: T(21), updated_at: T(22) }, 'quran_bookmarks[1]');
+    await expectDate('SELECT created_at, updated_at FROM quran_bookmarks WHERE verse_key = $1', ['1:1'], { created_at: T(28), updated_at: null }, 'quran_bookmarks[no updatedAt]');
+    await expectDate('SELECT created_at, updated_at FROM quran_reading_progress WHERE streak = $1', [3], { created_at: T(23), updated_at: T(24) }, 'quran_reading_progress[1]');
+    await expectDate('SELECT created_at, updated_at FROM quran_reading_progress WHERE streak = $1', [0], { created_at: null, updated_at: null }, 'quran_reading_progress[no dates]');
+    await expectDate('SELECT created_at, updated_at FROM quran_memorization_stats', [], { created_at: T(25), updated_at: T(26) }, 'quran_memorization_stats');
+    const progress = await pool.query('SELECT last_read_date FROM quran_reading_progress WHERE streak = 3');
     assert.equal(progress.rows[0].last_read_date, '2026-06-13', 'a date-only string is kept verbatim');
 
-    // The run report names every source date that had no column, by count.
+    // The run report counts every source date by what happened to it.
     const reportFiles = fs.readdirSync(OUT_DIR).filter((f) => f.startsWith('migration-report-')).map((f) => path.join(OUT_DIR, f))
       .filter((f) => fs.statSync(f).mtimeMs >= STARTED_AT).sort();
     const lastExec = JSON.parse(fs.readFileSync(reportFiles.at(-1), 'utf8'));
     const dates = Object.fromEntries(lastExec.results.map((r) => [r.domain, r.dates]));
-    assert.deepEqual(dates.trial_requests, { preserved: { created_at: 1 }, unpreserved: { updatedAt: 1 } });
-    assert.deepEqual(dates.quran_reading_progress, { unpreserved: { createdAt: 1, updatedAt: 1 } });
+    assert.deepEqual(dates.trial_requests, { preserved: { created_at: 2, updated_at: 1 }, absentKeptNull: { updated_at: 1 } });
+    assert.deepEqual(dates.subscribers, { preserved: { created_at: 1, updated_at: 1 } });
+    assert.deepEqual(dates.quran_bookmarks, { preserved: { created_at: 2, updated_at: 1 }, absentKeptNull: { updated_at: 1 } });
+    assert.deepEqual(dates.quran_reading_progress, { preserved: { created_at: 1, updated_at: 1 }, absentKeptNull: { created_at: 1, updated_at: 1 } });
+    assert.deepEqual(dates.quran_memorization_stats, { preserved: { created_at: 1, updated_at: 1 } });
     assert.deepEqual(dates.payments, { preserved: { created_at: 2, updated_at: 2 } });
-    for (const r of lastExec.results) assert.equal(r.dates.generated, undefined, `${r.domain} generated a date although every source document had one`);
+    for (const r of lastExec.results) {
+      assert.equal(r.dates.generated, undefined, `${r.domain} generated a date although every source document had one`);
+      assert.equal(r.dates.unpreserved, undefined, `${r.domain} reported a source date as lost (DATES_MUST_BE_PRESERVED)`);
+    }
   });
 
   await test('rerun: nothing new is written, nothing is duplicated, every document reports unchanged', async () => {
@@ -333,6 +358,45 @@ async function main() {
     assert.equal(row[0].title, 'Course A (revised)');
     assert.equal(iso(row[0].updated_at), iso(newUpdatedAt), 'the trigger stamp was replaced by the source updatedAt');
     assert.equal(iso(row[0].created_at), iso(T(5)));
+  });
+
+  await test('0029 columns on the UPDATE / ON CONFLICT paths: the source updatedAt replaces the trigger stamp, and a missing one stays NULL', async () => {
+    const newUpdatedAt = new Date('2026-07-02T09:10:11.222Z');
+    const trials = mongoose.connection.collection('trialrequests');
+    await trials.updateOne({ status: 'new' }, { $set: { message: 'changed', updatedAt: newUpdatedAt } });
+    await trials.updateOne({ status: 'contacted' }, { $set: { message: 'changed too' } });
+    await mongoose.connection.collection('subscribers').updateOne({}, { $set: { updatedAt: newUpdatedAt } });
+    await mongoose.connection.collection('quranbookmarks').updateOne({ verseKey: '1:1' }, { $set: { note: 'changed' } });
+    const progress = mongoose.connection.collection('quranreadingprogresses');
+    await progress.updateOne({ 'streak.current': 3 }, { $set: { 'streak.current': 4, updatedAt: newUpdatedAt } });
+    await progress.updateOne({ 'streak.current': 0 }, { $set: { 'streak.current': 1 } });
+    const r = run(DOMAIN_SCRIPT, ['--domain=all']);
+    assert.equal(r.code, 0, r.stderr);
+    const imported = Object.fromEntries(r.report.results.filter((x) => x.imported > 0).map((x) => [x.domain, x.imported]));
+    assert.deepEqual(imported, { trial_requests: 2, subscribers: 1, quran_bookmarks: 1, quran_reading_progress: 2 }, 'only the changed documents are re-imported');
+
+    const one = async (sql, params) => (await pool.query(sql, params)).rows;
+    const t1 = await one('SELECT message, created_at, updated_at FROM trial_requests WHERE status = $1', ['new']);
+    assert.equal(t1.length, 1, 'updated in place, not duplicated');
+    assert.equal(t1[0].message, 'changed');
+    assert.equal(iso(t1[0].updated_at), iso(newUpdatedAt), 'trial_requests: the trigger stamp was replaced by the source updatedAt');
+    assert.equal(iso(t1[0].created_at), iso(T(17)));
+    const t2 = await one('SELECT message, updated_at FROM trial_requests WHERE status = $1', ['contacted']);
+    assert.equal(t2[0].message, 'changed too');
+    assert.equal(t2[0].updated_at, null, 'trial_requests: no source updatedAt -> NULL, not the trigger stamp');
+    const s = await one('SELECT created_at, updated_at FROM subscribers', []);
+    assert.equal(iso(s[0].updated_at), iso(newUpdatedAt), 'subscribers (ON CONFLICT): source updatedAt kept');
+    assert.equal(iso(s[0].created_at), iso(T(19)));
+    const b = await one('SELECT note, created_at, updated_at FROM quran_bookmarks WHERE verse_key = $1', ['1:1']);
+    assert.equal(b[0].note, 'changed');
+    assert.equal(b[0].updated_at, null, 'quran_bookmarks (ON CONFLICT): no source updatedAt -> NULL');
+    assert.equal(iso(b[0].created_at), iso(T(28)));
+    const p1 = await one('SELECT created_at, updated_at FROM quran_reading_progress WHERE streak = 4', []);
+    assert.equal(iso(p1[0].updated_at), iso(newUpdatedAt), 'quran_reading_progress (ON CONFLICT): source updatedAt kept');
+    assert.equal(iso(p1[0].created_at), iso(T(23)));
+    const p2 = await one('SELECT created_at, updated_at FROM quran_reading_progress WHERE streak = 1', []);
+    assert.equal(p2[0].created_at, null, 'quran_reading_progress: no source createdAt -> NULL');
+    assert.equal(p2[0].updated_at, null, 'quran_reading_progress: no source updatedAt -> NULL, not the trigger stamp');
   });
 
   await test('no seeded email, name, phone, password hash or connection string in any output, report or checkpoint', async () => {

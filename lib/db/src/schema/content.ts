@@ -111,6 +111,10 @@ export const trialRequests = pgTable(
     message: text("message"),
     status: text("status").notNull().default("new"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    // 0029_preserve_source_dates.sql: nullable, no backfill -- rows that
+    // existed before 0029, and migrated documents with no source value, keep
+    // NULL ("not known"); new rows get now(). set_updated_at() keeps it current.
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
   },
   (t) => [
     check(
@@ -133,6 +137,10 @@ export const subscribers = pgTable(
     email: text("email").notNull(),
     status: text("status").notNull().default("subscribed"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    // 0029_preserve_source_dates.sql: nullable, no backfill -- rows that
+    // existed before 0029, and migrated documents with no source value, keep
+    // NULL ("not known"); new rows get now(). set_updated_at() keeps it current.
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
   },
   (t) => [
     check("subscribers_status_allowlist", sql`${t.status} IN ('subscribed','unsubscribed')`),

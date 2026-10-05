@@ -393,7 +393,8 @@ export const DOMAINS = {
     // source dates transform() writes to a column; `unpreserved` are the
     // ones this table has no column for -- counted in the report by name,
     // never dropped silently. Any other Date field fails the document.
-    sourceDates: { mapped: ['createdAt'], unpreserved: ['updatedAt'] },
+    // updated_at (0029) is nullable: NULL when the source has no updatedAt.
+    sourceDates: { mapped: ['createdAt', 'updatedAt'] },
     async export() {
       const TrialRequest = mongoose.connection.collection('trialrequests');
       return TrialRequest.find({}).toArray();
@@ -408,6 +409,7 @@ export const DOMAINS = {
         message: doc.message ?? null,
         status: ['new', 'contacted', 'scheduled'].includes(doc.status) ? doc.status : 'new',
         ...ts.fields,
+        updated_at: optionalSourceDate(doc, 'updatedAt', 'updated_at', ctx.dateStats),
         __generatedFields: ts.generated,
       };
     },
@@ -421,12 +423,14 @@ export const DOMAINS = {
           `UPDATE trial_requests SET name=$1, email=$2, phone=$3, course=$4, message=$5, status=$6, created_at=$7 WHERE id=$8`,
           [row.name, row.email, row.phone, row.course, row.message, row.status, row.created_at, existingPgId]
         );
+        // set_updated_at() (0029) stamped the UPDATE: put the source dates back.
+        await restoreSourceTimestamps(client, { table: 'trial_requests', id: existingPgId, values: preservedTimestamps(row), inTransaction: true });
         return existingPgId;
       }
       const r = await client.query(
-        `INSERT INTO trial_requests (name, email, phone, course, message, status, created_at)
-         VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id`,
-        [row.name, row.email, row.phone, row.course, row.message, row.status, row.created_at]
+        `INSERT INTO trial_requests (name, email, phone, course, message, status, created_at, updated_at)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id`,
+        [row.name, row.email, row.phone, row.course, row.message, row.status, row.created_at, row.updated_at]
       );
       return r.rows[0].id;
     },
@@ -437,14 +441,20 @@ export const DOMAINS = {
 
   subscribers: {
     targetTable: "subscribers",
-    sourceDates: { mapped: ['createdAt'], unpreserved: ['updatedAt'] },
+    sourceDates: { mapped: ['createdAt', 'updatedAt'] },
     async export() {
       const Subscriber = mongoose.connection.collection('subscribers');
       return Subscriber.find({}).toArray();
     },
     transform(doc, ctx) {
       const ts = sourceTimestamps(doc, { createdAt: 'created_at' }, ctx.dateStats);
-      return { email: String(doc.email).toLowerCase(), status: 'subscribed', ...ts.fields, __generatedFields: ts.generated };
+      return {
+        email: String(doc.email).toLowerCase(),
+        status: 'subscribed',
+        ...ts.fields,
+        updated_at: optionalSourceDate(doc, 'updatedAt', 'updated_at', ctx.dateStats),
+        __generatedFields: ts.generated,
+      };
     },
     validate(row) {
       if (!row.email) throw new Error('subscribers row missing email');
@@ -452,12 +462,16 @@ export const DOMAINS = {
     async upsert(client, sourceId, row, checkpoint) {
       const existingPgId = checkpoint[String(sourceId)]?.pgId;
       const r = await client.query(
-        `INSERT INTO subscribers (email, status, created_at) VALUES ($1,$2,$3)
+        `INSERT INTO subscribers (email, status, created_at, updated_at) VALUES ($1,$2,$3,$4)
          ON CONFLICT ((lower(email))) DO UPDATE SET status = EXCLUDED.status, created_at = EXCLUDED.created_at
          RETURNING id`,
-        [row.email, row.status, row.created_at]
+        [row.email, row.status, row.created_at, row.updated_at]
       );
-      return r.rows[0]?.id ?? existingPgId;
+      const id = r.rows[0]?.id ?? existingPgId;
+      // The ON CONFLICT path is an UPDATE, which set_updated_at() (0029)
+      // stamps: put the source dates back (a no-op after a plain INSERT).
+      await restoreSourceTimestamps(client, { table: 'subscribers', id, values: preservedTimestamps(row), inTransaction: true });
+      return id;
     },
     async countPg(client) {
       return Number((await client.query('SELECT count(*) FROM subscribers')).rows[0].count);
@@ -1327,7 +1341,7 @@ export const DOMAINS = {
   quran_bookmarks: {
     targetTable: 'quran_bookmarks',
     needsUserMap: true,
-    sourceDates: { mapped: ['createdAt'], unpreserved: ['updatedAt'] },
+    sourceDates: { mapped: ['createdAt', 'updatedAt'] },
     async export() {
       return mongoose.connection.collection('quranbookmarks').find({}).toArray();
     },
@@ -1342,6 +1356,7 @@ export const DOMAINS = {
         note: doc.note || null,
         color: doc.color || null,
         ...ts.fields,
+        updated_at: optionalSourceDate(doc, 'updatedAt', 'updated_at', ctx.dateStats),
         __generatedFields: ts.generated,
       };
     },
@@ -1349,12 +1364,16 @@ export const DOMAINS = {
       if (!row.verse_key || !row.user_id) throw new Error('quran_bookmarks row missing verse_key/user_id');
     },
     async upsert(client, sourceId, row) {
-      await client.query(
-        `INSERT INTO quran_bookmarks (user_id, verse_key, chapter_id, verse_num, note, color, created_at)
-         VALUES ($1,$2,$3,$4,$5,$6,$7)
-         ON CONFLICT (user_id, verse_key) DO UPDATE SET note = EXCLUDED.note, color = EXCLUDED.color, created_at = EXCLUDED.created_at`,
-        [row.user_id, row.verse_key, row.chapter_id, row.verse_num, row.note, row.color, row.created_at]
+      const r = await client.query(
+        `INSERT INTO quran_bookmarks (user_id, verse_key, chapter_id, verse_num, note, color, created_at, updated_at)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+         ON CONFLICT (user_id, verse_key) DO UPDATE SET note = EXCLUDED.note, color = EXCLUDED.color, created_at = EXCLUDED.created_at
+         RETURNING id`,
+        [row.user_id, row.verse_key, row.chapter_id, row.verse_num, row.note, row.color, row.created_at, row.updated_at]
       );
+      // The ON CONFLICT path is an UPDATE, which set_updated_at() (0029)
+      // stamps: put the source dates back (a no-op after a plain INSERT).
+      await restoreSourceTimestamps(client, { table: 'quran_bookmarks', id: r.rows[0].id, values: preservedTimestamps(row), inTransaction: true });
       return encodeCompositeTargetId([row.user_id, row.verse_key]);
     },
     async countPg(client) {
@@ -1365,9 +1384,10 @@ export const DOMAINS = {
   quran_reading_progress: {
     targetTable: 'quran_reading_progress',
     needsUserMap: true,
-    // No timestamp columns on this table (lastReadDate is a 'YYYY-MM-DD'
-    // string kept verbatim in last_read_date).
-    sourceDates: { unpreserved: ['createdAt', 'updatedAt'] },
+    // created_at/updated_at (0029) are nullable: NULL when the source has
+    // no value. lastReadDate is a 'YYYY-MM-DD' string, kept verbatim in
+    // last_read_date.
+    sourceDates: { mapped: ['createdAt', 'updatedAt'] },
     async export() {
       return mongoose.connection.collection('quranreadingprogresses').find({}).toArray();
     },
@@ -1386,18 +1406,28 @@ export const DOMAINS = {
         longest_streak: doc.streak?.longest ?? 0,
         last_read_date: doc.streak?.lastReadDate || null,
         history: JSON.stringify(doc.history ?? []),
+        created_at: optionalSourceDate(doc, 'createdAt', 'created_at', ctx.dateStats),
+        updated_at: optionalSourceDate(doc, 'updatedAt', 'updated_at', ctx.dateStats),
       };
     },
     validate() {},
     async upsert(client, sourceId, row) {
       await client.query(
-        `INSERT INTO quran_reading_progress (user_id, resume, goal, goal_type, streak, longest_streak, last_read_date, history)
-         VALUES ($1,$2::jsonb,$3,$4,$5,$6,$7,$8::jsonb)
+        `INSERT INTO quran_reading_progress
+           (user_id, resume, goal, goal_type, streak, longest_streak, last_read_date, history, created_at, updated_at)
+         VALUES ($1,$2::jsonb,$3,$4,$5,$6,$7,$8::jsonb,$9,$10)
          ON CONFLICT (user_id) DO UPDATE SET
            resume=EXCLUDED.resume, goal=EXCLUDED.goal, goal_type=EXCLUDED.goal_type, streak=EXCLUDED.streak,
-           longest_streak=EXCLUDED.longest_streak, last_read_date=EXCLUDED.last_read_date, history=EXCLUDED.history`,
-        [row.user_id, row.resume, row.goal, row.goal_type, row.streak, row.longest_streak, row.last_read_date, row.history]
+           longest_streak=EXCLUDED.longest_streak, last_read_date=EXCLUDED.last_read_date, history=EXCLUDED.history,
+           created_at=EXCLUDED.created_at`,
+        [row.user_id, row.resume, row.goal, row.goal_type, row.streak, row.longest_streak, row.last_read_date, row.history,
+         row.created_at, row.updated_at]
       );
+      // The ON CONFLICT path is an UPDATE, which set_updated_at() (0029)
+      // stamps: put the source dates back (a no-op after a plain INSERT).
+      await restoreSourceTimestamps(client, {
+        table: 'quran_reading_progress', idColumn: 'user_id', id: row.user_id, values: preservedTimestamps(row), inTransaction: true,
+      });
       return row.user_id;
     },
     async countPg(client) {
@@ -1408,8 +1438,9 @@ export const DOMAINS = {
   quran_memorization_stats: {
     targetTable: 'quran_memorization_stats',
     needsUserMap: true,
-    // No timestamp columns on this table (lastPracticeDate is a string).
-    sourceDates: { unpreserved: ['createdAt', 'updatedAt'] },
+    // created_at/updated_at (0029) are nullable: NULL when the source has
+    // no value. lastPracticeDate is a string, kept verbatim.
+    sourceDates: { mapped: ['createdAt', 'updatedAt'] },
     async export() {
       return mongoose.connection.collection('quranmemorizationstats').find({}).toArray();
     },
@@ -1439,20 +1470,30 @@ export const DOMAINS = {
         streak: doc.streak?.current ?? 0,
         longest_streak: doc.streak?.longest ?? 0,
         last_practice_date: a || b || null,
+        created_at: optionalSourceDate(doc, 'createdAt', 'created_at', ctx.dateStats),
+        updated_at: optionalSourceDate(doc, 'updatedAt', 'updated_at', ctx.dateStats),
       };
     },
     validate() {},
     async upsert(client, sourceId, row) {
       await client.query(
         `INSERT INTO quran_memorization_stats
-           (user_id, goal, goal_type, total_recordings, total_practice_time, streak, longest_streak, last_practice_date)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+           (user_id, goal, goal_type, total_recordings, total_practice_time, streak, longest_streak, last_practice_date,
+            created_at, updated_at)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
          ON CONFLICT (user_id) DO UPDATE SET
            goal=EXCLUDED.goal, goal_type=EXCLUDED.goal_type, total_recordings=EXCLUDED.total_recordings,
            total_practice_time=EXCLUDED.total_practice_time, streak=EXCLUDED.streak,
-           longest_streak=EXCLUDED.longest_streak, last_practice_date=EXCLUDED.last_practice_date`,
-        [row.user_id, row.goal, row.goal_type, row.total_recordings, row.total_practice_time, row.streak, row.longest_streak, row.last_practice_date]
+           longest_streak=EXCLUDED.longest_streak, last_practice_date=EXCLUDED.last_practice_date,
+           created_at=EXCLUDED.created_at`,
+        [row.user_id, row.goal, row.goal_type, row.total_recordings, row.total_practice_time, row.streak, row.longest_streak, row.last_practice_date,
+         row.created_at, row.updated_at]
       );
+      // The ON CONFLICT path is an UPDATE, which set_updated_at() (0029)
+      // stamps: put the source dates back (a no-op after a plain INSERT).
+      await restoreSourceTimestamps(client, {
+        table: 'quran_memorization_stats', idColumn: 'user_id', id: row.user_id, values: preservedTimestamps(row), inTransaction: true,
+      });
       return row.user_id;
     },
     async countPg(client) {

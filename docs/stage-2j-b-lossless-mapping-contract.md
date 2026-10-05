@@ -60,13 +60,15 @@ AdminUser login path, meaningless once GoTrue owns authentication.
 ## 3. `trialrequests` (10) → `trial_requests` — READY, unchanged
 
 All fields preserved exactly (`name`/`email`/`phone`/`course`/`message`/`status`
-allowlist matches exactly).
+allowlist matches exactly). `createdAt` → `created_at` and `updatedAt` →
+`updated_at` PRESERVED_EXACTLY (`updated_at` added by 0029, see §11a).
 
 ## 4. `subscribers` (1) → `subscribers` — READY, unchanged
 
 `email` preserved exactly; `status` is a TRANSFORMED_LOSSLESSLY constant
 (`'subscribed'`, matching the old model's implicit meaning — it had no
-status field at all).
+status field at all). `createdAt`/`updatedAt` PRESERVED_EXACTLY
+(`updated_at` added by 0029, see §11a).
 
 ## 5. `courses` (6) → `courses` — READY, unchanged
 
@@ -194,6 +196,22 @@ to `stats.lastPracticeDate` on the same document (both are the
 "today's activity date" field, duplicated by a copy-paste in the
 original schema) — DERIVED_WITH_PROOF: not migrated as a second column,
 the proof of equality is recorded in the migration report per document.
+
+## 11a. Source dates the tables had no column for (0029, owner decision DATES_MUST_BE_PRESERVED)
+
+`0029_preserve_source_dates.sql` adds `trial_requests.updated_at`,
+`subscribers.updated_at`, `quran_bookmarks.updated_at`,
+`quran_reading_progress.created_at`/`updated_at` and
+`quran_memorization_stats.created_at`/`updated_at`: timestamptz, nullable,
+DEFAULT now() for rows inserted afterwards only (rows that already exist
+keep NULL — never the time the schema migration ran), each `updated_at`
+with the usual `set_updated_at()` trigger. The source `createdAt`/
+`updatedAt` of every document is copied PRESERVED_EXACTLY (to the
+millisecond); a document with no such date gets NULL, never the migration
+time, and the run report counts it as `absentKeptNull`. After its own
+UPDATE / ON CONFLICT writes the tool restores the source values over the
+trigger stamp (`restoreSourceTimestamps()`). None of these five domains
+declares a date as unpreserved any more.
 
 ## 12. Zero-row domains — tooling proven via synthetic fixtures, not skipped
 

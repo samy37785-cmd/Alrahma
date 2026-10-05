@@ -78,7 +78,7 @@ await test('requiredSourceDate / optionalSourceDate: source value wins; only a r
   assert.equal(fallback.generated, true);
   assert.equal(optionalSourceDate({}, 'paidAt', 'paid_at', stats), null, 'a nullable column stays null, never invented');
   assert.equal(optionalSourceDate({ paidAt: UPDATED }, 'paidAt', 'paid_at', stats).toISOString(), UPDATED.toISOString());
-  assert.deepEqual(stats, { preserved: { issued_at: 1, paid_at: 1 }, generated: { issued_at: 1 } });
+  assert.deepEqual(stats, { preserved: { issued_at: 1, paid_at: 1 }, generated: { issued_at: 1 }, absentKeptNull: { paid_at: 1 } });
 });
 
 await test('accountForSourceDates: mapped passes, declared loss is counted, an undeclared Date fails the document', () => {
@@ -211,13 +211,54 @@ await test('enrollments/trial_requests/subscribers/courses/quran_bookmarks trans
   assert.equal(bookmark.created_at.toISOString(), CREATED.toISOString());
 });
 
-await test('every domain declares its source dates, and every Date it maps is consumed or declared lost', () => {
+// The columns 0029 added (DATES_MUST_BE_PRESERVED), per domain.
+const DATE_COLUMNS_0029 = {
+  trial_requests: ['updated_at'],
+  subscribers: ['updated_at'],
+  quran_bookmarks: ['updated_at'],
+  quran_reading_progress: ['created_at', 'updated_at'],
+  quran_memorization_stats: ['created_at', 'updated_at'],
+};
+const sourceFieldOf = (column) => (column === 'created_at' ? 'createdAt' : 'updatedAt');
+function minimalDoc(name, dates) {
+  const base = {
+    trial_requests: { name: 'n', email: 'e@example.invalid' },
+    subscribers: { email: 'e@example.invalid' },
+    quran_bookmarks: { user: userId, verseKey: '1:1', chapterId: 1, verseNum: 1, createdAt: CREATED },
+    quran_reading_progress: { user: userId },
+    quran_memorization_stats: { user: userId },
+  }[name];
+  return { ...base, ...dates };
+}
+
+await test('0029 columns: each transform writes the source instant, and NULL (counted absentKeptNull) when the source has none', async () => {
+  for (const [name, columns] of Object.entries(DATE_COLUMNS_0029)) {
+    const withDates = await DOMAINS[name].transform(minimalDoc(name, { createdAt: CREATED, updatedAt: UPDATED }), planCtx());
+    for (const column of columns) {
+      const expected = column === 'created_at' ? CREATED : UPDATED;
+      assert.equal(withDates[column]?.toISOString(), expected.toISOString(), `${name}.${column}`);
+    }
+    // The minimal documents carry no updatedAt, and the quran progress/stats
+    // ones no createdAt either.
+    const ctx = planCtx();
+    ctx.dateStats = {};
+    const without = await DOMAINS[name].transform(minimalDoc(name, {}), ctx);
+    for (const column of columns) {
+      assert.equal(without[column], null, `${name}.${column}: no source value -> NULL, never the migration time`);
+      assert.equal(ctx.dateStats.absentKeptNull?.[column], 1, `${name}.${column} is counted as absentKeptNull`);
+    }
+  }
+});
+
+await test('every domain declares its source dates; the 0029 tables map every date and declare no loss', () => {
   for (const [name, domain] of Object.entries(DOMAINS)) {
     assert.ok(domain.sourceDates, `${name} must declare sourceDates (mapped/unpreserved)`);
   }
-  // The tables with no timestamp column at all name their losses.
-  assert.deepEqual(DOMAINS.quran_reading_progress.sourceDates.unpreserved, ['createdAt', 'updatedAt']);
-  assert.deepEqual(DOMAINS.quran_memorization_stats.sourceDates.unpreserved, ['createdAt', 'updatedAt']);
+  for (const [name, columns] of Object.entries(DATE_COLUMNS_0029)) {
+    const { mapped = [], unpreserved = [] } = DOMAINS[name].sourceDates;
+    for (const column of columns) assert.ok(mapped.includes(sourceFieldOf(column)), `${name} must map ${sourceFieldOf(column)}`);
+    assert.deepEqual(unpreserved, [], `${name} must not declare a date lost any more`);
+  }
 });
 
 await test('invoices transform: every invoice fails by name (no admin identity to issue it; its dates could not be kept either)', async () => {

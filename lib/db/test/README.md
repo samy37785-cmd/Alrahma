@@ -35,13 +35,13 @@ pnpm run check:published-migrations  # just the 4 filesystem checksum assertions
 
 Suites, in the order the orchestrator runs them:
 
-- `test/schema.local.test.mjs` — 71 real-SQL assertions (schema, constraints, functions/triggers)
+- `test/schema.local.test.mjs` — 74 real-SQL assertions (schema, constraints, functions/triggers)
 - `test/rls.local.test.mjs` — 85 real-SQL assertions (specific findings: bypass closure, forgery prevention, AAL boundaries, concurrency, webhook lease + fencing, subscription/invoice/refund RPCs, Booking-First Enrollment's submit_enrollment_booking() RPC, 0027's reviews_public/teachers_public security_invoker hardening)
 - `test/rls-full-matrix.local.test.mjs` — 70 real-SQL assertions (systematic per-table sweep of docs/rls-matrix.md, incl. plan versioning + invoice issuance sweeps)
 - `test/acl.local.test.mjs` — 20 real-SQL assertions (direct has_table_privilege/has_column_privilege/has_function_privilege checks — proves the GRANT matrix directly, not by inference)
 - `test/upgrade-scenario.local.test.mjs` — 9 real-SQL assertions (self-contained — see below; applies 0000-0003, injects legacy drift, then applies the rest and proves it's cleaned up)
 
-**259 real-SQL/filesystem assertions total: 4 checksum + 71 schema + 85
+**262 real-SQL/filesystem assertions total: 4 checksum + 74 schema + 85
 targeted RLS + 70 full RLS matrix + 20 ACL + 9 upgrade.** (Stage 2J-B /
 0022_lossless_migration_support.sql raised the total from 230 to 241:
 +1 schema, +9 full RLS matrix, +1 ACL. Booking-First Enrollment's 0025
@@ -59,8 +59,13 @@ denied) nor functionally regressive.
 0028_payment_gateway_paymob.sql then raised it from 256 to 259: +3
 schema — payment_gateway's exact values, a historical paymob payment
 kept pending with its original timestamps, and the stripe-only
-subscription RPC still rejecting paymob. See each migration's own tests
-for what every new assertion covers.) Neither
+subscription RPC still rejecting paymob.
+0029_preserve_source_dates.sql then raised it from 259 to 262: +3
+schema — the 7 new source-date columns (nullable timestamptz, DEFAULT
+now(), set_updated_at() on each updated_at), rows that existed before
+0029 keeping NULL instead of the migration time, and a source instant
+kept to the millisecond with an explicit NULL kept NULL. See each
+migration's own tests for what every new assertion covers.) Neither
 `test:db` nor `check:published-migrations` is wired into any CI pipeline
 yet — this repo has no `.github/workflows` at all today; whenever one is
 added, `test:db` (or at minimum `check:published-migrations`) belongs in

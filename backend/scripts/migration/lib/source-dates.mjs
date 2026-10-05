@@ -10,6 +10,11 @@
 //     so the migration time is used, the field is listed in the row's
 //     `__generatedFields` (read-back and the content hash exempt only that
 //     field) and the run report counts it by field name;
+//   - kept NULL: a NULLABLE column whose source document has no value
+//     (optionalSourceDate) stays NULL -- "not known" -- never the
+//     migration time; counted as absentKeptNull. This is how the date
+//     columns 0029 added (owner decision DATES_MUST_BE_PRESERVED) are
+//     filled;
 //   - unpreserved: the target table has no column for it at all. Declared
 //     per domain, never inferred, and counted by field name in the report.
 // A top-level Date field that is none of these fails the document: a new
@@ -99,7 +104,7 @@ export function requiredSourceDate(doc, field, column, stats) {
 /** A domain-specific date for a nullable column: the source instant or null, never a fallback. */
 export function optionalSourceDate(doc, field, column, stats) {
   const value = sourceDate(doc, field);
-  if (value) bump(stats, 'preserved', column);
+  bump(stats, value ? 'preserved' : 'absentKeptNull', column);
   return value;
 }
 

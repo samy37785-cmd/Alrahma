@@ -33,6 +33,10 @@ export const quranBookmarks = pgTable(
     note: text("note"),
     color: text("color"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    // 0029_preserve_source_dates.sql: nullable, no backfill -- rows that
+    // existed before 0029, and migrated documents with no source value, keep
+    // NULL ("not known"); new rows get now(). set_updated_at() keeps it current.
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
   },
   (t) => [uniqueIndex("quran_bookmarks_user_verse_unique").on(t.userId, t.verseKey)],
 );
@@ -70,6 +74,11 @@ export const quranReadingProgress = pgTable("quran_reading_progress", {
   history: jsonb("history").$type<Array<{ date: string; [key: string]: unknown }>>()
     .notNull()
     .default([]),
+  // 0029_preserve_source_dates.sql: nullable, no backfill -- rows that
+  // existed before 0029, and migrated documents with no source value, keep
+  // NULL ("not known"); new rows get now(). set_updated_at() keeps it current.
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 });
 
 /** Was `QuranMemorizationStats.js` — one row per user (unique). */
@@ -89,4 +98,9 @@ export const quranMemorizationStats = pgTable("quran_memorization_stats", {
   // Stage 2J-B (0022): the old model's stats.lastPracticeDate, same
   // 'YYYY-MM-DD' text discipline as quranReadingProgress.lastReadDate.
   lastPracticeDate: text("last_practice_date"),
+  // 0029_preserve_source_dates.sql: nullable, no backfill -- rows that
+  // existed before 0029, and migrated documents with no source value, keep
+  // NULL ("not known"); new rows get now(). set_updated_at() keeps it current.
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 });

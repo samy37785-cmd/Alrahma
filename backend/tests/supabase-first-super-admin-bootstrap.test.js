@@ -4,363 +4,352 @@ import {
   CLI_SPEC,
   validateCliArgs,
   resolveRunConfig,
-  runBootstrap,
+  preflightBootstrap,
+  applyBootstrap,
+  runBootstrapCli,
   isValidEmailShape,
-  BootstrapError,
 } from '../scripts/ops/lib/supabase-first-super-admin-bootstrap-core.mjs';
-import { parseStrictCliArgs } from '../scripts/migration/lib/cli-args.mjs';
+import { OperatorError, makeRedactor } from '../scripts/ops/lib/operator-io.mjs';
+import { scriptedIo, assertNoLeaks, fakeJwtKey } from './helpers/operator-fakes.js';
 
-// Ops tooling for bootstrapping the FIRST Supabase-native super-admin
-// identity. Every test here uses plain in-memory objects as Supabase Auth
-// Admin API / Postgres stand-ins — no real network call, no real Postgres
-// connection, no @supabase/supabase-js client is ever constructed in this
-// file. This tool is never actually run against any real project as part
-// of this change — see docs/supabase-first-super-admin-bootstrap-runbook.md.
+// SECURE_SUPER_ADMIN_OPERATOR_TOOL: the first-super-admin bootstrap, on
+// in-memory fakes only -- no network, no Postgres, no Supabase client. The
+// same flow runs against a real local Supabase stack in
+// scripts/ops/operator-tools.real-gotrue.test.mjs.
+
+const NEW_ID = '11111111-2222-4333-8444-555555555555';
+const EMAIL = 'Dedicated.Admin+ops@Example.org';
+const SERVICE_KEY = 'sb_secret_test_fake_not_a_real_key_0001';
+const LOCAL_DB_URL = 'postgresql://postgres:local-test-pw-not-real@127.0.0.1:5432/postgres';
 
 const BASE_ENV = Object.freeze({
   ALLOW_SUPABASE_SUPER_ADMIN_BOOTSTRAP: '1',
-  SUPABASE_BOOTSTRAP_TARGET_ENV: 'staging',
-  SUPABASE_URL: 'https://fake-project.example.supabase.co',
-  SUPABASE_SERVICE_ROLE_KEY: 'fake-service-role-key-for-test-not-a-real-value',
-  SUPABASE_DB_URL: 'postgresql://fake:fake@fake-db.example.invalid:5432/postgres',
+  SUPABASE_BOOTSTRAP_TARGET_ENV: 'local',
+  SUPABASE_URL: 'http://127.0.0.1:54321',
 });
+const APPLY_LOCAL = ['--apply', '--confirm-create-first-super-admin', '--target=local'];
 
-const BASE_APPLY_ARGS = Object.freeze({
-  apply: true,
-  'confirm-create-first-super-admin': true,
-  target: 'staging',
-  email: 'owner@example.com',
-});
-
-// ── Fake Postgres (service_role transaction) ────────────────────────────────
-
-function makeFakeDb({ adminRoleAssignments = [], profiles = {}, authUsersByEmail = {} } = {}) {
-  const state = {
-    adminRoleAssignments: [...adminRoleAssignments],
-    profiles: new Map(Object.entries(profiles)),
-    authUsersByEmail: new Map(Object.entries(authUsersByEmail)),
+function err(code) {
+  return (e) => {
+    assert.ok(e instanceof OperatorError, `expected an OperatorError, got ${e?.name}: ${e?.message}`);
+    assert.equal(e.code, code, e.message);
+    return true;
   };
-  const queries = [];
-
-  async function query(sql, params = []) {
-    const s = sql.trim();
-    queries.push(s.split('\n')[0].trim());
-
-    if (s.startsWith('SELECT 1 FROM admin_role_assignments')) {
-      return { rows: state.adminRoleAssignments.length ? [{}] : [] };
-    }
-    if (s.startsWith("SELECT 1 FROM profiles WHERE role = 'admin'")) {
-      const any = [...state.profiles.values()].some((p) => p.role === 'admin');
-      return { rows: any ? [{}] : [] };
-    }
-    if (s.startsWith('SELECT id FROM auth.users WHERE email')) {
-      const id = state.authUsersByEmail.get(params[0]);
-      return { rows: id ? [{ id }] : [] };
-    }
-    if (s.startsWith('UPDATE profiles SET role')) {
-      const id = params[0];
-      const p = state.profiles.get(id) ?? {};
-      state.profiles.set(id, { ...p, role: 'admin' });
-      return { rows: [] };
-    }
-    if (s.startsWith('INSERT INTO admin_role_assignments')) {
-      state.adminRoleAssignments.push({ user_id: params[0], role: 'super-admin' });
-      return { rows: [] };
-    }
-    if (s.startsWith('SELECT role FROM profiles WHERE id')) {
-      const p = state.profiles.get(params[0]);
-      return { rows: p ? [{ role: p.role }] : [] };
-    }
-    if (s.startsWith('SELECT role FROM admin_role_assignments WHERE user_id')) {
-      const row = state.adminRoleAssignments.find((r) => r.user_id === params[0]);
-      return { rows: row ? [{ role: row.role }] : [] };
-    }
-    throw new Error(`unexpected query in fake db: ${s}`);
-  }
-
-  async function runInServiceRoleTransaction(fn) {
-    return fn({ query });
-  }
-
-  return { state, queries, runInServiceRoleTransaction };
 }
 
-function makeFakeInvite({ newUserId = 'new-user-id-1', fail = false } = {}) {
-  const calls = [];
+// ── Fakes ──────────────────────────────────────────────────────────────────
+
+function makeFakeDb({ roleRows = 0, adminProfiles = 0, authEmails = [], failRoleInsert = false } = {}) {
+  const state = { roleRows: [], adminProfiles, authEmails: [...authEmails], profiles: new Map(), committedWrites: 0, ended: false, readOnlyWrites: 0 };
+  const client = (mode, pending) => ({
+    async query(sql, params = []) {
+      const s = sql.trim();
+      if (s.startsWith('select count(*)::int as n from public.admin_role_assignments')) return { rows: [{ n: roleRows + state.roleRows.length }] };
+      if (s.startsWith("select count(*)::int as n from public.profiles where role = 'admin'")) return { rows: [{ n: state.adminProfiles }] };
+      if (s.startsWith('select email from auth.users')) return { rows: state.authEmails.map((email) => ({ email })) };
+      if (mode === 'ro') {
+        state.readOnlyWrites++;
+        throw new Error('cannot execute in a read-only transaction');
+      }
+      if (s.startsWith('update public.profiles')) {
+        pending.profile = params[0];
+        return { rowCount: 1, rows: [] };
+      }
+      if (s.startsWith('insert into public.admin_role_assignments')) {
+        if (failRoleInsert) throw new Error('simulated role insert failure');
+        pending.role = params[0];
+        return { rowCount: 1, rows: [] };
+      }
+      if (s.startsWith('select (select role::text from public.profiles')) {
+        return { rows: [{ profile_role: pending.profile === params[0] ? 'admin' : 'user', roles: pending.role === params[0] ? ['super-admin'] : null, role_rows: roleRows + state.roleRows.length + (pending.role ? 1 : 0) }] };
+      }
+      throw new Error(`unexpected query in fake db: ${s.split('\n')[0]}`);
+    },
+  });
   return {
-    calls,
-    inviteUser: async (email) => {
-      calls.push(email);
-      if (fail) return { data: null, error: new Error('invite rejected') };
-      return { data: { user: { id: newUserId, email } }, error: null };
+    state,
+    readOnly: (fn) => fn(client('ro')),
+    inTransaction: async (fn) => {
+      const pending = {};
+      const out = await fn(client('rw', pending));
+      if (pending.profile) state.profiles.set(pending.profile, 'admin');
+      if (pending.role) state.roleRows.push({ user_id: pending.role, role: 'super-admin' });
+      state.committedWrites++;
+      return out;
+    },
+    end: async () => {
+      state.ended = true;
     },
   };
 }
 
-function makeFakeDelete() {
-  const calls = [];
-  return { calls, deleteUser: async (userId) => { calls.push(userId); } };
+function makeFakeAuth(db, { fail = false } = {}) {
+  const calls = { invite: [], delete: [] };
+  return {
+    calls,
+    inviteUser: async (email) => {
+      calls.invite.push(email);
+      // A realistic failure text that names the address -- it must never reach the output.
+      if (fail) return { data: null, error: { message: `Error sending invite email to ${email}` } };
+      db.state.authEmails.push(email);
+      return { data: { user: { id: NEW_ID } }, error: null };
+    },
+    deleteUser: async (id) => {
+      calls.delete.push(id);
+    },
+  };
 }
 
-// ── CLI arg parsing + gate validation ──────────────────────────────────────
+function makeDeps({ db = makeFakeDb(), authFail = false, conflict = false, dirty = false, backupAgeHours = 1 } = {}) {
+  const auth = makeFakeAuth(db, { fail: authFail });
+  const calls = { createDb: 0, createAuthAdmin: 0, collision: [] };
+  return {
+    db,
+    auth,
+    calls,
+    deps: {
+      gitState: () => ({ sha: 'a'.repeat(40), dirty }),
+      verifyFreshBackup: () => {
+        if (backupAgeHours > 24) throw new Error('backup at D:/x is 30.0h old -- max allowed is 24h');
+        return { sha256: 'b'.repeat(64), ageHours: backupAgeHours };
+      },
+      collisionCheck: async (args) => {
+        calls.collision.push(args);
+        return conflict;
+      },
+      createDb: () => {
+        calls.createDb++;
+        return db;
+      },
+      createAuthAdmin: () => {
+        calls.createAuthAdmin++;
+        return auth;
+      },
+    },
+  };
+}
 
-test('CLI_SPEC: apply/dry-run/confirm flags are boolean-only, target/email require a value', () => {
-  assert.throws(() => parseStrictCliArgs(['--apply=true'], CLI_SPEC), /boolean flag/);
-  assert.throws(() => parseStrictCliArgs(['--target'], CLI_SPEC), /non-empty/);
-  assert.doesNotThrow(() => parseStrictCliArgs(['--apply', '--target=staging', '--email=a@b.com'], CLI_SPEC));
+function happyIo({ email = EMAIL, again = EMAIL, phrase = 'INVITE SUPER-ADMIN local' } = {}) {
+  return scriptedIo({ hidden: [email, again, LOCAL_DB_URL, SERVICE_KEY], visible: [phrase] });
+}
+
+async function run({ argv = APPLY_LOCAL, env = BASE_ENV, io = happyIo(), setup = makeDeps() } = {}) {
+  const redactor = makeRedactor();
+  let error = null;
+  let result = null;
+  try {
+    result = await runBootstrapCli({ argv, env, io, redactor, deps: setup.deps });
+  } catch (e) {
+    error = e;
+  }
+  return { result, error, io, redactor, ...setup };
+}
+
+const SECRETS = [EMAIL, EMAIL.toLowerCase(), 'dedicated.admin', SERVICE_KEY, LOCAL_DB_URL, 'local-test-pw-not-real'];
+
+// ── Arguments and gates ────────────────────────────────────────────────────
+
+test('CLI_SPEC: no flag can carry a secret -- there is no --email, password, key or URL flag', () => {
+  for (const flag of Object.keys(CLI_SPEC.flags)) {
+    assert.ok(!/email|password|token|secret|key|url|link|code/.test(flag), `--${flag} looks like a secret-carrying flag`);
+  }
 });
 
-test('validateCliArgs: --apply and --dry-run together is rejected', () => {
+test('--email on the command line is refused, naming the flag but never echoing its value', async () => {
+  const r = await run({ argv: [...APPLY_LOCAL, '--email=leak.check@example.com'] });
+  assert.ok(r.error instanceof OperatorError && r.error.code === 'BAD_ARGS');
+  assert.match(r.error.message, /unknown flag "--email"/);
+  assertNoLeaks([r.error.message, ...r.io.log], ['leak.check@example.com']);
+  assert.equal(r.calls.createDb + r.calls.createAuthAdmin, 0);
+});
+
+test('validateCliArgs: combinations and acknowledgements', () => {
   assert.throws(() => validateCliArgs({ apply: true, 'dry-run': true }), /cannot be combined/);
-});
-
-test('validateCliArgs: apply-only flags without --apply are rejected', () => {
-  assert.throws(() => validateCliArgs({ target: 'staging' }), /--target only has meaning together with --apply/);
-  assert.throws(() => validateCliArgs({ email: 'a@b.com' }), /--email only has meaning together with --apply/);
-});
-
-test('validateCliArgs: --apply without --confirm-create-first-super-admin is rejected', () => {
+  assert.throws(() => validateCliArgs({ target: 'local' }), /only has meaning together with --apply/);
+  assert.throws(() => validateCliArgs({ apply: true, target: 'local' }), /--confirm-create-first-super-admin/);
+  assert.throws(() => validateCliArgs({ apply: true, 'confirm-create-first-super-admin': true, target: 'staging' }), /--target must be local or production/);
   assert.throws(
-    () => validateCliArgs({ apply: true, target: 'staging', email: 'a@b.com' }),
-    /--confirm-create-first-super-admin/
+    () => validateCliArgs({ apply: true, 'confirm-create-first-super-admin': true, target: 'production' }),
+    /--target=production requires --backup-manifest/
   );
 });
 
-test('validateCliArgs: --apply with an invalid --target is rejected', () => {
-  assert.throws(
-    () => validateCliArgs({ apply: true, 'confirm-create-first-super-admin': true, target: 'prod', email: 'a@b.com' }),
-    /--target=staging or --target=production/
-  );
+test('resolveRunConfig: the env authorization and the target channel must both agree', () => {
+  assert.deepEqual(resolveRunConfig({ args: {}, env: {} }), { apply: false });
+  const args = { apply: true, 'confirm-create-first-super-admin': true, target: 'local' };
+  assert.throws(() => resolveRunConfig({ args, env: { ...BASE_ENV, ALLOW_SUPABASE_SUPER_ADMIN_BOOTSTRAP: undefined } }), err('NOT_AUTHORIZED'));
+  assert.throws(() => resolveRunConfig({ args, env: { ...BASE_ENV, SUPABASE_BOOTSTRAP_TARGET_ENV: 'production' } }), err('TARGET_MISMATCH'));
+  assert.throws(() => resolveRunConfig({ args, env: { ...BASE_ENV, SUPABASE_BOOTSTRAP_TARGET_ENV: undefined } }), err('TARGET_MISMATCH'));
+  assert.equal(resolveRunConfig({ args, env: BASE_ENV }).target, 'local');
 });
 
-test('validateCliArgs: --apply with a malformed --email is rejected', () => {
-  assert.throws(
-    () => validateCliArgs({ apply: true, 'confirm-create-first-super-admin': true, target: 'staging', email: 'not-an-email' }),
-    /valid --email/
-  );
+test('production under CI is refused before any input or connection', async () => {
+  const env = { ...BASE_ENV, CI: 'true', SUPABASE_BOOTSTRAP_TARGET_ENV: 'production' };
+  const r = await run({ argv: ['--apply', '--confirm-create-first-super-admin', '--target=production', '--backup-manifest=x.json'], env, io: scriptedIo() });
+  assert.ok(r.error instanceof OperatorError && r.error.code === 'CI_REMOTE_REFUSED', r.error?.message);
+  assert.deepEqual(r.io.events, [], 'nothing was asked or printed');
+  assert.equal(r.calls.createDb + r.calls.createAuthAdmin + r.calls.collision.length, 0);
+});
+
+test('dry-run (no flags) reads nothing and connects nowhere', async () => {
+  const r = await run({ argv: [], env: {}, io: scriptedIo({ interactive: false }) });
+  assert.equal(r.result.status, 'dry-run');
+  assert.equal(r.calls.createDb + r.calls.createAuthAdmin, 0);
+  assert.ok(!r.io.events.some((e) => e.startsWith('hidden:') || e.startsWith('visible:')));
+});
+
+test('apply without an interactive terminal is refused before any prompt', async () => {
+  const r = await run({ io: scriptedIo({ interactive: false }) });
+  assert.ok(r.error instanceof OperatorError && r.error.code === 'NOT_INTERACTIVE');
+  assert.ok(!r.io.events.some((e) => e.startsWith('hidden:')));
+});
+
+test('production from a checkout with uncommitted changes is refused', async () => {
+  const env = { ...BASE_ENV, SUPABASE_BOOTSTRAP_TARGET_ENV: 'production', SUPABASE_URL: undefined };
+  const r = await run({
+    argv: ['--apply', '--confirm-create-first-super-admin', '--target=production', '--backup-manifest=x.json'],
+    env,
+    setup: makeDeps({ dirty: true }),
+  });
+  assert.equal(r.error?.code, 'DIRTY_CHECKOUT');
+});
+
+test('production with a backup older than 24h is refused before the email is asked', async () => {
+  const env = { ...BASE_ENV, SUPABASE_BOOTSTRAP_TARGET_ENV: 'production', SUPABASE_URL: undefined };
+  const r = await run({
+    argv: ['--apply', '--confirm-create-first-super-admin', '--target=production', '--backup-manifest=x.json'],
+    env,
+    io: scriptedIo(),
+    setup: makeDeps({ backupAgeHours: 30 }),
+  });
+  assert.equal(r.error?.code, 'BACKUP_REFUSED');
+  assert.ok(!r.io.events.some((e) => e.startsWith('hidden:')));
 });
 
 test('isValidEmailShape', () => {
   assert.equal(isValidEmailShape('owner@example.com'), true);
   assert.equal(isValidEmailShape('not-an-email'), false);
   assert.equal(isValidEmailShape(''), false);
-  assert.equal(isValidEmailShape(undefined), false);
 });
 
-// ── resolveRunConfig — the five --apply gates ───────────────────────────────
+// ── The run ────────────────────────────────────────────────────────────────
 
-test('resolveRunConfig: default (no flags) is a dry-run and requires no env vars at all', () => {
-  const config = resolveRunConfig({ args: {}, env: {} });
-  assert.equal(config.apply, false);
+test('happy path: projectRef and gitSha shown, typed phrase required, exactly ONE invite, then the role write', async () => {
+  const r = await run();
+  assert.equal(r.error, null, r.error?.message);
+  assert.deepEqual({ status: r.result.status, userId: r.result.userId, invitesSent: r.result.invitesSent }, { status: 'success', userId: NEW_ID, invitesSent: 1 });
+  assert.equal(r.auth.calls.invite.length, 1);
+  assert.equal(r.auth.calls.invite[0], EMAIL.toLowerCase(), 'the normalized address is invited');
+  assert.deepEqual(r.db.state.roleRows, [{ user_id: NEW_ID, role: 'super-admin' }]);
+  assert.equal(r.db.state.profiles.get(NEW_ID), 'admin');
+  assert.equal(r.db.state.readOnlyWrites, 0);
+  assert.ok(r.db.state.ended, 'the pool is always closed');
+  const header = r.io.log.find((l) => l.includes('projectRef='));
+  assert.match(header, /target=local projectRef=local gitSha=a{40}/);
+  assert.ok(r.io.log.includes(`SUPER_ADMIN_USER_ID=${NEW_ID}`));
+  assert.ok(r.io.log.includes('INVITES_SENT=1'));
+  // The phrase prompt came after the preflight summary, and before the invite.
+  const phraseAt = r.io.events.findIndex((e) => e.startsWith('visible:'));
+  assert.ok(phraseAt > r.io.events.findIndex((e) => e === 'print'));
+  assert.ok(assertNoLeaks([...r.io.log, ...r.io.sensitive], SECRETS) >= 5);
 });
 
-test('resolveRunConfig: --apply without ALLOW_SUPABASE_SUPER_ADMIN_BOOTSTRAP=1 fails closed', () => {
-  const env = { ...BASE_ENV, ALLOW_SUPABASE_SUPER_ADMIN_BOOTSTRAP: undefined };
-  assert.throws(() => resolveRunConfig({ args: BASE_APPLY_ARGS, env }), /ALLOW_SUPABASE_SUPER_ADMIN_BOOTSTRAP=1/);
+test('the two email entries must match (normalized); a mismatch stops before any connection', async () => {
+  const r = await run({ io: scriptedIo({ hidden: [EMAIL, 'someone.else@example.org'] }) });
+  assert.equal(r.error?.code, 'EMAIL_MISMATCH');
+  assert.equal(r.calls.createDb + r.calls.createAuthAdmin, 0);
+  assertNoLeaks([r.error.message, ...r.io.log], [...SECRETS, 'someone.else@example.org']);
 });
 
-test('resolveRunConfig: --target mismatched against SUPABASE_BOOTSTRAP_TARGET_ENV fails closed', () => {
-  const env = { ...BASE_ENV, SUPABASE_BOOTSTRAP_TARGET_ENV: 'production' };
-  assert.throws(() => resolveRunConfig({ args: BASE_APPLY_ARGS, env }), /does not match SUPABASE_BOOTSTRAP_TARGET_ENV/);
+test('conflicting email: SUPER_ADMIN_EMAIL_CONFLICT=YES stops the run before Supabase is contacted', async () => {
+  const setup = makeDeps({ conflict: true });
+  const env = { ...BASE_ENV };
+  const r = await run({ argv: [...APPLY_LOCAL, '--backup-manifest=fresh.json'], env, io: scriptedIo({ hidden: [EMAIL, EMAIL] }), setup });
+  assert.equal(r.error?.code, 'EMAIL_CONFLICT');
+  assert.ok(r.io.log.includes('SUPER_ADMIN_EMAIL_CONFLICT=YES'));
+  assert.equal(setup.calls.collision.length, 1);
+  assert.equal(setup.calls.collision[0].candidateEmail, EMAIL.toLowerCase());
+  assert.equal(setup.calls.createDb + setup.calls.createAuthAdmin, 0, 'no database or Auth client was ever created');
+  assert.equal(r.io.remaining().hidden, 0);
+  assertNoLeaks([r.error.message, ...r.io.log], SECRETS);
 });
 
-test('resolveRunConfig: SUPABASE_BOOTSTRAP_TARGET_ENV unset fails closed (never defaults to a match)', () => {
-  const env = { ...BASE_ENV, SUPABASE_BOOTSTRAP_TARGET_ENV: undefined };
-  assert.throws(() => resolveRunConfig({ args: BASE_APPLY_ARGS, env }), /does not match SUPABASE_BOOTSTRAP_TARGET_ENV/);
+test('no conflict: SUPER_ADMIN_EMAIL_CONFLICT=NO, then the run continues', async () => {
+  const r = await run({ argv: [...APPLY_LOCAL, '--backup-manifest=fresh.json'] });
+  assert.equal(r.error, null, r.error?.message);
+  assert.ok(r.io.log.includes('SUPER_ADMIN_EMAIL_CONFLICT=NO'));
+  assert.equal(r.auth.calls.invite.length, 1);
 });
 
-for (const key of ['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY', 'SUPABASE_DB_URL']) {
-  test(`resolveRunConfig: missing ${key} fails closed before any connection`, () => {
-    const env = { ...BASE_ENV, [key]: undefined };
-    assert.throws(() => resolveRunConfig({ args: BASE_APPLY_ARGS, env }), new RegExp(`${key} is not set`));
-  });
-}
-
-test('resolveRunConfig: all five gates satisfied returns an apply config', () => {
-  const config = resolveRunConfig({ args: BASE_APPLY_ARGS, env: BASE_ENV });
-  assert.equal(config.apply, true);
-  assert.equal(config.target, 'staging');
-  assert.equal(config.email, 'owner@example.com');
-  assert.equal(config.confirmPromoteExisting, false);
+test('existing user (same address) stops with nothing changed and no invite', async () => {
+  const setup = makeDeps({ db: makeFakeDb({ authEmails: [EMAIL.toLowerCase()] }) });
+  const r = await run({ setup });
+  assert.equal(r.error?.code, 'EXISTING_ACCOUNT');
+  assert.equal(setup.auth.calls.invite.length, 0);
+  assert.equal(setup.db.state.committedWrites, 0);
 });
 
-// ── runBootstrap — the write sequence, all I/O injected/fake ───────────────
+test('existing user (same mailbox: +tag / gmail dots) also stops with no invite', async () => {
+  const db = makeFakeDb({ authEmails: ['owner.person@gmail.com'] });
+  await assert.rejects(preflightBootstrap({ email: 'ownerperson+admin@googlemail.com', readOnly: db.readOnly }), err('EXISTING_ACCOUNT'));
+});
 
-test('runBootstrap: a brand-new email creates Auth, then profile, then super-admin role, in order', async () => {
+test('duplicate invite: a second run after a successful one stops at EXISTING_ADMIN_FOUND -- still one invite in total', async () => {
+  const setup = makeDeps();
+  const first = await run({ setup });
+  assert.equal(first.result.status, 'success');
+  const second = await run({ setup: { ...setup }, io: happyIo() });
+  assert.equal(second.error?.code, 'EXISTING_ADMIN_FOUND');
+  assert.equal(setup.auth.calls.invite.length, 1, 'never a second invite');
+  assert.deepEqual(setup.db.state.roleRows, [{ user_id: NEW_ID, role: 'super-admin' }]);
+});
+
+test('an existing admin role row or admin profile blocks the run before the phrase is asked', async () => {
+  for (const [db, code] of [[makeFakeDb({ roleRows: 1 }), 'EXISTING_ADMIN_FOUND'], [makeFakeDb({ adminProfiles: 1 }), 'AMBIGUOUS_ADMIN_STATE']]) {
+    const setup = makeDeps({ db });
+    const r = await run({ setup });
+    assert.equal(r.error?.code, code);
+    assert.equal(setup.auth.calls.invite.length, 0);
+    assert.equal(r.io.remaining().visible, 1, 'the confirmation phrase was never asked');
+  }
+});
+
+test('a wrong confirmation phrase sends no invite', async () => {
+  const setup = makeDeps();
+  const r = await run({ setup, io: happyIo({ phrase: 'INVITE SUPER-ADMIN difzynyphojgisrfvrkd' }) });
+  assert.equal(r.error?.code, 'NOT_CONFIRMED');
+  assert.equal(setup.auth.calls.invite.length, 0);
+});
+
+test('keys and database URLs must belong to the target', async () => {
+  const anonJwt = fakeJwtKey({ role: 'anon', iss: 'supabase-demo' });
+  let r = await run({ io: scriptedIo({ hidden: [EMAIL, EMAIL, LOCAL_DB_URL, anonJwt] }) });
+  assert.equal(r.error?.code, 'WRONG_KEY', 'an anon key is not a service key');
+  assertNoLeaks([r.error.message], [anonJwt]);
+  r = await run({ io: scriptedIo({ hidden: [EMAIL, EMAIL, 'postgresql://db.someotherref.supabase.co:5432/postgres'] }) });
+  assert.equal(r.error?.code, 'TARGET_MISMATCH', 'a remote database URL is not the local target');
+});
+
+test('an invite failure reports a redacted reason (the address never appears) and writes nothing', async () => {
+  const setup = makeDeps({ authFail: true });
+  const r = await run({ setup });
+  assert.equal(r.error?.code, 'INVITE_FAILED');
+  assert.equal(setup.auth.calls.invite.length, 1);
+  assert.equal(setup.db.state.committedWrites, 0);
+  assertNoLeaks([r.error.message, ...r.io.log], SECRETS);
+});
+
+test('a failed role write deletes exactly the account this run invited', async () => {
+  const db = makeFakeDb({ failRoleInsert: true });
+  const auth = makeFakeAuth(db);
+  const result = await applyBootstrap({ email: 'x@example.org', inviteUser: auth.inviteUser, deleteUser: auth.deleteUser, readOnly: db.readOnly, inTransaction: db.inTransaction, redactor: makeRedactor() });
+  assert.equal(result.status, 'failed_compensated');
+  assert.deepEqual(auth.calls.delete, [NEW_ID]);
+  assert.equal(db.state.roleRows.length, 0);
+});
+
+test('the preflight runs read-only: a write attempted inside it is refused', async () => {
   const db = makeFakeDb();
-  const invite = makeFakeInvite({ newUserId: 'uid-123' });
-  const del = makeFakeDelete();
-
-  const result = await runBootstrap({
-    email: 'owner@example.com',
-    confirmPromoteExisting: false,
-    inviteUser: invite.inviteUser,
-    deleteUser: del.deleteUser,
-    runInServiceRoleTransaction: db.runInServiceRoleTransaction,
-  });
-
-  assert.deepEqual(result, { status: 'success', createdByThisRun: true, promoted: true });
-  assert.deepEqual(invite.calls, ['owner@example.com']);
-  assert.equal(del.calls.length, 0, 'no compensation on a successful run');
-  assert.equal(db.state.profiles.get('uid-123').role, 'admin');
-  assert.deepEqual(db.state.adminRoleAssignments, [{ user_id: 'uid-123', role: 'super-admin' }]);
-
-  // Order: the profile UPDATE must precede the admin_role_assignments
-  // INSERT (admin_set_admin_role()'s own order, mirrored here).
-  const updateIdx = db.queries.findIndex((q) => q.startsWith('UPDATE profiles'));
-  const insertIdx = db.queries.findIndex((q) => q.startsWith('INSERT INTO admin_role_assignments'));
-  assert.ok(updateIdx !== -1 && insertIdx !== -1 && updateIdx < insertIdx);
-
-  // No secret/password/token anywhere in the result the CLI would log.
-  const logged = JSON.stringify({ status: result.status, createdByThisRun: result.createdByThisRun, promoted: result.promoted });
-  assert.ok(!logged.includes('owner@example.com'));
-  assert.ok(!/password|token|secret/i.test(logged));
-});
-
-test('runBootstrap: an existing admin_role_assignments row blocks the whole run', async () => {
-  const db = makeFakeDb({ adminRoleAssignments: [{ user_id: 'someone', role: 'admin' }] });
-  const invite = makeFakeInvite();
-  const del = makeFakeDelete();
-
-  await assert.rejects(
-    runBootstrap({
-      email: 'owner@example.com',
-      confirmPromoteExisting: false,
-      inviteUser: invite.inviteUser,
-      deleteUser: del.deleteUser,
-      runInServiceRoleTransaction: db.runInServiceRoleTransaction,
-    }),
-    (err) => {
-      assert.ok(err instanceof BootstrapError);
-      assert.equal(err.code, 'EXISTING_ADMIN_FOUND');
-      return true;
-    }
-  );
-  assert.equal(invite.calls.length, 0, 'no Auth account should ever be created once an admin already exists');
-  assert.equal(del.calls.length, 0);
-});
-
-test('runBootstrap: an orphaned profiles.role=admin row (no admin_role_assignments) fails closed as ambiguous', async () => {
-  const db = makeFakeDb({ profiles: { 'orphan-id': { role: 'admin' } } });
-  const invite = makeFakeInvite();
-
-  await assert.rejects(
-    runBootstrap({
-      email: 'owner@example.com',
-      confirmPromoteExisting: false,
-      inviteUser: invite.inviteUser,
-      deleteUser: makeFakeDelete().deleteUser,
-      runInServiceRoleTransaction: db.runInServiceRoleTransaction,
-    }),
-    (err) => { assert.equal(err.code, 'AMBIGUOUS_ADMIN_STATE'); return true; }
-  );
-  assert.equal(invite.calls.length, 0);
-});
-
-test('runBootstrap: an existing auth.users account for the email is never silently promoted', async () => {
-  const db = makeFakeDb({ authUsersByEmail: { 'owner@example.com': 'existing-uid' } });
-  const invite = makeFakeInvite();
-  const del = makeFakeDelete();
-
-  await assert.rejects(
-    runBootstrap({
-      email: 'owner@example.com',
-      confirmPromoteExisting: false,
-      inviteUser: invite.inviteUser,
-      deleteUser: del.deleteUser,
-      runInServiceRoleTransaction: db.runInServiceRoleTransaction,
-    }),
-    (err) => { assert.equal(err.code, 'EXISTING_ACCOUNT_REQUIRES_CONFIRMATION'); return true; }
-  );
-  assert.equal(invite.calls.length, 0, 'an existing account must never trigger a NEW invite');
-  assert.equal(db.state.profiles.get('existing-uid'), undefined, 'the existing profile must be untouched');
-  assert.equal(db.state.adminRoleAssignments.length, 0);
-});
-
-test('runBootstrap: --confirm-promote-existing-account allows promoting a pre-existing account, without a new invite', async () => {
-  const db = makeFakeDb({ authUsersByEmail: { 'owner@example.com': 'existing-uid' } });
-  const invite = makeFakeInvite();
-  const del = makeFakeDelete();
-
-  const result = await runBootstrap({
-    email: 'owner@example.com',
-    confirmPromoteExisting: true,
-    inviteUser: invite.inviteUser,
-    deleteUser: del.deleteUser,
-    runInServiceRoleTransaction: db.runInServiceRoleTransaction,
-  });
-
-  assert.deepEqual(result, { status: 'success', createdByThisRun: false, promoted: true });
-  assert.equal(invite.calls.length, 0, 'promoting an existing account must never also invite a new one');
-  assert.equal(db.state.profiles.get('existing-uid').role, 'admin');
-  assert.deepEqual(db.state.adminRoleAssignments, [{ user_id: 'existing-uid', role: 'super-admin' }]);
-});
-
-test('runBootstrap: a profile/role write failure compensates ONLY the identity this run itself created', async () => {
-  const db = makeFakeDb();
-  // Force the second (promote) transaction to fail, after the Auth
-  // identity has already been "created" by the fake invite below.
-  let transactionCount = 0;
-  const realRun = db.runInServiceRoleTransaction;
-  const flakyRun = async (fn) => {
-    transactionCount += 1;
-    if (transactionCount === 2) throw new Error('simulated promote-transaction failure');
-    return realRun(fn);
-  };
-  const invite = makeFakeInvite({ newUserId: 'uid-456' });
-  const del = makeFakeDelete();
-
-  const result = await runBootstrap({
-    email: 'owner@example.com',
-    confirmPromoteExisting: false,
-    inviteUser: invite.inviteUser,
-    deleteUser: del.deleteUser,
-    runInServiceRoleTransaction: flakyRun,
-  });
-
-  assert.deepEqual(result, { status: 'failed_compensated', createdByThisRun: true, promoted: false });
-  assert.deepEqual(del.calls, ['uid-456'], 'compensation must target exactly the id this run created, nothing else');
-});
-
-test('runBootstrap: a promote failure for an EXISTING (not newly-created) account never triggers compensation', async () => {
-  const db = makeFakeDb({ authUsersByEmail: { 'owner@example.com': 'existing-uid' } });
-  let transactionCount = 0;
-  const realRun = db.runInServiceRoleTransaction;
-  const flakyRun = async (fn) => {
-    transactionCount += 1;
-    if (transactionCount === 2) throw new Error('simulated promote-transaction failure');
-    return realRun(fn);
-  };
-  const del = makeFakeDelete();
-
-  await assert.rejects(
-    runBootstrap({
-      email: 'owner@example.com',
-      confirmPromoteExisting: true,
-      inviteUser: makeFakeInvite().inviteUser,
-      deleteUser: del.deleteUser,
-      runInServiceRoleTransaction: flakyRun,
-    }),
-    /simulated promote-transaction failure/
-  );
-  assert.equal(del.calls.length, 0, 'never delete an account this run did not itself create');
-});
-
-test('runBootstrap: a failed invite performs no writes and no compensation', async () => {
-  const db = makeFakeDb();
-  const invite = makeFakeInvite({ fail: true });
-  const del = makeFakeDelete();
-
-  await assert.rejects(
-    runBootstrap({
-      email: 'owner@example.com',
-      confirmPromoteExisting: false,
-      inviteUser: invite.inviteUser,
-      deleteUser: del.deleteUser,
-      runInServiceRoleTransaction: db.runInServiceRoleTransaction,
-    }),
-    (err) => { assert.equal(err.code, 'INVITE_FAILED'); return true; }
-  );
-  assert.equal(del.calls.length, 0);
-  assert.equal(db.state.adminRoleAssignments.length, 0);
+  await preflightBootstrap({ email: 'x@example.org', readOnly: db.readOnly });
+  await assert.rejects(db.readOnly((c) => c.query('update public.profiles set role = $1', ['admin'])), /read-only/);
 });

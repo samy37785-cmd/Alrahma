@@ -90,6 +90,14 @@ async function main() {
     await assert.rejects(runCollisionCheck({ backupManifestPath: tampered, candidateEmail: 'academy-admin@example.com' }), /does not match its manifest sha256/);
   });
 
+  await test('a backup older than 24h is refused before anything is restored', async () => {
+    const stale = path.join(WORK_DIR, 'stale.backup-manifest.json');
+    const createdAt = new Date(Date.now() - 25 * 3_600_000).toISOString();
+    fs.writeFileSync(stale, JSON.stringify({ filePath: archivePath, sha256, createdAt }));
+    await assert.rejects(runCollisionCheck({ backupManifestPath: stale, candidateEmail: 'academy-admin@example.com' }), /older than 24h/);
+    assert.equal(await leftoverCheckerContainers(), '', 'no container was started for a stale backup');
+  });
+
   await test('a non-email entry is refused without echoing it', async () => {
     await assert.rejects(runCollisionCheck({ backupManifestPath: manifestPath, candidateEmail: 'secret-typo' }), (err) => !/secret-typo/.test(err.message));
   });

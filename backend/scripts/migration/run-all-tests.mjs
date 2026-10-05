@@ -54,6 +54,9 @@ const TEST_FILES = [
   // multi-container stack start/stop), so every fast/cheap file's own
   // regression is visible first.
   'real-gotrue-correlation.test.mjs',
+  // The owner-run Super Admin operator tools (scripts/ops/), end to end on
+  // their own real Supabase stack with the Mailpit mail catcher.
+  '../ops/operator-tools.real-gotrue.test.mjs',
 ];
 
 let overallFailed = false;

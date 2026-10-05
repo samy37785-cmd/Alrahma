@@ -340,7 +340,7 @@ const it = {
     "quranReader": "Lettore del Corano",
     "adhkarLink": "Adhkar",
     "hadithLibLink": "Biblioteca degli Hadith",
-    "prayerLink": "Orari di preghiera e Qibla",
+    "prayerLink": "Orari di preghiera",
     "blogLink": "Blog",
     "faqLink": "FAQ",
     "freeTrialLink": "Prova gratuita",

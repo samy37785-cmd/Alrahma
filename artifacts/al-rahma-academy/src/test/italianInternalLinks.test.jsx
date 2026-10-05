@@ -149,6 +149,15 @@ describe('Italian pages: Tajweed Checker is reachable, unpublished routes are no
     await mountFullPage('/it/tools/verse-of-the-day', VerseOfTheDayPage);
     expect(hasHref(`/it${IT_TAJWEED_ROUTE}`)).toBe(true);
   });
+
+  // The published prayer-times page has no Qibla feature (the Qibla tool is not published in Italian), so the
+  // footer label must not promise one. The link target stays the published prayer-times page.
+  it('the Italian footer prayer link says "Orari di preghiera" (no Qibla) and still points to /it/tools/prayer-times', async () => {
+    await mountFullPage('/it/tools', ToolsHub);
+    const link = document.querySelector('footer a[href="/it/tools/prayer-times"]');
+    expect(link.textContent).toBe('Orari di preghiera');
+    expect(document.querySelector('footer').textContent).not.toMatch(/qibla/i);
+  });
 });
 
 describe('English, Arabic and French are unchanged', () => {
@@ -163,6 +172,16 @@ describe('English, Arabic and French are unchanged', () => {
     for (const h of ['/tools/qibla', '/tools/islamic-calendar', '/resources/blog', '/login']) {
       expect(hasHref(`${prefix}${h}`), `${url} lost ${h}`).toBe(true);
     }
+  });
+
+  it.each([
+    ['/tools', 'Prayer Times & Qibla'],
+    ['/ar/tools', 'أوقات الصلاة والقبلة'],
+    ['/fr/tools', 'Horaires des prières & Qibla'],
+  ])('%s: the footer prayer link keeps its label', async (url, label) => {
+    await mountFullPage(url, ToolsHub);
+    const prefix = url.replace(/\/tools$/, '');
+    expect(document.querySelector(`footer a[href="${prefix}/tools/prayer-times"]`).textContent).toBe(label);
   });
 
   it('English /courses/quran keeps its /tools/quran link', async () => {

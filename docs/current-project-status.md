@@ -2,21 +2,37 @@
 
 **This is the current source of truth.** Every other document under `docs/` (rehearsal reports, parity maps, design docs) describes the project **as it stood at the time it was written** — none of them are re-updated as later rounds change the code, and several predate work that has since superseded their conclusions (e.g. earlier parity/rehearsal docs describe schema state `0000`–`0011`; the schema is now at `0022`, and lossless per-domain migration tooling covering all 27 domains has since been built and reviewed). When a historical doc and this one disagree, **this one is correct**; the historical doc is left as-is for its own record of what was true then, not corrected retroactively.
 
-Last verified: PR #70 and PR #71 merged to `main`; Postgres/Supabase schema migrations now number `0000`–`0025`. Booking-First Enrollment (§5 below) is tracked on a later branch, `feat/booking-only-enrollment`, and now includes a server-side hardening pass (payment endpoints closed with 410, not just unlinked from the UI; mass-assignment fix on the public booking endpoint; required/validated WhatsApp number; admin update allowlist + validation; Mongo/Supabase parity for the new booking fields) on top of the original booking-flow work.
+Last verified: `main` at `a3d6cb0` (#208, 2026-10-07); Postgres/Supabase schema migrations now number `0000`–`0029`. (Earlier text of this paragraph: PR #70 and PR #71 merged to `main`.) Booking-First Enrollment (§5 below) is tracked on a later branch, `feat/booking-only-enrollment`, and now includes a server-side hardening pass (payment endpoints closed with 410, not just unlinked from the UI; mass-assignment fix on the public booking endpoint; required/validated WhatsApp number; admin update allowlist + validation; Mongo/Supabase parity for the new booking fields) on top of the original booking-flow work.
+
+## 0. What changed after PR #71 (read this first)
+
+Sections 1–4 were written at PR #70/#71 and are kept for history. These points are superseded; where they disagree, this section is correct.
+
+| Topic | Then | Now |
+|---|---|---|
+| Payments | 15 `paymob` payments permanently deferred (`--defer-domains=payments`) | **Migrated** (owner decision PAYMENTS=MIGRATE_ALL): `paymob` is a historical, import-only `payment_gateway` value (0028); the 15 rows import as-is (all `pending`; 9 linked to a user, 6 guest checkouts with `user_id` NULL) with the whole source document in `payment_source_snapshots` (#200, #201) |
+| Passwords | never migrated, throwaway password + reset flow | bcrypt hashes imported via GoTrue `password_hash`; no reset email (#201) |
+| Source dates | some unpreserved | every source date preserved to the millisecond, NULL stays NULL; 0029 adds the missing columns (#204) |
+| Reset/refresh tokens | — | intentionally not migrated, counted and reported (#207) |
+| First admin / plans | a migration-seed admin identity created the plans | no migration service identity (owner decision NO_MIGRATION_SERVICE_IDENTITY): the owner's real Super Admin, MFA and the three plans are created first by owner-run tools with hidden inputs (#206, #208; `docs/supabase-first-super-admin-bootstrap-runbook.md`) |
+| Inventory | 55 documents, `users` 7 | 60 documents, `users` 10 (approved backup of 2026-10-06T15:30:36Z; see `docs/stage-2j-b-lossless-mapping-contract.md`) |
+| Production Supabase schema | — | **Not verified to match migrations `0000`–`0029`.** The last committed read-only inventory (`docs/remote-supabase-inventory.md`, 2026-08-30) found a different 34-table legacy schema, all tables empty, no migration-tracking table and no backups (Free plan). No committed record shows the repo migrations applied to the real project. Treat the target schema as unverified until a read-only check of the real project says otherwise. |
+
+Still true: MongoDB is the production datastore, `DATA_BACKEND` is unchanged, and no production write has been made by any migration tool.
 
 ## 1. Where production data actually lives today
 
 - **MongoDB is still the production data source.** The live backend (`backend/`) reads and writes MongoDB via Mongoose, exactly as it always has. Nothing about that has changed.
 - **No Supabase Production migration or cutover has occurred.** `DATA_BACKEND` has not been changed. No script in `backend/scripts/migration/` has ever been run with real credentials against the real Supabase project (`difzynyphojgisrfvrkd`) or the real Atlas cluster. Every test and rehearsal run in this engagement has targeted disposable, throwaway local Docker containers (Mongo and/or Postgres, occasionally a local Supabase-CLI GoTrue instance or a minimal Docker HTTP stub), never anything real. Stage 2J-C (PR #71) added a closed-by-default Production Enablement gate on top of this tooling — it narrows how a real run could ever be triggered, it does not itself trigger one, and nothing has been run against real credentials.
-- The Postgres/Supabase schema under `lib/db/drizzle/` (migrations `0000`–`0025`) is fully built and tested — RLS policies, ACL grants, RPCs, the `migration_source_ledger` provenance table — but it is a **target schema for a future migration**, not the backend's live datastore.
+- The Postgres/Supabase schema under `lib/db/drizzle/` (migrations `0000`–`0029`) is fully built and tested — RLS policies, ACL grants, RPCs, the `migration_source_ledger` provenance table — but it is a **target schema for a future migration**, not the backend's live datastore.
 
 ## 2. What the migration tooling has actually proven, locally
 
 Local rehearsal (Stage 2J-B Part H) against a full restored copy of the real Mongo dump, in disposable containers only:
 
 - **Dump integrity:** 55/55 documents, 32/32 collections restored exactly; re-dump vs. original — 0 byte-level mismatches.
-- **40 of 55 documents (every non-payments domain) migrate losslessly and verifiably**: `users` 7, `courses` 6, `enrollments` 13, `quran_bookmarks` 1, `quran_reading_progress` 1, `quran_memorization_stats` 1, `subscribers` 1, `trial_requests` 10.
-- **15 of 55 documents (100% of `payments`) are explicitly, permanently deferred, not migrated, not modified.** Every real payment record uses gateway `paymob`, which the migration tooling's payments adapter does not support (it supports `stripe`/`paypal` only). The original Mongo `payments` data, the `payment_gateway` code, and every payment controller/table are untouched by this entire engagement. Deferral is explicit and operator-controlled: `production-import-orchestrator.mjs` requires `--defer-domains=payments` to skip it — nothing defers it by default, and without that flag the whole run fails closed before any write if `payments` would fail.
+- **40 of 55 documents (every non-payments domain) migrated losslessly and verifiably at that time** (superseded: see section 0 for the current 60-document inventory, payments included): `users` 7, `courses` 6, `enrollments` 13, `quran_bookmarks` 1, `quran_reading_progress` 1, `quran_memorization_stats` 1, `subscribers` 1, `trial_requests` 10.
+- **(Superseded by section 0: payments are now migrated.) At the time, 15 of 55 documents (100% of `payments`) were explicitly deferred, not migrated, not modified.** Every real payment record uses gateway `paymob`, which the migration tooling's payments adapter does not support (it supports `stripe`/`paypal` only). The original Mongo `payments` data, the `payment_gateway` code, and every payment controller/table are untouched by this entire engagement. Deferral is explicit and operator-controlled: `production-import-orchestrator.mjs` requires `--defer-domains=payments` to skip it — nothing defers it by default, and without that flag the whole run fails closed before any write if `payments` would fail.
 - **A run that defers a domain is reported as `status: 'completed_with_deferred'`, never `'reconciled'`.** These are not the same thing, and calling code must inspect `status` (or `deferredDomains.length`), not just `ok`, to tell them apart — `ok` is `true` for both, by design (deferring is a deliberate, acknowledged choice, not a failure).
 - **Crash/resume safety** has been proven via deliberate fault injection at each real kill-window (mid-write, between a target write and its ledger acknowledgement, between GoTrue account creation and ledger linkage, mid-transaction for subscriptions/relationships/the migration-seed admin identity) — every window closes to either "fully committed" or "fully rolled back," never a silently-orphaned partial write, across seven rounds of adversarial review.
 - **Strict CLI parsing, immutable approval artifacts, and bidirectional ledger integrity** (every target row traces to a ledger entry AND every ledger entry's claimed target still exists) are enforced structurally in the production orchestrator, not by convention.
@@ -27,13 +43,13 @@ None of the above has ever been exercised against real production data, real cre
 
 - No production Mongo→Supabase import.
 - No Supabase Production cutover; `DATA_BACKEND` unchanged.
-- No payments migration of any kind, real or planned within this engagement's current scope.
+- No production payments migration has happened. (Superseded scope: the 15 historical `paymob` payments are now part of the planned import, see section 0.)
 - No Render or Vercel configuration changes.
-- No real credential has been read, requested, logged, or committed by any script in `backend/scripts/migration/` — every worker asserts its Postgres target is `localhost`/`127.0.0.1` before doing anything, structurally, not as a convention.
+- No real credential has been read, requested, logged, or committed by any script in `backend/scripts/migration/` — every worker asserts its Postgres target is `localhost`/`127.0.0.1` before doing anything unless a signed, scoped, fresh-backup-bound production authorization is presented (#71, #206), and the Mongo source must always be local.
 
 ## 4. Review status
 
-**PR #70** (`feat/stage-2j-b-lossless-data-migration`) and **PR #71** (`feat/stage-2j-c-production-enablement`) are both merged to `main`. Everything in sections 1–3 above still holds after the merge: MongoDB remains the sole production datastore, no production import/cutover has occurred, and the payments domain is still deferred.
+**PR #70** (`feat/stage-2j-b-lossless-data-migration`) and **PR #71** (`feat/stage-2j-c-production-enablement`) are both merged to `main`. Everything in sections 1–3 above still holds after the merge: MongoDB remains the sole production datastore, no production import/cutover has occurred. (The payments domain is no longer deferred: see section 0.)
 
 ## 5. Booking-First Enrollment (no in-app online payment)
 

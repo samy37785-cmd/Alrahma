@@ -5,10 +5,10 @@
 // prove the new RLS/RPC design actually behaves as intended before building
 // adapters on top of it. Safe to delete after Stage 2F is reviewed.
 import pg from 'pg';
+import { isLocalHost } from './lib/host-guard.mjs';
 
 function assertLocalHost(uri) {
-  const host = new URL(uri).hostname;
-  if (host !== 'localhost' && host !== '127.0.0.1') throw new Error('local-only');
+  if (!isLocalHost(uri)) throw new Error('local-only');
 }
 
 const uri = process.env.VALIDATE_DB_URL;

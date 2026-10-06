@@ -21,6 +21,7 @@ import readline from 'node:readline';
 import { execFileSync } from 'node:child_process';
 import { redactText } from '../../migration/lib/redact.mjs';
 import { isLocalHost } from '../../migration/lib/host-guard.mjs';
+import { hasHostOverride } from '../../../data/supabase/pg-url.js';
 import { TARGET_SUPABASE_REF } from '../../migration/lib/production-approval.mjs';
 
 export const OPERATOR_TARGETS = ['local', 'production'];
@@ -201,6 +202,8 @@ export function resolveSupabaseApi({ target, env }) {
 
 /** The Supabase project ref a Postgres URL belongs to (direct db.<ref> host or pooler user postgres.<ref>), else null. */
 export function dbUrlProjectRef(uri) {
+  // A ?host= override means pg would not connect to the host this reads.
+  if (hasHostOverride(uri)) return null;
   const url = new URL(uri);
   const direct = /^db\.([a-z0-9]+)\.supabase\.co$/i.exec(url.hostname);
   if (direct) return direct[1].toLowerCase();

@@ -44,6 +44,7 @@
 import fs from 'node:fs';
 import { X509Certificate } from 'node:crypto';
 import pg from 'pg';
+import { hasHostOverride, HOST_OVERRIDE_MESSAGE } from './pg-url.js';
 
 let pool;
 
@@ -119,6 +120,11 @@ export function buildPgPoolConfig(connectionString, loadCa = loadCaCert) {
   }
   if (!url.hostname) {
     throw new Error('Postgres connection string has no host');
+  }
+  // pg lets ?host= / ?hostaddr= override the URL's host, so the local check
+  // and the strict-TLS switch below would be judging a server pg never uses.
+  if (hasHostOverride(connectionString)) {
+    throw new Error(HOST_OVERRIDE_MESSAGE);
   }
 
   const host = url.hostname;

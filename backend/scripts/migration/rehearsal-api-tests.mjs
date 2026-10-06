@@ -10,11 +10,11 @@
 // Run after: seed-mongo-fixture.mjs -> mongo-to-supabase.mjs -> (this file).
 import assert from 'node:assert/strict';
 import request from 'supertest';
+import { isLocalHost } from './lib/host-guard.mjs';
 
 function assertLocalHost(uri, label) {
-  const host = new URL(uri).hostname;
-  if (host !== 'localhost' && host !== '127.0.0.1') {
-    throw new Error(`Refusing to run: ${label} host "${host}" is not localhost/127.0.0.1.`);
+  if (!isLocalHost(uri)) {
+    throw new Error(`Refusing to run: ${label} host "${new URL(uri).hostname}" is not localhost/127.0.0.1 (or carries a host/hostaddr override).`);
   }
 }
 

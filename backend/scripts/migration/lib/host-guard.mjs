@@ -13,7 +13,12 @@
 // never the real Atlas cluster directly — so that guard stays exactly the
 // unconditional `assertLocalHost()` it always was, in both worker scripts,
 // completely untouched by this change.
+import { hasHostOverride, HOST_OVERRIDE_MESSAGE } from '../../../data/supabase/pg-url.js';
+
+// A Postgres URL whose ?host= / ?hostaddr= points pg elsewhere is never local:
+// the authority says one thing and pg connects to another (data/supabase/pg-url.js).
 export function isLocalHost(uri) {
+  if (hasHostOverride(uri)) return false;
   const host = new URL(uri).hostname;
   return host === 'localhost' || host === '127.0.0.1';
 }
@@ -28,6 +33,9 @@ export function isLocalHost(uri) {
  *   actually run the real checks that object's own creator performs.
  */
 export function assertLocalHostOrProductionAuthorized(uri, label, productionAuthorization) {
+  // Refused outright, authorization or not: no approval covers a URL whose
+  // real destination differs from the host this check (and the approval) saw.
+  if (hasHostOverride(uri)) throw new Error(`Refusing to run: ${label}: ${HOST_OVERRIDE_MESSAGE}.`);
   const host = new URL(uri).hostname;
   if (isLocalHost(uri)) return;
 

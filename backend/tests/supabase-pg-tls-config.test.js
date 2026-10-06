@@ -2,6 +2,14 @@ import { test, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import pg from 'pg';
 import { buildPgPoolConfig } from '../data/supabase/client.js';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { hasHostOverride, hostOverrideParams } from '../data/supabase/pg-url.js';
+import { isLocalHost, assertLocalHostOrProductionAuthorized } from '../scripts/migration/lib/host-guard.mjs';
+import { assertDbUrlTarget, dbUrlProjectRef } from '../scripts/ops/lib/operator-io.mjs';
+import { assertLocalHost as dbHarnessAssertLocalHost } from '../../lib/db/test/local-harness.mjs';
+import { assertLocalOnly as dbOrchestratorAssertLocalOnly } from '../../lib/db/test/orchestrator-lib.mjs';
 
 // Direct tests of the Postgres TLS policy. buildPgPoolConfig() is pure — it
 // never opens a socket, and pg.Client is only constructed (never .connect()ed)
@@ -170,4 +178,132 @@ test('trailing-dot localhost ("localhost.") is NOT local: the unsafe direction i
   const cfg = buildPgPoolConfig('postgresql://u:p@localhost./appdb', loader.fn);
   assert.equal(loader.calls, 1);
   assert.deepEqual(cfg.ssl, { rejectUnauthorized: true });
+});
+
+// ── Host override (?host= / ?hostaddr=) ───────────────────────────────────
+// `pg` merges every query parameter of a connection string over its own
+// config, so `?host=` sends the connection somewhere other than the host in
+// the URL's authority. Every guard below decides "local" or "this project"
+// from that authority alone, so a URL such as
+//   postgresql://u:pw@127.0.0.1/db?host=db.example.test
+// used to pass as local (no TLS, no production gate) while pg connected to
+// db.example.test. These tests pin that no guard can be fooled that way.
+// All hosts are reserved example/test names; nothing is ever connected to.
+
+const REMOTE_HOST = 'db.example.test';
+const SECRET = 'S3cretPw-do-not-leak';
+const PROD_REF = 'difzynyphojgisrfvrkd';
+
+const DISGUISED_LOCAL = [
+  `postgresql://app_user:${SECRET}@127.0.0.1:5432/appdb?host=${REMOTE_HOST}`,
+  `postgresql://app_user:${SECRET}@localhost/appdb?sslmode=disable&host=${REMOTE_HOST}`,
+  `postgresql://app_user:${SECRET}@localhost/appdb?HOST=${REMOTE_HOST}`,
+  `postgresql://app_user:${SECRET}@127.0.0.1/appdb?hostaddr=203.0.113.9`,
+];
+// Assembled from parts: this repo's diff-level secret scan flags a literal
+// user:password@...supabase URL, and none of these values is real.
+const projectUrl = (query = '') => ['postgresql://postgres:', SECRET, '@db.', PROD_REF, '.supabase.co:5432/postgres', query].join('');
+const DISGUISED_PROJECT = projectUrl(`?host=${REMOTE_HOST}`);
+
+test('the premise: pg really connects to the ?host= value, not the URL authority', () => {
+  const cfg = new pg.Client({ connectionString: DISGUISED_LOCAL[0] }).connectionParameters;
+  assert.equal(cfg.host, REMOTE_HOST);
+});
+
+test('hasHostOverride / hostOverrideParams: host and hostaddr in any case, nothing else', () => {
+  for (const url of DISGUISED_LOCAL) assert.equal(hasHostOverride(url), true, url.replace(SECRET, '***'));
+  assert.deepEqual(hostOverrideParams(DISGUISED_LOCAL[1]), ['host']);
+  for (const url of [
+    `postgresql://u:p@127.0.0.1:5432/appdb`,
+    `postgresql://u:p@127.0.0.1:5432/appdb?sslmode=disable`,
+    `postgresql://u:p@db.example.test/appdb?application_name=hostel&options=-c%20search_path%3Dpublic`,
+  ]) {
+    assert.equal(hasHostOverride(url), false, url);
+  }
+  // An unparseable value is not this helper's business: the callers report it.
+  assert.equal(hasHostOverride('not a url'), false);
+});
+
+test('buildPgPoolConfig refuses a host override on a local URL, instead of returning ssl:false', () => {
+  for (const url of DISGUISED_LOCAL) {
+    assert.throws(() => buildPgPoolConfig(url, () => undefined), /host\/hostaddr query parameter/, url.replace(SECRET, '***'));
+  }
+});
+
+test('buildPgPoolConfig refuses a host override on a remote URL too', () => {
+  assert.throws(() => buildPgPoolConfig(`postgresql://u:p@db.example.test/appdb?host=127.0.0.1`, () => undefined), /host\/hostaddr query parameter/);
+});
+
+test('the refusal never echoes the password, the URL or the overriding host', () => {
+  for (const url of [...DISGUISED_LOCAL, DISGUISED_PROJECT]) {
+    let refusal = null;
+    try {
+      buildPgPoolConfig(url, () => undefined);
+    } catch (err) {
+      refusal = err;
+    }
+    assert.ok(refusal, 'expected a refusal');
+    assert.ok(!refusal.message.includes(SECRET), 'password leaked');
+    assert.ok(!refusal.message.includes(REMOTE_HOST), 'host leaked');
+    assert.ok(!refusal.message.includes('127.0.0.1'), 'URL leaked');
+  }
+});
+
+test('buildPgPoolConfig is unchanged for URLs without an override (local ssl:false, remote strict)', () => {
+  const local = 'postgresql://u:p@127.0.0.1:54322/appdb';
+  assert.deepEqual(buildPgPoolConfig(local, () => undefined), { connectionString: local, ssl: false });
+  const remote = buildPgPoolConfig('postgresql://u:p@db.example.test/appdb?sslmode=disable', () => undefined);
+  assert.deepEqual(remote.ssl, { rejectUnauthorized: true });
+  assert.ok(!remote.connectionString.includes('sslmode'));
+});
+
+test('isLocalHost is false for a disguised URL, so it can never pass as a local target', () => {
+  for (const url of DISGUISED_LOCAL) assert.equal(isLocalHost(url), false, url.replace(SECRET, '***'));
+  assert.equal(isLocalHost('postgresql://u:p@127.0.0.1:54322/appdb'), true);
+});
+
+test('assertLocalHostOrProductionAuthorized refuses a disguised URL even with a verified production authorization', () => {
+  const auth = { verified: true, projectRef: PROD_REF };
+  for (const url of DISGUISED_LOCAL) {
+    assert.throws(() => assertLocalHostOrProductionAuthorized(url, 'MIGRATION_DB_URL', null), /host\/hostaddr query parameter|not localhost/);
+    assert.throws(() => assertLocalHostOrProductionAuthorized(url, 'MIGRATION_DB_URL', auth), /host\/hostaddr query parameter/);
+  }
+  assert.doesNotThrow(() => assertLocalHostOrProductionAuthorized('postgresql://u:p@127.0.0.1/appdb', 'MIGRATION_DB_URL', null));
+});
+
+test('operator tools: a disguised URL is neither the local target nor the production project', () => {
+  assert.equal(dbUrlProjectRef(projectUrl()), PROD_REF);
+  assert.equal(dbUrlProjectRef(DISGUISED_PROJECT), null);
+  assert.throws(() => assertDbUrlTarget(DISGUISED_PROJECT, 'production'), /does not belong to --target=production/);
+  for (const url of DISGUISED_LOCAL) {
+    assert.throws(() => assertDbUrlTarget(url, 'local'), /does not belong to --target=local/, url.replace(SECRET, '***'));
+  }
+  assert.doesNotThrow(() => assertDbUrlTarget('postgresql://u:p@127.0.0.1:54322/appdb', 'local'));
+});
+
+test('lib/db test harness guards refuse a disguised TEST_DATABASE_URL', () => {
+  for (const url of DISGUISED_LOCAL) {
+    assert.throws(() => dbHarnessAssertLocalHost(url, 'TEST_DATABASE_URL'), /Refusing to run/, url.replace(SECRET, '***'));
+    assert.throws(() => dbOrchestratorAssertLocalOnly(url, 'TEST_DATABASE_URL'), /Refusing to run/, url.replace(SECRET, '***'));
+  }
+  assert.doesNotThrow(() => dbHarnessAssertLocalHost('postgresql://u:p@127.0.0.1:54322/appdb', 'TEST_DATABASE_URL'));
+  assert.doesNotThrow(() => dbOrchestratorAssertLocalOnly('postgresql://u:p@127.0.0.1:54322/appdb', 'TEST_DATABASE_URL'));
+});
+
+// The rehearsal and seed scripts used to carry their own copy of the
+// hostname-only check. Postgres URLs now go through isLocalHost(); the only
+// copies left are the ones that guard a MongoDB URI (no host override exists
+// there) and are listed here on purpose.
+test('no migration script keeps a hostname-only local check for a Postgres URL', () => {
+  const dir = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'scripts', 'migration');
+  const MONGO_ONLY = new Set([
+    'mongo-to-supabase.mjs',
+    'seed-mongo-fixture.mjs',
+    'seed-mongo-fixture-stage2f.mjs',
+    'seed-mongo-fixture-auth-migration.mjs',
+  ]);
+  const offenders = fs.readdirSync(dir)
+    .filter((f) => f.endsWith('.mjs') && !f.endsWith('.test.mjs') && !MONGO_ONLY.has(f))
+    .filter((f) => /host\s*!==\s*'localhost'\s*&&\s*host\s*!==\s*'127\.0\.0\.1'/.test(fs.readFileSync(path.join(dir, f), 'utf8')));
+  assert.deepEqual(offenders, []);
 });

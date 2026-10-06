@@ -33,6 +33,7 @@ import { execSync } from 'node:child_process';
 import pg from 'pg';
 import request from 'supertest';
 import speakeasy from 'speakeasy';
+import { isLocalHost } from './lib/host-guard.mjs';
 
 // Docker Desktop's WSL2 VM clock can drift from the Windows host clock by
 // several seconds (a known, common artifact after host sleep/resume) —
@@ -49,9 +50,8 @@ function totpContainerTime(containerName) {
 }
 
 function assertLocalHost(uri, label) {
-  const host = new URL(uri).hostname;
-  if (host !== 'localhost' && host !== '127.0.0.1') {
-    throw new Error(`Refusing to run: ${label} host "${host}" is not localhost/127.0.0.1.`);
+  if (!isLocalHost(uri)) {
+    throw new Error(`Refusing to run: ${label} host "${new URL(uri).hostname}" is not localhost/127.0.0.1 (or carries a host/hostaddr override).`);
   }
 }
 

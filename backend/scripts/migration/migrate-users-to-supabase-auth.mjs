@@ -194,13 +194,6 @@ export function correlationIdFor({ sourceCollection, sourceDocumentId, sourceVal
     .digest('hex');
 }
 
-function assertLocalHost(uri, label) {
-  const host = new URL(uri).hostname;
-  if (host !== 'localhost' && host !== '127.0.0.1') {
-    throw new Error(`Refusing to run: ${label} host "${host}" is not localhost/127.0.0.1.`);
-  }
-}
-
 const CHECKPOINT_DIR = path.join(process.cwd(), '.checkpoints');
 const CHECKPOINT_FILE = path.join(CHECKPOINT_DIR, 'users-auth-migration.json');
 

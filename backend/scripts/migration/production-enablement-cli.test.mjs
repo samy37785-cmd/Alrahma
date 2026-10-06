@@ -106,6 +106,51 @@ function main() {
   });
 
   // -----------------------------------------------------------------
+  // MIGRATION_MONGO_URI is unconditionally local-only for BOTH worker
+  // scripts. migrate-users-to-supabase-auth.mjs used to have no such
+  // check: given a non-local source it went on to connect to it.
+  // -----------------------------------------------------------------
+
+  const FAKE_NONLOCAL_MONGO = `mongodb://mongo.production-enablement-test.invalid:27017/al-rahma`;
+  const LOCAL_PG_URI = 'postgresql://user:pass@127.0.0.1:1/postgres';
+  const MONGO_REFUSAL = /MIGRATION_MONGO_URI host "mongo\.production-enablement-test\.invalid" is not localhost\/127\.0\.0\.1/;
+
+  test('migrate-users-to-supabase-auth.mjs: a non-local MIGRATION_MONGO_URI is refused before any connection is attempted', () => {
+    const run = runScript(USER_MIGRATION, ['--execute'], {
+      MIGRATION_MONGO_URI: FAKE_NONLOCAL_MONGO, MIGRATION_DB_URL: LOCAL_PG_URI,
+      SUPABASE_URL: 'http://127.0.0.1:1/', SUPABASE_SERVICE_ROLE_KEY: 'fake-service-role-key-for-test',
+    });
+    assert.notEqual(run.code, 0);
+    assert.match(run.stderr, MONGO_REFUSAL);
+    // Refused on the guard itself, not on a later DNS/connection failure.
+    assert.doesNotMatch(run.stderr, /ENOTFOUND|ECONNREFUSED|getaddrinfo/);
+  });
+
+  test('migrate-users-to-supabase-auth.mjs: a valid production authorization never lifts the Mongo source guard', () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'r13-gate-mongo-'));
+    try {
+      const { approvalManifest, backupManifest } = makeValidProductionArtifacts(tmpDir);
+      const run = runScript(USER_MIGRATION, ['--execute'], {
+        MIGRATION_MONGO_URI: FAKE_NONLOCAL_MONGO, MIGRATION_DB_URL: FAKE_PG_URI,
+        MIGRATION_PRODUCTION_MODE: '1', MIGRATION_APPROVAL_MANIFEST: approvalManifest, MIGRATION_BACKUP_MANIFEST: backupManifest,
+        SUPABASE_URL: `https://${TARGET_SUPABASE_REF}.supabase.co`, SUPABASE_SERVICE_ROLE_KEY: 'fake-service-role-key-for-test',
+      });
+      assert.notEqual(run.code, 0);
+      assert.match(run.stderr, MONGO_REFUSAL);
+    } finally {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    }
+  });
+
+  test('mongo-to-supabase.mjs: the same non-local MIGRATION_MONGO_URI is refused too (regression pin)', () => {
+    const run = runScript(MONGO_TO_SUPABASE, ['--domain=trial_requests', '--dry-run'], {
+      MIGRATION_MONGO_URI: FAKE_NONLOCAL_MONGO, MIGRATION_DB_URL: LOCAL_PG_URI,
+    });
+    assert.notEqual(run.code, 0);
+    assert.match(run.stderr, MONGO_REFUSAL);
+  });
+
+  // -----------------------------------------------------------------
   // The gate genuinely opens with a real, fully-valid authorization --
   // proven by getting PAST the guard's own message (a DNS/connection
   // failure against the deliberately-unresolvable host follows instead).

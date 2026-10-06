@@ -15,6 +15,27 @@
 // completely untouched by this change.
 import { hasHostOverride, HOST_OVERRIDE_MESSAGE } from '../../../data/supabase/pg-url.js';
 
+/**
+ * The Mongo SOURCE guard shared by the user-migration tool. The source is
+ * always a local, restored copy of the approved backup -- never the live
+ * cluster -- and no production authorization ever lifts that. (mongo-to-
+ * supabase.mjs has always enforced the same rule on its own copy.)
+ */
+export function assertLocalMongoSource(uri, label = 'MIGRATION_MONGO_URI') {
+  let host;
+  try {
+    host = new URL(uri).hostname;
+  } catch {
+    throw new Error(`Refusing to run: ${label} is not a parseable URL.`);
+  }
+  if (host !== 'localhost' && host !== '127.0.0.1') {
+    throw new Error(
+      `Refusing to run: ${label} host "${host}" is not localhost/127.0.0.1 -- the Mongo source is always a local, ` +
+      'restored copy of the approved backup, never the live cluster.'
+    );
+  }
+}
+
 // A Postgres URL whose ?host= / ?hostaddr= points pg elsewhere is never local:
 // the authority says one thing and pg connects to another (data/supabase/pg-url.js).
 export function isLocalHost(uri) {

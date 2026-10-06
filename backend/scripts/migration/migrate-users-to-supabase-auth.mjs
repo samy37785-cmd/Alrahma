@@ -53,7 +53,7 @@ import { findLedgerEntry, markPlanned, markCreated, markFailed, contentHashOf } 
 import { parseStrictCliArgs } from './lib/cli-args.mjs';
 import { jsonPathEqual } from './lib/read-back-verify.mjs';
 import { verifyThenReconcile } from './lib/reconcile.mjs';
-import { assertLocalHostOrProductionAuthorized } from './lib/host-guard.mjs';
+import { assertLocalHostOrProductionAuthorized, assertLocalMongoSource } from './lib/host-guard.mjs';
 import { loadAndVerifyProductionAuthorization } from './lib/production-authorization.mjs';
 import { verifyBootstrapState } from './lib/bootstrap-allowlist.mjs';
 import { assertSessionReadOnly, makePoolReadOnly } from './lib/read-only-session.mjs';
@@ -1782,6 +1782,11 @@ async function main() {
   if (!mongoUri || !pgUri || !supabaseUrl || !serviceRoleKey) {
     throw new Error('MIGRATION_MONGO_URI, MIGRATION_DB_URL, SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must all be set.');
   }
+  // MIGRATION_MONGO_URI stays unconditionally local-only, exactly as in
+  // mongo-to-supabase.mjs: the source is a restored copy of the approved
+  // backup, never the live cluster, and production authorization never
+  // lifts this. This tool used to read whatever host it was given.
+  assertLocalMongoSource(mongoUri, 'MIGRATION_MONGO_URI');
   // MIGRATION_DB_URL (the Postgres/Supabase TARGET) may point at the real
   // production project ONLY when a genuine, independently-verified
   // production authorization is present -- see lib/production-

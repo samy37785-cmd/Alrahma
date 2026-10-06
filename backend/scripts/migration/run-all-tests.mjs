@@ -39,6 +39,7 @@ const TEST_FILES = [
   'lib/email-collision.test.mjs',
   'lib/bootstrap-manifest.test.mjs',
   'lib/security-ephemeral.test.mjs',
+  'lib/source-collections.test.mjs',
   'mongo-to-supabase-cli.test.mjs',
   'migrate-users-to-supabase-auth.test.mjs',
   'unrecorded-data-preflight.test.mjs',

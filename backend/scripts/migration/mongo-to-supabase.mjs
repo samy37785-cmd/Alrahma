@@ -153,6 +153,7 @@ import { loadAndVerifyProductionAuthorization } from './lib/production-authoriza
 import { verifyBootstrapState } from './lib/bootstrap-allowlist.mjs';
 import { assertSessionReadOnly, makePoolReadOnly } from './lib/read-only-session.mjs';
 import { buildPgPoolConfig } from '../../data/supabase/client.js';
+import { assertSourceCollectionsCovered } from './lib/source-collections.mjs';
 
 // Stage 2J-B, PR #70 review round 8, item 1 -- this script's own CLI was
 // still parsed by hand (a generic --key=value splitter, `v ?? true`) even
@@ -2469,6 +2470,9 @@ async function main() {
     // the orchestrator): the pre-existing bootstrap rows must still be
     // exactly the approved ones before this worker reads or writes.
     if (productionAuthorization) await verifyBootstrapState(pgClient, productionAuthorization.bootstrapAllowlist);
+    // A full run must not leave data behind in a collection nobody mapped
+    // (lib/source-collections.mjs): read-only, before the first domain.
+    if (!rollback && requestedAll) await assertSourceCollectionsCovered(mongoose.connection.db);
     // NO_MIGRATION_SERVICE_IDENTITY: the canonical plans must already exist.
     // Checked once, before the first domain runs, so a missing catalog
     // stops --dry-run and a real run alike with nothing written anywhere

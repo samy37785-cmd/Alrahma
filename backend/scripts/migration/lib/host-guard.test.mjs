@@ -4,7 +4,7 @@
 // real infrastructure, no real connection ever attempted (this module
 // only ever parses a URL's hostname, never opens a socket).
 import assert from 'node:assert/strict';
-import { isLocalHost, assertLocalHostOrProductionAuthorized } from './host-guard.mjs';
+import { isLocalHost, assertLocalHostOrProductionAuthorized, assertLocalMongoSource } from './host-guard.mjs';
 
 const results = [];
 function test(name, fn) {
@@ -71,6 +71,30 @@ test('assertLocalHostOrProductionAuthorized: non-local host with a plain `true` 
 
 test('assertLocalHostOrProductionAuthorized: non-local host with a genuine, well-formed authorization object passes (the fix is not over-broad)', () => {
   assert.doesNotThrow(() => assertLocalHostOrProductionAuthorized('postgresql://x@db.example.com:5432/db', 'MIGRATION_DB_URL', REAL_AUTH));
+});
+
+test('assertLocalMongoSource: localhost and 127.0.0.1 pass', () => {
+  assert.doesNotThrow(() => assertLocalMongoSource('mongodb://127.0.0.1:27017/al-rahma'));
+  assert.doesNotThrow(() => assertLocalMongoSource('mongodb://localhost:27017/al-rahma', 'MIGRATION_MONGO_URI'));
+});
+
+test('assertLocalMongoSource: any other host, an SRV cluster and an unparseable value are refused, naming only the host', () => {
+  for (const uri of [
+    'mongodb://mongo.example.test:27017/al-rahma',
+    'mongodb+srv://cluster0.example.test/al-rahma',
+    'mongodb://127.0.0.1.example.test:27017/al-rahma',
+    'mongodb://localhost:27017,mongo.example.test:27017/al-rahma',
+  ]) {
+    assert.throws(() => assertLocalMongoSource(uri, 'MIGRATION_MONGO_URI'), /Refusing to run: MIGRATION_MONGO_URI/, uri);
+  }
+  assert.throws(() => assertLocalMongoSource('not a url', 'MIGRATION_MONGO_URI'), /not a parseable URL/);
+  // The message never echoes userinfo.
+  try {
+    assertLocalMongoSource('mongodb://appuser:Sup3rSecret@mongo.example.test:27017/al-rahma');
+    assert.fail('should have refused');
+  } catch (err) {
+    assert.ok(!String(err.message).includes('Sup3rSecret'));
+  }
 });
 
 const failed = results.filter((r) => !r.pass);

@@ -2,10 +2,24 @@
 
 Executive, per-field mapping for every real MongoDB collection in the
 `al-rahma` database, against the canonical Postgres schema (migrations
-0000–0022). No values or PII appear below — field NAMES and their
-classification only. Real counts are from the Stage 2J-A inventory and
-the Stage 2J-B local restore (both against `Cluster0.al-rahma`, never
-`sample_mflix` or any other database/project).
+0000–0029). No values or PII appear below — field NAMES and their
+classification only. Real counts were first taken from the Stage 2J-A
+inventory and the Stage 2J-B local restore (both against
+`Cluster0.al-rahma`, never `sample_mflix` or any other database/project)
+and have been re-read from the approved backup of 2026-10-06T15:30:36Z
+(restored into an isolated container: 32 collections, 60 documents,
+119 indexes, 0 restore failures):
+
+| Collection | Documents | Collection | Documents |
+|---|---|---|---|
+| `users` | 10 | `quranbookmarks` | 1 |
+| `payments` | 15 | `quranreadingprogresses` | 3 |
+| `enrollments` | 13 | `quranmemorizationstats` | 1 |
+| `trialrequests` | 10 | `invoices` | 0 |
+| `courses` | 6 | the other 22 collections | 0 |
+| `subscribers` | 1 | | |
+
+Where a section below quotes a count, the figure here is the current one.
 
 Classification legend (exactly the six the task specifies):
 
@@ -23,27 +37,27 @@ Classification legend (exactly the six the task specifies):
 
 ---
 
-## 1. `users` (7 documents) → `auth.users` + `profiles`
+## 1. `users` (10 documents) → `auth.users` + `profiles`
 
 | Mongo field | Classification | Notes |
 |---|---|---|
 | `name` | PRESERVED_EXACTLY | → `profiles.name` |
 | `email` | PRESERVED_EXACTLY | → `auth.users.email` / `profiles.email`, lowercased (already lowercase in the model) |
-| `password` (bcrypt hash) | **BLOCKED — by design** | Never migrated. A GoTrue account is created with a fresh CSPRNG throwaway password; every migrated user requires a real password-reset flow. This is a hard security rule, not a gap. |
+| `password` (bcrypt hash) | **TRANSFORMED_LOSSLESSLY** (owner decision PASSWORDS=IMPORT_BCRYPT_HASHES, #201) | The document's own bcrypt hash (`$2a$`/`$2b$`/`$2y$`, cost 04–31) is passed to GoTrue as `password_hash`, so each person signs in with the password they already have. No password is generated and no reset email is sent; a document without an importable hash fails the run before any write (`lib/auth-import.mjs`). All 10 real hashes are `$2a$` and match the importer's pattern. |
 | `role` (`student`\|`teacher`\|`parent`\|`admin`) | TRANSFORMED_LOSSLESSLY | See §6 below — fully bijective via `profiles.role` + `profiles.is_teacher` + `admin_role_assignments`, all three of which **already exist** (0013/0018), previously just unused by the migration tool (Stage 2J-A Defect #1). |
-| `teacher` (assigned teacher ref) | TRANSFORMED_LOSSLESSLY (0/7 real data) / would be REQUIRES resolution | → `profiles.teacher_id` (already exists, 0014). Resolved via `migration_source_ledger` after both accounts exist. **Real data check**: all 7 sampled documents show `teacher` either absent or `null` — zero real assignments exist to migrate. |
+| `teacher` (assigned teacher ref) | TRANSFORMED_LOSSLESSLY (0/7 real data) / would be REQUIRES resolution | → `profiles.teacher_id` (already exists, 0014). Resolved via `migration_source_ledger` after both accounts exist. **Real data check**: all 10 documents show `teacher` either absent or `null` — zero real assignments exist to migrate. |
 | `children` (parent → student refs) | TRANSFORMED_LOSSLESSLY | → `parent_student_links` rows (already exists, 0016) — one row per (parent, child) pair, resolved the same way as `teacher`. |
 | `parentLinkCode` | PRESERVED_EXACTLY | → `profiles.parent_link_code` (already exists, 0014) |
 | `familyName` | PRESERVED_EXACTLY | → `profiles.family_name` (already exists, 0014) |
 | `specialization`/`bio`/`gender`/`languages`/`subjects` | PRESERVED_EXACTLY | All already exist on `profiles` (0014) |
-| `rating` | NOT_APPLICABLE (real data) | 0/7 real users carry a value (no field present in the census for any sampled document). No `profiles` column exists for a denormalized rating (`reviews_public` is the new design's source of truth) — if a real value existed, this would be BLOCKED-by-design, but it does not. |
+| `rating` | NOT_APPLICABLE (real data: only the schema default) | 4/10 real users carry `rating`, and every one of them is `0` (the Mongoose default, never a real rating). No `profiles` column exists for a denormalized rating (`reviews_public` is the new design's source of truth; the Supabase admin API derives a teacher's rating from reviews), so a non-zero value would be BLOCKED-by-design — none exists. The tool does not inspect this field, so a future non-default value would not be flagged. |
 | `referralCode` | PRESERVED_EXACTLY | → `profiles.referral_code` (already exists, 0014) |
-| `googleId` | **BLOCKED** | Linking a real OAuth identity into `auth.identities` requires either the actual OAuth token exchange or careful use of the GoTrue Admin API's identity-linking — not a safe bulk data-only backfill. A user who signed in with Google before must re-link Google after migration. |
+| `googleId` | **BLOCKED** (0/10 hold a value: 3 are `null`, 7 absent) | Linking a real OAuth identity into `auth.identities` requires either the actual OAuth token exchange or careful use of the GoTrue Admin API's identity-linking — not a safe bulk data-only backfill. A user who signed in with Google before must re-link Google after migration. |
 | `xp`/`level`/`streak`/`lastStudyDate`/`badges` | PRESERVED_EXACTLY | All already exist on `profiles` (0014) — the profiles.ts source file's own doc comment claiming "no gamification" was stale; fixed in this stage. |
 | `resetToken`/`resetTokenExpiry` | **INTENTIONALLY_NOT_MIGRATED_SECURITY_EPHEMERAL_DATA** (owner decision DECISION_RESET_TOKEN_EXPIRY) | A pending password-reset link of the old system; meaningless in GoTrue, which issues its own. Never migrated; counted by field in the user-migration report (`securityEphemeral`, and `dates.users.intentionallyNotMigrated` for the expiry). |
 | `tokenVersion` | **BLOCKED — by design** | Mongo's own JWT-invalidation counter; GoTrue manages its own session/refresh-token lifecycle independently. |
 | `createdAt`/`updatedAt` | PRESERVED_EXACTLY | → `profiles.created_at`/`updated_at` |
-| `subscription` (embedded object) | see §8 | Own section below — 6/7 real users carry one. |
+| `subscription` (embedded object) | see §8 | Own section below — 9/10 real users carry the object, and none holds a plan or any non-default value (see §8). |
 
 `RefreshToken` documents (0 real rows) — **INTENTIONALLY_NOT_MIGRATED_SECURITY_EPHEMERAL_DATA** (DECISION_RESET_TOKEN_EXPIRY): GoTrue issues its own sessions and every old session ends at cutover. The collection is counted in the user-migration report (`securityEphemeral.collections.refreshtokens`) and never read beyond that count.
 
@@ -98,7 +112,12 @@ the full `AdminUser` RBAC system). Fix: `migrateOneUser()` now detects
 before `is_admin_aal2()` grants them anything (structurally unavoidable —
 zero MFA factors exist post-migration by design).
 
-## 8. `subscription` (embedded on `users`, 6/7 real documents) → `subscriptions` + `plans`
+## 8. `subscription` (embedded on `users`, 9/10 real documents; all inactive and plan-less) → `subscriptions` + `plans`
+
+Real data: every one of the 9 objects is the default shape (`status: 'inactive'`, `plan` and every date `null`,
+`cancelAtPeriodEnd: false`). A subscription without a plan is skipped by `validateSubscriptionPlan()`
+(`skip: true`), so the expected target is **0 `subscriptions` rows** and nothing is lost: no value in these
+objects differs from its default.
 
 | Mongo field | Classification | Notes |
 |---|---|---|
@@ -127,8 +146,8 @@ plans with.
 |---|---|
 | `plan` | DERIVED_WITH_PROOF → `plan_id` (same resolution as §8; FAIL if unresolvable) |
 | `amount`, `currency` | TRANSFORMED_LOSSLESSLY → `amount_minor` (integer cents; FAIL, not round, on any non-integer-cent value); currency must already be `EUR` (the only value `currency_code` supports) — any other value is a FAIL, never a silent conversion |
-| `gateway` | PRESERVED_EXACTLY (`stripe`/`paypal` both already in `payment_gateway`) |
-| `method` | NOT_APPLICABLE as a column | No dedicated column; `card`/`paypal` is fully implied by `gateway` for this dataset — kept in `payment_source_snapshots.raw_payload` for completeness, not dropped |
+| `gateway` | PRESERVED_EXACTLY (`stripe`/`paypal` were already in `payment_gateway`; the 15 real rows are all `paymob`, a historical gateway added import-only by 0028, owner decision PAYMENTS=MIGRATE_ALL) |
+| `method` | NOT_APPLICABLE as a column | No dedicated column. The real values (`card` 11, `vodafone` 3, `instapay` 1) are all under gateway `paymob`, so `gateway` does NOT imply the method — it is kept in `payment_source_snapshots.raw_payload`, never dropped |
 | `customer.{name,email,phone}` | PRESERVED_EXACTLY | → new `payments.customer_{name,email,phone}_snapshot` (0022) |
 | `userId` (9/15 present, 6/15 null) | TRANSFORMED_LOSSLESSLY | Resolved via the migrated-users ledger when present; **left NULL, never a fake profiles row**, when absent (0022 made `payments.user_id` nullable) |
 | `status` (`pending`\|`paid`\|`failed`) | TRANSFORMED_LOSSLESSLY | `pending→pending`, `paid→succeeded`, `failed→failed`; any other value = FAIL |

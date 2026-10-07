@@ -47,6 +47,7 @@ import pg from 'pg';
 import { runCommand } from '../../../lib/db/test/orchestrator-lib.mjs';
 import { verifyNoUnrecordedData, verifyLedgerPointsToRealTargets, verifyTeacherLinkProvenance, verifyLedgerRowIntegrity, verifyMigrationJournal } from './production-import-orchestrator.mjs';
 import { encodeCompositeTargetId } from './lib/composite-target-id.mjs';
+import { acceptedMigrationHashes } from './lib/migration-file-identity.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, '..', '..', '..');
@@ -1000,6 +1001,28 @@ async function main() {
           /does not match this repo's journal entry/,
           'a hash mismatch at one position, with the total count unchanged, must still be caught'
         );
+      } finally {
+        client.release();
+      }
+    } finally {
+      await restoreMigrationsSnapshot(snapshot);
+    }
+  });
+
+  await test('round 9, item 3: LF/CRLF-only hash variation is accepted without weakening real content checks', async () => {
+    const snapshot = await migrationsSnapshot();
+    try {
+      const first = snapshot[0];
+      const journal = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'lib', 'db', 'drizzle', 'meta', '_journal.json'), 'utf8'));
+      const sqlPath = path.join(REPO_ROOT, 'lib', 'db', 'drizzle', `${journal.entries[0].tag}.sql`);
+      const alternatives = acceptedMigrationHashes(fs.readFileSync(sqlPath));
+      const alternate = alternatives.find((hash) => hash !== first.hash);
+      assert.ok(alternate, 'the fixture must have an LF/CRLF alternate hash');
+      await pgPool.query('UPDATE drizzle.__drizzle_migrations SET hash = $2 WHERE id = $1', [first.id, alternate]);
+      const client = await pgPool.connect();
+      try {
+        const result = await verifyMigrationJournal(client);
+        assert.equal(result.appliedCount, result.expectedCount);
       } finally {
         client.release();
       }

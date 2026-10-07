@@ -101,6 +101,7 @@ import pg from 'pg';
 import { parseApprovedDispositions } from './migrate-users-to-supabase-auth.mjs';
 import { parseStrictCliArgs } from './lib/cli-args.mjs';
 import { encodeCompositeTargetId } from './lib/composite-target-id.mjs';
+import { acceptedMigrationHashes, migrationHashMatches } from './lib/migration-file-identity.mjs';
 import {
   TARGET_SUPABASE_REF,
   computeConfirmToken,
@@ -472,8 +473,10 @@ function currentGitSha() {
  * computes and writes: for each journal entry, `hash` is sha256 of the
  * COMPLETE raw .sql file content (not just the tag/filename -- so an
  * edited-after-applying file is caught even if its filename/tag never
- * changed), and `created_at` is the journal's own `when` timestamp
- * (not wall-clock apply time). drizzle.__drizzle_migrations is read
+ * changed), and `created_at` is the journal's own `when` timestamp (not
+ * wall-clock apply time). Git can materialize those same bytes with LF or
+ * CRLF line endings, so verification accepts exactly those two
+ * representations and nothing else. drizzle.__drizzle_migrations is read
  * `ORDER BY id ASC` -- id is a SERIAL PK assigned in the exact order
  * migrate() inserted each row, i.e. real application order -- and
  * compared position-by-position against the journal's own array order.
@@ -488,8 +491,8 @@ export async function verifyMigrationJournal(pgClient) {
   const expected = journal.entries.map((entry) => {
     const sqlPath = path.join(REPO_ROOT, 'lib', 'db', 'drizzle', `${entry.tag}.sql`);
     if (!fs.existsSync(sqlPath)) fail(`journal references ${entry.tag}.sql, which does not exist on disk`);
-    const hash = crypto.createHash('sha256').update(fs.readFileSync(sqlPath)).digest('hex');
-    return { tag: entry.tag, hash, createdAt: entry.when };
+    const acceptedHashes = acceptedMigrationHashes(fs.readFileSync(sqlPath));
+    return { tag: entry.tag, hash: acceptedHashes[0], acceptedHashes, createdAt: entry.when };
   });
 
   const { rows: tableExists } = await pgClient.query(`
@@ -512,10 +515,11 @@ export async function verifyMigrationJournal(pgClient) {
   for (let i = 0; i < expected.length; i++) {
     const exp = expected[i];
     const got = applied[i];
-    if (String(got.created_at) !== String(exp.createdAt) || got.hash !== exp.hash) {
+    if (String(got.created_at) !== String(exp.createdAt) || !migrationHashMatches(got.hash, exp)) {
       fail(
         `target Postgres's applied migration at position ${i} does not match this repo's journal entry "${exp.tag}" — ` +
-        `expected hash=${exp.hash} created_at=${exp.createdAt}, got hash=${got.hash} created_at=${got.created_at}. ` +
+        `expected the current SQL bytes (allowing only LF/CRLF checkout normalization) with created_at=${exp.createdAt}, ` +
+        `got created_at=${got.created_at}. ` +
         `The target's migration history has diverged from this exact codebase (a different/substituted migration at this ` +
         `position, a migration file edited after being applied, or migrations applied out of order) — refusing to proceed ` +
         `against a schema this code was never reviewed against.`

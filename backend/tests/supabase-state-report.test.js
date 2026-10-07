@@ -14,6 +14,7 @@ import {
 } from '../scripts/ops/lib/supabase-state-report-core.mjs';
 import { OperatorError, makeRedactor } from '../scripts/ops/lib/operator-io.mjs';
 import { EXPECTED_NEW_TABLES, EXPECTED_NEW_VIEWS } from '../../ops/option-a-rehearsal/scripts/lib/new-schema-fingerprint.mjs';
+import { acceptedMigrationHashes } from '../scripts/migration/lib/migration-file-identity.mjs';
 import { scriptedIo, assertNoLeaks } from './helpers/operator-fakes.js';
 
 // The owner-run, read-only Supabase state report, on in-memory fakes only --
@@ -45,9 +46,9 @@ const expected = Array.from({ length: 5 }, (_, i) => ({ tag: `000${i}_x`, hash: 
 const applied = (n, mutate = (r) => r) => expected.slice(0, n).map((e, i) => mutate({ hash: e.hash, created_at: e.createdAt }, i));
 
 test('compareJournal: exact, incomplete (how far), ahead, diverged (where) and absent are told apart', () => {
-  assert.deepEqual(compareJournal(applied(5), expected), { status: 'EXACT', appliedCount: 5, expectedCount: 5, matchingPrefix: 5, firstDivergence: null });
-  assert.deepEqual(compareJournal(applied(3), expected), { status: 'INCOMPLETE', appliedCount: 3, expectedCount: 5, matchingPrefix: 3, firstDivergence: null });
-  assert.deepEqual(compareJournal([], expected), { status: 'INCOMPLETE', appliedCount: 0, expectedCount: 5, matchingPrefix: 0, firstDivergence: null });
+  assert.deepEqual(compareJournal(applied(5), expected), { status: 'EXACT', appliedCount: 5, expectedCount: 5, matchingPrefix: 5, lineEndingVariantMatches: 0, firstDivergence: null });
+  assert.deepEqual(compareJournal(applied(3), expected), { status: 'INCOMPLETE', appliedCount: 3, expectedCount: 5, matchingPrefix: 3, lineEndingVariantMatches: 0, firstDivergence: null });
+  assert.deepEqual(compareJournal([], expected), { status: 'INCOMPLETE', appliedCount: 0, expectedCount: 5, matchingPrefix: 0, lineEndingVariantMatches: 0, firstDivergence: null });
   assert.equal(compareJournal([...applied(5), { hash: 'extra', created_at: '9999' }], expected).status, 'AHEAD');
   const edited = compareJournal(applied(5, (row, i) => (i === 2 ? { ...row, hash: 'edited-after-apply' } : row)), expected);
   assert.equal(edited.status, 'DIVERGED');
@@ -55,7 +56,17 @@ test('compareJournal: exact, incomplete (how far), ahead, diverged (where) and a
   assert.equal(edited.matchingPrefix, 2);
   const reordered = compareJournal([applied(5)[1], applied(5)[0], ...applied(5).slice(2)], expected);
   assert.equal(reordered.status, 'DIVERGED');
-  assert.deepEqual(compareJournal(null, expected), { status: 'ABSENT', appliedCount: 0, expectedCount: 5, matchingPrefix: 0, firstDivergence: null });
+  assert.deepEqual(compareJournal(null, expected), { status: 'ABSENT', appliedCount: 0, expectedCount: 5, matchingPrefix: 0, lineEndingVariantMatches: 0, firstDivergence: null });
+});
+
+test('compareJournal: LF and CRLF checkouts are the same migration, but any other content still diverges', () => {
+  const hashes = acceptedMigrationHashes('select 1;\nselect 2;\n');
+  assert.equal(hashes.length, 2);
+  const crossPlatform = [{ tag: '0000_x', hash: hashes[0], acceptedHashes: hashes, createdAt: '1000' }];
+  const result = compareJournal([{ hash: hashes[1], created_at: '1000' }], crossPlatform);
+  assert.equal(result.status, 'EXACT');
+  assert.equal(result.lineEndingVariantMatches, 1);
+  assert.equal(compareJournal([{ hash: 'f'.repeat(64), created_at: '1000' }], crossPlatform).status, 'DIVERGED');
 });
 
 test("readExpectedJournal: identity is this checkout's own journal -- every entry's sql hash and `when`", () => {
@@ -64,6 +75,8 @@ test("readExpectedJournal: identity is this checkout's own journal -- every entr
   assert.equal(journal[0].tag.slice(0, 4), '0000');
   for (const entry of journal) {
     assert.match(entry.hash, /^[0-9a-f]{64}$/);
+    assert.ok(entry.acceptedHashes.includes(entry.hash));
+    assert.ok(entry.acceptedHashes.length >= 1 && entry.acceptedHashes.length <= 3);
     assert.match(entry.createdAt, /^\d{13}$/);
   }
 });

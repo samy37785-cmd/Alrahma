@@ -199,8 +199,12 @@ cd <ops checkout>; node backend/scripts/ops/supabase-state-report.mjs --target=p
   No API key and no email.
 - **Reads:** the applied migrations compared with this checkout's journal
   (`MIGRATION_JOURNAL=EXACT|INCOMPLETE|DIVERGED|AHEAD|ABSENT`, the count and the
-  first divergence), missing/unexpected public tables and views, RLS-off
-  tables, tables holding rows, and each auth account's timestamps: invited,
+  first divergence). Migration hashes accept only the two Git checkout
+  representations of the same SQL (LF or CRLF); the report prints how many
+  applied rows used the other line-ending representation. Any non-line-ending
+  content difference still reports `DIVERGED`. It also reads
+  missing/unexpected public tables and views, RLS-off tables, tables holding
+  rows, and each auth account's timestamps: invited,
   confirmed, last sign-in, whether a password, MFA factor, session or
   pending invite token exists, plus the admin role rows.
 - **`INVITE_STATE`** is read from those fields only. A used invite looks the

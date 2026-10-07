@@ -16,10 +16,10 @@
 // runs in BEGIN READ ONLY (verified with `show transaction_read_only`) and
 // always ROLLBACKs; every statement it sends is a SELECT/SHOW. I/O is
 // injected so the whole run is testable on fakes and on a real local stack.
-import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { parseStrictCliArgs } from '../../migration/lib/cli-args.mjs';
+import { acceptedMigrationHashes, migrationHashMatches } from '../../migration/lib/migration-file-identity.mjs';
 import { EXPECTED_NEW_TABLES, EXPECTED_NEW_VIEWS } from '../../../../ops/option-a-rehearsal/scripts/lib/new-schema-fingerprint.mjs';
 import {
   OperatorError,
@@ -48,11 +48,15 @@ const TABLE_NAME_RE = /^[a-z_][a-z0-9_]*$/;
 export function readExpectedJournal(repoRoot) {
   const dir = path.join(repoRoot, 'lib', 'db', 'drizzle');
   const journal = JSON.parse(fs.readFileSync(path.join(dir, 'meta', '_journal.json'), 'utf8'));
-  return journal.entries.map((entry) => ({
-    tag: entry.tag,
-    hash: crypto.createHash('sha256').update(fs.readFileSync(path.join(dir, `${entry.tag}.sql`))).digest('hex'),
-    createdAt: String(entry.when),
-  }));
+  return journal.entries.map((entry) => {
+    const acceptedHashes = acceptedMigrationHashes(fs.readFileSync(path.join(dir, `${entry.tag}.sql`)));
+    return {
+      tag: entry.tag,
+      hash: acceptedHashes[0],
+      acceptedHashes,
+      createdAt: String(entry.when),
+    };
+  });
 }
 
 /**
@@ -61,15 +65,17 @@ export function readExpectedJournal(repoRoot) {
  */
 export function compareJournal(applied, expected) {
   if (applied === null) {
-    return { status: 'ABSENT', appliedCount: 0, expectedCount: expected.length, matchingPrefix: 0, firstDivergence: null };
+    return { status: 'ABSENT', appliedCount: 0, expectedCount: expected.length, matchingPrefix: 0, lineEndingVariantMatches: 0, firstDivergence: null };
   }
   let matchingPrefix = 0;
+  let lineEndingVariantMatches = 0;
   while (
     matchingPrefix < applied.length &&
     matchingPrefix < expected.length &&
     String(applied[matchingPrefix].created_at) === expected[matchingPrefix].createdAt &&
-    applied[matchingPrefix].hash === expected[matchingPrefix].hash
+    migrationHashMatches(applied[matchingPrefix].hash, expected[matchingPrefix])
   ) {
+    if (applied[matchingPrefix].hash !== expected[matchingPrefix].hash) lineEndingVariantMatches++;
     matchingPrefix++;
   }
   let status;
@@ -78,7 +84,7 @@ export function compareJournal(applied, expected) {
   else if (matchingPrefix === expected.length && applied.length > expected.length) status = 'AHEAD';
   else status = 'DIVERGED';
   const firstDivergence = status === 'DIVERGED' ? { position: matchingPrefix, tag: expected[matchingPrefix]?.tag ?? null } : null;
-  return { status, appliedCount: applied.length, expectedCount: expected.length, matchingPrefix, firstDivergence };
+  return { status, appliedCount: applied.length, expectedCount: expected.length, matchingPrefix, lineEndingVariantMatches, firstDivergence };
 }
 
 // ── Invite state ────────────────────────────────────────────────────────────
@@ -301,6 +307,7 @@ export function renderReport(report, { target, projectRef, git }) {
     `MIGRATION_COUNT=${j.appliedCount}`,
     `EXPECTED_MIGRATION_COUNT=${j.expectedCount}`,
     `JOURNAL_MATCHING_PREFIX=${j.matchingPrefix}`,
+    `JOURNAL_LINE_ENDING_VARIANT_MATCHES=${j.lineEndingVariantMatches}`,
   ];
   if (j.firstDivergence) lines.push(`JOURNAL_FIRST_DIVERGENCE=position ${j.firstDivergence.position} (${j.firstDivergence.tag})`);
   lines.push(

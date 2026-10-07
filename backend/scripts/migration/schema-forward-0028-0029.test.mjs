@@ -150,4 +150,3 @@ main().catch((err) => {
   console.error('[schema-forward-0028-0029.test] harness crashed:', err);
   process.exitCode = 1;
 });
-

@@ -44,6 +44,7 @@ const TEST_FILES = [
   'mongo-to-supabase-cli.test.mjs',
   'migrate-users-to-supabase-auth.test.mjs',
   'unrecorded-data-preflight.test.mjs',
+  'schema-forward-0028-0029.test.mjs',
   'orchestrator-cli-resume-compensate.test.mjs',
   'production-import-orchestrator.test.mjs',
   'production-enablement-cli.test.mjs',

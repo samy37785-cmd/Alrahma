@@ -1,6 +1,8 @@
 # Supabase first Super Admin: owner runbook
 
-How the owner creates the real Super Admin on Supabase production, accepts
+How the owner first advances the verified empty target from migrations
+`0000`-`0027` to `0000`-`0029`, then creates the real Super Admin on
+Supabase production, accepts
 the invite, enrolls MFA, creates the three plans, and collects the unsigned
 approval-manifest candidate. Everything here is run **by the owner, in an
 interactive PowerShell window**, and nothing here is part of any automated
@@ -16,6 +18,7 @@ The tools print IDs and statuses only. The commands below contain no secrets.
 
 | Step | Tool | Writes |
 | --- | --- | --- |
+| 0 | `supabase-schema-forward-0028-0029.mjs --apply` | exactly migrations 0028 and 0029, including their two journal rows, in one transaction |
 | 1 | `supabase-first-super-admin-bootstrap.mjs --apply` | one invite (auth.users), `profiles.role='admin'`, one `super-admin` role row |
 | 2 | `supabase-owner-bootstrap.mjs accept-invite` | the owner's password |
 | 3 | `supabase-owner-bootstrap.mjs run` | one TOTP factor; the three plans and their three audit rows |
@@ -56,6 +59,49 @@ Set the non-secret switches once in the PowerShell window, from
 $env:SUPABASE_BOOTSTRAP_TARGET_ENV = 'production'
 $env:SUPABASE_CA_CERT_PATH = 'D:\AlRahma-Private-Backups\<project CA>.crt'
 ```
+
+## 0. Advance only migrations 0028 and 0029
+
+This is a separately authorized production write. Preparing or merging the
+tool does **not** authorize running it. With no flags, the tool is a
+connection-free dry run.
+
+Before an approved production run, fetch `origin/main` and use a clean
+checkout whose `HEAD` exactly equals `origin/main`; the tool verifies both
+SHAs itself. Then set the dedicated, one-run switches:
+
+```powershell
+$env:SUPABASE_SCHEMA_TARGET_ENV = 'production'
+$env:ALLOW_SUPABASE_SCHEMA_FORWARD_0028_0029 = '1'
+node scripts/ops/supabase-schema-forward-0028-0029.mjs --apply --confirm-0028-0029 --target=production
+Remove-Item Env:ALLOW_SUPABASE_SCHEMA_FORWARD_0028_0029
+```
+
+The database URL is asked for hidden. The tool then refuses unless all of
+the following are true:
+
+- the checkout contains exactly migrations `0000`-`0029`, with only
+  `0028_payment_gateway_paymob` and `0029_preserve_source_dates` after the
+  applied prefix;
+- the production journal is the exact `0000`-`0027` prefix (LF and CRLF
+  representations of the same committed SQL are equivalent; no other
+  difference is accepted);
+- all 39 public tables and both views match the reviewed schema, RLS is on
+  for every public table, `auth.users=0`, `role_permissions=26`, and every
+  other public table is empty;
+- none of the effects of 0028 or 0029 is already partly present.
+
+It displays that preflight, then requires the exact phrase
+`APPLY 0028 AND 0029 <projectRef>`. Inside one transaction it takes an
+advisory lock and a journal-table lock, repeats the complete preflight,
+applies only the two pinned SQL files, writes only their two Drizzle journal
+rows, and verifies the exact 30/30 journal, the `paymob` enum value, all
+seven date columns and all five triggers before commit. Any failed check or
+SQL statement rolls the transaction back. A final read-only check runs after
+commit.
+
+It does not create an Auth account, application row or plan, does not read an
+API key, and does not touch Mongo, Render or `DATA_BACKEND`.
 
 ## 1. Bootstrap: one invite, one role
 

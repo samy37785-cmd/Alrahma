@@ -7,6 +7,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { CLI_SPEC as BOOTSTRAP_SPEC } from '../scripts/ops/lib/supabase-first-super-admin-bootstrap-core.mjs';
 import { CLI_SPEC as OWNER_SPEC } from '../scripts/ops/lib/supabase-owner-bootstrap-core.mjs';
+import { CLI_SPEC as SCHEMA_FORWARD_SPEC } from '../scripts/ops/lib/supabase-schema-forward-0028-0029-core.mjs';
 import {
   assertApiKey,
   assertPrivateOutPath,
@@ -24,6 +25,7 @@ const BACKEND = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const BOOTSTRAP = path.join(BACKEND, 'scripts/ops/supabase-first-super-admin-bootstrap.mjs');
 const OWNER = path.join(BACKEND, 'scripts/ops/supabase-owner-bootstrap.mjs');
 const COLLECTOR = path.join(BACKEND, 'scripts/migration/bootstrap-manifest.mjs');
+const SCHEMA_FORWARD = path.join(BACKEND, 'scripts/ops/supabase-schema-forward-0028-0029.mjs');
 
 const LEAK_EMAIL = 'leak.check.owner@example.org';
 const FAKE_SECRETS = {
@@ -42,9 +44,34 @@ const LEAKS = [LEAK_EMAIL, 'some-password-typed-blind', ...Object.values(FAKE_SE
 
 test('no tool has a flag that can carry a secret', () => {
   const collectorFlags = ['out', 'candidate', 'backup-manifest', 'scope', 'valid-hours'];
-  for (const flag of [...Object.keys(BOOTSTRAP_SPEC.flags), ...Object.keys(OWNER_SPEC.flags), ...collectorFlags]) {
+  for (const flag of [...Object.keys(BOOTSTRAP_SPEC.flags), ...Object.keys(OWNER_SPEC.flags), ...Object.keys(SCHEMA_FORWARD_SPEC.flags), ...collectorFlags]) {
     assert.ok(!/email|password|token|secret|key|url|link|code/.test(flag), `--${flag}`);
   }
+});
+
+test('schema-forward CLI: dry-run is connection-free; no terminal and production CI stop before input', () => {
+  let r = spawnTool(SCHEMA_FORWARD, [], {});
+  assert.equal(r.code, 0);
+  assert.match(r.out, /dry-run only -- no input was read, no connection was made, nothing was written/);
+
+  const allowed = {
+    ALLOW_SUPABASE_SCHEMA_FORWARD_0028_0029: '1',
+    SUPABASE_SCHEMA_TARGET_ENV: 'local',
+    SUPABASE_URL: 'http://127.0.0.1:54321',
+    ...FAKE_SECRETS,
+  };
+  r = spawnTool(SCHEMA_FORWARD, ['--apply', '--confirm-0028-0029', '--target=local'], allowed);
+  assert.equal(r.code, 1);
+  assert.match(r.out, /STOPPED NOT_INTERACTIVE/);
+
+  r = spawnTool(
+    SCHEMA_FORWARD,
+    ['--apply', '--confirm-0028-0029', '--target=production'],
+    { ...allowed, CI: 'true', SUPABASE_SCHEMA_TARGET_ENV: 'production' }
+  );
+  assert.equal(r.code, 1);
+  assert.match(r.out, /STOPPED CI_REMOTE_REFUSED/);
+  assertNoLeaks([r.out], LEAKS);
 });
 
 test('bootstrap CLI: --email is refused by name, its value never printed', () => {
@@ -156,9 +183,13 @@ function code(rel) {
 const OWNER_FILES = ['scripts/ops/supabase-owner-bootstrap.mjs', 'scripts/ops/lib/supabase-owner-bootstrap-core.mjs'];
 const BOOTSTRAP_FILES = ['scripts/ops/supabase-first-super-admin-bootstrap.mjs', 'scripts/ops/lib/supabase-first-super-admin-bootstrap-core.mjs'];
 const SHARED_FILES = ['scripts/ops/lib/operator-io.mjs'];
+const SCHEMA_FORWARD_FILES = [
+  'scripts/ops/supabase-schema-forward-0028-0029.mjs',
+  'scripts/ops/lib/supabase-schema-forward-0028-0029-core.mjs',
+];
 
 test('no tool sends a password reset, generates a link, creates a user directly, or touches DATA_BACKEND/Render', () => {
-  for (const file of [...OWNER_FILES, ...BOOTSTRAP_FILES, ...SHARED_FILES, 'scripts/migration/bootstrap-manifest.mjs']) {
+  for (const file of [...OWNER_FILES, ...BOOTSTRAP_FILES, ...SHARED_FILES, ...SCHEMA_FORWARD_FILES, 'scripts/migration/bootstrap-manifest.mjs']) {
     const src = code(file);
     for (const [re, what] of [
       [/resetPasswordForEmail|recover\b|type:\s*'recovery'/, 'a password reset'],
@@ -168,6 +199,19 @@ test('no tool sends a password reset, generates a link, creates a user directly,
       [/dotenv/, 'a .env file read'],
     ]) assert.ok(!re.test(src), `${file}: contains ${what}`);
   }
+});
+
+test('schema-forward source is pinned to 0028/0029 and has no auth, plan, application-row, or deployment path', () => {
+  const src = SCHEMA_FORWARD_FILES.map(code).join('\n');
+  assert.match(src, /0028_payment_gateway_paymob/);
+  assert.match(src, /0029_preserve_source_dates/);
+  assert.match(src, /migrations\.length !== 2/);
+  for (const [re, what] of [
+    [/auth\.admin|createClient|SUPABASE_SERVICE_ROLE_KEY/, 'Supabase Auth Admin path'],
+    [/create_plan_version|insert into public\.(profiles|plans|payments|subscriptions)/i, 'application-row write'],
+    [/DATA_BACKEND|RENDER_|render\.com/i, 'DATA_BACKEND or Render path'],
+    [/dotenv/, '.env reader'],
+  ]) assert.ok(!re.test(src), `schema-forward contains ${what}`);
 });
 
 test('the owner tool uses no service-role path at all, and only the official plan RPC', () => {

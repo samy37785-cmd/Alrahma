@@ -462,6 +462,41 @@ async function main() {
     assert.deepEqual(ledger.rows, [{ status: 'reconciled', n: SOURCE.trialrequests.length }], 'no failed ledger row is left behind');
   });
 
+  await test('a retired or unmapped source collection that holds data stops both tools before any write; empty ones are accepted', async () => {
+    const countsBefore = await tableCounts();
+    const writesBefore = await writeCounter();
+    const requestsBefore = await gotrueRequestLines();
+    const posts = mongoose.connection.collection('posts');
+    const stray = mongoose.connection.collection('stray_unmapped_collection');
+    await posts.insertOne({ _id: id(), title: 'retired-fixture' });
+    await stray.insertMany([{ _id: id() }, { _id: id() }]);
+    try {
+      const users = run(USERS_SCRIPT, [], usersCwd);
+      assert.notEqual(users.code, 0, 'the user tool must refuse');
+      assert.match(`${users.stdout}
+${users.stderr}`, /SOURCE_COLLECTIONS_NOT_COVERED/);
+      for (const args of [['--domain=all', '--dry-run'], ['--domain=all']]) {
+        const r = run(DOMAIN_SCRIPT, args);
+        assert.notEqual(r.code, 0, `${args.join(' ')} must refuse`);
+        assert.match(r.stderr, /SOURCE_COLLECTIONS_NOT_COVERED/);
+        assert.match(r.stderr, /posts \(retired, no target\) holds 1 document\(s\)/);
+        assert.match(r.stderr, /stray_unmapped_collection \(no mapping\) holds 2 document\(s\)/);
+        assert.equal(r.report, null, 'it stopped before the first domain, so no run report was written');
+      }
+      assert.deepEqual(await tableCounts(), countsBefore, 'a row count changed');
+      assert.equal(await writeCounter(), writesBefore, 'a tuple was written');
+      assert.equal(await gotrueRequestLines(), requestsBefore, 'GoTrue was contacted');
+    } finally {
+      await posts.deleteMany({});
+      await stray.drop();
+    }
+    // Empty unknown collections are only noted, not a reason to stop.
+    await mongoose.connection.db.createCollection('stray_empty_collection');
+    const ok = run(DOMAIN_SCRIPT, ['--domain=all', '--dry-run']);
+    assert.equal(ok.code, 0, ok.stderr);
+    await mongoose.connection.db.dropCollection('stray_empty_collection');
+  });
+
   await test('no seeded email, name, phone, password hash or connection string in any output, report or checkpoint', async () => {
     const files = [
       ...fs.readdirSync(OUT_DIR).map((f) => path.join(OUT_DIR, f)).filter((f) => fs.statSync(f).mtimeMs >= STARTED_AT),

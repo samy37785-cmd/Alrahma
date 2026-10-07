@@ -62,6 +62,7 @@ import { installRedactingConsole, redactDeep, fingerprint } from './lib/redact.m
 import { computePasswordHashProblems, emailConfirmationFor, isBcryptHash } from './lib/auth-import.mjs';
 import { sourceTimestamps, accountForSourceDates, restoreSourceTimestamps } from './lib/source-dates.mjs';
 import { SECURITY_EPHEMERAL_CLASSIFICATION, SECURITY_EPHEMERAL_COLLECTIONS, securityEphemeralReport } from './lib/security-ephemeral.mjs';
+import { assertSourceCollectionsCovered } from './lib/source-collections.mjs';
 
 // Review round 6, item 3: this script never went through migration_source_
 // ledger before this round (it predates that table, and auth.users/
@@ -1847,6 +1848,9 @@ async function main() {
   };
 
   try {
+    // No collection of the source may hold data this migration would leave
+    // behind unmentioned (lib/source-collections.mjs); read-only, before any write.
+    await assertSourceCollectionsCovered(db.db);
     const users = await db.collection('users').find({}).toArray();
     const admins = await db.collection('adminusers').find({}).toArray();
     // DECISION_RESET_TOKEN_EXPIRY: counted (presence only) and reported as

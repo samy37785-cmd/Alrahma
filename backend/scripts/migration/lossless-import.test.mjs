@@ -442,6 +442,26 @@ async function main() {
     assert.equal(p2[0].updated_at, null, 'quran_reading_progress: no source updatedAt -> NULL, not the trigger stamp');
   });
 
+  await test('a stale local checkpoint (pgIds of rows that do not exist, no ledger entry) is never trusted: a fresh domain run inserts the rows', async () => {
+    // "This domain on a target that never held its rows": no ledger rows, no target rows -- and a
+    // checkpoint file left behind by an earlier run against some other database (a local rehearsal,
+    // say, in the same checkout). The ledger is the authority for resume; the checkpoint is not.
+    await pool.query(`DELETE FROM migration_source_ledger WHERE source_collection = 'trial_requests'`);
+    await pool.query('DELETE FROM trial_requests');
+    const stale = {};
+    for (const doc of SOURCE.trialrequests) stale[String(doc._id)] = { pgId: crypto.randomUUID(), hash: 'stale', migratedAt: '2026-01-01T00:00:00.000Z' };
+    fs.mkdirSync(CHECKPOINT_DIR, { recursive: true });
+    fs.writeFileSync(path.join(CHECKPOINT_DIR, 'trial_requests.json'), JSON.stringify(stale));
+
+    const r = run(DOMAIN_SCRIPT, ['--domain=trial_requests']);
+    assert.equal(r.code, 0, r.stderr);
+    assert.equal(r.report.results[0].failed, 0);
+    assert.equal(r.report.results[0].imported, SOURCE.trialrequests.length);
+    assert.equal(Number((await pool.query('SELECT count(*) FROM trial_requests')).rows[0].count), SOURCE.trialrequests.length);
+    const ledger = await pool.query(`SELECT status, count(*)::int AS n FROM migration_source_ledger WHERE source_collection = 'trial_requests' GROUP BY status`);
+    assert.deepEqual(ledger.rows, [{ status: 'reconciled', n: SOURCE.trialrequests.length }], 'no failed ledger row is left behind');
+  });
+
   await test('no seeded email, name, phone, password hash or connection string in any output, report or checkpoint', async () => {
     const files = [
       ...fs.readdirSync(OUT_DIR).map((f) => path.join(OUT_DIR, f)).filter((f) => fs.statSync(f).mtimeMs >= STARTED_AT),

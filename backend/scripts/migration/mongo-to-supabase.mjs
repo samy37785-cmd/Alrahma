@@ -2133,7 +2133,6 @@ async function migrateDomain(domainName, { dryRun, resetCheckpoint, pgClient, pl
       // NO local checkpoint at all) and UPDATEs it in place instead of
       // creating a duplicate.
       let resumeTargetId = null;
-      let ledgerEntryExists = false;
       if (!dryRun) {
         const existing = await findLedgerEntry(pgClient, {
           sourceDatabase: SOURCE_DATABASE,
@@ -2141,7 +2140,6 @@ async function migrateDomain(domainName, { dryRun, resetCheckpoint, pgClient, pl
           sourceDocumentId: sourceId,
           targetTable: domain.targetTable,
         });
-        ledgerEntryExists = !!existing;
 
         if (existing && existing.target_id) {
           const stillThere = await verifyTargetRowExists(pgClient, spec, existing.target_id);
@@ -2200,7 +2198,16 @@ async function migrateDomain(domainName, { dryRun, resetCheckpoint, pgClient, pl
 
       if (resumeTargetId) {
         checkpoint[sourceId] = { ...(checkpoint[sourceId] ?? {}), pgId: resumeTargetId };
-      } else if (ledgerEntryExists) {
+      } else {
+        // A pgId in the local checkpoint is trusted only when the ledger
+        // confirmed that target row above (resumeTargetId). This branch
+        // used to run only when a ledger entry existed; with NO ledger
+        // entry at all (a target that never held this document) a stale
+        // checkpoint left by an earlier run against some other database was
+        // kept, upsert() UPDATEd a row that does not exist, and the run
+        // failed every document of the domain (leaving 'failed' ledger
+        // rows behind on a real target).
+        //
         // PR #70 review round 9, item 5 follow-up: the ledger is the
         // authoritative source of truth for resume (same principle this
         // file's own rollback path already relies on) -- if a ledger row

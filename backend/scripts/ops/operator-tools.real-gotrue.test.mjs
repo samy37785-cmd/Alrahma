@@ -41,8 +41,10 @@ import { catalogMismatch, compareBootstrapState, readBootstrapState } from '../m
 import { collectCandidate, resolveCollectDbUrl } from '../migration/bootstrap-manifest.mjs';
 import { runBootstrapCli } from './lib/supabase-first-super-admin-bootstrap-core.mjs';
 import { runOwnerCli, canonicalPlanVersionParams } from './lib/supabase-owner-bootstrap-core.mjs';
+import { readExpectedJournal, runStateReportCli } from './lib/supabase-state-report-core.mjs';
 import { createAuthAdmin, createDb } from './supabase-first-super-admin-bootstrap.mjs';
 import { createOwnerClient, renderTerminalQr } from './supabase-owner-bootstrap.mjs';
+import { createReadOnlyDb, gitFreshness } from './supabase-state-report.mjs';
 import { OperatorError, gitState, makeRedactor } from './lib/operator-io.mjs';
 import { scriptedIo, assertNoLeaks } from '../../tests/helpers/operator-fakes.js';
 
@@ -213,6 +215,35 @@ async function main() {
       (select count(*)::int from public.plans) as plans,
       (select count(*)::int from public.admin_audit_log) as audit`);
 
+  // The read-only state report, through the real CLI wiring (hidden DB URL, read-only transaction).
+  const stateReport = async ({ nowOffsetMs = 0 } = {}) => {
+    const io = scriptedIo({ hidden: [env.DB_URL] });
+    const redactor = makeRedactor();
+    try {
+      const result = await runStateReportCli({
+        argv: ['--target=local'],
+        env: { SUPABASE_URL: env.API_URL },
+        io,
+        redactor,
+        deps: {
+          gitState: () => gitFreshness(REPO_ROOT),
+          createDb: createReadOnlyDb,
+          expectedJournal: () => readExpectedJournal(REPO_ROOT),
+          now: () => Date.now() + nowOffsetMs,
+        },
+      });
+      return { ...result, log: io.log };
+    } finally {
+      outputs.push(...io.log);
+    }
+  };
+  const snapshot = async () => ({
+    users: await q('select to_jsonb(u) as u from auth.users u order by id'),
+    roles: await q('select * from public.admin_role_assignments order by user_id'),
+    profiles: await q('select * from public.profiles order by id'),
+    tokens: await q('select count(*)::int as n from auth.one_time_tokens'),
+  });
+
   let ownerId = null;
   let inviteLink = null;
   let ownerTotpSecret = null;
@@ -270,6 +301,36 @@ async function main() {
       assert.deepEqual(await counts(), { users: 1, roles: 1, plans: 0, audit: 0 });
     });
 
+    await test('state report: the invited, unused account reads as INVITE_PENDING_NOT_USED, read-only, no email/full id/token, expiry judged by age', async () => {
+      const before = await snapshot();
+      const r = await stateReport();
+      assert.deepEqual(await snapshot(), before, 'the report changed nothing');
+      const text = r.log.join('\n');
+      for (const expected of [
+        'AUTH_USERS=1', `id_prefix=${ownerId.slice(0, 8)}`, 'EMAIL_CONFIRMED=NO', 'LAST_SIGN_IN_PRESENT=NO', 'has_password=false',
+        'INVITE_STATE=INVITE_PENDING_NOT_USED', 'INVITE_CONSUMED=false', 'INVITE_LIKELY_EXPIRED=false', 'profile_role=admin',
+        'admin_roles=super-admin', 'SUPER_ADMIN_ASSIGNMENT_COUNT=1', 'confirmation_token:1', 'TABLES_MISSING=none',
+        'PROBE 0022_migration_ledger=present', 'PROBE 0029_preserved_dates=present',
+      ]) {
+        assert.ok(text.includes(expected), `report lacks ${expected}`);
+      }
+      assert.ok(!text.includes(ownerId), 'the full account id is never printed');
+      assert.match(text, /user_invited\(/, 'the invite is in the account audit trail');
+      // The same account, two hours later, is past the default one-hour link lifetime.
+      const later = await stateReport({ nowOffsetMs: 2 * 60 * 60 * 1000 });
+      assert.ok(later.log.join('\n').includes('INVITE_LIKELY_EXPIRED=true'));
+      console.log(`    journal: ${r.log.find((l) => l.startsWith('MIGRATION_JOURNAL='))} ${r.log.find((l) => l.startsWith('MIGRATION_COUNT='))}`);
+    });
+
+    await test('state report: a write inside the report transaction is refused by Postgres itself', async () => {
+      const db = createReadOnlyDb(env.DB_URL);
+      try {
+        await assert.rejects(db.readOnly((c) => c.query(`update public.profiles set role = role where false`)), /read-only transaction/);
+      } finally {
+        await db.end();
+      }
+    });
+
     await test('accept-invite: a password typo stops BEFORE the one-time link is used', async () => {
       const r = await owner(acceptArgv(), scriptedIo({ hidden: [env.ANON_KEY, inviteLink, OWNER_PASSWORD, `${OWNER_PASSWORD}x`] }));
       expectStop(r, 'PASSWORD_MISMATCH');
@@ -284,6 +345,14 @@ async function main() {
       const u = await one('select email_confirmed_at, encrypted_password is not null as has_pw from auth.users where id = $1', [ownerId]);
       assert.ok(u.email_confirmed_at && u.has_pw);
       assert.equal((await one('select count(*)::int as n from auth.sessions where user_id = $1', [ownerId])).n, 0);
+    });
+
+    await test('state report: after accept-invite the account reads as INVITE_CONSUMED_PASSWORD_SET with its sign-in time', async () => {
+      const text = (await stateReport()).log.join('\n');
+      for (const expected of ['EMAIL_CONFIRMED=YES', 'LAST_SIGN_IN_PRESENT=YES', 'has_password=true', 'INVITE_STATE=INVITE_CONSUMED_PASSWORD_SET', 'INVITE_CONSUMED=true', 'sessions=0']) {
+        assert.ok(text.includes(expected), `report lacks ${expected}`);
+      }
+      assert.ok(!text.includes('confirmation_token:'), 'the used invite token row is gone');
     });
 
     await test('accept-invite: the used link is refused', async () => {

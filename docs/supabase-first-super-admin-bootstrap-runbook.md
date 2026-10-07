@@ -184,6 +184,33 @@ The owner reviews the candidate. Signing comes later, as separate steps:
   then a read-only production plan;
 - `--scope=execute` only after that plan has been reviewed.
 
+## Read-only state report (any time, any step)
+
+`supabase-state-report.mjs --target=production` answers "what is the
+project actually in?" without changing anything. Run it yourself in an
+interactive PowerShell window, from a checkout that is current with
+`origin/main` (it warns when it is not):
+
+```powershell
+cd <ops checkout>; node backend/scripts/ops/supabase-state-report.mjs --target=production
+```
+
+- **Input:** the database URL, from a hidden prompt (or `SUPABASE_DB_URL`).
+  No API key and no email.
+- **Reads:** the applied migrations compared with this checkout's journal
+  (`MIGRATION_JOURNAL=EXACT|INCOMPLETE|DIVERGED|AHEAD|ABSENT`, the count and the
+  first divergence), missing/unexpected public tables and views, RLS-off
+  tables, tables holding rows, and each auth account's timestamps: invited,
+  confirmed, last sign-in, whether a password, MFA factor, session or
+  pending invite token exists, plus the admin role rows.
+- **`INVITE_STATE`** is read from those fields only. A used invite looks the
+  same whether a person, a browser prefetch or a mail scanner opened it.
+  `INVITE_LIKELY_EXPIRED` assumes Supabase's default 60 minute link lifetime;
+  the project's real value is a dashboard setting this tool cannot read.
+- **Safety:** one `BEGIN READ ONLY` transaction (checked with `show
+  transaction_read_only`), SELECT/SHOW only, always rolled back. It prints no
+  email, token, hash, IP or full id (an account is its first 8 id characters).
+
 ## Notes
 
 - **Safe to re-run after a refusal.** Every refusal happens before the step
@@ -194,4 +221,5 @@ The owner reviews the candidate. Signing comes later, as separate steps:
   (`backend/scripts/ops/operator-tools.real-gotrue.test.mjs`, in
   `npm run test:migration`). It also runs on fakes, in
   `backend/tests/supabase-first-super-admin-bootstrap.test.js`,
-  `supabase-owner-bootstrap.test.js` and `operator-tools-guards.test.js`.
+  `supabase-owner-bootstrap.test.js`, `operator-tools-guards.test.js` and
+  `supabase-state-report.test.js`.

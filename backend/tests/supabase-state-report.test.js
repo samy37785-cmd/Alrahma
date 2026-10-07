@@ -153,13 +153,20 @@ test('collectStateReport: sends only SELECT/SHOW, never selects an email, hash, 
   await collectStateReport(client, { expectedJournal, now: NOW });
   assert.ok(client.sent.length > 15);
   for (const sql of client.sent) {
-    assert.match(sql, /^\s*(select|show|with)\b/i, `not a read: ${sql.slice(0, 60)}`);
+    assert.match(sql, /^\s*(select|show)\b/i, `not a read: ${sql.slice(0, 60)}`);
     assert.doesNotMatch(sql, /\bemail\b/i, 'no query may read an email');
     assert.doesNotMatch(sql, /token_hash|ip_address|raw_user_meta_data|phone|\bidentity_data\b/i);
     assert.doesNotMatch(sql, /\b(insert|update|delete|alter|drop|create|truncate|grant|revoke)\b/i);
   }
   const guarded = selectOnly({ query: async () => assert.fail('a write must never reach the client') });
-  for (const sql of ['update public.profiles set role = 1', 'insert into x values (1)', 'delete from x', 'drop table x', 'begin']) {
+  for (const sql of [
+    'update public.profiles set role = 1',
+    'insert into x values (1)',
+    'delete from x',
+    'drop table x',
+    'begin',
+    'with erased as (delete from public.profiles returning *) select 1',
+  ]) {
     assert.throws(() => guarded.query(sql), err('NOT_READ_ONLY'));
   }
 });

@@ -113,7 +113,7 @@ export function classifyInvite(account, now) {
 // ── The read ────────────────────────────────────────────────────────────────
 
 function sqlIsReadOnly(sql) {
-  return /^\s*(select|show|with)\b/i.test(sql);
+  return /^\s*(select|show)\b/i.test(sql);
 }
 
 /** Wraps a client so that anything but a SELECT/SHOW is refused before it is sent. */

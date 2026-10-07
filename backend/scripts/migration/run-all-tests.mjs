@@ -14,9 +14,9 @@
 // Each file below already manages its own disposable Docker
 // Mongo/Postgres/GoTrue-stub containers and verifies their own cleanup;
 // this script only sequences them and aggregates the final exit code.
-import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { runSuite } from './lib/test-summary.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -40,6 +40,7 @@ const TEST_FILES = [
   'lib/bootstrap-manifest.test.mjs',
   'lib/security-ephemeral.test.mjs',
   'lib/source-collections.test.mjs',
+  'lib/test-summary.test.mjs',
   'mongo-to-supabase-cli.test.mjs',
   'migrate-users-to-supabase-auth.test.mjs',
   'unrecorded-data-preflight.test.mjs',
@@ -60,26 +61,9 @@ const TEST_FILES = [
   '../ops/operator-tools.real-gotrue.test.mjs',
 ];
 
-let overallFailed = false;
-const summary = [];
-
-for (const relPath of TEST_FILES) {
-  const fullPath = path.join(__dirname, relPath);
-  console.log(`\n=== ${relPath} ===`);
-  const result = spawnSync(process.execPath, [fullPath], { stdio: 'inherit' });
-  const ok = result.status === 0;
-  if (!ok) overallFailed = true;
-  summary.push({ file: relPath, ok, code: result.status });
-}
-
-console.log('\n=== migration test suite summary ===');
-for (const { file, ok, code } of summary) {
-  console.log(`${ok ? 'PASS' : 'FAIL'}  ${file}${ok ? '' : ` (exit ${code})`}`);
-}
-
-if (overallFailed) {
-  console.error('\nOne or more migration test files failed.');
-  process.exitCode = 1;
-} else {
-  console.log('\nAll migration test files passed.');
-}
+// A file passes only when it exits 0, prints its "<passed>/<total> passed."
+// line, ran at least one test and passed all of them (lib/test-summary.mjs).
+const { ok } = await runSuite(TEST_FILES.map((rel) => path.join(__dirname, rel)), {
+  display: (file) => path.relative(__dirname, file).split(path.sep).join('/'),
+});
+if (!ok) process.exitCode = 1;

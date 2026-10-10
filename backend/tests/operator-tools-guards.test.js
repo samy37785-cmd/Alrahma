@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { CLI_SPEC as BOOTSTRAP_SPEC } from '../scripts/ops/lib/supabase-first-super-admin-bootstrap-core.mjs';
 import { CLI_SPEC as OWNER_SPEC } from '../scripts/ops/lib/supabase-owner-bootstrap-core.mjs';
 import { CLI_SPEC as SCHEMA_FORWARD_SPEC } from '../scripts/ops/lib/supabase-schema-forward-0028-0029-core.mjs';
+import { CLI_SPEC as RECOVERY_SPEC } from '../scripts/ops/lib/supabase-recover-first-super-admin-core.mjs';
 import {
   assertApiKey,
   assertPrivateOutPath,
@@ -26,6 +27,7 @@ const BOOTSTRAP = path.join(BACKEND, 'scripts/ops/supabase-first-super-admin-boo
 const OWNER = path.join(BACKEND, 'scripts/ops/supabase-owner-bootstrap.mjs');
 const COLLECTOR = path.join(BACKEND, 'scripts/migration/bootstrap-manifest.mjs');
 const SCHEMA_FORWARD = path.join(BACKEND, 'scripts/ops/supabase-schema-forward-0028-0029.mjs');
+const RECOVERY = path.join(BACKEND, 'scripts/ops/supabase-recover-first-super-admin.mjs');
 
 const LEAK_EMAIL = 'leak.check.owner@example.org';
 const FAKE_SECRETS = {
@@ -44,7 +46,7 @@ const LEAKS = [LEAK_EMAIL, 'some-password-typed-blind', ...Object.values(FAKE_SE
 
 test('no tool has a flag that can carry a secret', () => {
   const collectorFlags = ['out', 'candidate', 'backup-manifest', 'scope', 'valid-hours'];
-  for (const flag of [...Object.keys(BOOTSTRAP_SPEC.flags), ...Object.keys(OWNER_SPEC.flags), ...Object.keys(SCHEMA_FORWARD_SPEC.flags), ...collectorFlags]) {
+  for (const flag of [...Object.keys(BOOTSTRAP_SPEC.flags), ...Object.keys(OWNER_SPEC.flags), ...Object.keys(SCHEMA_FORWARD_SPEC.flags), ...Object.keys(RECOVERY_SPEC.flags), ...collectorFlags]) {
     assert.ok(!/email|password|token|secret|key|url|link|code/.test(flag), `--${flag}`);
   }
 });
@@ -72,6 +74,38 @@ test('schema-forward CLI: dry-run is connection-free; no terminal and production
   assert.equal(r.code, 1);
   assert.match(r.out, /STOPPED CI_REMOTE_REFUSED/);
   assertNoLeaks([r.out], LEAKS);
+});
+
+test('recovery CLI: dry-run is connection-free; every gate stops before any input or connection', () => {
+  let r = spawnTool(RECOVERY, [], {});
+  assert.equal(r.code, 0);
+  assert.match(r.out, /dry-run only -- no input was read, no connection was made, nothing was written/);
+
+  const apply = ['--apply', '--confirm-recover-super-admin-account', '--target=local', '--expect-id-prefix=7e6700bd'];
+  const allowed = { ALLOW_SUPABASE_SUPER_ADMIN_RECOVERY: '1', SUPABASE_RECOVERY_TARGET_ENV: 'local', SUPABASE_URL: 'http://127.0.0.1:54321', ...FAKE_SECRETS };
+
+  r = spawnTool(RECOVERY, apply, { ...allowed, ALLOW_SUPABASE_SUPER_ADMIN_RECOVERY: '' });
+  assert.equal(r.code, 1);
+  assert.match(r.out, /STOPPED NOT_AUTHORIZED/);
+
+  r = spawnTool(RECOVERY, apply, allowed);
+  assert.equal(r.code, 1);
+  assert.match(r.out, /STOPPED NOT_INTERACTIVE/);
+  assert.ok(!/\(hidden\)/.test(r.out), 'no prompt was shown');
+
+  r = spawnTool(RECOVERY, ['--apply', '--confirm-recover-super-admin-account', '--target=production', '--expect-id-prefix=7e6700bd'], { ...allowed, CI: 'true', SUPABASE_RECOVERY_TARGET_ENV: 'production' });
+  assert.equal(r.code, 1);
+  assert.match(r.out, /STOPPED CI_REMOTE_REFUSED/);
+
+  r = spawnTool(RECOVERY, apply.filter((a) => !a.startsWith('--expect-id-prefix')), allowed);
+  assert.match(r.out, /STOPPED BAD_ARGS: .*--expect-id-prefix/);
+
+  for (const flag of ['--email=leak.check.owner@example.org', '--password=some-password-typed-blind', '--user-id=7e6700bd-1111-4222-8333-444444444444']) {
+    r = spawnTool(RECOVERY, [...apply, flag], allowed);
+    assert.equal(r.code, 1);
+    assert.match(r.out, new RegExp(`STOPPED BAD_ARGS: unknown flag "${flag.split('=')[0]}"`));
+    assertNoLeaks([r.out], [...LEAKS, '7e6700bd-1111-4222-8333-444444444444']);
+  }
 });
 
 test('bootstrap CLI: --email is refused by name, its value never printed', () => {
@@ -221,6 +255,40 @@ test('the owner tool uses no service-role path at all, and only the official pla
     assert.ok(!/from\(['"]plans['"]\)\s*\.(insert|update|upsert|delete)/.test(src), `${file}: a direct plans write`);
   }
   assert.match(code(OWNER_FILES[1]), /rpc\('create_plan_version', params\)/);
+});
+
+const RECOVERY_FILES = ['scripts/ops/supabase-recover-first-super-admin.mjs', 'scripts/ops/lib/supabase-recover-first-super-admin-core.mjs'];
+
+test('recovery source: its only write is ONE Auth Admin updateUserById with exactly { password, email_confirm: true }', () => {
+  const src = RECOVERY_FILES.map(code).join('\n');
+  const calls = src.match(/updateUserById\s*\(/g) ?? [];
+  assert.equal(calls.length, 1, 'exactly one Auth Admin write call exists');
+  assert.match(src, /client\.auth\.admin\.updateUserById\(userId, \{ password, email_confirm: true \}\)/);
+  for (const [re, what] of [
+    [/inviteUserByEmail|generateLink|resetPasswordForEmail|type:\s*'recovery'|signInWith|signUp\s*\(|createUser\s*\(|deleteUser|listUsers|\.mfa\.|verifyOtp|signOut/, 'an email/token/user/session/MFA Auth path'],
+    [/create_plan_version|\.rpc\(/, 'a plan or RPC path'],
+    [/\b(insert\s+into|update\s+\w+\s+set|delete\s+from|truncate|alter\s+table|drop\s+\w+|create\s+(table|function|policy)|grant\s+)/i, 'a SQL write or DDL statement'],
+    [/inTransaction|set\s+local\s+role/i, 'a read-write transaction'],
+    [/DATA_BACKEND|RENDER_|render\.com/i, 'DATA_BACKEND or Render'],
+    [/dotenv|\.env['"`]/, 'a .env read'],
+    [/writeFile|appendFile|createWriteStream|fs\.write/, 'a file write'],
+  ]) assert.ok(!re.test(src), `recovery files contain ${what}`);
+});
+
+test('recovery source: every SQL statement it sends is a SELECT, and it runs only in the read-only transaction', () => {
+  const core = code(RECOVERY_FILES[1]);
+  const sql = [...core.matchAll(/(?:client\.query|\bn)\(\s*(?:`([^`]*)`|'([^']*)'|"([^"]*)")/g)].map((m) => (m[1] ?? m[2] ?? m[3]).trim());
+  assert.ok(sql.length >= 10, `found ${sql.length} statements`);
+  for (const s of sql) assert.match(s, /^select\b/i, s);
+  assert.match(code(RECOVERY_FILES[0]), /createDb: createReadOnlyDb/, 'the CLI wires the BEGIN READ ONLY runner');
+});
+
+test('recovery source: no email address is read, selected or asked for; the password hash is only tested for non-empty', () => {
+  const src = RECOVERY_FILES.map(code).join('\n');
+  assert.ok(!/select[^`'"]*\bemail\b(?!_confirmed)/i.test(src), 'no select of an email column');
+  assert.ok(!/promptHidden\([^)]*[Ee]mail/.test(src), 'no email prompt');
+  const withoutHashTest = src.replace(/coalesce\(to_jsonb\(u\)->>'encrypted_password', ''\) <> ''/g, '');
+  assert.ok(!/encrypted_password/.test(withoutHashTest), 'the password hash is only ever compared with the empty string');
 });
 
 test('the bootstrap creates no plan and no MFA factor; neither tool writes any file', () => {

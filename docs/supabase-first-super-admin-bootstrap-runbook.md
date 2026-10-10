@@ -164,7 +164,59 @@ doesn't waste it. The tool then:
 It prints `INVITE_ACCEPTED=YES` and `PASSWORD_SET=YES`.
 
 If it says `INVITE_LINK_REJECTED`, the link was already opened or has
-expired. **Stop.** Recovery is a separate decision.
+expired. **Stop.** Recovery is a separate decision: see
+[2b](#2b-recovery-when-the-invite-expired-unused).
+
+## 2b. Recovery when the invite expired unused
+
+Use this only when step 2 can no longer succeed because the one invite link
+expired (Email OTP lifetime, default 60 minutes) and nobody used it. Do
+not raise the OTP lifetime, do not try to revive the old link (treat it as
+compromised if it was ever shown on a screen), and do not run step 1 again
+(it refuses: an admin row exists). This tool finishes the **same** account
+instead:
+
+- it sets a password you type (twice, hidden, at least 14 characters);
+- it confirms the email of that one account;
+- nothing else. It sends **no email**, creates no token, user, profile or
+  role, signs nobody in, and enrolls no MFA.
+
+Running it is a separately authorized production write. Merging the tool does
+**not** authorize running it. With no flags it is a connection-free dry run.
+
+```powershell
+$env:ALLOW_SUPABASE_SUPER_ADMIN_RECOVERY = '1'
+$env:SUPABASE_RECOVERY_TARGET_ENV = 'production'
+node scripts/ops/supabase-recover-first-super-admin.mjs --apply --confirm-recover-super-admin-account --target=production --expect-id-prefix=<first 8 characters of SUPER_ADMIN_USER_ID>
+Remove-Item Env:ALLOW_SUPABASE_SUPER_ADMIN_RECOVERY, Env:SUPABASE_RECOVERY_TARGET_ENV
+```
+
+It asks, all hidden: the **full account UUID** (it must start with
+`--expect-id-prefix`), the **database URL** and the **service_role/secret
+key** (both checked to belong to the production project). Then it reads the
+state, read-only, and **stops with nothing changed** unless it is exactly:
+
+```text
+AUTH_USERS=1  ADMIN_PROFILES=1  SUPER_ADMIN_ASSIGNMENTS=1
+EMAIL_CONFIRMED=NO  LAST_SIGN_IN_PRESENT=NO  HAS_PASSWORD=NO
+SESSIONS=0  MFA_FACTORS=0  AUTH_AUDIT_ROWS=0
+```
+
+and that one user, admin profile and super-admin role row are all the entered
+account (not banned, profile role `admin`). Only then does it ask for the new
+password twice and the phrase
+`RECOVER SUPER-ADMIN difzynyphojgisrfvrkd <prefix>`. It then re-checks the
+state, makes **one** Auth Admin call for that id with exactly
+`{ password, email_confirm: true }`, and reads the state back. It prints
+`RECOVERY_APPLIED=YES PASSWORD_SET=YES EMAIL_CONFIRMED=YES INVITES_SENT=0`.
+
+If anything reads back differently it says so (`RECOVERY_UNCERTAIN` or
+`POST_WRITE_VERIFICATION_FAILED`) and tells you **not** to run `--apply`
+again. Run the read-only state report and ask for review. After success the
+tool refuses to run again (`EMAIL_CONFIRMED=YES`).
+
+Next, with separate approval: step 3 (`supabase-owner-bootstrap.mjs run`),
+which signs in with the email and the new password.
 
 ## 3. MFA and the three plans
 
@@ -268,8 +320,11 @@ cd <ops checkout>; node backend/scripts/ops/supabase-state-report.mjs --target=p
   before AAL2 and the role checks.
 - **Tests.** The same code runs end to end in CI, against a disposable local
   Supabase stack with real GoTrue and the Mailpit mail catcher
-  (`backend/scripts/ops/operator-tools.real-gotrue.test.mjs`, in
-  `npm run test:migration`). It also runs on fakes, in
+  (`backend/scripts/ops/operator-tools.real-gotrue.test.mjs` and, for the
+  expired-invite recovery,
+  `backend/scripts/ops/recover-first-super-admin.real-gotrue.test.mjs`, both
+  in `npm run test:migration`). It also runs on fakes, in
   `backend/tests/supabase-first-super-admin-bootstrap.test.js`,
+  `supabase-recover-first-super-admin.test.js`,
   `supabase-owner-bootstrap.test.js`, `operator-tools-guards.test.js` and
   `supabase-state-report.test.js`.

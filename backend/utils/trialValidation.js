@@ -47,24 +47,32 @@ export function isSingleBareAddress(value) {
   );
 }
 
+// The forbidden-character check runs on the RAW value, before trim(): a
+// control character or line break anywhere in a single-line field —
+// including leading/trailing — rejects the request rather than being
+// silently stripped. trim() then only removes ordinary edge whitespace.
+// (Validators and sanitizers in a chain run in the order declared.)
+const rejectChars = (forbidden) => (v) => !forbidden.test(v);
+
 const optionalText = (field, max, forbidden) =>
   body(field)
     .optional({ values: 'null' })
     .isString().bail()
+    .custom(rejectChars(forbidden)).bail()
     .trim()
-    .isLength({ max })
-    .custom((v) => !forbidden.test(v));
+    .isLength({ max });
 
 export const trialValidation = [
   body('name')
     .exists({ values: 'falsy' }).withMessage(MISSING_TRIAL_MESSAGE).bail()
     .isString().bail()
+    .custom(rejectChars(SINGLE_LINE_FORBIDDEN)).bail()
     .trim()
-    .isLength({ min: 1, max: TRIAL_LIMITS.name })
-    .custom((v) => !SINGLE_LINE_FORBIDDEN.test(v)),
+    .isLength({ min: 1, max: TRIAL_LIMITS.name }),
   body('email')
     .exists({ values: 'falsy' }).withMessage(MISSING_TRIAL_MESSAGE).bail()
     .isString().bail()
+    .custom(rejectChars(SINGLE_LINE_FORBIDDEN)).bail()
     .trim()
     .isLength({ max: TRIAL_LIMITS.email }).bail()
     .isEmail({

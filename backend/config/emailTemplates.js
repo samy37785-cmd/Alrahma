@@ -48,6 +48,15 @@ const row = (label, value) =>
 // dir="auto" lets Arabic/RTL input render correctly. The email address has
 // already passed utils/trialValidation.js (one bare address) before it
 // reaches the mailto: link.
+//
+// A valid local part may still contain `?`, `&`, `%`, `=` or `#`, which a
+// mail client reads as mailto: header/query syntax (RFC 6068) — e.g. a
+// `?cc=` would pre-fill extra recipients on "Reply to Student". So the
+// address is percent-encoded for the URL (keeping `@` readable), then
+// HTML-escaped for the attribute.
+const mailtoHref = (email) =>
+  `mailto:${escapeHtml(encodeURIComponent(email ?? '').replace(/%40/g, '@'))}`;
+
 const trialRow = (label, value) =>
   `<tr>
     <td style="padding:6px 0;color:#555;font-size:14px;width:140px;vertical-align:top;"><strong>${label}</strong></td>
@@ -55,7 +64,6 @@ const trialRow = (label, value) =>
   </tr>`;
 
 export function trialRequestAdminEmail({ name, email, phone, course, message }) {
-  const safeEmail = escapeHtml(email);
   return base(`
     <h2 style="margin:0 0 8px;color:#0b6e4f;">New Trial Request 📋</h2>
     <p style="margin:0 0 20px;color:#555;font-size:14px;">A student has requested a free trial session.</p>
@@ -67,7 +75,7 @@ export function trialRequestAdminEmail({ name, email, phone, course, message }) 
       ${trialRow('Message', message)}
     </table>
     <div style="margin-top:24px;">
-      <a href="mailto:${safeEmail}" style="background:#0b6e4f;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-size:14px;display:inline-block;">Reply to Student</a>
+      <a href="${mailtoHref(email)}" style="background:#0b6e4f;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-size:14px;display:inline-block;">Reply to Student</a>
     </div>
   `);
 }

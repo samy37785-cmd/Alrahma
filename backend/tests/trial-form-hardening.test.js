@@ -229,15 +229,37 @@ test('both routes: line breaks and control characters are rejected', async () =>
   assert.equal(sent.length, 0);
 });
 
-test('leading/trailing whitespace (incl. CR/LF, U+2029) is trimmed away before use', async () => {
-  const res = await postMongo({ ...VALID, email: `${VALID.email}\r\n`, course: 'Quran ' });
+test('both routes: CR/LF, tab or a line separator at the edge of a single-line field is rejected, not stripped', async () => {
+  const cases = [
+    { email: `${VALID.email}\r\n` },
+    { email: `\n${VALID.email}` },
+    { email: `\t${VALID.email}` },
+    { name: `${VALID.name}\n` },
+    { name: `\r${VALID.name}` },
+    { phone: `${VALID.phone}\r\n` },
+    { course: 'Quran ' },
+    { course: ' Quran' },
+  ];
+  for (const patch of cases) {
+    const body = { ...VALID, ...patch };
+    assert.equal((await postMongo(body)).status, 400, `mongo should reject edge char in ${Object.keys(patch)[0]}`);
+    assert.equal((await postSupabase(body)).status, 400, `supabase should reject edge char in ${Object.keys(patch)[0]}`);
+  }
+  assert.equal(await TrialRequest.countDocuments(), 0);
+  assert.equal(supabaseInserts.length, 0);
+  assert.equal(sent.length, 0);
+});
+
+test('ordinary edge spaces are trimmed; edge line breaks in message are trimmed', async () => {
+  const res = await postMongo({ ...VALID, email: `  ${VALID.email} `, course: ' Quran ', message: '\r\nHello\n' });
   assert.equal(res.status, 201);
   const stored = await TrialRequest.findOne().lean();
   assert.equal(stored.email, VALID.email);
   assert.equal(stored.course, 'Quran');
+  assert.equal(stored.message, 'Hello');
   assert.deepEqual(sent[1].to, { name: '', address: VALID.email });
 
-  const supa = await postSupabase({ ...VALID, email: `\t${VALID.email}\n` });
+  const supa = await postSupabase({ ...VALID, email: ` ${VALID.email}  ` });
   assert.equal(supa.status, 201);
   assert.equal(supabaseInserts[0][1], VALID.email);
 });
@@ -324,6 +346,22 @@ test('admin HTML template escapes every dynamic field', () => {
   }
   assert.ok(!/<(b|i|u|span)[\s>]/.test(html), 'no user-supplied tag may survive');
   assert.ok(html.includes(`mailto:${VALID.email}`));
+});
+
+test('admin template: mailto: link percent-encodes query syntax in a valid local part', async () => {
+  const email = 'first?cc=other&x=1%2#y@example.com';
+  assert.equal(isSingleBareAddress(email), true, 'precondition: this is one valid bare address');
+  const html = trialRequestAdminEmail({ name: 'A', email });
+  const hrefs = [...html.matchAll(/href="mailto:([^"]*)"/g)].map((m) => m[1]);
+  assert.equal(hrefs.length, 1);
+  assert.equal(hrefs[0], 'first%3Fcc%3Dother%26x%3D1%252%23y@example.com');
+  assert.ok(!/[?&#]/.test(hrefs[0]), 'no raw mailto: query/fragment characters');
+
+  // End to end: accepted by the route, and the sent HTML carries the encoded link.
+  const res = await postMongo({ ...VALID, email });
+  assert.equal(res.status, 201);
+  assert.ok(sent[0].html.includes('href="mailto:first%3Fcc%3Dother%26x%3D1%252%23y@example.com"'));
+  assert.deepEqual(sent[0].replyTo, { name: '', address: email });
 });
 
 test('student HTML template escapes the name', () => {

@@ -1,3 +1,5 @@
+import { escapeHtml } from '../utils/escapeHtml.js';
+
 const base = (content) => `
 <!DOCTYPE html>
 <html lang="en">
@@ -42,27 +44,51 @@ const row = (label, value) =>
   </tr>`;
 
 // ── Admin: new trial request ──────────────────────────────────────────────
+// Every value here comes from a public form: each one is HTML-escaped, and
+// dir="auto" lets Arabic/RTL input render correctly. The email address has
+// already passed utils/trialValidation.js (one bare address) before it
+// reaches the mailto: link.
+const trialRow = (label, value) =>
+  `<tr>
+    <td style="padding:6px 0;color:#555;font-size:14px;width:140px;vertical-align:top;"><strong>${label}</strong></td>
+    <td dir="auto" style="padding:6px 0;color:#222;font-size:14px;white-space:pre-wrap;">${value ? escapeHtml(value) : '—'}</td>
+  </tr>`;
+
 export function trialRequestAdminEmail({ name, email, phone, course, message }) {
+  const safeEmail = escapeHtml(email);
   return base(`
     <h2 style="margin:0 0 8px;color:#0b6e4f;">New Trial Request 📋</h2>
     <p style="margin:0 0 20px;color:#555;font-size:14px;">A student has requested a free trial session.</p>
     <table cellpadding="0" cellspacing="0" width="100%">
-      ${row('Name', name)}
-      ${row('Email', `<a href="mailto:${email}" style="color:#0b6e4f;">${email}</a>`)}
-      ${row('Phone', phone)}
-      ${row('Course', course)}
-      ${row('Message', message)}
+      ${trialRow('Name', name)}
+      ${trialRow('Email', email)}
+      ${trialRow('Phone', phone)}
+      ${trialRow('Course', course)}
+      ${trialRow('Message', message)}
     </table>
     <div style="margin-top:24px;">
-      <a href="mailto:${email}" style="background:#0b6e4f;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-size:14px;display:inline-block;">Reply to Student</a>
+      <a href="mailto:${safeEmail}" style="background:#0b6e4f;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-size:14px;display:inline-block;">Reply to Student</a>
     </div>
   `);
+}
+
+export function trialRequestAdminText({ name, email, phone, course, message }) {
+  return [
+    'New Trial Request',
+    '',
+    `Name: ${name || '-'}`,
+    `Email: ${email || '-'}`,
+    `Phone: ${phone || '-'}`,
+    `Course: ${course || '-'}`,
+    'Message:',
+    message || '-',
+  ].join('\n');
 }
 
 // ── Student: trial request confirmed ─────────────────────────────────────
 export function trialRequestStudentEmail({ name }) {
   return base(`
-    <h2 style="margin:0 0 8px;color:#0b6e4f;">Jazak Allah Khair, ${name}! 🌟</h2>
+    <h2 dir="auto" style="margin:0 0 8px;color:#0b6e4f;">Jazak Allah Khair, ${escapeHtml(name)}! 🌟</h2>
     <p style="color:#555;font-size:15px;line-height:1.7;">
       We have received your free trial request. One of our teachers will contact you within <strong>24 hours</strong> to schedule your session.
     </p>
@@ -74,6 +100,18 @@ export function trialRequestStudentEmail({ name }) {
     </div>
     <p style="color:#888;font-size:13px;margin-top:24px;">If you have any questions, reply to this email or contact us on WhatsApp.</p>
   `);
+}
+
+export function trialRequestStudentText({ name }) {
+  return [
+    `Jazak Allah Khair, ${name || ''}!`,
+    '',
+    'We have received your free trial request. One of our teachers will contact you within 24 hours to schedule your session.',
+    '',
+    `In the meantime, feel free to explore the Quran reader: ${process.env.CLIENT_URL || 'http://localhost:5173'}/quran`,
+    '',
+    'If you have any questions, reply to this email or contact us on WhatsApp.',
+  ].join('\n');
 }
 
 // ── Admin: new manual payment ─────────────────────────────────────────────

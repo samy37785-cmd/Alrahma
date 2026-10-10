@@ -13,11 +13,9 @@ import { withAnonContext, withUserContext } from './client.js';
 // @route  POST /api/trials
 // @access Public
 export const createTrial = asyncHandler(async (req, res) => {
-  const { name, email, phone, course, message } = req.body;
-  if (!name || !email) {
-    res.status(400);
-    throw new Error('Name and email are required');
-  }
+  // Validated by the same utils/trialValidation.js chain as the Mongo route
+  // (mounted in data/supabase/routes/trialRoutes.js).
+  const { name, email, phone, course, message } = req.trialInput;
 
   // trial_requests_insert_public (0002_rls.sql) grants INSERT on exactly
   // (name, email, phone, course, message, status) to anon/authenticated, and

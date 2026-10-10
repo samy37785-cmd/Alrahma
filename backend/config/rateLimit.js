@@ -97,3 +97,14 @@ export const enrollmentLimiter = limiter({
   message: 'Too many enrollment requests — please try again later.',
   prefix: 'rl:enrollment:',
 });
+
+// POST /api/trials sends email on every accepted request, so it gets its own
+// small budget (same pattern as enrollmentLimiter). Keyed on req.ip, which
+// app.js derives with `trust proxy = 1`: only the single hop added by the
+// hosting proxy is trusted, so client-supplied X-Forwarded-For entries to
+// its left never change the key. Shared across instances when REDIS_URL is set.
+export const trialLimiter = limiter({
+  max: 5,
+  message: 'Too many trial requests — please try again later.',
+  prefix: 'rl:trial:',
+});

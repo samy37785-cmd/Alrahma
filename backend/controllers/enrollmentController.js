@@ -5,6 +5,7 @@ import { enrollmentAdminEmail, enrollmentStudentEmail } from '../config/emailTem
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { parsePagination, sendPaginated } from '../utils/pagination.js';
 import { pickPublicBookingFields, normalizeWhatsapp } from '../utils/enrollmentValidation.js';
+import { toClientEnrollment } from '../utils/clientViews.js';
 import logger from '../config/logger.js';
 
 // Booking reference shown to the student and embedded in the pre-filled
@@ -81,9 +82,11 @@ export const createEnrollment = asyncHandler(async (req, res) => {
 
 // @route  GET /api/enrollments/mine
 // @access Student (own enrollment, matched by email)
+// Returns only the student-facing allowlist (utils/clientViews.js) — never
+// adminNote or the admin's payment bookkeeping.
 export const getMyEnrollment = asyncHandler(async (req, res) => {
   const enrollment = await Enrollment.findOne({ email: req.user.email }).sort('-createdAt').lean();
-  res.json(enrollment || null);
+  res.json(toClientEnrollment(enrollment));
 });
 
 // @route  GET /api/enrollments?page=1&limit=50

@@ -12,6 +12,7 @@
 import { asyncHandler } from '../../utils/asyncHandler.js';
 import { parsePagination, sendPaginated } from '../../utils/pagination.js';
 import { pickPublicBookingFields, normalizeWhatsapp } from '../../utils/enrollmentValidation.js';
+import { toClientEnrollment } from '../../utils/clientViews.js';
 import { withAnonContext, withUserContext } from './client.js';
 import { sendMail, ADMIN_EMAIL } from '../../config/mailer.js';
 import { enrollmentAdminEmail, enrollmentStudentEmail } from '../../config/emailTemplates.js';
@@ -161,12 +162,13 @@ export const getMyEnrollment = asyncHandler(async (req, res) => {
   // request.jwt.claims a real Supabase Auth session would have carried.
   const enrollment = await withUserContext(req.user._id, async (client) => {
     const r = await client.query(
+      // Admin-only columns (admin_note and the payment bookkeeping) are not
+      // even selected here; toClientEnrollment below is the allowlist.
       `SELECT id, name, email, whatsapp, country, city, timezone, times,
               subjects, lang, level, age_group, gender_pref,
               preferred_teacher_key, preferred_teacher_name,
-              requested_plan_slug, status, notes, booking_ref, agreed_amount,
-              currency, payment_method_external, paid_at, renewal_at,
-              admin_note, created_at, updated_at
+              requested_plan_slug, status, notes, booking_ref,
+              created_at, updated_at
          FROM enrollments
         WHERE email = $1
         ORDER BY created_at DESC
@@ -176,7 +178,7 @@ export const getMyEnrollment = asyncHandler(async (req, res) => {
     return r.rows[0];
   }, { email: req.user.email });
 
-  res.json(enrollment ? mapRow(enrollment) : null);
+  res.json(enrollment ? toClientEnrollment(mapRow(enrollment)) : null);
 });
 
 // @route  GET /api/enrollments?page=1&limit=500

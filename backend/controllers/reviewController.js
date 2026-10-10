@@ -3,6 +3,7 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 import { handleValidationErrors } from '../utils/validationHelper.js';
 import { parsePagination } from '../utils/pagination.js';
 import { auditFromReq } from '../services/auditService.js';
+import { toClientReview } from '../utils/clientViews.js';
 import Review from '../models/Review.js';
 
 export const reviewValidation = [
@@ -44,8 +45,11 @@ export const createReview = asyncHandler(async (req, res) => {
     body: reviewBody,
   });
 
-  res.status(201).json({ review });
+  res.status(201).json({ review: toClientReview(review.toObject()) });
 });
+
+// Public review lists return only the client allowlist (utils/clientViews.js)
+// — never the moderator's adminNote.
 
 export const getTeacherReviews = asyncHandler(async (req, res) => {
   const { page, limit, skip } = parsePagination(req.query, { defaultLimit: 10, maxLimit: 20 });
@@ -61,7 +65,7 @@ export const getTeacherReviews = asyncHandler(async (req, res) => {
     Review.avgRatingForTeacher(req.params.teacherId),
   ]);
 
-  res.json({ reviews, total, page, pages: Math.ceil(total / limit), ...stats });
+  res.json({ reviews: reviews.map(toClientReview), total, page, pages: Math.ceil(total / limit), ...stats });
 });
 
 export const getCourseReviews = asyncHandler(async (req, res) => {
@@ -77,7 +81,7 @@ export const getCourseReviews = asyncHandler(async (req, res) => {
     Review.countDocuments({ course: req.params.courseId, status: 'approved' }),
   ]);
 
-  res.json({ reviews, total, page, pages: Math.ceil(total / limit) });
+  res.json({ reviews: reviews.map(toClientReview), total, page, pages: Math.ceil(total / limit) });
 });
 
 export const moderateReview = asyncHandler(async (req, res) => {

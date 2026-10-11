@@ -24,14 +24,18 @@
 // the SPA shell for any route not in the manifest) exactly like any other
 // static asset, with zero added latency and no server-side process.
 //
-// The '/' + 'en' pair is written LAST, after every other pair, so the SPA
-// fallback shell at dist/public/index.html (which every non-manifest
-// route still needs) is never replaced mid-run by a half-finished pass.
+// The '/' + 'en' pair is written LAST, after every other pair, so the
+// pristine shell at dist/public/index.html (which `vite preview` serves for
+// every route during this run) is never replaced mid-run by a half-finished
+// pass. In production, non-manifest routes get dist/public/spa-shell.html
+// instead (a noindex copy of that pristine shell, written first; see
+// spaShell.mjs and vercel.json's catch-all rewrite).
 import { spawn, spawnSync } from 'node:child_process';
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { PRERENDER_MANIFEST, urlPathFor, canonicalUrlFor, outputRelPathFor, hreflangLinksFor, ogLocaleFor } from './prerender-routes.mjs';
+import { SPA_SHELL_FILE, buildSpaShell } from './spaShell.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..');
@@ -238,6 +242,14 @@ async function waitForHydratedSeo(page, entry, timeoutMs = 15000) {
 async function run() {
   const { chromium } = await import('playwright');
   let preview;
+
+  // Written first, from the untouched `vite build` index.html, before any
+  // page (least of all English Home, which replaces index.html at the end)
+  // is prerendered. vercel.json's catch-all rewrite serves this file, not
+  // index.html, for every URL without a prerendered file — see spaShell.mjs.
+  const builtIndex = await readFile(join(distDir, 'index.html'), 'utf8');
+  await writeFile(join(distDir, SPA_SHELL_FILE), buildSpaShell(builtIndex), 'utf8');
+  console.log(`[prerender] wrote ${SPA_SHELL_FILE}  (SPA fallback shell, noindex)`);
 
   try {
     // shell: true -- on Windows, spawn() cannot exec npx.cmd (a batch

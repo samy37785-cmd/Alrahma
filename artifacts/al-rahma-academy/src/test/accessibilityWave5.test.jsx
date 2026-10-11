@@ -81,7 +81,9 @@ describe('protected files are byte-identical to origin/main (949b6b7)', () => {
       'public/sitemap.xml': 'e4de2e4d08cfe7c5ee11d8ee28eb4768ae4f079a57b89b1ef6e28d55e4ebdf9d',
       'scripts/gen-sitemap.mjs': '83b8022647b09534b25ba66198848574abda88c8d0f211865f0ee6b306edc7ab',
       'scripts/prerender-routes.mjs': '662229f26e0282460e6463db0758175f09e4783b5c8c2e9ff0fa21614e3ec70c',
-      'scripts/prerender.mjs': '6d38afed3468e907b99bb6df9e39e5515fdf59bea11fa5bd1a3228e005a629e2',
+      // SPA shell PR: prerender.mjs also writes dist/public/spa-shell.html (the noindex
+      // fallback served by vercel.json). No route, locale, page content or Quran Reader output changed.
+      'scripts/prerender.mjs': '008c1721cdf1e9e54c0b1dc714f27553cb2aa1b8b7686403196a49042cdb9c5b',
       'src/api/cache.js': '90177f0efbcb4469686bb4cd3e45cc61571c0ca7d463a2a8e57f0091c43694e8',
       'src/api/quran.js': '84ad13d403c5ee7f879365971a2140044c85c8c32db2d7c62c702692fd8d1c88',
       'src/components/features/quran/QuranChapterHeader.jsx': 'afe3fe96e360b4778462370ccc9917204c7689188444a047667d2f0ec6b674fe',

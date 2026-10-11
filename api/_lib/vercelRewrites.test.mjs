@@ -196,9 +196,14 @@ test('the Render destination host/path template is unchanged by this fix', () =>
   assert.equal(rule.destination.startsWith('https://academy-backend-cxso.onrender.com/api/'), true);
 });
 
-test('the SPA catch-all rewrite is untouched', () => {
+// The catch-all serves the noindex SPA shell (written by the frontend's
+// scripts/prerender.mjs, see scripts/spaShell.mjs), never index.html: that
+// file is the prerendered English Home page, so serving it for every
+// unknown or non-prerendered URL made each one a duplicate of Home.
+test('the SPA catch-all rewrite serves the noindex shell, not the prerendered Home page', () => {
   const rewrites = loadRewrites();
-  const spaRule = rewrites.find((r) => r.destination === '/index.html');
+  const spaRule = rewrites.find((r) => r.source === '/((?!api/|.*\\..*).*)');
   assert.ok(spaRule, 'expected the SPA fallback rewrite to still exist');
-  assert.equal(spaRule.source, '/((?!api/|.*\\..*).*)');
+  assert.equal(spaRule.destination, '/spa-shell.html');
+  assert.equal(rewrites.some((r) => r.destination === '/index.html'), false);
 });

@@ -162,12 +162,13 @@ export const getMyEnrollment = asyncHandler(async (req, res) => {
   // request.jwt.claims a real Supabase Auth session would have carried.
   const enrollment = await withUserContext(req.user._id, async (client) => {
     const r = await client.query(
-      // Admin-only columns (admin_note and the payment bookkeeping) are not
-      // even selected here; toClientEnrollment below is the allowlist.
+      // admin_note (admin-only) is not even selected here;
+      // toClientEnrollment below is the allowlist.
       `SELECT id, name, email, whatsapp, country, city, timezone, times,
               subjects, lang, level, age_group, gender_pref,
               preferred_teacher_key, preferred_teacher_name,
-              requested_plan_slug, status, notes, booking_ref,
+              requested_plan_slug, status, notes, booking_ref, agreed_amount,
+              currency, payment_method_external, paid_at, renewal_at,
               created_at, updated_at
          FROM enrollments
         WHERE email = $1

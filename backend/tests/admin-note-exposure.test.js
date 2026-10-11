@@ -5,10 +5,11 @@ import request from 'supertest';
 import { setupTestDb, clearTestDb, teardownTestDb } from './helpers/db.js';
 import { agentWithCsrf } from './helpers/csrf.js';
 
-// Regression: admin-only fields (adminNote, and on enrollments the admin's
-// offline-payment bookkeeping) must never appear in a student- or
+// Regression: the admin-only adminNote must never appear in a student- or
 // public-facing response, on either data backend, while the admin routes
-// keep returning them. Every record is seeded with a distinctive marker in
+// keep returning it. Nothing else in the client contract changes: the exact-
+// contract tests compare each response with the stored record minus
+// adminNote (the student's own payment fields and Mongo's __v included). Every record is seeded with a distinctive marker in
 // adminNote; each check asserts the marker string appears nowhere in the
 // client response (or in any log line), not just that one key is missing.
 //
@@ -77,7 +78,18 @@ beforeEach(async () => {
   supabaseRows = { enrollment: null, reviews: [] };
 });
 
-const ADMIN_ONLY_ENROLLMENT_FIELDS = ['adminNote', 'agreedAmount', 'currency', 'paymentMethodExternal', 'paidAt', 'renewalAt'];
+const ADMIN_ONLY_ENROLLMENT_FIELDS = ['adminNote'];
+// Part of the student's existing /mine contract; must stay in the response.
+const STUDENT_PAYMENT_FIELDS = ['agreedAmount', 'currency', 'paymentMethodExternal', 'paidAt', 'renewalAt'];
+// Every key the Supabase mapRow() produced for /mine before this change, minus adminNote.
+const SUPABASE_MINE_KEYS = [
+  '_id', 'name', 'email', 'whatsapp', 'country', 'city', 'timezone', 'times', 'subjects', 'lang', 'level',
+  'ageGroup', 'genderPref', 'teacherId', 'teacherName', 'plan', 'status', 'notes', 'bookingRef',
+  ...STUDENT_PAYMENT_FIELDS, 'createdAt', 'updatedAt',
+];
+const asJson = (v) => JSON.parse(JSON.stringify(v));
+// eslint-disable-next-line no-unused-vars
+const withoutAdminNote = ({ adminNote, ...rest }) => rest;
 
 let seq = 0;
 async function makeStudent(role = 'student') {
@@ -142,16 +154,21 @@ function assertNoAdminData(body, label) {
 
 // ── Allowlist helpers ──────────────────────────────────────────────────────
 
-test('allowlists contain no admin-only field', () => {
+test('allowlists exclude adminNote and keep every other schema field', () => {
   for (const f of ADMIN_ONLY_ENROLLMENT_FIELDS) assert.ok(!ENROLLMENT_CLIENT_FIELDS.includes(f), f);
   assert.ok(!REVIEW_CLIENT_FIELDS.includes('adminNote'));
-  assert.ok(!REVIEW_CLIENT_FIELDS.includes('__v'));
+  const enrollmentSchema = Object.keys(Enrollment.schema.paths).filter((k) => k !== 'adminNote');
+  assert.deepEqual([...ENROLLMENT_CLIENT_FIELDS].sort(), enrollmentSchema.sort());
+  const reviewSchema = Object.keys(Review.schema.paths).filter((k) => k !== 'adminNote');
+  assert.deepEqual([...REVIEW_CLIENT_FIELDS].sort(), reviewSchema.sort());
 });
 
 test('toClientEnrollment copies only allowlisted fields; unknown future fields stay hidden', () => {
   const out = toClientEnrollment({ ...FULL_BOOKING, _id: 'x', __v: 0, someNewInternalField: 'secret' });
   for (const key of Object.keys(out)) assert.ok(ENROLLMENT_CLIENT_FIELDS.includes(key), key);
-  for (const f of [...ADMIN_ONLY_ENROLLMENT_FIELDS, '__v', 'someNewInternalField']) assert.equal(out[f], undefined, f);
+  for (const f of [...ADMIN_ONLY_ENROLLMENT_FIELDS, 'someNewInternalField']) assert.equal(out[f], undefined, f);
+  for (const f of STUDENT_PAYMENT_FIELDS) assert.deepEqual(out[f], FULL_BOOKING[f], f);
+  assert.equal(out.__v, 0);
   assert.equal(out.bookingRef, FULL_BOOKING.bookingRef);
   assert.equal(toClientEnrollment(null), null);
 });
@@ -163,12 +180,12 @@ test('toClientReview trims a populated student to { _id, name }', () => {
   });
   assert.deepEqual(out.student, { _id: 's1', name: 'Amina' });
   assertNoAdminData(out, 'toClientReview');
-  assert.equal(out.__v, undefined);
+  assert.equal(out.__v, 0);
 });
 
 // ── GET /api/enrollments/mine ──────────────────────────────────────────────
 
-test('mongo /mine: student gets their booking without adminNote or payment bookkeeping', async () => {
+test('mongo /mine: exact previous contract minus adminNote (payment fields and __v kept)', async () => {
   const { user, auth } = await makeStudent();
   await Enrollment.create({ ...FULL_BOOKING, email: user.email });
 
@@ -176,8 +193,11 @@ test('mongo /mine: student gets their booking without adminNote or payment bookk
   assert.equal(res.status, 200);
   assertNoAdminData(res.body, 'mongo /mine');
   for (const f of ADMIN_ONLY_ENROLLMENT_FIELDS) assert.equal(res.body[f], undefined, f);
-  for (const key of Object.keys(res.body)) assert.ok(ENROLLMENT_CLIENT_FIELDS.includes(key), `unexpected key ${key}`);
-  // The existing client contract is intact.
+  // Exact contract: what /mine returned before (the whole stored document) minus adminNote.
+  const stored = await Enrollment.findOne({ email: user.email }).lean();
+  assert.deepEqual(res.body, asJson(withoutAdminNote(stored)));
+  for (const f of STUDENT_PAYMENT_FIELDS) assert.ok(res.body[f] !== undefined, `${f} must stay in /mine`);
+  assert.equal(res.body.__v, 0);
   assert.equal(res.body.bookingRef, FULL_BOOKING.bookingRef);
   assert.equal(res.body.teacherName, FULL_BOOKING.teacherName);
   assert.deepEqual(res.body.subjects, FULL_BOOKING.subjects);
@@ -193,7 +213,7 @@ test('mongo /mine: no booking still returns null', async () => {
   assert.equal(res.body, null);
 });
 
-test('supabase /mine: allowlist drops admin_note even when the row carries it; query no longer selects it', async () => {
+test('supabase /mine: previous keys minus adminNote; admin_note no longer selected, payment columns still are', async () => {
   const { user, auth } = await makeStudent();
   supabaseRows.enrollment = supabaseEnrollmentRow(user.email);
 
@@ -201,23 +221,30 @@ test('supabase /mine: allowlist drops admin_note even when the row carries it; q
   assert.equal(res.status, 200);
   assertNoAdminData(res.body, 'supabase /mine');
   for (const f of ADMIN_ONLY_ENROLLMENT_FIELDS) assert.equal(res.body[f], undefined, f);
+  assert.deepEqual(Object.keys(res.body).sort(), [...SUPABASE_MINE_KEYS].sort());
   assert.equal(res.body.bookingRef, FULL_BOOKING.bookingRef);
+  assert.equal(res.body.agreedAmount, 40);
+  assert.equal(res.body.currency, 'GBP');
+  assert.equal(res.body.paymentMethodExternal, 'bank transfer');
+  assert.equal(res.body.paidAt, '2026-10-01T00:00:00Z');
+  assert.equal(res.body.renewalAt, '2026-11-01T00:00:00Z');
 
   const sql = supabaseQueries.find((q) => /FROM enrollments/.test(q.sql)).sql;
-  for (const col of ['admin_note', 'agreed_amount', 'payment_method_external', 'paid_at', 'renewal_at']) {
-    assert.ok(!sql.includes(col), `/mine must not select ${col}`);
+  assert.ok(!sql.includes('admin_note'), '/mine must not select admin_note');
+  for (const col of ['agreed_amount', 'currency', 'payment_method_external', 'paid_at', 'renewal_at']) {
+    assert.ok(sql.includes(col), `/mine must still select ${col}`);
   }
 });
 
-test('parity: /mine returns the same key set on both backends', async () => {
+test('parity: /mine returns the same key set on both backends (Mongo adds its own __v, as before)', async () => {
   const { user, auth } = await makeStudent();
   await Enrollment.create({ ...FULL_BOOKING, email: user.email });
   supabaseRows.enrollment = supabaseEnrollmentRow(user.email);
 
   const mongo = await request(app).get('/api/enrollments/mine').set(auth);
   const supa = await request(supabaseApp).get('/api/enrollments/mine').set(auth);
-  assert.deepEqual(Object.keys(supa.body).sort(), Object.keys(mongo.body).sort());
-  for (const k of ['email', 'bookingRef', 'teacherName', 'plan', 'status', 'notes', 'ageGroup', 'genderPref']) {
+  assert.deepEqual(Object.keys(supa.body).sort(), Object.keys(mongo.body).filter((k) => k !== '__v').sort());
+  for (const k of ['email', 'bookingRef', 'teacherName', 'plan', 'status', 'notes', 'ageGroup', 'genderPref', 'agreedAmount', 'currency', 'paymentMethodExternal']) {
     assert.deepEqual(supa.body[k], mongo.body[k], k);
   }
 });
@@ -263,7 +290,7 @@ async function seedApprovedReviews() {
   return { author, teacher, courseId, forTeacher, forCourse };
 }
 
-test('mongo public reviews (teacher and course): no adminNote, no __v, student is { _id, name }', async () => {
+test('mongo public reviews (teacher and course): exact previous contract minus adminNote', async () => {
   const { author, teacher, courseId } = await seedApprovedReviews();
 
   for (const url of [`/api/reviews/teacher/${teacher._id}`, `/api/reviews/course/${courseId}`]) {
@@ -272,8 +299,12 @@ test('mongo public reviews (teacher and course): no adminNote, no __v, student i
     assert.equal(res.body.reviews.length, 1, url);
     assertNoAdminData(res.body, url);
     const [r] = res.body.reviews;
-    assert.equal(r.__v, undefined);
     for (const key of Object.keys(r)) assert.ok(REVIEW_CLIENT_FIELDS.includes(key), `unexpected key ${key}`);
+    // Exact contract: the same populated lean query the route ran before, minus adminNote.
+    const filter = url.includes('/teacher/') ? { teacher: teacher._id } : { course: courseId };
+    const before = await Review.find({ ...filter, status: 'approved' }).populate('student', 'name').lean();
+    assert.deepEqual(res.body.reviews, asJson(before.map(withoutAdminNote)));
+    assert.equal(r.__v, 0);
     assert.deepEqual(r.student, { _id: author._id.toString(), name: author.name });
     assert.ok(r._id && r.rating && r.body && r.createdAt);
     assert.equal(res.body.total, 1);
@@ -294,7 +325,7 @@ test('supabase public reviews: allowlist drops admin_note even if the view retur
   }
 });
 
-test('parity: public review keys on Supabase are a subset of the Mongo keys (Mongo adds updatedAt only)', async () => {
+test('parity: public review keys on Supabase are a subset of the Mongo keys (Mongo adds updatedAt and __v)', async () => {
   const { teacher } = await seedApprovedReviews();
   supabaseRows.reviews = [{
     id: 'r-1', student_id: 's-1', student_name: 'Amina', teacher_id: 't-1', course_id: null,
@@ -309,10 +340,10 @@ test('parity: public review keys on Supabase are a subset of the Mongo keys (Mon
   for (const key of Object.keys(supa)) {
     assert.ok(mongoKeys.has(key) || supa[key] === null, `supabase-only key ${key}`);
   }
-  assert.deepEqual([...mongoKeys].filter((k) => !(k in supa)), ['updatedAt']);
+  assert.deepEqual([...mongoKeys].filter((k) => !(k in supa)).sort(), ['__v', 'updatedAt']);
 });
 
-test('mongo POST /api/reviews: the author response carries no adminNote or __v', async () => {
+test('mongo POST /api/reviews: exact previous contract (the created document), no adminNote', async () => {
   const { user: teacher } = await makeStudent('teacher');
   const { auth } = await makeStudent();
   const { agent, csrf } = await agentWithCsrf(app);
@@ -320,7 +351,9 @@ test('mongo POST /api/reviews: the author response carries no adminNote or __v',
     .send({ teacherId: teacher._id.toString(), rating: 5, body: 'Very clear lessons' });
   assert.equal(res.status, 201);
   assertNoAdminData(res.body, 'POST /api/reviews');
-  assert.equal(res.body.review.__v, undefined);
+  const created = await Review.findById(res.body.review._id).lean();
+  assert.deepEqual(res.body.review, asJson(withoutAdminNote(created)));
+  assert.equal(res.body.review.__v, 0);
   assert.equal(res.body.review.rating, 5);
   assert.equal(res.body.review.status, 'pending');
 });

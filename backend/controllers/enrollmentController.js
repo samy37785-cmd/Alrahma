@@ -83,7 +83,7 @@ export const createEnrollment = asyncHandler(async (req, res) => {
 // @route  GET /api/enrollments/mine
 // @access Student (own enrollment, matched by email)
 // Returns only the student-facing allowlist (utils/clientViews.js) — never
-// adminNote or the admin's payment bookkeeping.
+// the admin-only adminNote.
 export const getMyEnrollment = asyncHandler(async (req, res) => {
   const enrollment = await Enrollment.findOne({ email: req.user.email }).sort('-createdAt').lean();
   res.json(toClientEnrollment(enrollment));

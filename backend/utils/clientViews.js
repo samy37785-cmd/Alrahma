@@ -1,12 +1,13 @@
 // Explicit allowlists for records returned to a student or the public.
 //
-// Enrollment and Review rows also carry admin-only fields (adminNote, and
-// on enrollments the offline-payment bookkeeping an admin records). Those
-// must never reach a student- or public-facing response, so these helpers
-// copy ONLY the named fields instead of deleting known-bad ones: a column
-// added to the model later stays hidden until someone deliberately lists it
-// here. Used by both data backends (Mongo controllers and data/supabase/),
-// so the two return the same client shape. Admin routes do not use these.
+// Enrollment and Review rows carry an admin-only moderation/booking note
+// (adminNote) that must never reach a student- or public-facing response.
+// These helpers copy ONLY the named fields instead of deleting known-bad
+// ones, so a column added to the model later stays hidden until someone
+// deliberately lists it here. The lists are every field the schema has
+// (Mongo's __v included) except adminNote, so the client contract is the
+// same as before apart from that one field. Used by both data backends
+// (Mongo controllers and data/supabase/). Admin routes do not use these.
 
 const pick = (source, fields) => {
   if (!source) return null;
@@ -18,22 +19,25 @@ const pick = (source, fields) => {
 };
 
 // GET /api/enrollments/mine — the student's own booking. Deliberately
-// excluded (admin-only): adminNote, agreedAmount, currency,
-// paymentMethodExternal, paidAt, renewalAt.
+// excluded: adminNote. The student's own payment details (agreedAmount,
+// currency, paymentMethodExternal, paidAt, renewalAt) stay in the response,
+// as they always were.
 export const ENROLLMENT_CLIENT_FIELDS = Object.freeze([
   '_id', 'name', 'email', 'whatsapp', 'country', 'city', 'timezone', 'times',
   'subjects', 'lang', 'level', 'ageGroup', 'genderPref',
   'teacherId', 'teacherName', 'plan',
-  'status', 'notes', 'bookingRef', 'createdAt', 'updatedAt',
+  'status', 'notes', 'bookingRef',
+  'agreedAmount', 'currency', 'paymentMethodExternal', 'paidAt', 'renewalAt',
+  'createdAt', 'updatedAt', '__v',
 ]);
 
 export const toClientEnrollment = (enrollment) => pick(enrollment, ENROLLMENT_CLIENT_FIELDS);
 
 // Public review lists and the author's own POST /api/reviews response.
-// Deliberately excluded: adminNote (moderation note) and Mongo's __v.
+// Deliberately excluded: adminNote (the moderator's note).
 export const REVIEW_CLIENT_FIELDS = Object.freeze([
   '_id', 'student', 'teacher', 'course', 'rating', 'title', 'body',
-  'status', 'helpful', 'createdAt', 'updatedAt',
+  'status', 'helpful', 'createdAt', 'updatedAt', '__v',
 ]);
 
 // `student` is either an id or a populated { _id, name } — never more.

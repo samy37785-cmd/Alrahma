@@ -196,9 +196,24 @@ test('the Render destination host/path template is unchanged by this fix', () =>
   assert.equal(rule.destination.startsWith('https://academy-backend-cxso.onrender.com/api/'), true);
 });
 
-test('the SPA catch-all rewrite is untouched', () => {
+// The SPA rewrite now covers only the real App.jsx route patterns and
+// targets the frontend's spa-shell.html (scripts/spaShell.mjs), never
+// index.html: that file is the prerendered English Home page. Every other
+// path matches no rewrite, so Vercel answers it with 404.html and HTTP 404.
+// The full route-by-route check lives in the frontend suite
+// (artifacts/al-rahma-academy/src/test/spaShell.test.js), which CI runs.
+test('the SPA rewrite targets spa-shell.html for real routes only, never index.html', () => {
   const rewrites = loadRewrites();
-  const spaRule = rewrites.find((r) => r.destination === '/index.html');
-  assert.ok(spaRule, 'expected the SPA fallback rewrite to still exist');
-  assert.equal(spaRule.source, '/((?!api/|.*\\..*).*)');
+  const spaRule = rewrites.find((r) => r.destination === '/spa-shell.html');
+  assert.ok(spaRule, 'expected the SPA rewrite to still exist');
+  assert.match(spaRule.source, /^\/:path\(.+\)$/);
+  assert.equal(rewrites.some((r) => r.destination === '/index.html'), false);
+  const pattern = spaRule.source.match(/^\/:path\((.*)\)$/)[1];
+  const matcher = new RegExp(`^/(?:${pattern})/?$`, 'i');
+  for (const p of ['/enroll', '/ar/enroll', '/resources/blog', '/tools/prayer-times', '/dashboard']) {
+    assert.equal(matcher.test(p), true, `${p} should reach the SPA shell`);
+  }
+  for (const p of ['/this-page-does-not-exist-xyz', '/ar/garbage', '/tools/nonexistent', '/api/healthz']) {
+    assert.equal(matcher.test(p), false, `${p} must not be rewritten (404)`);
+  }
 });

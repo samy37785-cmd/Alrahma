@@ -6,6 +6,6 @@
     { "source": "/api/v1/admin", "destination": "/api/v1/admin-proxy" },
     { "source": "/api/v1/admin/:subpath(.*)", "destination": "/api/v1/admin-proxy?path=:subpath" },
     { "source": "/api/:path((?!v1/admin(?:$|/)).*)", "destination": "https://academy-backend-cxso.onrender.com/api/:path" },
-    { "source": "/((?!api/|.*\\..*).*)", "destination": "/index.html" }
+    { "source": "/:path((?:(?:ar|fr|it|es|de)/?|(?:(?:ar|fr|it|es|de)/)?(?:courses(?:/[^/.]+)?|tools(?:/(?:quran-reader|adhkar|hadith|prayer|prayer-times|qibla|islamic-calendar|verse-of-the-day|tasbeeh|arabic-alphabet|tajweed-checker|hifz-review|quran))?|resources(?:/(?:faq|blog(?:/[^/.]+)?))?|academy(?:/(?:about|teachers(?:/[^/.]+)?|privacy|terms|refund-policy))?|terms|refund-policy|login|register|forgot-password|reset-password|enroll|payment/(?:success|cancel)|dashboard|billing|wishlist|ai-tutor|community|profile|messages|admin(?:/login)?|teacher|parent|calendar|quran|adhkar|hadith-library|islamic-tools|blog(?:/[^/.]+)?|faq|about|teachers(?:/[^/.]+)?|privacy|course/(?:ijazah|islamic-studies))/?))", "destination": "/spa-shell.html" }
   ]
 }

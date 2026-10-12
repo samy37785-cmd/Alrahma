@@ -129,7 +129,13 @@ const EXPECTED_AR_URLS = ROUTES.map((route) => ORIGIN + pathForLocale(route, 'ar
 // appended here, fr-only — this is the one and only place they affect the
 // expected URL set at all; EXPECTED_EN_URLS/EXPECTED_AR_URLS/
 // EXPECTED_IT_URLS above and below are deliberately untouched.
-const EXPECTED_FR_URLS = [...ROUTES, ...FR_ONLY_ROUTES].map((route) => ORIGIN + pathForLocale(route, 'fr'));
+// City prayer-times pages (2026-10-13): each city is published only in its
+// country's language (src/data/prayerCities.js), listed here literally.
+const IT_CITY_ROUTES = ['roma', 'milano', 'torino', 'bologna', 'firenze', 'napoli', 'bergamo', 'brescia', 'verona', 'genova']
+  .map((slug) => `/tools/prayer-times/${slug}`);
+const FR_CITY_ROUTES = ['paris', 'marseille', 'lyon', 'toulouse', 'lille', 'strasbourg', 'nice', 'montpellier', 'bordeaux', 'nantes']
+  .map((slug) => `/tools/prayer-times/${slug}`);
+const EXPECTED_FR_URLS = [...ROUTES, ...FR_ONLY_ROUTES, ...FR_CITY_ROUTES].map((route) => ORIGIN + pathForLocale(route, 'fr'));
 // Italian SEO waves: it now publishes every route above (the Ijazah, Tajweed
 // Checker and Islamic Studies waves each joined after the main Italian wave),
 // so nothing is excluded here; routes outside this list (Blog, Enroll, the
@@ -141,7 +147,7 @@ const IT_ROUTES = ROUTES.filter((route) => !IT_EXCLUDED_ROUTES.includes(route));
 // Enroll publication, /tools/verse-of-the-day and /tools/quran-reader in their own
 // publications (all 2026-10-03). Every FR_ONLY_ROUTES entry is now published for it.
 const IT_WAVE3_ROUTES = ['/tools/hadith', '/tools/prayer-times', '/enroll', '/tools/verse-of-the-day', '/tools/quran-reader'];
-const EXPECTED_IT_URLS = [...IT_ROUTES, ...IT_WAVE3_ROUTES].map((route) => ORIGIN + pathForLocale(route, 'it'));
+const EXPECTED_IT_URLS = [...IT_ROUTES, ...IT_WAVE3_ROUTES, ...IT_CITY_ROUTES].map((route) => ORIGIN + pathForLocale(route, 'it'));
 const EXPECTED_URLS = [...EXPECTED_EN_URLS, ...EXPECTED_AR_URLS, ...EXPECTED_FR_URLS, ...EXPECTED_IT_URLS];
 
 function getLocUrls() {
@@ -175,7 +181,7 @@ describe('sitemap.xml — exact published-routes whitelist', () => {
     expect(getLocUrls()).toHaveLength(EXPECTED_URLS.length);
   });
 
-  it('splits into exactly 31 EN, 31 AR, 36 FR and 36 IT URLs', () => {
+  it('splits into exactly 31 EN, 31 AR, 46 FR and 46 IT URLs', () => {
     const locs = getLocUrls();
     const byPrefix = (l) => locs.filter((u) => u.startsWith(`${ORIGIN}/${l}/`) || u === `${ORIGIN}/${l}`);
     const arUrls = byPrefix('ar');
@@ -190,11 +196,13 @@ describe('sitemap.xml — exact published-routes whitelist', () => {
     expect(arUrls).toHaveLength(31);
     // French SEO Publication Wave (2026-09-30): 31 (the pre-existing French
     // wave, same route set as EN/AR) + 5 fr-only routes (FR_ONLY_ROUTES).
-    expect(frUrls).toHaveLength(36);
+    // City prayer-times pages (2026-10-13): + 10 French cities.
+    expect(frUrls).toHaveLength(46);
     // Italian Islamic Studies SEO Publication (2026-09-30, concurrent PR):
     // it now publishes every route in ROUTES, IT_EXCLUDED_ROUTES is empty.
-    expect(itUrls).toHaveLength(36);
-    expect(locs).toHaveLength(134);
+    // City prayer-times pages (2026-10-13): + 10 Italian cities.
+    expect(itUrls).toHaveLength(46);
+    expect(locs).toHaveLength(154);
   });
 
   it('has no duplicate URLs', () => {
@@ -239,6 +247,20 @@ describe('sitemap.xml — exact published-routes whitelist', () => {
       expect(locs).not.toContain(`${ORIGIN}/ar${route}`);
       if (IT_WAVE3_ROUTES.includes(route)) expect(locs).toContain(`${ORIGIN}/it${route}`);
       else expect(locs).not.toContain(`${ORIGIN}/it${route}`);
+    }
+  });
+});
+
+describe('sitemap.xml — city prayer-times pages', () => {
+  it('lists each Italian city only under /it/ and each French city only under /fr/', () => {
+    const locs = getLocUrls();
+    for (const [own, routes] of [['it', IT_CITY_ROUTES], ['fr', FR_CITY_ROUTES]]) {
+      for (const route of routes) {
+        expect(locs).toContain(`${ORIGIN}/${own}${route}`);
+        for (const other of ['', '/ar', '/fr', '/it', '/es', '/de'].filter((p) => p !== `/${own}`)) {
+          expect(locs).not.toContain(`${ORIGIN}${other}${route}`);
+        }
+      }
     }
   });
 });

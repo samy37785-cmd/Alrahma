@@ -81,9 +81,10 @@ describe('Italian copy gaps (resources / about / tasbeeh)', () => {
 describe('Italian PRERENDER_MANIFEST entries', () => {
   const itEntries = PRERENDER_MANIFEST.filter((e) => e.locale === 'it');
 
-  it('is exactly the 31 earlier Italian routes plus hadith, prayer-times, enroll, verse-of-the-day and quran-reader, all published and indexable', () => {
-    expect(itEntries.map((e) => e.route).sort()).toEqual([...IT_ROUTES, '/tools/hadith', '/tools/prayer-times', '/enroll', '/tools/verse-of-the-day', '/tools/quran-reader'].sort());
-    expect(itEntries).toHaveLength(36);
+  it('is exactly the 31 earlier Italian routes plus hadith, prayer-times, enroll, verse-of-the-day, quran-reader and the 10 Italian city pages, all published and indexable', () => {
+    const cityRoutes = ['roma', 'milano', 'torino', 'bologna', 'firenze', 'napoli', 'bergamo', 'brescia', 'verona', 'genova'].map((slug) => `/tools/prayer-times/${slug}`);
+    expect(itEntries.map((e) => e.route).sort()).toEqual([...IT_ROUTES, '/tools/hadith', '/tools/prayer-times', '/enroll', '/tools/verse-of-the-day', '/tools/quran-reader', ...cityRoutes].sort());
+    expect(itEntries).toHaveLength(46);
     for (const e of itEntries) {
       expect(e.status).toBe('published');
       expect(e.indexable).toBe(true);

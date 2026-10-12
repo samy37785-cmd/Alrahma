@@ -25,9 +25,13 @@ const AFFECTED = {
   '/tools/prayer-times': ['fr', 'it'],
 };
 
+// City prayer-times pages (2026-10-13) exist in one language only (the city's
+// country), so their x-default is the page itself (first-published fallback).
+const isCityRoute = (route) => route.startsWith('/tools/prayer-times/');
+
 describe('x-default points at a published version of the same route', () => {
   it('the five routes without an English version publish exactly these locales', () => {
-    const noEn = routes.filter((r) => !localesOf(r).includes('en')).sort();
+    const noEn = routes.filter((r) => !isCityRoute(r) && !localesOf(r).includes('en')).sort();
     expect(noEn).toEqual(Object.keys(AFFECTED).sort());
     for (const [route, locales] of Object.entries(AFFECTED)) expect(localesOf(route).sort(), route).toEqual(locales);
   });
@@ -76,11 +80,28 @@ describe('x-default points at a published version of the same route', () => {
   it('the first-published-locale fallback is deterministic (manifest order) when neither en nor fr is published', () => {
     // Exercised through the real function on a synthetic route is impossible
     // without editing the manifest, so assert the rule on the data instead:
-    // no published route lacks both en and fr today.
-    for (const route of routes) {
+    // apart from the single-locale city pages (next test), no published route
+    // lacks both en and fr today.
+    for (const route of routes.filter((r) => !isCityRoute(r))) {
       const l = localesOf(route);
       expect(l.includes('en') || l.includes('fr'), route).toBe(true);
     }
+  });
+
+  it('city prayer-times pages: one locale (it or fr) each, x-default is the page itself', () => {
+    const cities = routes.filter(isCityRoute);
+    expect(cities).toHaveLength(20);
+    for (const route of cities) {
+      const locales = localesOf(route);
+      expect(locales, route).toHaveLength(1);
+      expect(['it', 'fr']).toContain(locales[0]);
+      const links = hreflangLinksFor({ route, locale: locales[0] });
+      expect(links, route).toEqual([
+        { hreflang: locales[0], href: urlOf(route, locales[0]) },
+        { hreflang: 'x-default', href: urlOf(route, locales[0]) },
+      ]);
+    }
+    expect(cities.filter((r) => localesOf(r)[0] === 'it')).toHaveLength(10);
   });
 
   it('no alternate is ever claimed for an unpublished language', () => {
@@ -101,7 +122,7 @@ describe('publication is untouched', () => {
     const xml = fs.readFileSync(path.resolve(__dirname, '../../public/sitemap.xml'), 'utf8');
     const locs = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
     expect(locs.sort()).toEqual(published.map(canonicalUrlFor).sort());
-    expect(locs).toHaveLength(134);
-    expect(locs.filter((u) => u.startsWith(`${ORIGIN}/it/`))).toHaveLength(36);
+    expect(locs).toHaveLength(154);
+    expect(locs.filter((u) => u.startsWith(`${ORIGIN}/it/`))).toHaveLength(46);
   });
 });

@@ -373,12 +373,12 @@ describe('wiring: each Italian page puts the new text into description, og:descr
 
 describe('nothing else moved: sitemap, manifest, robots and llms.txt', () => {
   const file = (...p) => fs.readFileSync(path.join(ROOT, ...p), 'utf8');
-  it('hash to origin/main, and 134 pages stay published', () => {
-    expect(sha(file('public', 'sitemap.xml'))).toBe('e4de2e4d08cfe7c5ee11d8ee28eb4768ae4f079a57b89b1ef6e28d55e4ebdf9d');
+  it('hash to origin/main, and 154 pages stay published (134 + 20 city prayer-times pages)', () => {
+    expect(sha(file('public', 'sitemap.xml'))).toBe('1b33be99d0364355c4ef9f1b19875acd620eede50ad266cb75154f8cb9d6489d');
     expect(sha(file('public', 'robots.txt'))).toBe('b2bd76ccef97000cdc5d352d2503b101be782545e8168bd8ed35c4d2fa74e8d4');
     expect(sha(file('public', 'llms.txt'))).toBe('62d919c335771962601bc2e3ef20d96c73648c81137acfedd5d10536c2b186ab');
-    expect(sha(file('scripts', 'prerender-routes.mjs'))).toBe('662229f26e0282460e6463db0758175f09e4783b5c8c2e9ff0fa21614e3ec70c');
-    expect(PRERENDER_MANIFEST.filter((e) => e.status === 'published')).toHaveLength(134);
+    expect(sha(file('scripts', 'prerender-routes.mjs'))).toBe('f885eca7b765c7b1ebd7a49261b46b6ff2b0b321cfa5fd77066ba160533c4224');
+    expect(PRERENDER_MANIFEST.filter((e) => e.status === 'published')).toHaveLength(154);
   });
 });
 

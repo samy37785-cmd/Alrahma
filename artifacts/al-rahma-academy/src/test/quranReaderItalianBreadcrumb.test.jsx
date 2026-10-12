@@ -162,13 +162,14 @@ describe('prerender safety: the new breadcrumb adds nothing dynamic', () => {
 });
 
 describe('publication (done by the Italian Quran Reader SEO Publication, after this prerequisite)', () => {
-  it('/it/tools/quran-reader has exactly one manifest entry and one sitemap URL (134 total, IT 36)', () => {
+  it('/it/tools/quran-reader has exactly one manifest entry and one sitemap URL (154 total, IT 46)', () => {
     expect(PRERENDER_MANIFEST.filter((e) => e.route === '/tools/quran-reader' && e.locale === 'it')).toHaveLength(1);
     expect(PRERENDER_MANIFEST.filter((e) => e.route === '/tools/quran-reader').map((e) => e.locale)).toEqual(['fr', 'it']);
     const xml = fs.readFileSync(path.resolve(__dirname, '../../public/sitemap.xml'), 'utf8');
     const locs = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
-    expect(locs).toHaveLength(134);
-    expect(locs.filter((u) => u.includes('/it/'))).toHaveLength(36);
+    // + 20 city prayer-times pages (10 it, 10 fr), 2026-10-13.
+    expect(locs).toHaveLength(154);
+    expect(locs.filter((u) => u.includes('/it/'))).toHaveLength(46);
     expect(locs.filter((u) => u.endsWith('/it/tools/quran-reader'))).toHaveLength(1);
   });
 });

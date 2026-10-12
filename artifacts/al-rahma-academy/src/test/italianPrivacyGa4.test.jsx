@@ -110,9 +110,10 @@ describe('GA4 and consent behaviour are untouched', () => {
 describe('publication guard: manifest and sitemap are unchanged', () => {
   it('the Italian privacy page was already published; counts are the baseline', () => {
     expect(PRERENDER_MANIFEST.filter((e) => e.route === '/academy/privacy' && e.locale === 'it')).toHaveLength(1);
-    expect(PRERENDER_MANIFEST.filter((e) => e.locale === 'it')).toHaveLength(36);
+    // + 20 city prayer-times pages (10 it, 10 fr), 2026-10-13.
+    expect(PRERENDER_MANIFEST.filter((e) => e.locale === 'it')).toHaveLength(46);
     const sitemap = fs.readFileSync(path.resolve(__dirname, '../../public/sitemap.xml'), 'utf8');
-    expect((sitemap.match(/<loc>/g) || []).length).toBe(134);
+    expect((sitemap.match(/<loc>/g) || []).length).toBe(154);
   });
 });
 

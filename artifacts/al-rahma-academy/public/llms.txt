@@ -5,6 +5,20 @@
 Canonical domain: https://al-rahmaacademy.com
 Complete list of published pages: https://al-rahmaacademy.com/sitemap.xml (this file is a short, hand-picked guide; the sitemap is the exhaustive list and the source of truth for which pages exist).
 
+## Key facts
+- Lessons: live and one-to-one (never group classes), 1 hour each, via Zoom or Skype.
+- Free trial: one free 60-minute trial lesson, no payment required.
+- Monthly plans, in euros, VAT included:
+  - Noorani: €56 per month, 2 lessons per week (8 per month).
+  - Huffaz: €84 per month, 3 lessons per week (12 per month).
+  - Ijazah: €112 per month, 4 lessons per week (16 per month).
+  - Every plan works out at €7 per lesson hour.
+- Refunds: a refund can be requested within 24 days of the first payment, with no deduction for lessons already attended.
+- No long-term contract: plans can be cancelled or changed at any time.
+- Students: children and adults, including complete beginners with no Arabic (the Noorani Qaida starts from the first letter).
+- Female tutors are available on request.
+- Lessons can be taught in English, Italian or French.
+
 ## Published languages
 The site is published and indexable in four languages. Each non-English language has its own landing page and URL prefix.
 - [Home](https://al-rahmaacademy.com/): Overview of courses, pricing and the free trial. English is the default language.

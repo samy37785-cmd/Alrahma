@@ -58,7 +58,7 @@ export const siteFacts = {
   // render", per the contract documented next to trialSpotsAvailableText()
   // below) rather than ever showing a fabricated placeholder number.
   limitedTrialSpots: 6,
-  limitedTrialSpotsConfirmed: '2026-09-02',
+  limitedTrialSpotsConfirmed: '2026-10-12',
 };
 
 // Full, grammatically-correct noun phrases for "<count> free trial

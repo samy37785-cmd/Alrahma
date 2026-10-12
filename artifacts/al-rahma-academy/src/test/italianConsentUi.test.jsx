@@ -76,7 +76,7 @@ describe('EN/AR/FR and the consent logic are unchanged (baselines from origin/ma
 
   it('consent.js, ga.js, Analytics, ConsentBanner and CookieSettingsButton are byte-identical to origin/main', () => {
     expect(shaFile('analytics/consent.js')).toBe('97f0b469a3a0d6fe581f880356635b2bc31b88102f6a1ff74eb55407d6a060e8');
-    expect(shaFile('analytics/ga.js')).toBe('1c19b7ea616779bab06c70e65ed9171a11f19b9091009775d4f2ee57f0d05e04');
+    expect(shaFile('analytics/ga.js')).toBe('d34a54d870b4bd18cf1998a0352f67cb5c7be1cf9bc920a5115cc20798afa933');
     expect(shaFile('components/ui/ConsentBanner.jsx')).toBe('82c815698a2d8dd4813dee0a6e1f6b393516cd98f16201dbe1eb06fe3218842e');
     expect(shaFile('components/ui/CookieSettingsButton.jsx')).toBe('f96f838510f7e43430b594d45d0bc019778dedc3647049338531e5fbcd0b8437');
     expect(shaFile('components/ui/Analytics.jsx')).toBe('9a48482be0bb3d4e67f7572279ade41cabd8330d5b62565cb86126e48951e8d7');

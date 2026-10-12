@@ -19,7 +19,7 @@
 
 | Event | Parameters |
 |---|---|
-| `page_view` | `page_path`, `page_location` (origin + pathname, no query/hash), `site_lang` |
+| `page_view` | `page_path`, `page_location` (origin + pathname, no hash; the only query kept is the campaign tags below), `site_lang` |
 | `enroll_view` | `page_path`, `site_lang` |
 | `enroll_step_view` | `page_path`, `site_lang`, `step` (number) |
 | `whatsapp_click` / `email_click` | `page_path`, `site_lang` (links to the academy's own number/address only) |
@@ -34,6 +34,18 @@ The two `*_submitted` events are the site's conversions. They carry nothing from
 
 After the first `booking_submitted` and `trial_submitted` arrive, mark both as key events: Admin → Data display → Events → star the event (or Key events → New key event → the exact event name). This only changes reporting; nothing in the app depends on it.
 
+## Campaign links (utm_*)
+
+GA4 takes a visit's source and campaign from `utm_*` tags in `page_location`. The app keeps only `utm_source`, `utm_medium`, `utm_campaign`, `utm_content` and `utm_term`, in that order, and only when the value matches `[A-Za-z0-9._-]{1,100}`. Every other query parameter (`email`, `teacher`, `plan`, `fbclid`, `gclid`, …) is dropped, and so is a tag whose value contains `@`, `+`, spaces or anything else outside that set. Without tags, an Instagram or WhatsApp visit usually shows as Direct.
+
+Use lowercase values with `_` or `-`, for example:
+
+- Instagram bio: `https://al-rahmaacademy.com/it/?utm_source=instagram&utm_medium=social&utm_campaign=bio`
+- WhatsApp status: `https://al-rahmaacademy.com/it/enroll?utm_source=whatsapp&utm_medium=social&utm_campaign=status`
+- Meta ad: `https://al-rahmaacademy.com/it/?utm_source=meta&utm_medium=paid_social&utm_campaign=<campaign_name>`
+
+The tags count only for visitors who accept analytics on the page they land on: a visitor who browses to another page before accepting lands in GA without them.
+
 ## GA4 web stream settings (applied)
 
 Stream "AL-Rahma Academy – Web" (`https://al-rahmaacademy.com`). Enhanced measurement is enabled only because GA does not allow "Page loads" to be switched off. Everything else is off, so the only events are the app's allow-listed ones:
@@ -41,7 +53,7 @@ Stream "AL-Rahma Academy – Web" (`https://al-rahmaacademy.com`). Enhanced meas
 | Setting | State | Why |
 |---|---|---|
 | Page views → Page loads | on (locked by GA) | Inert: the app configures the tag with `send_page_view: false` |
-| Page views → Page changes based on browser history events | **off** | The app sends its own SPA `page_view` without the query string |
+| Page views → Page changes based on browser history events | **off** | The app sends its own SPA `page_view`, with no query string except the campaign tags |
 | Scrolls | **off** | Not needed |
 | Outbound clicks | **off** | Would send `mailto:` / WhatsApp URLs, which contain the email address / phone number |
 | Site search | **off** | Reads query parameters |

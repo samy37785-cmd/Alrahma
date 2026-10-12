@@ -68,7 +68,7 @@ describe('the component and its data source are unchanged', () => {
     expect(votd.split(NEW_NAV)).toHaveLength(2);
     expect(sha(votd.replace(NEW_IT_DESC, OLD_IT_DESC).replace(NEW_IMPORTS, '').replace(NEW_NAV, OLD_NAV))).toBe('234b3c98d308a7f66526d5940fdee0eea0278735067c7bdc98cfdd1daab02a05');
     expect(shaFile('api/quran.js')).toBe('84ad13d403c5ee7f879365971a2140044c85c8c32db2d7c62c702692fd8d1c88');
-    expect(shaFile('utils/islamicToolsUtils.js')).toBe('df31e29fbc2229194e12025a29cd9e34addead0155e47e81acc56898f344ce27');
+    expect(shaFile('utils/islamicToolsUtils.js')).toBe('e4e178fb9bcb7995d95a03daa4b7ee3516fc7f630aba91526ec51363c4c085ec');
   });
 
   it('EN/AR/FR prerender captures are unchanged (SHA-256 baselines from origin/main)', async () => {

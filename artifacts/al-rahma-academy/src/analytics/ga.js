@@ -10,8 +10,11 @@ import { CONSENT_GRANTED, readConsent } from './consent';
 // Privacy rules enforced here, not left to call sites:
 //  - Nothing is loaded or sent until loadGa() runs, and the Analytics
 //    component only calls it when consent === 'granted'.
-//  - page_location / page_path are always origin + pathname: no query
-//    string, no hash (they can carry prefilled form values or referral ids).
+//  - page_path is always the pathname, and page_location is origin +
+//    pathname: no hash, and no query string except the campaign tags in
+//    CAMPAIGN_PARAMS (other parameters can carry prefilled form values or
+//    referral ids). Campaign values must match a strict pattern, so an
+//    email address or phone number in a tag is dropped.
 //  - Only the events and parameters in EVENT_PARAMS are ever sent, and each
 //    value is validated against a strict pattern, so a caller cannot leak a
 //    name, email, phone number or form value by accident.
@@ -40,9 +43,17 @@ const TRIAL_FORMS = {
 };
 const TRIAL_FORM_VALUES = ['trial_section', 'quick_trial', 'exit_intent'];
 
+// GA4 reads a session's campaign from these tags in page_location. Our own
+// links (Instagram bio, WhatsApp, ads) carry them; nothing else in the query
+// string is ever passed on.
+const CAMPAIGN_PARAMS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'];
+const CAMPAIGN_VALUE_RE = /^[A-Za-z0-9._-]{1,100}$/;
+const CAMPAIGN_PAIR = `utm_(?:source|medium|campaign|content|term)=[A-Za-z0-9._-]{1,100}`;
+const PAGE_LOCATION_RE = new RegExp(`^https?://[^?#\\s]+(?:\\?${CAMPAIGN_PAIR}(?:&${CAMPAIGN_PAIR}){0,4})?$`);
+
 const PARAM_VALIDATORS = {
   page_path: (v) => typeof v === 'string' && /^\/[^?#\s]*$/.test(v) && v.length <= 200,
-  page_location: (v) => typeof v === 'string' && /^https?:\/\/[^?#\s]+$/.test(v) && v.length <= 300,
+  page_location: (v) => typeof v === 'string' && PAGE_LOCATION_RE.test(v) && v.length <= 900,
   site_lang: (v) => typeof v === 'string' && /^[a-z]{2}$/.test(v),
   step: (v) => Number.isInteger(v) && v >= 1 && v <= 10,
   category: (v) => typeof v === 'string' && /^[a-zA-Z][a-zA-Z_]{0,31}$/.test(v),
@@ -62,8 +73,18 @@ export function currentSiteLang() {
   return langFromPath(window.location.pathname).lang || 'en';
 }
 
+function campaignQuery() {
+  const query = new URLSearchParams(window.location.search);
+  const kept = [];
+  for (const key of CAMPAIGN_PARAMS) {
+    const value = query.get(key);
+    if (value && CAMPAIGN_VALUE_RE.test(value)) kept.push(`${key}=${value}`);
+  }
+  return kept.length ? `?${kept.join('&')}` : '';
+}
+
 function cleanLocation() {
-  return window.location.origin + window.location.pathname;
+  return window.location.origin + window.location.pathname + campaignQuery();
 }
 
 function isLoaded() {

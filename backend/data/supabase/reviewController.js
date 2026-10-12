@@ -7,6 +7,7 @@ import { asyncHandler } from '../../utils/asyncHandler.js';
 import { handleValidationErrors } from '../../utils/validationHelper.js';
 import { parsePagination } from '../../utils/pagination.js';
 import { withUserContext, withAnonContext } from './client.js';
+import { toClientReview } from '../../utils/clientViews.js';
 
 export { reviewValidation } from '../../controllers/reviewController.js';
 
@@ -19,8 +20,10 @@ export { reviewValidation } from '../../controllers/reviewController.js';
 // email/phone/PII, never a blanket profiles GRANT. createReview (which
 // runs authenticated, under the caller's own identity) still returns the
 // real name directly from req.user for its own immediate response.
+// Passed through the shared client allowlist (utils/clientViews.js) so the
+// public shape matches the Mongo path field for field.
 function toJson(row) {
-  return {
+  return toClientReview({
     _id: row.id,
     student: { _id: row.student_id, name: row.student_name ?? null },
     teacher: row.teacher_id,
@@ -31,7 +34,7 @@ function toJson(row) {
     status: row.status,
     helpful: row.helpful,
     createdAt: row.created_at,
-  };
+  });
 }
 
 // @route POST /api/reviews

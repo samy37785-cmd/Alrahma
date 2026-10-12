@@ -14,12 +14,15 @@ const appRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../.
 const vercelConfig = JSON.parse(readFileSync(path.resolve(appRoot, '../../vercel.json'), 'utf8'));
 const read = (rel) => readFileSync(path.resolve(appRoot, rel), 'utf8');
 
-// Same compilation as Vercel's path-to-regexp for `/:path(<pattern>)`
-// (strict: false, sensitive: false), as in spaShell.test.js.
+// Unlike the SPA rewrite (see spaShell.test.js), a `headers` rule did NOT
+// get an implicit optional trailing slash on the Vercel Preview: without
+// `/?` in the pattern, /resources/blog/ answered 200 without the header.
+// Production serves trailing-slash URLs with 200, so the pattern carries
+// its own `/?` and this matcher adds none.
 const rules = vercelConfig.headers || [];
 const blogRule = rules.find((r) => r.headers.some((h) => h.key === 'X-Robots-Tag'));
 const pattern = blogRule?.source.match(/^\/:path\((.*)\)$/)?.[1];
-const matcher = pattern ? new RegExp(`^/(?:${pattern})/?$`, 'i') : null;
+const matcher = pattern ? new RegExp(`^/(?:${pattern})$`, 'i') : null;
 const noindexed = (p) => !!matcher && matcher.test(p);
 
 describe('vercel.json: blog pages are noindex until the blog launches', () => {
@@ -32,7 +35,7 @@ describe('vercel.json: blog pages are noindex until the blog launches', () => {
 
   it('covers the blog index, posts and the legacy /blog URLs in every locale', () => {
     for (const prefix of ['', '/ar', '/fr', '/it', '/es', '/de']) {
-      for (const p of ['/resources/blog', '/resources/blog/', '/resources/blog/some-post', '/blog', '/blog/some-post']) {
+      for (const p of ['/resources/blog', '/resources/blog/', '/resources/blog/some-post', '/resources/blog/some-post/', '/blog', '/blog/', '/blog/some-post']) {
         expect(noindexed(`${prefix}${p}`), `${prefix}${p}`).toBe(true);
       }
     }
@@ -42,7 +45,7 @@ describe('vercel.json: blog pages are noindex until the blog launches', () => {
     for (const p of [
       '/', '/it/', '/resources', '/it/resources', '/resources/faq', '/it/resources/faq',
       '/courses/quran', '/tools/prayer', '/it/tools/prayer-times', '/academy/teachers/1',
-      '/blogger', '/resources/blogs', '/resources/blog/a/b', '/api/blog', '/enroll',
+      '/blogger', '/resources/blogs', '/resources/blog/a/b', '/resources/blog//', '/api/blog', '/enroll', '/resources/faq/',
       '/xx/resources/blog', '/sitemap.xml', '/robots.txt',
     ]) {
       expect(noindexed(p), p).toBe(false);

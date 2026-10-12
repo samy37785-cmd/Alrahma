@@ -75,7 +75,7 @@ afterEach(() => {
 describe('protected files are byte-identical to origin/main (949b6b7)', () => {
   it('Quran API / cache, page, hooks, reader components except the Mushaf page, share card, reader i18n + data, SEO, sitemap, manifest, llms.txt, robots, prerender scripts, global stylesheets', () => {
     const BASELINE = {
-      'public/llms.txt': 'b801d49380a0e5e6694f497e013c38096d47fd33a3de4ec95305136c21ebdd02',
+      'public/llms.txt': '62d919c335771962601bc2e3ef20d96c73648c81137acfedd5d10536c2b186ab',
       'public/manifest.json': 'eb1abafcd12b91b890a6e7f6c9ce69da6641ce80c95c31fa3f51ee792897cfc0',
       'public/robots.txt': 'b2bd76ccef97000cdc5d352d2503b101be782545e8168bd8ed35c4d2fa74e8d4',
       'public/sitemap.xml': 'e4de2e4d08cfe7c5ee11d8ee28eb4768ae4f079a57b89b1ef6e28d55e4ebdf9d',

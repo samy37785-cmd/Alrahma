@@ -103,8 +103,10 @@ describe('buildTrialWhatsappLink (shared builder in utils/whatsapp.js)', () => {
     const details = { ...PII, course: 'القرآن الكريم' };
     const href = buildTrialWhatsappLink(details, getTrialWhatsappText('ar'));
     const encoded = href.split('?text=')[1];
-    // Nothing that could break or split the query string survives unencoded.
-    expect(encoded).not.toMatch(/[\s&#?+<>"'/]/);
+    // Nothing that could break or split the query string survives unencoded
+    // (encodeURIComponent leaves only A-Z a-z 0-9 - _ . ! ~ * ' ( ) as is).
+    expect(encoded).toMatch(/^[A-Za-z0-9\-_.!~*'()%]+$/);
+    expect(encoded).not.toMatch(/[\s&#?+<>"/]/);
     expect(new URL(href).searchParams.get('text')).toBe(buildTrialWhatsappMessage(details, getTrialWhatsappText('ar')));
     const text = decodeURIComponent(encoded);
     for (const v of Object.values(details)) expect(text).toContain(v);
@@ -118,13 +120,16 @@ describe('buildTrialWhatsappLink (shared builder in utils/whatsapp.js)', () => {
     expect(text).toBe(`${EN.intro}\nName: Amina\nEmail: a@example.com`);
   });
 
-  it.each(['', '   ', '+201039553264', '0123456789', '12345', '1234567890123456', 'abc', null, undefined, 201039553264])(
-    'returns null (no broken link) when the academy number is %j',
+  it.each(['', '   ', ' 201039553264', '+201039553264', '0123456789', '12345', '1234567890123456', 'abc', null, undefined, 201039553264])(
+    'treats %j as "no WhatsApp number configured"',
     (bad) => {
       expect(academyWhatsappNumber(bad)).toBeNull();
-      expect(buildTrialWhatsappLink({ name: 'A' }, EN, bad)).toBeNull();
     },
   );
+
+  it('accepts the configured academy number (the builder returning null is covered in trialSuccessWhatsappNoNumber)', () => {
+    expect(academyWhatsappNumber(site.whatsapp)).toBe(site.whatsapp);
+  });
 
   it('has complete copy for all six site languages', () => {
     expect([...TRIAL_WHATSAPP_LANGS].sort()).toEqual(['ar', 'de', 'en', 'es', 'fr', 'it']);

@@ -21,9 +21,8 @@ export function buildBookingWhatsappLink({ name, plan, bookingRef, message }) {
 // configured": callers then show the email success alone, never a broken link.
 const WHATSAPP_NUMBER_RE = /^[1-9]\d{7,14}$/;
 
-export function academyWhatsappNumber(number = site.whatsapp) {
-  const n = typeof number === 'string' ? number.trim() : '';
-  return WHATSAPP_NUMBER_RE.test(n) ? n : null;
+export function academyWhatsappNumber(number) {
+  return typeof number === 'string' && WHATSAPP_NUMBER_RE.test(number) ? number : null;
 }
 
 const TRIAL_FIELDS = ['name', 'course', 'email', 'phone', 'message'];
@@ -43,8 +42,7 @@ export function buildTrialWhatsappMessage(details, copy) {
 // Returns null when no valid academy number is configured. The whole message
 // goes through encodeURIComponent once, so Arabic text, "&", "?", "#", "+"
 // and line breaks reach WhatsApp exactly as typed.
-export function buildTrialWhatsappLink(details, copy, number = site.whatsapp) {
-  const to = academyWhatsappNumber(number);
-  if (!to) return null;
-  return `https://wa.me/${to}?text=${encodeURIComponent(buildTrialWhatsappMessage(details, copy))}`;
+export function buildTrialWhatsappLink(details, copy) {
+  if (!academyWhatsappNumber(site.whatsapp)) return null;
+  return `https://wa.me/${site.whatsapp}?text=${encodeURIComponent(buildTrialWhatsappMessage(details, copy))}`;
 }

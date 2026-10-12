@@ -5,6 +5,7 @@ import { LangProvider } from '../context/LangContext';
 import { TrialProvider } from '../context/TrialContext';
 import { getExperienceText } from '../i18n/experience';
 import { getTrialWhatsappText } from '../i18n/trialWhatsapp';
+import { buildTrialWhatsappLink } from '../utils/whatsapp';
 
 // With no valid academy WhatsApp number configured, a successful trial
 // request shows the email success only: no WhatsApp button, no broken link,
@@ -41,6 +42,10 @@ afterEach(() => {
 });
 
 describe('no academy WhatsApp number configured', () => {
+  it('the shared builder returns null instead of a broken link', () => {
+    expect(buildTrialWhatsappLink({ name: 'A', email: 'a@example.com' }, getTrialWhatsappText('en'))).toBeNull();
+  });
+
   it('Trial: email success only', async () => {
     submitTrial.mockResolvedValueOnce({});
     const { container } = renderIt(<Trial />);

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { submitTrial } from '../../api/contentApi';
 import { useLang } from '../../context/LangContext';
 import { getExperienceText } from '../../i18n/experience';
+import { site } from '../../data/site';
 import { academyWhatsappNumber } from '../../utils/whatsapp';
 import TrialWhatsappButton from './TrialWhatsappButton';
 
@@ -70,7 +71,7 @@ export default function ExitIntentPopup() {
       sessionStorage.setItem(SESSION_KEY, '1');
       // With the optional WhatsApp follow-up on screen the popup stays open
       // until the visitor closes it; without one it closes itself as before.
-      if (!academyWhatsappNumber()) setTimeout(close, 4500);
+      if (!academyWhatsappNumber(site.whatsapp)) setTimeout(close, 4500);
     } catch {
       setError(copy.submitError);
     } finally {

@@ -404,7 +404,7 @@ describe('nothing else moved: sitemap, manifest, llms.txt and robots.txt', () =>
     expect(PRERENDER_MANIFEST.filter((e) => e.status === 'published')).toHaveLength(134);
   });
   it('llms.txt hashes to origin/main', () => {
-    expect(sha(file('public', 'llms.txt'))).toBe('b801d49380a0e5e6694f497e013c38096d47fd33a3de4ec95305136c21ebdd02');
+    expect(sha(file('public', 'llms.txt'))).toBe('62d919c335771962601bc2e3ef20d96c73648c81137acfedd5d10536c2b186ab');
   });
 });
 

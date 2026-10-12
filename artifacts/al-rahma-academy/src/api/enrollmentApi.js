@@ -1,7 +1,11 @@
 import http from './http';
 import adminHttp from './adminHttp';
+import { trackBookingSubmitted } from '../analytics/ga';
 
-export const submitEnrollment = (data)     => http.post('/enrollments', data).then((r) => r.data);
+export const submitEnrollment = (data)     => http.post('/enrollments', data).then((r) => {
+  trackBookingSubmitted();
+  return r.data;
+});
 export const getMyEnrollment  = ()         => http.get('/enrollments/mine').then((r) => r.data);
 // Admin "Bookings" tab (AdminBookingsTab.jsx) reads/writes the hardened
 // admin API (MFA + RBAC + audit-logged) — same generic v1 admin CRUD stack

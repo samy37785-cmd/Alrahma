@@ -24,7 +24,17 @@
 | `enroll_step_view` | `page_path`, `site_lang`, `step` (number) |
 | `whatsapp_click` / `email_click` | `page_path`, `site_lang` (links to the academy's own number/address only) |
 | `faq_show_all` | `page_path`, `site_lang` |
-| `adhkar_category_change` | `page_path`, `site_lang`, `category` (fixed key, e.g. `s## GA4 web stream settings (applied)
+| `adhkar_category_change` | `page_path`, `site_lang`, `category` (fixed key, e.g. `baadSalah`) |
+| `booking_submitted` | `page_path`, `site_lang`. Sent by `submitEnrollment()` only after `POST /api/enrollments` succeeds |
+| `trial_submitted` | `page_path`, `site_lang`, `form` (`trial_section` / `quick_trial` / `exit_intent`). Sent by `submitTrial()` only after `POST /api/trials` succeeds |
+
+The two `*_submitted` events are the site's conversions. They carry nothing from the form (no name, email, phone, plan or booking reference), and an analytics error can never make an accepted request look failed.
+
+### Key events (GA4 UI, one-time)
+
+After the first `booking_submitted` and `trial_submitted` arrive, mark both as key events: Admin → Data display → Events → star the event (or Key events → New key event → the exact event name). This only changes reporting; nothing in the app depends on it.
+
+## GA4 web stream settings (applied)
 
 Stream "AL-Rahma Academy – Web" (`https://al-rahmaacademy.com`). Enhanced measurement is enabled only because GA does not allow "Page loads" to be switched off. Everything else is off, so the only events are the app's allow-listed ones:
 

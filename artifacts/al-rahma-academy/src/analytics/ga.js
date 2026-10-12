@@ -27,7 +27,18 @@ const EVENT_PARAMS = {
   email_click: ['page_path', 'site_lang'],
   faq_show_all: ['page_path', 'site_lang'],
   adhkar_category_change: ['page_path', 'site_lang', 'category'],
+  // Conversions: sent only after the server accepted the request.
+  booking_submitted: ['page_path', 'site_lang'],
+  trial_submitted: ['page_path', 'site_lang', 'form'],
 };
+
+// Which trial form was used, keyed by the `source` the form already sends
+// to POST /api/trials. The section form on the home page sends none.
+const TRIAL_FORMS = {
+  'hero-quick-trial': 'quick_trial',
+  'exit-intent': 'exit_intent',
+};
+const TRIAL_FORM_VALUES = ['trial_section', 'quick_trial', 'exit_intent'];
 
 const PARAM_VALIDATORS = {
   page_path: (v) => typeof v === 'string' && /^\/[^?#\s]*$/.test(v) && v.length <= 200,
@@ -35,6 +46,7 @@ const PARAM_VALIDATORS = {
   site_lang: (v) => typeof v === 'string' && /^[a-z]{2}$/.test(v),
   step: (v) => Number.isInteger(v) && v >= 1 && v <= 10,
   category: (v) => typeof v === 'string' && /^[a-zA-Z][a-zA-Z_]{0,31}$/.test(v),
+  form: (v) => TRIAL_FORM_VALUES.includes(v),
 };
 
 let lastPagePath = null;
@@ -162,6 +174,26 @@ export function trackEvent(eventName, params = {}) {
     page_path: window.location.pathname,
     site_lang: currentSiteLang(),
   });
+}
+
+// Called by the API layer once a booking or trial request has succeeded, so
+// every form that submits one is counted without each form wiring it up.
+// Analytics must never turn an accepted request into a visible failure, so
+// any error here is swallowed.
+export function trackBookingSubmitted() {
+  try {
+    trackEvent('booking_submitted');
+  } catch {
+    // ignore
+  }
+}
+
+export function trackTrialSubmitted(source) {
+  try {
+    trackEvent('trial_submitted', { form: TRIAL_FORMS[source] || 'trial_section' });
+  } catch {
+    // ignore
+  }
 }
 
 // Test-only: module state survives between tests in the same file.

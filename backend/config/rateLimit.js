@@ -97,3 +97,27 @@ export const enrollmentLimiter = limiter({
   message: 'Too many enrollment requests — please try again later.',
   prefix: 'rl:enrollment:',
 });
+
+// POST /api/trials sends email on every accepted request, so it gets its own
+// small budget (same pattern as enrollmentLimiter). Keyed on req.ip, which
+// app.js derives with `trust proxy = 1`: only the single hop added by the
+// hosting proxy is trusted, so client-supplied X-Forwarded-For entries to
+// its left never change the key.
+//
+// Limits of this protection (same as every limiter in this file):
+// - Without REDIS_URL the counters live in each process's memory. With N
+//   backend instances (e.g. Render scaled to >1, or overlapping instances
+//   during a deploy) one client can get up to 5 × N accepted requests per
+//   window, and every restart/deploy resets the counters.
+// - With REDIS_URL (startup log "Rate limiting: Redis store enabled") the
+//   budget is one global 5 per window across all instances.
+// - passOnStoreError: if the store fails, requests pass unlimited (fail
+//   open) rather than 500ing — see limiter() above.
+// - It is per client IP: it slows a single source, it does not stop a
+//   distributed one; validation (one bare address, fixed subject) is what
+//   keeps each accepted request harmless.
+export const trialLimiter = limiter({
+  max: 5,
+  message: 'Too many trial requests — please try again later.',
+  prefix: 'rl:trial:',
+});

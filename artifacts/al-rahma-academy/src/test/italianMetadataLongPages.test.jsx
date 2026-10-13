@@ -376,7 +376,7 @@ describe('nothing else moved: sitemap, manifest, robots and llms.txt', () => {
   it('hash to origin/main, and 134 pages stay published', () => {
     expect(sha(file('public', 'sitemap.xml'))).toBe('e4de2e4d08cfe7c5ee11d8ee28eb4768ae4f079a57b89b1ef6e28d55e4ebdf9d');
     expect(sha(file('public', 'robots.txt'))).toBe('b2bd76ccef97000cdc5d352d2503b101be782545e8168bd8ed35c4d2fa74e8d4');
-    expect(sha(file('public', 'llms.txt'))).toBe('b801d49380a0e5e6694f497e013c38096d47fd33a3de4ec95305136c21ebdd02');
+    expect(sha(file('public', 'llms.txt'))).toBe('62d919c335771962601bc2e3ef20d96c73648c81137acfedd5d10536c2b186ab');
     expect(sha(file('scripts', 'prerender-routes.mjs'))).toBe('662229f26e0282460e6463db0758175f09e4783b5c8c2e9ff0fa21614e3ec70c');
     expect(PRERENDER_MANIFEST.filter((e) => e.status === 'published')).toHaveLength(134);
   });

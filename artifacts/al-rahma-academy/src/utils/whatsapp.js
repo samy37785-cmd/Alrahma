@@ -15,3 +15,34 @@ export function buildBookingWhatsappLink({ name, plan, bookingRef, message }) {
 
   return `https://wa.me/${site.whatsapp}?text=${encodeURIComponent(text)}`;
 }
+
+// wa.me takes the number in international form, digits only, no "+" (E.164
+// is at most 15 digits). Anything else counts as "no WhatsApp number
+// configured": callers then show the email success alone, never a broken link.
+const WHATSAPP_NUMBER_RE = /^[1-9]\d{7,14}$/;
+
+export function academyWhatsappNumber(number) {
+  return typeof number === 'string' && WHATSAPP_NUMBER_RE.test(number) ? number : null;
+}
+
+const TRIAL_FIELDS = ['name', 'course', 'email', 'phone', 'message'];
+
+// The pre-filled message after a successful free-trial request: the intro
+// line, then only the fields the visitor actually filled in, each as
+// "Label: value". `copy` comes from i18n/trialWhatsapp.js.
+export function buildTrialWhatsappMessage(details, copy) {
+  const lines = [copy.intro];
+  for (const field of TRIAL_FIELDS) {
+    const value = typeof details?.[field] === 'string' ? details[field].trim() : '';
+    if (value) lines.push(`${copy.labels[field]}: ${value}`);
+  }
+  return lines.join('\n');
+}
+
+// Returns null when no valid academy number is configured. The whole message
+// goes through encodeURIComponent once, so Arabic text, "&", "?", "#", "+"
+// and line breaks reach WhatsApp exactly as typed.
+export function buildTrialWhatsappLink(details, copy) {
+  if (!academyWhatsappNumber(site.whatsapp)) return null;
+  return `https://wa.me/${site.whatsapp}?text=${encodeURIComponent(buildTrialWhatsappMessage(details, copy))}`;
+}

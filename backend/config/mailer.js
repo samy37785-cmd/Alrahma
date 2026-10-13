@@ -29,9 +29,17 @@ if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
 }
 
 // Generic send helper — skips (with a warning) if SMTP is not configured.
-export async function sendMail({ to, subject, html }) {
+//
+// Logging rule: never log the recipient, subject, body, or the transport's
+// error message (SMTP errors can echo addresses back). Only a generic status,
+// the transport's error code, and an optional caller-supplied requestId.
+//
+// `from` is always the configured sender; callers can never set it. `replyTo`
+// is only passed by callers that have already strictly validated the address
+// (see utils/trialValidation.js). `text` is an optional plain-text part.
+export async function sendMail({ to, subject, html, text, replyTo, requestId = null }) {
   if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-    logger.warn('Skipped email — SMTP not configured', { subject, to });
+    logger.warn('Skipped email — SMTP not configured', { requestId });
     return;
   }
   try {
@@ -40,9 +48,11 @@ export async function sendMail({ to, subject, html }) {
       to,
       subject,
       html,
+      ...(text ? { text } : {}),
+      ...(replyTo ? { replyTo } : {}),
     });
   } catch (err) {
-    logger.error('Failed to send email', { subject, to, message: err.message });
+    logger.error('Failed to send email', { requestId, code: err?.code ?? null });
   }
 }
 

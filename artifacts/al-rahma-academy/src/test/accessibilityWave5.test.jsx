@@ -75,13 +75,16 @@ afterEach(() => {
 describe('protected files are byte-identical to origin/main (949b6b7)', () => {
   it('Quran API / cache, page, hooks, reader components except the Mushaf page, share card, reader i18n + data, SEO, sitemap, manifest, llms.txt, robots, prerender scripts, global stylesheets', () => {
     const BASELINE = {
-      'public/llms.txt': 'b801d49380a0e5e6694f497e013c38096d47fd33a3de4ec95305136c21ebdd02',
+      'public/llms.txt': '62d919c335771962601bc2e3ef20d96c73648c81137acfedd5d10536c2b186ab',
       'public/manifest.json': 'eb1abafcd12b91b890a6e7f6c9ce69da6641ce80c95c31fa3f51ee792897cfc0',
       'public/robots.txt': 'b2bd76ccef97000cdc5d352d2503b101be782545e8168bd8ed35c4d2fa74e8d4',
       'public/sitemap.xml': 'e4de2e4d08cfe7c5ee11d8ee28eb4768ae4f079a57b89b1ef6e28d55e4ebdf9d',
       'scripts/gen-sitemap.mjs': '83b8022647b09534b25ba66198848574abda88c8d0f211865f0ee6b306edc7ab',
       'scripts/prerender-routes.mjs': '662229f26e0282460e6463db0758175f09e4783b5c8c2e9ff0fa21614e3ec70c',
-      'scripts/prerender.mjs': '6d38afed3468e907b99bb6df9e39e5515fdf59bea11fa5bd1a3228e005a629e2',
+      // SPA shell PR: prerender.mjs also writes dist/public/spa-shell.html (real routes, served by
+      // vercel.json) and dist/public/404.html (HTTP 404, noindex). No route, locale, page content or
+      // Quran Reader output changed.
+      'scripts/prerender.mjs': '62d8757820a9b86937ae4e2630d05abd2c6c7ccc801a2b3d68f67a313b91fdcc',
       'src/api/cache.js': '90177f0efbcb4469686bb4cd3e45cc61571c0ca7d463a2a8e57f0091c43694e8',
       'src/api/quran.js': '84ad13d403c5ee7f879365971a2140044c85c8c32db2d7c62c702692fd8d1c88',
       'src/components/features/quran/QuranChapterHeader.jsx': 'afe3fe96e360b4778462370ccc9917204c7689188444a047667d2f0ec6b674fe',

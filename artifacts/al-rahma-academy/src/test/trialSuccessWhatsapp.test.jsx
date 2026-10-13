@@ -364,7 +364,7 @@ describe('Scope guard: prerendered HTML, /enroll and Italian metadata are unchan
   // Pinned at origin/main 78883d6. A later PR that deliberately changes
   // /enroll or the Italian SEO updates these hashes in the same diff.
   it.each(Object.entries({
-    'src/pages/Enroll.jsx': 'b308db6065939223400f22f33d69337f86b20f140fa01dc38b4facbf2fcdcb71',
+    'src/pages/Enroll.jsx': 'adc6fe07e46e5f21edcf21419f3940946655eb12eb7fed1ad9bab9fac675547d',
     'src/components/features/enrollment/EnrollWizard.jsx': '2fe22bae0e8a3e950a48bb891cd8a18efa3afb28775ed06d8272b5941c286402',
     'src/i18n/enroll/seo.js': 'b420a7d60d860877fc451434f54aa7c558a67b7d223ec81ea1b3a5f38da5aa35',
     'src/i18n/enroll/countries.js': '341fe3dfef149848fbfcaf6a87723818976b6d6b9e137f1470e059e7ac68676c',

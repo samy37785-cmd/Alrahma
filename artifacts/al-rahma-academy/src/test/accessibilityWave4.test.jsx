@@ -116,7 +116,7 @@ describe('protected files are byte-identical to origin/main (3b44029)', () => {
       'src/i18n/quran/controlsPanels.js': '3f9c11e87de7b32d0e685580882a489c0bf7f10afa639f6641fac10891680654',
       'src/i18n/quran/kbdSidePanel.js': 'd2a2d708f85d4141ccfeb5736118dd96a38f67da7bc59640a1f18dd5750680f3',
       'src/i18n/quran/verseCardModal.js': 'b389bf8d90b0f61d8593c2703da2433f148dd2528df4bd34b5ed182a4dc40146',
-      'src/pages/Quran.jsx': '750cd8ad52d28e28d461780b4d82ab9612fb454a4886e4b06153965aa9c9b80d',
+      'src/pages/Quran.jsx': '2818cdfd006357115f6f2e0441eefcd47e1fdf5f5a87ffec80c5828136ef6ace',
       'src/styles/tokens.css': '042749b20028ad361fb7570c4ecc3d45c584ddab30919d97c11d302c53eccfb8',
       'src/styles/global.css': '0e5681ec63222eedac4354b9210543ed13160722c74d781bb69dc739417d52fe',
       'src/styles/components.css': '3a8d83364b5362adf3ac755dc5e46532d805e8449e68d26e25a34ec904224041',

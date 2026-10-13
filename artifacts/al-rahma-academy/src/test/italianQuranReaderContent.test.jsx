@@ -42,9 +42,11 @@ const shaFile = (rel) => sha(fs.readFileSync(path.resolve(__dirname, '..', rel),
 // 'fr' + 'it' (quranReaderItalianBreadcrumb.test.jsx). That exact block is normalised back
 // to the original line before hashing; it must match exactly once, and any other
 // difference in the file still fails the hash.
+// en + ar join fr + it in the same gate on 2026-10-13 (en/ar tools publication).
 const BREADCRUMB_GATE_NEW = `      {/* Italian Quran Reader breadcrumb prerequisite: 'it' joins 'fr' so the Italian
           page writes the BreadcrumbList that waitForHydratedSeo() requires. */}
-      {(siteLang === 'fr' || siteLang === 'it') && (
+      {/* en + ar join fr + it (2026-10-13), the languages this route is published in. */}
+      {['en', 'ar', 'fr', 'it'].includes(siteLang) && (
 `;
 const BREADCRUMB_GATE_OLD = "      {siteLang === 'fr' && (\n";
 const shaQuranPage = () => {
@@ -67,6 +69,12 @@ const shaMushafPage = () => {
 };
 // Same change in the rendered reader: the viewport's role attribute (serialised inside JSON).
 const normaliseMushafRole = (json) => json.replace(/(class=\\"mushaf-viewport[^"\\]*\\" )role=\\"group\\"/g, '$1role=\\"button\\"');
+// The hidden breadcrumb wrapper Quran.jsx renders for its published languages.
+const stripHiddenBreadcrumb = (html) => {
+  const out = html.replace(/<div class="sr-only"><nav[\s\S]*?<\/nav><\/div>/, '');
+  expect(out.length, 'one hidden breadcrumb removed').toBeLessThan(html.length);
+  return out;
+};
 const fn = (o) => JSON.stringify(o, (k, v) => (typeof v === 'function' ? `fn:${v.toString()}` : v));
 const ARABIC = /[؀-ۿ]/;
 const BASMALAH = 'بِسۡمِ ٱللَّهِ ٱلرَّحۡمَٰنِ ٱلرَّحِيمِ';
@@ -183,7 +191,10 @@ describe('protected content and logic are untouched (SHA-256 baselines from orig
       // The Arabic page races its first load: some buttons are `disabled` for a moment.
       // That is unrelated to this change, so it is normalised away.
       // The Mushaf viewport's role (Accessibility Wave 5) is normalised back too: it is the only rendered difference.
-      out[`${loc}.visitor`] = sha(normaliseMushafRole(JSON.stringify(states)).replace(/ disabled=\\"\\"/g, ''));
+      // en/ar (2026-10-13) now render the same hidden (.sr-only) breadcrumb fr/it already had;
+      // it is stripped back out so the rest of the reader must still match origin/main exactly.
+      const visible = ['en', 'ar'].includes(loc) ? states.map(stripHiddenBreadcrumb) : states;
+      out[`${loc}.visitor`] = sha(normaliseMushafRole(JSON.stringify(visible)).replace(/ disabled=\\"\\"/g, ''));
       cleanup();
     }
     expect(out).toEqual({

@@ -148,7 +148,8 @@ export default function Enroll() {
           for Enroll's en/ar states changed the moment this was rendered
           unconditionally). it is gated in too: waitForHydratedSeo() needs the same
           BreadcrumbList for /it/enroll to be prerenderable. */}
-      {(lang === 'fr' || lang === 'it') && (
+      {/* en + ar join fr + it (2026-10-13), the languages this route is published in. */}
+      {['en', 'ar', 'fr', 'it'].includes(lang) && (
         <div className="sr-only">
           <Breadcrumbs items={[{ label: t.nav.trial }]} />
         </div>

@@ -28,6 +28,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { runCommand, redact, interpretDockerPsResult, assertLocalOnly } from '../../lib/db/test/orchestrator-lib.mjs';
+import { waitForPostgresTcpReady } from '../../lib/db/test/pg-readiness.mjs';
 import { createLocalAuthUsersStub, createLocalAuthRolesAndFunctions, assertLocalHost } from '../../lib/db/test/local-harness.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -104,21 +105,20 @@ async function startDisposablePostgres(containerName) {
   }
   if (!hostPort) throw new Error(`Could not discover the host port Docker assigned to "${containerName}" (5432/tcp).`);
 
-  const deadline = Date.now() + READY_TIMEOUT_MS;
-  let ready = false;
-  while (Date.now() < deadline) {
-    const check = await runCommand('docker', ['exec', containerName, 'pg_isready', '-U', 'postgres', '-d', DB_NAME]);
-    if (check.code === 0) { ready = true; break; }
-    await sleep(READY_POLL_MS);
-  }
-  if (!ready) throw new Error(`Postgres in container "${containerName}" did not become ready within ${READY_TIMEOUT_MS}ms.`);
-
   const url = `postgres://postgres:${password}@127.0.0.1:${hostPort}/${DB_NAME}`;
   // Explicit, fail-fast, BEFORE any Express boot — two independent
   // implementations (defense in depth), matching the same discipline every
   // other script in this family follows.
   assertLocalOnly(url, 'self-generated container URL');
   assertLocalHost(url, 'self-generated container URL');
+  // TCP readiness, not pg_isready over the container socket (see lib/db/test/pg-readiness.mjs).
+  await waitForPostgresTcpReady({
+    connectionString: url,
+    createClient: (config) => new pg.Client(config),
+    label: containerName,
+    timeoutMs: READY_TIMEOUT_MS,
+    pollMs: READY_POLL_MS,
+  });
   return url;
 }
 

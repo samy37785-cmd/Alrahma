@@ -72,9 +72,9 @@ describe('protected files are byte-identical to origin/main (3b44029)', () => {
       'public/llms.txt': '62d919c335771962601bc2e3ef20d96c73648c81137acfedd5d10536c2b186ab',
       'public/manifest.json': 'eb1abafcd12b91b890a6e7f6c9ce69da6641ce80c95c31fa3f51ee792897cfc0',
       'public/robots.txt': 'b2bd76ccef97000cdc5d352d2503b101be782545e8168bd8ed35c4d2fa74e8d4',
-      'public/sitemap.xml': 'e4de2e4d08cfe7c5ee11d8ee28eb4768ae4f079a57b89b1ef6e28d55e4ebdf9d',
+      'public/sitemap.xml': '7f1f0e16e258f7928bcf1ff70b2a05c4a615533b368f26fcfd8bba40ca434656',
       'scripts/gen-sitemap.mjs': '83b8022647b09534b25ba66198848574abda88c8d0f211865f0ee6b306edc7ab',
-      'scripts/prerender-routes.mjs': '662229f26e0282460e6463db0758175f09e4783b5c8c2e9ff0fa21614e3ec70c',
+      'scripts/prerender-routes.mjs': '3ca8cbda9ffd7aa80e59d787d1ece4c6d6b4c69d13c00c04bf9683fba140e034',
       // SPA shell PR: prerender.mjs also writes dist/public/spa-shell.html (real routes, served by
       // vercel.json) and dist/public/404.html (HTTP 404, noindex). No route, locale, page content or
       // Quran Reader output changed.

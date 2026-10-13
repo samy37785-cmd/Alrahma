@@ -162,12 +162,13 @@ describe('prerender safety: the new breadcrumb adds nothing dynamic', () => {
 });
 
 describe('publication (done by the Italian Quran Reader SEO Publication, after this prerequisite)', () => {
-  it('/it/tools/quran-reader has exactly one manifest entry and one sitemap URL (134 total, IT 36)', () => {
+  it('/it/tools/quran-reader has exactly one manifest entry and one sitemap URL (144 total, IT 36)', () => {
     expect(PRERENDER_MANIFEST.filter((e) => e.route === '/tools/quran-reader' && e.locale === 'it')).toHaveLength(1);
-    expect(PRERENDER_MANIFEST.filter((e) => e.route === '/tools/quran-reader').map((e) => e.locale)).toEqual(['fr', 'it']);
+    expect(PRERENDER_MANIFEST.filter((e) => e.route === '/tools/quran-reader').map((e) => e.locale)).toEqual(['fr', 'it', 'en', 'ar']); // en + ar since 2026-10-13
     const xml = fs.readFileSync(path.resolve(__dirname, '../../public/sitemap.xml'), 'utf8');
     const locs = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
-    expect(locs).toHaveLength(134);
+    // 134 + the five tools/Enroll routes in en and ar (2026-10-13).
+    expect(locs).toHaveLength(144);
     expect(locs.filter((u) => u.includes('/it/'))).toHaveLength(36);
     expect(locs.filter((u) => u.endsWith('/it/tools/quran-reader'))).toHaveLength(1);
   });

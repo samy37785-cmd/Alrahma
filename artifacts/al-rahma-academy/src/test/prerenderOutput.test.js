@@ -2192,10 +2192,17 @@ describe.skipIf(!distExists)('/it/enroll raw prerender HTML — safe before any 
     expect(html).not.toMatch(/api\/v1\/enrollments|submitEnrollment|Riferimento prenotazione|ho appena inviato una richiesta/i);
   });
 
-  it('there is still no en or ar enroll file, and /fr/enroll exists', () => {
+  // en + ar joined on 2026-10-13: their files exist and are the same empty first
+  // step (no frozen time zone, no booking reference).
+  it('fr, en and ar enroll files exist, each an empty first step', () => {
     expect(existsSync(path.join(distDir, 'fr/enroll/index.html'))).toBe(true);
-    expect(existsSync(path.join(distDir, 'enroll/index.html'))).toBe(false);
-    expect(existsSync(path.join(distDir, 'ar/enroll/index.html'))).toBe(false);
+    for (const rel of ['enroll/index.html', 'ar/enroll/index.html']) {
+      const file = path.join(distDir, rel);
+      expect(existsSync(file), rel).toBe(true);
+      const raw = readFileSync(file, 'utf8');
+      expect(raw, rel).not.toMatch(/Africa\/|Europe\/|America\/[A-Z]|Asia\/[A-Z]|value="UTC"/);
+      expect(raw, rel).not.toMatch(/AR-[A-Z0-9]{4,}/);
+    }
   });
 });
 
@@ -2206,12 +2213,14 @@ describe.skipIf(!distExists)('x-default targets are real, canonical, prerendered
   const ORIGIN_X = 'https://al-rahmaacademy.com';
   const rawOf = (entry) => readFileSync(path.join(distDir, outputRelPathFor(entry)), 'utf8');
   const published_ = PRERENDER_MANIFEST.filter((e) => e.status === 'published');
+  // Published for fr + it only (x-default = French) until 2026-10-13, when en
+  // + ar joined; their x-default is the English page now.
   const AFFECTED_X = {
-    '/enroll': ['fr', 'it'],
-    '/tools/quran-reader': ['fr', 'it'],
-    '/tools/verse-of-the-day': ['fr', 'it'],
-    '/tools/hadith': ['fr', 'it'],
-    '/tools/prayer-times': ['fr', 'it'],
+    '/enroll': ['fr', 'it', 'en', 'ar'],
+    '/tools/quran-reader': ['fr', 'it', 'en', 'ar'],
+    '/tools/verse-of-the-day': ['fr', 'it', 'en', 'ar'],
+    '/tools/hadith': ['fr', 'it', 'en', 'ar'],
+    '/tools/prayer-times': ['fr', 'it', 'en', 'ar'],
   };
 
   it('every published page has exactly one x-default, equal to one of its published alternates', () => {
@@ -2238,11 +2247,11 @@ describe.skipIf(!distExists)('x-default targets are real, canonical, prerendered
     }
   });
 
-  it('the five routes without an English version point x-default at the French page, on every published locale', () => {
+  it('the five former fr/it-only routes now point x-default at the English page, on every published locale', () => {
     for (const [route, locales] of Object.entries(AFFECTED_X)) {
       for (const locale of locales) {
         const html = rawOf({ route, locale });
-        expect(html, `${route} @ ${locale}`).toContain(`<link rel="alternate" hreflang="x-default" href="${ORIGIN_X}/fr${route}">`);
+        expect(html, `${route} @ ${locale}`).toContain(`<link rel="alternate" hreflang="x-default" href="${ORIGIN_X}${route}">`);
         const langs = [...html.matchAll(/<link rel="alternate" hreflang="([^"]*)"/g)].map((m) => m[1]).sort();
         expect(langs).toEqual([...locales, 'x-default'].sort());
       }
@@ -2257,9 +2266,10 @@ describe.skipIf(!distExists)('x-default targets are real, canonical, prerendered
     }
   });
 
-  it('the number of prerendered files is 134 (en 31, ar 31, fr 36, it 36) and /it/enroll is present', () => {
-    expect(published_).toHaveLength(134);
-    expect(['en', 'ar', 'fr', 'it'].map((l) => published_.filter((e) => e.locale === l).length)).toEqual([31, 31, 36, 36]);
+  it('the number of prerendered files is 144 (en 36, ar 36, fr 36, it 36) and /it/enroll is present', () => {
+    // en and ar: 31 + the five tools/Enroll routes (2026-10-13).
+    expect(published_).toHaveLength(144);
+    expect(['en', 'ar', 'fr', 'it'].map((l) => published_.filter((e) => e.locale === l).length)).toEqual([36, 36, 36, 36]);
     expect(existsSync(path.join(distDir, 'it/enroll/index.html'))).toBe(true);
   });
 });

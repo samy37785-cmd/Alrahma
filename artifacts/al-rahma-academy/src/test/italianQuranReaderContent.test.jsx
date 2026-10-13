@@ -419,15 +419,18 @@ describe('Italian page metadata, loading and error states', () => {
 });
 
 describe('publication (Italian Quran Reader SEO Publication, after this content landed)', () => {
-  it('/it/tools/quran-reader has exactly one manifest entry and one sitemap URL (134 total, IT 36), next to fr', () => {
-    expect(PRERENDER_MANIFEST.filter((e) => e.route === '/tools/quran-reader' && e.status === 'published').map((e) => e.locale)).toEqual(['fr', 'it']);
+  it('/it/tools/quran-reader has exactly one manifest entry and one sitemap URL (144 total, IT 36), next to fr', () => {
+    expect(PRERENDER_MANIFEST.filter((e) => e.route === '/tools/quran-reader' && e.status === 'published').map((e) => e.locale)).toEqual(['fr', 'it', 'en', 'ar']); // en + ar since 2026-10-13
     const xml = fs.readFileSync(path.resolve(__dirname, '../../public/sitemap.xml'), 'utf8');
     const locs = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
-    expect(locs).toHaveLength(134);
+    // 134 + the five tools/Enroll routes in en and ar (2026-10-13).
+    expect(locs).toHaveLength(144);
     expect(locs.filter((u) => u.includes('/it/'))).toHaveLength(36);
     expect(locs.filter((u) => u.endsWith('/tools/quran-reader')).sort()).toEqual([
+      'https://al-rahmaacademy.com/ar/tools/quran-reader',
       'https://al-rahmaacademy.com/fr/tools/quran-reader',
       'https://al-rahmaacademy.com/it/tools/quran-reader',
+      'https://al-rahmaacademy.com/tools/quran-reader',
     ]);
   });
 });

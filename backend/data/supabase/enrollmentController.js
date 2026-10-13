@@ -138,7 +138,7 @@ export const createEnrollment = asyncHandler(async (req, res) => {
       html: enrollmentStudentEmail({ name: data.name, teacherName: data.teacherName, plan: data.plan, bookingRef }),
     });
   } catch (err) {
-    logger.error('Failed to send enrollment confirmation email', { email: data.email, message: err.message });
+    logger.error('Failed to send enrollment confirmation email', { message: err.message }); // AR-15: no email in logs
   }
 
   res.status(201).json({ message: 'Booking request received', id: null, bookingRef });

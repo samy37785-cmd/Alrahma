@@ -60,6 +60,8 @@ const TEST_FILES = [
   // The owner-run Super Admin operator tools (scripts/ops/), end to end on
   // their own real Supabase stack with the Mailpit mail catcher.
   '../ops/operator-tools.real-gotrue.test.mjs',
+  // The first-Super-Admin recovery tool (an invite that expired unused), on its own real stack.
+  '../ops/recover-first-super-admin.real-gotrue.test.mjs',
 ];
 
 // A file passes only when it exits 0, prints its "<passed>/<total> passed."

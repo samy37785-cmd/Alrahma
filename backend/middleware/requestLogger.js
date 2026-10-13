@@ -1,6 +1,9 @@
 import logger from '../config/logger.js';
+import { anonymizeIp } from '../config/encryption.js';
 
 const SKIP_PATHS = new Set(['/', '/health', '/ready']);
+
+export const pathOnly = (url) => String(url ?? '').split('?')[0];
 
 export function requestLogger(req, res, next) {
   if (SKIP_PATHS.has(req.path)) return next();
@@ -12,11 +15,12 @@ export function requestLogger(req, res, next) {
     const status = res.statusCode;
     const level  = status >= 500 ? 'error' : status >= 400 ? 'warn' : 'info';
 
-    logger[level](`${req.method} ${req.originalUrl}`, {
+    // Audit AR-15: no full IP, no X-Forwarded-For chain, and no query string
+    // (it can carry an email or a one-time token, e.g. a password reset link).
+    logger[level](`${req.method} ${pathOnly(req.originalUrl)}`, {
       status,
       ms,
-      ip:        req.ip,
-      xff:       req.headers['x-forwarded-for'] ?? null, // TEMP diagnostic for trust-proxy fix — remove after
+      ip:        anonymizeIp(req.ip ?? ''),
       userId:    req.user?._id?.toString?.() ?? null,
       requestId: req.requestId ?? null,
     });

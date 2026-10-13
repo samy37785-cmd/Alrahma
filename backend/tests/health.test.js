@@ -14,11 +14,11 @@ test('GET / returns the service banner', async () => {
   assert.equal(res.body.service, 'Al-Rahma Academy API');
 });
 
-test('GET /health reports ok with an uptime number', async () => {
+test('GET /health reports ok and no uptime, memory or environment (audit AR-19)', async () => {
   const res = await request(app).get('/health');
   assert.equal(res.status, 200);
   assert.equal(res.body.status, 'ok');
-  assert.equal(typeof res.body.uptime, 'number');
+  assert.deepEqual(Object.keys(res.body).sort(), ['commit', 'status']);
 });
 
 test('CORS rejects a disallowed origin', async () => {

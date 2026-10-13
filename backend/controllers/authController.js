@@ -112,6 +112,12 @@ export const getLinkCode = asyncHandler(async (req, res) => {
 // @desc   Request a password-reset email
 // @route  POST /api/auth/forgot-password
 // @access Public
+// Audit AR-18: the token travels in the fragment, which browsers never send to
+// a server, so it stays out of request logs. ResetPassword.jsx reads it from
+// there (or from ?token= in links sent before this change) and then removes it
+// from the address bar.
+export const resetLink = (rawToken) => `${siteOrigin()}/reset-password#token=${rawToken}`;
+
 export const forgotPassword = asyncHandler(async (req, res) => {
   const email = normEmail(req.body.email);
   const user = await User.findOne({ email });
@@ -124,7 +130,7 @@ export const forgotPassword = asyncHandler(async (req, res) => {
   user.resetTokenExpiry = Date.now() + 60 * 60 * 1000; // 1 hour
   await user.save({ validateBeforeSave: false });
 
-  const link = `${siteOrigin()}/reset-password?token=${rawToken}`;
+  const link = resetLink(rawToken);
   await sendMail({
     to: email,
     subject: 'Reset your password — Al-Rahma Academy',

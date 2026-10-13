@@ -25,7 +25,25 @@ test('GET /api/healthz mirrors /health and is reachable under /api (what vercel.
   const res = await request(app).get('/api/healthz');
   assert.equal(res.status, 200);
   assert.equal(res.body.status, 'ok');
-  assert.equal(typeof res.body.uptime, 'number');
+});
+
+test('GET /api/healthz and /health send only status and the deployed commit, no uptime, memory or environment (audit AR-19)', async () => {
+  const saved = process.env.RENDER_GIT_COMMIT;
+  try {
+    process.env.RENDER_GIT_COMMIT = '0af5fa7c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a';
+    for (const path of ['/api/healthz', '/health']) {
+      const res = await request(app).get(path);
+      assert.equal(res.status, 200);
+      assert.deepEqual(res.body, { status: 'ok', commit: '0af5fa7' }, path);
+    }
+    // Anything that is not a hex SHA is never echoed back.
+    process.env.RENDER_GIT_COMMIT = '<script>alert(1)</script>';
+    assert.deepEqual((await request(app).get('/api/healthz')).body, { status: 'ok', commit: null });
+    delete process.env.RENDER_GIT_COMMIT;
+    assert.deepEqual((await request(app).get('/api/healthz')).body, { status: 'ok', commit: null });
+  } finally {
+    if (saved === undefined) delete process.env.RENDER_GIT_COMMIT; else process.env.RENDER_GIT_COMMIT = saved;
+  }
 });
 
 test('GET /api/csrf returns { ok: true } and issues the csrf_token cookie (the frontend\'s ensureCsrfToken() warm-up call)', async () => {

@@ -194,17 +194,13 @@ export const updateMe = asyncHandler(async (req, res) => {
   const email = req.body.email != null ? normEmail(req.body.email) : undefined;
   const user = await User.findById(req.user._id).select('+password');
 
-  if (name) user.name = name;
-  if (email && email !== user.email) {
-    const taken = await User.findOne({ email }).lean();
-    if (taken) {
-      res.status(409);
-      throw new Error('That email is already in use');
-    }
-    user.email = email;
-  }
+  const emailChanging = !!email && email !== user.email;
 
-  if (newPassword) {
+  // Audit AR-03: the email is the login and where reset links go, so changing
+  // it needs the current password, like a password change. The password is
+  // checked before the "email taken" lookup, so only the account owner can
+  // learn whether an address is registered here.
+  if (emailChanging || newPassword) {
     if (!currentPassword) {
       res.status(400);
       throw new Error('Please provide your current password');
@@ -214,8 +210,26 @@ export const updateMe = asyncHandler(async (req, res) => {
       res.status(401);
       throw new Error('Current password is incorrect');
     }
-    user.password     = newPassword;
+  }
+
+  if (name) user.name = name;
+  if (emailChanging) {
+    const taken = await User.findOne({ email }).lean();
+    if (taken) {
+      res.status(409);
+      throw new Error('That email is already in use');
+    }
+    user.email = email;
+  }
+  if (newPassword) user.password = newPassword;
+
+  // A new email or password ends every other session (AR-03), and this
+  // device gets a fresh cookie so it stays signed in. Before, a password
+  // change ended this device's session too, on its next request.
+  if (emailChanging || newPassword) {
     user.tokenVersion = (user.tokenVersion ?? 0) + 1;
+    await user.save();
+    return sendAuth(res, user);
   }
 
   await user.save();

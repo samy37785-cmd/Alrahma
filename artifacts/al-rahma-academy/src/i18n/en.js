@@ -675,6 +675,7 @@ const en = {
       "infoSuccess": "Profile updated successfully.",
       "changePass": "Change Password",
       "currentPass": "Current password",
+      "emailPassHint": "To change your email, enter your current password. Signed up with Google? Set a password first with “Forgot password”.",
       "newPass": "New password",
       "confirmPass": "Confirm new password",
       "changeBtn": "Change password",

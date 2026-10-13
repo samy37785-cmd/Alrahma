@@ -677,6 +677,7 @@ const fr = {
       "infoSuccess": "Profil mis à jour avec succès.",
       "changePass": "Changer le Mot de Passe",
       "currentPass": "Mot de passe actuel",
+      "emailPassHint": "Pour changer votre e-mail, saisissez votre mot de passe actuel. Inscrit avec Google ? Définissez d’abord un mot de passe via « Mot de passe oublié ».",
       "newPass": "Nouveau mot de passe",
       "confirmPass": "Confirmer le nouveau mot de passe",
       "changeBtn": "Changer le mot de passe",

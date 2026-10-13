@@ -683,6 +683,7 @@ const it = {
       "infoSuccess": "Profilo aggiornato con successo.",
       "changePass": "Cambia Password",
       "currentPass": "Password attuale",
+      "emailPassHint": "Per cambiare l’email, inserisci la password attuale. Ti sei registrato con Google? Imposta prima una password con «Password dimenticata».",
       "newPass": "Nuova password",
       "confirmPass": "Conferma nuova password",
       "changeBtn": "Cambia password",

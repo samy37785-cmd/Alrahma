@@ -37,6 +37,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { runCommand } from '../../../lib/db/test/orchestrator-lib.mjs';
+import { waitForPostgresTcpReady } from '../../../lib/db/test/pg-readiness.mjs';
 import { createLocalAuthUsersStub, createLocalAuthRolesAndFunctions } from '../../../lib/db/test/local-harness.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -68,15 +69,16 @@ async function startDisposablePostgres(dbName) {
     await sleep(500);
   }
   if (!hostPort) throw new Error('could not discover host port');
-  const deadline = Date.now() + 60000;
-  let ready = false;
-  while (Date.now() < deadline) {
-    const check = await runCommand('docker', ['exec', containerName, 'pg_isready', '-U', 'postgres', '-d', dbName]);
-    if (check.code === 0) { ready = true; break; }
-    await sleep(1000);
-  }
-  if (!ready) throw new Error('postgres did not become ready');
-  return { containerName, url: `postgres://postgres:${password}@127.0.0.1:${hostPort}/${dbName}` };
+  const url = `postgres://postgres:${password}@127.0.0.1:${hostPort}/${dbName}`;
+  // TCP readiness, not pg_isready over the container socket (see lib/db/test/pg-readiness.mjs).
+  await waitForPostgresTcpReady({
+    connectionString: url,
+    createClient: (config) => new pg.Client(config),
+    label: containerName,
+    timeoutMs: 60000,
+    pollMs: 1000,
+  });
+  return { containerName, url };
 }
 
 async function stopDisposablePostgres(containerName) {

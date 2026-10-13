@@ -55,6 +55,7 @@ import { fileURLToPath } from 'node:url';
 import mongoose from 'mongoose';
 import pg from 'pg';
 import { runCommand } from '../../../lib/db/test/orchestrator-lib.mjs';
+import { waitForPostgresTcpReady } from '../../../lib/db/test/pg-readiness.mjs';
 import { signedTestManifest } from './lib/manifest-test-fixture.mjs';
 import { collectBootstrapAllowlist } from './lib/bootstrap-allowlist.mjs';
 import { CANONICAL_PLANS } from './lib/plan-catalog.mjs';
@@ -482,9 +483,9 @@ async function main() {
   await mongoose.disconnect();
 
   console.log('\n=== CLEANUP ===');
-  await runCommand('docker', ['rm', '-f', MONGO_NAME]);
-  await runCommand('docker', ['rm', '-f', PG_NAME]);
-  await runCommand('docker', ['rm', '-f', GOTRUE_NAME]);
+  await runCommand('docker', ['rm', '-f', '-v', MONGO_NAME]);
+  await runCommand('docker', ['rm', '-f', '-v', PG_NAME]);
+  await runCommand('docker', ['rm', '-f', '-v', GOTRUE_NAME]);
   const mongoGone = await runCommand('docker', ['ps', '-a', '--filter', `name=^${MONGO_NAME}$`, '--format', '{{.Names}}']);
   const pgGone = await runCommand('docker', ['ps', '-a', '--filter', `name=^${PG_NAME}$`, '--format', '{{.Names}}']);
   const gotrueGone = await runCommand('docker', ['ps', '-a', '--filter', `name=^${GOTRUE_NAME}$`, '--format', '{{.Names}}']);
@@ -533,13 +534,15 @@ async function startDisposablePostgres() {
     await sleep(500);
   }
   if (!port) throw new Error('could not discover Postgres host port');
-  const deadline = Date.now() + 30_000;
-  while (Date.now() < deadline) {
-    const check = await runCommand('docker', ['exec', PG_NAME, 'pg_isready', '-U', 'postgres']);
-    if (check.code === 0) return port;
-    await sleep(500);
-  }
-  throw new Error('Postgres did not become ready in time');
+  // TCP readiness, not pg_isready over the container socket (see lib/db/test/pg-readiness.mjs).
+  await waitForPostgresTcpReady({
+    connectionString: `postgresql://postgres:postgres@127.0.0.1:${port}/postgres`,
+    createClient: (config) => new pg.Client(config),
+    label: PG_NAME,
+    timeoutMs: 30_000,
+    pollMs: 500,
+  });
+  return port;
 }
 
 // A disposable, minimal (busybox httpd) container serving the one static
@@ -579,8 +582,8 @@ async function startDisposableGotrueStub() {
 
 main().catch(async (err) => {
   console.error('[orchestrator-cli-resume-compensate.test] harness crashed:', err);
-  await runCommand('docker', ['rm', '-f', MONGO_NAME]).catch(() => {});
-  await runCommand('docker', ['rm', '-f', PG_NAME]).catch(() => {});
-  await runCommand('docker', ['rm', '-f', GOTRUE_NAME]).catch(() => {});
+  await runCommand('docker', ['rm', '-f', '-v', MONGO_NAME]).catch(() => {});
+  await runCommand('docker', ['rm', '-f', '-v', PG_NAME]).catch(() => {});
+  await runCommand('docker', ['rm', '-f', '-v', GOTRUE_NAME]).catch(() => {});
   process.exitCode = 1;
 });

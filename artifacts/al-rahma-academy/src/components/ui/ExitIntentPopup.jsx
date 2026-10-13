@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react';
 import { submitTrial } from '../../api/contentApi';
 import { useLang } from '../../context/LangContext';
 import { getExperienceText } from '../../i18n/experience';
+import { site } from '../../data/site';
+import { academyWhatsappNumber } from '../../utils/whatsapp';
+import TrialWhatsappButton from './TrialWhatsappButton';
 
 const SESSION_KEY = 'ar-exit-shown';
 
@@ -66,7 +69,9 @@ export default function ExitIntentPopup() {
       await submitTrial({ ...form, source: 'exit-intent' });
       setDone(true);
       sessionStorage.setItem(SESSION_KEY, '1');
-      setTimeout(close, 4500);
+      // With the optional WhatsApp follow-up on screen the popup stays open
+      // until the visitor closes it; without one it closes itself as before.
+      if (!academyWhatsappNumber(site.whatsapp)) setTimeout(close, 4500);
     } catch {
       setError(copy.submitError);
     } finally {
@@ -90,6 +95,7 @@ export default function ExitIntentPopup() {
             <p className="exit-popup__done-emoji" aria-hidden="true">🎉</p>
             <h3>{copy.successTitle}</h3>
             <p>{copy.successBody}</p>
+            <TrialWhatsappButton details={{ name: form.name, email: form.email, phone: form.whatsapp }} />
           </div>
         ) : (
           <>

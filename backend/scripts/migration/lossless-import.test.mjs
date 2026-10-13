@@ -38,6 +38,7 @@ import { fileURLToPath } from 'node:url';
 import mongoose from 'mongoose';
 import pg from 'pg';
 import { runCommand } from '../../../lib/db/test/orchestrator-lib.mjs';
+import { waitForPostgresTcpReady } from '../../../lib/db/test/pg-readiness.mjs';
 import { DOMAINS } from './mongo-to-supabase.mjs';
 import { CANONICAL_PLANS } from './lib/plan-catalog.mjs';
 
@@ -142,10 +143,16 @@ async function main() {
     GOTRUE_NAME, ['-p', '127.0.0.1::80', 'busybox', 'sh', '-c', 'mkdir -p /www && httpd -f -vv -p 80 -h /www'], '80/tcp'
   );
   await waitFor(async () => (await runCommand('docker', ['exec', MONGO_NAME, 'mongosh', '--quiet', '--eval', "print('ready')"])).stdout.includes('ready'));
-  await waitFor(async () => (await runCommand('docker', ['exec', PG_NAME, 'pg_isready', '-U', 'postgres'])).code === 0);
-
   const mongoUri = `mongodb://127.0.0.1:${mongoPort}/al-rahma`;
   const pgUri = `postgresql://postgres:postgres@127.0.0.1:${pgPort}/postgres`;
+  // TCP readiness, not pg_isready over the container socket (see lib/db/test/pg-readiness.mjs).
+  await waitForPostgresTcpReady({
+    connectionString: pgUri,
+    createClient: (config) => new pg.Client(config),
+    label: PG_NAME,
+    timeoutMs: 60_000,
+    pollMs: 500,
+  });
   const gotrueUrl = `http://127.0.0.1:${gotruePort}`;
   const migrate = await runCommand(process.execPath, [RUN_MIGRATIONS], { env: { ...process.env, TEST_DATABASE_URL: pgUri } });
   if (migrate.code !== 0) throw new Error(`schema application failed: ${migrate.stderr}`);

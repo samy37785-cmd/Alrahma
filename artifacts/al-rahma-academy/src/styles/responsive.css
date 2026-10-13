@@ -442,6 +442,25 @@ img, video, svg, canvas { max-width: 100%; }
   bottom: calc(22px + env(safe-area-inset-bottom, 0px) + var(--ds-bottom-nav-h, 0px));
 }
 
+/* On pages that show the WhatsApp FAB, the footer's last row (Cookie settings
+   on the right, or the left in Arabic) ends above the button at the very bottom
+   of the page instead of behind it: 22px offset + 56px button + 12px gap. */
+body:has(.whatsapp-fab) .footer__bottom { padding-bottom: calc(90px + env(safe-area-inset-bottom, 0px)); }
+
+/* WhatsApp FAB on phones: at 56px and 22px from the edge it reached into the
+   text column (course cards, timeline) while scrolling. 48px still clears the
+   44px touch-target minimum. */
+@media (max-width: 640px) {
+  .whatsapp-fab {
+    width: 48px; height: 48px; font-size: 1.35rem;
+    right: 14px;
+    bottom: calc(14px + env(safe-area-inset-bottom, 0px) + var(--ds-bottom-nav-h, 0px));
+  }
+  [dir="rtl"] .whatsapp-fab { left: 14px; right: auto; }
+  /* 14px offset + 48px button + 14px gap */
+  body:has(.whatsapp-fab) .footer__bottom { padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px)); }
+}
+
 /* Quran Hifz floating bar: add internal padding so text clears the bar */
 .qlc__float-bar {
   padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));

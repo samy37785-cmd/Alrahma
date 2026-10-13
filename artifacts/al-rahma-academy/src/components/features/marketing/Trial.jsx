@@ -6,6 +6,7 @@ import { useTrial } from '../../../context/TrialContext';
 import { useLang } from '../../../context/LangContext';
 import { limitedTrialSpotsText } from '../../../data/siteFacts';
 import { courseOptionLabel } from '../../../i18n/home/leakedStrings';
+import TrialWhatsappButton from '../../ui/TrialWhatsappButton';
 
 const EMPTY = { name: '', email: '', phone: '', course: '', message: '' };
 
@@ -32,6 +33,9 @@ export default function Trial() {
   const [submitted, setSubmitted] = useState(false);
   const [error, setError]         = useState('');
   const [sending, setSending]     = useState(false);
+  // What the visitor sent, kept only in memory for the optional WhatsApp
+  // follow-up after a successful submit (the form itself is cleared).
+  const [sentDetails, setSentDetails] = useState(null);
 
   useEffect(() => {
     if (selectedCourse) setForm((prev) => ({ ...prev, course: selectedCourse }));
@@ -48,17 +52,32 @@ export default function Trial() {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
+    // Editing again starts a new request: drop the previous success state.
+    if (submitted) {
+      setSubmitted(false);
+      setSentDetails(null);
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setSubmitted(false);
+    setSentDetails(null);
     setSending(true);
     try {
       await submitTrial(form);
+      setSentDetails({
+        name: form.name,
+        course: form.course ? courseOptionLabel(form.course, lang) : '',
+        email: form.email,
+        phone: form.phone,
+        message: form.message,
+      });
       setSubmitted(true);
       setForm(EMPTY);
-      setTimeout(() => setSubmitted(false), 6000);
+      // The success note (and the WhatsApp follow-up) now stays until the
+      // visitor edits the form again, instead of vanishing after 6 seconds.
     } catch (err) {
       if (!err.response || !navigator.onLine) {
         setError('network');
@@ -195,7 +214,10 @@ export default function Trial() {
           </p>
 
           {submitted && (
-            <p className="form-note">{tr.success}</p>
+            <>
+              <p className="form-note" role="status">{tr.success}</p>
+              <TrialWhatsappButton details={sentDetails} />
+            </>
           )}
 
           {error === 'network' && (

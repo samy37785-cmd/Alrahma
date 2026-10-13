@@ -12,6 +12,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import pg from 'pg';
 import { runCommand } from '../../../lib/db/test/orchestrator-lib.mjs';
+import { waitForPostgresTcpReady } from '../../../lib/db/test/pg-readiness.mjs';
 import { createLocalAuthRolesAndFunctions, createLocalAuthUsersStub } from '../../../lib/db/test/local-harness.mjs';
 import { readExpectedJournal } from '../ops/lib/supabase-state-report-core.mjs';
 import {
@@ -59,12 +60,16 @@ async function startPostgres() {
     else await sleep(300);
   }
   if (!port) throw new Error('could not discover the disposable Postgres port');
-  for (let i = 0; i < 100; i++) {
-    const ready = await runCommand('docker', ['exec', PG_NAME, 'pg_isready', '-U', 'postgres']);
-    if (ready.code === 0) return `postgresql://postgres:postgres@127.0.0.1:${port}/postgres`;
-    await sleep(300);
-  }
-  throw new Error('disposable Postgres did not become ready');
+  const url = `postgresql://postgres:postgres@127.0.0.1:${port}/postgres`;
+  // TCP readiness, not pg_isready over the container socket (see lib/db/test/pg-readiness.mjs).
+  await waitForPostgresTcpReady({
+    connectionString: url,
+    createClient: (config) => new pg.Client(config),
+    label: PG_NAME,
+    timeoutMs: 30_000,
+    pollMs: 300,
+  });
+  return url;
 }
 
 async function applyPrefix(pool, journal, count) {

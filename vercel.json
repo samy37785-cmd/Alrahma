@@ -9,6 +9,12 @@
     { "source": "/:path((?:(?:ar|fr|it|es|de)/?|(?:(?:ar|fr|it|es|de)/)?(?:courses(?:/[^/.]+)?|tools(?:/(?:quran-reader|adhkar|hadith|prayer|prayer-times|qibla|islamic-calendar|verse-of-the-day|tasbeeh|arabic-alphabet|tajweed-checker|hifz-review|quran))?|resources(?:/(?:faq|blog(?:/[^/.]+)?))?|academy(?:/(?:about|teachers(?:/[^/.]+)?|privacy|terms|refund-policy))?|terms|refund-policy|login|register|forgot-password|reset-password|enroll|payment/(?:success|cancel)|dashboard|billing|wishlist|ai-tutor|community|profile|messages|admin(?:/login)?|teacher|parent|calendar|quran|adhkar|hadith-library|islamic-tools|blog(?:/[^/.]+)?|faq|about|teachers(?:/[^/.]+)?|privacy|course/(?:ijazah|islamic-studies))/?))", "destination": "/spa-shell.html" }
   ],
   "headers": [
+    { "source": "/((?!api(?:/|$)).*)", "headers": [
+      { "key": "X-Content-Type-Options", "value": "nosniff" },
+      { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+      { "key": "X-Frame-Options", "value": "DENY" },
+      { "key": "Content-Security-Policy", "value": "frame-ancestors 'none'; object-src 'none'; base-uri 'self'" }
+    ] },
     { "source": "/:path((?:(?:ar|fr|it|es|de)/)?(?:resources/)?blog(?:/[^/.]+)?/?)", "headers": [{ "key": "X-Robots-Tag", "value": "noindex, follow" }] }
   ]
 }

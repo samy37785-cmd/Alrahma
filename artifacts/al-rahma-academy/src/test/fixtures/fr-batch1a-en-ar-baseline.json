@@ -429,8 +429,8 @@
         "ogDescription": "Online Quran Reading, Tajweed, and Hifz (memorization) courses with certified Al-Azhar teachers — in 17 languages.",
         "htmlLang": "en",
         "htmlDir": "ltr",
-        "bodySha256": "691cce418e807f359b9d684d8117017dcfe07fe7e5d74445e4b6b66181c5396d",
-        "bodyLength": 30816,
+        "bodySha256": "b122eace443fbba084c6a82785994f41b12ec329dcdf29cec13b654a0304ed9d",
+        "bodyLength": 30823,
         "deferredSectionsMounted": true
       },
       "ar": {
@@ -440,8 +440,8 @@
         "ogDescription": "دروس أونلاين في تلاوة القرآن والتجويد وحفظ القرآن الكريم مع معلمين معتمدين من الأزهر — دروس فردية مباشرة ترافقك خطوة بخطوة حتى إتقان التلاوة الصحيحة.",
         "htmlLang": "ar",
         "htmlDir": "rtl",
-        "bodySha256": "ad68cca50eda012402a3134fbe2ee86ad2dab3375cd6a499770117f712c74494",
-        "bodyLength": 30711,
+        "bodySha256": "1d2b919ca07b1e6cb400dc083c1c5e3ce530039545373c1670b2cb155582d401",
+        "bodyLength": 30718,
         "deferredSectionsMounted": true
       }
     },

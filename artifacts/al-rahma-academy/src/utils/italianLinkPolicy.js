@@ -18,7 +18,9 @@ export const isRouteHidden = (lang, route) => lang === 'it' && IT_HIDDEN_ROUTES.
 
 /**
  * The "open the Quran reader" button used to point at /tools/quran, a client-side
- * redirect that has no Italian page of its own. Italian links straight to the
- * published reader; other languages keep their existing link.
+ * redirect: crawlers that do not run the app (Bing, AI crawlers) got the SPA shell
+ * there instead of the reader. Every language now links straight to the reader
+ * (Italian first, then en/ar/fr on 2026-10-13). `lang` is kept for callers.
  */
-export const quranReaderRoute = (lang) => (lang === 'it' ? '/tools/quran-reader' : '/tools/quran');
+// eslint-disable-next-line no-unused-vars
+export const quranReaderRoute = (lang) => '/tools/quran-reader';

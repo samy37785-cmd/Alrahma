@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeAll } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { LangProvider } from '../context/LangContext';
 import { AdminAuthProvider } from '../context/AdminAuthContext';
@@ -50,7 +50,8 @@ describe('link policy', () => {
   it('only hides for Italian', () => {
     for (const lang of ['en', 'ar', 'fr', 'es', 'de']) {
       for (const route of IT_HIDDEN_ROUTES) expect(isRouteHidden(lang, route)).toBe(false);
-      expect(quranReaderRoute(lang)).toBe('/tools/quran');
+      // Every language links straight to the reader, never the /tools/quran redirect.
+      expect(quranReaderRoute(lang)).toBe('/tools/quran-reader');
     }
     expect(quranReaderRoute('it')).toBe('/tools/quran-reader');
   });
@@ -184,9 +185,14 @@ describe('English, Arabic and French are unchanged', () => {
     expect(document.querySelector(`footer a[href="${prefix}/tools/prayer-times"]`).textContent).toBe(label);
   });
 
-  it('English /courses/quran keeps its /tools/quran link', async () => {
-    await mountFullPage('/courses/quran', CoursesQuran);
-    expect(document.querySelector('.hub-related a.btn')?.getAttribute('href')).toBe('/tools/quran');
+  // Changed on purpose (2026-10-13): en/ar/fr now link straight to the reader,
+  // like Italian, instead of the /tools/quran client-side redirect.
+  it('/courses/quran links straight to the Quran reader in English, Arabic and French', async () => {
+    for (const [url, href] of [['/courses/quran', '/tools/quran-reader'], ['/ar/courses/quran', '/ar/tools/quran-reader'], ['/fr/courses/quran', '/fr/tools/quran-reader']]) {
+      await mountFullPage(url, CoursesQuran);
+      expect(document.querySelector('.hub-related a.btn')?.getAttribute('href'), url).toBe(href);
+      cleanup();
+    }
   });
 });
 

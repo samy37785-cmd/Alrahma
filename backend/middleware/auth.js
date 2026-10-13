@@ -15,7 +15,7 @@ async function findUserById(id) {
 // Resolves the JWT from the httpOnly cookie (primary) or a Bearer header
 // (fallback, e.g. for API tooling). The cookie is never readable by JS, which
 // is what protects the token from theft via XSS.
-function getToken(req) {
+export function getToken(req) {
   if (req.cookies?.token) return req.cookies.token;
   if (req.headers.authorization?.startsWith('Bearer ')) {
     return req.headers.authorization.split(' ')[1];

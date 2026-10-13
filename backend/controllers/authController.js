@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import jwt from 'jsonwebtoken';
 import { body } from 'express-validator';
 import User from '../models/User.js';
 import { sendMail } from '../config/mailer.js';
@@ -8,6 +9,7 @@ import { handleValidationErrors } from '../utils/validationHelper.js';
 import { hashToken } from '../utils/hashToken.js';
 import { siteOrigin } from '../config/site.js';
 import { AUTH_COOKIE, authCookieOptions, sendAuth } from '../utils/authCookie.js';
+import { getToken } from '../middleware/auth.js';
 
 // Normalise a user-supplied email for storage AND lookups. Coercing to a String
 // also neutralises NoSQL operator injection (e.g. { $gt: '' }) at the boundary —
@@ -82,7 +84,22 @@ export const login = asyncHandler(async (req, res) => {
 // @desc   Logout — clears the auth cookie
 // @route  POST /api/auth/logout
 // @access Public
-export const logout = asyncHandler(async (_req, res) => {
+export const logout = asyncHandler(async (req, res) => {
+  // Audit AR-08: clearing the cookie alone left the JWT valid until it
+  // expired (7 days by default), so a copied token kept working after logout.
+  // Bumping tokenVersion ends it at once, the same way a password change does
+  // (protect() compares the token's `v`). That signs the account out on every
+  // device, which also covers a token the user never knew was copied. Only a
+  // token that is still current can do this, so an old, already-ended token
+  // cannot be used to sign the user out elsewhere.
+  const token = getToken(req);
+  if (token) {
+    try {
+      const { id, v = 0 } = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
+      const current = v === 0 ? { $in: [0, null] } : v; // null also matches a missing field
+      await User.updateOne({ _id: id, tokenVersion: current }, { $inc: { tokenVersion: 1 } });
+    } catch { /* invalid or expired token: nothing to end, just clear the cookie */ }
+  }
   // Clear with the same attributes the cookie was set with, or the browser
   // keeps it. maxAge is omitted; expires:past tells the browser to drop it.
   res.clearCookie(AUTH_COOKIE, { ...authCookieOptions(0), maxAge: undefined });

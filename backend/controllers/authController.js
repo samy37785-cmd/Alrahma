@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { body } from 'express-validator';
 import User from '../models/User.js';
@@ -62,6 +63,12 @@ export const register = asyncHandler(async (req, res) => {
   sendAuth(res, user, 201);
 });
 
+// Audit AR-12: login for an unknown email used to skip bcrypt and answer in a
+// few milliseconds, against ~250 ms for a real account, which told anyone
+// whether an address is registered. An unknown email now runs the same
+// compare (12 rounds, as models/User.js) against this throwaway hash.
+const TIMING_EQUALIZER_HASH = bcrypt.hashSync(crypto.randomBytes(16).toString('hex'), 12);
+
 // @desc   Login
 // @route  POST /api/auth/login
 // @access Public
@@ -73,7 +80,10 @@ export const login = asyncHandler(async (req, res) => {
   // include password explicitly (it's select:false in the model)
   const user = await User.findOne({ email }).select('+password');
 
-  if (!user || !(await user.matchPassword(password))) {
+  const passwordOk = user
+    ? await user.matchPassword(password)
+    : (await bcrypt.compare(password, TIMING_EQUALIZER_HASH), false);
+  if (!passwordOk) {
     res.status(401);
     throw new Error('Invalid email or password');
   }
@@ -148,7 +158,9 @@ export const forgotPassword = asyncHandler(async (req, res) => {
   await user.save({ validateBeforeSave: false });
 
   const link = resetLink(rawToken);
-  await sendMail({
+  // AR-12: not awaited, so a registered address answers as fast as an unknown
+  // one instead of waiting for SMTP. sendMail never throws (config/mailer.js).
+  void sendMail({
     to: email,
     subject: 'Reset your password — Al-Rahma Academy',
     html: forgotPasswordEmail({ name: user.name, link }),

@@ -1,23 +1,28 @@
-import { useState } from 'react';
-import { useNavigate, useSearchParams, Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { resetPassword } from '../api/authApi';
 import { useLang } from '../context/LangContext';
 import useSEO from '../hooks/useSEO';
 import Brand from '../components/layout/Brand';
+import { readResetToken } from '../utils/resetToken';
 
 export default function ResetPassword() {
   const { t } = useLang();
   const rp = t.authPg.resetPwd;
   const networkError = t.authPg.login.networkError;
   useSEO({ title: rp.title, noindex: true });
-  const [params]            = useSearchParams();
-  const token               = params.get('token') || '';
+  const [token]             = useState(() => readResetToken());
   const navigate            = useNavigate();
   const [password, setPassword] = useState('');
   const [confirm, setConfirm]   = useState('');
   const [msg, setMsg]           = useState('');
   const [err, setErr]           = useState('');
   const [loading, setLoading]   = useState(false);
+
+  // AR-18: the token leaves the address bar, and so the browser history, once read.
+  useEffect(() => {
+    if (token) window.history.replaceState(window.history.state, '', window.location.pathname);
+  }, [token]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

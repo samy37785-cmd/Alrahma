@@ -4,7 +4,7 @@ import { verifyEmail } from '../api/authApi';
 import { useLang } from '../context/LangContext';
 import useSEO from '../hooks/useSEO';
 import Brand from '../components/layout/Brand';
-import { readResetToken } from '../utils/resetToken';
+import { useLinkToken } from '../hooks/useLinkToken';
 
 // Audit AR-02: the page an email-confirmation link opens. The token arrives in
 // the fragment (#token=…), which the browser never sends to a server; it is
@@ -13,11 +13,12 @@ export default function VerifyEmail() {
   const { t } = useLang();
   const ve = t.authPg.verifyEmail;
   useSEO({ title: ve.title, noindex: true });
-  const [token] = useState(() => readResetToken());
+  const token = useLinkToken();
   const [state, setState] = useState(token ? 'checking' : 'invalid');
 
   useEffect(() => {
     if (!token) return undefined;
+    setState('checking');
     window.history.replaceState(window.history.state, '', window.location.pathname);
     let cancelled = false;
     verifyEmail(token)

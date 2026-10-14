@@ -4,14 +4,14 @@ import { resetPassword } from '../api/authApi';
 import { useLang } from '../context/LangContext';
 import useSEO from '../hooks/useSEO';
 import Brand from '../components/layout/Brand';
-import { readResetToken } from '../utils/resetToken';
+import { useLinkToken } from '../hooks/useLinkToken';
 
 export default function ResetPassword() {
   const { t } = useLang();
   const rp = t.authPg.resetPwd;
   const networkError = t.authPg.login.networkError;
   useSEO({ title: rp.title, noindex: true });
-  const [token]             = useState(() => readResetToken());
+  const token               = useLinkToken();
   const navigate            = useNavigate();
   const [password, setPassword] = useState('');
   const [confirm, setConfirm]   = useState('');

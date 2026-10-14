@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, cleanup, act } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { LangProvider } from '../context/LangContext';
 import VerifyEmail from '../pages/VerifyEmail';
@@ -55,6 +55,24 @@ describe('VerifyEmail page', () => {
     openVerify('/verify-email');
     expect(screen.getByRole('alert')).toBeTruthy();
     expect(verifyEmail).not.toHaveBeenCalled();
+  });
+
+  // Owner test 2026-10-14: an older link was opened first; pasting the newer
+  // link into the same tab changed only the fragment and the page kept
+  // showing "invalid" until a manual reload.
+  it('a second link opened in the same tab is checked too', async () => {
+    const NEWER = 'c'.repeat(64);
+    verifyEmail.mockImplementation((tok) => (tok === NEWER ? Promise.resolve({}) : Promise.reject(new Error('400'))));
+    openVerify(`/verify-email#token=${TOKEN}`);
+    await screen.findByRole('alert');
+
+    act(() => {
+      window.history.replaceState(null, '', `/verify-email#token=${NEWER}`);
+      window.dispatchEvent(new HashChangeEvent('hashchange'));
+    });
+    await screen.findByText('Your email is confirmed. Thank you!');
+    expect(verifyEmail).toHaveBeenLastCalledWith(NEWER);
+    expect(window.location.href).not.toContain(NEWER);
   });
 });
 

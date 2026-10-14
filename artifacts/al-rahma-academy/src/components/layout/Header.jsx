@@ -291,7 +291,13 @@ export default function Header() {
               <button className="nav__mobile-logout" onClick={handleLogout}>
                 <LogoutIcon size={ICON_SIZE} /> {n.logout}
               </button>
-            ) : isRouteHidden(lang, "/login") ? null : (
+            ) : isRouteHidden(lang, "/login") ? (
+              // Italian: /it/login is not a published page, so crawlers get no
+              // link to it (italianLinkPolicy.js); visitors still get a button.
+              <button type="button" className="nav__mobile-login-link" onClick={() => { closeAll(); navigate(localizedTo("/login")); }}>
+                {n.login}
+              </button>
+            ) : (
               <Link to={localizedTo("/login")} className="nav__mobile-login-link" onClick={closeAll}>
                 {n.login}
               </Link>
@@ -385,7 +391,10 @@ export default function Header() {
                   </ul>
                 )}
               </div>
-            ) : isRouteHidden(lang, "/login") ? null : (
+            ) : isRouteHidden(lang, "/login") ? (
+              // Italian: a button, not a link (see the mobile drawer above).
+              <button type="button" className="btn btn--ghost-inv btn--sm" onClick={() => navigate(localizedTo("/login"))}>{n.login}</button>
+            ) : (
               <Link to={localizedTo("/login")} className="btn btn--ghost-inv btn--sm">{n.login}</Link>
             )}
 

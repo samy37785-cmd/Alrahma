@@ -73,7 +73,9 @@
 /* Responsive */
 @media (max-width: 960px) {
   .hero__inner, .about__inner, .trial__inner { grid-template-columns: 1fr; }
-  .hero__visual { order: -1; height: 300px; }
+  /* Text (headline + Book a Free Trial) first on phones and tablets; the brand
+     medallion follows it. order:-1 put the medallion above the fold instead. */
+  .hero__visual { height: 300px; }
   .hero__pill--bottom { bottom: 0; left: 0; }
   .hero__verse { position: static; margin-top: 8px; max-width: 100%; }
   .hero__art { order: -1; }

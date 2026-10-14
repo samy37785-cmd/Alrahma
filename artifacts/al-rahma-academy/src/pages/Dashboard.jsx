@@ -11,6 +11,7 @@ import { useAuth } from '../context/AuthContext';
 import { useLang } from '../context/LangContext';
 import { getExperienceText } from '../i18n/experience';
 import { useDashboardData } from '../hooks/useDashboard';
+import EmailVerifyBanner from '../components/ui/EmailVerifyBanner';
 import useCountUp from '../hooks/useCountUp';
 import { getCourseProgress, getMyCertificates } from '../api/courseApi';
 import { getClasses } from '../api/classApi';
@@ -235,6 +236,9 @@ export default function Dashboard() {
           </Link>
         </div>
       </div>
+
+      {/* ── Email confirmation (AR-02) ─────────────────────── */}
+      <EmailVerifyBanner me={me} />
 
       {/* ── Dashboard data error banner ─────────────────────── */}
       {!!error && (

@@ -67,6 +67,12 @@ const userSchema = new mongoose.Schema(
     lastStudyDate: { type: Date,   default: null },         // last day XP was earned
     badges:        [{ type: String }],                      // awarded badge keys
 
+    // Email confirmation (audit AR-02). No default on purpose: accounts from
+    // before this field count as confirmed (utils/emailVerification.js).
+    emailVerified:     { type: Boolean },
+    emailVerifyToken:  { type: String, select: false },
+    emailVerifyExpiry: { type: Date,   select: false },
+
     resetToken:       { type: String, select: false },
     resetTokenExpiry: { type: Date,   select: false },
     // Incremented on password change; invalidates all previously-issued tokens.

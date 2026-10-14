@@ -11,6 +11,9 @@ import { hashToken } from '../utils/hashToken.js';
 import { siteOrigin } from '../config/site.js';
 import { AUTH_COOKIE, authCookieOptions, sendAuth } from '../utils/authCookie.js';
 import { getToken } from '../middleware/auth.js';
+import {
+  isEmailVerified, startEmailVerification, markEmailVerified, sendVerificationEmail,
+} from '../utils/emailVerification.js';
 
 // Normalise a user-supplied email for storage AND lookups. Coercing to a String
 // also neutralises NoSQL operator injection (e.g. { $gt: '' }) at the boundary —
@@ -59,7 +62,11 @@ export const register = asyncHandler(async (req, res) => {
     throw new Error('An account with that email already exists. Try signing in instead.');
   }
 
-  const user = await User.create({ name, email, password, role: safeRole });
+  // AR-02: a new account starts unconfirmed and gets a confirmation link.
+  const user = new User({ name, email, password, role: safeRole });
+  const verifyToken = startEmailVerification(user);
+  await user.save();
+  void sendVerificationEmail(user, verifyToken);
   sendAuth(res, user, 201);
 });
 
@@ -120,7 +127,39 @@ export const logout = asyncHandler(async (req, res) => {
 // @route  GET /api/auth/me
 // @access Private
 export const getMe = asyncHandler(async (req, res) => {
-  res.json(req.user); // set by the `protect` middleware
+  // req.user is set by the `protect` middleware. emailVerified is computed so
+  // accounts from before email confirmation read as confirmed (AR-02).
+  res.json({ ...req.user.toObject(), emailVerified: isEmailVerified(req.user) });
+});
+
+// @desc   Confirm the account's email with the token from the emailed link
+// @route  POST /api/auth/verify-email
+// @access Public (the token is the proof)
+export const verifyEmail = asyncHandler(async (req, res) => {
+  const token = typeof req.body?.token === 'string' ? req.body.token : '';
+  const user = token && await User.findOne({
+    emailVerifyToken:  hashToken(token),
+    emailVerifyExpiry: { $gt: new Date() },
+  }).select('+emailVerifyToken +emailVerifyExpiry');
+  if (!user) {
+    res.status(400);
+    throw new Error('This confirmation link is invalid or has expired.');
+  }
+  markEmailVerified(user);
+  await user.save({ validateBeforeSave: false });
+  res.json({ message: 'Email confirmed.' });
+});
+
+// @desc   Send a new confirmation link to the signed-in user's email
+// @route  POST /api/auth/verify-email/resend
+// @access Private
+export const resendVerification = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id);
+  if (isEmailVerified(user)) return res.json({ message: 'Email already confirmed.' });
+  const verifyToken = startEmailVerification(user); // replaces any earlier link
+  await user.save({ validateBeforeSave: false });
+  void sendVerificationEmail(user, verifyToken);
+  res.json({ message: 'Confirmation email sent.' });
 });
 
 // @desc   Student: get (creating if needed) the code a parent uses to link.
@@ -193,6 +232,8 @@ export const resetPassword = asyncHandler(async (req, res) => {
   user.resetToken       = undefined;
   user.resetTokenExpiry = undefined;
   user.tokenVersion     = (user.tokenVersion ?? 0) + 1;
+  // The reset link reached this inbox, which proves the address too (AR-02).
+  if (!isEmailVerified(user)) markEmailVerified(user);
   await user.save();
 
   res.json({ message: 'Password reset successfully. You can now log in.' });
@@ -234,6 +275,8 @@ export const updateMe = asyncHandler(async (req, res) => {
     user.email = email;
   }
   if (newPassword) user.password = newPassword;
+  // AR-02: a new address must be confirmed before email-matched data shows.
+  const verifyToken = emailChanging ? startEmailVerification(user) : null;
 
   // A new email or password ends every other session (AR-03), and this
   // device gets a fresh cookie so it stays signed in. Before, a password
@@ -241,6 +284,7 @@ export const updateMe = asyncHandler(async (req, res) => {
   if (emailChanging || newPassword) {
     user.tokenVersion = (user.tokenVersion ?? 0) + 1;
     await user.save();
+    if (verifyToken) void sendVerificationEmail(user, verifyToken);
     return sendAuth(res, user);
   }
 
@@ -295,7 +339,18 @@ export const googleAuth = asyncHandler(async (req, res) => {
       password: randomPwd,
       role: 'student',
       googleId: payload.sub,
+      emailVerified: true, // Google confirmed the address (email_verified above)
     });
+  } else if (!isEmailVerified(user)) {
+    // AR-02: someone signed up with this address but never confirmed it, and
+    // Google now proves who owns it. Confirm it, replace the unknown password
+    // and end every earlier session, so a squatter who registered first does
+    // not end up sharing the owner's account.
+    markEmailVerified(user);
+    user.password     = crypto.randomBytes(24).toString('hex');
+    user.tokenVersion = (user.tokenVersion ?? 0) + 1;
+    user.googleId     = payload.sub;
+    await user.save();
   } else if (!user.googleId) {
     user.googleId = payload.sub;
     await user.save({ validateBeforeSave: false });

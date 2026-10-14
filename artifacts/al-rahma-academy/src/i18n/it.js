@@ -726,6 +726,17 @@ const it = {
       "back": "← Torna al login",
       "errorFallback": "Impossibile inviare l'email. Riprova."
     },
+    "verifyEmail": {
+      "title": "Conferma la tua email",
+      "checking": "Conferma dell’email in corso…",
+      "success": "La tua email è confermata. Grazie!",
+      "invalid": "Questo link di conferma non è valido o è scaduto. Accedi e inviane uno nuovo dalla tua dashboard.",
+      "toDashboard": "Vai alla mia dashboard",
+      "banner": "Conferma la tua email ({email}). Le prenotazioni e le fatture associate a questo indirizzo compariranno dopo la conferma.",
+      "resend": "Invia di nuovo il link",
+      "resent": "Inviato. Controlla la posta in arrivo.",
+      "resendFailed": "Impossibile inviare l’email. Riprova più tardi."
+    },
     "resetPwd": {
       "title": "Imposta una nuova password",
       "sub": "Inserisci e conferma la tua nuova password qui sotto.",

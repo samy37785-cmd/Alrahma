@@ -718,6 +718,17 @@ const en = {
       "back": "← Back to login",
       "errorFallback": "Could not send reset email. Please try again."
     },
+    "verifyEmail": {
+      "title": "Confirm your email",
+      "checking": "Confirming your email…",
+      "success": "Your email is confirmed. Thank you!",
+      "invalid": "This confirmation link is invalid or has expired. Sign in and send a new one from your dashboard.",
+      "toDashboard": "Go to my dashboard",
+      "banner": "Please confirm your email ({email}). Bookings and invoices made with this address appear after you confirm it.",
+      "resend": "Send the link again",
+      "resent": "Sent. Check your inbox.",
+      "resendFailed": "Could not send the email. Please try again later."
+    },
     "resetPwd": {
       "title": "Set a new password",
       "sub": "Enter and confirm your new password below.",

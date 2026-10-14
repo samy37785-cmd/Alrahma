@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useAdminAuth } from '../../context/AdminAuthContext';
+import { useAccountIdentity } from '../../hooks/useAccountIdentity';
 import { useLang } from '../../context/LangContext';
 import { useTheme } from '../../context/ThemeContext';
 import { getExperienceText } from '../../i18n/experience';
@@ -33,10 +34,13 @@ import NavIcon from './NavIcon';
 import MobileBottomNav from './MobileBottomNav';
 
 export default function DashboardLayout({ children }) {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   // isAdmin is proven exclusively by the real AdminUser + MFA session, never
   // by the regular account's own `role` field. See src/utils/accountRoles.js.
   const { isAdmin } = useAdminAuth();
+  // The account shown in the shell: the admin account while its session is
+  // verified, otherwise the regular one.
+  const identity = useAccountIdentity();
   const { lang } = useLang();
   const dashboardCopy = getExperienceText(lang).dashboard;
   const { shell, sections, items: itemLabels, roles } = dashboardCopy;
@@ -149,15 +153,15 @@ export default function DashboardLayout({ children }) {
 
   const handleLogout = () => {
     setUserMenu(false);
-    logout();
+    identity.logout();
     // Not navigate('/') - see localePath.js's goHome() comment: under a
     // non-English basename that produces "/fr" with no trailing slash.
     goHome();
   };
 
-  const initials = user?.name ? getNameInitials(user.name) : '?';
+  const initials = identity.name ? getNameInitials(identity.name) : '?';
 
-  const userName = user?.name?.split(' ')[0] ?? shell.account;
+  const userName = identity.name ? identity.name.split(' ')[0] : shell.account;
 
   return (
     <div className={`ds${collapsed ? ' ds--collapsed' : ''}${mobileOpen ? ' ds--mobile-open' : ''}`}>
@@ -272,7 +276,7 @@ export default function DashboardLayout({ children }) {
             <div className="ds-sidebar__avatar" aria-hidden="true">{initials}</div>
             {!collapsed && (
               <div className="ds-sidebar__user-info">
-                <span className="ds-sidebar__user-name">{user?.name}</span>
+                <span className="ds-sidebar__user-name">{identity.name}</span>
                 <span className="ds-sidebar__user-role">{roleLabel(user, isAdmin, roles)}</span>
               </div>
             )}
@@ -371,17 +375,20 @@ export default function DashboardLayout({ children }) {
               {userMenu && (
                 <div className="ds-dropdown" role="menu" aria-label={shell.userMenu}>
                   <div className="ds-dropdown__header">
-                    <span className="ds-dropdown__name">{user?.name}</span>
-                    <span className="ds-dropdown__email">{user?.email}</span>
+                    <span className="ds-dropdown__name">{identity.name}</span>
+                    <span className="ds-dropdown__email">{identity.email}</span>
                   </div>
-                  <Link
-                    to="/profile"
-                    className="ds-dropdown__item"
-                    onClick={() => setUserMenu(false)}
-                    role="menuitem"
-                  >
-                    <User size={14} aria-hidden="true" /> {shell.profile}
-                  </Link>
+                  {/* The admin account has no regular profile or billing page. */}
+                  {!isAdmin && (
+                    <Link
+                      to="/profile"
+                      className="ds-dropdown__item"
+                      onClick={() => setUserMenu(false)}
+                      role="menuitem"
+                    >
+                      <User size={14} aria-hidden="true" /> {shell.profile}
+                    </Link>
+                  )}
                   {!isAdmin && (
                     <Link
                       to="/billing"

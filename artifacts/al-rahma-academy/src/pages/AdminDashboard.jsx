@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import {
   LayoutDashboard, Users, BookOpen, CreditCard, Target,
   Mail, Settings, TrendingUp, BarChart3, Activity, CheckCircle,
-  RefreshCw, Download, CalendarDays, Star, Users2, AlertCircle, CalendarCheck,
+  RefreshCw, Download, CalendarDays, Star, AlertCircle, CalendarCheck,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getCourses } from '../api/courseApi';
@@ -13,7 +13,6 @@ import { getUsers } from '../api/adminApi';
 import { getTrials, getSubscribers } from '../api/contentApi';
 import { getEnrollments } from '../api/enrollmentApi';
 import { getAdminReviews } from '../api/reviewApi';
-import { getAdminPosts, getAdminComments } from '../api/communityApi';
 import AdminCoursesTab    from '../components/features/admin/AdminCoursesTab';
 import AdminTrialsTab     from '../components/features/admin/AdminTrialsTab';
 import AdminPaymentsTab   from '../components/features/admin/AdminPaymentsTab';
@@ -22,7 +21,6 @@ import AdminNewsletterTab from '../components/features/admin/AdminNewsletterTab'
 import AdminUsersTab      from '../components/features/admin/AdminUsersTab';
 import AdminClassesTab   from '../components/features/admin/AdminClassesTab';
 import AdminReviewsTab   from '../components/features/admin/AdminReviewsTab';
-import AdminCommunityTab from '../components/features/admin/AdminCommunityTab';
 import AdminProgressModal from '../components/features/admin/AdminProgressModal';
 import DashboardLayout    from '../components/layout/DashboardLayout';
 import { DsBarChart, DsAreaChart, DsChartEmpty } from '../components/ui/DsChart';
@@ -164,7 +162,6 @@ const TABS = [
   { key: 'newsletter',  label: 'Newsletter',  Icon: Mail },
   { key: 'classes',     label: 'Classes',     Icon: CalendarDays },
   { key: 'reviews',     label: 'Reviews',     Icon: Star },
-  { key: 'community',   label: 'Community',   Icon: Users2 },
 ];
 
 export default function AdminDashboard() {
@@ -181,8 +178,6 @@ export default function AdminDashboard() {
   const { data: subscribers = [], isLoading: l4, isError: e4 } = useQuery({ queryKey: ['admin', 'newsletter'],  queryFn: getSubscribers,                      staleTime: 300000 });
   const { data: usersRes, isLoading: l5, isError: e5 }         = useQuery({ queryKey: ['admin', 'users'],       queryFn: getUsers,                            staleTime: 60000  });
   const { data: reviewsRes, isLoading: l7, isError: e6 }       = useQuery({ queryKey: ['admin', 'reviews'],     queryFn: getAdminReviews,                     staleTime: 60000  });
-  const { data: communityPostsRes, isLoading: l8, isError: e7 }    = useQuery({ queryKey: ['admin', 'community-posts'],    queryFn: getAdminPosts,    staleTime: 60000  });
-  const { data: communityCommentsRes, isLoading: l9, isError: e8 } = useQuery({ queryKey: ['admin', 'community-comments'], queryFn: getAdminComments, staleTime: 60000  });
   const { data: bookingsRes, isLoading: l10, isError: e9 }         = useQuery({ queryKey: ['admin', 'bookings'],  queryFn: getEnrollments,                      staleTime: 30000  });
 
   // Surfaces a failed data load (most commonly a 403 for an AdminUser role
@@ -192,7 +187,7 @@ export default function AdminDashboard() {
   // indistinguishable from a genuinely empty account.
   const failedSections = [
     e1 && 'courses', e2 && 'trial requests', e3 && 'payments', e4 && 'newsletter subscribers', e5 && 'users', e6 && 'reviews',
-    e7 && 'community posts', e8 && 'community comments', e9 && 'bookings',
+    e9 && 'bookings',
   ].filter(Boolean);
   const loadErrorMessage = failedSections.length
     ? `Failed to load: ${failedSections.join(', ')}. You may not have permission to view this data, or there was a network error.`
@@ -204,14 +199,10 @@ export default function AdminDashboard() {
   const usersTotal      = usersRes?.total ?? users.length;
   const reviews         = reviewsRes?.reviews ?? [];
   const reviewsTotal    = reviewsRes?.total ?? reviews.length;
-  const communityPosts      = communityPostsRes?.posts ?? [];
-  const communityPostsTotal = communityPostsRes?.total ?? communityPosts.length;
-  const communityComments      = communityCommentsRes?.comments ?? [];
-  const communityCommentsTotal = communityCommentsRes?.total ?? communityComments.length;
   const bookings      = bookingsRes?.data ?? bookingsRes ?? [];
   const bookingsTotal = bookingsRes?.total ?? bookings.length;
 
-  const loading = l1 || l2 || l3 || l4 || l5 || l7 || l8 || l9 || l10;
+  const loading = l1 || l2 || l3 || l4 || l5 || l7 || l10;
 
   const setCourses  = (updater) => queryClient.setQueryData(['admin', 'courses'],    updater);
   const setBookings = (updater) => queryClient.setQueryData(['admin', 'bookings'], (old) => {
@@ -234,16 +225,6 @@ export default function AdminDashboard() {
     const next = typeof updater === 'function' ? updater(prev) : updater;
     return old?.reviews !== undefined ? { ...old, reviews: next } : next;
   });
-  const setCommunityPosts = (updater) => queryClient.setQueryData(['admin', 'community-posts'], (old) => {
-    const prev = old?.posts ?? [];
-    const next = typeof updater === 'function' ? updater(prev) : updater;
-    return old?.posts !== undefined ? { ...old, posts: next } : next;
-  });
-  const setCommunityComments = (updater) => queryClient.setQueryData(['admin', 'community-comments'], (old) => {
-    const prev = old?.comments ?? [];
-    const next = typeof updater === 'function' ? updater(prev) : updater;
-    return old?.comments !== undefined ? { ...old, comments: next } : next;
-  });
 
   const loadAll = () => {
     queryClient.invalidateQueries({ queryKey: ['admin'] });
@@ -262,7 +243,6 @@ export default function AdminDashboard() {
     if (key === 'bookings')  return bookings.filter((b) => b.status === 'pending').length;
     if (key === 'payments')  return pendingPayments.length;
     if (key === 'trials')    return trials.filter((t) => t.status === 'pending').length;
-    if (key === 'community') return communityPosts.filter((p) => p.status === 'pending').length + communityComments.filter((c) => c.status === 'pending').length;
     return 0;
   };
 
@@ -677,21 +657,6 @@ export default function AdminDashboard() {
             reviews={reviews}
             reviewsTotal={reviewsTotal}
             onReviewsChange={setReviews}
-            onError={setError}
-          />
-        </div>
-      </div>
-
-      {/* ── COMMUNITY TAB ──────────────────────────────────────────── */}
-      <div id="tabpanel-community" role="tabpanel" aria-labelledby="tab-community" hidden={activeTab !== 'community'}>
-        <div className="ds-card" style={{ padding: 0, overflow: 'hidden' }}>
-          <AdminCommunityTab
-            posts={communityPosts}
-            postsTotal={communityPostsTotal}
-            comments={communityComments}
-            commentsTotal={communityCommentsTotal}
-            onPostsChange={setCommunityPosts}
-            onCommentsChange={setCommunityComments}
             onError={setError}
           />
         </div>

@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import BrandLockup from "../ui/BrandLockup";
 import { useAuth } from "../../context/AuthContext";
 import { useAdminAuth } from "../../context/AdminAuthContext";
+import { useAccountIdentity } from "../../hooks/useAccountIdentity";
 import { useLang, withLanguage } from "../../context/LangContext";
 import { homeHref } from "../../utils/localePath";
 import { isRouteHidden } from "../../utils/italianLinkPolicy";
@@ -33,13 +34,17 @@ export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [cmdOpen, setCmdOpen]       = useState(false);
   const [scrolled, setScrolled]     = useState(false);
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   // isAdmin is proven exclusively by the real AdminUser + MFA session, never
   // by the regular account's own `role` field. See src/utils/accountRoles.js.
   // There is no isTeacher/isParent any more - both normalize to `user`.
   const { isAdmin } = useAdminAuth();
+  // The account shown as signed in: the admin account while its session is
+  // verified, otherwise the regular one (hooks/useAccountIdentity.js).
+  const identity = useAccountIdentity();
   const { t, lang, setLang } = useLang();
-  const copy = getExperienceText(lang).header;
+  const experience = getExperienceText(lang);
+  const copy = experience.header;
   const { dark, toggle: toggleDark } = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
@@ -118,7 +123,7 @@ export default function Header() {
     const pathname = path.split(/[?#]/, 1)[0];
     return location.pathname === pathname || location.pathname.startsWith(pathname + "/");
   };
-  const handleLogout = () => { closeAll(); logout(); navigate(localizedTo("/")); };
+  const handleLogout = () => { closeAll(); identity.logout(); navigate(localizedTo("/")); };
 
   /* Raw <a href={homeHref()}>, not <Link> — see utils/localePath.js's
      homeHref() comment: react-router can't render a duplicate-free,
@@ -172,7 +177,7 @@ export default function Header() {
     { to: localizedTo("/academy/privacy"),  label: n.privacy,  Icon: LockIcon },
   ], [localizedTo, n]);
 
-  const userName = user?.name?.split(" ")[0] ?? copy.account;
+  const userName = identity.name ? identity.name.split(" ")[0] : copy.account;
 
   return (
     <>
@@ -192,28 +197,32 @@ export default function Header() {
           >
 
             {/* ── Mobile-only: signed-in user profile strip + account links ── */}
-            {user && (
+            {identity.signedIn && (
               <>
                 <div className="nav__mobile-profile">
-                  <Avatar name={user.name} size="sm" />
+                  <Avatar name={identity.name} size="sm" />
                   <div className="nav__mobile-profile-info">
-                    <span className="nav__mobile-profile-name">{user.name}</span>
+                    <span className="nav__mobile-profile-name">{identity.name}</span>
                     {/* Stage 2C (see docs/legacy-role-orphan-cleanup.md): never
                         render the raw backend `role` field - it can still
                         literally hold a legacy teacher/parent/student value
                         for an old account, and it is not a trust source
                         anyway (see accountRoles.js). Always show the same
                         translated, generic account label. */}
-                    <span className="nav__mobile-profile-role">{copy.account}</span>
+                    <span className="nav__mobile-profile-role">
+                      {isAdmin ? experience.dashboard.roles.administrator : copy.account}
+                    </span>
                   </div>
-                  <Link
-                    to={localizedTo("/profile")}
-                    className="nav__mobile-profile-edit"
-                    onClick={closeAll}
-                    aria-label={copy.editProfile}
-                  >
-                    <SettingsIcon size={16} />
-                  </Link>
+                  {!isAdmin && (
+                    <Link
+                      to={localizedTo("/profile")}
+                      className="nav__mobile-profile-edit"
+                      onClick={closeAll}
+                      aria-label={copy.editProfile}
+                    >
+                      <SettingsIcon size={16} />
+                    </Link>
+                  )}
                 </div>
                 <div className="nav__mobile-account">
                   <span className="nav__mobile-account-label">{copy.myAccount}</span>
@@ -227,10 +236,12 @@ export default function Header() {
                     </span>
                     <span>{n.dashboard}</span>
                   </Link>
-                  <Link to={localizedTo("/billing")} className="nav__mobile-account-link" onClick={closeAll}>
-                    <span className="nav__mobile-account-icon"><CardIcon size={ICON_SIZE} /></span>
-                    <span>{n.invoices}</span>
-                  </Link>
+                  {!isAdmin && (
+                    <Link to={localizedTo("/billing")} className="nav__mobile-account-link" onClick={closeAll}>
+                      <span className="nav__mobile-account-icon"><CardIcon size={ICON_SIZE} /></span>
+                      <span>{n.invoices}</span>
+                    </Link>
+                  )}
                 </div>
               </>
             )}
@@ -287,7 +298,7 @@ export default function Header() {
             </div>
 
             {/* ── Mobile-only: logout / login at bottom of drawer ── */}
-            {user ? (
+            {identity.signedIn ? (
               <button className="nav__mobile-logout" onClick={handleLogout}>
                 <LogoutIcon size={ICON_SIZE} /> {n.logout}
               </button>
@@ -338,7 +349,7 @@ export default function Header() {
             <LangSwitcher />
 
             {/* User dropdown — desktop only; mobile has full drawer section */}
-            {user ? (
+            {identity.signedIn ? (
               <div className="nav__dropdown nav__dropdown--user header__user-desktop" ref={userMenu.ref}>
                 <button
                   className={`nav__user-btn${userMenu.open ? " nav__user-btn--open" : ""}`}
@@ -347,7 +358,7 @@ export default function Header() {
                   aria-haspopup="menu"
                   aria-label={copy.accountMenu(userName)}
                 >
-                  <Avatar name={user.name} size="xs" />
+                  <Avatar name={identity.name} size="xs" />
                   <span className="nav__user-name">{userName}</span>
                   <ChevronDownIcon
                     size={11}
@@ -369,18 +380,23 @@ export default function Header() {
                         {n.dashboard}
                       </Link>
                     </li>
-                    <li role="none">
-                      <Link to={localizedTo("/billing")} className="nav__dropdown-item" onClick={closeAll} role="menuitem">
-                        <span className="nav__dropdown-item-icon" aria-hidden="true"><CardIcon size={ICON_SIZE} /></span>
-                        {n.invoices}
-                      </Link>
-                    </li>
-                    <li role="none">
-                      <Link to={localizedTo("/profile")} className="nav__dropdown-item" onClick={closeAll} role="menuitem">
-                        <span className="nav__dropdown-item-icon" aria-hidden="true"><SettingsIcon size={ICON_SIZE} /></span>
-                        {n.profile}
-                      </Link>
-                    </li>
+                    {/* The admin account has no regular invoices or profile page. */}
+                    {!isAdmin && (
+                      <li role="none">
+                        <Link to={localizedTo("/billing")} className="nav__dropdown-item" onClick={closeAll} role="menuitem">
+                          <span className="nav__dropdown-item-icon" aria-hidden="true"><CardIcon size={ICON_SIZE} /></span>
+                          {n.invoices}
+                        </Link>
+                      </li>
+                    )}
+                    {!isAdmin && (
+                      <li role="none">
+                        <Link to={localizedTo("/profile")} className="nav__dropdown-item" onClick={closeAll} role="menuitem">
+                          <span className="nav__dropdown-item-icon" aria-hidden="true"><SettingsIcon size={ICON_SIZE} /></span>
+                          {n.profile}
+                        </Link>
+                      </li>
+                    )}
                     <li className="nav__dropdown-divider" role="separator" />
                     <li role="none">
                       <button className="nav__dropdown-item nav__dropdown-item--danger" onClick={handleLogout} role="menuitem">

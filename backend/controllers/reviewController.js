@@ -92,8 +92,34 @@ export const moderateReview = asyncHandler(async (req, res) => {
     req.params.id,
     { ...(status && { status }), ...(adminNote && { adminNote }) },
     { new: true, runValidators: true },
-  );
+  )
+    // Same shape as the admin list, so the moderated row keeps its names.
+    .populate('student', 'name')
+    .populate('teacher', 'name')
+    .populate('course', 'title');
   if (!review) return res.status(404).json({ message: 'Review not found' });
   await auditFromReq(req, 'review.moderate', 'Review', review._id, null, review, 'info');
   res.json({ review });
+});
+
+// @route GET /api/v1/admin/reviews  (MFA admin session, reviews:write)
+// Every review in any status, newest first, for the moderation tab. Admin
+// only, so adminNote stays in.
+export const getAdminReviews = asyncHandler(async (req, res) => {
+  const { page, limit, skip } = parsePagination(req.query, { defaultLimit: 100, maxLimit: 200 });
+  const filter = ['pending', 'approved', 'rejected'].includes(req.query.status) ? { status: req.query.status } : {};
+
+  const [reviews, total] = await Promise.all([
+    Review.find(filter)
+      .populate('student', 'name')
+      .populate('teacher', 'name')
+      .populate('course', 'title')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean(),
+    Review.countDocuments(filter),
+  ]);
+
+  res.json({ reviews, total, page, pages: Math.ceil(total / limit) });
 });

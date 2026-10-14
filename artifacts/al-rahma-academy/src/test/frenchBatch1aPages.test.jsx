@@ -47,7 +47,7 @@ const SAME_IN_FRENCH = new Set([
   'Adhkar', 'FAQ', 'Blog', 'Contact', 'Email', 'Newsletter', 'Flexible', 'Excellence',
   'Noorani', 'Huffaz', 'Ijazah', 'France', 'Canada', 'Portugal',
   '— Sahih al-Bukhari 5027', 'alrahmaacademy038@gmail.com',
-  'Facebook', 'Instagram', 'YouTube', 'TikTok', 'Snapchat',
+  'Facebook', 'Instagram', 'YouTube', 'TikTok', 'Snapchat', 'Google', 'WhatsApp',
   // French Religious-Content Safety Correction: this hadith (Sahih
   // al-Bukhari 5027) is shown as its literal English source on the French
   // page, not translated -- see isnadChain.js's own comment.

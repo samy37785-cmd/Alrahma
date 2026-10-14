@@ -76,7 +76,7 @@ const SAME_IN_ITALIAN = new Set([
   'Noorani', 'Huffaz', 'Tajweed', 'Ijazah', 'Hifz', 'Sanad', 'Aqeedah', 'Fiqh', 'Seerah', 'Tafsir',
   'Fiqh · Tafsir · Aqeedah', // it.js's own tutors.creds -- already identical in en/it before this batch
   'alrahmaacademy038@gmail.com',
-  'Facebook', 'Instagram', 'YouTube', 'TikTok', 'Snapchat',
+  'Facebook', 'Instagram', 'YouTube', 'TikTok', 'Snapchat', 'Google', 'WhatsApp',
   ...OUT_OF_BATCH_STILL_ENGLISH,
 ]);
 

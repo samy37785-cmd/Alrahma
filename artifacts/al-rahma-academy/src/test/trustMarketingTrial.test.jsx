@@ -88,8 +88,9 @@ describe('Trial submission flow still works (spec §6 regression guard)', () => 
 
     await waitFor(() => expect(submitTrial).toHaveBeenCalledTimes(1));
     const payload = submitTrial.mock.calls[0][0];
+    // + heardFrom: the optional "how did you hear about us" answer (audit item 8).
     expect(Object.keys(payload).sort()).toEqual(
-      ['course', 'email', 'message', 'name', 'phone'].sort(),
+      ['course', 'email', 'heardFrom', 'message', 'name', 'phone'].sort(),
     );
     expect(payload.name).toBe('Test User');
     expect(payload.email).toBe('test@example.com');

@@ -1,5 +1,6 @@
 import { langFromPath } from '../utils/localePath';
 import { CONSENT_GRANTED, readConsent } from './consent';
+import { HEARD_FROM, TRIAL_FORM_VALUES, trialFormFor } from '../utils/trialSource';
 
 // Google Analytics 4 — loaded ONLY after explicit analytics consent.
 //
@@ -32,16 +33,9 @@ const EVENT_PARAMS = {
   adhkar_category_change: ['page_path', 'site_lang', 'category'],
   // Conversions: sent only after the server accepted the request.
   booking_submitted: ['page_path', 'site_lang'],
-  trial_submitted: ['page_path', 'site_lang', 'form'],
+  trial_submitted: ['page_path', 'site_lang', 'form', 'heard_from'],
 };
 
-// Which trial form was used, keyed by the `source` the form already sends
-// to POST /api/trials. The section form on the home page sends none.
-const TRIAL_FORMS = {
-  'hero-quick-trial': 'quick_trial',
-  'exit-intent': 'exit_intent',
-};
-const TRIAL_FORM_VALUES = ['trial_section', 'quick_trial', 'exit_intent'];
 
 // GA4 reads a session's campaign from these tags in page_location. Our own
 // links (Instagram bio, WhatsApp, ads) carry them; nothing else in the query
@@ -58,6 +52,7 @@ const PARAM_VALIDATORS = {
   step: (v) => Number.isInteger(v) && v >= 1 && v <= 10,
   category: (v) => typeof v === 'string' && /^[a-zA-Z][a-zA-Z_]{0,31}$/.test(v),
   form: (v) => TRIAL_FORM_VALUES.includes(v),
+  heard_from: (v) => HEARD_FROM.includes(v),
 };
 
 let lastPagePath = null;
@@ -209,9 +204,12 @@ export function trackBookingSubmitted() {
   }
 }
 
-export function trackTrialSubmitted(source) {
+export function trackTrialSubmitted(source, heardFrom) {
   try {
-    trackEvent('trial_submitted', { form: TRIAL_FORMS[source] || 'trial_section' });
+    trackEvent('trial_submitted', {
+      form: trialFormFor(source),
+      ...(HEARD_FROM.includes(heardFrom) ? { heard_from: heardFrom } : {}),
+    });
   } catch {
     // ignore
   }

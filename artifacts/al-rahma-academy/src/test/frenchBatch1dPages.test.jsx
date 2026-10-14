@@ -33,7 +33,7 @@ beforeEach(async () => {
 // operational e-mail/phone placeholders, and the shared header/footer.
 const SAME_IN_FRENCH = new Set([
   'AL-RAHMA', 'ACADEMY', 'AL-Rahma', 'Academy.', 'Copyright ©', 'Adhkar', 'FAQ', 'Blog', 'Contact', 'Ctrl K',
-  'Facebook', 'Instagram', 'YouTube', 'TikTok', 'Snapchat', 'WhatsApp',
+  'Facebook', 'Instagram', 'YouTube', 'TikTok', 'Snapchat', 'WhatsApp', 'Google',
   'alrahmaacademy038@gmail.com', '+20 103 955 3264', 'you@email.com', '+44 7700 900000',
   'EN', 'AR', 'IT', 'ES', 'DE', 'FR', 'Blog & Articles', 'Qibla',
 ]);

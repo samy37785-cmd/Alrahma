@@ -30,6 +30,33 @@ const MULTI_LINE_FORBIDDEN = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/;
 // Characters that have list/display-name/comment meaning in address syntax.
 const ADDRESS_SYNTAX_CHARS = /[\s,;<>"()[\]\\:]/;
 
+// Where the lead came from (audit item 8). All optional; a value outside
+// these lists is dropped, never a reason to refuse a trial request.
+export const HEARD_FROM = Object.freeze([
+  'google', 'instagram', 'facebook', 'tiktok', 'youtube', 'whatsapp',
+  'friend_family', 'mosque_community', 'ai_assistant', 'other',
+]);
+export const FORM_SOURCES = Object.freeze(['trial_section', 'quick_trial', 'exit_intent']);
+// The `source` some forms already sent before formSource existed.
+const LEGACY_FORM_SOURCE = { 'hero-quick-trial': 'quick_trial', 'exit-intent': 'exit_intent' };
+// Same pattern the frontend's GA module accepts for campaign tags.
+const CAMPAIGN_VALUE = /^[A-Za-z0-9._-]{1,100}$/;
+
+export function pickTrialSource(body = {}) {
+  const oneOf = (list, v) => (typeof v === 'string' && list.includes(v) ? v : null);
+  const campaign = (v) => (typeof v === 'string' && CAMPAIGN_VALUE.test(v) ? v : null);
+  const utm = {
+    source: campaign(body.utmSource),
+    medium: campaign(body.utmMedium),
+    campaign: campaign(body.utmCampaign),
+  };
+  return {
+    heardFrom: oneOf(HEARD_FROM, body.heardFrom),
+    formSource: oneOf(FORM_SOURCES, body.formSource) ?? LEGACY_FORM_SOURCE[body.source] ?? null,
+    utm: utm.source || utm.medium || utm.campaign ? utm : null,
+  };
+}
+
 export const INVALID_TRIAL_MESSAGE =
   'Please enter one valid email address and keep each field within its length limit.';
 export const MISSING_TRIAL_MESSAGE = 'Name and email are required';
@@ -91,8 +118,9 @@ export const trialValidation = [
 // Ends the request with 400 on any failure (the status this endpoint has
 // always used for bad input). On success, exposes ONLY the five accepted
 // fields, trimmed, as req.trialInput — controllers must read from there,
-// never from req.body. Unknown extra fields (e.g. `source`, `whatsapp` sent
-// by some forms) are ignored exactly as before.
+// never from req.body — and the lead's origin, already reduced to known
+// values, as req.trialSource. Other extra fields (e.g. `whatsapp` sent by
+// some forms) are ignored exactly as before.
 export function rejectInvalidTrial(req, res, next) {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -107,5 +135,6 @@ export function rejectInvalidTrial(req, res, next) {
     course: pick('course'),
     message: pick('message'),
   };
+  req.trialSource = pickTrialSource(req.body);
   next();
 }

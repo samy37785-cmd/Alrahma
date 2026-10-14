@@ -6,24 +6,34 @@ import {
 } from '../config/emailTemplates.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 
+// "instagram / social / ramadan" for the admin email; null without tags.
+function campaignLabel(utm) {
+  if (!utm) return null;
+  return [utm.source, utm.medium, utm.campaign].filter(Boolean).join(' / ');
+}
+
 // @desc   Submit a free-trial request (from the React form)
 // @route  POST /api/trials
 // @access Public — input is validated by utils/trialValidation.js (mounted in
 //         routes/trialRoutes.js); this handler only reads req.trialInput.
 export const createTrial = asyncHandler(async (req, res) => {
   const { name, email, phone, course, message } = req.trialInput;
+  const { heardFrom, formSource, utm } = req.trialSource;
 
   const trial = await TrialRequest.create({
     name, email,
     ...(phone ? { phone } : {}),
     ...(course ? { course } : {}),
     ...(message ? { message } : {}),
+    ...(heardFrom ? { heardFrom } : {}),
+    ...(formSource ? { formSource } : {}),
+    ...(utm ? { utm } : {}),
   });
 
   // The address is passed as an object so Nodemailer never re-parses it as a
   // list; it was already proven to be exactly one bare address.
   const student = { name: '', address: email };
-  const fields = { name, email, phone, course, message };
+  const fields = { name, email, phone, course, message, heardFrom, campaign: campaignLabel(utm) };
 
   // Notify admin + confirm to student (non-blocking)
   const adminEmail = ADMIN_EMAIL();

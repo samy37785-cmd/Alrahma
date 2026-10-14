@@ -7,8 +7,9 @@ import { useLang } from '../../../context/LangContext';
 import { limitedTrialSpotsText } from '../../../data/siteFacts';
 import { courseOptionLabel } from '../../../i18n/home/leakedStrings';
 import TrialWhatsappButton from '../../ui/TrialWhatsappButton';
+import { HEARD_FROM } from '../../../utils/trialSource';
 
-const EMPTY = { name: '', email: '', phone: '', course: '', message: '' };
+const EMPTY = { name: '', email: '', phone: '', course: '', message: '', heardFrom: '' };
 
 // Trust/marketing remediation: this component used to show
 // "Only N free trial spots left this week", where N came from
@@ -201,6 +202,15 @@ export default function Trial() {
               value={form.message}
               onChange={handleChange}
             />
+          </div>
+          <div className="field">
+            <label htmlFor="heardFrom">{tr.heardFrom.label}</label>
+            <select id="heardFrom" name="heardFrom" value={form.heardFrom} onChange={handleChange}>
+              <option value="">{tr.heardFrom.placeholder}</option>
+              {HEARD_FROM.map((k) => (
+                <option key={k} value={k}>{tr.heardFrom.options[k]}</option>
+              ))}
+            </select>
           </div>
 
           <button type="submit" className="btn btn--gold btn--block" disabled={sending} aria-busy={sending}>

@@ -270,6 +270,22 @@ const fr = {
       "course": "Cours souhaité",
       "message": "Message (optionnel)"
     },
+    "heardFrom": {
+      "label": "Comment nous avez-vous connus ? (facultatif)",
+      "placeholder": "Choisir",
+      "options": {
+        "google": "Google",
+        "instagram": "Instagram",
+        "facebook": "Facebook",
+        "tiktok": "TikTok",
+        "youtube": "YouTube",
+        "whatsapp": "WhatsApp",
+        "friend_family": "Un ami ou un proche",
+        "mosque_community": "Mosquée ou communauté",
+        "ai_assistant": "Un assistant IA (ChatGPT, etc.)",
+        "other": "Autre"
+      }
+    },
     "placeholders": {
       "name": "Votre nom",
       "email": "vous@exemple.fr",

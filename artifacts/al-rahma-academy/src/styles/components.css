@@ -1080,7 +1080,8 @@
 .qtm__field { display: flex; flex-direction: column; gap: 5px; }
 .qtm__field label { font-size: .82rem; font-weight: 600; color: var(--text-primary); }
 .qtm__optional { font-weight: 400; color: var(--text-secondary); }
-.qtm__field input {
+.qtm__field input,
+.qtm__field select {
   border: 1.5px solid var(--border-default, #ddd);
   border-radius: 10px;
   padding: 11px 14px;
@@ -1090,7 +1091,8 @@
   transition: border-color .15s, box-shadow .15s;
   outline: none;
 }
-.qtm__field input:focus {
+.qtm__field input:focus,
+.qtm__field select:focus {
   border-color: var(--color-primary, #0b6e4f);
   box-shadow: 0 0 0 3px rgba(11,110,79,.12);
 }

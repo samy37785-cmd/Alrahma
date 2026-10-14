@@ -76,6 +76,34 @@ describe('GA4 conversion events', () => {
     expect(JSON.stringify(gtagCalls())).not.toMatch(/Amina|example\.com|201000000000/);
   });
 
+  // Audit item 8: where the lead came from.
+  it('trial_submitted carries the "heard from" answer only when it is a known value', async () => {
+    writeConsent('granted');
+    window.history.replaceState({}, '', '/it/');
+    post.mockResolvedValue({ data: { ok: true } });
+
+    await submitTrial({ ...PERSON, heardFrom: 'instagram' });
+    await submitTrial({ ...PERSON, heardFrom: 'amina@example.com' });
+
+    expect(events('trial_submitted').map((e) => e[2])).toEqual([
+      { page_path: '/it/', site_lang: 'it', form: 'trial_section', heard_from: 'instagram' },
+      { page_path: '/it/', site_lang: 'it', form: 'trial_section' },
+    ]);
+  });
+
+  it('the trial request sends which form was used and the page campaign tags (valid ones only)', async () => {
+    window.history.replaceState({}, '', '/it/?utm_source=instagram&utm_medium=social&utm_campaign=amina@example.com&ref=x');
+    post.mockResolvedValue({ data: { ok: true } });
+
+    await submitTrial({ ...PERSON, source: 'hero-quick-trial', heardFrom: 'friend_family' });
+
+    const [url, body] = post.mock.calls[0];
+    expect(url).toBe('/trials');
+    expect(body).toMatchObject({ formSource: 'quick_trial', heardFrom: 'friend_family', utmSource: 'instagram', utmMedium: 'social' });
+    expect(body.utmCampaign).toBeUndefined();
+    expect(body.ref).toBeUndefined();
+  });
+
   it('sends nothing when the request fails', async () => {
     writeConsent('granted');
     post.mockRejectedValue(new Error('500'));

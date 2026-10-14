@@ -268,6 +268,22 @@ const en = {
       "course": "Course of interest",
       "message": "Message (optional)"
     },
+    "heardFrom": {
+      "label": "How did you hear about us? (optional)",
+      "placeholder": "Choose one",
+      "options": {
+        "google": "Google",
+        "instagram": "Instagram",
+        "facebook": "Facebook",
+        "tiktok": "TikTok",
+        "youtube": "YouTube",
+        "whatsapp": "WhatsApp",
+        "friend_family": "A friend or family member",
+        "mosque_community": "Mosque or community",
+        "ai_assistant": "An AI assistant (ChatGPT, etc.)",
+        "other": "Other"
+      }
+    },
     "placeholders": {
       "name": "Your name",
       "email": "you@example.com",

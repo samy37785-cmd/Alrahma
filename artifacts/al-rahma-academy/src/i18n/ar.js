@@ -268,6 +268,22 @@ const ar = {
       "course": "الدورة المطلوبة",
       "message": "رسالة (اختياري)"
     },
+    "heardFrom": {
+      "label": "كيف عرفت عنا؟ (اختياري)",
+      "placeholder": "اختر",
+      "options": {
+        "google": "جوجل",
+        "instagram": "إنستغرام",
+        "facebook": "فيسبوك",
+        "tiktok": "تيك توك",
+        "youtube": "يوتيوب",
+        "whatsapp": "واتساب",
+        "friend_family": "صديق أو أحد من العائلة",
+        "mosque_community": "المسجد أو الجالية",
+        "ai_assistant": "مساعد ذكاء اصطناعي (مثل ChatGPT)",
+        "other": "أخرى"
+      }
+    },
     "placeholders": {
       "name": "اسمك",
       "email": "example@mail.com",

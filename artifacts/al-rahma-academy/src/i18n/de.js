@@ -268,6 +268,22 @@ const de = {
       "course": "Gewünschter Kurs",
       "message": "Nachricht (optional)"
     },
+    "heardFrom": {
+      "label": "Wie haben Sie von uns erfahren? (optional)",
+      "placeholder": "Bitte wählen",
+      "options": {
+        "google": "Google",
+        "instagram": "Instagram",
+        "facebook": "Facebook",
+        "tiktok": "TikTok",
+        "youtube": "YouTube",
+        "whatsapp": "WhatsApp",
+        "friend_family": "Freunde oder Familie",
+        "mosque_community": "Moschee oder Gemeinde",
+        "ai_assistant": "Ein KI-Assistent (ChatGPT usw.)",
+        "other": "Sonstiges"
+      }
+    },
     "placeholders": {
       "name": "Dein Name",
       "email": "du@beispiel.de",

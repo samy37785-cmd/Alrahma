@@ -22,7 +22,6 @@ vi.mock('../api/adminApi', () => ({ getUsers: vi.fn() }));
 vi.mock('../api/contentApi', () => ({ getTrials: vi.fn(), getSubscribers: vi.fn() }));
 vi.mock('../api/enrollmentApi', () => ({ getEnrollments: vi.fn(), updateEnrollment: vi.fn() }));
 vi.mock('../api/reviewApi', () => ({ getAdminReviews: vi.fn() }));
-vi.mock('../api/communityApi', () => ({ getAdminPosts: vi.fn(), getAdminComments: vi.fn() }));
 
 vi.mock('../context/AuthContext', () => ({ useAuth: () => ({ user: { name: 'Admin' } }) }));
 vi.mock('../components/layout/DashboardLayout', () => ({
@@ -37,7 +36,6 @@ vi.mock('../components/features/admin/AdminUsersTab', () => ({ default: () => <d
 vi.mock('../components/features/admin/AdminClassesTab', () => ({ default: () => <div /> }));
 vi.mock('../components/features/admin/AdminReviewsTab', () => ({ default: () => <div /> }));
 vi.mock('../components/features/admin/AdminProgressModal', () => ({ default: () => <div /> }));
-vi.mock('../components/features/admin/AdminCommunityTab', () => ({ default: () => <div /> }));
 
 import { getCourses } from '../api/courseApi';
 import { getManualPayments } from '../api/paymentApi';
@@ -45,7 +43,6 @@ import { getUsers } from '../api/adminApi';
 import { getTrials, getSubscribers } from '../api/contentApi';
 import { getEnrollments } from '../api/enrollmentApi';
 import { getAdminReviews } from '../api/reviewApi';
-import { getAdminPosts, getAdminComments } from '../api/communityApi';
 import AdminDashboard from '../pages/AdminDashboard';
 
 function renderDashboard() {
@@ -65,8 +62,6 @@ function mockAllSucceed() {
   getSubscribers.mockResolvedValue([]);
   getEnrollments.mockResolvedValue({ data: [], total: 0 });
   getAdminReviews.mockResolvedValue({ reviews: [], total: 0 });
-  getAdminPosts.mockResolvedValue({ posts: [], total: 0 });
-  getAdminComments.mockResolvedValue({ comments: [], total: 0 });
 }
 
 describe('AdminDashboard — RBAC-aware load-error banner', () => {
@@ -78,6 +73,16 @@ describe('AdminDashboard — RBAC-aware load-error banner', () => {
 
     await waitFor(() => expect(screen.getByRole('tablist')).toBeInTheDocument());
     expect(screen.queryByText(/Failed to load/)).not.toBeInTheDocument();
+  });
+
+  // The community tab read endpoints that never existed on the server, so it
+  // always put "community posts, community comments" in the banner.
+  it('has no community tab', async () => {
+    mockAllSucceed();
+    renderDashboard();
+
+    await waitFor(() => expect(screen.getByRole('tablist')).toBeInTheDocument());
+    expect(screen.queryByRole('tab', { name: /community/i })).not.toBeInTheDocument();
   });
 
   it('a single failed query (e.g. a 403 for a role lacking users:read) names that section in the banner', async () => {
@@ -133,8 +138,6 @@ describe('AdminDashboard KPIs no longer depend on account roles', () => {
     getSubscribers.mockResolvedValue([]);
     getEnrollments.mockResolvedValue({ data: [], total: 0 });
     getAdminReviews.mockResolvedValue({ reviews: [], total: 0 });
-    getAdminPosts.mockResolvedValue({ posts: [], total: 0 });
-    getAdminComments.mockResolvedValue({ comments: [], total: 0 });
     renderDashboard();
 
     await waitFor(() => expect(screen.getByText('Active Subscribers')).toBeInTheDocument());
@@ -190,8 +193,6 @@ describe('AdminDashboard: the unproven conversion-rate metric is gone', () => {
     getSubscribers.mockResolvedValue([]);
     getEnrollments.mockResolvedValue({ data: [], total: 0 });
     getAdminReviews.mockResolvedValue({ reviews: [], total: 0 });
-    getAdminPosts.mockResolvedValue({ posts: [], total: 0 });
-    getAdminComments.mockResolvedValue({ comments: [], total: 0 });
     renderDashboard();
 
     await waitFor(() => expect(screen.getByText('Pending Payments')).toBeInTheDocument());

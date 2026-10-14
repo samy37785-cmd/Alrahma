@@ -188,6 +188,35 @@ test('PATCH /api/v1/admin/reviews/:id/moderate is forbidden for a viewer (no rev
   assert.equal(unauthenticated.status, 401);
 });
 
+// The admin console's Reviews tab read GET /api/reviews, which never existed
+// (404 — the "Failed to load: reviews" banner, owner report 2026-10-14).
+test('GET /api/v1/admin/reviews lists every status, newest first, with the reviewer and course names', async () => {
+  const { agent, cookieHeader } = await adminUserAgent();
+  const student = await User.create({ name: 'Listed Reviewer', email: `listed-${Date.now()}@example.com`, password: STUDENT_PASSWORD });
+  const course = await Course.create({ title: 'Tajweed Basics', description: 'd' });
+  await Review.create({ student: student._id, course: course._id, rating: 4, body: 'Older', status: 'approved', createdAt: new Date('2026-01-01') });
+  await Review.create({ student: student._id, course: course._id, rating: 5, body: 'Newer', status: 'pending', adminNote: 'check' });
+
+  const res = await agent.get('/api/v1/admin/reviews').set({ Cookie: cookieHeader });
+  assert.equal(res.status, 200);
+  assert.equal(res.body.total, 2);
+  assert.deepEqual(res.body.reviews.map((r) => r.body), ['Newer', 'Older']);
+  assert.equal(res.body.reviews[0].student.name, 'Listed Reviewer');
+  assert.equal(res.body.reviews[0].adminNote, 'check');
+  assert.equal(res.body.reviews[0].course.title, 'Tajweed Basics');
+
+  const pending = await agent.get('/api/v1/admin/reviews?status=pending').set({ Cookie: cookieHeader });
+  assert.deepEqual(pending.body.reviews.map((r) => r.body), ['Newer']);
+});
+
+test('GET /api/v1/admin/reviews is forbidden for a viewer and rejects unauthenticated requests', async () => {
+  const { agent, cookieHeader } = await adminUserAgent('viewer');
+  assert.equal((await agent.get('/api/v1/admin/reviews').set({ Cookie: cookieHeader })).status, 403);
+
+  const { agent: anon } = await agentWithCsrf(app);
+  assert.equal((await anon.get('/api/v1/admin/reviews')).status, 401);
+});
+
 // ---------------------------------------------------------------------------
 // Courses / Enrollments — already had a hardened /api/v1/admin equivalent
 // before this migration (routes/v1/admin/coursesRoutes.js,

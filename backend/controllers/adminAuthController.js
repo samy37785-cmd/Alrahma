@@ -228,7 +228,18 @@ export async function confirmMfaSetup(req, res) {
 
   await auditFromAdmin(admin, 'auth.mfa_activated', req);
 
-  return res.json({ message: '2FA activated and session started' });
+  return res.json({ message: '2FA activated and session started', admin: adminProfile(admin) });
+}
+
+// The profile the admin console shows for the signed-in admin (name, email).
+function adminProfile(admin) {
+  return {
+    id:          String(admin._id),
+    name:        admin.name,
+    email:       admin.email,
+    role:        admin.role,
+    permissions: admin.getPermissions(),
+  };
 }
 
 // ── POST /api/v1/admin/auth/mfa/verify ──────────────────────────────────────
@@ -308,13 +319,7 @@ export async function verifyMfaLogin(req, res) {
 
   return res.json({
     message: 'Login successful',
-    admin: {
-      id:          String(admin._id),
-      name:        admin.name,
-      email:       admin.email,
-      role:        admin.role,
-      permissions: admin.getPermissions(),
-    },
+    admin: adminProfile(admin),
   });
 }
 

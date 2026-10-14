@@ -55,7 +55,8 @@ export function bottomNavFor(isAdmin, unreadCount) {
     { to: '/admin',    icon: LayoutDashboard, labelKey: 'overview',  end: true },
     { to: '/messages', icon: MessageSquare,   labelKey: 'messages',  badge: unreadCount },
     { to: '/admin#users', icon: Users,        labelKey: 'users' },
-    { to: '/profile',  icon: User,            labelKey: 'profile' },
+    // Not /profile: that page belongs to the regular account, not the admin.
+    { to: '/admin#trials', icon: Target,      labelKey: 'trials' },
   ];
   return [
     { to: '/dashboard', icon: LayoutDashboard, labelKey: 'dashboard', end: true },

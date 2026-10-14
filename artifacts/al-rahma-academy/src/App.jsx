@@ -44,6 +44,7 @@ const IslamicTools       = lazy(() => import('./pages/IslamicTools'));
 const Adhkar             = lazy(() => import('./pages/Adhkar'));
 const ForgotPassword     = lazy(() => import('./pages/ForgotPassword'));
 const ResetPassword      = lazy(() => import('./pages/ResetPassword'));
+const VerifyEmail        = lazy(() => import('./pages/VerifyEmail'));
 const CourseContent      = lazy(() => import('./pages/CourseContent'));
 const CourseIjazah       = lazy(() => import('./pages/CourseIjazah'));
 const CourseIslamicStudies = lazy(() => import('./pages/CourseIslamicStudies'));
@@ -168,6 +169,7 @@ export default function App({ basename = '' }) {
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/verify-email" element={<VerifyEmail />} />
 
           {/* ── Enroll & Booking ──
               /payment/success and /payment/cancel are legacy Stripe/PayPal

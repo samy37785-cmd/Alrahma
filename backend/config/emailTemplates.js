@@ -330,6 +330,19 @@ export function weeklyParentReportEmail({ parentName, children }) {
   `);
 }
 
+export function verifyEmailTemplate({ name, link }) {
+  return base(`
+    <p>Hi ${esc(name)},</p>
+    <p style="color:#555;font-size:15px;line-height:1.7;">
+      Please confirm that this is your email address. The link expires in <strong>48 hours</strong>.
+    </p>
+    <div style="margin:24px 0;">
+      <a href="${link}" style="background:#0b6e4f;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;display:inline-block;">Confirm my email</a>
+    </div>
+    <p style="color:#888;font-size:12px;">If you didn't create an account at Al-Rahma Academy, ignore this email.</p>
+  `);
+}
+
 export function forgotPasswordEmail({ name, link }) {
   return base(`
     <p>Hi ${esc(name)},</p>

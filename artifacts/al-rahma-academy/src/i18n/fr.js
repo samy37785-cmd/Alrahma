@@ -720,6 +720,17 @@ const fr = {
       "back": "← Retour à la connexion",
       "errorFallback": "Impossible d'envoyer l'email. Veuillez réessayer."
     },
+    "verifyEmail": {
+      "title": "Confirmez votre e-mail",
+      "checking": "Confirmation de votre e-mail…",
+      "success": "Votre e-mail est confirmé. Merci !",
+      "invalid": "Ce lien de confirmation n’est pas valide ou a expiré. Connectez-vous et envoyez-en un nouveau depuis votre tableau de bord.",
+      "toDashboard": "Aller à mon tableau de bord",
+      "banner": "Veuillez confirmer votre e-mail ({email}). Les réservations et factures liées à cette adresse apparaîtront après la confirmation.",
+      "resend": "Renvoyer le lien",
+      "resent": "Envoyé. Vérifiez votre boîte de réception.",
+      "resendFailed": "Impossible d’envoyer l’e-mail. Réessayez plus tard."
+    },
     "resetPwd": {
       "title": "Définir un nouveau mot de passe",
       "sub": "Entrez et confirmez votre nouveau mot de passe.",

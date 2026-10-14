@@ -718,6 +718,17 @@ const de = {
       "back": "← Zurück zur Anmeldung",
       "errorFallback": "E-Mail konnte nicht gesendet werden. Bitte erneut versuchen."
     },
+    "verifyEmail": {
+      "title": "E-Mail bestätigen",
+      "checking": "Deine E-Mail wird bestätigt…",
+      "success": "Deine E-Mail ist bestätigt. Danke!",
+      "invalid": "Dieser Bestätigungslink ist ungültig oder abgelaufen. Melde dich an und sende im Dashboard einen neuen.",
+      "toDashboard": "Zu meinem Dashboard",
+      "banner": "Bitte bestätige deine E-Mail ({email}). Buchungen und Rechnungen mit dieser Adresse erscheinen nach der Bestätigung.",
+      "resend": "Link erneut senden",
+      "resent": "Gesendet. Sieh in deinem Posteingang nach.",
+      "resendFailed": "Die E-Mail konnte nicht gesendet werden. Bitte versuche es später erneut."
+    },
     "resetPwd": {
       "title": "Neues Passwort festlegen",
       "sub": "Gib dein neues Passwort ein und bestätige es.",

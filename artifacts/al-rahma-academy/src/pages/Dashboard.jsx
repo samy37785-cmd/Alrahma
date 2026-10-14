@@ -5,7 +5,7 @@ import { useQuery, useQueries } from '@tanstack/react-query';
 import {
   Flame, TrendingUp, CalendarDays, Clock, Play, BookOpen, BarChart2,
   MessageSquare, Book, CreditCard, MessageCircle, Landmark, Zap,
-  GraduationCap, Trophy, Star, Target, Moon, ListChecks, PenLine, Sparkles,
+  GraduationCap, Trophy, Star, Target, Moon, ListChecks, PenLine,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLang } from '../context/LangContext';
@@ -238,9 +238,6 @@ export default function Dashboard() {
           )}
           <Link to="/courses" className="btn btn--ghost btn--sm">
             <BookOpen size={14} aria-hidden="true" /> {dashboardCopy.items.courses}
-          </Link>
-          <Link to="/ai-tutor" className="btn btn--green btn--sm">
-            <Sparkles size={14} aria-hidden="true" /> Ask AI Tutor
           </Link>
         </div>
       </div>

@@ -535,8 +535,10 @@ body,
    colors need overriding. The dark bg-surface token handles most of it. */
 
 html.dark .qtm { background: var(--bg-surface-raised); }
-html.dark .qtm__field input { background: var(--bg-page); color: var(--text-primary); border-color: var(--border-default); }
-html.dark .qtm__field input:focus { border-color: var(--color-primary); }
+html.dark .qtm__field input,
+html.dark .qtm__field select { background: var(--bg-page); color: var(--text-primary); border-color: var(--border-default); }
+html.dark .qtm__field input:focus,
+html.dark .qtm__field select:focus { border-color: var(--color-primary); }
 html.dark .qtm__close { color: var(--text-secondary); }
 html.dark .qtm__close:hover { background: var(--bg-surface-hover); }
 

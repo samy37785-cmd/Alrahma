@@ -270,6 +270,22 @@ const fr = {
       "course": "Cours souhaité",
       "message": "Message (optionnel)"
     },
+    "heardFrom": {
+      "label": "Comment nous avez-vous connus ? (facultatif)",
+      "placeholder": "Choisir",
+      "options": {
+        "google": "Google",
+        "instagram": "Instagram",
+        "facebook": "Facebook",
+        "tiktok": "TikTok",
+        "youtube": "YouTube",
+        "whatsapp": "WhatsApp",
+        "friend_family": "Un ami ou un proche",
+        "mosque_community": "Mosquée ou communauté",
+        "ai_assistant": "Un assistant IA (ChatGPT, etc.)",
+        "other": "Autre"
+      }
+    },
     "placeholders": {
       "name": "Votre nom",
       "email": "vous@exemple.fr",
@@ -677,6 +693,7 @@ const fr = {
       "infoSuccess": "Profil mis à jour avec succès.",
       "changePass": "Changer le Mot de Passe",
       "currentPass": "Mot de passe actuel",
+      "emailPassHint": "Pour changer votre e-mail, saisissez votre mot de passe actuel. Inscrit avec Google ? Définissez d’abord un mot de passe via « Mot de passe oublié ».",
       "newPass": "Nouveau mot de passe",
       "confirmPass": "Confirmer le nouveau mot de passe",
       "changeBtn": "Changer le mot de passe",
@@ -718,6 +735,17 @@ const fr = {
       "success": "Vérifiez votre boîte mail — nous avons envoyé un lien de réinitialisation !",
       "back": "← Retour à la connexion",
       "errorFallback": "Impossible d'envoyer l'email. Veuillez réessayer."
+    },
+    "verifyEmail": {
+      "title": "Confirmez votre e-mail",
+      "checking": "Confirmation de votre e-mail…",
+      "success": "Votre e-mail est confirmé. Merci !",
+      "invalid": "Ce lien de confirmation n’est pas valide ou a expiré. Connectez-vous et envoyez-en un nouveau depuis votre tableau de bord.",
+      "toDashboard": "Aller à mon tableau de bord",
+      "banner": "Veuillez confirmer votre e-mail ({email}). Les réservations et factures liées à cette adresse apparaîtront après la confirmation.",
+      "resend": "Renvoyer le lien",
+      "resent": "Envoyé. Vérifiez votre boîte de réception.",
+      "resendFailed": "Impossible d’envoyer l’e-mail. Réessayez plus tard."
     },
     "resetPwd": {
       "title": "Définir un nouveau mot de passe",

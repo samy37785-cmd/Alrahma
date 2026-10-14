@@ -52,6 +52,26 @@ test('globalSearch: an unpublished blog post is never matched', async () => {
   assert.equal(res.body.results.posts.length, 0);
 });
 
+test('globalSearch: an unpublished course is never matched (audit AR-14)', async () => {
+  await Course.create({ title: 'Tajweed Draft', description: 'x', published: false });
+  await Course.create({ title: 'Tajweed Live', description: 'x', published: true });
+  const res = await request(app).get('/api/search').query({ q: 'tajweed' });
+  assert.equal(res.status, 200);
+  assert.deepEqual(res.body.results.courses.map((c) => c.title), ['Tajweed Live']);
+});
+
+test('searchCourses: an unpublished course is never matched or counted, with or without q and level (audit AR-14)', async () => {
+  await Course.create({ title: 'Hifz Draft', description: 'x', level: 'Beginner', published: false });
+  await Course.create({ title: 'Hifz Live', description: 'x', level: 'Beginner', published: true });
+  for (const query of [{}, { q: 'hifz' }, { level: 'Beginner' }, { q: 'draft' }]) {
+    const res = await request(app).get('/api/search/courses').query(query);
+    assert.equal(res.status, 200);
+    const expected = query.q === 'draft' ? [] : ['Hifz Live'];
+    assert.deepEqual(res.body.courses.map((c) => c.title), expected, JSON.stringify(query));
+    assert.equal(res.body.total, expected.length, JSON.stringify(query));
+  }
+});
+
 // ---------------------------------------------------------------------------
 // GET /api/search/courses — level filter is the T7-optimized path
 // ---------------------------------------------------------------------------

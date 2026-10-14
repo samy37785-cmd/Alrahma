@@ -60,7 +60,7 @@ const { createTrial: mongoCreateTrial } = await import('../controllers/trialCont
 const { createTrial: supabaseCreateTrial } = await import('../data/supabase/trialController.js');
 const { trialLimiter } = await import('../config/rateLimit.js');
 const {
-  trialValidation, rejectInvalidTrial, isSingleBareAddress,
+  trialValidation, rejectInvalidTrial, isSingleBareAddress, pickTrialSource,
   TRIAL_LIMITS, INVALID_TRIAL_MESSAGE, MISSING_TRIAL_MESSAGE,
 } = await import('../utils/trialValidation.js');
 const { escapeHtml } = await import('../utils/escapeHtml.js');
@@ -615,4 +615,50 @@ test('route request: no submitted personal data appears in any log line', async 
   for (const value of [VALID.email, VALID.name, VALID.phone, VALID.message, 'x@example.com']) {
     assert.ok(!dump.includes(value), 'submitted value leaked into logs');
   }
+});
+
+// ── Lead source (audit item 8) ─────────────────────────────────────────────
+
+test('pickTrialSource: keeps known values, drops anything else, maps the legacy source', () => {
+  assert.deepEqual(
+    pickTrialSource({ heardFrom: 'instagram', formSource: 'quick_trial', utmSource: 'ig', utmMedium: 'social', utmCampaign: 'ramadan_2027' }),
+    { heardFrom: 'instagram', formSource: 'quick_trial', utm: { source: 'ig', medium: 'social', campaign: 'ramadan_2027' } },
+  );
+  assert.deepEqual(
+    pickTrialSource({ heardFrom: 'myspace', formSource: 'popup', utmSource: 'a b', utmCampaign: 'x@y.com' }),
+    { heardFrom: null, formSource: null, utm: null },
+  );
+  assert.equal(pickTrialSource({ source: 'exit-intent' }).formSource, 'exit_intent');
+  assert.equal(pickTrialSource({ source: 'hero-quick-trial', formSource: 'trial_section' }).formSource, 'trial_section');
+  assert.equal(pickTrialSource({ utmSource: 'x'.repeat(101) }).utm, null);
+  assert.deepEqual(pickTrialSource({ heardFrom: ['google'] }).heardFrom, null);
+});
+
+test('mongo route: stores where the lead came from and shows it in the admin email only', async () => {
+  const res = await postMongo({
+    ...VALID, heardFrom: 'friend_family', formSource: 'trial_section',
+    utmSource: 'instagram', utmMedium: 'social', utmCampaign: 'oct_reel',
+  });
+  assert.equal(res.status, 201);
+  const stored = await TrialRequest.findOne().lean();
+  assert.equal(stored.heardFrom, 'friend_family');
+  assert.equal(stored.formSource, 'trial_section');
+  assert.deepEqual(stored.utm, { source: 'instagram', medium: 'social', campaign: 'oct_reel' });
+
+  const admin = sent.find((m) => m.to === 'admin-inbox@example.test');
+  const student = sent.find((m) => m.to !== 'admin-inbox@example.test');
+  assert.match(admin.text, /Heard from: friend_family/);
+  assert.match(admin.text, /Campaign: instagram \/ social \/ oct_reel/);
+  assert.match(admin.html, /Heard from/);
+  assert.doesNotMatch(student.text, /Heard from|Campaign/);
+});
+
+test('mongo route: an unknown or malformed source never blocks the request', async () => {
+  const res = await postMongo({ ...VALID, heardFrom: '<script>', formSource: 1, utmSource: 'a\nb' });
+  assert.equal(res.status, 201);
+  const stored = await TrialRequest.findOne().lean();
+  assert.equal(stored.heardFrom, undefined);
+  assert.equal(stored.formSource, undefined);
+  assert.equal(stored.utm?.source, undefined);
+  assert.match(sent.find((m) => m.to === 'admin-inbox@example.test').text, /Heard from: -/);
 });

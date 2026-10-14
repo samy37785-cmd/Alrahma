@@ -274,6 +274,22 @@ const it = {
       "course": "Corso di interesse",
       "message": "Messaggio (opzionale)"
     },
+    "heardFrom": {
+      "label": "Come ci hai conosciuto? (facoltativo)",
+      "placeholder": "Scegli",
+      "options": {
+        "google": "Google",
+        "instagram": "Instagram",
+        "facebook": "Facebook",
+        "tiktok": "TikTok",
+        "youtube": "YouTube",
+        "whatsapp": "WhatsApp",
+        "friend_family": "Un amico o un familiare",
+        "mosque_community": "Moschea o comunità",
+        "ai_assistant": "Un assistente IA (ChatGPT, ecc.)",
+        "other": "Altro"
+      }
+    },
     "placeholders": {
       "name": "Il tuo nome",
       "email": "tu@esempio.com",
@@ -683,6 +699,7 @@ const it = {
       "infoSuccess": "Profilo aggiornato con successo.",
       "changePass": "Cambia Password",
       "currentPass": "Password attuale",
+      "emailPassHint": "Per cambiare l’email, inserisci la password attuale. Ti sei registrato con Google? Imposta prima una password con «Password dimenticata».",
       "newPass": "Nuova password",
       "confirmPass": "Conferma nuova password",
       "changeBtn": "Cambia password",
@@ -724,6 +741,17 @@ const it = {
       "success": "Controlla la tua casella — abbiamo inviato un link di reset!",
       "back": "← Torna al login",
       "errorFallback": "Impossibile inviare l'email. Riprova."
+    },
+    "verifyEmail": {
+      "title": "Conferma la tua email",
+      "checking": "Conferma dell’email in corso…",
+      "success": "La tua email è confermata. Grazie!",
+      "invalid": "Questo link di conferma non è valido o è scaduto. Accedi e inviane uno nuovo dalla tua dashboard.",
+      "toDashboard": "Vai alla mia dashboard",
+      "banner": "Conferma la tua email ({email}). Le prenotazioni e le fatture associate a questo indirizzo compariranno dopo la conferma.",
+      "resend": "Invia di nuovo il link",
+      "resent": "Inviato. Controlla la posta in arrivo.",
+      "resendFailed": "Impossibile inviare l’email. Riprova più tardi."
     },
     "resetPwd": {
       "title": "Imposta una nuova password",

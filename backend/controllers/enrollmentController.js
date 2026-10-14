@@ -7,6 +7,7 @@ import { parsePagination, sendPaginated } from '../utils/pagination.js';
 import { pickPublicBookingFields, normalizeWhatsapp } from '../utils/enrollmentValidation.js';
 import { toClientEnrollment } from '../utils/clientViews.js';
 import logger from '../config/logger.js';
+import { isEmailVerified } from '../utils/emailVerification.js';
 
 // Booking reference shown to the student and embedded in the pre-filled
 // WhatsApp message (e.g. "AR-20260913-K7F2"). The 4-char suffix comes from
@@ -74,7 +75,7 @@ export const createEnrollment = asyncHandler(async (req, res) => {
       html: enrollmentStudentEmail({ name: data.name, teacherName: data.teacherName, plan: data.plan, bookingRef: enrollment.bookingRef }),
     });
   } catch (err) {
-    logger.error('Failed to send enrollment confirmation email', { email: data.email, message: err.message });
+    logger.error('Failed to send enrollment confirmation email', { message: err.message }); // AR-15: no email in logs
   }
 
   res.status(201).json({ message: 'Booking request received', id: enrollment._id, bookingRef: enrollment.bookingRef });
@@ -85,7 +86,11 @@ export const createEnrollment = asyncHandler(async (req, res) => {
 // Returns only the student-facing allowlist (utils/clientViews.js) — never
 // the admin-only adminNote.
 export const getMyEnrollment = asyncHandler(async (req, res) => {
-  const enrollment = await Enrollment.findOne({ email: req.user.email }).sort('-createdAt').lean();
+  // AR-02: bookings are matched by email only, so they show once the account
+  // has confirmed it owns that address.
+  const enrollment = isEmailVerified(req.user)
+    ? await Enrollment.findOne({ email: req.user.email }).sort('-createdAt').lean()
+    : null;
   res.json(toClientEnrollment(enrollment));
 });
 

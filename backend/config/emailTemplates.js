@@ -63,7 +63,7 @@ const trialRow = (label, value) =>
     <td dir="auto" style="padding:6px 0;color:#222;font-size:14px;white-space:pre-wrap;">${value ? escapeHtml(value) : '—'}</td>
   </tr>`;
 
-export function trialRequestAdminEmail({ name, email, phone, course, message }) {
+export function trialRequestAdminEmail({ name, email, phone, course, message, heardFrom, campaign }) {
   return base(`
     <h2 style="margin:0 0 8px;color:#0b6e4f;">New Trial Request 📋</h2>
     <p style="margin:0 0 20px;color:#555;font-size:14px;">A student has requested a free trial session.</p>
@@ -73,6 +73,8 @@ export function trialRequestAdminEmail({ name, email, phone, course, message }) 
       ${trialRow('Phone', phone)}
       ${trialRow('Course', course)}
       ${trialRow('Message', message)}
+      ${trialRow('Heard from', heardFrom)}
+      ${trialRow('Campaign', campaign)}
     </table>
     <div style="margin-top:24px;">
       <a href="${mailtoHref(email)}" style="background:#0b6e4f;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-size:14px;display:inline-block;">Reply to Student</a>
@@ -80,7 +82,7 @@ export function trialRequestAdminEmail({ name, email, phone, course, message }) 
   `);
 }
 
-export function trialRequestAdminText({ name, email, phone, course, message }) {
+export function trialRequestAdminText({ name, email, phone, course, message, heardFrom, campaign }) {
   return [
     'New Trial Request',
     '',
@@ -88,6 +90,8 @@ export function trialRequestAdminText({ name, email, phone, course, message }) {
     `Email: ${email || '-'}`,
     `Phone: ${phone || '-'}`,
     `Course: ${course || '-'}`,
+    `Heard from: ${heardFrom || '-'}`,
+    `Campaign: ${campaign || '-'}`,
     'Message:',
     message || '-',
   ].join('\n');
@@ -327,6 +331,19 @@ export function weeklyParentReportEmail({ parentName, children }) {
     <div style="margin:24px 0;">
       <a href="${process.env.CLIENT_URL || 'https://alrahmaacademy.com'}/parent" style="background:#0b6e4f;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;display:inline-block;">View Full Progress</a>
     </div>
+  `);
+}
+
+export function verifyEmailTemplate({ name, link }) {
+  return base(`
+    <p>Hi ${esc(name)},</p>
+    <p style="color:#555;font-size:15px;line-height:1.7;">
+      Please confirm that this is your email address. The link expires in <strong>48 hours</strong>.
+    </p>
+    <div style="margin:24px 0;">
+      <a href="${link}" style="background:#0b6e4f;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;display:inline-block;">Confirm my email</a>
+    </div>
+    <p style="color:#888;font-size:12px;">If you didn't create an account at Al-Rahma Academy, ignore this email.</p>
   `);
 }
 

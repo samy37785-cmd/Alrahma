@@ -1,6 +1,7 @@
-import { test, before, beforeEach, after } from 'node:test';
+import { test, mock, before, beforeEach, after } from 'node:test';
 import assert from 'node:assert/strict';
 import request from 'supertest';
+import bcrypt from 'bcryptjs';
 import app from '../app.js';
 import { setupTestDb, clearTestDb, teardownTestDb } from './helpers/db.js';
 import { agentWithCsrf } from './helpers/csrf.js';
@@ -130,4 +131,21 @@ test('updateMe: changing password requires the correct current password', async 
     .set(csrf)
     .send({ currentPassword: PASSWORD, newPassword: 'AnotherStr0ng!' });
   assert.equal(good.status, 200);
+});
+
+test('login: an unknown email runs the same bcrypt compare as a wrong password, with the same answer (audit AR-12)', async () => {
+  const { agent, csrf } = await agentWithCsrf(app);
+  await agent.post('/api/auth/register').set(csrf).send({ name: 'Rana', email: 'rana@example.com', password: PASSWORD });
+
+  const compare = mock.method(bcrypt, 'compare');
+  try {
+    const unknown = await agent.post('/api/auth/login').set(csrf).send({ email: 'nobody@example.com', password: 'Wr0ng-Passw0rd!' });
+    const wrong = await agent.post('/api/auth/login').set(csrf).send({ email: 'rana@example.com', password: 'Wr0ng-Passw0rd!' });
+    assert.equal(compare.mock.callCount(), 2, 'one bcrypt compare per attempt, account or not');
+    assert.equal(unknown.status, 401);
+    assert.equal(wrong.status, 401);
+    assert.deepEqual(unknown.body, wrong.body);
+  } finally {
+    compare.mock.restore();
+  }
 });

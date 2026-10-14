@@ -152,6 +152,26 @@ export async function setupMfa(req, res) {
   });
 }
 
+// ── TOTP single use (AR-11) ─────────────────────────────────────────────────
+// Verifies a code against one fixed time and returns the 30-second step it
+// belongs to (window 1 = the previous, current or next step), or null.
+function matchTotpStep(secret, token) {
+  const time = Date.now() / 1000;
+  const match = speakeasy.totp.verifyDelta({ secret, encoding: 'base32', token, window: 1, time });
+  return match ? Math.floor(time / 30) + match.delta : null;
+}
+
+// Claims a step atomically: succeeds only when no code of this step or a later
+// one was accepted before, so a replayed code, or the same code sent twice in
+// parallel, gets in at most once.
+async function claimTotpStep(adminId, step) {
+  const result = await AdminUser.updateOne(
+    { _id: adminId, $or: [{ lastTotpStep: null }, { lastTotpStep: { $lt: step } }] },
+    { $set: { lastTotpStep: step } },
+  );
+  return result.modifiedCount === 1;
+}
+
 // ── POST /api/v1/admin/auth/mfa/confirm ─────────────────────────────────────
 /**
  * Confirms the pending TOTP secret by verifying the first code.
@@ -185,14 +205,9 @@ export async function confirmMfaSetup(req, res) {
   }
 
   const { token: totpToken } = req.body;
-  const valid = speakeasy.totp.verify({
-    secret:   pendingSecret,
-    encoding: 'base32',
-    token:    totpToken,
-    window:   1,
-  });
+  const step = matchTotpStep(pendingSecret, totpToken);
 
-  if (!valid) {
+  if (step === null || !(await claimTotpStep(admin._id, step))) {
     return res.status(400).json({ message: 'Invalid TOTP code' });
   }
 
@@ -213,7 +228,18 @@ export async function confirmMfaSetup(req, res) {
 
   await auditFromAdmin(admin, 'auth.mfa_activated', req);
 
-  return res.json({ message: '2FA activated and session started' });
+  return res.json({ message: '2FA activated and session started', admin: adminProfile(admin) });
+}
+
+// The profile the admin console shows for the signed-in admin (name, email).
+function adminProfile(admin) {
+  return {
+    id:          String(admin._id),
+    name:        admin.name,
+    email:       admin.email,
+    role:        admin.role,
+    permissions: admin.getPermissions(),
+  };
 }
 
 // ── POST /api/v1/admin/auth/mfa/verify ──────────────────────────────────────
@@ -247,24 +273,29 @@ export async function verifyMfaLogin(req, res) {
     return res.status(400).json({ message: 'MFA is not enabled on this account' });
   }
 
+  // AR-10: wrong codes count toward the same lock as wrong passwords, so a
+  // locked account cannot keep guessing codes with a pre-auth token it holds.
+  if (admin.isLocked()) {
+    return res.status(423).json({
+      message: 'Account temporarily locked. Too many failed login attempts.',
+      code:    'ACCOUNT_LOCKED',
+    });
+  }
+
   const mfaSecret = admin.getMfaSecret();
   if (!mfaSecret) {
     return res.status(500).json({ message: 'MFA secret missing. Contact super-admin.' });
   }
 
   const { token: totpToken } = req.body;
-  const valid = speakeasy.totp.verify({
-    secret:   mfaSecret,
-    encoding: 'base32',
-    token:    totpToken,
-    window:   1,
-  });
+  const step = matchTotpStep(mfaSecret, totpToken);
+  const accepted = step !== null && await claimTotpStep(admin._id, step);
 
-  if (!valid) {
+  if (!accepted) {
     await admin.incrementFailedAttempts();
     await auditFromAdmin(admin, 'auth.mfa_failed', req, {
       severity: 'warning',
-      metadata: { reason: 'bad_totp' },
+      metadata: { reason: step === null ? 'bad_totp' : 'reused_totp' },
     });
     return res.status(401).json({ message: 'Invalid TOTP code' });
   }
@@ -288,13 +319,7 @@ export async function verifyMfaLogin(req, res) {
 
   return res.json({
     message: 'Login successful',
-    admin: {
-      id:          String(admin._id),
-      name:        admin.name,
-      email:       admin.email,
-      role:        admin.role,
-      permissions: admin.getPermissions(),
-    },
+    admin: adminProfile(admin),
   });
 }
 

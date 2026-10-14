@@ -4,6 +4,8 @@ import crypto from 'node:crypto';
 import app from '../app.js';
 import User from '../models/User.js';
 import { hashToken } from '../utils/hashToken.js';
+import { resetLink } from '../controllers/authController.js';
+import { siteOrigin } from '../config/site.js';
 import { setupTestDb, clearTestDb, teardownTestDb } from './helpers/db.js';
 import { agentWithCsrf } from './helpers/csrf.js';
 
@@ -106,4 +108,14 @@ test('resetPassword: a valid token resets the password, consumes the token, and 
     .set(csrf)
     .send({ token: rawToken, password: 'YetAnotherStr0ng!' });
   assert.equal(reuse.status, 400);
+});
+
+test('resetLink: the emailed link carries the token in the fragment, never the query string (audit AR-18)', () => {
+  const raw = crypto.randomBytes(32).toString('hex');
+  const link = resetLink(raw);
+  assert.equal(link, `${siteOrigin()}/reset-password#token=${raw}`);
+  const url = new URL(link);
+  assert.equal(url.search, '');
+  assert.equal(url.pathname, '/reset-password');
+  assert.equal(new URLSearchParams(url.hash.slice(1)).get('token'), raw);
 });

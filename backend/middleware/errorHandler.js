@@ -1,4 +1,5 @@
 import logger from '../config/logger.js';
+import { pathOnly } from './requestLogger.js';
 
 export function notFound(req, res, _next) {
   res.status(404).json({ message: `Route not found: ${req.originalUrl}` });
@@ -20,7 +21,7 @@ export function errorHandler(err, req, res, _next) {
   logger.error(err.message, {
     status,
     method:    req.method,
-    path:      req.originalUrl,
+    path:      pathOnly(req.originalUrl), // AR-15: no query string
     userId:    req.user?._id?.toString?.() ?? null,
     requestId: req.requestId ?? null,
     stack:     err.stack,

@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { HEARD_FROM, FORM_SOURCES } from '../utils/trialValidation.js';
 
 // Stores submissions from the "Book a Free Trial" form on the React site.
 const trialRequestSchema = new mongoose.Schema(
@@ -9,6 +10,14 @@ const trialRequestSchema = new mongoose.Schema(
     course: { type: String, trim: true },
     message: { type: String, trim: true },
     status: { type: String, enum: ['new', 'contacted', 'scheduled'], default: 'new' },
+    // Where the lead came from (utils/trialValidation.js pickTrialSource).
+    heardFrom: { type: String, enum: HEARD_FROM },
+    formSource: { type: String, enum: FORM_SOURCES },
+    utm: {
+      source: { type: String },
+      medium: { type: String },
+      campaign: { type: String },
+    },
   },
   { timestamps: true }
 );

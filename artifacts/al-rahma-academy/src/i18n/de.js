@@ -268,6 +268,22 @@ const de = {
       "course": "Gewünschter Kurs",
       "message": "Nachricht (optional)"
     },
+    "heardFrom": {
+      "label": "Wie haben Sie von uns erfahren? (optional)",
+      "placeholder": "Bitte wählen",
+      "options": {
+        "google": "Google",
+        "instagram": "Instagram",
+        "facebook": "Facebook",
+        "tiktok": "TikTok",
+        "youtube": "YouTube",
+        "whatsapp": "WhatsApp",
+        "friend_family": "Freunde oder Familie",
+        "mosque_community": "Moschee oder Gemeinde",
+        "ai_assistant": "Ein KI-Assistent (ChatGPT usw.)",
+        "other": "Sonstiges"
+      }
+    },
     "placeholders": {
       "name": "Dein Name",
       "email": "du@beispiel.de",
@@ -675,6 +691,7 @@ const de = {
       "infoSuccess": "Profil erfolgreich aktualisiert.",
       "changePass": "Passwort ändern",
       "currentPass": "Aktuelles Passwort",
+      "emailPassHint": "Um deine E-Mail zu ändern, gib dein aktuelles Passwort ein. Mit Google registriert? Lege zuerst über „Passwort vergessen“ ein Passwort fest.",
       "newPass": "Neues Passwort",
       "confirmPass": "Neues Passwort bestätigen",
       "changeBtn": "Passwort ändern",
@@ -716,6 +733,17 @@ const de = {
       "success": "Prüf deinen Posteingang — wir haben einen Reset-Link gesendet!",
       "back": "← Zurück zur Anmeldung",
       "errorFallback": "E-Mail konnte nicht gesendet werden. Bitte erneut versuchen."
+    },
+    "verifyEmail": {
+      "title": "E-Mail bestätigen",
+      "checking": "Deine E-Mail wird bestätigt…",
+      "success": "Deine E-Mail ist bestätigt. Danke!",
+      "invalid": "Dieser Bestätigungslink ist ungültig oder abgelaufen. Melde dich an und sende im Dashboard einen neuen.",
+      "toDashboard": "Zu meinem Dashboard",
+      "banner": "Bitte bestätige deine E-Mail ({email}). Buchungen und Rechnungen mit dieser Adresse erscheinen nach der Bestätigung.",
+      "resend": "Link erneut senden",
+      "resent": "Gesendet. Sieh in deinem Posteingang nach.",
+      "resendFailed": "Die E-Mail konnte nicht gesendet werden. Bitte versuche es später erneut."
     },
     "resetPwd": {
       "title": "Neues Passwort festlegen",

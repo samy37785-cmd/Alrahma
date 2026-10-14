@@ -268,6 +268,22 @@ const en = {
       "course": "Course of interest",
       "message": "Message (optional)"
     },
+    "heardFrom": {
+      "label": "How did you hear about us? (optional)",
+      "placeholder": "Choose one",
+      "options": {
+        "google": "Google",
+        "instagram": "Instagram",
+        "facebook": "Facebook",
+        "tiktok": "TikTok",
+        "youtube": "YouTube",
+        "whatsapp": "WhatsApp",
+        "friend_family": "A friend or family member",
+        "mosque_community": "Mosque or community",
+        "ai_assistant": "An AI assistant (ChatGPT, etc.)",
+        "other": "Other"
+      }
+    },
     "placeholders": {
       "name": "Your name",
       "email": "you@example.com",
@@ -675,6 +691,7 @@ const en = {
       "infoSuccess": "Profile updated successfully.",
       "changePass": "Change Password",
       "currentPass": "Current password",
+      "emailPassHint": "To change your email, enter your current password. Signed up with Google? Set a password first with “Forgot password”.",
       "newPass": "New password",
       "confirmPass": "Confirm new password",
       "changeBtn": "Change password",
@@ -716,6 +733,17 @@ const en = {
       "success": "Check your inbox — we sent a reset link!",
       "back": "← Back to login",
       "errorFallback": "Could not send reset email. Please try again."
+    },
+    "verifyEmail": {
+      "title": "Confirm your email",
+      "checking": "Confirming your email…",
+      "success": "Your email is confirmed. Thank you!",
+      "invalid": "This confirmation link is invalid or has expired. Sign in and send a new one from your dashboard.",
+      "toDashboard": "Go to my dashboard",
+      "banner": "Please confirm your email ({email}). Bookings and invoices made with this address appear after you confirm it.",
+      "resend": "Send the link again",
+      "resent": "Sent. Check your inbox.",
+      "resendFailed": "Could not send the email. Please try again later."
     },
     "resetPwd": {
       "title": "Set a new password",

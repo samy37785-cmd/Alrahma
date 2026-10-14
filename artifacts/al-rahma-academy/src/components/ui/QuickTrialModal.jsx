@@ -4,11 +4,13 @@ import { useModalA11y } from '../../hooks/useModalA11y';
 import { useLang } from '../../context/LangContext';
 import { getExperienceText } from '../../i18n/experience';
 import TrialWhatsappButton from './TrialWhatsappButton';
+import { HEARD_FROM } from '../../utils/trialSource';
 
 export default function QuickTrialModal({ open, onClose }) {
-  const { lang } = useLang();
+  const { lang, t } = useLang();
   const copy = getExperienceText(lang).quickTrial;
-  const [form, setForm] = useState({ name: '', email: '', whatsapp: '' });
+  const heard = t.trial.heardFrom;
+  const [form, setForm] = useState({ name: '', email: '', whatsapp: '', heardFrom: '' });
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState('');
@@ -21,7 +23,7 @@ export default function QuickTrialModal({ open, onClose }) {
 
   useEffect(() => {
     if (open) {
-      setForm({ name: '', email: '', whatsapp: '' });
+      setForm({ name: '', email: '', whatsapp: '', heardFrom: '' });
       setDone(false);
       setError('');
     }
@@ -122,6 +124,14 @@ export default function QuickTrialModal({ open, onClose }) {
                   onChange={(e) => set('whatsapp', e.target.value)}
                   autoComplete="tel"
                 />
+              </div>
+
+              <div className="qtm__field">
+                <label htmlFor="qtm-heard">{heard.label}</label>
+                <select id="qtm-heard" value={form.heardFrom} onChange={(e) => set('heardFrom', e.target.value)}>
+                  <option value="">{heard.placeholder}</option>
+                  {HEARD_FROM.map((k) => <option key={k} value={k}>{heard.options[k]}</option>)}
+                </select>
               </div>
 
               {error && <p className="qtm__error" role="alert">{error}</p>}

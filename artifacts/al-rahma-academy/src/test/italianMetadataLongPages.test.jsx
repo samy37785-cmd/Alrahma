@@ -299,8 +299,10 @@ const BASE = {
 // /it/ updated by the TrustBar deterministic-rendering fix: under navigator.webdriver the
 // WhatsApp status now shows the neutral "Scrivici su WhatsApp" + support hours instead of
 // "Supporto online…" (that one swap reproduces the previous hash, 44c2be0d…).
+// /it/ updated again by audit item 8: the trial form gained the optional
+// "Come ci hai conosciuto?" question (previous hash 267ce8ad…).
 const MOUNTED_TEXT = {
-  "/it/": "267ce8ad1bd5c6013ae9006dc38b4c80926c668f117b7c058d4bb149ee0ba409",
+  "/it/": "f5b32e596ea9e6bd5786361346e8117994f8c7ab0320098abb2cf3052f3461f0",
   "/it/academy/about": "f58105bdb93dc300c167773dc8f4a57946f2a9676a3b0357920798ba23574f1a",
   "/it/enroll": "ce332116a6206ef49917d6e81ba3831f980ea73b8ad7fd5cf521043ab8367283",
   "/it/academy/teachers": "cbe05d1a5135993cd1378dc9b3c5c69efab8329ad3ff9270413e901805b402e5"

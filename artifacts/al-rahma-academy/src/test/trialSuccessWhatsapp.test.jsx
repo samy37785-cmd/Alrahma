@@ -196,13 +196,14 @@ describe('Trial (home page form)', () => {
     expectNoPiiLeaked(container);
   });
 
+  // + heardFrom (audit item 8): the optional "how did you hear about us" answer, empty when skipped.
   it('keeps the POST /api/trials payload exactly as before', async () => {
     submitTrial.mockResolvedValueOnce({});
     renderWithLang(<Trial />);
     fill();
     submit();
     await waitFor(() => expect(submitTrial).toHaveBeenCalledTimes(1));
-    expect(submitTrial.mock.calls[0]).toEqual([{ name: PII.name, email: PII.email, phone: PII.phone, course: '', message: PII.message }]);
+    expect(submitTrial.mock.calls[0]).toEqual([{ name: PII.name, email: PII.email, phone: PII.phone, course: '', message: PII.message, heardFrom: '' }]);
   });
 
   it('editing the form again removes the previous success state and button', async () => {
@@ -267,7 +268,7 @@ describe('QuickTrialModal', () => {
     submit();
     expect(await screen.findByText(QT.successTitle)).toBeInTheDocument();
     // Payload unchanged (the modal still sends its own fields + source).
-    expect(submitTrial.mock.calls[0]).toEqual([{ name: PII.name, email: PII.email, whatsapp: PII.phone, source: 'hero-quick-trial' }]);
+    expect(submitTrial.mock.calls[0]).toEqual([{ name: PII.name, email: PII.email, whatsapp: PII.phone, heardFrom: '', source: 'hero-quick-trial' }]);
     expect(openSpy).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: EN.button }));
     expect(openSpy).toHaveBeenCalledTimes(1);

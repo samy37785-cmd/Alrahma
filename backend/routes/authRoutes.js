@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import {
   register, login, logout, getMe, updateMe, forgotPassword, resetPassword, getLinkCode, googleAuth,
+  verifyEmail, resendVerification,
   registerValidation, loginValidation,
 } from '../controllers/authController.js';
 import { protect } from '../middleware/auth.js';
@@ -14,6 +15,8 @@ router.get('/me', protect, getMe);
 router.put('/me', protect, updateMe);
 router.post('/forgot-password', forgotPassword);
 router.post('/reset-password', resetPassword);
+router.post('/verify-email', verifyEmail);
+router.post('/verify-email/resend', protect, resendVerification);
 
 // Google One-Tap / Sign In with Google
 router.post('/google', googleAuth);

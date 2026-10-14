@@ -152,15 +152,16 @@ app.use(requestLogger);
 //            Checks the DB connection so a container orchestrator can hold
 //            traffic until the DB is reachable.
 app.get('/', (_req, res) => res.json({ status: 'ok', service: 'Al-Rahma Academy API' }));
+// Public liveness answer: status plus the deployed commit (Render sets
+// RENDER_GIT_COMMIT; the repository is public, so the SHA reveals nothing new).
+// Audit AR-19: uptime, heap size and NODE_ENV are no longer sent. To confirm a
+// Manual Deploy went live, compare `commit` with the merged commit instead of
+// watching uptime reset.
 const healthCheckHandler = (_req, res) => {
-  res.json({
-    status:  'ok',
-    uptime:  Math.floor(process.uptime()),
-    memory:  process.memoryUsage().heapUsed,
-    version: process.env.npm_package_version || '1.0.0',
-    env:     process.env.NODE_ENV || 'development',
-    ts:      new Date().toISOString(),
-  });
+  const commit = /^[0-9a-f]{7,40}$/i.test(process.env.RENDER_GIT_COMMIT || '')
+    ? process.env.RENDER_GIT_COMMIT.slice(0, 7)
+    : null;
+  res.json({ status: 'ok', commit });
 };
 app.get('/health', healthCheckHandler);
 // /api/healthz — same DB-free liveness check as /health, mounted under /api

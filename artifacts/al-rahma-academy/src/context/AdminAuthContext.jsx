@@ -111,14 +111,14 @@ export function AdminAuthProvider({ children }) {
     return stage;
   }, []);
 
-  // First-time MFA activation. The confirm endpoint only returns a message
-  // (no admin profile), so the caller passes back the email already entered
-  // on the credentials step to seed a minimal cached profile. This IS a
-  // real, fresh, in-session server result, so it verifies immediately -
-  // no extra round trip needed.
+  // First-time MFA activation. The confirm endpoint returns the admin
+  // profile; an older backend returned only a message, so the email already
+  // entered on the credentials step stays the fallback. This IS a real,
+  // fresh, in-session server result, so it verifies immediately - no extra
+  // round trip needed.
   const confirmMfaSetup = useCallback(async (token, email) => {
-    await adminMfaConfirm(token);
-    persist({ email });
+    const res = await adminMfaConfirm(token);
+    persist(res?.admin ?? { email });
     setSessionStatus(ADMIN_SESSION_STATUS.VERIFIED);
     setPendingStage(null);
     setMfaSetupInfo(null);

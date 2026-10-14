@@ -122,11 +122,11 @@ describe('protected files are byte-identical to origin/main (949b6b7)', () => {
       'src/pages/Quran.jsx': '2818cdfd006357115f6f2e0441eefcd47e1fdf5f5a87ffec80c5828136ef6ace',
       'src/styles/tokens.css': '042749b20028ad361fb7570c4ecc3d45c584ddab30919d97c11d302c53eccfb8',
       'src/styles/global.css': '0e5681ec63222eedac4354b9210543ed13160722c74d781bb69dc739417d52fe',
-      'src/styles/components.css': '3a8d83364b5362adf3ac755dc5e46532d805e8449e68d26e25a34ec904224041',
-      'src/styles/dark.css': 'b17af28318fa64a0025d5195210996bda1173ad202b56ecc86faad9c871f2a41',
+      'src/styles/components.css': '11bd712028f98d5db82bf035a528bca93306d49e6046ad1a508b5460fc97d6f6',
+      'src/styles/dark.css': 'e1cb10418eaa0c112a39e5df6e91464818b3512706661a202bf0e680445a664f',
       'src/styles/pages.css': '39ae385296ca78854c3dd36c3ef7b8390cd667e49239ef706a8456ae50f2d6c6',
       'src/styles/layout/home.css': '60fca53b34ce2e8c7c1101125558944c2c97359d673e40e4786635d1a3c864c5',
-      'src/styles/layout/header.css': 'b5aa83faa8979d0e803643cb796c2df4eb734aae295a4213bee4e2ccd84008e6',
+      'src/styles/layout/header.css': '237c8e28e3c270351157923349973802986f0a2b9fba3dd8bf9ea9ab40d89f4e', // 2026-10-14: button.nav__mobile-login-link (Italian login button)
     };
     expect(Object.fromEntries(Object.keys(BASELINE).map((f) => [f, sha(f)]))).toEqual(BASELINE);
   });

@@ -1,6 +1,6 @@
 import { site } from '../../data/site';
 import {
-  LayoutDashboard, MessageSquare, Users, BookOpen, CreditCard, Target, UserCog, Book, User, ExternalLink, Calendar, Heart, Sparkles, Users2, MessageCircle,
+  LayoutDashboard, MessageSquare, Users, BookOpen, CreditCard, Target, UserCog, Book, User, ExternalLink, Calendar, Heart, MessageCircle,
 } from 'lucide-react';
 
 // Stage 2A (see docs/user-admin-auth-contract.md): the product has exactly
@@ -30,12 +30,13 @@ export function navFor(isAdmin, unreadCount) {
     { to: '/dashboard', icon: LayoutDashboard, labelKey: 'dashboard', end: true },
     { section: 'learning' },
     { to: '/tools/quran-reader', icon: Book,        labelKey: 'quranReader' },
-    { to: '/ai-tutor',           icon: Sparkles,      labelKey: 'aiTutor' },
     { to: '/calendar',           icon: Calendar,     labelKey: 'mySchedule' },
     { to: '/wishlist',           icon: Heart,         labelKey: 'wishlist' },
     { section: 'community' },
     { to: '/messages',  icon: MessageSquare, labelKey: 'messages',  badge: unreadCount || 0 },
-    { to: '/community', icon: Users2,        labelKey: 'community' },
+    // AI Tutor and Community are hidden: neither has a server endpoint yet
+    // (every /api/ai-tutor and /api/community call is a 404), so both pages
+    // were broken for students. Their routes redirect to /dashboard (App.jsx).
     { section: 'account' },
     { to: '/profile', icon: User,        labelKey: 'profile' },
     { to: '/billing', icon: CreditCard,  labelKey: 'billing' },
@@ -55,7 +56,8 @@ export function bottomNavFor(isAdmin, unreadCount) {
     { to: '/admin',    icon: LayoutDashboard, labelKey: 'overview',  end: true },
     { to: '/messages', icon: MessageSquare,   labelKey: 'messages',  badge: unreadCount },
     { to: '/admin#users', icon: Users,        labelKey: 'users' },
-    { to: '/profile',  icon: User,            labelKey: 'profile' },
+    // Not /profile: that page belongs to the regular account, not the admin.
+    { to: '/admin#trials', icon: Target,      labelKey: 'trials' },
   ];
   return [
     { to: '/dashboard', icon: LayoutDashboard, labelKey: 'dashboard', end: true },

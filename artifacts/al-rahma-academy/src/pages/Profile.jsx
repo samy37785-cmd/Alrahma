@@ -77,7 +77,9 @@ export default function Profile() {
 
   const subscription = me?.subscription ?? user?.subscription ?? null;
 
-  const [info, setInfo] = useState({ name: user?.name || '', email: user?.email || '' });
+  const [info, setInfo] = useState({ name: user?.name || '', email: user?.email || '', currentPassword: '' });
+  // AR-03: a new email needs the current password (the server checks it).
+  const emailChanging = info.email.trim().toLowerCase() !== (user?.email || '').toLowerCase();
   const [pass, setPass] = useState({ currentPassword: '', newPassword: '', confirm: '' });
   const [infoMsg, setInfoMsg]   = useState('');
   const [infoErr, setInfoErr]   = useState('');
@@ -102,7 +104,8 @@ export default function Profile() {
     setInfoMsg(''); setInfoErr('');
     setSaving(true);
     try {
-      await updateProfile({ name: info.name, email: info.email });
+      await updateProfile({ name: info.name, email: info.email, ...(emailChanging ? { currentPassword: info.currentPassword } : {}) });
+      setInfo((p) => ({ ...p, currentPassword: '' }));
       setInfoMsg(pg.infoSuccess);
     } catch (err) {
       setInfoErr(err.response?.data?.message || pg.infoError || 'Could not save changes. Please try again.');
@@ -218,6 +221,22 @@ export default function Profile() {
                     aria-describedby={infoErr ? 'info-error' : undefined}
                   />
                 </div>
+                {emailChanging && (
+                  <div className="field" style={{ margin: 0 }}>
+                    <label htmlFor="prof-email-pass">{pg.currentPass}</label>
+                    <input
+                      id="prof-email-pass"
+                      type="password"
+                      autoComplete="current-password"
+                      value={info.currentPassword}
+                      onChange={(e) => setInfo((p) => ({ ...p, currentPassword: e.target.value }))}
+                      required
+                      aria-invalid={infoErr ? 'true' : undefined}
+                      aria-describedby={infoErr ? 'prof-email-pass-hint info-error' : 'prof-email-pass-hint'}
+                    />
+                    <small id="prof-email-pass-hint" style={{ fontSize: '0.78rem', color: 'var(--muted)' }}>{pg.emailPassHint}</small>
+                  </div>
+                )}
                 <div className="field" style={{ margin: 0 }}>
                   <label>{pg.accountType}</label>
                   <input value={roleLabel} disabled style={{ background: 'var(--bg-disabled)', cursor: 'not-allowed' }} />

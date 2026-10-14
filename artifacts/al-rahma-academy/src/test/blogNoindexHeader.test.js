@@ -26,8 +26,9 @@ const matcher = pattern ? new RegExp(`^/(?:${pattern})$`, 'i') : null;
 const noindexed = (p) => !!matcher && matcher.test(p);
 
 describe('vercel.json: blog pages are noindex until the blog launches', () => {
-  it('has exactly one header rule: X-Robots-Tag "noindex, follow"', () => {
-    expect(rules).toHaveLength(1);
+  it('has exactly one X-Robots-Tag rule: "noindex, follow"', () => {
+    // The other rule is the site-wide security headers (securityHeaders.test.js).
+    expect(rules.filter((r) => r.headers.some((h) => h.key === 'X-Robots-Tag'))).toHaveLength(1);
     expect(blogRule).toBeTruthy();
     expect(blogRule.headers).toEqual([{ key: 'X-Robots-Tag', value: 'noindex, follow' }]);
     expect(matcher).toBeTruthy();

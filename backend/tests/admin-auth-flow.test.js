@@ -74,6 +74,10 @@ test('full flow: first login prompts MFA setup, confirming activates MFA and iss
   assert.equal(confirm.status, 200);
   assert.ok(cookieValue(confirm, 'admin_at'), 'expected a full access token cookie');
   assert.ok(cookieValue(confirm, 'admin_rt'), 'expected a refresh token cookie');
+  // The console shows the signed-in admin's name right after first setup.
+  assert.equal(confirm.body.admin.email, 'admin@example.com');
+  assert.ok(confirm.body.admin.name);
+  assert.equal('password' in confirm.body.admin, false);
 
   const admin = await AdminUser.findOne({ email: 'admin@example.com' });
   assert.equal(admin.mfaEnabled, true);

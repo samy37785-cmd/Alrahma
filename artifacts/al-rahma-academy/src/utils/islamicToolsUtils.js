@@ -24,13 +24,17 @@ export const ASR_SCHOOLS = [
   { id: 1, ar: 'الحنفي',                       en: 'Hanafi' },
 ];
 
+// `id` is the AlAdhan API `method` number (GET https://api.aladhan.com/v1/methods):
+// 1 Karachi, 2 ISNA, 3 Muslim World League, 4 Umm Al-Qura, 5 Egyptian General
+// Authority of Survey, 12 Union des Organisations Islamiques de France.
+// The page's default (3) is the Muslim World League.
 export const CALC_METHODS = [
-  { id: 3,  name: 'الهيئة المصرية العامة للمساحة',          en: 'Egyptian Authority' },
+  { id: 5,  name: 'الهيئة المصرية العامة للمساحة',          en: 'Egyptian Authority' },
   { id: 4,  name: 'أم القرى (مكة المكرمة)',                 en: 'Umm Al-Qura, Makkah' },
-  { id: 1,  name: 'رابطة العالم الإسلامي',                  en: 'Muslim World League' },
+  { id: 3,  name: 'رابطة العالم الإسلامي',                  en: 'Muslim World League' },
   { id: 2,  name: 'جمعية إسلامية لأمريكا الشمالية (ISNA)', en: 'ISNA' },
-  { id: 5,  name: 'جامعة العلوم الإسلامية، كراتشي',         en: 'Karachi' },
-  { id: 12, name: 'الاتحاد الإسلامي الأوروبي',              en: 'Union of Islamic Orgs. (France)' },
+  { id: 1,  name: 'جامعة العلوم الإسلامية، كراتشي',         en: 'Karachi' },
+  { id: 12, name: 'اتحاد المنظمات الإسلامية في فرنسا',      en: 'Union of Islamic Orgs. (France)' },
 ];
 
 export const DAILY_VERSE_KEYS = [

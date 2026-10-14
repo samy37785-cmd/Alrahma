@@ -653,6 +653,13 @@
   background: var(--green);
   color: #fff;
 }
+/* Italian: the same control as a <button> (no crawlable /it/login link). */
+button.nav__mobile-login-link {
+  background: transparent;
+  font-family: inherit;
+  cursor: pointer;
+  width: calc(100% - 40px);
+}
 
 /* RTL: flip the profile-edit button and account icon spacing */
 [dir="rtl"] .nav__mobile-profile { flex-direction: row-reverse; }

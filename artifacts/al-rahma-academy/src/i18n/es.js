@@ -675,6 +675,7 @@ const es = {
       "infoSuccess": "Perfil actualizado correctamente.",
       "changePass": "Cambiar Contraseña",
       "currentPass": "Contraseña actual",
+      "emailPassHint": "Para cambiar tu correo, introduce tu contraseña actual. ¿Te registraste con Google? Primero crea una contraseña con «¿Olvidaste tu contraseña?».",
       "newPass": "Nueva contraseña",
       "confirmPass": "Confirmar nueva contraseña",
       "changeBtn": "Cambiar contraseña",
@@ -716,6 +717,17 @@ const es = {
       "success": "¡Revisa tu bandeja de entrada — enviamos un enlace de restablecimiento!",
       "back": "← Volver al inicio de sesión",
       "errorFallback": "No se pudo enviar el email. Por favor, inténtalo de nuevo."
+    },
+    "verifyEmail": {
+      "title": "Confirma tu correo",
+      "checking": "Confirmando tu correo…",
+      "success": "Tu correo está confirmado. ¡Gracias!",
+      "invalid": "Este enlace de confirmación no es válido o ha caducado. Inicia sesión y envía uno nuevo desde tu panel.",
+      "toDashboard": "Ir a mi panel",
+      "banner": "Confirma tu correo ({email}). Las reservas y facturas hechas con esta dirección aparecerán cuando lo confirmes.",
+      "resend": "Enviar el enlace de nuevo",
+      "resent": "Enviado. Revisa tu bandeja de entrada.",
+      "resendFailed": "No se pudo enviar el correo. Inténtalo más tarde."
     },
     "resetPwd": {
       "title": "Establece una nueva contraseña",

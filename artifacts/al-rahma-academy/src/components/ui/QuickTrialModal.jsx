@@ -3,6 +3,7 @@ import { submitTrial } from '../../api/contentApi';
 import { useModalA11y } from '../../hooks/useModalA11y';
 import { useLang } from '../../context/LangContext';
 import { getExperienceText } from '../../i18n/experience';
+import TrialWhatsappButton from './TrialWhatsappButton';
 
 export default function QuickTrialModal({ open, onClose }) {
   const { lang } = useLang();
@@ -64,7 +65,13 @@ export default function QuickTrialModal({ open, onClose }) {
             <h2>{copy.successTitle}</h2>
             <p>{copy.successBody}</p>
             <p className="qtm__blessing" dir="rtl" lang="ar">بارك الله فيكم</p>
-            <button className="btn btn--green btn--block" onClick={onClose}>
+            {/* The form keeps what was sent while the success view is open;
+                the modal's WhatsApp field is the visitor's phone. */}
+            <TrialWhatsappButton
+              details={{ name: form.name, email: form.email, phone: form.whatsapp }}
+              className="btn btn--ghost btn--block"
+            />
+            <button className="btn btn--green btn--block" style={{ marginTop: 12 }} onClick={onClose}>
               {copy.successAction}
             </button>
           </div>

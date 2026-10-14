@@ -5,12 +5,13 @@ import { useQuery, useQueries } from '@tanstack/react-query';
 import {
   Flame, TrendingUp, CalendarDays, Clock, Play, BookOpen, BarChart2,
   MessageSquare, Book, CreditCard, MessageCircle, Landmark, Zap,
-  GraduationCap, Trophy, Star, Target, Moon, ListChecks, PenLine, Sparkles,
+  GraduationCap, Trophy, Star, Target, Moon, ListChecks, PenLine,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLang } from '../context/LangContext';
 import { getExperienceText } from '../i18n/experience';
 import { useDashboardData } from '../hooks/useDashboard';
+import EmailVerifyBanner from '../components/ui/EmailVerifyBanner';
 import useCountUp from '../hooks/useCountUp';
 import { getCourseProgress, getMyCertificates } from '../api/courseApi';
 import { getClasses } from '../api/classApi';
@@ -92,6 +93,9 @@ export default function Dashboard() {
 
   const sub     = me?.subscription ?? user?.subscription ?? null;
   const isActive = sub?.status === 'active';
+  // A new account has never had a plan: it is not "expired", it just hasn't
+  // started yet, so it is pointed at the free trial instead of "Renew".
+  const neverSubscribed = !isActive && !sub?.validUntil && !sub?.activeSince;
   const days     = daysLeft(sub?.validUntil);
   const sessions = sessionsFromPlan(sub?.plan);
 
@@ -217,11 +221,16 @@ export default function Dashboard() {
           <p className="ds-page-hd__sub">
             {isActive
               ? `${sub?.plan} plan · expires ${new Date(sub?.validUntil).toLocaleDateString('en-GB', { day: 'numeric', month: 'long' })}`
-              : 'Your subscription is inactive — renew to continue learning.'}
+              : neverSubscribed
+                ? 'Welcome! Start with a free 60-minute trial lesson.'
+                : 'Your subscription is inactive — renew to continue learning.'}
           </p>
         </div>
         <div className="ds-page-hd__actions">
-          {!isActive && (
+          {neverSubscribed && (
+            <Link to="/enroll" className="btn btn--green btn--sm">Book a Free Trial</Link>
+          )}
+          {!isActive && !neverSubscribed && (
             <a href={homeHref('pricing')} className="btn btn--green btn--sm">Renew Plan</a>
           )}
           {!enrollment && isActive && (
@@ -230,11 +239,11 @@ export default function Dashboard() {
           <Link to="/courses" className="btn btn--ghost btn--sm">
             <BookOpen size={14} aria-hidden="true" /> {dashboardCopy.items.courses}
           </Link>
-          <Link to="/ai-tutor" className="btn btn--green btn--sm">
-            <Sparkles size={14} aria-hidden="true" /> Ask AI Tutor
-          </Link>
         </div>
       </div>
+
+      {/* ── Email confirmation (AR-02) ─────────────────────── */}
+      <EmailVerifyBanner me={me} />
 
       {/* ── Dashboard data error banner ─────────────────────── */}
       {!!error && (
@@ -257,7 +266,7 @@ export default function Dashboard() {
       )}
 
       {/* ── Expired banner ──────────────────────────────────── */}
-      {!isActive && (
+      {!isActive && !neverSubscribed && (
         <div style={{
           display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px',
           background: 'var(--color-danger-surface)', border: '1px solid var(--color-danger-border)',

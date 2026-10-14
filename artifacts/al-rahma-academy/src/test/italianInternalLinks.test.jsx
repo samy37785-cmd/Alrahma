@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeAll } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { LangProvider } from '../context/LangContext';
 import { AdminAuthProvider } from '../context/AdminAuthContext';
@@ -50,7 +50,8 @@ describe('link policy', () => {
   it('only hides for Italian', () => {
     for (const lang of ['en', 'ar', 'fr', 'es', 'de']) {
       for (const route of IT_HIDDEN_ROUTES) expect(isRouteHidden(lang, route)).toBe(false);
-      expect(quranReaderRoute(lang)).toBe('/tools/quran');
+      // Every language links straight to the reader, never the /tools/quran redirect.
+      expect(quranReaderRoute(lang)).toBe('/tools/quran-reader');
     }
     expect(quranReaderRoute('it')).toBe('/tools/quran-reader');
   });
@@ -84,26 +85,35 @@ describe('Italian pages: Tajweed Checker is reachable, unpublished routes are no
     expect(hasHref('/it/resources/faq')).toBe(true);
   });
 
-  // /it/login is not a published page (it serves the SPA shell), so the Italian UI offers no login control at all:
-  // no link, no button that navigates, no window.location.
+  // /it/login is not a published page (it serves the SPA shell), so crawlers get no link to it. Since
+  // 2026-10-14 (owner request) Italian visitors still get a login control: a <button> in the header and in
+  // the mobile drawer that navigates on click, never an <a href>.
   it.each([
     ['/it/tools', ToolsHub],
     ['/it/tools/prayer', IslamicTools],
     ['/it/resources', ResourcesHub],
-  ])('%s: no Italian login control in the header or the mobile drawer', async (url, Page) => {
+  ])('%s: the Italian login control is a button (header and drawer), never a link', async (url, Page) => {
     await mountFullPage(url, Page);
     expect(hasHref('/it/login')).toBe(false);
-    expect(document.querySelector('.nav__mobile-login-link')).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Accedi' })).toBeNull();
     expect(screen.queryByRole('link', { name: 'Accedi' })).toBeNull();
-    expect(document.querySelector('header')?.textContent).not.toMatch(/Accedi/);
+    const buttons = screen.getAllByRole('button', { name: 'Accedi' });
+    expect(buttons).toHaveLength(2);
+    expect(buttons.every((b) => b.tagName === 'BUTTON' && !b.hasAttribute('href'))).toBe(true);
+    expect(document.querySelector('button.nav__mobile-login-link')).not.toBeNull();
+    expect(document.querySelector('a.nav__mobile-login-link')).toBeNull();
     expect(document.querySelector('.header__right')).not.toBeNull();
   });
 
-  it('the Header source has no navigate-to-login fallback and no window.location', () => {
+  it('the Italian login button opens /it/login', async () => {
+    await mountFullPage('/it/tools', ToolsHub);
+    const headerButton = screen.getAllByRole('button', { name: 'Accedi' }).find((b) => !b.classList.contains('nav__mobile-login-link'));
+    fireEvent.click(headerButton);
+    expect(window.location.pathname).toBe('/it/login');
+  });
+
+  it('the Header source uses no window.location for login', () => {
     const src = fs.readFileSync(path.resolve(__dirname, '../components/layout/Header.jsx'), 'utf8');
     expect(src).not.toMatch(/window\.location/);
-    expect(src).not.toMatch(/navigate\(\s*localizedTo\(\s*["']\/login/);
   });
 
   it('the Italian tools card only describes published tools', async () => {
@@ -184,9 +194,14 @@ describe('English, Arabic and French are unchanged', () => {
     expect(document.querySelector(`footer a[href="${prefix}/tools/prayer-times"]`).textContent).toBe(label);
   });
 
-  it('English /courses/quran keeps its /tools/quran link', async () => {
-    await mountFullPage('/courses/quran', CoursesQuran);
-    expect(document.querySelector('.hub-related a.btn')?.getAttribute('href')).toBe('/tools/quran');
+  // Changed on purpose (2026-10-13): en/ar/fr now link straight to the reader,
+  // like Italian, instead of the /tools/quran client-side redirect.
+  it('/courses/quran links straight to the Quran reader in English, Arabic and French', async () => {
+    for (const [url, href] of [['/courses/quran', '/tools/quran-reader'], ['/ar/courses/quran', '/ar/tools/quran-reader'], ['/fr/courses/quran', '/fr/tools/quran-reader']]) {
+      await mountFullPage(url, CoursesQuran);
+      expect(document.querySelector('.hub-related a.btn')?.getAttribute('href'), url).toBe(href);
+      cleanup();
+    }
   });
 });
 
@@ -272,12 +287,12 @@ describe.skipIf(!distExists)('Italian internal link crawl (dist/public)', () => 
     expect(from.has('/it/tools/verse-of-the-day')).toBe(true);
   });
 
-  it('no Italian page carries a login control; EN/AR/FR still do', () => {
+  it('no Italian page links to a login URL (the login control is a button); EN/AR/FR still link it', () => {
     const withLogin = [];
     for (const e of itPages) {
       const html = fs.readFileSync(fileFor(e), 'utf8');
       const body = html.slice(html.indexOf('<body'));
-      if (/href="[^"]*\/login"|nav__mobile-login-link|>Accedi</.test(body)) withLogin.push(e.route);
+      if (/href="[^"]*\/login"|<a[^>]*nav__mobile-login-link/.test(body)) withLogin.push(e.route);
     }
     expect(withLogin).toEqual([]);
     for (const [p, href] of [['', '/login'], ['/ar', '/ar/login'], ['/fr', '/fr/login']]) {

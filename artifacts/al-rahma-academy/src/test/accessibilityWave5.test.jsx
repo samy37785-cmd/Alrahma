@@ -126,7 +126,7 @@ describe('protected files are byte-identical to origin/main (949b6b7)', () => {
       'src/styles/dark.css': 'b17af28318fa64a0025d5195210996bda1173ad202b56ecc86faad9c871f2a41',
       'src/styles/pages.css': '39ae385296ca78854c3dd36c3ef7b8390cd667e49239ef706a8456ae50f2d6c6',
       'src/styles/layout/home.css': '60fca53b34ce2e8c7c1101125558944c2c97359d673e40e4786635d1a3c864c5',
-      'src/styles/layout/header.css': 'b5aa83faa8979d0e803643cb796c2df4eb734aae295a4213bee4e2ccd84008e6',
+      'src/styles/layout/header.css': '237c8e28e3c270351157923349973802986f0a2b9fba3dd8bf9ea9ab40d89f4e', // 2026-10-14: button.nav__mobile-login-link (Italian login button)
     };
     expect(Object.fromEntries(Object.keys(BASELINE).map((f) => [f, sha(f)]))).toEqual(BASELINE);
   });

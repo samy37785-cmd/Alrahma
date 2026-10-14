@@ -81,6 +81,9 @@ const adminUserSchema = new mongoose.Schema(
     mfaEnabled:        { type: Boolean, default: false },
     // Temporary secret during the setup flow (before first successful TOTP)
     _mfaPendingSecret: { type: String, default: null, select: false },
+    // 30-second TOTP time step of the last accepted code. A code is accepted
+    // only for a later step, so the same code cannot be used twice (AR-11).
+    lastTotpStep:      { type: Number, default: null },
 
     // Brute-force protection — per-account lock independent of rate limiting
     failedLoginAttempts: { type: Number, default: 0 },

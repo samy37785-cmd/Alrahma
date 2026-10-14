@@ -8,6 +8,8 @@ export const updateMe       = (data)  => http.put('/auth/me', data).then((r) => 
 export const forgotPassword = (email) => http.post('/auth/forgot-password', { email }).then((r) => r.data);
 export const resetPassword  = (data)  => http.post('/auth/reset-password', data).then((r) => r.data);
 export const googleLogin    = (credential) => http.post('/auth/google', { credential }).then((r) => r.data);
+export const verifyEmail    = (token) => http.post('/auth/verify-email', { token }).then((r) => r.data);
+export const resendVerification = () => http.post('/auth/verify-email/resend').then((r) => r.data);
 // getMyLinkCode() (GET /auth/link-code) was removed in Stage 2C (see
 // docs/legacy-role-orphan-cleanup.md) - it was the child/user-side half of
 // the parent-child linking feature, whose only consumer, Profile.jsx's

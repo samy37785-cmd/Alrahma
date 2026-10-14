@@ -1,4 +1,6 @@
 import crypto from 'crypto';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 import { body } from 'express-validator';
 import User from '../models/User.js';
 import { sendMail } from '../config/mailer.js';
@@ -8,6 +10,7 @@ import { handleValidationErrors } from '../utils/validationHelper.js';
 import { hashToken } from '../utils/hashToken.js';
 import { siteOrigin } from '../config/site.js';
 import { AUTH_COOKIE, authCookieOptions, sendAuth } from '../utils/authCookie.js';
+import { getToken } from '../middleware/auth.js';
 
 // Normalise a user-supplied email for storage AND lookups. Coercing to a String
 // also neutralises NoSQL operator injection (e.g. { $gt: '' }) at the boundary —
@@ -60,6 +63,12 @@ export const register = asyncHandler(async (req, res) => {
   sendAuth(res, user, 201);
 });
 
+// Audit AR-12: login for an unknown email used to skip bcrypt and answer in a
+// few milliseconds, against ~250 ms for a real account, which told anyone
+// whether an address is registered. An unknown email now runs the same
+// compare (12 rounds, as models/User.js) against this throwaway hash.
+const TIMING_EQUALIZER_HASH = bcrypt.hashSync(crypto.randomBytes(16).toString('hex'), 12);
+
 // @desc   Login
 // @route  POST /api/auth/login
 // @access Public
@@ -71,7 +80,10 @@ export const login = asyncHandler(async (req, res) => {
   // include password explicitly (it's select:false in the model)
   const user = await User.findOne({ email }).select('+password');
 
-  if (!user || !(await user.matchPassword(password))) {
+  const passwordOk = user
+    ? await user.matchPassword(password)
+    : (await bcrypt.compare(password, TIMING_EQUALIZER_HASH), false);
+  if (!passwordOk) {
     res.status(401);
     throw new Error('Invalid email or password');
   }
@@ -82,7 +94,22 @@ export const login = asyncHandler(async (req, res) => {
 // @desc   Logout — clears the auth cookie
 // @route  POST /api/auth/logout
 // @access Public
-export const logout = asyncHandler(async (_req, res) => {
+export const logout = asyncHandler(async (req, res) => {
+  // Audit AR-08: clearing the cookie alone left the JWT valid until it
+  // expired (7 days by default), so a copied token kept working after logout.
+  // Bumping tokenVersion ends it at once, the same way a password change does
+  // (protect() compares the token's `v`). That signs the account out on every
+  // device, which also covers a token the user never knew was copied. Only a
+  // token that is still current can do this, so an old, already-ended token
+  // cannot be used to sign the user out elsewhere.
+  const token = getToken(req);
+  if (token) {
+    try {
+      const { id, v = 0 } = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
+      const current = v === 0 ? { $in: [0, null] } : v; // null also matches a missing field
+      await User.updateOne({ _id: id, tokenVersion: current }, { $inc: { tokenVersion: 1 } });
+    } catch { /* invalid or expired token: nothing to end, just clear the cookie */ }
+  }
   // Clear with the same attributes the cookie was set with, or the browser
   // keeps it. maxAge is omitted; expires:past tells the browser to drop it.
   res.clearCookie(AUTH_COOKIE, { ...authCookieOptions(0), maxAge: undefined });
@@ -131,7 +158,9 @@ export const forgotPassword = asyncHandler(async (req, res) => {
   await user.save({ validateBeforeSave: false });
 
   const link = resetLink(rawToken);
-  await sendMail({
+  // AR-12: not awaited, so a registered address answers as fast as an unknown
+  // one instead of waiting for SMTP. sendMail never throws (config/mailer.js).
+  void sendMail({
     to: email,
     subject: 'Reset your password — Al-Rahma Academy',
     html: forgotPasswordEmail({ name: user.name, link }),
@@ -177,17 +206,13 @@ export const updateMe = asyncHandler(async (req, res) => {
   const email = req.body.email != null ? normEmail(req.body.email) : undefined;
   const user = await User.findById(req.user._id).select('+password');
 
-  if (name) user.name = name;
-  if (email && email !== user.email) {
-    const taken = await User.findOne({ email }).lean();
-    if (taken) {
-      res.status(409);
-      throw new Error('That email is already in use');
-    }
-    user.email = email;
-  }
+  const emailChanging = !!email && email !== user.email;
 
-  if (newPassword) {
+  // Audit AR-03: the email is the login and where reset links go, so changing
+  // it needs the current password, like a password change. The password is
+  // checked before the "email taken" lookup, so only the account owner can
+  // learn whether an address is registered here.
+  if (emailChanging || newPassword) {
     if (!currentPassword) {
       res.status(400);
       throw new Error('Please provide your current password');
@@ -197,8 +222,26 @@ export const updateMe = asyncHandler(async (req, res) => {
       res.status(401);
       throw new Error('Current password is incorrect');
     }
-    user.password     = newPassword;
+  }
+
+  if (name) user.name = name;
+  if (emailChanging) {
+    const taken = await User.findOne({ email }).lean();
+    if (taken) {
+      res.status(409);
+      throw new Error('That email is already in use');
+    }
+    user.email = email;
+  }
+  if (newPassword) user.password = newPassword;
+
+  // A new email or password ends every other session (AR-03), and this
+  // device gets a fresh cookie so it stays signed in. Before, a password
+  // change ended this device's session too, on its next request.
+  if (emailChanging || newPassword) {
     user.tokenVersion = (user.tokenVersion ?? 0) + 1;
+    await user.save();
+    return sendAuth(res, user);
   }
 
   await user.save();

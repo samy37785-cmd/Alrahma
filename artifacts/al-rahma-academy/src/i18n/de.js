@@ -675,6 +675,7 @@ const de = {
       "infoSuccess": "Profil erfolgreich aktualisiert.",
       "changePass": "Passwort ändern",
       "currentPass": "Aktuelles Passwort",
+      "emailPassHint": "Um deine E-Mail zu ändern, gib dein aktuelles Passwort ein. Mit Google registriert? Lege zuerst über „Passwort vergessen“ ein Passwort fest.",
       "newPass": "Neues Passwort",
       "confirmPass": "Neues Passwort bestätigen",
       "changeBtn": "Passwort ändern",

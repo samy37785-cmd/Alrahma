@@ -4,6 +4,7 @@
    ══════════════════════════════════════════════════════════ */
 
 @import './styles/tokens.css';        /* Layer 1+2: design tokens & dark mode      */
+@import './styles/font-fallbacks.css'; /* metric-matched fallbacks for Poppins/Playfair */
 @import './styles/global.css';        /* variables, reset, typography, buttons     */
 @import './styles/layout.css';        /* topbar, header, nav, home sections, footer */
 @import './styles/auth.css';          /* login, register, admin, profile, 404       */

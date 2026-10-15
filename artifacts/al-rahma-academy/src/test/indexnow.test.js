@@ -41,12 +41,12 @@ describe('key file', () => {
 describe('URL validation', () => {
   const published = publishedUrls();
 
-  it('allows exactly the published canonical URLs: all 144, none of them es/de', () => {
-    expect(published).toHaveLength(144);
+  it('allows exactly the published canonical URLs: all 164, none of them es/de', () => {
+    expect(published).toHaveLength(164);
     expect(published.some((u) => /\/(es|de)(\/|$)/.test(new URL(u).pathname))).toBe(false);
     const { accepted, rejected } = validateUrls(published);
     expect(rejected).toEqual([]);
-    expect(accepted).toHaveLength(144);
+    expect(accepted).toHaveLength(164);
   });
 
   it.each([
@@ -82,9 +82,9 @@ describe('URL validation', () => {
 });
 
 describe('batching and payload', () => {
-  it('splits 144 URLs into batches of at most 100 (100 + 44)', () => {
+  it('splits 164 URLs into batches of at most 100 (100 + 64)', () => {
     const batches = chunk(publishedUrls());
-    expect(batches.map((b) => b.length)).toEqual([100, 44]);
+    expect(batches.map((b) => b.length)).toEqual([100, 64]);
     expect(MAX_BATCH).toBeLessThanOrEqual(100);
   });
   it('payload follows the IndexNow JSON shape', () => {
@@ -102,7 +102,7 @@ describe('submit()', () => {
     expect(init.method).toBe('POST');
     expect(init.headers['Content-Type']).toBe('application/json; charset=utf-8');
     expect(JSON.parse(init.body).urlList).toHaveLength(100);
-    expect(result).toEqual({ ok: true, batches: [{ urls: 100, status: 200, ok: true }, { urls: 44, status: 200, ok: true }] });
+    expect(result).toEqual({ ok: true, batches: [{ urls: 100, status: 200, ok: true }, { urls: 64, status: 200, ok: true }] });
   });
 
   it.each([[202], [400], [403], [422], [429]])('HTTP %i is reported, never thrown', async (status) => {
@@ -151,7 +151,7 @@ describe('CLI', () => {
     expect(lines.join('\n')).toContain('rejected https://al-rahmaacademy.com/es/');
   });
 
-  it('refuses a full-site send (144 URLs) without --all', async () => {
+  it('refuses a full-site send (164 URLs) without --all', async () => {
     const fetchImpl = vi.fn(async () => ({ status: 200 }));
     const { lines, log } = quiet();
     const readFile = () => publishedUrls().join('\n');

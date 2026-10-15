@@ -371,7 +371,7 @@ describe('Scope guard: prerendered HTML, /enroll and Italian metadata are unchan
     'src/i18n/enroll/countries.js': '341fe3dfef149848fbfcaf6a87723818976b6d6b9e137f1470e059e7ac68676c',
     'src/i18n/itMetaDescriptions.js': 'bf226934a1f3f5180b6206357747df46499db592bf554c8a6b3cd81ff63c3a69',
     'src/i18n/home/seo.js': '2c199f33b4d85041e0d18ef9503e4960321f52124ef5adad6a278ded687920b8',
-    'scripts/prerender-routes.mjs': '3ca8cbda9ffd7aa80e59d787d1ece4c6d6b4c69d13c00c04bf9683fba140e034',
+    'scripts/prerender-routes.mjs': '5af0f861179fdb4390d08f721c2eb9866e1b40b2225c06d1628171d7474c4678',
     'scripts/seoRoutes.mjs': '01db84ba966064e6d70b7082c0000100d077b4cb2291d873509e8ca01b4edc75',
   }))('%s is unchanged', (rel, expected) => {
     const src = fs.readFileSync(path.join(ROOT, rel), 'utf8').replace(/\r\n/g, '\n');

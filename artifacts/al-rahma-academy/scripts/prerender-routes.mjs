@@ -41,6 +41,7 @@
 // own) and reimplements pathFor()'s exact three-line logic locally rather
 // than pull in the whole i18n tree for one function.
 import { site } from '../src/data/site.js';
+import { PRAYER_CITIES, prayerCityRoute } from '../src/data/prayerCities.js';
 
 const ORIGIN = site.origin;
 
@@ -458,6 +459,13 @@ export const PRERENDER_MANIFEST = [
   // title and description in the raw HTML) although every page links them.
   ...['/tools/prayer-times', '/tools/quran-reader', '/tools/hadith', '/tools/verse-of-the-day', '/enroll']
     .flatMap((route) => ['en', 'ar'].map((locale) => ({ route, locale, status: 'published', indexable: true }))),
+  // City prayer-times pages (2026-10-13): one page per city in
+  // src/data/prayerCities.js, published only in its country's language
+  // (10 Italian cities under /it/, 10 French cities under /fr/), so hreflang is
+  // that one locale + x-default. Static content only: the yearly table and the
+  // Qibla are build-time data; today's times are fetched for a real visitor only
+  // (navigator.webdriver gate, as on /tools/prayer-times).
+  ...PRAYER_CITIES.map((city) => ({ route: prayerCityRoute(city.slug), locale: city.locale, status: 'published', indexable: true })),
 ];
 
 // The URL path to navigate to for one manifest entry, e.g. "/ar/courses/ijazah".

@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate, useParams } from 'react-router-
 import { AuthProvider } from './context/AuthContext';
 import { AdminAuthProvider } from './context/AdminAuthContext';
 import { LangProvider, useLang } from './context/LangContext';
+import { PRAYER_CITIES, prayerCityRoute } from './data/prayerCities';
 import { getExperienceText } from './i18n/experience';
 import { ThemeProvider } from './context/ThemeContext';
 import { QueryProvider } from './context/QueryProvider';
@@ -71,6 +72,7 @@ const AcademyHub    = lazy(() => import('./pages/hubs/AcademyHub'));
 const TasbeehPage          = lazy(() => import('./pages/tools/TasbeehPage'));
 const ArabicAlphabetPage   = lazy(() => import('./pages/tools/ArabicAlphabetPage'));
 const PrayerTimesPage      = lazy(() => import('./pages/tools/PrayerTimesPage'));
+const CityPrayerTimesPage  = lazy(() => import('./pages/tools/CityPrayerTimesPage'));
 const QiblaPage            = lazy(() => import('./pages/tools/QiblaPage'));
 const IslamicCalendarPage  = lazy(() => import('./pages/tools/IslamicCalendarPage'));
 const VerseOfTheDayPage    = lazy(() => import('./pages/tools/VerseOfTheDayPage'));
@@ -136,6 +138,13 @@ export default function App({ basename = '' }) {
           <Route path="/tools/hadith" element={<HadithLibrary />} />
           <Route path="/tools/prayer" element={<IslamicTools />} />
           <Route path="/tools/prayer-times" element={<PrayerTimesPage />} />
+          {/* One route per known city (Italian and French pages only, see
+              src/data/prayerCities.js). Listed, not a :city param, so an
+              unknown city stays a real 404: these URLs are always
+              prerendered files, never the SPA shell rewrite. */}
+          {PRAYER_CITIES.map((city) => (
+            <Route key={city.slug} path={prayerCityRoute(city.slug)} element={<CityPrayerTimesPage slug={city.slug} />} />
+          ))}
           <Route path="/tools/qibla" element={<QiblaPage />} />
           <Route path="/tools/islamic-calendar" element={<IslamicCalendarPage />} />
           <Route path="/tools/verse-of-the-day" element={<VerseOfTheDayPage />} />

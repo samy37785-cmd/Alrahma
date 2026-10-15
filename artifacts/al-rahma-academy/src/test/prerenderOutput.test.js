@@ -2272,11 +2272,40 @@ describe.skipIf(!distExists)('x-default targets are real, canonical, prerendered
     }
   });
 
-  it('the number of prerendered files is 144 (en 36, ar 36, fr 36, it 36) and /it/enroll is present', () => {
-    // en and ar: 31 + the five tools/Enroll routes (2026-10-13).
-    expect(published_).toHaveLength(144);
-    expect(['en', 'ar', 'fr', 'it'].map((l) => published_.filter((e) => e.locale === l).length)).toEqual([36, 36, 36, 36]);
+  it('the number of prerendered files is 164 (en 36, ar 36, fr 46, it 46) and /it/enroll is present', () => {
+    // en and ar: 31 + the five tools/Enroll routes; fr and it: 36 + 10 city prayer-times pages each (2026-10-13).
+    expect(published_).toHaveLength(164);
+    expect(['en', 'ar', 'fr', 'it'].map((l) => published_.filter((e) => e.locale === l).length)).toEqual([36, 36, 46, 46]);
     expect(existsSync(path.join(distDir, 'it/enroll/index.html'))).toBe(true);
+  });
+});
+
+// City prayer-times pages: the raw file is the city's own page in its own
+// language, with the yearly table and the Qibla, and no day-specific times.
+describe.skipIf(!distExists)('city prayer-times pages: raw prerender HTML', () => {
+  const cities = PRERENDER_MANIFEST.filter((e) => e.route.startsWith('/tools/prayer-times/'));
+  const H1 = { it: 'Orari di preghiera a ', fr: 'Horaires de prière à ' };
+  const TODAY = { it: 'Oggi a ', fr: "Aujourd'hui à " };
+
+  it('20 files: lang, self canonical, index/follow, hreflang = own locale + x-default, H1, 24-row table, Qibla, no today block', () => {
+    expect(cities).toHaveLength(20);
+    for (const entry of cities) {
+      const file = path.join(distDir, outputRelPathFor(entry));
+      expect(existsSync(file), file).toBe(true);
+      const html = readFileSync(file, 'utf8');
+      const doc = new JSDOM(html).window.document;
+      const self = canonicalUrlFor(entry);
+      expect(doc.documentElement.lang, self).toBe(entry.locale);
+      expect(doc.querySelector('link[rel="canonical"]').getAttribute('href'), self).toBe(self);
+      expect(doc.querySelector('meta[name="robots"]').getAttribute('content'), self).toMatch(/^index, follow/);
+      const alternates = [...doc.querySelectorAll('link[rel="alternate"][hreflang]')].map((l) => [l.getAttribute('hreflang'), l.getAttribute('href')]);
+      expect(alternates.sort(), self).toEqual([[entry.locale, self], ['x-default', self]].sort());
+      expect(doc.querySelector('h1').textContent, self).toMatch(new RegExp(`^${H1[entry.locale]}`));
+      expect(doc.querySelectorAll('#main-content table tbody tr'), self).toHaveLength(24);
+      expect(doc.querySelector('#main-content').textContent, self).toContain('Qibla');
+      expect(doc.querySelector('#main-content').textContent, self).not.toContain(TODAY[entry.locale]);
+      expect(doc.querySelector('script[data-seo="breadcrumb"]'), self).not.toBeNull();
+    }
   });
 });
 

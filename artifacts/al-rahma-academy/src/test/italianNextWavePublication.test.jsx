@@ -24,18 +24,20 @@ describe('manifest and sitemap: baseline derived from the manifest, not a hard-c
     const itLocs = locs.filter((u) => u.startsWith(`${ORIGIN}/it/`));
     expect(itLocs).toHaveLength(itPublished.length);
     // Baseline before wave 3: 129 total, 31 Italian. Waves 3 + the final Enroll publication add exactly 3.
-    // The en + ar versions of the five routes (2026-10-13) are a later, separate wave of 10.
-    expect(published.length - 10 - 129).toBe(5);
-    expect(itPublished.length - 31).toBe(5);
+    // Later, separate waves (2026-10-13): the en + ar versions of the five
+    // routes (10) and the 20 city prayer-times pages.
+    const isCity = (e) => e.route.startsWith('/tools/prayer-times/');
+    expect(published.filter((e) => !isCity(e)).length - 10 - 129).toBe(5);
+    expect(itPublished.filter((e) => !isCity(e)).length - 31).toBe(5);
     expect(itPublished.map((e) => e.route)).toEqual(expect.arrayContaining(['/tools/hadith', '/tools/prayer-times', '/enroll', '/tools/verse-of-the-day', '/tools/quran-reader']));
     expect(locs).toContain(`${ORIGIN}/it/enroll`);
     expect(locs).toContain(`${ORIGIN}/it/tools/hadith`);
     expect(locs).toContain(`${ORIGIN}/it/tools/prayer-times`);
   });
 
-  it('every other locale kept its count: 36 fr; en and ar are 36 (31 + the five tools/Enroll routes, 2026-10-13)', () => {
+  it('every other locale kept its count: en and ar 36 (31 + the five tools/Enroll routes), fr 46 (36 + 10 city pages)', () => {
     const count = (l) => published.filter((e) => e.locale === l).length;
-    expect([count('en'), count('ar'), count('fr')]).toEqual([36, 36, 36]);
+    expect([count('en'), count('ar'), count('fr')]).toEqual([36, 36, 46]);
   });
 });
 

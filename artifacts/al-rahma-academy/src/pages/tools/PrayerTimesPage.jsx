@@ -11,6 +11,8 @@ import { isRouteHidden } from '../../utils/italianLinkPolicy';
 import { TOOLS_TEXT, pick } from '../../i18n/content';
 import { PRAYER_TIMES_TEXT } from '../../i18n/tools/prayerTimes';
 import { RELATED_TOOLS_TEXT } from '../../i18n/tools/relatedTools';
+import { PRAYER_CITY_TEXT } from '../../i18n/tools/prayerCities';
+import { prayerCitiesFor, prayerCityRoute } from '../../data/prayerCities';
 import {
   PRAYERS_ORDER, PRAYER_META, EXTRA_ORDER, EXTRA_META,
   ASR_SCHOOLS, CALC_METHODS,
@@ -37,6 +39,9 @@ export default function PrayerTimesPage() {
   const tx = pick(TOOLS_TEXT, lang);
   const t = PRAYER_TIMES_TEXT[lang] || PRAYER_TIMES_TEXT.en;
   const rt = RELATED_TOOLS_TEXT[lang] || RELATED_TOOLS_TEXT.en;
+  // City pages exist only in Italian and French; other languages show no list.
+  const cityText = PRAYER_CITY_TEXT[lang];
+  const cities = cityText ? prayerCitiesFor(lang) : [];
 
   useSEO({ title: t.seo.title, description: t.seo.description });
 
@@ -393,6 +398,13 @@ export default function PrayerTimesPage() {
             )}
 
           </div>
+
+          {cities.length > 0 && (
+            <nav className="it__also-try" aria-label={cityText.hubList.ariaLabel}>
+              <span className="it__also-try__label">{cityText.hubList.title}</span>
+              {cities.map((c) => <Link key={c.slug} to={prayerCityRoute(c.slug)}>{c.name}</Link>)}
+            </nav>
+          )}
 
           <nav className="it__also-try" aria-label={rt.ariaLabel}>
             <span className="it__also-try__label">{rt.alsoTry}</span>

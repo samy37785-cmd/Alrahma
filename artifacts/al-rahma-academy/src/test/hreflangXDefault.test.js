@@ -21,9 +21,14 @@ const urlOf = (route, locale) => ORIGIN + (locale === 'en' ? route : route === '
 // URL) until 2026-10-13, when en + ar joined; x-default is English again.
 const FORMER_FR_IT_ONLY = ['/enroll', '/tools/quran-reader', '/tools/verse-of-the-day', '/tools/hadith', '/tools/prayer-times'];
 
+// City prayer-times pages (2026-10-13) exist in one language only (the city's
+// country), so their x-default is the page itself (first-published fallback).
+const isCityRoute = (route) => route.startsWith('/tools/prayer-times/');
+
 describe('x-default points at a published version of the same route', () => {
-  it('every published route has an English version; the five former fr/it-only routes publish all four languages', () => {
-    const noEn = routes.filter((r) => !localesOf(r).includes('en')).sort();
+  it('every published route except the city pages has an English version; the five former fr/it-only routes publish all four languages', () => {
+    // City prayer-times pages (2026-10-13) are published only in their country's language.
+    const noEn = routes.filter((r) => !isCityRoute(r) && !localesOf(r).includes('en')).sort();
     expect(noEn).toEqual([]);
     for (const route of FORMER_FR_IT_ONLY) expect(localesOf(route).sort(), route).toEqual(['ar', 'en', 'fr', 'it']);
   });
@@ -72,11 +77,28 @@ describe('x-default points at a published version of the same route', () => {
   it('the first-published-locale fallback is deterministic (manifest order) when neither en nor fr is published', () => {
     // Exercised through the real function on a synthetic route is impossible
     // without editing the manifest, so assert the rule on the data instead:
-    // no published route lacks both en and fr today.
-    for (const route of routes) {
+    // apart from the single-locale city pages (next test), no published route
+    // lacks both en and fr today.
+    for (const route of routes.filter((r) => !isCityRoute(r))) {
       const l = localesOf(route);
       expect(l.includes('en') || l.includes('fr'), route).toBe(true);
     }
+  });
+
+  it('city prayer-times pages: one locale (it or fr) each, x-default is the page itself', () => {
+    const cities = routes.filter(isCityRoute);
+    expect(cities).toHaveLength(20);
+    for (const route of cities) {
+      const locales = localesOf(route);
+      expect(locales, route).toHaveLength(1);
+      expect(['it', 'fr']).toContain(locales[0]);
+      const links = hreflangLinksFor({ route, locale: locales[0] });
+      expect(links, route).toEqual([
+        { hreflang: locales[0], href: urlOf(route, locales[0]) },
+        { hreflang: 'x-default', href: urlOf(route, locales[0]) },
+      ]);
+    }
+    expect(cities.filter((r) => localesOf(r)[0] === 'it')).toHaveLength(10);
   });
 
   it('no alternate is ever claimed for an unpublished language', () => {
@@ -97,8 +119,8 @@ describe('publication is untouched', () => {
     const xml = fs.readFileSync(path.resolve(__dirname, '../../public/sitemap.xml'), 'utf8');
     const locs = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
     expect(locs.sort()).toEqual(published.map(canonicalUrlFor).sort());
-    // 134 + the five tools/Enroll routes in en and ar (2026-10-13).
-    expect(locs).toHaveLength(144);
-    expect(locs.filter((u) => u.startsWith(`${ORIGIN}/it/`))).toHaveLength(36);
+    // 134 + the five tools/Enroll routes in en and ar + 20 city prayer-times pages (10 it, 10 fr), 2026-10-13.
+    expect(locs).toHaveLength(164);
+    expect(locs.filter((u) => u.startsWith(`${ORIGIN}/it/`))).toHaveLength(46);
   });
 });

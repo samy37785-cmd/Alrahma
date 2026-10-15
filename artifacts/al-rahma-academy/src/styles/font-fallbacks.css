@@ -1,0 +1,79 @@
+/* ══════════════════════════════════════════════════════════
+   Metric-matched fallback fonts (#250, part 2)
+
+   Until Poppins / Playfair Display arrive (font-display: swap), text is drawn
+   in a local system font. Poppins is about 12% wider than Arial or Roboto, so
+   when it swapped in, paragraphs re-wrapped onto more lines and pushed the page
+   down: Lighthouse measured CLS 0.24 on /fr/, from .hero__sub.
+
+   These faces are the same local fonts, scaled so their text takes the same
+   room as the web font. The ratios were measured in Chrome with canvas
+   measureText on the live /fr/ hero and section text (2026-10-15):
+     Poppins 400 / Arial 1.1196, / Roboto 1.1322
+     Poppins 700 / Arial Bold 1.0725, / Roboto Bold 1.1533
+     Playfair Display 700 / Georgia Bold 0.8941, / Noto Serif Bold 0.8996
+   Vertical overrides use Poppins' own metrics (ascender 1050, descender 350,
+   line gap 100 per 1000 units) divided by size-adjust.
+
+   unicode-range keeps them to Latin text, which is all Poppins and Playfair
+   cover. Arabic letters and the direction/joining marks (U+200B-200F,
+   U+202A-202E, U+2060-206F) never use these faces, so Arabic text and RTL
+   layout are exactly as before.
+   ══════════════════════════════════════════════════════════ */
+
+@font-face {
+  font-family: "Poppins Fallback";
+  src: local("Arial"), local("ArialMT");
+  font-weight: 100 500;
+  size-adjust: 111.96%;
+  ascent-override: 93.78%;
+  descent-override: 31.26%;
+  line-gap-override: 8.93%;
+  unicode-range: U+0000-024F, U+1E00-1EFF, U+2010-2027, U+2030-205F, U+20A0-20CF, U+2100-214F, U+2190-2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Poppins Fallback";
+  src: local("Arial Bold"), local("Arial-BoldMT");
+  font-weight: 600 900;
+  size-adjust: 107.25%;
+  ascent-override: 97.90%;
+  descent-override: 32.63%;
+  line-gap-override: 9.32%;
+  unicode-range: U+0000-024F, U+1E00-1EFF, U+2010-2027, U+2030-205F, U+20A0-20CF, U+2100-214F, U+2190-2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* Android has no Arial: its system font is Roboto. */
+@font-face {
+  font-family: "Poppins Fallback Android";
+  src: local("Roboto"), local("Roboto-Regular");
+  font-weight: 100 500;
+  size-adjust: 113.22%;
+  ascent-override: 92.74%;
+  descent-override: 30.91%;
+  line-gap-override: 8.83%;
+  unicode-range: U+0000-024F, U+1E00-1EFF, U+2010-2027, U+2030-205F, U+20A0-20CF, U+2100-214F, U+2190-2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Poppins Fallback Android";
+  src: local("Roboto Bold"), local("Roboto-Bold");
+  font-weight: 600 900;
+  size-adjust: 115.33%;
+  ascent-override: 91.04%;
+  descent-override: 30.35%;
+  line-gap-override: 8.67%;
+  unicode-range: U+0000-024F, U+1E00-1EFF, U+2010-2027, U+2030-205F, U+20A0-20CF, U+2100-214F, U+2190-2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Playfair Fallback";
+  src: local("Georgia Bold"), local("Georgia-Bold");
+  font-weight: 600 900;
+  size-adjust: 89.41%;
+  unicode-range: U+0000-024F, U+1E00-1EFF, U+2010-2027, U+2030-205F, U+20A0-20CF, U+2100-214F, U+2190-2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Playfair Fallback Android";
+  src: local("Noto Serif Bold"), local("NotoSerif-Bold");
+  font-weight: 600 900;
+  size-adjust: 89.96%;
+  unicode-range: U+0000-024F, U+1E00-1EFF, U+2010-2027, U+2030-205F, U+20A0-20CF, U+2100-214F, U+2190-2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}

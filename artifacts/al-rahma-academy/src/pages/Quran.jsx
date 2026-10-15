@@ -376,7 +376,8 @@ export default function Quran() {
           change would be safe. */}
       {/* Italian Quran Reader breadcrumb prerequisite: 'it' joins 'fr' so the Italian
           page writes the BreadcrumbList that waitForHydratedSeo() requires. */}
-      {(siteLang === 'fr' || siteLang === 'it') && (
+      {/* en + ar join fr + it (2026-10-13), the languages this route is published in. */}
+      {['en', 'ar', 'fr', 'it'].includes(siteLang) && (
         <div className="sr-only">
           <Breadcrumbs items={[{ label: t.nav.tools, to: '/tools' }, { label: t.nav.quranReader }]} />
         </div>

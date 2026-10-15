@@ -44,6 +44,23 @@ async function snapshot(urlPath) {
   return sha(JSON.stringify(state));
 }
 
+
+// en/ar (2026-10-13) render the same hidden breadcrumb fr/it already had. With the
+// .sr-only wrapper and its BreadcrumbList JSON-LD taken back out, the rest of the
+// page must still equal its origin/main snapshot exactly.
+async function snapshotWithoutBreadcrumb(urlPath, Page) {
+  setWebdriver(true);
+  await mountFullPage(urlPath, Page);
+  const body = document.body.innerHTML;
+  const stripped = body.replace(/<div class="sr-only"><nav[\s\S]*?<\/nav><\/div>/, '');
+  expect(stripped.length, `${urlPath}: one hidden breadcrumb removed`).toBeLessThan(body.length);
+  const ld = [...document.querySelectorAll('script[type="application/ld+json"]')]
+    .filter((s) => s.getAttribute('data-seo') !== 'breadcrumb')
+    .map((s) => s.textContent).sort();
+  cleanup();
+  return sha(JSON.stringify({ body: stripped, ld }));
+}
+
 beforeEach(() => {
   for (const m of Object.values(mocks)) m.mockReset().mockRejectedValue(new Error('network disabled in test'));
   vi.stubGlobal('fetch', fetchMock);
@@ -119,8 +136,8 @@ describe('fr, en, ar, es and de are unchanged (SHA-256 of the prerender-time DOM
     expect(await snapshot('/fr/tools/quran-reader')).toBe('4189f7d15acda91cc62aa05a2d10795fa94655b899336aba7eb7ca0838bd97ea');
   });
 
-  it('en, ar, es and de render no breadcrumb and are byte-identical to before', async () => {
-    const paths = { en: '/tools/quran-reader', ar: '/ar/tools/quran-reader', es: '/es/tools/quran-reader', de: '/de/tools/quran-reader' };
+  it('es and de render no breadcrumb and are byte-identical to before', async () => {
+    const paths = { es: '/es/tools/quran-reader', de: '/de/tools/quran-reader' };
     for (const [l, p] of Object.entries(paths)) {
       setWebdriver(true);
       await mountFullPage(p, Quran);
@@ -128,9 +145,25 @@ describe('fr, en, ar, es and de are unchanged (SHA-256 of the prerender-time DOM
       expect(hiddenTrails(), l).toHaveLength(0);
       cleanup();
     }
-    expect({
-      en: await snapshot(paths.en), ar: await snapshot(paths.ar), es: await snapshot(paths.es), de: await snapshot(paths.de),
-    }).toEqual({ en: 'ea56ed0b377dde7d65867123fdc6cf027ac0653741233bd7d1d0d9d4ee3e9343', ar: '4889afa31df36344956e084819cea9112ed3314b6afcff7f00fa8e921903c6ef', es: 'c46d481796a3dbb5a634436189fcb27ce781b60c6d4284a7db5eb85da1938187', de: 'a1fbad210958017ca59194e2903cfb5348f356d0abfb39fa15808301a570d4a7' });
+    expect({ es: await snapshot(paths.es), de: await snapshot(paths.de) }).toEqual({
+      es: 'c46d481796a3dbb5a634436189fcb27ce781b60c6d4284a7db5eb85da1938187', de: 'a1fbad210958017ca59194e2903cfb5348f356d0abfb39fa15808301a570d4a7',
+    });
+  });
+
+  it('en and ar (published 2026-10-13) render one hidden breadcrumb; everything else is byte-identical to before', async () => {
+    const paths = { en: '/tools/quran-reader', ar: '/ar/tools/quran-reader' };
+    for (const [l, p] of Object.entries(paths)) {
+      setWebdriver(true);
+      await mountFullPage(p, Quran);
+      expect(crumbScripts(), l).toHaveLength(1);
+      expect(hiddenTrails(), l).toHaveLength(1);
+      // Home > Tools > Quran reader, as on fr/it.
+      expect(crumb().itemListElement, l).toHaveLength(3);
+      cleanup();
+    }
+    expect({ en: await snapshotWithoutBreadcrumb(paths.en, Quran), ar: await snapshotWithoutBreadcrumb(paths.ar, Quran) }).toEqual({
+      en: 'ea56ed0b377dde7d65867123fdc6cf027ac0653741233bd7d1d0d9d4ee3e9343', ar: '4889afa31df36344956e084819cea9112ed3314b6afcff7f00fa8e921903c6ef',
+    });
   });
 });
 
@@ -162,12 +195,13 @@ describe('prerender safety: the new breadcrumb adds nothing dynamic', () => {
 });
 
 describe('publication (done by the Italian Quran Reader SEO Publication, after this prerequisite)', () => {
-  it('/it/tools/quran-reader has exactly one manifest entry and one sitemap URL (134 total, IT 36)', () => {
+  it('/it/tools/quran-reader has exactly one manifest entry and one sitemap URL (144 total, IT 36)', () => {
     expect(PRERENDER_MANIFEST.filter((e) => e.route === '/tools/quran-reader' && e.locale === 'it')).toHaveLength(1);
-    expect(PRERENDER_MANIFEST.filter((e) => e.route === '/tools/quran-reader').map((e) => e.locale)).toEqual(['fr', 'it']);
+    expect(PRERENDER_MANIFEST.filter((e) => e.route === '/tools/quran-reader').map((e) => e.locale)).toEqual(['fr', 'it', 'en', 'ar']); // en + ar since 2026-10-13
     const xml = fs.readFileSync(path.resolve(__dirname, '../../public/sitemap.xml'), 'utf8');
     const locs = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
-    expect(locs).toHaveLength(134);
+    // 134 + the five tools/Enroll routes in en and ar (2026-10-13).
+    expect(locs).toHaveLength(144);
     expect(locs.filter((u) => u.includes('/it/'))).toHaveLength(36);
     expect(locs.filter((u) => u.endsWith('/it/tools/quran-reader'))).toHaveLength(1);
   });

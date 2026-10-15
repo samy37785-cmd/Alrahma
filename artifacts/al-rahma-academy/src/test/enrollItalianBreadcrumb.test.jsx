@@ -40,6 +40,23 @@ async function snapshot(urlPath) {
   return sha(JSON.stringify(state));
 }
 
+
+// en/ar (2026-10-13) render the same hidden breadcrumb fr/it already had. With the
+// .sr-only wrapper and its BreadcrumbList JSON-LD taken back out, the rest of the
+// page must still equal its origin/main snapshot exactly.
+async function snapshotWithoutBreadcrumb(urlPath, Page) {
+  setWebdriver(true);
+  await mountFullPage(urlPath, Page);
+  const body = document.body.innerHTML;
+  const stripped = body.replace(/<div class="sr-only"><nav[\s\S]*?<\/nav><\/div>/, '');
+  expect(stripped.length, `${urlPath}: one hidden breadcrumb removed`).toBeLessThan(body.length);
+  const ld = [...document.querySelectorAll('script[type="application/ld+json"]')]
+    .filter((s) => s.getAttribute('data-seo') !== 'breadcrumb')
+    .map((s) => s.textContent).sort();
+  cleanup();
+  return sha(JSON.stringify({ body: stripped, ld }));
+}
+
 beforeEach(() => {
   vi.stubGlobal('fetch', fetchMock);
   fetchMock.mockClear();
@@ -119,16 +136,17 @@ describe('fr, en and ar are unchanged (SHA-256 of the rendered DOM and JSON-LD, 
     expect(await snapshot('/fr/enroll')).toBe('f7fe0e1cdd5fb9f2a1bf0bf2fb29f5fac04ba028aa916616031fe5b9bc62f988');
   });
 
-  it('/enroll (en) and /ar/enroll render no breadcrumb, and are byte-identical to before', async () => {
+  it('/enroll (en) and /ar/enroll (published 2026-10-13) render one hidden breadcrumb; everything else is byte-identical to before', async () => {
     for (const p of ['/enroll', '/ar/enroll']) {
       setWebdriver(true);
       await mountFullPage(p, Enroll);
-      expect(crumbScripts(), p).toHaveLength(0);
-      expect(document.querySelectorAll('.sr-only'), p).toHaveLength(0);
+      expect(crumbScripts(), p).toHaveLength(1);
+      expect(document.querySelectorAll('.sr-only'), p).toHaveLength(1);
+      expect(crumb().itemListElement, p).toHaveLength(2);
       cleanup();
     }
-    expect(await snapshot('/enroll')).toBe('711b8b7060f51a25522238fd398a425f36c69606d14ee678c9ac568ec9e596bf');
-    expect(await snapshot('/ar/enroll')).toBe('8853209e871be09589bb9ad7e9d0ea7727b361fbd8573a365cf4e6eae82eb00f');
+    expect(await snapshotWithoutBreadcrumb('/enroll', Enroll)).toBe('711b8b7060f51a25522238fd398a425f36c69606d14ee678c9ac568ec9e596bf');
+    expect(await snapshotWithoutBreadcrumb('/ar/enroll', Enroll)).toBe('8853209e871be09589bb9ad7e9d0ea7727b361fbd8573a365cf4e6eae82eb00f');
   });
 });
 

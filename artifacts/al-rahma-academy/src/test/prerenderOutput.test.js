@@ -2002,8 +2002,9 @@ describe.skipIf(!distExists)('Italian wave 3 (hadith, prayer-times) prerender (d
         expect(html.match(/rel="canonical"/g)).toHaveLength(1);
         expect(attr(html, /name="robots" content="([^"]*)"/)).toMatch(/^index, follow/);
         expect(html).toContain('property="og:locale" content="it_IT"');
-        expect(html).toContain('property="og:locale:alternate" content="fr_FR"');
-        expect(html).not.toMatch(/og:locale:alternate" content="(en_GB|ar_EG|es_ES|de_DE)"/);
+        // en + ar joined fr + it on 2026-10-13.
+        expect([...html.matchAll(/property="og:locale:alternate" content="([^"]*)"/g)].map((m) => m[1])).toEqual(['fr_FR', 'en_GB', 'ar_EG']);
+        expect(html).not.toMatch(/og:locale:alternate" content="(es_ES|de_DE)"/);
       });
 
       it('has the Italian title, description, og tags and a single Italian H1', () => {
@@ -2014,14 +2015,16 @@ describe.skipIf(!distExists)('Italian wave 3 (hadith, prayer-times) prerender (d
         expect([...html.matchAll(/<h1[^>]*>([\s\S]*?)<\/h1>/g)].map((m) => m[1].replace(/<[^>]+>/g, '').trim())).toEqual([page.h1]);
       });
 
-      it('has exactly fr + it + x-default hreflang, with the right URLs', () => {
+      it('has exactly fr + it + en + ar + x-default (-> English) hreflang, with the right URLs', () => {
         const links = [...html.matchAll(/<link rel="alternate" hreflang="([^"]*)" href="([^"]*)"/g)].map((m) => [m[1], m[2]]);
         expect(Object.fromEntries(links)).toEqual({
           fr: `${ORIGIN}/fr${page.route}`,
           it: `${ORIGIN}/it${page.route}`,
-          'x-default': `${ORIGIN}/fr${page.route}`,
+          en: `${ORIGIN}${page.route}`,
+          ar: `${ORIGIN}/ar${page.route}`,
+          'x-default': `${ORIGIN}${page.route}`,
         });
-        expect(links).toHaveLength(3);
+        expect(links).toHaveLength(5);
       });
 
       it('has the Italian breadcrumb and only the JSON-LD the page already had, with no user data', () => {
@@ -2082,10 +2085,10 @@ describe.skipIf(!distExists)('Italian wave 3 (hadith, prayer-times) prerender (d
 
   describe('EN/AR/FR pages are unchanged apart from the expected Italian hreflang/og alternate', () => {
     for (const route of ['/tools/hadith', '/tools/prayer-times']) {
-      it(`/fr${route} now also lists it, and nothing else about its alternates changed`, () => {
+      it(`/fr${route} lists it, en and ar (2026-10-13), and nothing else about its alternates changed`, () => {
         const html = read(`fr${route}/index.html`);
         const links = [...html.matchAll(/<link rel="alternate" hreflang="([^"]*)" href="([^"]*)"/g)].map((m) => m[1]);
-        expect(links.sort()).toEqual(['fr', 'it', 'x-default']);
+        expect(links.sort()).toEqual(['ar', 'en', 'fr', 'it', 'x-default']);
         expect(html).toContain('<html lang="fr" dir="ltr">');
         expect(html).toContain(`rel="canonical" href="${ORIGIN}/fr${route}"`);
       });
@@ -2128,7 +2131,8 @@ describe.skipIf(!distExists)('/fr/enroll raw prerender HTML — neutral, determi
     expect(doc.querySelector('link[rel="canonical"]').getAttribute('href')).toBe('https://al-rahmaacademy.com/fr/enroll');
     expect(doc.querySelector('meta[name="robots"]').getAttribute('content')).toMatch(/^index, follow/);
     const alts = [...doc.querySelectorAll('link[rel="alternate"][hreflang]')].map((l) => l.getAttribute('hreflang')).sort();
-    expect(alts).toEqual(['fr', 'it', 'x-default']);
+    // en + ar joined on 2026-10-13.
+    expect(alts).toEqual(['ar', 'en', 'fr', 'it', 'x-default']);
   });
 });
 
@@ -2146,18 +2150,20 @@ describe.skipIf(!distExists)('/it/enroll raw prerender HTML — safe before any 
     expect(doc.querySelectorAll('link[rel="canonical"]')).toHaveLength(1);
     expect(doc.querySelector('meta[name="robots"]').getAttribute('content')).toMatch(/^index, follow/);
     expect(doc.querySelector('meta[property="og:locale"]').getAttribute('content')).toBe('it_IT');
-    expect([...doc.querySelectorAll('meta[property="og:locale:alternate"]')].map((m) => m.getAttribute('content'))).toEqual(['fr_FR']);
+    expect([...doc.querySelectorAll('meta[property="og:locale:alternate"]')].map((m) => m.getAttribute('content'))).toEqual(['fr_FR', 'en_GB', 'ar_EG']);
     expect(doc.title).toBe('Prenota lezioni di prova gratuite | AL-Rahma Academy');
     expect(doc.querySelector('meta[name="description"]').getAttribute('content')).toMatch(/^Richiedi una lezione di prova gratuita/);
     expect([...doc.querySelectorAll('h1')].map((h) => h.textContent.trim())).toEqual(['Iscriviti ad Al-Rahma Academy']);
   });
 
-  it('has exactly fr, it and one x-default (-> /fr/enroll), and no en or ar alternate', () => {
+  it('has exactly fr, it, en, ar and one x-default (-> /enroll, English since 2026-10-13)', () => {
     const links = [...doc.querySelectorAll('link[rel="alternate"][hreflang]')].map((l) => [l.getAttribute('hreflang'), l.getAttribute('href')]);
     expect(links).toEqual([
       ['fr', 'https://al-rahmaacademy.com/fr/enroll'],
       ['it', 'https://al-rahmaacademy.com/it/enroll'],
-      ['x-default', 'https://al-rahmaacademy.com/fr/enroll'],
+      ['en', 'https://al-rahmaacademy.com/enroll'],
+      ['ar', 'https://al-rahmaacademy.com/ar/enroll'],
+      ['x-default', 'https://al-rahmaacademy.com/enroll'],
     ]);
   });
 
@@ -2192,10 +2198,17 @@ describe.skipIf(!distExists)('/it/enroll raw prerender HTML — safe before any 
     expect(html).not.toMatch(/api\/v1\/enrollments|submitEnrollment|Riferimento prenotazione|ho appena inviato una richiesta/i);
   });
 
-  it('there is still no en or ar enroll file, and /fr/enroll exists', () => {
+  // en + ar joined on 2026-10-13: their files exist and are the same empty first
+  // step (no frozen time zone, no booking reference).
+  it('fr, en and ar enroll files exist, each an empty first step', () => {
     expect(existsSync(path.join(distDir, 'fr/enroll/index.html'))).toBe(true);
-    expect(existsSync(path.join(distDir, 'enroll/index.html'))).toBe(false);
-    expect(existsSync(path.join(distDir, 'ar/enroll/index.html'))).toBe(false);
+    for (const rel of ['enroll/index.html', 'ar/enroll/index.html']) {
+      const file = path.join(distDir, rel);
+      expect(existsSync(file), rel).toBe(true);
+      const raw = readFileSync(file, 'utf8');
+      expect(raw, rel).not.toMatch(/Africa\/|Europe\/|America\/[A-Z]|Asia\/[A-Z]|value="UTC"/);
+      expect(raw, rel).not.toMatch(/AR-[A-Z0-9]{4,}/);
+    }
   });
 });
 
@@ -2206,12 +2219,14 @@ describe.skipIf(!distExists)('x-default targets are real, canonical, prerendered
   const ORIGIN_X = 'https://al-rahmaacademy.com';
   const rawOf = (entry) => readFileSync(path.join(distDir, outputRelPathFor(entry)), 'utf8');
   const published_ = PRERENDER_MANIFEST.filter((e) => e.status === 'published');
+  // Published for fr + it only (x-default = French) until 2026-10-13, when en
+  // + ar joined; their x-default is the English page now.
   const AFFECTED_X = {
-    '/enroll': ['fr', 'it'],
-    '/tools/quran-reader': ['fr', 'it'],
-    '/tools/verse-of-the-day': ['fr', 'it'],
-    '/tools/hadith': ['fr', 'it'],
-    '/tools/prayer-times': ['fr', 'it'],
+    '/enroll': ['fr', 'it', 'en', 'ar'],
+    '/tools/quran-reader': ['fr', 'it', 'en', 'ar'],
+    '/tools/verse-of-the-day': ['fr', 'it', 'en', 'ar'],
+    '/tools/hadith': ['fr', 'it', 'en', 'ar'],
+    '/tools/prayer-times': ['fr', 'it', 'en', 'ar'],
   };
 
   it('every published page has exactly one x-default, equal to one of its published alternates', () => {
@@ -2238,11 +2253,11 @@ describe.skipIf(!distExists)('x-default targets are real, canonical, prerendered
     }
   });
 
-  it('the five routes without an English version point x-default at the French page, on every published locale', () => {
+  it('the five former fr/it-only routes now point x-default at the English page, on every published locale', () => {
     for (const [route, locales] of Object.entries(AFFECTED_X)) {
       for (const locale of locales) {
         const html = rawOf({ route, locale });
-        expect(html, `${route} @ ${locale}`).toContain(`<link rel="alternate" hreflang="x-default" href="${ORIGIN_X}/fr${route}">`);
+        expect(html, `${route} @ ${locale}`).toContain(`<link rel="alternate" hreflang="x-default" href="${ORIGIN_X}${route}">`);
         const langs = [...html.matchAll(/<link rel="alternate" hreflang="([^"]*)"/g)].map((m) => m[1]).sort();
         expect(langs).toEqual([...locales, 'x-default'].sort());
       }
@@ -2257,9 +2272,10 @@ describe.skipIf(!distExists)('x-default targets are real, canonical, prerendered
     }
   });
 
-  it('the number of prerendered files is 134 (en 31, ar 31, fr 36, it 36) and /it/enroll is present', () => {
-    expect(published_).toHaveLength(134);
-    expect(['en', 'ar', 'fr', 'it'].map((l) => published_.filter((e) => e.locale === l).length)).toEqual([31, 31, 36, 36]);
+  it('the number of prerendered files is 144 (en 36, ar 36, fr 36, it 36) and /it/enroll is present', () => {
+    // en and ar: 31 + the five tools/Enroll routes (2026-10-13).
+    expect(published_).toHaveLength(144);
+    expect(['en', 'ar', 'fr', 'it'].map((l) => published_.filter((e) => e.locale === l).length)).toEqual([36, 36, 36, 36]);
     expect(existsSync(path.join(distDir, 'it/enroll/index.html'))).toBe(true);
   });
 });
@@ -2283,12 +2299,14 @@ describe.skipIf(!distExists)('/it/tools/verse-of-the-day raw prerender HTML — 
     expect(html).not.toContain('<html lang="en"');
   });
 
-  it('has exactly fr, it and one x-default (-> /fr/tools/verse-of-the-day)', () => {
+  it('has exactly fr, it, en, ar and one x-default (-> /tools/verse-of-the-day, English since 2026-10-13)', () => {
     const links = [...doc.querySelectorAll('link[rel="alternate"][hreflang]')].map((l) => [l.getAttribute('hreflang'), l.getAttribute('href')]);
     expect(links).toEqual([
       ['fr', 'https://al-rahmaacademy.com/fr/tools/verse-of-the-day'],
       ['it', 'https://al-rahmaacademy.com/it/tools/verse-of-the-day'],
-      ['x-default', 'https://al-rahmaacademy.com/fr/tools/verse-of-the-day'],
+      ['en', 'https://al-rahmaacademy.com/tools/verse-of-the-day'],
+      ['ar', 'https://al-rahmaacademy.com/ar/tools/verse-of-the-day'],
+      ['x-default', 'https://al-rahmaacademy.com/tools/verse-of-the-day'],
     ]);
   });
 
@@ -2323,8 +2341,8 @@ describe.skipIf(!distExists)('/it/tools/quran-reader raw prerender HTML — noth
     expect(doc.querySelectorAll('link[rel="canonical"]')).toHaveLength(1);
     expect(doc.querySelector('meta[name="robots"]').getAttribute('content')).toMatch(/^index, follow/);
     expect(doc.querySelector('meta[property="og:locale"]').getAttribute('content')).toBe('it_IT');
-    expect([...doc.querySelectorAll('meta[property="og:locale:alternate"]')].map((m) => m.getAttribute('content'))).toEqual(['fr_FR']);
-    expect([...frDoc.querySelectorAll('meta[property="og:locale:alternate"]')].map((m) => m.getAttribute('content'))).toEqual(['it_IT']);
+    expect([...doc.querySelectorAll('meta[property="og:locale:alternate"]')].map((m) => m.getAttribute('content'))).toEqual(['fr_FR', 'en_GB', 'ar_EG']);
+    expect([...frDoc.querySelectorAll('meta[property="og:locale:alternate"]')].map((m) => m.getAttribute('content'))).toEqual(['it_IT', 'en_GB', 'ar_EG']);
     expect(doc.title).toBe('Leggi e ascolta il Corano | AL-Rahma Academy');
     expect(doc.querySelector('meta[name="description"]').getAttribute('content')).toMatch(/^Leggi, ascolta e memorizza il Sacro Corano/);
     expect([...doc.querySelectorAll('h1')].map((h) => h.textContent.trim())).toEqual(['Centro di apprendimento del Corano']);
@@ -2344,11 +2362,13 @@ describe.skipIf(!distExists)('/it/tools/quran-reader raw prerender HTML — noth
     for (const s of doc.querySelectorAll('script[type="application/ld+json"]')) expect(() => JSON.parse(s.textContent)).not.toThrow();
   });
 
-  it('has exactly fr, it and one x-default (-> /fr/tools/quran-reader), identical on the French page', () => {
+  it('has exactly fr, it, en, ar and one x-default (-> /tools/quran-reader, English since 2026-10-13), identical on the French page', () => {
     const expected = [
       ['fr', 'https://al-rahmaacademy.com/fr/tools/quran-reader'],
       ['it', 'https://al-rahmaacademy.com/it/tools/quran-reader'],
-      ['x-default', 'https://al-rahmaacademy.com/fr/tools/quran-reader'],
+      ['en', 'https://al-rahmaacademy.com/tools/quran-reader'],
+      ['ar', 'https://al-rahmaacademy.com/ar/tools/quran-reader'],
+      ['x-default', 'https://al-rahmaacademy.com/tools/quran-reader'],
     ];
     expect(alternates(doc)).toEqual(expected);
     expect(alternates(frDoc)).toEqual(expected);

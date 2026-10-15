@@ -365,13 +365,13 @@ describe('Scope guard: prerendered HTML, /enroll and Italian metadata are unchan
   // Pinned at origin/main 78883d6. A later PR that deliberately changes
   // /enroll or the Italian SEO updates these hashes in the same diff.
   it.each(Object.entries({
-    'src/pages/Enroll.jsx': 'b308db6065939223400f22f33d69337f86b20f140fa01dc38b4facbf2fcdcb71',
+    'src/pages/Enroll.jsx': 'adc6fe07e46e5f21edcf21419f3940946655eb12eb7fed1ad9bab9fac675547d',
     'src/components/features/enrollment/EnrollWizard.jsx': '2fe22bae0e8a3e950a48bb891cd8a18efa3afb28775ed06d8272b5941c286402',
     'src/i18n/enroll/seo.js': 'b420a7d60d860877fc451434f54aa7c558a67b7d223ec81ea1b3a5f38da5aa35',
     'src/i18n/enroll/countries.js': '341fe3dfef149848fbfcaf6a87723818976b6d6b9e137f1470e059e7ac68676c',
     'src/i18n/itMetaDescriptions.js': 'bf226934a1f3f5180b6206357747df46499db592bf554c8a6b3cd81ff63c3a69',
     'src/i18n/home/seo.js': '2c199f33b4d85041e0d18ef9503e4960321f52124ef5adad6a278ded687920b8',
-    'scripts/prerender-routes.mjs': '662229f26e0282460e6463db0758175f09e4783b5c8c2e9ff0fa21614e3ec70c',
+    'scripts/prerender-routes.mjs': '3ca8cbda9ffd7aa80e59d787d1ece4c6d6b4c69d13c00c04bf9683fba140e034',
     'scripts/seoRoutes.mjs': '01db84ba966064e6d70b7082c0000100d077b4cb2291d873509e8ca01b4edc75',
   }))('%s is unchanged', (rel, expected) => {
     const src = fs.readFileSync(path.join(ROOT, rel), 'utf8').replace(/\r\n/g, '\n');

@@ -112,7 +112,8 @@ describe('publication guard: manifest and sitemap are unchanged', () => {
     expect(PRERENDER_MANIFEST.filter((e) => e.route === '/academy/privacy' && e.locale === 'it')).toHaveLength(1);
     expect(PRERENDER_MANIFEST.filter((e) => e.locale === 'it')).toHaveLength(36);
     const sitemap = fs.readFileSync(path.resolve(__dirname, '../../public/sitemap.xml'), 'utf8');
-    expect((sitemap.match(/<loc>/g) || []).length).toBe(134);
+    // 134 + the five tools/Enroll routes in en and ar (2026-10-13).
+    expect((sitemap.match(/<loc>/g) || []).length).toBe(144);
   });
 });
 

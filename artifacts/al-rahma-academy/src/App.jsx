@@ -1,5 +1,6 @@
-import { lazy, Suspense } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useParams } from 'react-router-dom';
+import { Suspense } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useParams, matchPath } from 'react-router-dom';
+import { lazyPage } from './utils/lazyPage';
 import { AuthProvider } from './context/AuthContext';
 import { AdminAuthProvider } from './context/AdminAuthContext';
 import { LangProvider, useLang } from './context/LangContext';
@@ -18,36 +19,36 @@ import ContentGuard from './components/ui/ContentGuard';
 import LiveChat from './components/ui/LiveChat';
 
 // Route-level code splitting
-const Home               = lazy(() => import('./pages/Home'));
-const Login              = lazy(() => import('./pages/Login'));
-const Register           = lazy(() => import('./pages/Register'));
-const AdminDashboard     = lazy(() => import('./pages/AdminDashboard'));
-const AdminLogin         = lazy(() => import('./pages/AdminLogin'));
-const Quran              = lazy(() => import('./pages/Quran'));
-const Blog               = lazy(() => import('./pages/Blog'));
-const BlogPost           = lazy(() => import('./pages/BlogPost'));
-const FAQ                = lazy(() => import('./pages/FAQ'));
-const AboutPage          = lazy(() => import('./pages/About'));
-const Privacy            = lazy(() => import('./pages/Privacy'));
-const TermsOfService     = lazy(() => import('./pages/TermsOfService'));
-const RefundPolicy       = lazy(() => import('./pages/RefundPolicy'));
-const PaymentResult      = lazy(() => import('./pages/PaymentResult'));
-const Billing            = lazy(() => import('./pages/Billing'));
-const Wishlist           = lazy(() => import('./pages/Wishlist'));
-const Dashboard          = lazy(() => import('./pages/Dashboard'));
-const Profile            = lazy(() => import('./pages/Profile'));
-const Teachers           = lazy(() => import('./pages/Teachers'));
-const TeacherProfile     = lazy(() => import('./pages/TeacherProfile'));
-const Enroll             = lazy(() => import('./pages/Enroll'));
-const IslamicTools       = lazy(() => import('./pages/IslamicTools'));
-const Adhkar             = lazy(() => import('./pages/Adhkar'));
-const ForgotPassword     = lazy(() => import('./pages/ForgotPassword'));
-const ResetPassword      = lazy(() => import('./pages/ResetPassword'));
-const VerifyEmail        = lazy(() => import('./pages/VerifyEmail'));
-const CourseContent      = lazy(() => import('./pages/CourseContent'));
-const CourseIjazah       = lazy(() => import('./pages/CourseIjazah'));
-const CourseIslamicStudies = lazy(() => import('./pages/CourseIslamicStudies'));
-const HadithLibrary      = lazy(() => import('./pages/HadithLibrary'));
+const Home               = lazyPage(() => import('./pages/Home'));
+const Login              = lazyPage(() => import('./pages/Login'));
+const Register           = lazyPage(() => import('./pages/Register'));
+const AdminDashboard     = lazyPage(() => import('./pages/AdminDashboard'));
+const AdminLogin         = lazyPage(() => import('./pages/AdminLogin'));
+const Quran              = lazyPage(() => import('./pages/Quran'));
+const Blog               = lazyPage(() => import('./pages/Blog'));
+const BlogPost           = lazyPage(() => import('./pages/BlogPost'));
+const FAQ                = lazyPage(() => import('./pages/FAQ'));
+const AboutPage          = lazyPage(() => import('./pages/About'));
+const Privacy            = lazyPage(() => import('./pages/Privacy'));
+const TermsOfService     = lazyPage(() => import('./pages/TermsOfService'));
+const RefundPolicy       = lazyPage(() => import('./pages/RefundPolicy'));
+const PaymentResult      = lazyPage(() => import('./pages/PaymentResult'));
+const Billing            = lazyPage(() => import('./pages/Billing'));
+const Wishlist           = lazyPage(() => import('./pages/Wishlist'));
+const Dashboard          = lazyPage(() => import('./pages/Dashboard'));
+const Profile            = lazyPage(() => import('./pages/Profile'));
+const Teachers           = lazyPage(() => import('./pages/Teachers'));
+const TeacherProfile     = lazyPage(() => import('./pages/TeacherProfile'));
+const Enroll             = lazyPage(() => import('./pages/Enroll'));
+const IslamicTools       = lazyPage(() => import('./pages/IslamicTools'));
+const Adhkar             = lazyPage(() => import('./pages/Adhkar'));
+const ForgotPassword     = lazyPage(() => import('./pages/ForgotPassword'));
+const ResetPassword      = lazyPage(() => import('./pages/ResetPassword'));
+const VerifyEmail        = lazyPage(() => import('./pages/VerifyEmail'));
+const CourseContent      = lazyPage(() => import('./pages/CourseContent'));
+const CourseIjazah       = lazyPage(() => import('./pages/CourseIjazah'));
+const CourseIslamicStudies = lazyPage(() => import('./pages/CourseIslamicStudies'));
+const HadithLibrary      = lazyPage(() => import('./pages/HadithLibrary'));
 // TeacherDashboard/ParentDashboard are intentionally NOT imported here.
 // Stage 2A (see docs/user-admin-auth-contract.md): no route selects them
 // any more - /teacher and /parent redirect to the generic Dashboard. Stage
@@ -56,28 +57,63 @@ const HadithLibrary      = lazy(() => import('./pages/HadithLibrary'));
 // and its parent-child link-code feature too, once the product decision
 // resolved that undecided question: there are no teacher/parent/student
 // account types, only user/admin, and parent-child linking is out of scope.
-const Messages           = lazy(() => import('./pages/Messages'));
-const CalendarPage       = lazy(() => import('./pages/CalendarPage'));
-const NotFound           = lazy(() => import('./pages/NotFound'));
+const Messages           = lazyPage(() => import('./pages/Messages'));
+const CalendarPage       = lazyPage(() => import('./pages/CalendarPage'));
+const NotFound           = lazyPage(() => import('./pages/NotFound'));
 
 // Hub pages (new IA)
-const CoursesHub    = lazy(() => import('./pages/hubs/CoursesHub'));
-const CoursesQuran  = lazy(() => import('./pages/hubs/CoursesQuran'));
-const CoursesArabic = lazy(() => import('./pages/hubs/CoursesArabic'));
-const ToolsHub      = lazy(() => import('./pages/hubs/ToolsHub'));
-const ResourcesHub  = lazy(() => import('./pages/hubs/ResourcesHub'));
-const AcademyHub    = lazy(() => import('./pages/hubs/AcademyHub'));
+const CoursesHub    = lazyPage(() => import('./pages/hubs/CoursesHub'));
+const CoursesQuran  = lazyPage(() => import('./pages/hubs/CoursesQuran'));
+const CoursesArabic = lazyPage(() => import('./pages/hubs/CoursesArabic'));
+const ToolsHub      = lazyPage(() => import('./pages/hubs/ToolsHub'));
+const ResourcesHub  = lazyPage(() => import('./pages/hubs/ResourcesHub'));
+const AcademyHub    = lazyPage(() => import('./pages/hubs/AcademyHub'));
 
 // Tool standalone pages
-const TasbeehPage          = lazy(() => import('./pages/tools/TasbeehPage'));
-const ArabicAlphabetPage   = lazy(() => import('./pages/tools/ArabicAlphabetPage'));
-const PrayerTimesPage      = lazy(() => import('./pages/tools/PrayerTimesPage'));
-const CityPrayerTimesPage  = lazy(() => import('./pages/tools/CityPrayerTimesPage'));
-const QiblaPage            = lazy(() => import('./pages/tools/QiblaPage'));
-const IslamicCalendarPage  = lazy(() => import('./pages/tools/IslamicCalendarPage'));
-const VerseOfTheDayPage    = lazy(() => import('./pages/tools/VerseOfTheDayPage'));
-const TajweedCheckerPage   = lazy(() => import('./pages/tools/TajweedCheckerPage'));
-const HifzReviewPage       = lazy(() => import('./pages/tools/HifzReviewPage'));
+const TasbeehPage          = lazyPage(() => import('./pages/tools/TasbeehPage'));
+const ArabicAlphabetPage   = lazyPage(() => import('./pages/tools/ArabicAlphabetPage'));
+const PrayerTimesPage      = lazyPage(() => import('./pages/tools/PrayerTimesPage'));
+const CityPrayerTimesPage  = lazyPage(() => import('./pages/tools/CityPrayerTimesPage'));
+const QiblaPage            = lazyPage(() => import('./pages/tools/QiblaPage'));
+const IslamicCalendarPage  = lazyPage(() => import('./pages/tools/IslamicCalendarPage'));
+const VerseOfTheDayPage    = lazyPage(() => import('./pages/tools/VerseOfTheDayPage'));
+const TajweedCheckerPage   = lazyPage(() => import('./pages/tools/TajweedCheckerPage'));
+const HifzReviewPage       = lazyPage(() => import('./pages/tools/HifzReviewPage'));
+
+// The page each URL renders, for preloadInitialPage() below. Mirrors the
+// <Route> table (redirect-only routes excluded); every published prerender
+// route must match an entry (src/test/startupNoBlank.test.jsx).
+const INITIAL_PAGES = [
+  ['/', Home],
+  ['/courses', CoursesHub], ['/courses/quran', CoursesQuran], ['/courses/arabic', CoursesArabic],
+  ['/courses/ijazah', CourseIjazah], ['/courses/islamic-studies', CourseIslamicStudies], ['/courses/:id', CourseContent],
+  ['/tools', ToolsHub], ['/tools/quran-reader', Quran], ['/tools/adhkar', Adhkar], ['/tools/hadith', HadithLibrary],
+  ['/tools/prayer', IslamicTools], ['/tools/prayer-times', PrayerTimesPage],
+  ...PRAYER_CITIES.map((city) => [prayerCityRoute(city.slug), CityPrayerTimesPage]),
+  ['/tools/qibla', QiblaPage], ['/tools/islamic-calendar', IslamicCalendarPage], ['/tools/verse-of-the-day', VerseOfTheDayPage],
+  ['/tools/tasbeeh', TasbeehPage], ['/tools/arabic-alphabet', ArabicAlphabetPage], ['/tools/tajweed-checker', TajweedCheckerPage],
+  ['/tools/hifz-review', HifzReviewPage],
+  ['/resources', ResourcesHub], ['/resources/blog', Blog], ['/resources/blog/:slug', BlogPost], ['/resources/faq', FAQ],
+  ['/academy', AcademyHub], ['/academy/about', AboutPage], ['/academy/teachers', Teachers], ['/academy/teachers/:id', TeacherProfile],
+  ['/academy/privacy', Privacy], ['/academy/terms', TermsOfService], ['/academy/refund-policy', RefundPolicy],
+  ['/login', Login], ['/register', Register], ['/forgot-password', ForgotPassword], ['/reset-password', ResetPassword],
+  ['/verify-email', VerifyEmail], ['/enroll', Enroll], ['/payment/success', PaymentResult], ['/payment/cancel', PaymentResult],
+  ['/dashboard', Dashboard], ['/billing', Billing], ['/wishlist', Wishlist], ['/profile', Profile], ['/messages', Messages],
+  ['/admin/login', AdminLogin], ['/admin', AdminDashboard], ['/calendar', CalendarPage],
+];
+
+// The page for `pathname` (without the language prefix), or null.
+export function initialPageFor(pathname) {
+  const hit = INITIAL_PAGES.find(([pattern]) => matchPath(pattern, pathname));
+  return hit ? hit[1] : null;
+}
+
+// #250: main.jsx awaits this before the first render, so the current page is
+// drawn at once instead of the Suspense spinner replacing the prerendered
+// content while its (usually already downloaded) chunk resolves.
+export function preloadInitialPage(pathname) {
+  return initialPageFor(pathname)?.preload() ?? Promise.resolve();
+}
 
 // Param-aware redirects for old slug/id routes
 function RedirectBlogSlug() {

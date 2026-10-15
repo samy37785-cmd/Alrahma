@@ -12,6 +12,7 @@ import ArabicAlphabetPage from '../pages/tools/ArabicAlphabetPage';
 import VerseOfTheDayPage from '../pages/tools/VerseOfTheDayPage';
 import { IT_META_DESCRIPTIONS, pickItMetaDescription } from '../i18n/itMetaDescriptions';
 import { PRERENDER_MANIFEST } from '../../scripts/prerender-routes.mjs';
+import { builtDistReady } from './utils/builtDist';
 
 // Italian SEO Meta Descriptions, Wave 1 (short pages): only the <meta name="description">
 // (and its og:/twitter: copies) of five Italian pages changed. The 120-160 range below is
@@ -21,7 +22,7 @@ import { PRERENDER_MANIFEST } from '../../scripts/prerender-routes.mjs';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '../..');
 const DIST = path.join(ROOT, 'dist/public');
-const distExists = fs.existsSync(DIST);
+const distExists = builtDistReady('italianMetadataShortPages');
 useFullPageEnvironment();
 
 const sha = (s) => createHash('sha256').update(s).digest('hex');

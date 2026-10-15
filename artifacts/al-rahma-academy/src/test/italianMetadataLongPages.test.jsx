@@ -11,6 +11,7 @@ import AboutPage from '../pages/About';
 import Enroll from '../pages/Enroll';
 import Teachers from '../pages/Teachers';
 import { PRERENDER_MANIFEST } from '../../scripts/prerender-routes.mjs';
+import { builtDistReady } from './utils/builtDist';
 
 // Italian SEO Meta Descriptions, long wave: the <meta name="description"> (and its og:/twitter:
 // copies) of /it/, /it/academy/about, /it/enroll and /it/academy/teachers were 194-282 code
@@ -22,7 +23,7 @@ import { PRERENDER_MANIFEST } from '../../scripts/prerender-routes.mjs';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '../..');
 const DIST = path.join(ROOT, 'dist/public');
-const distExists = fs.existsSync(DIST);
+const distExists = builtDistReady('italianMetadataLongPages');
 useFullPageEnvironment();
 
 const sha = (s) => createHash('sha256').update(s).digest('hex');

@@ -8,6 +8,7 @@ import { useFullPageEnvironment, mountFullPage, headMeta } from './utils/fullPag
 import { CONSENT_STORAGE_KEY as CONSENT_KEY } from '../analytics/consent';
 import Privacy, { ANALYTICS_PRIVACY_COPY } from '../pages/Privacy';
 import { PRERENDER_MANIFEST } from '../../scripts/prerender-routes.mjs';
+import { builtDistReady } from './utils/builtDist';
 
 // Italian privacy page: the Analytics cookies section (Google Analytics 4
 // disclosure) is Italian instead of falling back to English. Only copy changes:
@@ -121,7 +122,7 @@ describe('publication guard: manifest and sitemap are unchanged', () => {
 // Raw prerender HTML (post-build only). The GA4 section is rendered only when a
 // Measurement ID is set at build time, so the Italian check applies when it is.
 const rawIt = path.resolve(__dirname, '../../dist/public/it/academy/privacy/index.html');
-describe.skipIf(!fs.existsSync(rawIt))('raw prerender HTML of /it/academy/privacy — before any JavaScript', () => {
+describe.skipIf(!(builtDistReady('italianPrivacyGa4') && fs.existsSync(rawIt)))('raw prerender HTML of /it/academy/privacy — before any JavaScript', () => {
   const html = fs.existsSync(rawIt) ? fs.readFileSync(rawIt, 'utf8') : '';
   it('keeps lang, canonical, robots and the five hreflang alternates', () => {
     expect(html).toContain('<html lang="it" dir="ltr">');

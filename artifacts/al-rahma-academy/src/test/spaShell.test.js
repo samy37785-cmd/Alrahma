@@ -7,6 +7,7 @@ import {
   SPA_SHELL_FILE, NOT_FOUND_FILE, NOT_FOUND_ROBOTS, buildSpaShell, buildNotFoundPage,
 } from '../../scripts/spaShell.mjs';
 import { LANGS } from '../i18n/index.js';
+import { builtDistReady } from './utils/builtDist';
 
 // URLs without a prerendered file (see scripts/spaShell.mjs):
 //   - a real App.jsx route  -> vercel.json rewrites it to spa-shell.html
@@ -23,7 +24,7 @@ const appRoot = path.resolve(__dirname, '../..');
 const sourceIndex = readFileSync(path.join(appRoot, 'index.html'), 'utf8');
 const appJsx = readFileSync(path.join(appRoot, 'src', 'App.jsx'), 'utf8');
 const distDir = path.join(appRoot, 'dist', 'public');
-const distExists = existsSync(distDir);
+const distExists = builtDistReady('spaShell');
 const vercelConfig = JSON.parse(readFileSync(path.resolve(appRoot, '../../vercel.json'), 'utf8'));
 
 const doc = (html) => new JSDOM(html).window.document;

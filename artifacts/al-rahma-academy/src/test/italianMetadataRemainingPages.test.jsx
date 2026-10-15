@@ -16,6 +16,7 @@ import { IT_PAGE_META_DESCRIPTIONS, IT_TEACHER_META_DESCRIPTIONS } from '../i18n
 import { TEACHERS } from '../data';
 import BASE from './fixtures/it-meta-remaining-baseline.json';
 import { PRERENDER_MANIFEST } from '../../scripts/prerender-routes.mjs';
+import { builtDistReady } from './utils/builtDist';
 
 // Italian metadata, remaining wave: sixteen pages whose description was outside 120-160 code points.
 // Only the <head> description (and its og:/twitter: copies) changes. Title, H1 and every other language
@@ -28,7 +29,7 @@ vi.mock('../api/adminAuthApi.js', () => ({
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DIST = path.resolve(__dirname, '../../dist/public');
-const distExists = fs.existsSync(DIST);
+const distExists = builtDistReady('italianMetadataRemainingPages');
 useFullPageEnvironment();
 
 const len = (s) => [...s].length;

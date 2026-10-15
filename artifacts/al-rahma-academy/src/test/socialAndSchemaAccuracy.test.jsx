@@ -82,8 +82,8 @@ describe.skipIf(!distExists)('prerendered output (dist/public), every published 
     expect(fs.existsSync(path.join(DIST, 'og-cover.png'))).toBe(true);
   });
 
-  it('all 134 pages: PNG social image, no SVG social image, WebSite languages en/ar/it/fr', () => {
-    expect(pages).toHaveLength(134);
+  it('all 164 published pages: PNG social image, no SVG social image, WebSite languages en/ar/it/fr', () => {
+    expect(pages).toHaveLength(164); // + en/ar tools and Enroll (#234), + 20 city prayer-times pages (#231)
     const bad = [];
     for (const e of pages) {
       const html = fs.readFileSync(file(e), 'utf8');

@@ -54,6 +54,7 @@ const COURSE_ARABIC_IT = 'Impara le 28 lettere arabe con pronuncia audio ed eser
 
 // origin/main raw-prerender facts (production at e888fc1, before this change). Italian
 // descriptions are omitted on purpose: they are the NEW values above.
+// 2026-10-15: verse-of-the-day hreflang updated for its en/ar pages (#234): + en, ar; x-default is now English.
 const BASE = {
   "en/tools/adhkar": {
     "title": "Adhkar & Du'a Library | AL-Rahma Academy",
@@ -305,7 +306,9 @@ const BASE = {
     "hreflang": [
       "fr=https://al-rahmaacademy.com/fr/tools/verse-of-the-day",
       "it=https://al-rahmaacademy.com/it/tools/verse-of-the-day",
-      "x-default=https://al-rahmaacademy.com/fr/tools/verse-of-the-day"
+      "en=https://al-rahmaacademy.com/tools/verse-of-the-day",
+      "ar=https://al-rahmaacademy.com/ar/tools/verse-of-the-day",
+      "x-default=https://al-rahmaacademy.com/tools/verse-of-the-day"
     ]
   },
   "it/courses/arabic": {

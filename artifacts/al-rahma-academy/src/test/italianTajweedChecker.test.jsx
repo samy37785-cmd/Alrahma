@@ -28,6 +28,7 @@ import { langFromPath } from '../utils/localePath';
 import TajweedCheckerPage from '../pages/tools/TajweedCheckerPage';
 import { TAJWEED_CHECKER_TEXT } from '../i18n/tools/tajweedChecker';
 import { PRERENDER_MANIFEST, hreflangLinksFor } from '../../scripts/prerender-routes.mjs';
+import { builtDistReady } from './utils/builtDist';
 
 // Italian Tajweed Checker Content + SEO Publication.
 vi.mock('../context/AuthContext', () => ({ useAuth: () => ({ user: null, logout: vi.fn() }) }));
@@ -35,7 +36,7 @@ vi.mock('../context/AdminAuthContext', () => ({ useAdminAuth: () => ({ isAdmin: 
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const distDir = path.resolve(__dirname, '../../dist/public');
-const distExists = existsSync(distDir);
+const distExists = builtDistReady('italianTajweedChecker');
 const ORIGIN = 'https://al-rahmaacademy.com';
 
 const IT = TAJWEED_CHECKER_TEXT.it;

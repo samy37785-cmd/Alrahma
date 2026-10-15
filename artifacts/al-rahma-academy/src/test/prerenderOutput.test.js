@@ -6,6 +6,7 @@ import { describe, it, expect } from 'vitest';
 import { PRERENDER_MANIFEST, canonicalUrlFor, outputRelPathFor } from '../../scripts/prerender-routes.mjs';
 import faqItems from '../data/faqItems.js';
 import { ADHKAR, CATEGORY_KEYS } from '../data/adhkarData.js';
+import { builtDistReady } from './utils/builtDist';
 
 // SEO Prerender Pilot (2026-09-20): proves the real static HTML files
 // scripts/prerender.mjs writes after `vite build` (as `postbuild`) are
@@ -22,7 +23,7 @@ import { ADHKAR, CATEGORY_KEYS } from '../data/adhkarData.js';
 // expected to actually execute its assertions.
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const distDir = path.resolve(__dirname, '../../dist/public');
-const distExists = existsSync(distDir);
+const distExists = builtDistReady('prerenderOutput');
 
 // Kept as a literal copy of prerender.mjs's own SHELL_TITLE constant
 // (rather than importing it) so a title-not-shell check here can never be

@@ -11,6 +11,7 @@ import { HOME_SEO_TEXT } from '../i18n/home/seo';
 import { ADHKAR_TR } from '../i18n/adhkarText';
 import fr from '../i18n/fr';
 import en from '../i18n/en';
+import { builtDistReady } from './utils/builtDist';
 
 // French P2 content & metadata fix. Covers:
 //  1. /fr/tools/quran-reader keyboard-shortcuts SIDE panel: it hardcoded
@@ -164,7 +165,7 @@ describe('/fr/courses/arabic heading is intentionally NOT changed by this fix', 
 // ── raw prerender HTML (only meaningful after a real build) ──────────────
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const distDir = path.resolve(__dirname, '../../dist/public');
-const distExists = existsSync(distDir);
+const distExists = builtDistReady('frenchP2ContentMetadata');
 
 function rawDescription(rel) {
   const html = readFileSync(path.join(distDir, rel), 'utf8');

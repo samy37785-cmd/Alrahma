@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { useFullPageEnvironment, mountFullPage, headMeta } from './utils/fullPageRender';
 import FAQ from '../pages/FAQ';
 import { PRERENDER_MANIFEST, canonicalUrlFor } from '../../scripts/prerender-routes.mjs';
+import { builtDistReady } from './utils/builtDist';
 
 // Social image and structured-data accuracy.
 //  - og:image / twitter:image must be a raster PNG (Facebook, LinkedIn, WhatsApp and X do not render SVG).
@@ -15,7 +16,7 @@ import { PRERENDER_MANIFEST, canonicalUrlFor } from '../../scripts/prerender-rou
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '../..');
 const DIST = path.join(ROOT, 'dist/public');
-const distExists = fs.existsSync(DIST);
+const distExists = builtDistReady('socialAndSchemaAccuracy');
 useFullPageEnvironment();
 
 const PNG_URL = 'https://al-rahmaacademy.com/og-cover.png';
@@ -81,8 +82,8 @@ describe.skipIf(!distExists)('prerendered output (dist/public), every published 
     expect(fs.existsSync(path.join(DIST, 'og-cover.png'))).toBe(true);
   });
 
-  it('all 134 pages: PNG social image, no SVG social image, WebSite languages en/ar/it/fr', () => {
-    expect(pages).toHaveLength(134);
+  it('all 164 published pages: PNG social image, no SVG social image, WebSite languages en/ar/it/fr', () => {
+    expect(pages).toHaveLength(164); // + en/ar tools and Enroll (#234), + 20 city prayer-times pages (#231)
     const bad = [];
     for (const e of pages) {
       const html = fs.readFileSync(file(e), 'utf8');

@@ -18,6 +18,7 @@ import PrayerTimesPage from '../pages/tools/PrayerTimesPage';
 import { IT_HIDDEN_ROUTES, isRouteHidden, quranReaderRoute } from '../utils/italianLinkPolicy';
 import { IT_TAJWEED_ROUTE } from '../i18n/itDiscoverability';
 import { PRERENDER_MANIFEST, canonicalUrlFor } from '../../scripts/prerender-routes.mjs';
+import { builtDistReady } from './utils/builtDist';
 
 // Italian internal-link policy: the published Tajweed Checker is reachable from
 // the Italian UI, and no visible Italian link leads to a route whose Italian page
@@ -30,7 +31,7 @@ vi.mock('../api/adminAuthApi.js', () => ({
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DIST = path.resolve(__dirname, '../../dist/public');
-const distExists = fs.existsSync(DIST);
+const distExists = builtDistReady('italianInternalLinks');
 useFullPageEnvironment();
 
 const hrefs = () => [...document.querySelectorAll('a[href]')].map((a) => a.getAttribute('href'));

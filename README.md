@@ -35,7 +35,8 @@ There is **no in-app online payment** anywhere in the customer-facing frontend: 
 | `cd backend && npm run test:migration` | **Every** Stage 2J-B migration test file (`backend/scripts/migration/**/*.test.mjs`) | Docker (spins up disposable, throwaway Mongo/Postgres containers per test file; nothing external, nothing persistent) |
 | `cd backend && npm run test:all` | Lint + `npm test` + `npm run test:migration`, in order | Docker |
 | `cd lib/db && npm run test:db` | Full RLS/ACL/schema/upgrade-scenario suite against a disposable Postgres | Docker |
-| `cd artifacts/al-rahma-academy && npx vitest run` | Frontend unit/component tests | — |
+| `cd artifacts/al-rahma-academy && npx vitest run` | Frontend unit/component tests (tests that read the built site skip themselves here) | — |
+| `cd artifacts/al-rahma-academy && pnpm run test:prerender` | The tests that read the built site (`dist/public`); fails if the build is missing, unfinished or older than the current sources | `pnpm run build` first (Playwright Chromium for the prerender) |
 
 **`npm test` in `backend/` never runs the migration suite** — its glob (`tests/**/*.test.js`) and the migration suite's file extension/location (`scripts/migration/**/*.test.mjs`) are structurally disjoint. Run `npm run test:migration` (or `test:all`) explicitly to exercise the migration tooling; CI (`.github/workflows/stage2jb-migration-ci.yml`) runs all of the above on every PR into `main`.
 

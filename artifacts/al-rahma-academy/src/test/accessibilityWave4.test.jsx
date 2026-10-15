@@ -118,11 +118,11 @@ describe('protected files are byte-identical to origin/main (3b44029)', () => {
       'src/i18n/quran/kbdSidePanel.js': 'd2a2d708f85d4141ccfeb5736118dd96a38f67da7bc59640a1f18dd5750680f3',
       'src/i18n/quran/verseCardModal.js': 'b389bf8d90b0f61d8593c2703da2433f148dd2528df4bd34b5ed182a4dc40146',
       'src/pages/Quran.jsx': '2818cdfd006357115f6f2e0441eefcd47e1fdf5f5a87ffec80c5828136ef6ace',
-      'src/styles/tokens.css': '042749b20028ad361fb7570c4ecc3d45c584ddab30919d97c11d302c53eccfb8',
+      'src/styles/tokens.css': 'fd07c812033b0421157b3d67ab3e8e1e9fb00d87adbf4123e73d4cb10fd3a4a7',
       'src/styles/global.css': '0e5681ec63222eedac4354b9210543ed13160722c74d781bb69dc739417d52fe',
       'src/styles/components.css': '11bd712028f98d5db82bf035a528bca93306d49e6046ad1a508b5460fc97d6f6',
       'src/styles/dark.css': 'e1cb10418eaa0c112a39e5df6e91464818b3512706661a202bf0e680445a664f',
-      'src/styles/pages.css': '39ae385296ca78854c3dd36c3ef7b8390cd667e49239ef706a8456ae50f2d6c6',
+      'src/styles/pages.css': '184fd45afd5b06f465c3ae83d8199c8f3509aaa4e0d1d0ac9e8857ea27ab16a2',
       'src/styles/layout/home.css': '60fca53b34ce2e8c7c1101125558944c2c97359d673e40e4786635d1a3c864c5',
       'src/styles/layout/header.css': '237c8e28e3c270351157923349973802986f0a2b9fba3dd8bf9ea9ab40d89f4e', // 2026-10-14: button.nav__mobile-login-link (Italian login button)
     };

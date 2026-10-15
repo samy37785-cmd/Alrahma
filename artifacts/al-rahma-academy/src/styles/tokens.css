@@ -223,12 +223,13 @@
   --space-24: 96px;
 
   /* ── Typography ── */
-  --font-sans:  "Poppins", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  /* "… Fallback" faces: metric-matched local fonts, see font-fallbacks.css */
+  --font-sans:  "Poppins", "Poppins Fallback", "Poppins Fallback Android", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-serif: "Amiri", Georgia, "Times New Roman", serif;
   --font-mono:  "Fira Code", "JetBrains Mono", "Courier New", monospace;
   /* Latin display serif for editorial-style headlines (Home page restyle) —
      distinct from --font-serif above, which is Amiri and stays Arabic-only. */
-  --font-serif-display: "Playfair Display", Georgia, serif;
+  --font-serif-display: "Playfair Display", "Playfair Fallback", "Playfair Fallback Android", Georgia, serif;
 
   /* Font size scale */
   --text-xs:    0.72rem;   /* 11.5px */

@@ -34,7 +34,7 @@ import '@fontsource/cairo/arabic-700.css';
 // loaded lazily after first paint (see loadArabicFonts below) so it no longer
 // blocks the initial render. Arabic text shows in the system fallback for a
 // fraction of a second, then swaps to Amiri (font-display: swap).
-import App from './App.jsx';
+import App, { preloadInitialPage } from './App.jsx';
 import './styles.css';
 import { initSentry } from './utils/sentry.js';
 import { loadArabicFontsIdle } from './utils/loadArabicFonts.js';
@@ -76,9 +76,16 @@ if (!redirected) {
   // Only this page's language dictionary is downloaded (i18n/index.js); the
   // prerendered HTML stays on screen until it arrives. English is the fallback
   // if that chunk cannot be fetched.
-  loadTranslations(lang || 'en')
-    .catch(() => loadTranslations('en'))
-    .then(() => createRoot(rootElement).render(app));
+  // The current page's component is loaded in the same wait (#250): otherwise
+  // its lazy() import suspends the first render and the Suspense spinner
+  // replaces the prerendered content until it resolves. If the page chunk
+  // fails, render anyway and let the router's own lazy load / ErrorBoundary
+  // handle it, as before.
+  const pagePath = window.location.pathname.slice(basename.length) || '/';
+  Promise.all([
+    loadTranslations(lang || 'en').catch(() => loadTranslations('en')),
+    preloadInitialPage(pagePath).catch(() => {}),
+  ]).then(() => createRoot(rootElement).render(app));
 
   // Load the heavy Arabic (Amiri) fonts off the critical path, once the browser
   // is idle after the first paint. Vite emits these as async CSS chunks.

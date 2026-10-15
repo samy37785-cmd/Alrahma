@@ -37,6 +37,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { PRERENDER_MANIFEST, urlPathFor, canonicalUrlFor, outputRelPathFor, hreflangLinksFor, ogLocaleFor } from './prerender-routes.mjs';
 import { SPA_SHELL_FILE, NOT_FOUND_FILE, buildSpaShell, buildNotFoundPage } from './spaShell.mjs';
+import { STAMP_FILE, stampFor } from './buildFingerprint.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..');
@@ -308,6 +309,9 @@ async function run() {
     killPreview(preview);
   }
 
+  // Written last, only after every page above succeeded: the dist-reading
+  // tests treat a build without a matching stamp as missing (buildFingerprint.mjs).
+  await writeFile(STAMP_FILE, JSON.stringify(stampFor(PRERENDER_MANIFEST.length), null, 2) + '\n', 'utf8');
   console.log(`[prerender] done: ${PRERENDER_MANIFEST.length} pages`);
 }
 

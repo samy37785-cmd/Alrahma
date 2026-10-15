@@ -15,6 +15,7 @@ import en from '../i18n/en';
 import ar from '../i18n/ar';
 import fr from '../i18n/fr';
 import it_ from '../i18n/it';
+import { builtDistReady } from './utils/builtDist';
 
 // TrustBar WhatsApp deterministic rendering: the support status ("Support online" /
 // "Leave a message") used to be computed from the clock wherever the page was rendered,
@@ -25,7 +26,7 @@ import it_ from '../i18n/it';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DIST = path.resolve(__dirname, '../../dist/public');
-const distExists = fs.existsSync(DIST);
+const distExists = builtDistReady('trustBarSupportStatus');
 
 const LOCALES = [
   { lang: 'en', url: '/', t: en, raw: 'index.html' },

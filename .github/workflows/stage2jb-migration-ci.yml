@@ -219,23 +219,22 @@ jobs:
 
       # Runs only after the build above has produced dist/public/ --
       # scripts/prerender.mjs's postbuild output is what this actually
-      # verifies. src/test/prerenderOutput.test.js skips itself (visibly,
-      # not as a false pass) when run without a prior build, which is
-      # exactly what the earlier "Frontend vitest" step above does every
-      # time -- this step is the only one where it actually executes its
-      # assertions.
+      # verifies. Every test that reads dist/public skips its dist blocks
+      # in the earlier "Frontend vitest" step (no build yet); this step is
+      # where they execute. `test:prerender` runs ALL of them (the list in
+      # scripts/test-prerender.mjs, kept complete by
+      # src/test/prerenderTestFiles.test.js) with REQUIRE_PRERENDER_DIST=1,
+      # so a missing, partial or stale build fails instead of skipping
+      # (prerender.mjs stamps a finished build; see scripts/buildFingerprint.mjs).
+      # The verbose reporter names each test as passed, not skipped.
       - name: Prerender output verification (post-build, requires dist/)
         working-directory: artifacts/al-rahma-academy
-        run: |
-          npx vitest run src/test/prerenderOutput.test.js
-          # Verbose reporter so the log names each raw-prerender test and
-          # shows it passed (not skipped) now that dist/ exists.
-          npx vitest run src/test/frenchP2ContentMetadata.test.jsx --reporter=verbose
+        run: pnpm run test:prerender --reporter=verbose
 
       # Real-browser layout tests (src/test/accessibilityWave*.layout.test.js).
       # They skip themselves, visibly, in the browser-less "Frontend vitest"
       # step above because Playwright's Chromium is only installed later, and
-      # the post-build step above only names two files. REQUIRE_CHROMIUM=1
+      # the post-build step above runs only the dist-reading tests. REQUIRE_CHROMIUM=1
       # turns a missing browser into a failure here, so they cannot skip
       # silently; the verbose reporter lists each test as passed. Waves 3, 4 and 5
       # test the built Home and Quran Reader (dist/public from the build step above).

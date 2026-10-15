@@ -11,6 +11,7 @@ import AboutPage from '../pages/About';
 import Enroll from '../pages/Enroll';
 import Teachers from '../pages/Teachers';
 import { PRERENDER_MANIFEST } from '../../scripts/prerender-routes.mjs';
+import { builtDistReady } from './utils/builtDist';
 
 // Italian SEO Meta Descriptions, long wave: the <meta name="description"> (and its og:/twitter:
 // copies) of /it/, /it/academy/about, /it/enroll and /it/academy/teachers were 194-282 code
@@ -22,7 +23,7 @@ import { PRERENDER_MANIFEST } from '../../scripts/prerender-routes.mjs';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '../..');
 const DIST = path.join(ROOT, 'dist/public');
-const distExists = fs.existsSync(DIST);
+const distExists = builtDistReady('italianMetadataLongPages');
 useFullPageEnvironment();
 
 const sha = (s) => createHash('sha256').update(s).digest('hex');
@@ -43,6 +44,7 @@ const keyOf = (r) => r.slice(1).replace(/^it\/$/, 'it/'); // '/it/' -> 'it/', '/
 
 // origin/main (165b9be) production raw-prerender facts, captured twice and identical.
 // mainText = SHA-256 of #main-content's textContent in the raw HTML.
+// 2026-10-15: enroll hreflang updated for the en/ar Enroll pages (#234): + en, ar; x-default is now /enroll.
 const BASE = {
   "en/": {
     "title": "Learn the Quran Online | AL-Rahma Academy",
@@ -199,7 +201,9 @@ const BASE = {
     "hreflang": [
       "fr=https://al-rahmaacademy.com/fr/enroll",
       "it=https://al-rahmaacademy.com/it/enroll",
-      "x-default=https://al-rahmaacademy.com/fr/enroll"
+      "en=https://al-rahmaacademy.com/enroll",
+      "ar=https://al-rahmaacademy.com/ar/enroll",
+      "x-default=https://al-rahmaacademy.com/enroll"
     ],
     "description": "Un cours d'essai de Coran individuel et gratuit — sans paiement, sans engagement. Choisissez vos matières, choisissez un enseignant certifié par Al-Azhar et réservez votre formule — nous confirmerons avec vous votre planning et le paiement sur WhatsApp.",
     "mainText": "c1be31b436c3d73a1b05be0495d600a81b9d6d3edd5613dd079ec978447f3327"
@@ -269,7 +273,9 @@ const BASE = {
     "hreflang": [
       "fr=https://al-rahmaacademy.com/fr/enroll",
       "it=https://al-rahmaacademy.com/it/enroll",
-      "x-default=https://al-rahmaacademy.com/fr/enroll"
+      "en=https://al-rahmaacademy.com/enroll",
+      "ar=https://al-rahmaacademy.com/ar/enroll",
+      "x-default=https://al-rahmaacademy.com/enroll"
     ],
     "description": "Una lezione di prova gratuita individuale di Corano — senza pagamento, senza impegno. Scegli le tue materie, scegli un insegnante certificato Al-Azhar e prenota il tuo piano — confermeremo con te l'orario e il pagamento su WhatsApp.",
     "mainText": "ce332116a6206ef49917d6e81ba3831f980ea73b8ad7fd5cf521043ab8367283"

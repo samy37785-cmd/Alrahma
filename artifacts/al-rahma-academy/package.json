@@ -10,7 +10,8 @@
     "postbuild": "node scripts/prerender.mjs",
     "serve": "vite preview --config vite.config.ts --host 0.0.0.0",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:prerender": "node scripts/test-prerender.mjs"
   },
   "devDependencies": {
     "@fontsource/amiri": "^5.2.8",

@@ -1,0 +1,6 @@
+// Shared shape for the cancellation survey copy (used by the non-English languages).
+export const cancelSurvey = (copy) => ({
+  dialog: copy.dialog, beforeCancelDialog: copy.beforeCancelDialog, confirmDialog: copy.confirmDialog, close: copy.close, title: copy.title, subtitle: copy.subtitle, otherPlaceholder: copy.otherPlaceholder, continue: copy.continue, keepSubscription: copy.keepSubscription, beforeYouGo: copy.beforeYouGo, continueCancelling: copy.continueCancelling, confirmTitle: copy.confirmTitle, confirmBodyStart: copy.confirmBodyStart, guarantee: copy.guarantee, confirmBodyEnd: copy.confirmBodyEnd, requestRefund: copy.requestRefund, cancelSubscription: copy.cancelSubscription, emailSubject: copy.emailSubject, emailBody: (reason) => `${copy.reason}: ${reason}`, whatsappMessage: (reason) => `${copy.whatsappStart}: ${reason}. ${copy.whatsappEnd}`,
+  reasons: copy.reasons.map((label, index) => ({ id: ['price', 'schedule', 'tutor', 'progress', 'moving', 'pause', 'other'][index], label })),
+  offers: Object.fromEntries(['price', 'schedule', 'tutor', 'progress', 'pause'].map((id, index) => [id, { icon: ['💰', '🕒', '👨‍🏫', '📈', '⏸️'][index], text: copy.offers[index][0], action: copy.offers[index][1] }])),
+});

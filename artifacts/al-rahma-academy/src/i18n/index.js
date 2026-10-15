@@ -1,3 +1,5 @@
+import { loadExperienceText } from './experience.js';
+
 // Each language's dictionary is its own chunk (2026-10-15): a visitor downloads
 // only the language of the page they opened (~40-47 KiB) instead of all six
 // (~263 KiB in the main bundle before). The language is fixed for a page load
@@ -24,9 +26,14 @@ export function translationsFor(lang) {
   return loaded[lang] ?? loaded.en;
 }
 
+// Also loads the language's interface copy (i18n/experience.js), so one call
+// before the first render covers both.
 export async function loadTranslations(lang) {
   const code = LOADERS[lang] ? lang : 'en';
-  if (!loaded[code]) loaded[code] = (await LOADERS[code]()).default;
+  if (!loaded[code]) {
+    const [module] = await Promise.all([LOADERS[code](), loadExperienceText(code)]);
+    loaded[code] = module.default;
+  }
   return loaded[code];
 }
 

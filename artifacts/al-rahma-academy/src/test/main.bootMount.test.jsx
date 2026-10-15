@@ -8,7 +8,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 // side effects, so each case needs a fresh module instance
 // (vi.resetModules()) and a fresh dynamic import.
 
-vi.mock('../App.jsx', () => ({ default: () => null }));
+const preloadInitialPageMock = vi.fn(() => Promise.resolve());
+vi.mock('../App.jsx', () => ({ default: () => null, preloadInitialPage: (...args) => preloadInitialPageMock(...args) }));
 vi.mock('../utils/sentry.js', () => ({ initSentry: vi.fn() }));
 vi.mock('../utils/loadArabicFonts.js', () => ({ loadArabicFontsIdle: vi.fn() }));
 
@@ -67,6 +68,21 @@ describe('main.jsx boot: React mount is skipped on redirect, normal otherwise', 
     await import('../main.jsx');
     await vi.waitFor(() => expect(createRootMock).toHaveBeenCalledTimes(1));
     expect(loadTranslationsMock.mock.calls).toEqual([['en']]);
+  });
+
+  it('loads the current page (path without the language prefix) before the first render (#250)', async () => {
+    preloadInitialPageMock.mockClear();
+    stubLocation('/fr/courses/ijazah', '');
+    await import('../main.jsx');
+    await vi.waitFor(() => expect(createRootMock).toHaveBeenCalledTimes(1));
+    expect(preloadInitialPageMock.mock.calls).toEqual([['/courses/ijazah']]);
+  });
+
+  it('a failed page preload still mounts the app', async () => {
+    preloadInitialPageMock.mockImplementationOnce(() => Promise.reject(new Error('chunk failed')));
+    stubLocation('/it/', '');
+    await import('../main.jsx');
+    await vi.waitFor(() => expect(createRootMock).toHaveBeenCalledTimes(1));
   });
 
   it('if the language chunk cannot be fetched, it falls back to English and still mounts', async () => {

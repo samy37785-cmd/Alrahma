@@ -40,6 +40,7 @@ import { initSentry } from './utils/sentry.js';
 import { loadArabicFontsIdle } from './utils/loadArabicFonts.js';
 import { langFromPath } from './utils/localePath.js';
 import { runBootRedirect } from './utils/bootRedirect.js';
+import { loadTranslations } from './i18n/index.js';
 
 initSentry();
 
@@ -60,7 +61,7 @@ if (!redirected) {
   // keeps resolving under that prefix for the rest of the session. Switching
   // language is a full page reload (see utils/localePath.js switchLanguageHref),
   // which is what lets this be computed once here rather than reactively.
-  const { basename } = langFromPath(window.location.pathname);
+  const { basename, lang } = langFromPath(window.location.pathname);
 
   const rootElement = document.getElementById('root');
   const app = (
@@ -72,7 +73,12 @@ if (!redirected) {
   // Client-side render. createRoot cleanly replaces the static #app-loading
   // spinner (in index.html) with the rendered app — the spinner gives an instant
   // first paint while this bundle loads instead of a blank white screen.
-  createRoot(rootElement).render(app);
+  // Only this page's language dictionary is downloaded (i18n/index.js); the
+  // prerendered HTML stays on screen until it arrives. English is the fallback
+  // if that chunk cannot be fetched.
+  loadTranslations(lang || 'en')
+    .catch(() => loadTranslations('en'))
+    .then(() => createRoot(rootElement).render(app));
 
   // Load the heavy Arabic (Amiri) fonts off the critical path, once the browser
   // is idle after the first paint. Vite emits these as async CSS chunks.

@@ -1,5 +1,5 @@
 import { createContext, useContext, useMemo, useEffect, useCallback } from 'react';
-import translations, { LANGS } from '../i18n';
+import { LANGS, translationsFor } from '../i18n';
 import { langFromPath, switchLanguageHref } from '../utils/localePath';
 
 const LangContext = createContext(null);
@@ -59,13 +59,13 @@ export function LangProvider({ children }) {
 
   // Apply dir and lang attributes on the root <html> element
   useEffect(() => {
-    const dir = translations[lang]?.dir || 'ltr';
+    const dir = translationsFor(lang)?.dir || 'ltr';
     document.documentElement.setAttribute('dir', dir);
     document.documentElement.setAttribute('lang', lang);
   }, [lang]);
 
   const value = useMemo(
-    () => ({ lang, setLang, t: translations[lang] }),
+    () => ({ lang, setLang, t: translationsFor(lang) }),
     [lang, setLang]
   );
 

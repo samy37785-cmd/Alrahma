@@ -17,29 +17,26 @@ const routes = [...new Set(published.map((e) => e.route))];
 const localesOf = (route) => published.filter((e) => e.route === route).map((e) => e.locale);
 const urlOf = (route, locale) => ORIGIN + (locale === 'en' ? route : route === '/' ? `/${locale}/` : `/${locale}${route}`);
 
-const AFFECTED = {
-  '/enroll': ['fr', 'it'],
-  '/tools/quran-reader': ['fr', 'it'],
-  '/tools/verse-of-the-day': ['fr', 'it'],
-  '/tools/hadith': ['fr', 'it'],
-  '/tools/prayer-times': ['fr', 'it'],
-};
+// These five routes were published for fr + it only (x-default = the French
+// URL) until 2026-10-13, when en + ar joined; x-default is English again.
+const FORMER_FR_IT_ONLY = ['/enroll', '/tools/quran-reader', '/tools/verse-of-the-day', '/tools/hadith', '/tools/prayer-times'];
 
 // City prayer-times pages (2026-10-13) exist in one language only (the city's
 // country), so their x-default is the page itself (first-published fallback).
 const isCityRoute = (route) => route.startsWith('/tools/prayer-times/');
 
 describe('x-default points at a published version of the same route', () => {
-  it('the five routes without an English version publish exactly these locales', () => {
+  it('every published route except the city pages has an English version; the five former fr/it-only routes publish all four languages', () => {
+    // City prayer-times pages (2026-10-13) are published only in their country's language.
     const noEn = routes.filter((r) => !isCityRoute(r) && !localesOf(r).includes('en')).sort();
-    expect(noEn).toEqual(Object.keys(AFFECTED).sort());
-    for (const [route, locales] of Object.entries(AFFECTED)) expect(localesOf(route).sort(), route).toEqual(locales);
+    expect(noEn).toEqual([]);
+    for (const route of FORMER_FR_IT_ONLY) expect(localesOf(route).sort(), route).toEqual(['ar', 'en', 'fr', 'it']);
   });
 
-  it.each(Object.keys(AFFECTED))('%s: x-default is the French URL', (route) => {
+  it.each(FORMER_FR_IT_ONLY)('%s: x-default is now the English URL, on every published locale', (route) => {
     for (const locale of localesOf(route)) {
       const links = hreflangLinksFor({ route, locale });
-      expect(links.find((l) => l.hreflang === 'x-default').href, `${route} @ ${locale}`).toBe(urlOf(route, 'fr'));
+      expect(links.find((l) => l.hreflang === 'x-default').href, `${route} @ ${locale}`).toBe(urlOf(route, 'en'));
     }
   });
 
@@ -122,7 +119,8 @@ describe('publication is untouched', () => {
     const xml = fs.readFileSync(path.resolve(__dirname, '../../public/sitemap.xml'), 'utf8');
     const locs = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
     expect(locs.sort()).toEqual(published.map(canonicalUrlFor).sort());
-    expect(locs).toHaveLength(154);
+    // 134 + the five tools/Enroll routes in en and ar + 20 city prayer-times pages (10 it, 10 fr), 2026-10-13.
+    expect(locs).toHaveLength(164);
     expect(locs.filter((u) => u.startsWith(`${ORIGIN}/it/`))).toHaveLength(46);
   });
 });

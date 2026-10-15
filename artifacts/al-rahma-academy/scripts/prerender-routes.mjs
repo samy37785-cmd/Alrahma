@@ -448,6 +448,17 @@ export const PRERENDER_MANIFEST = [
   // URL or user state. hreflang fr + it + x-default (-> /fr/tools/quran-reader).
   { route: '/tools/quran-reader', locale: 'it', status: 'published', indexable: true },
 
+  // English + Arabic tools and Enroll (2026-10-13): the five routes published so
+  // far for fr/it only. Their prerender blockers were fixed in the French wave
+  // above (webdriver gates on the fetch/geolocation effects, sr-only breadcrumbs
+  // on Quran and Enroll), and en/ar are the pages' original languages. A render
+  // of each /ar/ page shows Arabic text only, apart from names (brand, reciters,
+  // hadith collections, translation languages) and the contact email, so the
+  // "known AR content gap" the Static tools wave noted for Enroll is closed.
+  // Without these entries the en/ar URLs answered with the SPA shell (home
+  // title and description in the raw HTML) although every page links them.
+  ...['/tools/prayer-times', '/tools/quran-reader', '/tools/hadith', '/tools/verse-of-the-day', '/enroll']
+    .flatMap((route) => ['en', 'ar'].map((locale) => ({ route, locale, status: 'published', indexable: true }))),
   // City prayer-times pages (2026-10-13): one page per city in
   // src/data/prayerCities.js, published only in its country's language
   // (10 Italian cities under /it/, 10 French cities under /fr/), so hreflang is

@@ -123,8 +123,10 @@ function pathForLocale(route, locale) {
 // routes (see scripts/prerender-routes.mjs's own "French wave" comment) —
 // the exact same ROUTES list above, now with a third locale, not a new/
 // different route set. it/es/de remain unpublished, unchanged.
-const EXPECTED_EN_URLS = ROUTES.map((route) => ORIGIN + pathForLocale(route, 'en'));
-const EXPECTED_AR_URLS = ROUTES.map((route) => ORIGIN + pathForLocale(route, 'ar'));
+// English + Arabic tools and Enroll (2026-10-13): the five FR_ONLY_ROUTES are
+// now published for en and ar as well (they were fr + it only until then).
+const EXPECTED_EN_URLS = [...ROUTES, ...FR_ONLY_ROUTES].map((route) => ORIGIN + pathForLocale(route, 'en'));
+const EXPECTED_AR_URLS = [...ROUTES, ...FR_ONLY_ROUTES].map((route) => ORIGIN + pathForLocale(route, 'ar'));
 // French SEO Publication Wave (2026-09-30): FR_ONLY_ROUTES' 5 routes are
 // appended here, fr-only — this is the one and only place they affect the
 // expected URL set at all; EXPECTED_EN_URLS/EXPECTED_AR_URLS/
@@ -181,7 +183,7 @@ describe('sitemap.xml — exact published-routes whitelist', () => {
     expect(getLocUrls()).toHaveLength(EXPECTED_URLS.length);
   });
 
-  it('splits into exactly 31 EN, 31 AR, 46 FR and 46 IT URLs', () => {
+  it('splits into exactly 36 EN, 36 AR, 46 FR and 46 IT URLs', () => {
     const locs = getLocUrls();
     const byPrefix = (l) => locs.filter((u) => u.startsWith(`${ORIGIN}/${l}/`) || u === `${ORIGIN}/${l}`);
     const arUrls = byPrefix('ar');
@@ -192,8 +194,9 @@ describe('sitemap.xml — exact published-routes whitelist', () => {
     expect(arUrls).toHaveLength(EXPECTED_AR_URLS.length);
     expect(frUrls).toHaveLength(EXPECTED_FR_URLS.length);
     expect(itUrls).toHaveLength(EXPECTED_IT_URLS.length);
-    expect(enUrls).toHaveLength(31);
-    expect(arUrls).toHaveLength(31);
+    // 31 + the five tools/Enroll routes published for en/ar on 2026-10-13.
+    expect(enUrls).toHaveLength(36);
+    expect(arUrls).toHaveLength(36);
     // French SEO Publication Wave (2026-09-30): 31 (the pre-existing French
     // wave, same route set as EN/AR) + 5 fr-only routes (FR_ONLY_ROUTES).
     // City prayer-times pages (2026-10-13): + 10 French cities.
@@ -202,7 +205,7 @@ describe('sitemap.xml — exact published-routes whitelist', () => {
     // it now publishes every route in ROUTES, IT_EXCLUDED_ROUTES is empty.
     // City prayer-times pages (2026-10-13): + 10 Italian cities.
     expect(itUrls).toHaveLength(46);
-    expect(locs).toHaveLength(154);
+    expect(locs).toHaveLength(164);
   });
 
   it('has no duplicate URLs', () => {
@@ -239,12 +242,12 @@ describe('sitemap.xml — exact published-routes whitelist', () => {
   // of these 5 routes (see scripts/prerender-routes.mjs's own comment on
   // this exact wave for why: en/ar/it publication of these routes is a
   // separate, un-revisited decision).
-  it('publishes verse-of-the-day, quran-reader, hadith, prayer-times and enroll for /fr/, never en/ar; it for all five too', () => {
+  it('publishes verse-of-the-day, quran-reader, hadith, prayer-times and enroll in all four languages (en/ar since 2026-10-13)', () => {
     const locs = getLocUrls();
     for (const route of FR_ONLY_ROUTES) {
       expect(locs).toContain(`${ORIGIN}/fr${route}`);
-      expect(locs).not.toContain(`${ORIGIN}${route}`);
-      expect(locs).not.toContain(`${ORIGIN}/ar${route}`);
+      expect(locs).toContain(`${ORIGIN}${route}`);
+      expect(locs).toContain(`${ORIGIN}/ar${route}`);
       if (IT_WAVE3_ROUTES.includes(route)) expect(locs).toContain(`${ORIGIN}/it${route}`);
       else expect(locs).not.toContain(`${ORIGIN}/it${route}`);
     }

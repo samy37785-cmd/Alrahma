@@ -671,6 +671,56 @@
     <priority>0.85</priority>
   </url>
   <url>
+    <loc>https://al-rahmaacademy.com/tools/prayer-times</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://al-rahmaacademy.com/ar/tools/prayer-times</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://al-rahmaacademy.com/tools/quran-reader</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://al-rahmaacademy.com/ar/tools/quran-reader</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://al-rahmaacademy.com/tools/hadith</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://al-rahmaacademy.com/ar/tools/hadith</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://al-rahmaacademy.com/tools/verse-of-the-day</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://al-rahmaacademy.com/ar/tools/verse-of-the-day</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://al-rahmaacademy.com/enroll</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://al-rahmaacademy.com/ar/enroll</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://al-rahmaacademy.com/it/tools/prayer-times/roma</loc>
     <changefreq>monthly</changefreq>
     <priority>0.85</priority>

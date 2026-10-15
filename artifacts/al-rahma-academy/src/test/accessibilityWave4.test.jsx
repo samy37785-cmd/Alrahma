@@ -72,9 +72,9 @@ describe('protected files are byte-identical to origin/main (3b44029)', () => {
       'public/llms.txt': '62d919c335771962601bc2e3ef20d96c73648c81137acfedd5d10536c2b186ab',
       'public/manifest.json': 'eb1abafcd12b91b890a6e7f6c9ce69da6641ce80c95c31fa3f51ee792897cfc0',
       'public/robots.txt': 'b2bd76ccef97000cdc5d352d2503b101be782545e8168bd8ed35c4d2fa74e8d4',
-      'public/sitemap.xml': '1b33be99d0364355c4ef9f1b19875acd620eede50ad266cb75154f8cb9d6489d',
+      'public/sitemap.xml': '5ffc12408618d2bdffb0951df058f466b1559729e5d4129dfa8a97906756549f',
       'scripts/gen-sitemap.mjs': '83b8022647b09534b25ba66198848574abda88c8d0f211865f0ee6b306edc7ab',
-      'scripts/prerender-routes.mjs': 'f885eca7b765c7b1ebd7a49261b46b6ff2b0b321cfa5fd77066ba160533c4224',
+      'scripts/prerender-routes.mjs': '5af0f861179fdb4390d08f721c2eb9866e1b40b2225c06d1628171d7474c4678',
       // SPA shell PR: prerender.mjs also writes dist/public/spa-shell.html (real routes, served by
       // vercel.json) and dist/public/404.html (HTTP 404, noindex). No route, locale, page content or
       // Quran Reader output changed.
@@ -116,7 +116,7 @@ describe('protected files are byte-identical to origin/main (3b44029)', () => {
       'src/i18n/quran/controlsPanels.js': '3f9c11e87de7b32d0e685580882a489c0bf7f10afa639f6641fac10891680654',
       'src/i18n/quran/kbdSidePanel.js': 'd2a2d708f85d4141ccfeb5736118dd96a38f67da7bc59640a1f18dd5750680f3',
       'src/i18n/quran/verseCardModal.js': 'b389bf8d90b0f61d8593c2703da2433f148dd2528df4bd34b5ed182a4dc40146',
-      'src/pages/Quran.jsx': '750cd8ad52d28e28d461780b4d82ab9612fb454a4886e4b06153965aa9c9b80d',
+      'src/pages/Quran.jsx': '2818cdfd006357115f6f2e0441eefcd47e1fdf5f5a87ffec80c5828136ef6ace',
       'src/styles/tokens.css': '042749b20028ad361fb7570c4ecc3d45c584ddab30919d97c11d302c53eccfb8',
       'src/styles/global.css': '0e5681ec63222eedac4354b9210543ed13160722c74d781bb69dc739417d52fe',
       'src/styles/components.css': '11bd712028f98d5db82bf035a528bca93306d49e6046ad1a508b5460fc97d6f6',

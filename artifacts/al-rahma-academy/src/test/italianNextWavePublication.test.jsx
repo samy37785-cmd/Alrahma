@@ -24,9 +24,10 @@ describe('manifest and sitemap: baseline derived from the manifest, not a hard-c
     const itLocs = locs.filter((u) => u.startsWith(`${ORIGIN}/it/`));
     expect(itLocs).toHaveLength(itPublished.length);
     // Baseline before wave 3: 129 total, 31 Italian. Waves 3 + the final Enroll publication add exactly 3.
-    // The 20 city prayer-times pages (2026-10-13) are a later, separate wave.
+    // Later, separate waves (2026-10-13): the en + ar versions of the five
+    // routes (10) and the 20 city prayer-times pages.
     const isCity = (e) => e.route.startsWith('/tools/prayer-times/');
-    expect(published.filter((e) => !isCity(e)).length - 129).toBe(5);
+    expect(published.filter((e) => !isCity(e)).length - 10 - 129).toBe(5);
     expect(itPublished.filter((e) => !isCity(e)).length - 31).toBe(5);
     expect(itPublished.map((e) => e.route)).toEqual(expect.arrayContaining(['/tools/hadith', '/tools/prayer-times', '/enroll', '/tools/verse-of-the-day', '/tools/quran-reader']));
     expect(locs).toContain(`${ORIGIN}/it/enroll`);
@@ -34,9 +35,9 @@ describe('manifest and sitemap: baseline derived from the manifest, not a hard-c
     expect(locs).toContain(`${ORIGIN}/it/tools/prayer-times`);
   });
 
-  it('every other locale kept its count: 31 en, 31 ar, 46 fr (36 + 10 city pages)', () => {
+  it('every other locale kept its count: en and ar 36 (31 + the five tools/Enroll routes), fr 46 (36 + 10 city pages)', () => {
     const count = (l) => published.filter((e) => e.locale === l).length;
-    expect([count('en'), count('ar'), count('fr')]).toEqual([31, 31, 46]);
+    expect([count('en'), count('ar'), count('fr')]).toEqual([36, 36, 46]);
   });
 });
 
@@ -61,36 +62,39 @@ const PAGES = [
 
 describe('hreflang and og:locale follow the locales actually published for each route', () => {
   for (const { route } of PAGES) {
-    it(`${route}: exactly fr + it + x-default (en and ar are not published), reciprocal on both versions`, () => {
-      for (const locale of ['fr', 'it']) {
+    // en + ar joined on 2026-10-13: all four languages, x-default English.
+    it(`${route}: fr + it + en + ar + x-default (English), reciprocal on every version`, () => {
+      for (const locale of ['fr', 'it', 'en', 'ar']) {
         const links = hreflangLinksFor({ route, locale });
-        expect(links.map((l) => l.hreflang).sort()).toEqual(['fr', 'it', 'x-default']);
+        expect(links.map((l) => l.hreflang).sort()).toEqual(['ar', 'en', 'fr', 'it', 'x-default']);
         expect(links.find((l) => l.hreflang === 'it').href).toBe(`${ORIGIN}/it${route}`);
         expect(links.find((l) => l.hreflang === 'fr').href).toBe(`${ORIGIN}/fr${route}`);
-        // x-default is a published version (French), not the unpublished English URL.
-        expect(links.find((l) => l.hreflang === 'x-default').href).toBe(`${ORIGIN}/fr${route}`);
+        expect(links.find((l) => l.hreflang === 'en').href).toBe(`${ORIGIN}${route}`);
+        expect(links.find((l) => l.hreflang === 'ar').href).toBe(`${ORIGIN}/ar${route}`);
+        expect(links.find((l) => l.hreflang === 'x-default').href).toBe(`${ORIGIN}${route}`);
       }
-      expect(ogLocaleFor({ route, locale: 'it' })).toEqual({ primary: 'it_IT', alternates: ['fr_FR'] });
-      expect(ogLocaleFor({ route, locale: 'fr' })).toEqual({ primary: 'fr_FR', alternates: ['it_IT'] });
+      expect(ogLocaleFor({ route, locale: 'it' })).toEqual({ primary: 'it_IT', alternates: ['fr_FR', 'en_GB', 'ar_EG'] });
+      expect(ogLocaleFor({ route, locale: 'fr' })).toEqual({ primary: 'fr_FR', alternates: ['it_IT', 'en_GB', 'ar_EG'] });
     });
   }
 });
 
-describe('/it/enroll is published for fr + it only', () => {
-  it('has one Italian manifest entry and one sitemap URL; no en/ar entry; hreflang fr + it + x-default (fr), reciprocal', () => {
+describe('/it/enroll is published (en + ar joined fr + it on 2026-10-13)', () => {
+  it('has one Italian manifest entry and one sitemap URL; hreflang fr + it + en + ar + x-default (English), reciprocal', () => {
     expect(PRERENDER_MANIFEST.filter((e) => e.route === '/enroll' && e.locale === 'it')).toHaveLength(1);
     expect(locs.filter((u) => u === `${ORIGIN}/it/enroll`)).toHaveLength(1);
-    expect(PRERENDER_MANIFEST.filter((e) => e.route === '/enroll').map((e) => e.locale)).toEqual(['fr', 'it']);
-    for (const locale of ['fr', 'it']) {
+    expect(PRERENDER_MANIFEST.filter((e) => e.route === '/enroll').map((e) => e.locale)).toEqual(['fr', 'it', 'en', 'ar']);
+    for (const locale of ['fr', 'it', 'en', 'ar']) {
       const links = hreflangLinksFor({ route: '/enroll', locale });
       expect(links).toEqual([
         { hreflang: 'fr', href: `${ORIGIN}/fr/enroll` },
         { hreflang: 'it', href: `${ORIGIN}/it/enroll` },
-        { hreflang: 'x-default', href: `${ORIGIN}/fr/enroll` },
+        { hreflang: 'en', href: `${ORIGIN}/enroll` },
+        { hreflang: 'ar', href: `${ORIGIN}/ar/enroll` },
+        { hreflang: 'x-default', href: `${ORIGIN}/enroll` },
       ]);
-      expect(ogLocaleFor({ route: '/enroll', locale }).alternates).toEqual([locale === 'it' ? 'fr_FR' : 'it_IT']);
     }
-    expect(locs.some((u) => u === `${ORIGIN}/enroll` || u === `${ORIGIN}/ar/enroll`)).toBe(false);
+    expect(locs.filter((u) => u === `${ORIGIN}/enroll` || u === `${ORIGIN}/ar/enroll`)).toHaveLength(2);
   });
 });
 

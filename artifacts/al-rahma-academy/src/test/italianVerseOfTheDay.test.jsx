@@ -186,23 +186,28 @@ describe('prerender safety: nothing dated or fetched is frozen into the static f
 });
 
 describe('publication: one new Italian URL, x-default is the published French page', () => {
-  it('manifest has it for verse-of-the-day, and hreflang is fr + it + x-default (fr), reciprocal', () => {
-    expect(PRERENDER_MANIFEST.filter((e) => e.route === '/tools/verse-of-the-day').map((e) => e.locale)).toEqual(['fr', 'it']);
-    for (const locale of ['fr', 'it']) {
+  // en + ar joined on 2026-10-13, so x-default is now the English page.
+  it('manifest has it for verse-of-the-day, and hreflang is fr + it + en + ar + x-default (English), reciprocal', () => {
+    expect(PRERENDER_MANIFEST.filter((e) => e.route === '/tools/verse-of-the-day').map((e) => e.locale)).toEqual(['fr', 'it', 'en', 'ar']);
+    for (const locale of ['fr', 'it', 'en', 'ar']) {
       expect(hreflangLinksFor({ route: '/tools/verse-of-the-day', locale })).toEqual([
         { hreflang: 'fr', href: 'https://al-rahmaacademy.com/fr/tools/verse-of-the-day' },
         { hreflang: 'it', href: 'https://al-rahmaacademy.com/it/tools/verse-of-the-day' },
-        { hreflang: 'x-default', href: 'https://al-rahmaacademy.com/fr/tools/verse-of-the-day' },
+        { hreflang: 'en', href: 'https://al-rahmaacademy.com/tools/verse-of-the-day' },
+        { hreflang: 'ar', href: 'https://al-rahmaacademy.com/ar/tools/verse-of-the-day' },
+        { hreflang: 'x-default', href: 'https://al-rahmaacademy.com/tools/verse-of-the-day' },
       ]);
     }
   });
 
-  it('the sitemap holds exactly one Italian verse-of-the-day URL and no en/ar one', () => {
+  it('the sitemap holds exactly one verse-of-the-day URL per published language (en/ar since 2026-10-13)', () => {
     const xml = fs.readFileSync(path.resolve(__dirname, '../../public/sitemap.xml'), 'utf8');
     const locs = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
     expect(locs.filter((u) => u.endsWith('/tools/verse-of-the-day')).sort()).toEqual([
+      'https://al-rahmaacademy.com/ar/tools/verse-of-the-day',
       'https://al-rahmaacademy.com/fr/tools/verse-of-the-day',
       'https://al-rahmaacademy.com/it/tools/verse-of-the-day',
+      'https://al-rahmaacademy.com/tools/verse-of-the-day',
     ]);
     expect(locs).toHaveLength(PRERENDER_MANIFEST.filter((e) => e.status === 'published').length);
   });

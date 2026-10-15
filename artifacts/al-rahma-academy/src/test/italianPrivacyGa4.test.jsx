@@ -113,7 +113,8 @@ describe('publication guard: manifest and sitemap are unchanged', () => {
     // + 20 city prayer-times pages (10 it, 10 fr), 2026-10-13.
     expect(PRERENDER_MANIFEST.filter((e) => e.locale === 'it')).toHaveLength(46);
     const sitemap = fs.readFileSync(path.resolve(__dirname, '../../public/sitemap.xml'), 'utf8');
-    expect((sitemap.match(/<loc>/g) || []).length).toBe(154);
+    // 134 + the five tools/Enroll routes in en and ar + 20 city prayer-times pages (10 it, 10 fr), 2026-10-13.
+    expect((sitemap.match(/<loc>/g) || []).length).toBe(164);
   });
 });
 

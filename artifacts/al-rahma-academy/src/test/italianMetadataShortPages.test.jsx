@@ -397,11 +397,11 @@ describe('rendered head: description equals og:description, title and H1 unchang
 
 describe('nothing else moved: sitemap, manifest, llms.txt and robots.txt', () => {
   const file = (...p) => fs.readFileSync(path.join(ROOT, ...p), 'utf8');
-  it('sitemap.xml, robots.txt and the manifest hash to origin/main; 154 pages stay published (134 + 20 city prayer-times pages)', () => {
-    expect(sha(file('public', 'sitemap.xml'))).toBe('1b33be99d0364355c4ef9f1b19875acd620eede50ad266cb75154f8cb9d6489d');
+  it('sitemap.xml, robots.txt and the manifest hash to origin/main; 164 pages stay published (134 + the en/ar tools and Enroll + 20 city prayer-times pages)', () => {
+    expect(sha(file('public', 'sitemap.xml'))).toBe('5ffc12408618d2bdffb0951df058f466b1559729e5d4129dfa8a97906756549f');
     expect(sha(file('public', 'robots.txt'))).toBe('b2bd76ccef97000cdc5d352d2503b101be782545e8168bd8ed35c4d2fa74e8d4');
-    expect(sha(file('scripts', 'prerender-routes.mjs'))).toBe('f885eca7b765c7b1ebd7a49261b46b6ff2b0b321cfa5fd77066ba160533c4224');
-    expect(PRERENDER_MANIFEST.filter((e) => e.status === 'published')).toHaveLength(154);
+    expect(sha(file('scripts', 'prerender-routes.mjs'))).toBe('5af0f861179fdb4390d08f721c2eb9866e1b40b2225c06d1628171d7474c4678');
+    expect(PRERENDER_MANIFEST.filter((e) => e.status === 'published')).toHaveLength(164);
   });
   it('llms.txt hashes to origin/main', () => {
     expect(sha(file('public', 'llms.txt'))).toBe('62d919c335771962601bc2e3ef20d96c73648c81137acfedd5d10536c2b186ab');

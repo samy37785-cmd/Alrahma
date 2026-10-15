@@ -5,7 +5,15 @@ import de from '../i18n/de.js';
 import es from '../i18n/es.js';
 import fr from '../i18n/fr.js';
 import it_ from '../i18n/it.js';
-import experienceText from '../i18n/experience.js';
+import enExperience from '../i18n/experience/en.js';
+import arExperience from '../i18n/experience/ar.js';
+import deExperience from '../i18n/experience/de.js';
+import esExperience from '../i18n/experience/es.js';
+import frExperience from '../i18n/experience/fr.js';
+import itExperience from '../i18n/experience/it.js';
+
+// One file per language since 2026-10-15 (i18n/experience.js loads them).
+const experienceText = { en: enExperience, ar: arExperience, de: deExperience, es: esExperience, fr: frExperience, it: itExperience };
 
 // Phase 0 guardrail: the six locale files are hand-maintained object
 // literals with no tooling — a key added to en.js but forgotten in de.js

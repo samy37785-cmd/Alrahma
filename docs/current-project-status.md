@@ -1,8 +1,20 @@
 # Current project status
 
-**This is the current source of truth.** Every other document under `docs/` (rehearsal reports, parity maps, design docs) describes the project **as it stood at the time it was written** — none of them are re-updated as later rounds change the code, and several predate work that has since superseded their conclusions (e.g. earlier parity/rehearsal docs describe schema state `0000`–`0011`; the schema is now at `0022`, and lossless per-domain migration tooling covering all 27 domains has since been built and reviewed). When a historical doc and this one disagree, **this one is correct**; the historical doc is left as-is for its own record of what was true then, not corrected retroactively.
+**This is the current source of truth.** Every other document under `docs/` (rehearsal reports, parity maps, design docs) describes the project **as it stood at the time it was written** — none of them are re-updated as later rounds change the code, and several predate work that has since superseded their conclusions (e.g. earlier parity/rehearsal docs describe schema state `0000`–`0011`; the schema is now at `0029`, and lossless per-domain migration tooling covering all 27 domains has since been built and reviewed). When a historical doc and this one disagree, **this one is correct**; the historical doc is left as-is for its own record of what was true then, not corrected retroactively.
 
-Last verified: `main` at `a3d6cb0` (#208, 2026-10-07); Postgres/Supabase schema migrations now number `0000`–`0029`. (Earlier text of this paragraph: PR #70 and PR #71 merged to `main`.) Booking-First Enrollment (§5 below) is tracked on a later branch, `feat/booking-only-enrollment`, and now includes a server-side hardening pass (payment endpoints closed with 410, not just unlinked from the UI; mass-assignment fix on the public booking endpoint; required/validated WhatsApp number; admin update allowlist + validation; Mongo/Supabase parity for the new booking fields) on top of the original booking-flow work.
+Last verified: `main` at `f17f336` (#231, 2026-10-15), deployed on both Vercel and Render. Postgres/Supabase schema migrations number `0000`–`0029` (`lib/db/drizzle/meta/_journal.json`). Booking-First Enrollment (§5 below) and its server-side hardening pass (payment endpoints closed with 410, not just unlinked from the UI; mass-assignment fix on the public booking endpoint; required/validated WhatsApp number; admin update allowlist + validation; Mongo/Supabase parity for the new booking fields) are merged to `main`.
+
+## Production today (2026-10-15)
+
+| Area | Current state |
+|---|---|
+| Data | **MongoDB (Atlas) is the production datastore.** Owner decision (2026-10-14): the site stays on MongoDB. The Mongo→Supabase migration (sections 0–4) is **paused**: its schema and tooling stay in the repo and in CI, but no import, cutover or production write is planned. |
+| Frontend | Vercel, deployed automatically on every merge to `main`. Vite SPA; public pages are prerendered at build time: **164 published URLs** (en 36, ar 36, fr 46, it 46), defined in `artifacts/al-rahma-academy/scripts/prerender-routes.mjs` and listed in `public/sitemap.xml`. |
+| Backend | Render service `academy-backend` (Free plan). Auto-Deploy is off; the owner runs a Manual Deploy after merges. `GET /api/healthz` returns `{ status, commit }`; compare `commit` with `main` to confirm what is live. |
+| Email | Resend HTTPS API (`RESEND_API_KEY`, `backend/config/mailer.js`). Render's Free plan blocks outbound SMTP, so SMTP is only a fallback for other hosts. Sending domain `al-rahmaacademy.com` is verified in Resend. |
+| Admin | Separate `AdminUser` accounts with TOTP MFA, behind `ADMIN_IP_WHITELIST` (`backend/middleware/ipWhitelist.js`, fails closed when unset). |
+| Payments | No online payment (§5). Customer payment routes return `410`. The startup warning about unset `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` on Render is expected, not a fault. |
+| Hidden pages | AI Tutor and Community have no backend; `/ai-tutor` and `/community` redirect to `/dashboard`. |
 
 ## 0. What changed after PR #71 (read this first)
 
@@ -44,7 +56,7 @@ None of the above has ever been exercised against real production data, real cre
 - No production Mongo→Supabase import.
 - No Supabase Production cutover; `DATA_BACKEND` unchanged.
 - No production payments migration has happened. (Superseded scope: the 15 historical `paymob` payments are now part of the planned import, see section 0.)
-- No Render or Vercel configuration changes.
+- No Render or Vercel configuration changes by the migration work. (Later, unrelated changes such as the Resend email key and the admin settings are covered under "Production today" above.)
 - No real credential has been read, requested, logged, or committed by any script in `backend/scripts/migration/` — every worker asserts its Postgres target is `localhost`/`127.0.0.1` before doing anything unless a signed, scoped, fresh-backup-bound production authorization is presented (#71, #206), and the Mongo source must always be local.
 
 ## 4. Review status
@@ -74,4 +86,4 @@ A review of the initial booking-flow branch found the payment shutdown was UI-on
 
 ## 6. How to verify any of this yourself
 
-See the root [`README.md`](../README.md#test) for the exact test commands. In short: `cd backend && npm run test:all` runs backend lint + backend tests + every migration test file (all against disposable Docker containers only); `cd lib/db && npm run test:db` runs the full Postgres schema/RLS/ACL suite; `cd artifacts/al-rahma-academy && npx vitest run` runs the frontend suite; `pnpm run build` typechecks and builds everything. CI (`.github/workflows/stage2jb-migration-ci.yml`) runs all of these on every PR into `main`, with no repository secrets configured or used.
+See the root [`README.md`](../README.md#test) for the exact test commands. In short: `cd backend && npm run test:all` runs backend lint + backend tests + every migration test file (all against disposable Docker containers only); `cd lib/db && npm run test:db` runs the full Postgres schema/RLS/ACL suite; `cd artifacts/al-rahma-academy && npx vitest run` runs the frontend suite; `pnpm run build` typechecks and builds everything (including the prerender of the published pages). CI (`.github/workflows/stage2jb-migration-ci.yml`) runs all of these on every PR into `main`, with no repository secrets configured or used.

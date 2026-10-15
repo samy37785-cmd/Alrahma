@@ -2,13 +2,14 @@
 
 An online Quran, Arabic, and Islamic studies academy: public marketing/learning pages plus student, teacher, parent, and admin experiences.
 
-This README describes the **current architecture and how to run/test it**. For the current state of the Mongo→Supabase migration effort specifically (what has and has not happened), see [`docs/current-project-status.md`](docs/current-project-status.md) — that document is the single current source of truth on migration status; historical design/rehearsal reports elsewhere under `docs/` describe work as it stood at the time they were written and are not re-updated as the branch progresses.
+This README describes the **current architecture and how to run/test it**. For what runs in production today and the state of the (paused) Mongo→Supabase migration, see [`docs/current-project-status.md`](docs/current-project-status.md) — that document is the single current source of truth on both; historical design/rehearsal reports elsewhere under `docs/` describe work as it stood at the time they were written and are not re-updated as the branch progresses.
 
 ## Architecture (current)
 
 - **Backend** (`backend/`): Node.js + Express REST API, backed by **MongoDB** (Mongoose) as the production datastore. Auth, courses, enrollments/bookings, subscriptions, admin, etc. all live here today. Stripe/PayPal/manual-payment gateway code still exists (see "Enrollment & payments model" below) but is no longer reachable from the customer-facing frontend.
-- **Frontend** (`artifacts/al-rahma-academy/`): React + Vite single-page app (Tailwind, React Router/wouter, React Query).
-- **`lib/db/`**: A Postgres/Supabase schema (Drizzle ORM migrations `0000`–`0025`), RLS/ACL policies, and RPCs — built and tested as **Stage 2J-B/2J-C**'s target schema for a future Mongo→Supabase migration. This schema is fully built and tested locally; it is **not** the backend's live datastore today (see status doc).
+- **Frontend** (`artifacts/al-rahma-academy/`): React + Vite single-page app (Tailwind, React Router/wouter, React Query). Public pages are prerendered at build time (`scripts/prerender.mjs`, routes in `scripts/prerender-routes.mjs`) in English, Arabic, French and Italian.
+- **Email**: sent through the Resend HTTPS API (`backend/config/mailer.js`, `RESEND_API_KEY`); SMTP is only a fallback, because Render's Free plan blocks outbound SMTP.
+- **`lib/db/`**: A Postgres/Supabase schema (Drizzle ORM migrations `0000`–`0029`), RLS/ACL policies, and RPCs — built and tested as **Stage 2J-B/2J-C**'s target schema for a Mongo→Supabase migration that is now paused (owner decision 2026-10-14: stay on MongoDB). This schema is fully built and tested locally; it is **not** the backend's live datastore (see status doc).
 - **`backend/scripts/migration/`**: The Mongo→Supabase migration tooling itself (lossless per-domain transforms, a DB-side `migration_source_ledger` for idempotency/provenance, fault-injection-tested crash recovery, and a production-import orchestrator with approval-manifest/backup/signups-off preflight gates, plus a closed-by-default Production Enablement gate from Stage 2J-C). Reviewed across multiple rounds on PR #70 and PR #71 (both merged to `main`); **never yet run against Supabase Production**.
 - Workspace is managed with **pnpm** (see `pnpm-workspace.yaml`): `artifacts/*`, `lib/*`, `lib/integrations/*`, `scripts`.
 
@@ -41,8 +42,11 @@ There is **no in-app online payment** anywhere in the customer-facing frontend: 
 
 ## Deployment
 
-The backend and frontend deploy through this project's existing hosting configuration (Render for the API, Vercel for the frontend historically) — this repository's automation does not manage or trigger those deploys, and nothing in `backend/scripts/migration/` touches Render, Vercel, or any live deploy target. `DATA_BACKEND` and all production credentials are operator-managed outside this repo; no script here reads, requests, or logs one.
+- **Frontend:** Vercel deploys automatically on every merge to `main`.
+- **Backend:** Render (`academy-backend`) with Auto-Deploy off: after a merge that touches `backend/`, the owner runs a Manual Deploy. `GET /api/healthz` returns `{ status, commit }`, so the live commit can be compared with `main`.
+
+This repository's automation does not trigger the Render deploy, and nothing in `backend/scripts/migration/` touches Render, Vercel, or any live deploy target. `DATA_BACKEND` and all production credentials are operator-managed outside this repo; no script here reads, requests, or logs one.
 
 ## Mongo → Supabase migration status
 
-**See [`docs/current-project-status.md`](docs/current-project-status.md) for the authoritative, current answer.** In one line: MongoDB remains the production source of truth; the Supabase schema and migration tooling are built and locally rehearsal-tested but **no production import or cutover has occurred**; `payments` is explicitly deferred (real records use an unsupported gateway, and is now additionally out of scope of the customer-facing app after Booking-First Enrollment); PR #70 and PR #71 are both merged to `main`.
+**See [`docs/current-project-status.md`](docs/current-project-status.md) for the authoritative, current answer.** In one line: MongoDB remains the production source of truth, and the migration is paused by owner decision (2026-10-14); the Supabase schema and migration tooling are built and locally rehearsal-tested but **no production import or cutover has occurred**; `payments` is explicitly deferred (real records use an unsupported gateway, and is now additionally out of scope of the customer-facing app after Booking-First Enrollment); PR #70 and PR #71 are both merged to `main`.

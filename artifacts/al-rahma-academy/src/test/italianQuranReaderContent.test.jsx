@@ -67,14 +67,6 @@ const shaMushafPage = () => {
   expect(withoutComment.split('role="group"')).toHaveLength(2);
   return sha(withoutComment.replace('role="group"', 'role="button"'));
 };
-// Same change in the rendered reader: the viewport's role attribute (serialised inside JSON).
-const normaliseMushafRole = (json) => json.replace(/(class=\\"mushaf-viewport[^"\\]*\\" )role=\\"group\\"/g, '$1role=\\"button\\"');
-// The hidden breadcrumb wrapper Quran.jsx renders for its published languages.
-const stripHiddenBreadcrumb = (html) => {
-  const out = html.replace(/<div class="sr-only"><nav[\s\S]*?<\/nav><\/div>/, '');
-  expect(out.length, 'one hidden breadcrumb removed').toBeLessThan(html.length);
-  return out;
-};
 const fn = (o) => JSON.stringify(o, (k, v) => (typeof v === 'function' ? `fn:${v.toString()}` : v));
 const ARABIC = /[؀-ۿ]/;
 const BASMALAH = 'بِسۡمِ ٱللَّهِ ٱلرَّحۡمَٰنِ ٱلرَّحِيمِ';
@@ -86,6 +78,7 @@ const setWebdriver = (value) => Object.defineProperty(window.navigator, 'webdriv
 let playSpy;
 
 beforeEach(() => {
+  cleanup(); // start from an empty document even if an earlier test was cut short (#249)
   mocks.getChapters.mockReset().mockResolvedValue(CH);
   mocks.getVerses.mockReset().mockResolvedValue(V);
   mocks.getVersesByPage.mockReset().mockResolvedValue(V);
@@ -170,46 +163,8 @@ describe('protected content and logic are untouched (SHA-256 baselines from orig
     expect(sha(fn(KBD_SIDE_PANEL_TEXT.fr))).toBe('87b4665fdcdc127cc615ba762d53a641121abdc06054a3629b241f190a87204a');
   });
 
-  it('EN/AR/FR/ES/DE reader renders (prerender capture and every real-visitor panel) match origin/main', async () => {
-    const out = {};
-    for (const loc of ['en', 'ar', 'fr', 'es', 'de']) {
-      const p = loc === 'en' ? '/tools/quran-reader' : `/${loc}/tools/quran-reader`;
-      setWebdriver(true);
-      await mountFullPage(p, Quran);
-      out[`${loc}.prerender`] = sha(JSON.stringify({ t: document.title, b: document.querySelector('#main-content')?.innerHTML ?? document.body.innerHTML }));
-      cleanup();
-      setWebdriver(false);
-      await mountFullPage(p, Quran);
-      await settle();
-      const states = [document.body.innerHTML];
-      await press('?'); states.push(document.body.innerHTML); await press('?');
-      await press('g'); states.push(document.body.innerHTML); await press('g');
-      await press('k'); states.push(document.body.innerHTML); await press('k');
-      await press('/'); states.push(document.body.innerHTML); await press('Escape');
-      const hifz = [...document.querySelectorAll('.qlc__tab, button')].find((b) => /Hifz|Memoriz|Mémoris|حفظ|Auswendig|Memoriz/i.test(b.textContent));
-      if (hifz) { await click(hifz); states.push(document.body.innerHTML); }
-      // The Arabic page races its first load: some buttons are `disabled` for a moment.
-      // That is unrelated to this change, so it is normalised away.
-      // The Mushaf viewport's role (Accessibility Wave 5) is normalised back too: it is the only rendered difference.
-      // en/ar (2026-10-13) now render the same hidden (.sr-only) breadcrumb fr/it already had;
-      // it is stripped back out so the rest of the reader must still match origin/main exactly.
-      const visible = ['en', 'ar'].includes(loc) ? states.map(stripHiddenBreadcrumb) : states;
-      out[`${loc}.visitor`] = sha(normaliseMushafRole(JSON.stringify(visible)).replace(/ disabled=\\"\\"/g, ''));
-      cleanup();
-    }
-    expect(out).toEqual({
-      'en.prerender': '4132f9c7a1656807ded1947e0597605deab4ced4ad07ebd770dd846392d5b3f9',
-      'en.visitor': 'f3bce705fcd3921485a17728153c92b3dc44d47dbf47449a94016e0fd59ae939',
-      'ar.prerender': 'dc4eeb3ab04987e1233d60ea3081353a2af822f8c09ac30531a021df52b84fd1',
-      'ar.visitor': 'af12b5440e97f5d4cc5c96110312897fbc3ed671bdc00f8521531734352df45f',
-      'fr.prerender': '7dc5207971e4ff8537c420e34e4359917cc4a43572f0907ab3d0c67e3a02eaed',
-      'fr.visitor': 'bb39190f455ffb30dbb50b99557228ca025a91a13d49f695dd6bd55422220191',
-      'es.prerender': '0302fdbf11c4ce87822489cad77e4b1cc928d4c4a630f76c7a1d68340c1adfee',
-      'es.visitor': '391f90794e1beb5747f37a5b6031d249dff4c202a0a75ad8b9d7f91c10479177',
-      'de.prerender': '0ff77fec5ea0e2d291f8c191e814425a4f70e40d60ea34b95b7b9e7931976528',
-      'de.visitor': '5c1010c08b742a59e042b131343c97c48e019e5d6510311b64ccc0bc7d40dfe9',
-    });
-  });
+  // The EN/AR/FR/ES/DE reader-render baselines live in quranReaderLocaleRenders.test.jsx
+  // (#249): they are the heaviest tests here and now run in their own file.
 });
 
 describe('keyboard shortcuts side panel: complete Italian, keys untouched', () => {

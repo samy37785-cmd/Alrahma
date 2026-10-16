@@ -40,8 +40,9 @@ export async function mountFullPage(urlPath, Page) {
   window.history.replaceState({}, '', urlPath);
   const { basename } = langFromPath(urlPath);
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  let view;
   await act(async () => {
-    render(
+    view = render(
       <QueryClientProvider client={client}>
         <ThemeProvider>
           <BrowserRouter basename={basename}>
@@ -59,6 +60,7 @@ export async function mountFullPage(urlPath, Page) {
   });
   // Let deferred sections and effects settle.
   await act(async () => { await vi.advanceTimersByTimeAsync(50); });
+  return view; // the render result, so a caller can unmount just this page
 }
 
 export function headMeta(selector) {

@@ -19,8 +19,8 @@ export const subscribe = asyncHandler(async (req, res) => {
   res.status(201).json({ message: 'Subscribed successfully' });
 });
 
-// @route  GET /api/newsletter
-// @access Private/Admin
+// @route  GET /api/v1/admin/newsletter
+// @access Admin API (MFA + IP allowlist + users:read)
 export const listSubscribers = asyncHandler(async (req, res) => {
   const subscribers = await Subscriber.find().sort('-createdAt').lean();
   res.json(subscribers);

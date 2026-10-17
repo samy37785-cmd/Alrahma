@@ -16,15 +16,20 @@ export default function AdminProgressModal({ user, onClose, onError }) {
 
   useEffect(() => {
     setLoading(true);
+    // A part that fails to load still shows as empty, but the admin is told,
+    // so an empty report never looks like a student with no progress.
+    const failed = [];
+    const load = (fetchPart, label) => fetchPart(user._id).catch(() => { failed.push(label); return []; });
     Promise.all([
-      getUserHifzReport(user._id).catch(() => []),
-      getUserCourseProgress(user._id).catch(() => []),
-      listCertificates(user._id).catch(() => []),
+      load(getUserHifzReport, 'memorisation'),
+      load(getUserCourseProgress, 'course progress'),
+      load(listCertificates, 'certificates'),
     ]).then(([hifz, courses, userCerts]) => {
       setReport({ hifz, courses });
       setCerts(userCerts);
+      if (failed.length) onError(`Could not load this student's ${failed.join(', ')}`);
     }).finally(() => setLoading(false));
-  }, [user._id]);
+  }, [user._id, onError]);
 
   const handleIssueCert = async (e) => {
     e.preventDefault();

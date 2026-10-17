@@ -1,13 +1,13 @@
 import { Router } from 'express';
-import { issueCertificate, revokeCertificate } from '../../../controllers/certificateController.js';
+import { issueCertificate, revokeCertificate, listCertificates } from '../../../controllers/certificateController.js';
 import { requirePermissions } from '../../../middleware/rbac.js';
 import { asyncHandler } from '../../../utils/asyncHandler.js';
 
 const router = Router();
 
-// Student's own certificates (GET /api/certificates/mine) and admin listing
-// (GET /api/certificates) stay on the legacy router — only the admin
-// mutations moved here.
+// The student's own certificates stay at GET /api/certificates/mine. The
+// admin listing moved here from GET /api/certificates (AR-04).
+router.get('/',       requirePermissions('users:read'),         asyncHandler(listCertificates));
 router.post('/',      requirePermissions('certificates:write'), asyncHandler(issueCertificate));
 router.delete('/:id', requirePermissions('certificates:write'), asyncHandler(revokeCertificate));
 

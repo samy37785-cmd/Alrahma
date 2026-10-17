@@ -51,9 +51,9 @@ export const markMemorized = asyncHandler(async (req, res) => {
   res.json(doc);
 });
 
-// @desc  Admin/teacher: view a specific student's memorization progress.
-// @route GET /api/hifz/user/:userId
-// @access Admin
+// @desc  Admin: view a specific student's memorization progress.
+// @route GET /api/v1/admin/users/:userId/hifz
+// @access Admin API (MFA + IP allowlist + users:read)
 export const getUserHifz = asyncHandler(async (req, res) => {
   const progress = await HifzProgress.find({ user: req.params.userId }).sort({ chapterId: 1 }).lean();
   res.json(progress);

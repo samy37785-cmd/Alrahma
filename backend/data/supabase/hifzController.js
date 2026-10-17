@@ -81,15 +81,15 @@ export const markMemorized = asyncHandler(async (req, res) => {
   res.json(toJson(row));
 });
 
-// @route GET /api/hifz/user/:userId
-// @access Admin
+// @route GET /api/v1/admin/users/:userId/hifz
+// @access Admin API (MFA + IP allowlist + users:read)
 export const getUserHifz = asyncHandler(async (req, res) => {
-  const rows = await withUserContext(req.user._id, async (client) => {
+  const rows = await withUserContext(req.adminUser.id, async (client) => {
     const r = await client.query(
       'SELECT * FROM hifz_progress WHERE user_id = $1 ORDER BY chapter_id',
       [req.params.userId]
     );
     return r.rows;
-  });
+  }, { aal: req.adminAal });
   res.json(rows.map(toJson));
 });

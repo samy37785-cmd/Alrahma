@@ -23,6 +23,8 @@ import referralsRoutes    from './referralsRoutes.js';
 import reviewsRoutes      from './reviewsRoutes.js';
 import systemRoutes       from './systemRoutes.js';
 import invoicesRoutes     from './invoicesRoutes.js';
+import trialsRoutes       from './trialsRoutes.js';
+import newsletterRoutes   from './newsletterRoutes.js';
 import {
   coursesRouter as supabaseCoursesRoutes,
   liveClassesRouter as supabaseLiveClassesRoutes,
@@ -38,6 +40,10 @@ import supabaseContactAdminRoutes from '../../../data/supabase/admin/contactAdmi
 import supabaseReferralsAdminRoutes from '../../../data/supabase/admin/referralsAdminRoutes.js';
 import supabaseSystemAdminRoutes from '../../../data/supabase/admin/systemAdminRoutes.js';
 import supabaseInvoicesAdminRoutes from '../../../data/supabase/admin/invoicesAdminRoutes.js';
+import {
+  trialsRouter as supabaseTrialsRoutes,
+  newsletterRouter as supabaseNewsletterRoutes,
+} from '../../../data/supabase/admin/leadsAdminRoutes.js';
 
 const router = Router();
 
@@ -118,5 +124,10 @@ router.use('/system',       isSupabaseBackend() ? supabaseSystemAdminRoutes : sy
 // data/supabase/invoiceController.js's getAdminInvoices for what it now
 // does under supabase mode instead of silently failing).
 router.use('/invoices',     isSupabaseBackend() ? supabaseInvoicesAdminRoutes : invoicesRoutes);
+// AR-04: the admin reads that used to run on a password-only `role: 'admin'`
+// account (/api/trials, /api/newsletter) live here now, behind the same MFA,
+// IP allowlist and RBAC as every other admin route.
+router.use('/trials',       isSupabaseBackend() ? supabaseTrialsRoutes : trialsRoutes);
+router.use('/newsletter',   isSupabaseBackend() ? supabaseNewsletterRoutes : newsletterRoutes);
 
 export default router;

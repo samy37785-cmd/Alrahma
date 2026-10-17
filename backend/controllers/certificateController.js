@@ -63,8 +63,8 @@ export const getMyCertificates = asyncHandler(async (req, res) => {
 });
 
 // @desc  Admin: list all certificates (optionally for one student).
-// @route GET /api/certificates?userId=...
-// @access Admin
+// @route GET /api/v1/admin/certificates?userId=...
+// @access Admin API (MFA + IP allowlist + users:read)
 export const listCertificates = asyncHandler(async (req, res) => {
   const filter = req.query.userId ? { user: req.query.userId } : {};
   const certs = await Certificate.find(filter)

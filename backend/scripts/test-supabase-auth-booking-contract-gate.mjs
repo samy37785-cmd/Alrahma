@@ -234,11 +234,20 @@ async function main() {
       log('cleaning up test data (deleting only this run\'s tagged rows) before container teardown...');
       await verifyPool.query('delete from enrollments where notes = $1', [notesTag]);
       await verifyPool.query('delete from quran_bookmarks where note = $1', [notesTag]);
+      // AR-04 phase rows. A certificate blocks its profile's delete (ON DELETE
+      // restrict) and an MFA factor blocks its auth.users delete, so both go
+      // before the users below.
+      await verifyPool.query('delete from certificates where certificate_number = $1', [`CERT-AR04-${runId}`]);
+      await verifyPool.query(`delete from auth.mfa_factors where user_id in (select id from auth.users where email like $1)`, [`auth-booking-gate-%-${runId}@example.invalid`]);
+      await verifyPool.query('delete from trial_requests where message = $1', [notesTag]);
+      await verifyPool.query('delete from subscribers where email = $1', [`ar04-subscriber-${runId}@example.invalid`]);
       // profiles deleted first (no FK from profiles back to enrollments/
       // bookmarks; auth.users.id is profiles' own FK target) so the
       // seeded auth.users rows below can be removed cleanly either way.
       await verifyPool.query(`delete from profiles where id in (select id from auth.users where email like $1)`, [`auth-booking-gate-%-${runId}@example.invalid`]);
       await verifyPool.query(`delete from auth.users where email like $1`, [`auth-booking-gate-%-${runId}@example.invalid`]);
+      // Its course_progress rows went with the profiles (ON DELETE cascade).
+      await verifyPool.query('delete from courses where title = $1', [`AR04 Course ${runId}`]);
 
       const enrollmentsAfterCleanup = await verifyPool.query('select count(*)::int as n from enrollments');
       const bookmarksAfterCleanup = await verifyPool.query('select count(*)::int as n from quran_bookmarks');

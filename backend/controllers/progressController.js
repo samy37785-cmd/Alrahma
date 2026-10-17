@@ -52,9 +52,9 @@ async function awardXP(userId, amount) {
   return { xp: user.xp, level: user.level, streak: user.streak, badges: user.badges };
 }
 
-// @desc  Admin/teacher: a student's progress across all their courses.
-// @route GET /api/progress/user/:userId
-// @access Admin
+// @desc  Admin: a student's progress across all their courses.
+// @route GET /api/v1/admin/users/:userId/progress
+// @access Admin API (MFA + IP allowlist + users:read)
 export const getUserProgress = asyncHandler(async (req, res) => {
   const rows = await CourseProgress.find({ user: req.params.userId })
     .populate('course', 'title icon resources modules')

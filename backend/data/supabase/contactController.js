@@ -30,4 +30,3 @@ export const submitContact = asyncHandler(async (req, res) => {
 
   res.status(201).json({ message: 'Message received. We will get back to you soon.', id: null });
 });
-

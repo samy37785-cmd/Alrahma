@@ -92,4 +92,3 @@ export const getMyEnrollment = asyncHandler(async (req, res) => {
     : null;
   res.json(toClientEnrollment(enrollment));
 });
-

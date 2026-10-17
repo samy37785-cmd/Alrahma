@@ -63,4 +63,3 @@ export const validateCoupon = asyncHandler(async (req, res) => {
     discountValue: Number(result.discountValue),
   });
 });
-

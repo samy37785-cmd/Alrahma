@@ -180,4 +180,3 @@ export const getMyEnrollment = asyncHandler(async (req, res) => {
 
   res.json(enrollment ? toClientEnrollment(mapRow(enrollment)) : null);
 });
-

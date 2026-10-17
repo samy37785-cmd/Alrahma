@@ -3,11 +3,13 @@ import assert from 'node:assert/strict';
 import request from 'supertest';
 import app from '../app.js';
 import User from '../models/User.js';
+import AdminUser from '../models/AdminUser.js';
 import Course from '../models/Course.js';
 import Certificate from '../models/Certificate.js';
 import Message from '../models/Message.js';
 import { setupTestDb, clearTestDb, teardownTestDb } from './helpers/db.js';
 import { agentWithCsrf } from './helpers/csrf.js';
+import { signAccessToken } from '../utils/adminAuthTokens.js';
 
 // Coverage for T5: ~50 read-only queries across the backend were converted
 // to .lean() (courseController, certificateController, messageController,
@@ -26,13 +28,14 @@ before(async () => { await setupTestDb(); }, { timeout: 60_000 });
 after(async () => { await teardownTestDb(); });
 beforeEach(async () => { await clearTestDb(); });
 
-async function makeAdminAgent() {
-  const { agent, csrf } = await agentWithCsrf(app);
-  const email = `admin${Date.now()}${Math.random()}@example.com`;
-  await User.create({ name: 'Admin', email, password: PASSWORD, role: 'admin' });
-  const login = await agent.post('/api/auth/login').set(csrf).send({ email, password: PASSWORD });
-  assert.equal(login.status, 200);
-  return { agent, csrf };
+// The admin certificate listing is on the MFA admin API (AR-04), so this is an
+// MFA-verified admin console session, not a role 'admin' account.
+async function makeAdminCookie() {
+  const admin = await AdminUser.create({
+    name: 'Admin', email: `admin${Date.now()}${Math.random()}@example.com`,
+    password: 'Sup3r-Str0ng-Pass!', role: 'admin', mfaEnabled: true,
+  });
+  return `admin_at=${signAccessToken(admin._id, admin.role, true)}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -58,7 +61,7 @@ test('GET /api/courses: returns the real published course with correct field typ
 
 test('certificates: issue -> list (admin) -> mine (student), populated course field intact under lean', async () => {
   const course = await Course.create({ title: 'Hifz Program', description: 'x', published: true });
-  const { agent: adminAgent, csrf: adminCsrf } = await makeAdminAgent();
+  const adminCookie = await makeAdminCookie();
   const { agent: studentAgent, csrf: studentCsrf } = await agentWithCsrf(app);
   const studentEmail = `cert-student-${Date.now()}@example.com`;
   await studentAgent.post('/api/auth/register').set(studentCsrf).send({ name: 'Student', email: studentEmail, password: PASSWORD });
@@ -66,7 +69,7 @@ test('certificates: issue -> list (admin) -> mine (student), populated course fi
 
   await Certificate.create({ user: student._id, studentName: student.name, title: 'Ijazah', type: 'ijazah', course: course._id });
 
-  const listRes = await adminAgent.get('/api/certificates').set(adminCsrf);
+  const listRes = await request(app).get('/api/v1/admin/certificates').set('Cookie', adminCookie);
   assert.equal(listRes.status, 200);
   assert.equal(listRes.body.length, 1);
   assert.equal(listRes.body[0].course.title, 'Hifz Program'); // populate survives .lean()

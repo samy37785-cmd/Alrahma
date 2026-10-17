@@ -59,8 +59,8 @@ export const createTrial = asyncHandler(async (req, res) => {
 });
 
 // @desc   List all trial requests (for the admin dashboard)
-// @route  GET /api/trials
-// @access Private/Admin
+// @route  GET /api/v1/admin/trials
+// @access Admin API (MFA + IP allowlist + enrollments:read)
 export const getTrials = asyncHandler(async (req, res) => {
   const trials = await TrialRequest.find().sort('-createdAt').lean();
   res.json(trials);

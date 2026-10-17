@@ -45,14 +45,14 @@ export const getMyCertificates = asyncHandler(async (req, res) => {
   res.json(rows.map(toJson));
 });
 
-// @route GET /api/certificates?userId=...
-// @access Admin
+// @route GET /api/v1/admin/certificates?userId=...
+// @access Admin API (MFA + IP allowlist + users:read)
 export const listCertificates = asyncHandler(async (req, res) => {
-  const rows = await withUserContext(req.user._id, async (client) => {
+  const rows = await withUserContext(req.adminUser.id, async (client) => {
     const r = req.query.userId
       ? await client.query(`${SELECT_WITH_COURSE} WHERE c.user_id = $1 ORDER BY c.issued_at DESC`, [req.query.userId])
       : await client.query(`${SELECT_WITH_COURSE} ORDER BY c.issued_at DESC`);
     return r.rows;
-  });
+  }, { aal: req.adminAal });
   res.json(rows.map(toJson));
 });

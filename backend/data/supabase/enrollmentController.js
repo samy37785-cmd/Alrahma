@@ -10,7 +10,6 @@
 // backend's controller stays independently readable; if the two ever drift,
 // grep both for `sendMail(` to find both call sites.
 import { asyncHandler } from '../../utils/asyncHandler.js';
-import { parsePagination, sendPaginated } from '../../utils/pagination.js';
 import { pickPublicBookingFields, normalizeWhatsapp } from '../../utils/enrollmentValidation.js';
 import { toClientEnrollment } from '../../utils/clientViews.js';
 import { withAnonContext, withUserContext } from './client.js';
@@ -180,37 +179,4 @@ export const getMyEnrollment = asyncHandler(async (req, res) => {
   }, { email: req.user.email });
 
   res.json(enrollment ? toClientEnrollment(mapRow(enrollment)) : null);
-});
-
-// @route  GET /api/enrollments?page=1&limit=500
-// @access Admin
-export const getEnrollments = asyncHandler(async (req, res) => {
-  const { page, limit, skip } = parsePagination(req.query, { defaultLimit: 500, maxLimit: 500 });
-
-  // enrollments_select_admin is is_admin()-gated (no AAL2 needed) —
-  // withUserContext(req.user._id, ...) is sufficient (protect + adminOnly
-  // already verified req.user.role === 'admin').
-  // Sequential, not Promise.all — a single pg client can only run one query
-  // at a time; firing several concurrently on it is deprecated, undefined
-  // behavior, not real parallelism (same bug class found and fixed in
-  // parentController.js/reviewController.js during the Al-Rahma Final
-  // Corrections Part A rehearsal).
-  const { rows, total } = await withUserContext(req.user._id, async (client) => {
-    const listRes = await client.query(
-      `SELECT id, name, email, whatsapp, country, city, timezone, times,
-              subjects, lang, level, age_group, gender_pref,
-              preferred_teacher_key, preferred_teacher_name,
-              requested_plan_slug, status, notes, booking_ref, agreed_amount,
-              currency, payment_method_external, paid_at, renewal_at,
-              admin_note, created_at, updated_at
-         FROM enrollments
-        ORDER BY created_at DESC
-        LIMIT $1 OFFSET $2`,
-      [limit, skip]
-    );
-    const countRes = await client.query('SELECT count(*)::int AS total FROM enrollments');
-    return { rows: listRes.rows, total: countRes.rows[0].total };
-  });
-
-  return sendPaginated(res, { data: rows.map(mapRow), total, page, limit });
 });

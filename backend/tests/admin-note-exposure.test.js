@@ -251,7 +251,7 @@ test('parity: /mine returns the same key set on both backends (Mongo adds its ow
 
 // ── Admin routes keep the field ────────────────────────────────────────────
 
-test('admin paths still return adminNote (v1 admin and legacy admin list)', async () => {
+test('the v1 admin path still returns adminNote; the old legacy list is closed (AR-04)', async () => {
   const booking = await Enrollment.create({ ...FULL_BOOKING, email: 'booking@example.com' });
 
   const { agent, csrf, cookieHeader } = await adminAgent();
@@ -261,16 +261,16 @@ test('admin paths still return adminNote (v1 admin and legacy admin list)', asyn
 
   const { auth } = await makeStudent('admin');
   const legacy = await request(app).get('/api/enrollments').set(auth);
-  assert.equal(legacy.status, 200);
-  assert.ok(JSON.stringify(legacy.body).includes(MARKER), 'legacy admin list must still see adminNote');
+  assert.equal(legacy.status, 404);
+  assertNoAdminData(legacy.body, 'closed legacy admin list');
 });
 
 test('a student cannot reach the admin enrollment list', async () => {
   await Enrollment.create({ ...FULL_BOOKING, email: 'other@example.com' });
   const { auth } = await makeStudent();
   const res = await request(app).get('/api/enrollments').set(auth);
-  assert.equal(res.status, 403);
-  assertNoAdminData(res.body, 'forbidden admin list');
+  assert.equal(res.status, 404);
+  assertNoAdminData(res.body, 'closed admin list');
 });
 
 // ── Public reviews ─────────────────────────────────────────────────────────

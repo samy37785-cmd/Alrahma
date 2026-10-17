@@ -62,13 +62,9 @@ export async function protect(req, res, next) {
   next();
 }
 
-// Restricts a route to admins only. Use after `protect`.
-export function adminOnly(req, res, next) {
-  if (req.user?.role !== 'admin') {
-    return res.status(403).json({ message: 'Admin access required' });
-  }
-  next();
-}
+// There is deliberately no adminOnly here any more (AR-04). A regular
+// account's role === 'admin' only proved a password, so every admin read
+// that used it now lives under /api/v1/admin (TOTP MFA, IP allowlist, RBAC).
 
 // Restricts a route to teachers only. Use after `protect`.
 export function teacherOnly(req, res, next) {

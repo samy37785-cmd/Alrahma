@@ -1,7 +1,6 @@
 ﻿import { body } from 'express-validator';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { handleValidationErrors } from '../utils/validationHelper.js';
-import { parsePagination } from '../utils/pagination.js';
 import { auditFromReq } from '../services/auditService.js';
 import Coupon from '../models/Coupon.js';
 
@@ -76,15 +75,6 @@ export const createCoupon = asyncHandler(async (req, res) => {
   const coupon = await Coupon.create(req.body);
   await auditFromReq(req, 'coupon.create', 'Coupon', coupon._id, null, coupon, 'info');
   res.status(201).json({ coupon });
-});
-
-export const listCoupons = asyncHandler(async (req, res) => {
-  const { page, limit, skip } = parsePagination(req.query, { defaultLimit: 100, maxLimit: 200 });
-  const [coupons, total] = await Promise.all([
-    Coupon.find().sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
-    Coupon.countDocuments(),
-  ]);
-  res.json({ coupons, total, page, pages: Math.ceil(total / limit) });
 });
 
 export const updateCoupon = asyncHandler(async (req, res) => {

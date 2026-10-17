@@ -11,6 +11,7 @@ import * as courses from './coursesAdminController.js';
 import * as liveClasses from './liveClassesAdminController.js';
 import * as certificates from './certificatesAdminController.js';
 import * as reviews from './reviewsAdminController.js';
+import { listCertificates } from '../certificateController.js';
 
 export const coursesRouter = Router();
 coursesRouter.get('/', requirePermissions('courses:read'), asyncHandler(courses.list));
@@ -30,6 +31,8 @@ liveClassesRouter.patch('/:id', requirePermissions('live_classes:write'), asyncH
 liveClassesRouter.delete('/:id', requirePermissions('live_classes:write'), asyncHandler(liveClasses.remove));
 
 export const certificatesRouter = Router();
+// The admin listing moved here from GET /api/certificates (AR-04).
+certificatesRouter.get('/', requirePermissions('users:read'), asyncHandler(listCertificates));
 certificatesRouter.post('/', requirePermissions('certificates:write'), asyncHandler(certificates.issueCertificate));
 certificatesRouter.delete('/:id', requirePermissions('certificates:write'), asyncHandler(certificates.revokeCertificate));
 

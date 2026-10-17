@@ -14,10 +14,10 @@ import { asyncHandler } from '../../utils/asyncHandler.js';
 import { withUserContext } from './client.js';
 import { hasActiveSubscription } from './loadUser.js';
 
-// @route GET /api/progress/user/:userId
-// @access Admin
+// @route GET /api/v1/admin/users/:userId/progress
+// @access Admin API (MFA + IP allowlist + users:read)
 export const getUserProgress = asyncHandler(async (req, res) => {
-  const rows = await withUserContext(req.user._id, async (client) => {
+  const rows = await withUserContext(req.adminUser.id, async (client) => {
     const r = await client.query(
       `SELECT cp.completed, cp.last_activity, c.id AS course_id, c.title, c.icon, c.resources, c.modules
          FROM course_progress cp
@@ -27,7 +27,7 @@ export const getUserProgress = asyncHandler(async (req, res) => {
       [req.params.userId]
     );
     return r.rows;
-  });
+  }, { aal: req.adminAal });
 
   const report = rows.map((r) => {
     const lessonCount = (r.modules || []).reduce((n, m) => n + (m.lessons?.length || 0), 0);

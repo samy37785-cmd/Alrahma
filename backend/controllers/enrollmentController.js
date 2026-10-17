@@ -3,7 +3,6 @@ import Enrollment from '../models/Enrollment.js';
 import { sendMail, ADMIN_EMAIL } from '../config/mailer.js';
 import { enrollmentAdminEmail, enrollmentStudentEmail } from '../config/emailTemplates.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
-import { parsePagination, sendPaginated } from '../utils/pagination.js';
 import { pickPublicBookingFields, normalizeWhatsapp } from '../utils/enrollmentValidation.js';
 import { toClientEnrollment } from '../utils/clientViews.js';
 import logger from '../config/logger.js';
@@ -92,15 +91,4 @@ export const getMyEnrollment = asyncHandler(async (req, res) => {
     ? await Enrollment.findOne({ email: req.user.email }).sort('-createdAt').lean()
     : null;
   res.json(toClientEnrollment(enrollment));
-});
-
-// @route  GET /api/enrollments?page=1&limit=50
-// @access Admin
-export const getEnrollments = asyncHandler(async (req, res) => {
-  const { page, limit, skip } = parsePagination(req.query, { defaultLimit: 500, maxLimit: 500 });
-  const [data, total] = await Promise.all([
-    Enrollment.find().sort('-createdAt').skip(skip).limit(limit).lean(),
-    Enrollment.countDocuments(),
-  ]);
-  return sendPaginated(res, { data, total, page, limit });
 });

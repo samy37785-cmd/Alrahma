@@ -18,6 +18,7 @@ import crypto from 'node:crypto';
 import jwt from 'jsonwebtoken';
 import request from 'supertest';
 import { signToken } from '../../utils/authCookie.js';
+import { signAccessToken } from '../../utils/adminAuthTokens.js';
 import { withUserContext, getPool } from '../../data/supabase/client.js';
 
 let skip;
@@ -344,4 +345,144 @@ test('authenticated: direct RLS on enrollments — the owner sees only their own
     0,
     'RLS itself — not just the app\'s own WHERE clause — must block a bystander from seeing the owner\'s rows even via a completely unscoped SELECT',
   );
+});
+
+// -----------------------------------------------------------------
+// Phase 6 — AR-04: the admin reads that used to run on a password-only
+// regular account (profiles.role = 'admin') are closed, and their
+// replacements under /api/v1/admin need a verified MFA (AAL2) admin session
+// with the right permission. Real Postgres, real RLS, real admin loading
+// (data/supabase/loadAdmin.js) and the real admin_sat AAL check. The IP
+// allowlist half is in tests/admin-legacy-routes-ar04-supabase.test.js.
+// -----------------------------------------------------------------
+
+// An admin the way the bootstrap tools leave one: a role assignment, the
+// coarse profiles.role = 'admin' that 0013's admin_set_role() also sets, and a
+// verified TOTP factor. Written directly as the container's superuser.
+async function seedAdmin(label, role) {
+  const admin = await seedUser(label);
+  const pool = getPool();
+  await pool.query(`UPDATE profiles SET role = 'admin' WHERE id = $1`, [admin.id]);
+  await pool.query(`INSERT INTO admin_role_assignments (user_id, role) VALUES ($1, $2)`, [admin.id, role]);
+  await pool.query(`INSERT INTO auth.mfa_factors (user_id, status) VALUES ($1, 'verified')`, [admin.id]);
+  return admin;
+}
+
+function adminCookies(admin, role, aal) {
+  const cookies = [`admin_at=${signAccessToken(admin.id, role, aal === 'aal2')}`];
+  if (aal) {
+    const sat = jwt.sign({ sub: admin.id, aal, role: 'authenticated', email: admin.email }, process.env.SUPABASE_JWT_SECRET, { expiresIn: '10m' });
+    cookies.push(`admin_sat=${sat}`);
+  }
+  return cookies.join('; ');
+}
+
+let ar04Seed;
+async function seedAr04Data() {
+  if (ar04Seed) return ar04Seed;
+  const pool = getPool();
+  const student = await seedUser('ar04-student');
+  await pool.query(`INSERT INTO trial_requests (name, email, message) VALUES ('AR04 Trial', $1, $2)`, [`ar04-trial-${RUN_ID}@example.invalid`, NOTES_TAG]);
+  await pool.query(`INSERT INTO subscribers (email) VALUES ($1)`, [`ar04-subscriber-${RUN_ID}@example.invalid`]);
+  const course = (await pool.query(`INSERT INTO courses (title, description) VALUES ($1, 'x') RETURNING id`, [`AR04 Course ${RUN_ID}`])).rows[0];
+  await pool.query(`INSERT INTO course_progress (user_id, course_id) VALUES ($1, $2)`, [student.id, course.id]);
+  await pool.query(`INSERT INTO hifz_progress (user_id, chapter_id, chapter_name, total_verses, memorized_verses) VALUES ($1, 1, 'Al-Fatiha', 7, '[1,2]'::jsonb)`, [student.id]);
+  await pool.query(
+    `INSERT INTO certificates (certificate_number, user_id, student_name, type, title, course_id) VALUES ($1, $2, 'AR04 Student', 'ijazah', $3, $4)`,
+    [`CERT-AR04-${RUN_ID}`, student.id, `AR04 Ijazah ${RUN_ID}`, course.id],
+  );
+  ar04Seed = { student };
+  return ar04Seed;
+}
+
+const ar04ClosedPaths = (studentId) => [
+  '/api/enrollments', '/api/trials', '/api/newsletter', '/api/contact', '/api/coupons',
+  '/api/certificates', `/api/certificates?userId=${studentId}`, '/api/invoices/admin',
+  `/api/progress/user/${studentId}`, `/api/hifz/user/${studentId}`,
+];
+const ar04AdminPaths = (studentId) => [
+  '/api/v1/admin/trials', '/api/v1/admin/newsletter', `/api/v1/admin/certificates?userId=${studentId}`,
+  `/api/v1/admin/users/${studentId}/progress`, `/api/v1/admin/users/${studentId}/hifz`,
+];
+
+test('AR-04: an admin\'s own password-only login (profiles.role = admin) gets 404 on every old admin read and 401 on the new ones', { skip }, async () => {
+  const { default: app } = await import('../../app.js');
+  const { student } = await seedAr04Data();
+  const admin = await seedAdmin('ar04-password-only', 'admin');
+  const cookie = `token=${signToken(admin.id, 'user', 0)}`;
+  for (const path of ar04ClosedPaths(student.id)) {
+    const res = await request(app).get(path).set('Cookie', cookie);
+    assert.equal(res.status, 404, `${path} expected 404, got ${res.status}`);
+    assert.ok(!JSON.stringify(res.body).includes(RUN_ID), `${path} must not return any of this run's data`);
+  }
+  for (const path of ar04AdminPaths(student.id)) {
+    const res = await request(app).get(path).set('Cookie', cookie);
+    assert.equal(res.status, 401, `${path} expected 401, got ${res.status}`);
+  }
+});
+
+test('AR-04: the new admin reads refuse an admin session without a verified MFA step (no admin_sat, or aal1)', { skip }, async () => {
+  const { default: app } = await import('../../app.js');
+  const { student } = await seedAr04Data();
+  const admin = await seedAdmin('ar04-no-mfa', 'admin');
+  for (const aal of [undefined, 'aal1']) {
+    for (const path of ar04AdminPaths(student.id)) {
+      const res = await request(app).get(path).set('Cookie', adminCookies(admin, 'admin', aal));
+      assert.equal(res.status, 403, `${path} (${aal ?? 'no admin_sat'}) expected 403, got ${res.status}`);
+      assert.equal(res.body.code, 'MFA_REQUIRED');
+    }
+  }
+});
+
+test('AR-04: an MFA-verified (AAL2) admin reads trials, subscribers, certificates, progress and memorisation', { skip }, async () => {
+  const { default: app } = await import('../../app.js');
+  const { student } = await seedAr04Data();
+  const admin = await seedAdmin('ar04-verified', 'admin');
+  const cookie = adminCookies(admin, 'admin', 'aal2');
+  const get = (path) => request(app).get(path).set('Cookie', cookie);
+
+  const trials = await get('/api/v1/admin/trials');
+  assert.equal(trials.status, 200);
+  assert.equal(trials.body.filter((t) => t.message === NOTES_TAG).length, 1);
+
+  const subscribers = await get('/api/v1/admin/newsletter');
+  assert.equal(subscribers.status, 200);
+  assert.ok(subscribers.body.some((s) => s.email === `ar04-subscriber-${RUN_ID}@example.invalid`));
+
+  const certificates = await get(`/api/v1/admin/certificates?userId=${student.id}`);
+  assert.equal(certificates.status, 200);
+  assert.equal(certificates.body.length, 1);
+  assert.equal(certificates.body[0].title, `AR04 Ijazah ${RUN_ID}`);
+  assert.equal(certificates.body[0].course.title, `AR04 Course ${RUN_ID}`);
+
+  const progress = await get(`/api/v1/admin/users/${student.id}/progress`);
+  assert.equal(progress.status, 200);
+  assert.equal(progress.body.length, 1);
+  assert.equal(progress.body[0].title, `AR04 Course ${RUN_ID}`);
+
+  const hifz = await get(`/api/v1/admin/users/${student.id}/hifz`);
+  assert.equal(hifz.status, 200);
+  assert.equal(hifz.body.length, 1);
+  assert.deepEqual(hifz.body[0].memorizedVerses, [1, 2]);
+});
+
+test('AR-04: the new admin reads follow role_permissions (editor: trials only; viewer: all)', { skip }, async () => {
+  const { default: app } = await import('../../app.js');
+  const { student } = await seedAr04Data();
+
+  const editor = await seedAdmin('ar04-editor', 'editor');
+  const editorCookie = adminCookies(editor, 'editor', 'aal2');
+  const editorTrials = await request(app).get('/api/v1/admin/trials').set('Cookie', editorCookie);
+  assert.equal(editorTrials.status, 200);
+  for (const path of ar04AdminPaths(student.id).filter((p) => !p.endsWith('/trials'))) {
+    const res = await request(app).get(path).set('Cookie', editorCookie);
+    assert.equal(res.status, 403, `editor ${path} expected 403, got ${res.status}`);
+  }
+
+  const viewer = await seedAdmin('ar04-viewer', 'viewer');
+  const viewerCookie = adminCookies(viewer, 'viewer', 'aal2');
+  for (const path of ar04AdminPaths(student.id)) {
+    const res = await request(app).get(path).set('Cookie', viewerCookie);
+    assert.equal(res.status, 200, `viewer ${path} expected 200, got ${res.status}`);
+  }
 });

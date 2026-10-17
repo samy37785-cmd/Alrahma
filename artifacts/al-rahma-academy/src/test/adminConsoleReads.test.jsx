@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, waitFor, cleanup } from '@testing-library/react';
+import { render, screen, waitFor, within, cleanup } from '@testing-library/react';
 
 // AR-04: the admin console used to read trial leads, newsletter subscribers
 // and a student's progress report through the regular-account API (http),
@@ -42,24 +42,96 @@ describe('admin console reads use the MFA admin API', () => {
 describe('the progress window', () => {
   const user = { _id: 'u1', name: 'Amina', email: 'amina@example.com' };
 
-  it('loads all three parts through the admin API', async () => {
+  // One record per part, so each part's own content can be looked for.
+  const DATA = {
+    progress: [{ courseId: 'c1', title: 'Tajweed Foundations', icon: '📖', done: 1, total: 4, percent: 25 }],
+    hifz: [{ _id: 'u1:1', chapterId: 1, chapterName: 'Al-Fatiha', totalVerses: 7, memorizedVerses: [1, 2, 3] }],
+    certificates: [{ _id: 'cert1', title: 'Juz Amma completion', certificateNumber: 'CERT-2026-0001', type: 'completion' }],
+  };
+  const SHOWS = {
+    progress: /Tajweed Foundations/, // rendered after the course icon
+    hifz: /Al-Fatiha/,
+    certificates: /Juz Amma completion/,
+  };
+  const FAILURE = {
+    progress: /Could not load course progress/,
+    hifz: /Could not load memorization progress/,
+    certificates: /Could not load certificates/,
+  };
+  const EMPTY_TEXT = {
+    progress: 'No course activity yet.',
+    hifz: 'No memorization recorded yet.',
+  };
+  const partOf = (url) => (url.endsWith('/progress') ? 'progress' : url.endsWith('/hifz') ? 'hifz' : 'certificates');
+  const forbidden = () => Promise.reject(Object.assign(new Error('403'), { response: { status: 403 } }));
+
+  // Serves DATA (or empty lists), failing the parts named in `failing`.
+  function serve({ failing = [], empty = false } = {}) {
+    adminGet.mockImplementation((url) => {
+      const part = partOf(url);
+      if (failing.includes(part)) return forbidden();
+      return Promise.resolve({ data: empty ? [] : DATA[part] });
+    });
+  }
+
+  async function openWindow() {
     const onError = vi.fn();
     render(<AdminProgressModal user={user} onClose={() => {}} onError={onError} />);
-    await waitFor(() => expect(adminGet).toHaveBeenCalledTimes(3));
+    const dialog = await screen.findByRole('dialog');
+    await waitFor(() => expect(within(dialog).queryByText(/Loading report/)).toBeNull());
+    return { dialog: within(dialog), onError };
+  }
+
+  it('loads all three parts through the admin API and shows every one of them', async () => {
+    serve();
+    const { dialog, onError } = await openWindow();
     expect(adminGet.mock.calls.map((c) => c[0]).sort()).toEqual([
       '/v1/admin/certificates', '/v1/admin/users/u1/hifz', '/v1/admin/users/u1/progress',
     ]);
-    await waitFor(() => expect(screen.queryByText(/Loading report/)).toBeNull());
+    for (const part of Object.keys(SHOWS)) expect(dialog.getByText(SHOWS[part])).toBeTruthy();
+    expect(dialog.getByText('1/4')).toBeTruthy();
+    expect(dialog.queryByRole('alert')).toBeNull();
+    for (const text of Object.values(EMPTY_TEXT)) expect(dialog.queryByText(text)).toBeNull();
     expect(onError).not.toHaveBeenCalled();
   });
 
-  it('says so when a part cannot be loaded, instead of showing an empty report as if the student had none', async () => {
-    adminGet.mockImplementation((url) => (url.endsWith('/progress')
-      ? Promise.reject(Object.assign(new Error('403'), { response: { status: 403 } }))
-      : Promise.resolve({ data: [] })));
-    const onError = vi.fn();
-    render(<AdminProgressModal user={user} onClose={() => {}} onError={onError} />);
-    await waitFor(() => expect(onError).toHaveBeenCalledTimes(1));
-    expect(onError.mock.calls[0][0]).toMatch(/course progress/);
+  it('a student with genuinely no records still sees the "nothing yet" text, and no error', async () => {
+    serve({ empty: true });
+    const { dialog } = await openWindow();
+    for (const text of Object.values(EMPTY_TEXT)) expect(dialog.getByText(text)).toBeTruthy();
+    expect(dialog.queryByRole('alert')).toBeNull();
+  });
+
+  it.each(['progress', 'hifz', 'certificates'])(
+    'when %s fails: its own message shows in the window, not an empty state, and the other parts stay',
+    async (failingPart) => {
+      serve({ failing: [failingPart] });
+      const { dialog, onError } = await openWindow();
+
+      const alerts = dialog.getAllByRole('alert');
+      expect(alerts).toHaveLength(1);
+      expect(alerts[0].textContent).toMatch(FAILURE[failingPart]);
+      expect(alerts[0].textContent).toMatch(/not an empty record/);
+
+      if (EMPTY_TEXT[failingPart]) expect(dialog.queryByText(EMPTY_TEXT[failingPart])).toBeNull();
+      expect(dialog.queryByText(SHOWS[failingPart])).toBeNull();
+
+      for (const part of Object.keys(SHOWS).filter((p) => p !== failingPart)) {
+        expect(dialog.getByText(SHOWS[part])).toBeTruthy();
+        expect(dialog.queryByText(FAILURE[part])).toBeNull();
+      }
+      // The message is in the window itself, not the page banner behind it.
+      expect(onError).not.toHaveBeenCalled();
+    },
+  );
+
+  it('when every part fails: three messages, no "nothing yet" text, and the certificate form is still there', async () => {
+    serve({ failing: ['progress', 'hifz', 'certificates'] });
+    const { dialog } = await openWindow();
+    const alerts = dialog.getAllByRole('alert').map((a) => a.textContent);
+    expect(alerts).toHaveLength(3);
+    for (const pattern of Object.values(FAILURE)) expect(alerts.some((t) => pattern.test(t))).toBe(true);
+    for (const text of Object.values(EMPTY_TEXT)) expect(dialog.queryByText(text)).toBeNull();
+    expect(dialog.getByRole('button', { name: /Issue certificate/ })).toBeTruthy();
   });
 });

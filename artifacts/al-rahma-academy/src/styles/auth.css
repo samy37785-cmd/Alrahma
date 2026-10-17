@@ -69,6 +69,11 @@
 }
 .admin__del:hover { background: #f5c6c0; }
 .admin__empty { color: var(--muted); font-size: .9rem; padding: 10px 0; }
+/* A part of a report that failed to load (not an empty record). */
+.admin__load-error {
+  background: #fdecea; color: #c0392b; border-radius: 8px;
+  padding: 10px 14px; font-size: .9rem; font-weight: 600; margin: 0 0 12px;
+}
 .admin__table-wrap { overflow-x: auto; }
 .admin__table { width: 100%; border-collapse: collapse; font-size: .92rem; }
 .admin__table th, .admin__table td { text-align: left; padding: 12px 14px; border-bottom: 1px solid var(--line); }

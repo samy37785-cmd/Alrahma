@@ -86,14 +86,6 @@ export function parentOnly(req, res, next) {
   next();
 }
 
-// Allows staff (admin OR teacher). Use after `protect`.
-export function staffOnly(req, res, next) {
-  if (req.user?.role !== 'admin' && req.user?.role !== 'teacher') {
-    return res.status(403).json({ message: 'Staff access required' });
-  }
-  next();
-}
-
 // Attaches req.user if a valid token is present — but never blocks the request.
 // Use on routes that are public but benefit from knowing who the caller is.
 export async function softProtect(req, res, next) {

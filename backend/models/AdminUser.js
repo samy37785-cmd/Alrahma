@@ -19,6 +19,10 @@ export const ALL_PERMISSIONS = [
   // viewer split existed for these resources before the migration).
   'blog:write','coupons:write','contact:write',
   'certificates:write','referrals:write','reviews:write',
+  // Scheduling, editing and deleting live classes from the admin console
+  // (/api/v1/admin/live-classes). Same name as the Supabase role_permissions
+  // row (0013). Admin/super-admin only, like the other *:write above.
+  'live_classes:write',
 ];
 
 // Default permissions bundled with each role
@@ -32,6 +36,7 @@ export const ROLE_PERMISSIONS = {
     'audit:read',
     'blog:write','coupons:write','contact:write',
     'certificates:write','referrals:write','reviews:write',
+    'live_classes:write',
   ],
   'editor': [
     'courses:read','courses:write',

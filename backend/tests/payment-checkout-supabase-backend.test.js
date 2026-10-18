@@ -156,8 +156,9 @@ test('DATA_BACKEND=supabase: PayPal webhook stays mounted and live — rejects a
   assert.equal(res.status, 400);
 });
 
-test('DATA_BACKEND=supabase: the old coupon admin listing (GET /api/coupons) is closed with 404, not the payments 410 (AR-04)', async () => {
+test('DATA_BACKEND=supabase: coupon admin listing route is still mounted (401/403 for an unauthenticated caller, never 410 — historical/admin functionality is not closed)', async () => {
   const { agent } = await agentWithCsrf();
   const res = await agent.get('/api/coupons');
-  assert.equal(res.status, 404);
+  assert.notEqual(res.status, 410);
+  assert.ok([401, 403].includes(res.status), `expected 401/403 for an unauthenticated admin-only route, got ${res.status}`);
 });

@@ -40,10 +40,6 @@ import supabaseContactAdminRoutes from '../../../data/supabase/admin/contactAdmi
 import supabaseReferralsAdminRoutes from '../../../data/supabase/admin/referralsAdminRoutes.js';
 import supabaseSystemAdminRoutes from '../../../data/supabase/admin/systemAdminRoutes.js';
 import supabaseInvoicesAdminRoutes from '../../../data/supabase/admin/invoicesAdminRoutes.js';
-import {
-  trialsRouter as supabaseTrialsRoutes,
-  newsletterRouter as supabaseNewsletterRoutes,
-} from '../../../data/supabase/admin/leadsAdminRoutes.js';
 
 const router = Router();
 
@@ -119,15 +115,19 @@ router.use('/system',       isSupabaseBackend() ? supabaseSystemAdminRoutes : sy
 // Real fix for the admin-invoices architecture gap (Al-Rahma Final
 // Corrections): the canonical admin invoice list now lives here, behind the
 // real AAL2-capable admin router, instead of only under the customer-session
-// GET /api/invoices/admin (routes/invoiceRoutes.js / data/supabase/routes/
-// invoiceRoutes.js — kept mounted for compatibility, but see
+// GET /api/invoices/admin (routes/invoiceRoutes.js, closed with 404 on Mongo
+// since AR-04 / data/supabase/routes/invoiceRoutes.js — kept mounted for
+// compatibility, but see
 // data/supabase/invoiceController.js's getAdminInvoices for what it now
 // does under supabase mode instead of silently failing).
 router.use('/invoices',     isSupabaseBackend() ? supabaseInvoicesAdminRoutes : invoicesRoutes);
 // AR-04: the admin reads that used to run on a password-only `role: 'admin'`
 // account (/api/trials, /api/newsletter) live here now, behind the same MFA,
-// IP allowlist and RBAC as every other admin route.
-router.use('/trials',       isSupabaseBackend() ? supabaseTrialsRoutes : trialsRoutes);
-router.use('/newsletter',   isSupabaseBackend() ? supabaseNewsletterRoutes : newsletterRoutes);
+// IP allowlist and RBAC as every other admin route. Mongo only: the dormant
+// DATA_BACKEND=supabase backend keeps its own routes unchanged, like
+// /live-classes above in the other direction.
+const notFound = (_req, res) => res.status(404).json({ message: 'Not found' });
+router.use('/trials',       isSupabaseBackend() ? notFound : trialsRoutes);
+router.use('/newsletter',   isSupabaseBackend() ? notFound : newsletterRoutes);
 
 export default router;

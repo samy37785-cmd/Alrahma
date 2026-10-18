@@ -7,36 +7,22 @@ import { useModalA11y } from '../../../hooks/useModalA11y';
 
 const EMPTY_CERT = { type: 'completion', title: '', grade: '', notes: '' };
 
-// Each part loads on its own. A part that fails shows this message in its
-// own section, never the "nothing yet" text: a failed request says nothing
-// about the student, and the parts that did load stay on screen.
-function LoadError({ what }) {
-  return (
-    <p className="admin__load-error" role="alert">
-      Could not load {what}. This is a loading error, not an empty record. Close this window and open it again to retry.
-    </p>
-  );
-}
-
 export default function AdminProgressModal({ user, onClose, onError }) {
   const [report, setReport] = useState(null);
   const [certs, setCerts] = useState([]);
-  const [failed, setFailed] = useState({ courses: false, hifz: false, certs: false });
   const [certForm, setCertForm] = useState(EMPTY_CERT);
   const [loading, setLoading] = useState(true);
   const firstFocusRef = useModalA11y(true, onClose);
 
   useEffect(() => {
     setLoading(true);
-    const settle = (request) => request.then((data) => ({ ok: true, data }), () => ({ ok: false, data: [] }));
     Promise.all([
-      settle(getUserHifzReport(user._id)),
-      settle(getUserCourseProgress(user._id)),
-      settle(listCertificates(user._id)),
+      getUserHifzReport(user._id).catch(() => []),
+      getUserCourseProgress(user._id).catch(() => []),
+      listCertificates(user._id).catch(() => []),
     ]).then(([hifz, courses, userCerts]) => {
-      setReport({ hifz: hifz.data, courses: courses.data });
-      setCerts(userCerts.data);
-      setFailed({ courses: !courses.ok, hifz: !hifz.ok, certs: !userCerts.ok });
+      setReport({ hifz, courses });
+      setCerts(userCerts);
     }).finally(() => setLoading(false));
   }, [user._id]);
 
@@ -74,7 +60,7 @@ export default function AdminProgressModal({ user, onClose, onError }) {
         ) : (
           <>
             <h4 style={{ margin: '1.2rem 0 .6rem' }}>📚 Courses</h4>
-            {failed.courses ? <LoadError what="course progress" /> : report?.courses?.length ? (
+            {report?.courses?.length ? (
               <ul className="admin__list">
                 {report.courses.map((c) => (
                   <li key={c.courseId} style={{ alignItems: 'center' }}>
@@ -91,7 +77,7 @@ export default function AdminProgressModal({ user, onClose, onError }) {
             ) : <p className="admin__empty">No course activity yet.</p>}
 
             <h4 style={{ margin: '1.4rem 0 .6rem' }}>🧠 Memorization (Hifz)</h4>
-            {failed.hifz ? <LoadError what="memorization progress" /> : report?.hifz?.length ? (
+            {report?.hifz?.length ? (
               <ul className="admin__list">
                 {report.hifz.map((h) => (
                   <li key={h._id} style={{ alignItems: 'center' }}>
@@ -105,7 +91,6 @@ export default function AdminProgressModal({ user, onClose, onError }) {
             ) : <p className="admin__empty">No memorization recorded yet.</p>}
 
             <h4 style={{ margin: '1.4rem 0 .6rem' }}>🎓 Certificates</h4>
-            {failed.certs && <LoadError what="certificates" />}
             {certs.length > 0 && (
               <ul className="admin__list" style={{ marginBottom: 12 }}>
                 {certs.map((c) => (

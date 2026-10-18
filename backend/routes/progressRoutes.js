@@ -4,8 +4,9 @@ import { getCourseProgress, toggleProgress } from '../controllers/progressContro
 
 const router = Router();
 
-// The admin's per-student report is GET /api/v1/admin/users/:userId/progress
-// (AR-04).
+// The per-student admin report (GET /user/:userId) let a regular account with
+// role 'admin' read any student's progress with a password alone; it is
+// closed (AR-04).
 router.get('/:courseId', protect, getCourseProgress);
 router.put('/:courseId', protect, toggleProgress);
 

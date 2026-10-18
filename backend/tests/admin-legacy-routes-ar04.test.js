@@ -23,18 +23,23 @@ import { agentWithCsrf } from './helpers/csrf.js';
 // student progress report with a password alone (protect + adminOnly). None
 // of that went through the admin console's TOTP MFA or IP allowlist.
 //
-// Those reads now exist only under /api/v1/admin. This file proves, on the
-// Mongo backend:
+// Every one of those reads is closed. The two the admin console needs, the
+// Trials and Newsletter tabs, moved to /api/v1/admin. The progress report, the
+// certificate list and the course progress get no replacement route. This
+// file proves, on the Mongo backend:
 //   - every old path answers 404 to everyone, including a role 'admin'
 //     account, and returns none of the data;
 //   - a student's own routes still work;
-//   - the new admin routes refuse a role 'admin' account, an admin without
-//     a verified MFA step, and an admin without the permission, and serve
-//     an MFA-verified admin.
+//   - /api/v1/admin/trials and /newsletter refuse a role 'admin' account, an
+//     admin without a verified MFA step, and an admin without the
+//     permission, and serve an MFA-verified admin;
+//   - no admin route serves the progress report, certificate list or
+//     course progress.
 // The IP allowlist is covered in admin-legacy-routes-ar04-ip.test.js (it is
-// read once at import, so it needs its own process), and the Supabase
-// backend in admin-legacy-routes-ar04-supabase.test.js and the
-// auth-booking contract gate.
+// read once at import, so it needs its own process); /api/classes in
+// admin-legacy-routes-ar04-classes.test.js; sign-up, sign-in and the public
+// forms in admin-legacy-routes-ar04-public.test.js. The dormant
+// DATA_BACKEND=supabase backend is not changed.
 
 const PASSWORD = 'Str0ngP@ssw0rd!';
 const MARKER = 'ar04-leak-marker';
@@ -100,9 +105,12 @@ const closedPaths = (studentId) => [
   `/api/hifz/user/${studentId}`,
 ];
 
-const newAdminPaths = (studentId) => [
-  '/api/v1/admin/trials',
-  '/api/v1/admin/newsletter',
+const newAdminPaths = ['/api/v1/admin/trials', '/api/v1/admin/newsletter'];
+
+// Not admin routes either: the report window, certificate list and course
+// progress get no replacement for the closed reads.
+const noAdminReplacement = (studentId) => [
+  '/api/v1/admin/certificates',
   `/api/v1/admin/certificates?userId=${studentId}`,
   `/api/v1/admin/users/${studentId}/progress`,
   `/api/v1/admin/users/${studentId}/hifz`,
@@ -152,34 +160,22 @@ test('a student still reads their own booking, certificates, memorisation, cours
   }
 });
 
-test('the public trial, newsletter, contact and booking forms still accept submissions', async () => {
-  const { agent, csrf } = await agentWithCsrf(app);
-  const trial = await agent.post('/api/trials').set(csrf).send({ name: 'Visitor', email: 'visitor@example.com', course: 'Quran' });
-  assert.equal(trial.status, 201);
-  const sub = await agent.post('/api/newsletter').set(csrf).send({ email: 'reader@example.com' });
-  assert.ok([200, 201].includes(sub.status), `newsletter expected 200/201, got ${sub.status}`);
-  const contact = await agent.post('/api/contact').set(csrf).send({ name: 'Visitor', email: 'visitor@example.com', subject: 'Hello', message: 'A question about classes' });
-  assert.equal(contact.status, 201);
-  const booking = await agent.post('/api/enrollments').set(csrf).send({ name: 'Visitor', email: 'visitor@example.com', whatsapp: '+447700900000' });
-  assert.equal(booking.status, 201);
-});
+// ── The Trials and Newsletter admin routes ─────────────────────────────────
 
-// ── The new admin routes ───────────────────────────────────────────────────
-
-test('the new admin routes refuse a role "admin" account (no admin console session)', async () => {
-  const { student } = await seedEverything();
+test('the Trials and Newsletter admin routes refuse a role "admin" account (no admin console session)', async () => {
+  await seedEverything();
   const { agent } = await accountAgent('admin');
-  for (const path of newAdminPaths(student._id)) {
+  for (const path of newAdminPaths) {
     const res = await agent.get(path);
     assert.equal(res.status, 401, `${path} expected 401, got ${res.status}`);
     assert.ok(!JSON.stringify(res.body).includes(MARKER), `${path} must not return data`);
   }
 });
 
-test('the new admin routes refuse an admin whose MFA step is not verified', async () => {
-  const { student } = await seedEverything();
+test('the Trials and Newsletter admin routes refuse an admin whose MFA step is not verified', async () => {
+  await seedEverything();
   const { agent, cookie } = await adminConsoleAgent('admin', { mfaEnabled: true, mfaVerified: false });
-  for (const path of newAdminPaths(student._id)) {
+  for (const path of newAdminPaths) {
     const res = await agent.get(path).set('Cookie', cookie);
     assert.equal(res.status, 403, `${path} expected 403, got ${res.status}`);
     assert.equal(res.body.code, 'MFA_REQUIRED');
@@ -187,65 +183,59 @@ test('the new admin routes refuse an admin whose MFA step is not verified', asyn
   }
 });
 
-test('the new admin routes refuse a half-finished login (password done, TOTP not yet)', async () => {
-  const { student } = await seedEverything();
+test('the Trials and Newsletter admin routes refuse a half-finished login (password done, TOTP not yet)', async () => {
+  await seedEverything();
   const { agent, cookie } = await adminConsoleAgent('admin', { stage: 'mfa' });
-  for (const path of newAdminPaths(student._id)) {
+  for (const path of newAdminPaths) {
     const res = await agent.get(path).set('Cookie', cookie);
     assert.equal(res.status, 403, `${path} expected 403, got ${res.status}`);
     assert.equal(res.body.code, 'MFA_REQUIRED');
   }
 });
 
-test('an MFA-verified admin reads trials, subscribers, certificates, progress and memorisation', async () => {
-  const { student } = await seedEverything();
+test('an MFA-verified admin reads the trial requests and the newsletter subscribers', async () => {
+  await seedEverything();
   const { agent, cookie } = await adminConsoleAgent('admin');
-  const get = (path) => agent.get(path).set('Cookie', cookie);
 
-  const trials = await get('/api/v1/admin/trials');
+  const trials = await agent.get('/api/v1/admin/trials').set('Cookie', cookie);
   assert.equal(trials.status, 200);
   assert.equal(trials.body.length, 1);
   assert.equal(trials.body[0].name, `Trial ${MARKER}`);
 
-  const subscribers = await get('/api/v1/admin/newsletter');
+  const subscribers = await agent.get('/api/v1/admin/newsletter').set('Cookie', cookie);
   assert.equal(subscribers.status, 200);
   assert.equal(subscribers.body.length, 1);
   assert.equal(subscribers.body[0].email, `${MARKER}@example.com`);
-
-  const certificates = await get(`/api/v1/admin/certificates?userId=${student._id}`);
-  assert.equal(certificates.status, 200);
-  assert.equal(certificates.body.length, 1);
-  assert.equal(certificates.body[0].title, `Ijazah ${MARKER}`);
-  assert.equal(certificates.body[0].course.title, `Course ${MARKER}`);
-
-  const progress = await get(`/api/v1/admin/users/${student._id}/progress`);
-  assert.equal(progress.status, 200);
-  assert.equal(progress.body.length, 1);
-  assert.equal(progress.body[0].title, `Course ${MARKER}`);
-
-  const hifz = await get(`/api/v1/admin/users/${student._id}/hifz`);
-  assert.equal(hifz.status, 200);
-  assert.equal(hifz.body.length, 1);
-  assert.deepEqual(hifz.body[0].memorizedVerses, [1, 2]);
 });
 
-test('the new admin routes follow the admin role permissions', async () => {
-  const { student } = await seedEverything();
+test('the Trials and Newsletter admin routes follow the admin role permissions', async () => {
+  await seedEverything();
 
-  // viewer: users:read + enrollments:read -> every read
+  // viewer: users:read + enrollments:read -> both
   const viewer = await adminConsoleAgent('viewer');
-  for (const path of newAdminPaths(student._id)) {
+  for (const path of newAdminPaths) {
     const res = await viewer.agent.get(path).set('Cookie', viewer.cookie);
     assert.equal(res.status, 200, `viewer ${path} expected 200, got ${res.status}`);
   }
 
-  // editor: enrollments:read only -> trial leads (like bookings), nothing about users
+  // editor: enrollments:read only -> trial leads (like bookings), not the
+  // subscribers' email addresses
   const editor = await adminConsoleAgent('editor');
   const trials = await editor.agent.get('/api/v1/admin/trials').set('Cookie', editor.cookie);
   assert.equal(trials.status, 200);
-  for (const path of newAdminPaths(student._id).filter((p) => !p.endsWith('/trials'))) {
-    const res = await editor.agent.get(path).set('Cookie', editor.cookie);
-    assert.equal(res.status, 403, `editor ${path} expected 403, got ${res.status}`);
+  const subscribers = await editor.agent.get('/api/v1/admin/newsletter').set('Cookie', editor.cookie);
+  assert.equal(subscribers.status, 403);
+  assert.ok(!JSON.stringify(subscribers.body).includes(MARKER));
+});
+
+// ── No replacement for the report, certificate list or course progress ────
+
+test('no admin route serves the progress report, the certificate list or course progress, even to a super-admin', async () => {
+  const { student } = await seedEverything();
+  const { agent, cookie } = await adminConsoleAgent('super-admin');
+  for (const path of noAdminReplacement(student._id)) {
+    const res = await agent.get(path).set('Cookie', cookie);
+    assert.equal(res.status, 404, `${path} expected 404, got ${res.status}`);
     assert.ok(!JSON.stringify(res.body).includes(MARKER), `${path} must not return data`);
   }
 });

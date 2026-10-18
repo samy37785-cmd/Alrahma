@@ -2,8 +2,6 @@ import { Router } from 'express';
 import { requirePermissions } from '../../../middleware/rbac.js';
 import { asyncHandler } from '../../../utils/asyncHandler.js';
 import * as users from './usersAdminController.js';
-import { getUserProgress } from '../courseProgressController.js';
-import { getUserHifz } from '../hifzController.js';
 
 const router = Router();
 
@@ -16,10 +14,6 @@ router.patch('/:id/role',         requirePermissions('users:write'), asyncHandle
 router.patch('/:id/subscription', requirePermissions('users:write'), asyncHandler(users.updateUserSubscription));
 router.patch('/:id/teacher',      requirePermissions('users:write'), asyncHandler(users.assignTeacher));
 router.patch('/:id/family',       requirePermissions('users:write'), asyncHandler(users.setFamilyName));
-
-// Same progress-report reads as routes/v1/admin/usersRoutes.js (AR-04).
-router.get('/:userId/progress', requirePermissions('users:read'), asyncHandler(getUserProgress));
-router.get('/:userId/hifz',     requirePermissions('users:read'), asyncHandler(getUserHifz));
 
 router.get('/',    requirePermissions('users:read'),   asyncHandler(users.list));
 router.get('/:id', requirePermissions('users:read'),   asyncHandler(users.getOne));

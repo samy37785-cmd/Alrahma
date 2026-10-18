@@ -46,18 +46,20 @@ export const subscribe = asyncHandler(async (req, res) => {
   res.status(200).json({ message: 'Subscribed' });
 });
 
-// @route  GET /api/v1/admin/newsletter
-// @access Admin API (MFA + IP allowlist + users:read)
+// @route  GET /api/newsletter
+// @access Private/Admin
 export const listSubscribers = asyncHandler(async (req, res) => {
-  // Runs as the verified admin (AR-04), not as a regular account.
-  const subscribers = await withUserContext(req.adminUser.id, async (client) => {
+  // subscribers_select_admin is is_admin()-gated (no AAL2 needed) —
+  // withUserContext(req.user._id, ...) is sufficient (protect + adminOnly
+  // already verified req.user.role === 'admin').
+  const subscribers = await withUserContext(req.user._id, async (client) => {
     const r = await client.query(
       `SELECT id, email, status, created_at
          FROM subscribers
         ORDER BY created_at DESC`
     );
     return r.rows;
-  }, { aal: req.adminAal });
+  });
 
   // Postgres subscribers has no updated_at column, unlike Mongo's
   // { timestamps: true } — omitted below, same as trial_requests.

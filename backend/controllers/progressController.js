@@ -52,9 +52,10 @@ async function awardXP(userId, amount) {
   return { xp: user.xp, level: user.level, streak: user.streak, badges: user.badges };
 }
 
-// @desc  Admin: a student's progress across all their courses.
-// @route GET /api/v1/admin/users/:userId/progress
-// @access Admin API (MFA + IP allowlist + users:read)
+// @desc  Admin/teacher: a student's progress across all their courses.
+// @route None. Its only route, GET /api/progress/user/:userId, let a regular
+//        account with role 'admin' read any student's report with a password
+//        alone, so it was closed (AR-04). No admin route replaces it.
 export const getUserProgress = asyncHandler(async (req, res) => {
   const rows = await CourseProgress.find({ user: req.params.userId })
     .populate('course', 'title icon resources modules')

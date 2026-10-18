@@ -51,9 +51,10 @@ export const markMemorized = asyncHandler(async (req, res) => {
   res.json(doc);
 });
 
-// @desc  Admin: view a specific student's memorization progress.
-// @route GET /api/v1/admin/users/:userId/hifz
-// @access Admin API (MFA + IP allowlist + users:read)
+// @desc  Admin/teacher: view a specific student's memorization progress.
+// @route None. Its only route, GET /api/hifz/user/:userId, let a regular
+//        account with role 'admin' read any student's record with a password
+//        alone, so it was closed (AR-04). No admin route replaces it.
 export const getUserHifz = asyncHandler(async (req, res) => {
   const progress = await HifzProgress.find({ user: req.params.userId }).sort({ chapterId: 1 }).lean();
   res.json(progress);

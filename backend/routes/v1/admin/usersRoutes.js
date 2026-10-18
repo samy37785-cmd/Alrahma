@@ -5,8 +5,6 @@ import {
   listTeachers, adminCreateUser, updateUserRole,
   assignTeacher, setFamilyName, updateUserSubscription,
 } from '../../../controllers/userAdminController.js';
-import { getUserProgress } from '../../../controllers/progressController.js';
-import { getUserHifz } from '../../../controllers/hifzController.js';
 import { requirePermissions } from '../../../middleware/rbac.js';
 import { asyncHandler } from '../../../utils/asyncHandler.js';
 
@@ -53,12 +51,6 @@ router.patch('/:id/role',         requirePermissions('users:write'), asyncHandle
 router.patch('/:id/subscription', requirePermissions('users:write'), asyncHandler(updateUserSubscription));
 router.patch('/:id/teacher',      requirePermissions('users:write'), asyncHandler(assignTeacher));
 router.patch('/:id/family',       requirePermissions('users:write'), asyncHandler(setFamilyName));
-
-// A student's progress report (the admin's progress window). It used to be
-// read through GET /api/progress/user/:userId and /api/hifz/user/:userId on a
-// password-only `role: 'admin'` account (AR-04).
-router.get('/:userId/progress', requirePermissions('users:read'), asyncHandler(getUserProgress));
-router.get('/:userId/hifz',     requirePermissions('users:read'), asyncHandler(getUserHifz));
 
 router.get('/',    requirePermissions('users:read'),   asyncHandler(users.list));
 router.get('/:id', requirePermissions('users:read'),   asyncHandler(users.getOne));

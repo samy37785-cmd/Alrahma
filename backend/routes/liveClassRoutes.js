@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { protect, staffOnly } from '../middleware/auth.js';
+import { protect, teacherOnly } from '../middleware/auth.js';
 import {
   listClasses,
   createClass,
@@ -10,12 +10,14 @@ import {
 const router = Router();
 
 // All routes require a logged-in user. Listing is role-aware (see controller);
-// creating/editing/deleting is staff-only (teacher or admin).
+// creating/editing/deleting is for a teacher and their own classes only. A
+// regular account with role 'admin' used to manage every class here with a
+// password alone (AR-04); it no longer has any class privilege.
 router.use(protect);
 
 router.get('/', listClasses);
-router.post('/', staffOnly, createClass);
-router.patch('/:id', staffOnly, updateClass);
-router.delete('/:id', staffOnly, deleteClass);
+router.post('/', teacherOnly, createClass);
+router.patch('/:id', teacherOnly, updateClass);
+router.delete('/:id', teacherOnly, deleteClass);
 
 export default router;

@@ -3,10 +3,9 @@ import assert from 'node:assert/strict';
 import request from 'supertest';
 import { setupTestDb, clearTestDb, teardownTestDb } from './helpers/db.js';
 
-// AR-04, IP allowlist half: the admin reads that moved to /api/v1/admin
-// (trials, newsletter, certificates, a student's progress and memorisation)
-// must also be refused from an address outside ADMIN_IP_WHITELIST, even with
-// a valid MFA-verified admin session.
+// AR-04, IP allowlist half: the two admin reads that moved to /api/v1/admin
+// (the Trials and Newsletter tabs) must also be refused from an address
+// outside ADMIN_IP_WHITELIST, even with a valid MFA-verified admin session.
 //
 // middleware/ipWhitelist.js reads ADMIN_IP_WHITELIST once at import, so it is
 // set here before app.js is loaded (node --test runs each file in its own
@@ -15,17 +14,16 @@ import { setupTestDb, clearTestDb, teardownTestDb } from './helpers/db.js';
 
 const ALLOWED_IP = '198.51.100.7';
 const OTHER_IP = '203.0.113.9';
+const PATHS = ['/api/v1/admin/trials', '/api/v1/admin/newsletter'];
 
 let app;
 let AdminUser;
-let User;
 let signAccessToken;
 
 before(async () => {
   process.env.ADMIN_IP_WHITELIST = ALLOWED_IP;
   ({ default: app } = await import('../app.js'));
   ({ default: AdminUser } = await import('../models/AdminUser.js'));
-  ({ default: User } = await import('../models/User.js'));
   ({ signAccessToken } = await import('../utils/adminAuthTokens.js'));
   await setupTestDb();
 }, { timeout: 60_000 });
@@ -40,20 +38,9 @@ async function verifiedAdminCookie() {
   return `admin_at=${signAccessToken(admin._id, admin.role, true)}`;
 }
 
-async function paths() {
-  const student = await User.create({ name: 'Student', email: `s-${Date.now()}@example.com`, password: 'Str0ngP@ssw0rd!' });
-  return [
-    '/api/v1/admin/trials',
-    '/api/v1/admin/newsletter',
-    `/api/v1/admin/certificates?userId=${student._id}`,
-    `/api/v1/admin/users/${student._id}/progress`,
-    `/api/v1/admin/users/${student._id}/hifz`,
-  ];
-}
-
-test('an MFA-verified admin from an address outside the allowlist is refused on every moved read', async () => {
+test('an MFA-verified admin from an address outside the allowlist is refused on both moved reads', async () => {
   const cookie = await verifiedAdminCookie();
-  for (const path of await paths()) {
+  for (const path of PATHS) {
     const res = await request(app).get(path).set('Cookie', cookie).set('X-Forwarded-For', OTHER_IP);
     assert.equal(res.status, 403, `${path} from ${OTHER_IP} expected 403, got ${res.status}`);
   }
@@ -61,7 +48,7 @@ test('an MFA-verified admin from an address outside the allowlist is refused on 
 
 test('the same admin from the allowed address is served', async () => {
   const cookie = await verifiedAdminCookie();
-  for (const path of await paths()) {
+  for (const path of PATHS) {
     const res = await request(app).get(path).set('Cookie', cookie).set('X-Forwarded-For', ALLOWED_IP);
     assert.equal(res.status, 200, `${path} from ${ALLOWED_IP} expected 200, got ${res.status}`);
   }

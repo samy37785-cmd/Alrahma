@@ -60,18 +60,21 @@ export const createTrial = asyncHandler(async (req, res) => {
   });
 });
 
-// @route  GET /api/v1/admin/trials
-// @access Admin API (MFA + IP allowlist + enrollments:read)
+// @route  GET /api/trials
+// @access Private/Admin
 export const getTrials = asyncHandler(async (req, res) => {
-  // Runs as the verified admin (AR-04), not as a regular account.
-  const trials = await withUserContext(req.adminUser.id, async (client) => {
+  // trial_requests_select_admin is is_admin()-gated (no AAL2 needed) —
+  // withUserContext(req.user._id, ...) is sufficient since req.user is the
+  // calling admin's own profile id (protect + adminOnly already verified
+  // req.user.role === 'admin' before this handler runs).
+  const trials = await withUserContext(req.user._id, async (client) => {
     const r = await client.query(
       `SELECT id, name, email, phone, course, message, status, created_at
          FROM trial_requests
         ORDER BY created_at DESC`
     );
     return r.rows;
-  }, { aal: req.adminAal });
+  });
 
   // Postgres trial_requests has no updated_at column (see
   // lib/db/drizzle/0000_init_20_table_baseline.sql) — Mongo's `updatedAt`

@@ -62,9 +62,17 @@ export async function protect(req, res, next) {
   next();
 }
 
-// There is deliberately no adminOnly here any more (AR-04). A regular
-// account's role === 'admin' only proved a password, so every admin read
-// that used it now lives under /api/v1/admin (TOTP MFA, IP allowlist, RBAC).
+// Restricts a route to admins only. Use after `protect`.
+// No Mongo route uses it any more (AR-04): a regular account's role 'admin'
+// only proves a password, so admin data is read through /api/v1/admin (TOTP
+// MFA, IP allowlist, RBAC). It stays exported only because the dormant
+// DATA_BACKEND=supabase route files still import it.
+export function adminOnly(req, res, next) {
+  if (req.user?.role !== 'admin') {
+    return res.status(403).json({ message: 'Admin access required' });
+  }
+  next();
+}
 
 // Restricts a route to teachers only. Use after `protect`.
 export function teacherOnly(req, res, next) {
@@ -78,14 +86,6 @@ export function teacherOnly(req, res, next) {
 export function parentOnly(req, res, next) {
   if (req.user?.role !== 'parent') {
     return res.status(403).json({ message: 'Parent access required' });
-  }
-  next();
-}
-
-// Allows staff (admin OR teacher). Use after `protect`.
-export function staffOnly(req, res, next) {
-  if (req.user?.role !== 'admin' && req.user?.role !== 'teacher') {
-    return res.status(403).json({ message: 'Staff access required' });
   }
   next();
 }

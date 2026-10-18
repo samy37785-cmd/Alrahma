@@ -1,12 +1,12 @@
 import { Router } from 'express';
-import { protect, adminOnly } from '../middleware/auth.js';
-import { getCourseProgress, toggleProgress, getUserProgress } from '../controllers/progressController.js';
+import { protect } from '../middleware/auth.js';
+import { getCourseProgress, toggleProgress } from '../controllers/progressController.js';
 
 const router = Router();
 
-// Admin report — must be declared before the generic /:courseId route.
-router.get('/user/:userId', protect, adminOnly, getUserProgress);
-
+// The per-student admin report (GET /user/:userId) let a regular account with
+// role 'admin' read any student's progress with a password alone; it is
+// closed (AR-04).
 router.get('/:courseId', protect, getCourseProgress);
 router.put('/:courseId', protect, toggleProgress);
 

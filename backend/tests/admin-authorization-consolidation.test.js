@@ -17,11 +17,14 @@ import { agentWithCsrf } from './helpers/csrf.js';
 // (MFA + RBAC + audit-logged — see routes/v1/admin/). Their RBAC/401/403/
 // audit coverage now lives in tests/admin-v1-content-migration.test.js
 // (and, for coupons/referrals specifically, tests/coupon.test.js and
-// tests/referral.test.js). This file now covers only what's still actually
-// reachable on the legacy protect+adminOnly stack — the admin-only READ
-// endpoints (GET /api/coupons, GET /api/contact) that were never part of
-// the mutation migration — plus confirms every migrated mutation path is
-// gone from the legacy router.
+// tests/referral.test.js).
+//
+// AR-04 update: the last two admin reads on that stack (GET /api/coupons,
+// GET /api/contact) are closed too, and adminOnly itself is gone. This file
+// now confirms that every one of those paths answers 404, including to a
+// role 'admin' account. The full AR-04 matrix (every closed read, and the
+// MFA / IP / permission checks on their /api/v1/admin replacements) is in
+// tests/admin-legacy-routes-ar04*.test.js.
 
 const PASSWORD = 'Str0ngP@ssw0rd!';
 
@@ -45,8 +48,8 @@ async function makeStudentAgent() {
   return { agent, csrf };
 }
 
-// Admin-gated READ routes still on the legacy protect+adminOnly stack.
-const ADMIN_READ_ROUTES = [
+// The admin READ routes the legacy stack used to serve (closed, AR-04).
+const CLOSED_ADMIN_READ_ROUTES = [
   ['get', '/api/coupons', undefined],
   ['get', '/api/contact', undefined],
 ];
@@ -64,31 +67,28 @@ const MIGRATED_MUTATION_ROUTES = [
   ['patch',  '/api/contact/000000000000000000000000', { status: 'read' }],
 ];
 
-test('every remaining admin-gated legacy read route is rejected with 401 when unauthenticated', async () => {
-  for (const [method, path] of ADMIN_READ_ROUTES) {
+test('the closed legacy admin read routes answer 404 to an anonymous caller', async () => {
+  for (const [method, path] of CLOSED_ADMIN_READ_ROUTES) {
     const { agent, csrf } = await agentWithCsrf(app);
     const res = await agent[method](path).set(csrf).send({});
-    assert.equal(res.status, 401, `${method.toUpperCase()} ${path} expected 401, got ${res.status}`);
+    assert.equal(res.status, 404, `${method.toUpperCase()} ${path} expected 404, got ${res.status}`);
   }
 });
 
-test('every remaining admin-gated legacy read route is rejected with 403 for an authenticated non-admin', async () => {
+test('the closed legacy admin read routes answer 404 to a student', async () => {
   const { agent, csrf } = await makeStudentAgent();
-  for (const [method, path] of ADMIN_READ_ROUTES) {
+  for (const [method, path] of CLOSED_ADMIN_READ_ROUTES) {
     const res = await agent[method](path).set(csrf).send({});
-    assert.equal(res.status, 403, `${method.toUpperCase()} ${path} expected 403, got ${res.status}`);
-    assert.equal(res.body.message, 'Admin access required');
+    assert.equal(res.status, 404, `${method.toUpperCase()} ${path} expected 404, got ${res.status}`);
   }
 });
 
-test('an authenticated admin passes the authorization gate on every remaining legacy read route', async () => {
+test('the closed legacy admin read routes answer 404 even to a role "admin" account (AR-04)', async () => {
   const { agent, csrf } = await makeAdminAgent();
-
-  const coupons = await agent.get('/api/coupons').set(csrf);
-  assert.equal(coupons.status, 200);
-
-  const contacts = await agent.get('/api/contact').set(csrf);
-  assert.equal(contacts.status, 200);
+  for (const [method, path] of CLOSED_ADMIN_READ_ROUTES) {
+    const res = await agent[method](path).set(csrf).send({});
+    assert.equal(res.status, 404, `${method.toUpperCase()} ${path} expected 404, got ${res.status}`);
+  }
 });
 
 test('every migrated mutation route no longer exists on the legacy router (404) — even for an authenticated admin', async () => {

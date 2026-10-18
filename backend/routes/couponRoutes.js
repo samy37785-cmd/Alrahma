@@ -1,6 +1,4 @@
 import { Router } from 'express';
-import { protect, adminOnly } from '../middleware/auth.js';
-import { listCoupons } from '../controllers/couponController.js';
 import { paymentsDisabled } from '../middleware/paymentsDisabled.js';
 
 const router = Router();
@@ -13,7 +11,6 @@ const router = Router();
 // untouched, as legacy/deferred code.
 router.post('/validate', paymentsDisabled);
 
-router.get('/', protect, adminOnly, listCoupons);
 
 // Admin mutations (create/update/delete) now live at /api/v1/admin/coupons
 // (MFA + RBAC + audit-logged — see routes/v1/admin/couponsRoutes.js).

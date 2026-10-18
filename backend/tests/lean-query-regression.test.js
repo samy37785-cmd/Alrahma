@@ -56,7 +56,7 @@ test('GET /api/courses: returns the real published course with correct field typ
 // certificateController — populate + lean
 // ---------------------------------------------------------------------------
 
-test('certificates: issue -> list (admin) -> mine (student), populated course field intact under lean', async () => {
+test('certificates: issue -> mine (student), populated course field intact under lean; the old admin list is closed', async () => {
   const course = await Course.create({ title: 'Hifz Program', description: 'x', published: true });
   const { agent: adminAgent, csrf: adminCsrf } = await makeAdminAgent();
   const { agent: studentAgent, csrf: studentCsrf } = await agentWithCsrf(app);
@@ -66,10 +66,11 @@ test('certificates: issue -> list (admin) -> mine (student), populated course fi
 
   await Certificate.create({ user: student._id, studentName: student.name, title: 'Ijazah', type: 'ijazah', course: course._id });
 
+  // GET /api/certificates let a role 'admin' account list every certificate
+  // with a password alone; it is closed (AR-04) and has no replacement.
   const listRes = await adminAgent.get('/api/certificates').set(adminCsrf);
-  assert.equal(listRes.status, 200);
-  assert.equal(listRes.body.length, 1);
-  assert.equal(listRes.body[0].course.title, 'Hifz Program'); // populate survives .lean()
+  assert.equal(listRes.status, 404);
+  assert.ok(!JSON.stringify(listRes.body).includes('Ijazah'));
 
   const mineRes = await studentAgent.get('/api/certificates/mine');
   assert.equal(mineRes.status, 200);

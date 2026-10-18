@@ -1,14 +1,14 @@
 import { Router } from 'express';
-import { protect, adminOnly } from '../middleware/auth.js';
-import { getMyCertificates, listCertificates } from '../controllers/certificateController.js';
+import { protect } from '../middleware/auth.js';
+import { getMyCertificates } from '../controllers/certificateController.js';
 
 const router = Router();
 
 // Student: my certificates
 router.get('/mine', protect, getMyCertificates);
 
-router.get('/', protect, adminOnly, listCertificates);
-
+// The admin listing (GET /) let a regular account with role 'admin' read every
+// certificate with a password alone; it is closed (AR-04).
 // Admin mutations (issue/revoke) now live at /api/v1/admin/certificates
 // (MFA + RBAC + audit-logged — see routes/v1/admin/certificatesRoutes.js).
 

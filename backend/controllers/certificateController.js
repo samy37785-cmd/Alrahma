@@ -63,8 +63,9 @@ export const getMyCertificates = asyncHandler(async (req, res) => {
 });
 
 // @desc  Admin: list all certificates (optionally for one student).
-// @route GET /api/certificates?userId=...
-// @access Admin
+// @route None. Its only route, GET /api/certificates, let a regular account
+//        with role 'admin' read every certificate with a password alone, so
+//        it was closed (AR-04). No admin route replaces it.
 export const listCertificates = asyncHandler(async (req, res) => {
   const filter = req.query.userId ? { user: req.query.userId } : {};
   const certs = await Certificate.find(filter)

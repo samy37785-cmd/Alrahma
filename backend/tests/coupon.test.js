@@ -176,14 +176,13 @@ test('createCoupon: a duplicate code is rejected with 409 (unique index)', async
   assert.equal(res.status, 409);
 });
 
-test('listCoupons: returns real, previously-created coupons (legacy read route, unaffected by the mutation migration)', async () => {
+test('the old coupon listing (GET /api/coupons) is closed, even for a role "admin" account (AR-04)', async () => {
   await Coupon.create({ code: 'LIST1', discountType: 'percent', discountValue: 10 });
-  await Coupon.create({ code: 'LIST2', discountType: 'fixed', discountValue: 5 });
 
   const { agent, csrf } = await makeAdminAgent();
   const res = await agent.get('/api/coupons').set(csrf);
-  assert.equal(res.status, 200);
-  assert.equal(res.body.total, 2);
+  assert.equal(res.status, 404);
+  assert.ok(!JSON.stringify(res.body).includes('LIST1'));
 });
 
 test('deleteCoupon: removes the real document', async () => {

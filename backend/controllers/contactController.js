@@ -1,7 +1,6 @@
 import { body } from 'express-validator';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { handleValidationErrors } from '../utils/validationHelper.js';
-import { parsePagination } from '../utils/pagination.js';
 import { contactAdminEmail } from '../config/emailTemplates.js';
 import ContactMessage from '../models/ContactMessage.js';
 import { sendMail } from '../config/mailer.js';
@@ -49,19 +48,6 @@ export const submitContact = asyncHandler(async (req, res) => {
   }
 
   res.status(201).json({ message: 'Message received. We will get back to you soon.', id: contact._id });
-});
-
-export const getContacts = asyncHandler(async (req, res) => {
-  const { page, limit, skip } = parsePagination(req.query, { defaultLimit: 20, maxLimit: 50 });
-  const status = req.query.status;
-
-  const filter = status ? { status } : {};
-  const [contacts, total] = await Promise.all([
-    ContactMessage.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
-    ContactMessage.countDocuments(filter),
-  ]);
-
-  res.json({ contacts, total, page, pages: Math.ceil(total / limit) });
 });
 
 export const updateContactStatus = asyncHandler(async (req, res) => {

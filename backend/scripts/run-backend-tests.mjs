@@ -40,7 +40,7 @@ const BACKEND_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), 
 const TESTS_DIR = path.join(BACKEND_ROOT, 'tests');
 
 // --- inventory: update deliberately when a test file is added/removed ---
-const EXPECTED_TOTAL_FILES = 77; // +2 (2026-10-14): mailer-resend, auth-email-verification
+const EXPECTED_TOTAL_FILES = 81; // +4 (2026-10-18): admin-legacy-routes-ar04, -ar04-ip, -ar04-classes, -ar04-public
 // Contract file -> the gate script that provisions its dependencies.
 const CONTRACT_GATES = {
   'tests/contract/supabase-adapter.contract.test.js': 'scripts/test-supabase-contract.mjs',

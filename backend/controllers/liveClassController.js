@@ -11,15 +11,16 @@ const POPULATE = [
 ];
 
 // @desc  List live classes relevant to the caller, role-aware:
-//        admin = all, teacher = theirs, student = their own, parent = children's.
+//        teacher = theirs, student = their own, parent = children's.
+//        A regular account with role 'admin' gets no "all classes" view here:
+//        that needs the admin console (GET /api/v1/admin/live-classes, MFA +
+//        IP allowlist + RBAC), so it is treated like any other account.
 // @route GET /api/classes  (optional ?upcoming=1 to hide past/cancelled)
 // @access Private
 export const listClasses = asyncHandler(async (req, res) => {
   const role = req.user.role;
   let filter;
-  if (role === 'admin') {
-    filter = {};
-  } else if (role === 'teacher') {
+  if (role === 'teacher') {
     filter = { teacher: req.user._id };
   } else if (role === 'parent') {
     const parent = await User.findById(req.user._id).select('children').lean();
@@ -37,10 +38,11 @@ export const listClasses = asyncHandler(async (req, res) => {
   res.json(classes);
 });
 
-// @desc  Schedule a live class. Teachers may only schedule for their own
-//        assigned students; admins may schedule for any student.
+// @desc  Schedule a live class for one of the teacher's own assigned students.
+//        (The admin console schedules for any student, with a chosen teacher,
+//        through POST /api/v1/admin/live-classes.)
 // @route POST /api/classes
-// @access Private/Staff (teacher | admin)
+// @access Private/Teacher
 export const createClass = asyncHandler(async (req, res) => {
   const { student, title, startsAt, durationMin, meetingUrl, notes } = req.body;
   if (!student || !title || !startsAt) {
@@ -54,10 +56,7 @@ export const createClass = asyncHandler(async (req, res) => {
   }
 
   // A teacher can only schedule for a student assigned to them.
-  const studentQuery = req.user.role === 'admin'
-    ? { _id: student, role: 'student' }
-    : { _id: student, role: 'student', teacher: req.user._id };
-  const studentDoc = await User.findOne(studentQuery).select('name email').lean();
+  const studentDoc = await User.findOne({ _id: student, role: 'student', teacher: req.user._id }).select('name email').lean();
   if (!studentDoc) {
     res.status(404);
     throw new Error('Student not found among your students');
@@ -90,12 +89,9 @@ export const createClass = asyncHandler(async (req, res) => {
   res.status(201).json(populated);
 });
 
-// Loads a class the caller is allowed to modify (own teacher, or admin).
+// Loads a class the calling teacher gives.
 async function ownClassOr404(req, res) {
-  const filter = req.user.role === 'admin'
-    ? { _id: req.params.id }
-    : { _id: req.params.id, teacher: req.user._id };
-  const liveClass = await LiveClass.findOne(filter);
+  const liveClass = await LiveClass.findOne({ _id: req.params.id, teacher: req.user._id });
   if (!liveClass) {
     res.status(404);
     throw new Error('Class not found');
@@ -103,9 +99,9 @@ async function ownClassOr404(req, res) {
   return liveClass;
 }
 
-// @desc  Update / reschedule / cancel a class (teacher own, or admin).
+// @desc  Update / reschedule / cancel one of the teacher's own classes.
 // @route PATCH /api/classes/:id
-// @access Private/Staff
+// @access Private/Teacher
 export const updateClass = asyncHandler(async (req, res) => {
   const liveClass = await ownClassOr404(req, res);
   const { title, startsAt, durationMin, meetingUrl, notes, status } = req.body;
@@ -126,9 +122,9 @@ export const updateClass = asyncHandler(async (req, res) => {
   res.json(populated);
 });
 
-// @desc  Delete a class (teacher own, or admin).
+// @desc  Delete one of the teacher's own classes.
 // @route DELETE /api/classes/:id
-// @access Private/Staff
+// @access Private/Teacher
 export const deleteClass = asyncHandler(async (req, res) => {
   const liveClass = await ownClassOr404(req, res);
   await liveClass.deleteOne();

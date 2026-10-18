@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { CalendarDays, Trash2, X, Video } from 'lucide-react';
-import { getClasses, createClass, deleteClass } from '../../../api/classApi';
+import { adminGetClasses, adminCreateClass, adminDeleteClass, adminGetTeachers } from '../../../api/classApi';
 
-const EMPTY = { student: '', title: '', startsAt: '', durationMin: 30, meetingUrl: '' };
+const EMPTY = { student: '', teacher: '', title: '', startsAt: '', durationMin: 30, meetingUrl: '' };
 
 const fmt = (d) =>
   new Date(d).toLocaleString(undefined, {
@@ -27,30 +27,47 @@ const statusBadge = (status) => {
 // throughout this file - the underlying `student`/`c.student` field names
 // (form state, API payload shape) are unchanged, since renaming those is
 // a backend-contract change outside this task's scope.
+//
+// Classes are read and changed through the MFA admin API
+// (/api/v1/admin/live-classes), and every class names its teacher: the admin
+// must pick an existing teacher account (the class is never recorded under
+// the admin, and the student's assigned teacher is left alone).
 export default function AdminClassesTab({ users = [], onError }) {
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(EMPTY);
   const [filter, setFilter] = useState('upcoming');
 
-  const { data: classes = [], isLoading } = useQuery({
+  const { data: classesRes, isLoading } = useQuery({
     queryKey: ['admin', 'classes', filter],
-    queryFn: () => getClasses(filter === 'upcoming' ? { upcoming: 1 } : {}),
+    queryFn: () => adminGetClasses(filter === 'upcoming' ? { upcoming: 1 } : {}),
     staleTime: 60000,
   });
+  const classes = classesRes?.data ?? [];
+
+  const { data: teachers = [], isLoading: teachersLoading, isError: teachersFailed } = useQuery({
+    queryKey: ['admin', 'teachers'],
+    queryFn: adminGetTeachers,
+    staleTime: 300000,
+    enabled: showForm,
+  });
+  // A failed load is said as such, never shown as "no teachers".
+  const noTeachers = showForm && !teachersLoading && !teachersFailed && teachers.length === 0;
+  const cannotSchedule = noTeachers || teachersFailed;
 
   const createMut = useMutation({
-    mutationFn: createClass,
+    mutationFn: adminCreateClass,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'classes'] });
       setForm(EMPTY);
       setShowForm(false);
+      onError(''); // clear a "choose the teacher" message left from an earlier try
     },
     onError: (err) => onError(err.response?.data?.message || 'Could not schedule class'),
   });
 
   const deleteMut = useMutation({
-    mutationFn: deleteClass,
+    mutationFn: adminDeleteClass,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'classes'] }),
     onError: (err) => onError(err.response?.data?.message || 'Could not delete class'),
   });
@@ -59,11 +76,16 @@ export default function AdminClassesTab({ users = [], onError }) {
 
   const submit = (e) => {
     e.preventDefault();
+    if (!form.teacher) {
+      onError('Please choose the teacher who will give this class.');
+      return;
+    }
     if (!form.student || !form.title.trim() || !form.startsAt) {
       onError('Please fill in participant, title and date.');
       return;
     }
     createMut.mutate({
+      teacher:     form.teacher,
       student:     form.student,
       title:       form.title.trim(),
       startsAt:    new Date(form.startsAt).toISOString(),
@@ -128,9 +150,28 @@ export default function AdminClassesTab({ users = [], onError }) {
                 </select>
               </div>
               <div className="field" style={{ margin: 0 }}>
-                <label>Class title</label>
-                <input value={form.title} onChange={set('title')} placeholder="Tajweed lesson" />
+                <label htmlFor="admin-class-teacher">Teacher</label>
+                <select id="admin-class-teacher" value={form.teacher} onChange={set('teacher')}>
+                  <option value="">{teachersLoading ? 'Loading teachers…' : '— Select teacher —'}</option>
+                  {teachers.map((t) => (
+                    <option key={t._id} value={t._id}>{t.name} ({t.email})</option>
+                  ))}
+                </select>
               </div>
+            </div>
+            {noTeachers && (
+              <p className="admin__empty" role="status" style={{ margin: 0 }}>
+                There are no teacher accounts yet. Add a teacher account before scheduling a class.
+              </p>
+            )}
+            {teachersFailed && (
+              <p className="admin__empty" role="alert" style={{ margin: 0, color: 'var(--color-danger-text)' }}>
+                Could not load the teacher list, so a class cannot be scheduled right now. Close the form and open it again to retry.
+              </p>
+            )}
+            <div className="field" style={{ margin: 0 }}>
+              <label>Class title</label>
+              <input value={form.title} onChange={set('title')} placeholder="Tajweed lesson" />
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 100px', gap: 10 }}>
               <div className="field" style={{ margin: 0 }}>
@@ -154,7 +195,7 @@ export default function AdminClassesTab({ users = [], onError }) {
               <button
                 type="submit"
                 className="btn btn--green"
-                disabled={createMut.isPending}
+                disabled={createMut.isPending || cannotSchedule}
                 style={{ borderRadius: 7, fontSize: '0.855rem', display: 'flex', alignItems: 'center', gap: 5 }}
               >
                 {createMut.isPending ? '…' : <><CalendarDays size={13} aria-hidden="true" /> Schedule</>}

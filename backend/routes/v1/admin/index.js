@@ -23,6 +23,7 @@ import referralsRoutes    from './referralsRoutes.js';
 import reviewsRoutes      from './reviewsRoutes.js';
 import systemRoutes       from './systemRoutes.js';
 import invoicesRoutes     from './invoicesRoutes.js';
+import liveClassesRoutes  from './liveClassesRoutes.js';
 import {
   coursesRouter as supabaseCoursesRoutes,
   liveClassesRouter as supabaseLiveClassesRoutes,
@@ -100,7 +101,7 @@ router.use(maintenanceGuard);
 // admin subrouters are Mongo-only under supabase mode as of this closure.
 router.use('/users',        isSupabaseBackend() ? supabaseUsersAdminRoutes : usersRoutes);
 router.use('/courses',      isSupabaseBackend() ? supabaseCoursesRoutes : coursesRoutes);
-router.use('/live-classes', isSupabaseBackend() ? supabaseLiveClassesRoutes : (_req, res) => res.status(404).json({ message: 'Not found' }));
+router.use('/live-classes', isSupabaseBackend() ? supabaseLiveClassesRoutes : liveClassesRoutes);
 router.use('/enrollments',  isSupabaseBackend() ? supabaseEnrollmentsAdminRoutes : enrollmentsRoutes);
 router.use('/payments',     isSupabaseBackend() ? supabasePaymentsAdminRoutes : paymentsRoutes);
 router.use('/blog',         isSupabaseBackend() ? supabaseBlogAdminRoutes : blogRoutes);

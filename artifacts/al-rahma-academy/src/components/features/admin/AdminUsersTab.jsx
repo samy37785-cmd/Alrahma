@@ -13,7 +13,7 @@ import { updateUserSubscription } from '../../../api/adminApi';
 // definition, a regular user account - GET /v1/admin/users never returns
 // an AdminUser, which is an entirely separate system (AdminAuthContext) -
 // so there is nothing left for a role-ish column to meaningfully show.
-export default function AdminUsersTab({ users, usersTotal, onOpenReport, onUsersChange, onError }) {
+export default function AdminUsersTab({ users, usersTotal, onUsersChange, onError }) {
   const [userSearch, setUserSearch] = useState('');
 
   const handleSubscription = async (userId, action, plan) => {
@@ -63,7 +63,6 @@ export default function AdminUsersTab({ users, usersTotal, onOpenReport, onUsers
                 <td>{u.subscription?.validUntil ? new Date(u.subscription.validUntil).toLocaleDateString() : '—'}</td>
                 <td>
                   <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                    <button className="btn btn--ghost btn--sm" title="View progress report" onClick={() => onOpenReport(u)}>📊</button>
                     <button className="btn btn--green btn--sm" title="Renew 30 days" onClick={() => handleSubscription(u._id, 'renew', u.subscription?.plan || 'Starter')}>+30d</button>
                     {u.subscription?.status === 'active'
                       ? <button className="admin__del" title="Deactivate" onClick={() => handleSubscription(u._id, 'deactivate')}>✕</button>

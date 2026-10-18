@@ -49,12 +49,14 @@ export const loginValidation = [
 export const register = asyncHandler(async (req, res) => {
   if (handleValidationErrors(req, res)) return;
 
-  const { name, password, role } = req.body;
+  const { name, password } = req.body;
   const email = normEmail(req.body.email);
 
-  // Public sign-up may only create a student or a parent account.
-  // Teacher/admin accounts are created by an admin.
-  const safeRole = role === 'parent' ? 'parent' : 'student';
+  // Public sign-up always creates a regular account, stored with the
+  // model's default role 'student'. Any role in the request is ignored: the
+  // separate parent (and teacher) account kinds are cancelled, and the
+  // site's sign-up form never sends one. Existing accounts keep their role.
+  const safeRole = 'student';
 
   const exists = await User.findOne({ email }).lean();
   if (exists) {

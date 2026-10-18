@@ -89,16 +89,21 @@ test('a visitor signs up, is signed in, signs out and signs in again', async () 
   assert.equal((await other.post('/api/auth/login').set(otherCsrf).send({ email, password: 'Wrong-Pass-2026!' })).status, 401);
 });
 
-test('sign-up never creates an admin or a teacher account, whatever role the request sends', async () => {
-  for (const role of ['admin', 'teacher']) {
+test('sign-up always creates a regular account: never an admin, teacher or parent, whatever role the request sends', async () => {
+  // The site's form sends no role (undefined); the rest are hand-made requests.
+  for (const [i, role] of [undefined, 'student', 'admin', 'teacher', 'parent', 'PARENT', ['parent']].entries()) {
     const { agent, csrf } = await visitor();
-    const email = `wants-${role}@example.com`;
-    const res = await agent.post('/api/auth/register').set(csrf).send({ name: 'Visitor', email, password: PASSWORD, role });
-    assert.equal(res.status, 201);
+    const email = `signup-${i}@example.com`;
+    const body = { name: 'Visitor', email, password: PASSWORD };
+    if (role !== undefined) body.role = role;
+    const res = await agent.post('/api/auth/register').set(csrf).send(body);
+    assert.equal(res.status, 201, `role ${role}`);
     const stored = await User.findOne({ email }).lean();
     assert.equal(stored.role, 'student', `asked for ${role}, stored as a regular account`);
-    // ...and that account reads no admin data.
+    // ...and that account reads no admin data and opens no parent area.
     assert.equal((await agent.get('/api/v1/admin/trials')).status, 401);
+    assert.equal((await agent.get('/api/parent/children')).status, 403);
+    assert.equal((await agent.get('/api/auth/me')).body.role, 'student');
   }
 });
 

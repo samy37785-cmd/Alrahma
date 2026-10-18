@@ -29,7 +29,6 @@ function renderTab(users = [STUDENT, ADMIN_ROW], overrides = {}) {
   const props = {
     users,
     usersTotal: users.length,
-    onOpenReport: vi.fn(),
     onUsersChange: vi.fn(),
     onError: vi.fn(),
     ...overrides,
@@ -71,6 +70,14 @@ describe('AdminUsersTab (Stage 2C Final Corrective: no Role or Family columns)',
     renderTab([STUDENT]);
     await user.click(screen.getByTitle('Renew 30 days'));
     expect(adminApi.updateUserSubscription).toHaveBeenCalledWith('s1', { action: 'renew', plan: 'Noorani' });
+  });
+
+  it('has no progress-report button: the report (course progress, memorisation, certificates) belongs to the cancelled system', () => {
+    renderTab();
+    expect(screen.queryByTitle('View progress report')).not.toBeInTheDocument();
+    expect(screen.queryByText('📊')).not.toBeInTheDocument();
+    // Each row keeps exactly its subscription actions.
+    expect(screen.getAllByTitle('Renew 30 days')).toHaveLength(2);
   });
 
   it('the empty-state row spans exactly 7 columns (# Name Email Plan Status Valid-Until Action), matching the 2 columns removed', () => {

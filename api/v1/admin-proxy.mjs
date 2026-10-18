@@ -2,6 +2,7 @@ import { readRawBody } from '../_lib/readRawBody.mjs';
 import { buildSignedHeaders, extractTrustedClientIp } from '../_lib/adminProxySigning.mjs';
 import { isPathTraversalAttempt } from '../_lib/pathSafety.mjs';
 import { resolveAdminProxyRequest, ADMIN_MOUNT_PREFIX, AdminProxyRoutingError } from '../_lib/resolveAdminProxyRequest.mjs';
+import { gateEnabled, hasGateCookie } from '../_lib/adminGate.mjs';
 
 /**
  * Signed admin proxy: the ONLY thing on the Vercel side allowed to add
@@ -66,6 +67,24 @@ function buildForwardHeaders(req) {
 }
 
 export default async function handler(req, res) {
+  // Hidden admin console (api/_lib/adminGate.mjs): with ADMIN_PAGE_KEY set,
+  // a browser that has not opened the secret link gets the backend's own
+  // "route not found" answer, before anything is read, signed or forwarded.
+  const pageKey = process.env.ADMIN_PAGE_KEY;
+  if (gateEnabled(pageKey) && !(await hasGateCookie(req.headers.cookie, pageKey))) {
+    let shownPath = ADMIN_MOUNT_PREFIX;
+    try {
+      const resolved = resolveAdminProxyRequest(req.url);
+      shownPath = `${resolved.fullPath}${resolved.query}`;
+    } catch {
+      // keep the bare prefix
+    }
+    res.statusCode = 404;
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.end(JSON.stringify({ message: `Route not found: ${shownPath}` }));
+    return;
+  }
+
   // Undo Vercel's flattening of the rewrite-captured segments back into a
   // real /api/v1/admin/... path + query string. Everything below operates
   // on these exactly as the old filesystem-routed function did on

@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import {
   LayoutDashboard, Users, BookOpen, CreditCard, Target,
   Mail, Settings, TrendingUp, BarChart3, Activity, CheckCircle,
-  RefreshCw, Download, CalendarDays, Star, AlertCircle, CalendarCheck,
+  RefreshCw, Download, Star, AlertCircle, CalendarCheck,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getCourses } from '../api/courseApi';
@@ -19,9 +19,7 @@ import AdminPaymentsTab   from '../components/features/admin/AdminPaymentsTab';
 import AdminBookingsTab   from '../components/features/admin/AdminBookingsTab';
 import AdminNewsletterTab from '../components/features/admin/AdminNewsletterTab';
 import AdminUsersTab      from '../components/features/admin/AdminUsersTab';
-import AdminClassesTab   from '../components/features/admin/AdminClassesTab';
 import AdminReviewsTab   from '../components/features/admin/AdminReviewsTab';
-import AdminProgressModal from '../components/features/admin/AdminProgressModal';
 import DashboardLayout    from '../components/layout/DashboardLayout';
 import { DsBarChart, DsAreaChart, DsChartEmpty } from '../components/ui/DsChart';
 
@@ -152,6 +150,11 @@ function ActivityFeed({ users, pays, trials }) {
   );
 }
 
+// Live classes and the per-student progress report (course progress,
+// memorisation, certificates) belong to the cancelled student/teacher/
+// parent system (docs/product-scope-audit.md §1 and §6), so the console no
+// longer shows a Classes tab or a report window. Their components stay
+// unused in components/features/admin/ until the owner decides to delete them.
 const TABS = [
   { key: 'overview',    label: 'Overview',    Icon: LayoutDashboard },
   { key: 'users',       label: 'Users',       Icon: Users },
@@ -160,7 +163,6 @@ const TABS = [
   { key: 'payments',    label: 'Payments',    Icon: CreditCard },
   { key: 'trials',      label: 'Trials',      Icon: Target },
   { key: 'newsletter',  label: 'Newsletter',  Icon: Mail },
-  { key: 'classes',     label: 'Classes',     Icon: CalendarDays },
   { key: 'reviews',     label: 'Reviews',     Icon: Star },
 ];
 
@@ -170,7 +172,6 @@ export default function AdminDashboard() {
 
   const [error,      setError]      = useState('');
   const [activeTab,  setActiveTab]  = useState('overview');
-  const [reportUser, setReportUser] = useState(null);
 
   const { data: courses = [], isLoading: l1, isError: e1 }     = useQuery({ queryKey: ['admin', 'courses'],     queryFn: getCourses,                          staleTime: 120000 });
   const { data: trials = [], isLoading: l2, isError: e2 }      = useQuery({ queryKey: ['admin', 'trials'],      queryFn: getTrials,                           staleTime: 60000  });
@@ -558,7 +559,6 @@ export default function AdminDashboard() {
           <AdminUsersTab
             users={users}
             usersTotal={usersTotal}
-            onOpenReport={setReportUser}
             onUsersChange={setUsers}
             onError={setError}
           />
@@ -643,13 +643,6 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* ── CLASSES TAB ────────────────────────────────────────────── */}
-      <div id="tabpanel-classes" role="tabpanel" aria-labelledby="tab-classes" hidden={activeTab !== 'classes'}>
-        <div className="ds-card" style={{ padding: 0, overflow: 'hidden' }}>
-          <AdminClassesTab users={users} onError={setError} />
-        </div>
-      </div>
-
       {/* ── REVIEWS TAB ────────────────────────────────────────────── */}
       <div id="tabpanel-reviews" role="tabpanel" aria-labelledby="tab-reviews" hidden={activeTab !== 'reviews'}>
         <div className="ds-card" style={{ padding: 0, overflow: 'hidden' }}>
@@ -661,15 +654,6 @@ export default function AdminDashboard() {
           />
         </div>
       </div>
-
-      {/* Progress modal */}
-      {reportUser && (
-        <AdminProgressModal
-          user={reportUser}
-          onClose={() => setReportUser(null)}
-          onError={setError}
-        />
-      )}
     </DashboardLayout>
   );
 }

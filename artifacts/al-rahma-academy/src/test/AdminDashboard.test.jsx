@@ -32,10 +32,8 @@ vi.mock('../components/features/admin/AdminTrialsTab', () => ({ default: () => <
 vi.mock('../components/features/admin/AdminPaymentsTab', () => ({ default: () => <div /> }));
 vi.mock('../components/features/admin/AdminBookingsTab', () => ({ default: () => <div /> }));
 vi.mock('../components/features/admin/AdminNewsletterTab', () => ({ default: () => <div /> }));
-vi.mock('../components/features/admin/AdminUsersTab', () => ({ default: () => <div /> }));
-vi.mock('../components/features/admin/AdminClassesTab', () => ({ default: () => <div /> }));
+vi.mock('../components/features/admin/AdminUsersTab', () => ({ default: (props) => <div data-testid="users-tab" data-has-report={String('onOpenReport' in props)} /> }));
 vi.mock('../components/features/admin/AdminReviewsTab', () => ({ default: () => <div /> }));
-vi.mock('../components/features/admin/AdminProgressModal', () => ({ default: () => <div /> }));
 
 import { getCourses } from '../api/courseApi';
 import { getManualPayments } from '../api/paymentApi';
@@ -83,6 +81,22 @@ describe('AdminDashboard — RBAC-aware load-error banner', () => {
 
     await waitFor(() => expect(screen.getByRole('tablist')).toBeInTheDocument());
     expect(screen.queryByRole('tab', { name: /community/i })).not.toBeInTheDocument();
+  });
+
+  // Live classes and the per-student progress report belong to the cancelled
+  // student/teacher/parent system.
+  it('has no Classes tab and no progress-report window, and keeps the other eight tabs', async () => {
+    mockAllSucceed();
+    renderDashboard();
+
+    await waitFor(() => expect(screen.getByRole('tablist')).toBeInTheDocument());
+    expect(screen.queryByRole('tab', { name: /classes/i })).not.toBeInTheDocument();
+    expect(document.getElementById('tabpanel-classes')).toBeNull();
+    expect(screen.getAllByRole('tab').map((t) => t.textContent.replace(/\d+/g, '').trim())).toEqual([
+      'Overview', 'Users', 'Courses', 'Bookings', 'Payments', 'Trials', 'Newsletter', 'Reviews',
+    ]);
+    // The Users tab is no longer handed a way to open a report.
+    expect(screen.getByTestId('users-tab')).toHaveAttribute('data-has-report', 'false');
   });
 
   it('a single failed query (e.g. a 403 for a role lacking users:read) names that section in the banner', async () => {

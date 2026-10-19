@@ -4,6 +4,7 @@ import adminHttp from './adminHttp';
 // --- Courses (public listing + admin CRUD) ---
 export const getCourses    = ()         => http.get('/courses').then((r) => r.data);
 export const getCourse     = (id)       => http.get(`/courses/${id}`).then((r) => r.data);
+export const getAdminCourse = (id)      => adminHttp.get(`/v1/admin/courses/${id}`).then((r) => r.data);
 export const createCourse  = (data)     => adminHttp.post('/v1/admin/courses', data).then((r) => r.data);
 export const updateCourse  = (id, data) => adminHttp.put(`/v1/admin/courses/${id}`, data).then((r) => r.data);
 export const deleteCourse  = (id)       => adminHttp.delete(`/v1/admin/courses/${id}`).then((r) => r.data);

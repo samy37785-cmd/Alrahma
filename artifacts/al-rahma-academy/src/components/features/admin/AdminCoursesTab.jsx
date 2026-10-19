@@ -1,14 +1,51 @@
 import { useState } from 'react';
-import { createCourse, updateCourse, deleteCourse } from '../../../api/courseApi';
+import { createCourse, updateCourse, deleteCourse, getAdminCourse } from '../../../api/courseApi';
 
 const EMPTY_COURSE = { title: '', description: '', icon: '📘', level: 'All levels', resources: [], modules: [] };
 const EMPTY_RES    = { type: 'youtube', label: '', url: '' };
 const EMPTY_MODULE = { title: '', summary: '', lessons: [] };
 const EMPTY_LESSON = { title: '', type: 'video', url: '', content: '', duration: '' };
 
+const isArrayOrMissing = (value) => value === undefined || Array.isArray(value);
+
+// Turns the admin read of one course into the snapshot the form edits, or
+// returns null when it is not a usable record. The admin read returns the
+// stored document as is, and courses created before `resources`/`modules`
+// existed have neither field, so a missing array there means "none stored"
+// and becomes []. That is safe only because this record comes from the admin
+// read: the public list strips the same fields, which is why it is never
+// used as the snapshot.
+function toEditableCourse(full, expectedId) {
+  if (!full || typeof full !== 'object' || Array.isArray(full)) return null;
+  if (String(full._id) !== String(expectedId)) return null;
+  if (typeof full.title !== 'string' || typeof full.description !== 'string') return null;
+  if (full.updatedAt != null && typeof full.updatedAt !== 'string') return null;
+  if (!isArrayOrMissing(full.resources) || !isArrayOrMissing(full.modules)) return null;
+  const modules = full.modules ?? [];
+  if (modules.some((m) => !m || typeof m !== 'object' || !isArrayOrMissing(m.lessons))) return null;
+  return {
+    form: {
+      title: full.title,
+      description: full.description,
+      icon: full.icon,
+      level: full.level,
+      resources: full.resources ?? [],
+      modules: modules.map((m) => ({ ...m, lessons: m.lessons ?? [] })),
+    },
+    // null for a course stored without one: the server then accepts the save
+    // only while the stored course still has none.
+    updatedAt: full.updatedAt ?? null,
+  };
+}
+
 export default function AdminCoursesTab({ courses, onCoursesChange, onError }) {
   const [form, setForm]           = useState(EMPTY_COURSE);
   const [editingId, setEditingId] = useState(null);
+  // The updatedAt of the record the form was loaded from (null if it had
+  // none). It goes back with the save so the server can refuse it if the
+  // course changed in between.
+  const [editingUpdatedAt, setEditingUpdatedAt] = useState(null);
+  const [loadingCourseId, setLoadingCourseId] = useState(null);
 
   const handleChange = (e) => setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
 
@@ -26,11 +63,14 @@ export default function AdminCoursesTab({ courses, onCoursesChange, onError }) {
   const handleUpdate = async (e) => {
     e.preventDefault();
     try {
-      const updated = await updateCourse(editingId, form);
+      const updated = await updateCourse(editingId, { ...form, expectedUpdatedAt: editingUpdatedAt });
       onCoursesChange((prev) => prev.map((c) => (c._id === editingId ? updated : c)));
       setEditingId(null);
+      setEditingUpdatedAt(null);
       setForm(EMPTY_COURSE);
     } catch (err) {
+      // The form stays open on any failure, including a 409 (changed
+      // elsewhere), so the admin can copy their edits before reloading.
       onError(err.response?.data?.message || 'Could not update course');
     }
   };
@@ -45,12 +85,27 @@ export default function AdminCoursesTab({ courses, onCoursesChange, onError }) {
     }
   };
 
-  const startEdit = (course) => {
-    setEditingId(course._id);
-    setForm({ title: course.title, description: course.description, icon: course.icon, level: course.level, resources: course.resources || [], modules: course.modules || [] });
+  const startEdit = async (course) => {
+    // The course list comes from the public catalogue, which leaves out
+    // resources and lessons. Saving that partial object would erase them, so
+    // the form is only ever filled from the full admin read, and editing does
+    // not start if that read fails or looks wrong.
+    setLoadingCourseId(course._id);
+    onError('');
+    try {
+      const editable = toEditableCourse(await getAdminCourse(course._id), course._id);
+      if (!editable) throw new Error('Incomplete course data');
+      setEditingId(course._id);
+      setEditingUpdatedAt(editable.updatedAt);
+      setForm(editable.form);
+    } catch {
+      onError('Could not load the complete course. No changes were made; please try again.');
+    } finally {
+      setLoadingCourseId(null);
+    }
   };
 
-  const cancelEdit = () => { setEditingId(null); setForm(EMPTY_COURSE); };
+  const cancelEdit = () => { setEditingId(null); setEditingUpdatedAt(null); setForm(EMPTY_COURSE); };
 
   const addResource    = ()           => setForm((f) => ({ ...f, resources: [...f.resources, { ...EMPTY_RES }] }));
   const removeResource = (i)          => setForm((f) => ({ ...f, resources: f.resources.filter((_, idx) => idx !== i) }));
@@ -144,7 +199,7 @@ export default function AdminCoursesTab({ courses, onCoursesChange, onError }) {
           </div>
 
           <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <button type="submit" className="btn btn--green btn--block">{editingId ? 'Save changes' : 'Add course'}</button>
+            <button type="submit" className="btn btn--green btn--block" disabled={loadingCourseId !== null}>{editingId ? 'Save changes' : 'Add course'}</button>
             {editingId && <button type="button" className="btn btn--ghost btn--block" onClick={cancelEdit}>Cancel</button>}
           </div>
         </form>
@@ -157,7 +212,7 @@ export default function AdminCoursesTab({ courses, onCoursesChange, onError }) {
             <li key={c._id}>
               <span>{c.icon} {c.title}</span>
               <div style={{ display: 'flex', gap: 6 }}>
-                <button className="btn btn--ghost btn--sm" onClick={() => startEdit(c)}>Edit</button>
+                <button className="btn btn--ghost btn--sm" disabled={loadingCourseId !== null} onClick={() => startEdit(c)}>{loadingCourseId === c._id ? 'Loading…' : 'Edit'}</button>
                 <button className="admin__del" onClick={() => handleDelete(c._id)}>Delete</button>
               </div>
             </li>

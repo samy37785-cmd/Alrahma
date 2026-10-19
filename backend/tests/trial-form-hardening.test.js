@@ -63,6 +63,9 @@ const {
   trialValidation, rejectInvalidTrial, isSingleBareAddress, pickTrialSource,
   TRIAL_LIMITS, INVALID_TRIAL_MESSAGE, MISSING_TRIAL_MESSAGE,
 } = await import('../utils/trialValidation.js');
+const {
+  whatsappValidation, useWhatsappAsPhone, PHONE_MISMATCH_MESSAGE,
+} = await import('../middleware/trialWhatsappAlias.js');
 const { escapeHtml } = await import('../utils/escapeHtml.js');
 const {
   trialRequestAdminEmail, trialRequestAdminText,
@@ -136,13 +139,16 @@ function postStack(router) {
   return layer.route.stack.map((s) => s.handle);
 }
 
-for (const [label, router, controller] of [
-  ['mongo', mongoTrialRoutes, mongoCreateTrial],
-  ['supabase', supabaseTrialRoutes, supabaseCreateTrial],
+// Only the Mongo route also takes the phone number under its old name
+// `whatsapp`; the dormant Supabase route keeps exactly its previous stack.
+for (const [label, router, expected] of [
+  ['mongo', mongoTrialRoutes,
+    [trialLimiter, ...trialValidation, whatsappValidation, rejectInvalidTrial, useWhatsappAsPhone, mongoCreateTrial]],
+  ['supabase', supabaseTrialRoutes,
+    [trialLimiter, ...trialValidation, rejectInvalidTrial, supabaseCreateTrial]],
 ]) {
   test(`${label} route: trialLimiter, then validation, then the controller (last)`, () => {
-    const handles = postStack(router);
-    assert.deepEqual(handles, [trialLimiter, ...trialValidation, rejectInvalidTrial, controller]);
+    assert.deepEqual(postStack(router), expected);
   });
 }
 
@@ -315,11 +321,108 @@ test('non-string optional fields are rejected; unknown extra fields are ignored'
   assert.equal((await postMongo({ ...VALID, phone: ['1', '2'] })).status, 400);
   assert.equal((await postMongo({ ...VALID, course: { a: 1 } })).status, 400);
 
-  const res = await postMongo({ name: VALID.name, email: VALID.email, source: 'exit-intent', whatsapp: '+1 555' });
+  const res = await postMongo({ name: VALID.name, email: VALID.email, source: 'exit-intent', utm_content: 'x', isAdmin: true });
   assert.equal(res.status, 201);
   const stored = await TrialRequest.findOne().lean();
   assert.equal(stored.source, undefined);
-  assert.equal(stored.whatsapp, undefined);
+  assert.equal(stored.utm_content, undefined);
+  assert.equal(stored.isAdmin, undefined);
+});
+
+// ── The phone number from every form ─────────────────────────────────────
+// The quick-trial and exit-intent forms used to send the number as
+// `whatsapp`, which was dropped, so their numbers were never stored or
+// emailed. They now send `phone`. The Mongo route alone also accepts
+// `whatsapp` (middleware/trialWhatsappAlias.js), for pages still running the
+// old bundle; the shared validator and the dormant Supabase route are
+// unchanged and still ignore it.
+
+const adminMail = () => sent.find((m) => m.subject === 'New Trial Request');
+
+test('phone from the main form, the quick form and the exit popup reaches MongoDB and the admin email', async () => {
+  const forms = [
+    { formSource: 'trial_section', phone: '+44 7700 900123' },
+    { source: 'hero-quick-trial', formSource: 'quick_trial', phone: '+20 100 000 0001' },
+    { source: 'exit-intent', formSource: 'exit_intent', phone: '+1 555 0100' },
+  ];
+  for (const { phone, ...rest } of forms) {
+    await clearTestDb();
+    sent.length = 0;
+    const res = await postMongo({ name: VALID.name, email: VALID.email, phone, ...rest });
+    assert.equal(res.status, 201, rest.formSource);
+    const stored = await TrialRequest.findOne().lean();
+    assert.equal(stored.phone, phone, `${rest.formSource}: stored`);
+    assert.equal(stored.formSource, rest.formSource);
+    assert.ok(adminMail().html.includes(escapeHtml(phone)), `${rest.formSource}: admin html`);
+    assert.ok(adminMail().text.includes(phone), `${rest.formSource}: admin text`);
+  }
+});
+
+test('mongo route, an old bundle sending `whatsapp` only: stored as phone and shown in the admin email', async () => {
+  const res = await postMongo({ name: VALID.name, email: VALID.email, source: 'exit-intent', whatsapp: '  +1 555 0100  ' });
+  assert.equal(res.status, 201);
+  const stored = await TrialRequest.findOne().lean();
+  assert.equal(stored.phone, '+1 555 0100', 'trimmed like phone');
+  assert.equal(stored.whatsapp, undefined, 'no separate field');
+  assert.ok(adminMail().text.includes('+1 555 0100'));
+});
+
+test('mongo route, phone and whatsapp both sent: the same number is stored once; different numbers are refused, nothing stored or sent', async () => {
+  const same = await postMongo({ ...VALID, phone: '+44 7700 900123', whatsapp: ' +44 7700 900123 ' });
+  assert.equal(same.status, 201);
+  assert.equal((await TrialRequest.findOne().lean()).phone, '+44 7700 900123');
+
+  await clearTestDb();
+  sent.length = 0;
+  const res = await postMongo({ ...VALID, phone: '+44 7700 900123', whatsapp: '+44 7700 900999' });
+  assert.equal(res.status, 400);
+  assert.equal(res.body.message, PHONE_MISMATCH_MESSAGE);
+  assert.equal(await TrialRequest.countDocuments(), 0);
+  assert.equal(sent.length, 0);
+});
+
+test('supabase route (dormant) is unchanged: `whatsapp` is still an unknown field and ignored', async () => {
+  // Only `whatsapp`: accepted, and the phone column stays empty, as before.
+  assert.equal((await postSupabase({ name: VALID.name, email: VALID.email, whatsapp: '+1 555 0100' })).status, 201);
+  assert.equal(supabaseInserts[0][2], null);
+  // `phone` with a different `whatsapp`: no mismatch check, `phone` is kept.
+  assert.equal((await postSupabase({ ...VALID, whatsapp: '+44 7700 900999' })).status, 201);
+  assert.equal(supabaseInserts[1][2], VALID.phone);
+  // Values the Mongo route refuses under `whatsapp` are not looked at here.
+  for (const whatsapp of ['+44\n7700', repeat('1', TRIAL_LIMITS.phone + 1), ['1'], { a: 1 }]) {
+    assert.equal((await postSupabase({ name: VALID.name, email: VALID.email, whatsapp })).status, 201, JSON.stringify(whatsapp));
+  }
+  assert.equal(supabaseInserts.length, 6);
+  assert.ok(supabaseInserts.slice(2).every((params) => params[2] === null));
+});
+
+test('mongo route: an empty field next to a filled one is not a mismatch', async () => {
+  for (const extra of [{ phone: '', whatsapp: '+1 555 0100' }, { phone: '+1 555 0100', whatsapp: '' }, { phone: '+1 555 0100', whatsapp: '   ' }]) {
+    await clearTestDb();
+    const res = await postMongo({ name: VALID.name, email: VALID.email, ...extra });
+    assert.equal(res.status, 201, JSON.stringify(extra));
+    assert.equal((await TrialRequest.findOne().lean()).phone, '+1 555 0100');
+  }
+});
+
+// middleware/trialWhatsappAlias.js keeps its own copy of `phone`'s rules
+// (the shared validator is left untouched), so this pins the two together.
+test('mongo route: whatsapp is accepted and refused exactly where phone is', async () => {
+  const refused = ['+44\n7700', '+44\t7700', '+44\u20287700', '+44\u2029', '+44\u007F', '\r',
+    repeat('1', TRIAL_LIMITS.phone + 1), ['1'], { a: 1 }, 42, true];
+  const accepted = ['+44 7700 900123', '  +1 555  ', '', '   ', null, repeat('1', TRIAL_LIMITS.phone), `  ${repeat('1', TRIAL_LIMITS.phone)}  `];
+  for (const value of [...refused, ...accepted]) {
+    const asPhone = await postMongo({ name: VALID.name, email: VALID.email, phone: value });
+    const asWhatsapp = await postMongo({ name: VALID.name, email: VALID.email, whatsapp: value });
+    const label = JSON.stringify(value);
+    assert.equal(asPhone.status, refused.includes(value) ? 400 : 201, `phone ${label}`);
+    assert.equal(asWhatsapp.status, asPhone.status, `whatsapp ${label}`);
+    assert.equal(asWhatsapp.body.message, asPhone.body.message, `whatsapp ${label}`);
+  }
+  // With the name missing too, both report the missing name first.
+  const noName = await postMongo({ email: VALID.email, whatsapp: ['1'] });
+  assert.equal(noName.status, 400);
+  assert.equal(noName.body.message, MISSING_TRIAL_MESSAGE);
 });
 
 // ── HTML escaping ──────────────────────────────────────────────────────────

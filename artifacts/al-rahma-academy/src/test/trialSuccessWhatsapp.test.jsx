@@ -267,8 +267,9 @@ describe('QuickTrialModal', () => {
     fill();
     submit();
     expect(await screen.findByText(QT.successTitle)).toBeInTheDocument();
-    // Payload unchanged (the modal still sends its own fields + source).
-    expect(submitTrial.mock.calls[0]).toEqual([{ name: PII.name, email: PII.email, whatsapp: PII.phone, heardFrom: '', source: 'hero-quick-trial' }]);
+    // The WhatsApp field goes to the server as `phone`, the field it stores
+    // (sent as `whatsapp` it used to be dropped).
+    expect(submitTrial.mock.calls[0]).toEqual([{ name: PII.name, email: PII.email, phone: PII.phone, heardFrom: '', source: 'hero-quick-trial' }]);
     expect(openSpy).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: EN.button }));
     expect(openSpy).toHaveBeenCalledTimes(1);
@@ -325,7 +326,7 @@ describe('ExitIntentPopup', () => {
     fill();
     await act(async () => { submit(); });
     expect(screen.getByText(EX.successTitle)).toBeInTheDocument();
-    expect(submitTrial.mock.calls[0]).toEqual([{ name: PII.name, email: PII.email, whatsapp: PII.phone, source: 'exit-intent' }]);
+    expect(submitTrial.mock.calls[0]).toEqual([{ name: PII.name, email: PII.email, phone: PII.phone, source: 'exit-intent' }]);
     // The old 4.5 s auto-close would have removed the button before anyone could use it.
     act(() => { vi.advanceTimersByTime(10000); });
     const button = screen.getByRole('button', { name: EN.button });

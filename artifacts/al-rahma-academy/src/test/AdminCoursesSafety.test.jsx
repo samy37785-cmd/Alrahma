@@ -85,6 +85,16 @@ describe('Admin course editing preserves existing content', () => {
     });
   });
 
+  it('sends expectedUpdatedAt: null for a course stored without updatedAt, so the server still guards the save', async () => {
+    getAdminCourse.mockResolvedValue({ _id: 'course1', title: 'Course', description: 'Description', icon: '📘', level: 'All levels' });
+    updateCourse.mockResolvedValue({});
+    setup();
+    await openEditor();
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    await waitFor(() => expect(updateCourse).toHaveBeenCalledTimes(1));
+    expect(updateCourse.mock.calls[0][1]).toHaveProperty('expectedUpdatedAt', null);
+  });
+
   it('treats a module without a lessons field in the admin read as having no lessons', async () => {
     getAdminCourse.mockResolvedValue({ ...fullCourse, modules: [{ _id: 'm1', title: 'Module', summary: '' }] });
     updateCourse.mockResolvedValue({});
@@ -112,6 +122,7 @@ describe('Admin course editing preserves existing content', () => {
     ['lessons that are not a list', { ...fullCourse, modules: [{ title: 'Module', lessons: 'x' }] }],
     ['an empty module entry', { ...fullCourse, modules: [null] }],
     ['no title', { ...fullCourse, title: undefined }],
+    ['an updatedAt that is not a date string', { ...fullCourse, updatedAt: 12345 }],
     ['an HTML page', '<!doctype html><html></html>'],
     ['nothing', null],
   ])('refuses to edit when the admin read returns %s', async (_label, response) => {

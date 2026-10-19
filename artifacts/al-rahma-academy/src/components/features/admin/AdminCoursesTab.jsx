@@ -19,6 +19,7 @@ function toEditableCourse(full, expectedId) {
   if (!full || typeof full !== 'object' || Array.isArray(full)) return null;
   if (String(full._id) !== String(expectedId)) return null;
   if (typeof full.title !== 'string' || typeof full.description !== 'string') return null;
+  if (full.updatedAt != null && typeof full.updatedAt !== 'string') return null;
   if (!isArrayOrMissing(full.resources) || !isArrayOrMissing(full.modules)) return null;
   const modules = full.modules ?? [];
   if (modules.some((m) => !m || typeof m !== 'object' || !isArrayOrMissing(m.lessons))) return null;
@@ -31,16 +32,19 @@ function toEditableCourse(full, expectedId) {
       resources: full.resources ?? [],
       modules: modules.map((m) => ({ ...m, lessons: m.lessons ?? [] })),
     },
-    updatedAt: full.updatedAt,
+    // null for a course stored without one: the server then accepts the save
+    // only while the stored course still has none.
+    updatedAt: full.updatedAt ?? null,
   };
 }
 
 export default function AdminCoursesTab({ courses, onCoursesChange, onError }) {
   const [form, setForm]           = useState(EMPTY_COURSE);
   const [editingId, setEditingId] = useState(null);
-  // The updatedAt of the record the form was loaded from. It goes back with
-  // the save so the server can refuse it if the course changed in between.
-  const [editingUpdatedAt, setEditingUpdatedAt] = useState(undefined);
+  // The updatedAt of the record the form was loaded from (null if it had
+  // none). It goes back with the save so the server can refuse it if the
+  // course changed in between.
+  const [editingUpdatedAt, setEditingUpdatedAt] = useState(null);
   const [loadingCourseId, setLoadingCourseId] = useState(null);
 
   const handleChange = (e) => setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
@@ -62,7 +66,7 @@ export default function AdminCoursesTab({ courses, onCoursesChange, onError }) {
       const updated = await updateCourse(editingId, { ...form, expectedUpdatedAt: editingUpdatedAt });
       onCoursesChange((prev) => prev.map((c) => (c._id === editingId ? updated : c)));
       setEditingId(null);
-      setEditingUpdatedAt(undefined);
+      setEditingUpdatedAt(null);
       setForm(EMPTY_COURSE);
     } catch (err) {
       // The form stays open on any failure, including a 409 (changed
@@ -101,7 +105,7 @@ export default function AdminCoursesTab({ courses, onCoursesChange, onError }) {
     }
   };
 
-  const cancelEdit = () => { setEditingId(null); setEditingUpdatedAt(undefined); setForm(EMPTY_COURSE); };
+  const cancelEdit = () => { setEditingId(null); setEditingUpdatedAt(null); setForm(EMPTY_COURSE); };
 
   const addResource    = ()           => setForm((f) => ({ ...f, resources: [...f.resources, { ...EMPTY_RES }] }));
   const removeResource = (i)          => setForm((f) => ({ ...f, resources: f.resources.filter((_, idx) => idx !== i) }));

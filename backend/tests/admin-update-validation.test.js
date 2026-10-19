@@ -8,6 +8,7 @@ import Blog from '../models/Blog.js';
 import Review from '../models/Review.js';
 import ContactMessage from '../models/ContactMessage.js';
 import Course from '../models/Course.js';
+import SystemAuditLog from '../models/SystemAuditLog.js';
 import { signAccessToken } from '../utils/adminAuthTokens.js';
 import { setupTestDb, clearTestDb, teardownTestDb } from './helpers/db.js';
 import { agentWithCsrf } from './helpers/csrf.js';
@@ -309,7 +310,7 @@ test('updateCourse: a save from a copy opened before another save is refused wit
   const saveA = await agent.put(`/api/v1/admin/courses/${id}`).set({ ...csrf, Cookie: cookieHeader })
     .send(formBody(tabA, { title: 'Stale title' }));
   assert.equal(saveA.status, 409);
-  assert.match(saveA.body.message, /changed after you opened it/);
+  assert.match(saveA.body.message, /changed or deleted after you opened it/);
 
   const after = await Course.findById(id).lean();
   assert.equal(after.title, 'Tajweed');
@@ -360,7 +361,7 @@ test('updateCourse: a malformed expectedUpdatedAt is rejected with 422 and chang
   const { agent, csrf, cookieHeader } = await adminUserAgent();
   const id = await createFullCourse();
 
-  for (const expectedUpdatedAt of ['not-a-date', 1767225600000, null, { at: 'x' }]) {
+  for (const expectedUpdatedAt of ['not-a-date', '', 1767225600000, true, { at: 'x' }]) {
     const res = await agent.put(`/api/v1/admin/courses/${id}`).set({ ...csrf, Cookie: cookieHeader })
       .send({ title: 'Should not save', expectedUpdatedAt });
     assert.equal(res.status, 422, `expectedUpdatedAt=${JSON.stringify(expectedUpdatedAt)}`);
@@ -377,4 +378,171 @@ test('updateCourse: a viewer (courses:read only) cannot save a course', async ()
     .send(formBody(full, { title: 'Viewer edit' }));
   assert.equal(res.status, 403);
   assert.equal((await Course.findById(id).lean()).title, 'Tajweed');
+});
+
+// Two saves that arrive together both read the course before either writes,
+// so both pass the updatedAt check. This holds every Course.findById() until
+// `count` requests have read the course, which makes that overlap certain
+// instead of a matter of timing. Install it only around the PUTs: the admin
+// read (GET) chains .lean() onto findById.
+function holdReadsUntil(count) {
+  const original = Course.findById;
+  let arrived = 0;
+  let release;
+  const allRead = new Promise((resolve) => { release = resolve; });
+  Course.findById = function heldFindById(...args) {
+    const query = original.apply(this, args);
+    return (async () => {
+      const doc = await query;
+      arrived += 1;
+      if (arrived === count) release();
+      await allRead;
+      return doc;
+    })();
+  };
+  return () => { Course.findById = original; };
+}
+
+async function saveTogether(agent, headers, id, bodies) {
+  const restore = holdReadsUntil(bodies.length);
+  try {
+    return await Promise.all(bodies.map((body) => agent.put(`/api/v1/admin/courses/${id}`).set(headers).send(body)));
+  } finally {
+    restore();
+  }
+}
+
+test('updateCourse: two saves at the same moment from the same copy: one lands whole, the other gets 409', async () => {
+  const { agent, csrf, cookieHeader } = await adminUserAgent();
+  const headers = { ...csrf, Cookie: cookieHeader };
+  const id = await createFullCourse();
+  const before = await Course.findById(id).lean();
+  const full = (await agent.get(`/api/v1/admin/courses/${id}`).set(headers)).body;
+
+  // Tab A renames the course; tab B adds a lesson and a resource. Each sends
+  // the whole arrays it was opened with.
+  const titleEdit = formBody(full, { title: 'Title from tab A' });
+  const contentEdit = formBody(full, {
+    resources: [...full.resources, { type: 'link', label: 'Resource from tab B', url: 'https://example.com/b' }],
+    modules: full.modules.map((m, i) => (i === 0
+      ? { ...m, lessons: [...m.lessons, { title: 'Lesson from tab B', type: 'video', url: 'https://example.com/lb' }] }
+      : m)),
+  });
+  const [a, b] = await saveTogether(agent, headers, id, [titleEdit, contentEdit]);
+
+  assert.deepEqual([a.status, b.status].sort(), [200, 409], 'exactly one save may land');
+  const loser = a.status === 409 ? a : b;
+  assert.match(loser.body.message, /changed or deleted after you opened it/);
+
+  const after = await Course.findById(id).lean();
+  const titles = lessonTitles(after).flat();
+  if (a.status === 200) {
+    assert.equal(after.title, 'Title from tab A');
+    assert.ok(!titles.includes('Lesson from tab B'));
+    assert.equal(after.resources.length, 2);
+  } else {
+    assert.equal(after.title, 'Tajweed');
+    assert.ok(titles.includes('Lesson from tab B'));
+    assert.ok(after.resources.some((r) => r.label === 'Resource from tab B'));
+  }
+  // Whichever landed, nothing stored before was lost.
+  for (const t of lessonTitles(before).flat()) assert.ok(titles.includes(t), `${t} kept`);
+  assert.equal(after.resources[0].label, 'Workbook');
+});
+
+// Replacing whole arrays already makes Mongoose add __v to the save's filter
+// (a concurrent save then fails with a VersionError), but a save that only
+// changes plain fields carries no such guard: without the conditional write
+// both of these land and the first title is silently lost.
+test('updateCourse: two saves that change only the title at the same moment: one lands, the other gets 409', async () => {
+  const { agent, csrf, cookieHeader } = await adminUserAgent();
+  const headers = { ...csrf, Cookie: cookieHeader };
+  const id = await createFullCourse();
+  const full = (await agent.get(`/api/v1/admin/courses/${id}`).set(headers)).body;
+
+  const [a, b] = await saveTogether(agent, headers, id, [
+    { title: 'Title from tab A', expectedUpdatedAt: full.updatedAt },
+    { title: 'Title from tab B', expectedUpdatedAt: full.updatedAt },
+  ]);
+  assert.deepEqual([a.status, b.status].sort(), [200, 409]);
+  assert.equal((await Course.findById(id).lean()).title, a.status === 200 ? 'Title from tab A' : 'Title from tab B');
+});
+
+test('updateCourse: three saves at the same moment: exactly one lands', async () => {
+  const { agent, csrf, cookieHeader } = await adminUserAgent();
+  const headers = { ...csrf, Cookie: cookieHeader };
+  const id = await createFullCourse();
+  const full = (await agent.get(`/api/v1/admin/courses/${id}`).set(headers)).body;
+
+  const results = await saveTogether(agent, headers, id, ['One', 'Two', 'Three'].map((title) => formBody(full, { title })));
+  assert.deepEqual(results.map((r) => r.status).sort(), [200, 409, 409]);
+  const winner = ['One', 'Two', 'Three'][results.findIndex((r) => r.status === 200)];
+  assert.equal((await Course.findById(id).lean()).title, winner);
+});
+
+// The real catalogue's courses may lack updatedAt: the console then sends
+// expectedUpdatedAt: null, which matches only while the field is missing.
+async function createCourseWithoutTimestamps() {
+  const { insertedId } = await Course.collection.insertOne({
+    title: 'Quran reading', description: 'Learn to read', icon: '📘', level: 'All levels', price: 0, published: true, __v: 0,
+  });
+  return insertedId;
+}
+
+test('updateCourse: a course stored without updatedAt: the first save from null lands, a second one from null gets 409', async () => {
+  const { agent, csrf, cookieHeader } = await adminUserAgent();
+  const headers = { ...csrf, Cookie: cookieHeader };
+  const id = await createCourseWithoutTimestamps();
+  const full = (await agent.get(`/api/v1/admin/courses/${id}`).set(headers)).body;
+  assert.equal(full.updatedAt, undefined);
+
+  const first = await agent.put(`/api/v1/admin/courses/${id}`).set(headers)
+    .send(formBody(full, { description: 'First', expectedUpdatedAt: null }));
+  assert.equal(first.status, 200);
+  const stored = await Course.findById(id).lean();
+  assert.ok(stored.updatedAt instanceof Date, 'the first save sets updatedAt');
+
+  const stale = await agent.put(`/api/v1/admin/courses/${id}`).set(headers)
+    .send(formBody(full, { description: 'Stale', expectedUpdatedAt: null }));
+  assert.equal(stale.status, 409);
+  assert.equal((await Course.findById(id).lean()).description, 'First');
+});
+
+test('updateCourse: a course stored without updatedAt: two saves at the same moment from null: one lands, one gets 409', async () => {
+  const { agent, csrf, cookieHeader } = await adminUserAgent();
+  const headers = { ...csrf, Cookie: cookieHeader };
+  const id = await createCourseWithoutTimestamps();
+  const full = (await agent.get(`/api/v1/admin/courses/${id}`).set(headers)).body;
+
+  const [a, b] = await saveTogether(agent, headers, id, [
+    formBody(full, { description: 'From tab A', expectedUpdatedAt: null }),
+    formBody(full, { description: 'From tab B', expectedUpdatedAt: null }),
+  ]);
+  assert.deepEqual([a.status, b.status].sort(), [200, 409]);
+  assert.equal((await Course.findById(id).lean()).description, a.status === 200 ? 'From tab A' : 'From tab B');
+});
+
+test('updateCourse: null against a course that has updatedAt, or a date against one without, is a 409', async () => {
+  const { agent, csrf, cookieHeader } = await adminUserAgent();
+  const headers = { ...csrf, Cookie: cookieHeader };
+  const withDate = await createFullCourse();
+  const withoutDate = await createCourseWithoutTimestamps();
+
+  const a = await agent.put(`/api/v1/admin/courses/${withDate}`).set(headers).send({ title: 'X', expectedUpdatedAt: null });
+  const b = await agent.put(`/api/v1/admin/courses/${withoutDate}`).set(headers).send({ title: 'X', expectedUpdatedAt: OLD_UPDATED_AT.toISOString() });
+  assert.deepEqual([a.status, b.status], [409, 409]);
+  assert.equal((await Course.findById(withDate).lean()).title, 'Tajweed');
+  assert.equal((await Course.findById(withoutDate).lean()).title, 'Quran reading');
+});
+
+test('updateCourse: a successful save is audit-logged as course.update', async () => {
+  const { agent, csrf, cookieHeader } = await adminUserAgent();
+  const headers = { ...csrf, Cookie: cookieHeader };
+  const id = await createFullCourse();
+  const full = (await agent.get(`/api/v1/admin/courses/${id}`).set(headers)).body;
+
+  const res = await agent.put(`/api/v1/admin/courses/${id}`).set(headers).send(formBody(full, { title: 'Audited' }));
+  assert.equal(res.status, 200);
+  const entry = await SystemAuditLog.findOne({ action: 'course.update', resourceId: String(id) }).lean();
+  assert.ok(entry, 'course.update audit entry');
 });

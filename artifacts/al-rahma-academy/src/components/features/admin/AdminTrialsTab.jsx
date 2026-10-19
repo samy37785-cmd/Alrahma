@@ -54,13 +54,19 @@ export default function AdminTrialsTab({ trials, onTrialsChange, onError }) {
       <div className="admin__table-wrap">
         <table className="admin__table">
           <thead>
-            <tr><th>Name</th><th>Email</th><th>Course</th><th>Heard from</th><th>Campaign</th><th>Status</th><th>Date</th></tr>
+            <tr><th>Name</th><th>Email</th><th>Phone / WhatsApp</th><th>Message</th><th>Course</th><th>Heard from</th><th>Campaign</th><th>Status</th><th>Date</th></tr>
           </thead>
           <tbody>
             {filtered.map((t) => (
               <tr key={t._id}>
                 <td>{t.name}</td>
                 <td>{t.email}</td>
+                <td data-testid="trial-phone">
+                  {t.phone ? <span dir="ltr" style={{ whiteSpace: 'nowrap' }}>{t.phone}</span> : <Missing>Not recorded</Missing>}
+                </td>
+                <td data-testid="trial-message" style={{ whiteSpace: 'pre-wrap', maxWidth: 280, overflowWrap: 'anywhere' }}>
+                  {t.message || <Missing>No message</Missing>}
+                </td>
                 <td>{t.course || '—'}</td>
                 <td>{t.heardFrom ? t.heardFrom.replace(/_/g, ' ') : '—'}</td>
                 <td>{campaignOf(t) || '—'}</td>
@@ -83,11 +89,21 @@ export default function AdminTrialsTab({ trials, onTrialsChange, onError }) {
               </tr>
             ))}
             {trials.length === 0 && (
-              <tr><td colSpan="7" className="admin__empty">No requests yet.</td></tr>
+              <tr><td colSpan="9" className="admin__empty">No requests yet.</td></tr>
             )}
           </tbody>
         </table>
       </div>
+      <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: 10 }}>
+        Phone: until this was fixed, the number typed in the quick trial form and the exit popup was not saved,
+        so those older requests show “Not recorded” even if the visitor typed one. Some visitors also sent their
+        details over WhatsApp from the success screen. Only the main trial form has a message field.
+      </p>
     </section>
   );
+}
+
+// A field this request has no value for: shown, not left blank.
+function Missing({ children }) {
+  return <span style={{ color: 'var(--text-secondary)', fontStyle: 'italic' }}>{children}</span>;
 }

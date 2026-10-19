@@ -16,6 +16,28 @@ const courses = createCRUDController(Course, {
   searchFields:   ['title', 'description'],
   allowedFilters: ['level', 'language', 'isPublished'],
   sortable:       ['createdAt', 'updatedAt', 'title'],
+  // The console's course form saves whole `resources` and `modules` arrays,
+  // so a save from a form opened before someone else's save (a second tab or
+  // device) would silently put the old lessons back. The console sends the
+  // updatedAt it loaded the course with; if the course was saved since, the
+  // save is refused with a 409 and nothing changes. A request without the
+  // field keeps the old behaviour.
+  updateMiddleware: async (body, doc) => {
+    const { expectedUpdatedAt, ...rest } = body ?? {};
+    if (expectedUpdatedAt === undefined) return rest;
+    const expected = typeof expectedUpdatedAt === 'string' ? new Date(expectedUpdatedAt) : null;
+    if (!expected || Number.isNaN(expected.getTime())) {
+      const err = new Error('expectedUpdatedAt must be a date');
+      err.statusCode = 422;
+      throw err;
+    }
+    if (!doc.updatedAt || doc.updatedAt.getTime() !== expected.getTime()) {
+      const err = new Error('This course was changed after you opened it, so your edits were not saved. Open it again to load the latest version.');
+      err.statusCode = 409;
+      throw err;
+    }
+    return rest;
+  },
 });
 
 router.get('/',        requirePermissions('courses:read'),   asyncHandler(courses.list));

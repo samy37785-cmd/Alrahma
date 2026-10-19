@@ -41,7 +41,9 @@ export default function QuickTrialModal({ open, onClose }) {
     setLoading(true);
     setError('');
     try {
-      await submitTrial({ ...form, source: 'hero-quick-trial' });
+      // The WhatsApp field is the visitor's phone; the server stores `phone`.
+      const { whatsapp, ...rest } = form;
+      await submitTrial({ ...rest, phone: whatsapp, source: 'hero-quick-trial' });
       setDone(true);
     } catch {
       setError(copy.submitError);

@@ -61,7 +61,7 @@ const { createTrial: supabaseCreateTrial } = await import('../data/supabase/tria
 const { trialLimiter } = await import('../config/rateLimit.js');
 const {
   trialValidation, rejectInvalidTrial, isSingleBareAddress, pickTrialSource,
-  TRIAL_LIMITS, INVALID_TRIAL_MESSAGE, MISSING_TRIAL_MESSAGE,
+  TRIAL_LIMITS, INVALID_TRIAL_MESSAGE, MISSING_TRIAL_MESSAGE, PHONE_MISMATCH_MESSAGE,
 } = await import('../utils/trialValidation.js');
 const { escapeHtml } = await import('../utils/escapeHtml.js');
 const {
@@ -315,11 +315,90 @@ test('non-string optional fields are rejected; unknown extra fields are ignored'
   assert.equal((await postMongo({ ...VALID, phone: ['1', '2'] })).status, 400);
   assert.equal((await postMongo({ ...VALID, course: { a: 1 } })).status, 400);
 
-  const res = await postMongo({ name: VALID.name, email: VALID.email, source: 'exit-intent', whatsapp: '+1 555' });
+  const res = await postMongo({ name: VALID.name, email: VALID.email, source: 'exit-intent', utm_content: 'x', isAdmin: true });
   assert.equal(res.status, 201);
   const stored = await TrialRequest.findOne().lean();
   assert.equal(stored.source, undefined);
-  assert.equal(stored.whatsapp, undefined);
+  assert.equal(stored.utm_content, undefined);
+  assert.equal(stored.isAdmin, undefined);
+});
+
+// ── The phone number from every form ─────────────────────────────────────
+// The quick-trial and exit-intent forms used to send the number as
+// `whatsapp`, which was dropped, so their numbers were never stored or
+// emailed. They now send `phone`; `whatsapp` stays accepted for pages still
+// running the old bundle.
+
+const adminMail = () => sent.find((m) => m.subject === 'New Trial Request');
+
+test('phone from the main form, the quick form and the exit popup reaches MongoDB and the admin email', async () => {
+  const forms = [
+    { formSource: 'trial_section', phone: '+44 7700 900123' },
+    { source: 'hero-quick-trial', formSource: 'quick_trial', phone: '+20 100 000 0001' },
+    { source: 'exit-intent', formSource: 'exit_intent', phone: '+1 555 0100' },
+  ];
+  for (const { phone, ...rest } of forms) {
+    await clearTestDb();
+    sent.length = 0;
+    const res = await postMongo({ name: VALID.name, email: VALID.email, phone, ...rest });
+    assert.equal(res.status, 201, rest.formSource);
+    const stored = await TrialRequest.findOne().lean();
+    assert.equal(stored.phone, phone, `${rest.formSource}: stored`);
+    assert.equal(stored.formSource, rest.formSource);
+    assert.ok(adminMail().html.includes(escapeHtml(phone)), `${rest.formSource}: admin html`);
+    assert.ok(adminMail().text.includes(phone), `${rest.formSource}: admin text`);
+  }
+});
+
+test('an old bundle sending `whatsapp` only: stored as phone and shown in the admin email (both backends)', async () => {
+  const body = { name: VALID.name, email: VALID.email, source: 'exit-intent', whatsapp: '  +1 555 0100  ' };
+  const res = await postMongo(body);
+  assert.equal(res.status, 201);
+  const stored = await TrialRequest.findOne().lean();
+  assert.equal(stored.phone, '+1 555 0100', 'trimmed like phone');
+  assert.equal(stored.whatsapp, undefined, 'no separate field');
+  assert.ok(adminMail().text.includes('+1 555 0100'));
+
+  const supa = await postSupabase(body);
+  assert.equal(supa.status, 201);
+  const [, , phone] = supabaseInserts[0];
+  assert.equal(phone, '+1 555 0100');
+});
+
+test('phone and whatsapp both sent: the same number is stored once; different numbers are refused, nothing stored or sent', async () => {
+  const same = await postMongo({ ...VALID, phone: '+44 7700 900123', whatsapp: ' +44 7700 900123 ' });
+  assert.equal(same.status, 201);
+  assert.equal((await TrialRequest.findOne().lean()).phone, '+44 7700 900123');
+
+  await clearTestDb();
+  sent.length = 0;
+  for (const post of [postMongo, postSupabase]) {
+    const res = await post({ ...VALID, phone: '+44 7700 900123', whatsapp: '+44 7700 900999' });
+    assert.equal(res.status, 400);
+    assert.equal(res.body.message, PHONE_MISMATCH_MESSAGE);
+  }
+  assert.equal(await TrialRequest.countDocuments(), 0);
+  assert.equal(supabaseInserts.length, 0);
+  assert.equal(sent.length, 0);
+});
+
+test('an empty field next to a filled one is not a mismatch', async () => {
+  for (const extra of [{ phone: '', whatsapp: '+1 555 0100' }, { phone: '+1 555 0100', whatsapp: '' }, { phone: '+1 555 0100', whatsapp: '   ' }]) {
+    await clearTestDb();
+    const res = await postMongo({ name: VALID.name, email: VALID.email, ...extra });
+    assert.equal(res.status, 201, JSON.stringify(extra));
+    assert.equal((await TrialRequest.findOne().lean()).phone, '+1 555 0100');
+  }
+});
+
+test('whatsapp follows the same rules as phone', async () => {
+  for (const whatsapp of ['+44\n7700', '+44\t7700', `+44${' '}7700`, repeat('1', TRIAL_LIMITS.phone + 1), ['1'], { a: 1 }]) {
+    const res = await postMongo({ name: VALID.name, email: VALID.email, whatsapp });
+    assert.equal(res.status, 400, JSON.stringify(whatsapp));
+  }
+  assert.equal(await TrialRequest.countDocuments(), 0);
+  const atLimit = await postMongo({ name: VALID.name, email: VALID.email, whatsapp: repeat('1', TRIAL_LIMITS.phone) });
+  assert.equal(atLimit.status, 201);
 });
 
 // ── HTML escaping ──────────────────────────────────────────────────────────

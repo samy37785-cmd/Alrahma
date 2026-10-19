@@ -261,6 +261,63 @@ test('recent activity: the ten newest events across accounts, bookings, trials a
   assert.ok(events.every((e) => !('password' in e)));
 });
 
+// Seeds each source with records at the given minutes-ago (all distinct, so
+// the order is exact) and returns the full list, newest first: what a sort
+// of every record would give.
+async function seedActivity(minutesBySource) {
+  const now = Date.now();
+  const at = (m) => new Date(now - m * 60 * 1000);
+  const all = [];
+  const add = (type, m, extra) => { all.push({ type, m }); return { email: email(type), createdAt: at(m), ...extra }; };
+  const { account = [], booking = [], trial = [], newsletter = [] } = minutesBySource;
+  if (account.length) await models.User.collection.insertMany(account.map((m) => add('account', m, { name: `Acc ${m}`, password: 'x' })));
+  if (booking.length) await models.Enrollment.collection.insertMany(booking.map((m) => add('booking', m, { name: `Book ${m}`, status: 'pending', bookingRef: `AR-${m}` })));
+  if (trial.length) await models.TrialRequest.collection.insertMany(trial.map((m) => add('trial', m, { name: `Trial ${m}`, status: 'new' })));
+  if (newsletter.length) await models.Subscriber.collection.insertMany(newsletter.map((m) => add('newsletter', m)));
+  return all.sort((a, b) => a.m - b.m);
+}
+
+const minutesAgo = (e) => Math.round((Date.now() - new Date(e.createdAt).getTime()) / 60000);
+const range = (from, count, step = 1) => Array.from({ length: count }, (_, i) => from + i * step);
+
+test('recent activity: when the ten newest are all bookings, all ten are shown', async () => {
+  await seedActivity({ booking: range(1, 12), account: range(20, 5), trial: range(30, 5), newsletter: range(40, 5) });
+  const { body } = await getStats(await adminCookie());
+  const { events } = body.sections.activity;
+  assert.equal(events.length, 10);
+  assert.ok(events.every((e) => e.type === 'booking'), events.map((e) => e.type).join());
+  assert.deepEqual(events.map(minutesAgo), range(1, 10));
+});
+
+test('recent activity: when the ten newest are all newsletter sign-ups, all ten are shown', async () => {
+  await seedActivity({ newsletter: range(1, 11), booking: range(20, 3), account: range(30, 3) });
+  const { body } = await getStats(await adminCookie());
+  assert.deepEqual(body.sections.activity.events.map((e) => e.type), Array(10).fill('newsletter'));
+});
+
+test('recent activity matches a full sort of every record, for interleaved sources', async () => {
+  const all = await seedActivity({
+    account: [2, 3, 5, 7, 11, 13, 17],
+    booking: [1, 4, 6, 8, 19, 23],
+    trial: [9, 10, 12, 14, 15, 16, 18],
+    newsletter: [20, 21, 22],
+  });
+  const { body } = await getStats(await adminCookie());
+  const got = body.sections.activity.events.map((e) => ({ type: e.type, m: minutesAgo(e) }));
+  assert.deepEqual(got, all.slice(0, 10));
+});
+
+test('recent activity: the newest ten among the sources the admin may read only', async () => {
+  // Accounts and newsletter sign-ups are the newest, but an editor may not
+  // read them; it must still get ten bookings and trials, newest first.
+  const all = await seedActivity({ account: range(1, 10), newsletter: range(11, 5), booking: range(20, 8, 2), trial: range(21, 8, 2) });
+  const { body } = await getStats(await adminCookie('editor'));
+  const { events, omitted } = body.sections.activity;
+  assert.deepEqual(omitted, ['account', 'newsletter']);
+  const expected = all.filter((e) => e.type === 'booking' || e.type === 'trial').slice(0, 10);
+  assert.deepEqual(events.map((e) => ({ type: e.type, m: minutesAgo(e) })), expected);
+});
+
 test('an empty database gives real zeros, with every section loaded', async () => {
   const { body } = await getStats(await adminCookie());
   for (const [key, value] of Object.entries(body.sections)) assert.equal(value.status, 'ok', key);

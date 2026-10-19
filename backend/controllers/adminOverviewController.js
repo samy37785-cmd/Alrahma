@@ -188,13 +188,16 @@ async function coursesSection() {
 const ACTIVITY_LIMIT = 10;
 
 // The newest events from the sources this admin may read, newest first.
+// Each source gives its own newest ACTIVITY_LIMIT, so the merged list's top
+// ACTIVITY_LIMIT is the true newest across those sources even when every one
+// of them comes from a single source.
 // `omitted` names the sources left out (no permission, or failed to load).
 async function activitySection(can) {
   const sources = [
-    { type: 'account', allowed: can('users:read'), load: () => User.find({}, 'name email createdAt').sort({ createdAt: -1 }).limit(5).lean() },
-    { type: 'booking', allowed: can('enrollments:read'), load: () => Enrollment.find({}, 'name email status plan bookingRef createdAt').sort({ createdAt: -1 }).limit(5).lean() },
-    { type: 'trial', allowed: can('enrollments:read'), load: () => TrialRequest.find({}, 'name email course status createdAt').sort({ createdAt: -1 }).limit(5).lean() },
-    { type: 'newsletter', allowed: can('users:read'), load: () => Subscriber.find({}, 'email createdAt').sort({ createdAt: -1 }).limit(3).lean() },
+    { type: 'account', allowed: can('users:read'), load: () => User.find({}, 'name email createdAt').sort({ createdAt: -1 }).limit(ACTIVITY_LIMIT).lean() },
+    { type: 'booking', allowed: can('enrollments:read'), load: () => Enrollment.find({}, 'name email status plan bookingRef createdAt').sort({ createdAt: -1 }).limit(ACTIVITY_LIMIT).lean() },
+    { type: 'trial', allowed: can('enrollments:read'), load: () => TrialRequest.find({}, 'name email course status createdAt').sort({ createdAt: -1 }).limit(ACTIVITY_LIMIT).lean() },
+    { type: 'newsletter', allowed: can('users:read'), load: () => Subscriber.find({}, 'email createdAt').sort({ createdAt: -1 }).limit(ACTIVITY_LIMIT).lean() },
   ];
   const omitted = [];
   const events = [];

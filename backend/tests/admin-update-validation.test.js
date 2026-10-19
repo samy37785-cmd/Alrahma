@@ -685,3 +685,46 @@ test('updateTrialStatus: sends no email or message', async (t) => {
   }
   assert.equal(mailLogs(), afterSubmit, 'no email attempted for a status change');
 });
+
+test('updateTrialStatus: works on requests from all three forms and leaves their phone and message as stored (with #261)', async () => {
+  // The quick form and the exit popup send `phone` now; a page still on the
+  // old bundle sends `whatsapp`, which the Mongo route stores as `phone`.
+  const forms = [
+    { formSource: 'trial_section', phone: '+44 7700 900123', message: 'Weekday evenings work best.' },
+    { source: 'hero-quick-trial', formSource: 'quick_trial', phone: '+20 100 000 0001' },
+    { source: 'exit-intent', formSource: 'exit_intent', whatsapp: '+1 555 0100' },
+  ];
+  const ids = [];
+  for (const [i, form] of forms.entries()) {
+    const visitor = await agentWithCsrf(app);
+    const res = await visitor.agent.post('/api/trials').set(visitor.csrf)
+      .set('X-Forwarded-For', `198.51.100.${i + 20}`)
+      .send({ name: `Lead ${i}`, email: `lead${i}@example.com`, ...form });
+    assert.equal(res.status, 201, form.formSource);
+    ids.push(res.body.trial._id);
+  }
+
+  const { agent, csrf, cookieHeader } = await adminUserAgent();
+  const headers = { ...csrf, Cookie: cookieHeader };
+  const expected = [['+44 7700 900123', 'Weekday evenings work best.'], ['+20 100 000 0001', undefined], ['+1 555 0100', undefined]];
+  for (const [i, id] of ids.entries()) {
+    const before = await TrialRequest.findById(id).lean();
+    const res = await setStatus(agent, headers, id, i === 0 ? 'scheduled' : 'contacted');
+    assert.equal(res.status, 200);
+    assert.equal(res.body.phone, expected[i][0], 'the response carries the phone, so the Trials tab keeps showing it');
+    assert.equal(res.body.message, expected[i][1]);
+    const { status, updatedAt, ...rest } = await TrialRequest.findById(id).lean();
+    const { status: oldStatus, updatedAt: oldUpdatedAt, ...restBefore } = before;
+    assert.deepEqual(rest, restBefore, 'nothing but the status (and updatedAt) changes');
+    assert.equal(oldStatus, 'new');
+    assert.notEqual(status, oldStatus);
+    assert.ok(updatedAt >= oldUpdatedAt);
+  }
+
+  const list = await agent.get('/api/v1/admin/trials').set(headers);
+  assert.equal(list.status, 200);
+  const byId = Object.fromEntries(list.body.map((t) => [t._id, t]));
+  assert.deepEqual(ids.map((id) => [byId[id].phone, byId[id].status]), [
+    ['+44 7700 900123', 'scheduled'], ['+20 100 000 0001', 'contacted'], ['+1 555 0100', 'contacted'],
+  ]);
+});

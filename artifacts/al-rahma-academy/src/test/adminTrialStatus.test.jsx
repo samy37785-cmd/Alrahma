@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { useState } from 'react';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
@@ -85,6 +86,29 @@ describe('AdminTrialsTab status control', () => {
     fireEvent.change(statusSelect('Yusuf'), { target: { value: 'new' } });
     await waitFor(() => expect(onError).toHaveBeenLastCalledWith('status must be one of: new, contacted, scheduled'));
     expect(onTrialsChange).not.toHaveBeenCalled();
+  });
+
+  it('after a change the row still shows the phone and message (#261), even if the reply carries only the status', async () => {
+    const rows = [
+      trial({ _id: 't1', name: 'Amina', phone: '+44 7700 900123', message: 'Weekday evenings work best.' }),
+      trial({ _id: 't2', name: 'Yusuf' }),
+    ];
+    updateTrialStatus.mockResolvedValue({ _id: 't1', status: 'contacted' });
+    function Harness() {
+      const [list, setList] = useState(rows);
+      return <AdminTrialsTab trials={list} onTrialsChange={(update) => setList((prev) => update(prev))} onError={vi.fn()} />;
+    }
+    render(<Harness />);
+
+    fireEvent.change(statusSelect('Amina'), { target: { value: 'contacted' } });
+    await waitFor(() => expect(statusSelect('Amina')).toHaveValue('contacted'));
+    const row = statusSelect('Amina').closest('tr');
+    expect(within(row).getByTestId('trial-phone')).toHaveTextContent('+44 7700 900123');
+    expect(within(row).getByTestId('trial-message')).toHaveTextContent('Weekday evenings work best.');
+    const other = statusSelect('Yusuf').closest('tr');
+    expect(statusSelect('Yusuf')).toHaveValue('new');
+    expect(within(other).getByTestId('trial-phone')).toHaveTextContent('Not recorded');
+    expect(within(other).getByTestId('trial-message')).toHaveTextContent('No message');
   });
 
   it('without a way to save (read-only use) it shows the status as text', () => {

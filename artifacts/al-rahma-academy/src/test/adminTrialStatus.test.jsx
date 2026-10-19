@@ -11,7 +11,9 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 vi.mock('../api/contentApi', () => ({ getTrials: vi.fn(), getSubscribers: vi.fn(), updateTrialStatus: vi.fn() }));
 vi.mock('../api/courseApi', () => ({ getCourses: vi.fn() }));
 vi.mock('../api/paymentApi', () => ({ getManualPayments: vi.fn() }));
-vi.mock('../api/adminApi', () => ({ getUsers: vi.fn() }));
+// getOverviewStats is mocked too so this file keeps working once the
+// server-side Overview (#260) is merged, which reads it.
+vi.mock('../api/adminApi', () => ({ getUsers: vi.fn(), getOverviewStats: vi.fn(() => Promise.resolve({ sections: {} })) }));
 vi.mock('../api/enrollmentApi', () => ({ getEnrollments: vi.fn(), updateEnrollment: vi.fn() }));
 vi.mock('../api/reviewApi', () => ({ getAdminReviews: vi.fn() }));
 vi.mock('../context/AuthContext', () => ({ useAuth: () => ({ user: { name: 'Admin' } }) }));

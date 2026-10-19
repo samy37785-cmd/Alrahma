@@ -9,6 +9,8 @@ import Review from '../models/Review.js';
 import ContactMessage from '../models/ContactMessage.js';
 import Course from '../models/Course.js';
 import SystemAuditLog from '../models/SystemAuditLog.js';
+import TrialRequest from '../models/TrialRequest.js';
+import logger from '../config/logger.js';
 import { signAccessToken } from '../utils/adminAuthTokens.js';
 import { setupTestDb, clearTestDb, teardownTestDb } from './helpers/db.js';
 import { agentWithCsrf } from './helpers/csrf.js';
@@ -545,4 +547,141 @@ test('updateCourse: a successful save is audit-logged as course.update', async (
   assert.equal(res.status, 200);
   const entry = await SystemAuditLog.findOne({ action: 'course.update', resourceId: String(id) }).lean();
   assert.ok(entry, 'course.update audit entry');
+});
+
+// --------------------------------------------------------------------------
+// Trial request status
+// --------------------------------------------------------------------------
+// PATCH /api/v1/admin/trials/:id/status: an admin records how far a free-
+// trial lead has got (new / contacted / scheduled). Only the status changes,
+// only when an admin sets it, it is audit-logged without contact details,
+// and nobody is emailed or messaged.
+
+async function createTrials(...statuses) {
+  const old = new Date('2026-10-01T00:00:00.000Z');
+  const docs = statuses.map((status, i) => ({
+    name: `Lead ${i}`, email: `lead${i}@example.com`, phone: '+44 7700 900123', status, createdAt: old, updatedAt: old,
+  }));
+  const { insertedIds } = await TrialRequest.collection.insertMany(docs);
+  return Object.values(insertedIds);
+}
+
+const setStatus = (agent, headers, id, status) =>
+  agent.patch(`/api/v1/admin/trials/${id}/status`).set(headers).send(status === undefined ? {} : { status });
+
+test('updateTrialStatus: an admin moves a request through new, contacted, scheduled and back; each change is audit-logged with the statuses only', async () => {
+  const { agent, csrf, cookieHeader } = await adminUserAgent();
+  const headers = { ...csrf, Cookie: cookieHeader };
+  const [id] = await createTrials('new');
+
+  for (const status of ['contacted', 'scheduled', 'new']) {
+    const res = await setStatus(agent, headers, id, status);
+    assert.equal(res.status, 200, status);
+    assert.equal(res.body.status, status);
+    assert.equal((await TrialRequest.findById(id).lean()).status, status);
+  }
+
+  const entries = await SystemAuditLog.find({ action: 'trial.status_change', resourceId: String(id) }).sort({ createdAt: 1 }).lean();
+  assert.deepEqual(entries.map((e) => [e.before, e.after]), [
+    [{ status: 'new' }, { status: 'contacted' }],
+    [{ status: 'contacted' }, { status: 'scheduled' }],
+    [{ status: 'scheduled' }, { status: 'new' }],
+  ]);
+  assert.ok(entries.every((e) => e.resource === 'TrialRequest' && e.severity === 'info'));
+  const logged = JSON.stringify(entries);
+  assert.ok(!logged.includes('lead0@example.com') && !logged.includes('+44 7700'), 'no contact details in the audit log');
+});
+
+test('updateTrialStatus: setting the status it already has changes nothing and logs nothing', async () => {
+  const { agent, csrf, cookieHeader } = await adminUserAgent();
+  const headers = { ...csrf, Cookie: cookieHeader };
+  const [id] = await createTrials('contacted');
+  const before = await TrialRequest.findById(id).lean();
+
+  const res = await setStatus(agent, headers, id, 'contacted');
+  assert.equal(res.status, 200);
+  assert.equal(res.body.status, 'contacted');
+  const after = await TrialRequest.findById(id).lean();
+  assert.equal(after.updatedAt.getTime(), before.updatedAt.getTime());
+  assert.equal(await SystemAuditLog.countDocuments({ action: 'trial.status_change' }), 0);
+});
+
+test('updateTrialStatus: only the chosen request changes', async () => {
+  const { agent, csrf, cookieHeader } = await adminUserAgent();
+  const headers = { ...csrf, Cookie: cookieHeader };
+  const [a, b, c] = await createTrials('new', 'new', 'contacted');
+
+  assert.equal((await setStatus(agent, headers, b, 'scheduled')).status, 200);
+  const rows = await TrialRequest.find({ _id: { $in: [a, b, c] } }).lean();
+  const byId = Object.fromEntries(rows.map((r) => [String(r._id), r]));
+  assert.equal(byId[String(a)].status, 'new');
+  assert.equal(byId[String(b)].status, 'scheduled');
+  assert.equal(byId[String(c)].status, 'contacted');
+  assert.equal(byId[String(a)].updatedAt.toISOString(), '2026-10-01T00:00:00.000Z');
+  assert.equal(byId[String(c)].updatedAt.toISOString(), '2026-10-01T00:00:00.000Z');
+});
+
+test('updateTrialStatus: an editor (enrollments:write) may change it; a viewer (read only) gets 403 and nothing changes', async () => {
+  const [id] = await createTrials('new');
+
+  const editor = await adminUserAgent('editor');
+  const ok = await setStatus(editor.agent, { ...editor.csrf, Cookie: editor.cookieHeader }, id, 'contacted');
+  assert.equal(ok.status, 200);
+
+  const viewer = await adminUserAgent('viewer');
+  const denied = await setStatus(viewer.agent, { ...viewer.csrf, Cookie: viewer.cookieHeader }, id, 'scheduled');
+  assert.equal(denied.status, 403);
+  assert.deepEqual(denied.body.required, ['enrollments:write']);
+  assert.equal((await TrialRequest.findById(id).lean()).status, 'contacted');
+});
+
+test('updateTrialStatus: no session is 401; an MFA-unverified session is 403', async () => {
+  const [id] = await createTrials('new');
+  const { agent, csrf } = await agentWithCsrf(app);
+  const none = await setStatus(agent, { ...csrf, Cookie: `csrf_token=${csrf['x-csrf-token']}` }, id, 'contacted');
+  assert.equal(none.status, 401);
+
+  const admin = await AdminUser.create({
+    name: 'MFA admin', email: `mfa-${Date.now()}@example.com`, password: 'Sup3r-Str0ng-Pass!', role: 'admin', mfaEnabled: true,
+  });
+  const cookie = `admin_at=${signAccessToken(admin._id, admin.role, false)}; csrf_token=${csrf['x-csrf-token']}`;
+  const unverified = await setStatus(agent, { ...csrf, Cookie: cookie }, id, 'contacted');
+  assert.equal(unverified.status, 403);
+  assert.equal((await TrialRequest.findById(id).lean()).status, 'new');
+});
+
+test('updateTrialStatus: a bad id is 400, an unknown id 404, and any other status 422; nothing changes', async () => {
+  const { agent, csrf, cookieHeader } = await adminUserAgent();
+  const headers = { ...csrf, Cookie: cookieHeader };
+  const [id] = await createTrials('new');
+
+  assert.equal((await setStatus(agent, headers, 'not-an-id', 'contacted')).status, 400);
+  assert.equal((await setStatus(agent, headers, '64b7f0f0f0f0f0f0f0f0f0f0', 'contacted')).status, 404);
+  for (const status of ['pending', 'NEW', 'Contacted', '', 3, ['new'], { $ne: 'x' }, null, undefined]) {
+    const res = await setStatus(agent, headers, id, status);
+    assert.equal(res.status, 422, JSON.stringify(status));
+  }
+  assert.equal((await TrialRequest.findById(id).lean()).status, 'new');
+  assert.equal(await SystemAuditLog.countDocuments({ action: 'trial.status_change' }), 0);
+});
+
+test('updateTrialStatus: sends no email or message', async (t) => {
+  // These tests run with no email provider, so every sendMail() call logs
+  // "Skipped email". Submitting a request does (the positive control);
+  // changing its status must not.
+  const warn = t.mock.method(logger, 'warn');
+  const error = t.mock.method(logger, 'error');
+  const mailLogs = () => [...warn.mock.calls, ...error.mock.calls].filter((c) => /email/i.test(String(c.arguments[0]))).length;
+
+  const visitor = await agentWithCsrf(app);
+  const created = await visitor.agent.post('/api/trials').set(visitor.csrf).send({ name: 'Lead', email: 'lead@example.com' });
+  assert.equal(created.status, 201);
+  const afterSubmit = mailLogs();
+  assert.ok(afterSubmit >= 1, 'a submitted request does try to send email');
+
+  const { agent, csrf, cookieHeader } = await adminUserAgent();
+  for (const status of ['contacted', 'scheduled']) {
+    assert.equal((await setStatus(agent, { ...csrf, Cookie: cookieHeader }, created.body.trial._id, status)).status, 200);
+  }
+  assert.equal(mailLogs(), afterSubmit, 'no email attempted for a status change');
 });

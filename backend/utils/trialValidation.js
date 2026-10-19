@@ -60,7 +60,6 @@ export function pickTrialSource(body = {}) {
 export const INVALID_TRIAL_MESSAGE =
   'Please enter one valid email address and keep each field within its length limit.';
 export const MISSING_TRIAL_MESSAGE = 'Name and email are required';
-export const PHONE_MISMATCH_MESSAGE = 'Please send the phone number once: phone and whatsapp differ.';
 
 export function isSingleBareAddress(value) {
   if (typeof value !== 'string' || value.length === 0) return false;
@@ -112,10 +111,6 @@ export const trialValidation = [
     }).bail()
     .custom(isSingleBareAddress),
   optionalText('phone', TRIAL_LIMITS.phone, SINGLE_LINE_FORBIDDEN),
-  // The quick-trial and exit-intent forms sent the visitor's number as
-  // `whatsapp` until they were changed to `phone`; a page still open on the
-  // old bundle keeps sending it. Same rules as `phone`.
-  optionalText('whatsapp', TRIAL_LIMITS.phone, SINGLE_LINE_FORBIDDEN),
   optionalText('course', TRIAL_LIMITS.course, SINGLE_LINE_FORBIDDEN),
   optionalText('message', TRIAL_LIMITS.message, MULTI_LINE_FORBIDDEN),
 ];
@@ -124,13 +119,8 @@ export const trialValidation = [
 // always used for bad input). On success, exposes ONLY the five accepted
 // fields, trimmed, as req.trialInput — controllers must read from there,
 // never from req.body — and the lead's origin, already reduced to known
-// values, as req.trialSource. Other extra fields are ignored.
-//
-// `whatsapp` is the old name the two quick forms used for the phone number
-// (it used to be dropped here, so their numbers were never stored). It now
-// fills `phone` when `phone` is empty. If both arrive and differ after
-// trimming, the request is refused with 400 rather than guessing which
-// number is right; the site's own forms never send both.
+// values, as req.trialSource. Other extra fields (e.g. `whatsapp` sent by
+// some forms) are ignored exactly as before.
 export function rejectInvalidTrial(req, res, next) {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -138,15 +128,10 @@ export function rejectInvalidTrial(req, res, next) {
     return res.status(400).json({ message: missing ? MISSING_TRIAL_MESSAGE : INVALID_TRIAL_MESSAGE });
   }
   const pick = (k) => (typeof req.body[k] === 'string' && req.body[k] !== '' ? req.body[k] : null);
-  const phone = pick('phone');
-  const whatsapp = pick('whatsapp');
-  if (phone && whatsapp && phone !== whatsapp) {
-    return res.status(400).json({ message: PHONE_MISMATCH_MESSAGE });
-  }
   req.trialInput = {
     name: req.body.name,
     email: req.body.email,
-    phone: phone ?? whatsapp,
+    phone: pick('phone'),
     course: pick('course'),
     message: pick('message'),
   };

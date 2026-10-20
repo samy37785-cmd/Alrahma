@@ -66,7 +66,9 @@ export default function ExitIntentPopup() {
     setLoading(true);
     setError('');
     try {
-      await submitTrial({ ...form, source: 'exit-intent' });
+      // The WhatsApp field is the visitor's phone; the server stores `phone`.
+      const { whatsapp, ...rest } = form;
+      await submitTrial({ ...rest, phone: whatsapp, source: 'exit-intent' });
       setDone(true);
       sessionStorage.setItem(SESSION_KEY, '1');
       // With the optional WhatsApp follow-up on screen the popup stays open

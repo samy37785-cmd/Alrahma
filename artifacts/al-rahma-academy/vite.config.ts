@@ -77,6 +77,14 @@ export default defineConfig({
     dedupe: ['react', 'react-dom'],
   },
   root: path.resolve(import.meta.dirname),
+  // The commit this build was made from, for the admin console's Service
+  // status card only (src/utils/buildInfo.js). Vercel sets
+  // VERCEL_GIT_COMMIT_SHA during its builds; anywhere else it is empty and
+  // the card says "unknown". A named constant, not an env prefix, so it
+  // lands only in the code that reads it.
+  define: {
+    __BUILD_COMMIT__: JSON.stringify(process.env.VERCEL_GIT_COMMIT_SHA || ''),
+  },
   build: {
     outDir: path.resolve(import.meta.dirname, 'dist/public'),
     emptyOutDir: true,

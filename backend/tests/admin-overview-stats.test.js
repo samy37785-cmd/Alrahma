@@ -21,6 +21,7 @@ const DAY = 24 * 60 * 60 * 1000;
 let app;
 let models;
 let signAccessToken;
+let resetServiceStatusCache;
 
 before(async () => {
   process.env.ADMIN_IP_WHITELIST = ALLOWED_IP;
@@ -32,6 +33,7 @@ before(async () => {
     ManualPayment: await load('ManualPayment'), Course: await load('Course'),
   };
   ({ signAccessToken } = await import('../utils/adminAuthTokens.js'));
+  ({ resetServiceStatusCache } = await import('../controllers/serviceStatusController.js'));
   await setupTestDb();
 }, { timeout: 60_000 });
 after(async () => { await teardownTestDb(); });
@@ -388,4 +390,205 @@ test('the route sits behind the admin session, MFA and the IP allowlist', async 
   const otherIp = await getStats(await adminCookie(), { ip: OTHER_IP });
   assert.equal(otherIp.status, 403);
   assert.equal(otherIp.body.sections, undefined);
+});
+
+// ── Service status (GET /api/v1/admin/stats/service-status) ────────────────
+// The server's own commit, a database ping, and main on GitHub's public API.
+// GitHub is replaced by a stand-in that answers by path, counts the calls
+// and refuses every other host, so nothing leaves this machine. A missing
+// or failed fact must come back as "unknown" with its reason, never as "no
+// deploy needed".
+
+const SERVICE_PATH = '/api/v1/admin/stats/service-status';
+const REPO_PATH = '/repos/samy37785-cmd/Alrahma';
+const SERVER_SHA = '0af5fa7c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a';
+const MAIN_SHA = '9be0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8';
+const MAIN_PATH = `${REPO_PATH}/commits/main`;
+const COMPARE = `${REPO_PATH}/compare/${SERVER_SHA}...${MAIN_SHA}`;
+const mainCommit = (sha = MAIN_SHA) => ({ body: { sha, commit: { committer: { date: '2026-10-20T15:39:30Z' } } } });
+
+function getServiceStatus(cookie, { ip = ALLOWED_IP } = {}) {
+  const req = request(app).get(SERVICE_PATH).set('X-Forwarded-For', ip);
+  return cookie ? req.set('Cookie', cookie) : req;
+}
+
+function fakeGitHub(t, routes) {
+  const calls = [];
+  t.mock.method(globalThis, 'fetch', async (url) => {
+    const u = new URL(String(url));
+    if (u.host !== 'api.github.com') throw new Error(`unexpected request to ${u.host}`);
+    calls.push(u.pathname);
+    const route = routes[u.pathname];
+    if (route instanceof Error) throw route;
+    const { status = 200, body = { message: 'Not Found' }, headers = {} } = route ?? { status: 404 };
+    return new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json', ...headers } });
+  });
+  return calls;
+}
+
+function runningCommit(t, sha) {
+  const saved = process.env.RENDER_GIT_COMMIT;
+  if (sha === undefined) delete process.env.RENDER_GIT_COMMIT;
+  else process.env.RENDER_GIT_COMMIT = sha;
+  t.after(() => {
+    if (saved === undefined) delete process.env.RENDER_GIT_COMMIT;
+    else process.env.RENDER_GIT_COMMIT = saved;
+  });
+}
+
+async function serviceStatus(t, { server, routes }) {
+  resetServiceStatusCache();
+  runningCommit(t, server);
+  const calls = fakeGitHub(t, routes);
+  const res = await getServiceStatus(await adminCookie());
+  assert.equal(res.status, 200);
+  return { body: res.body, calls, res };
+}
+
+test("service status: the server runs main's commit: up to date, with a timed database ping", async (t) => {
+  const { body, calls, res } = await serviceStatus(t, { server: MAIN_SHA, routes: { [MAIN_PATH]: mainCommit() } });
+  assert.equal(res.headers['cache-control'], 'no-store');
+  assert.equal(body.server.commit, MAIN_SHA);
+  assert.deepEqual({ ...body.main, fetchedAt: undefined }, { status: 'ok', commit: MAIN_SHA, committedAt: '2026-10-20T15:39:30Z', fetchedAt: undefined });
+  assert.deepEqual(body.serverDeploy, { verdict: 'up_to_date' });
+  assert.equal(body.database.status, 'ok');
+  assert.ok(Number.isInteger(body.database.latencyMs) && body.database.latencyMs >= 1);
+  assert.ok(!Number.isNaN(Date.parse(body.database.checkedAt)));
+  assert.deepEqual(calls, [MAIN_PATH], 'no comparison when the commits match');
+});
+
+test('service status: server files changed since the running commit: a deploy is probably needed, with the list', async (t) => {
+  const files = [
+    { filename: 'artifacts/al-rahma-academy/src/App.jsx' },
+    { filename: 'backend/app.js' },
+    { filename: 'docs/notes.md' },
+    { filename: 'scripts/moved.js', previous_filename: 'backend/moved.js' },
+    { filename: 'backend/tests/app.test.js' },
+  ];
+  const { body } = await serviceStatus(t, { server: SERVER_SHA, routes: {
+    [MAIN_PATH]: mainCommit(),
+    [COMPARE]: { body: { status: 'ahead', ahead_by: 3, files } },
+  } });
+  assert.deepEqual({ ...body.serverDeploy, comparedAt: undefined }, {
+    verdict: 'likely_needed', commitsBehind: 3, changedFiles: 5, listComplete: true, comparedAt: undefined,
+    serverFileCount: 2, serverFiles: ['backend/app.js', 'scripts/moved.js'],
+  });
+});
+
+test('service status: only website, docs or server-test files changed: no server change (not proof), never "up to date"', async (t) => {
+  const files = [{ filename: 'artifacts/al-rahma-academy/src/App.jsx' }, { filename: 'README.md' }, { filename: 'backend/tests/app.test.js' }];
+  const { body } = await serviceStatus(t, { server: SERVER_SHA, routes: {
+    [MAIN_PATH]: mainCommit(),
+    [COMPARE]: { body: { status: 'ahead', ahead_by: 2, files } },
+  } });
+  assert.equal(body.serverDeploy.verdict, 'no_server_changes');
+  assert.equal(body.serverDeploy.listComplete, true);
+  assert.equal(body.serverDeploy.commitsBehind, 2);
+});
+
+test('service status: a list GitHub may have cut short (300 files) proves nothing unless it already shows a server file', async (t) => {
+  const site = Array.from({ length: 300 }, (_, i) => ({ filename: `artifacts/al-rahma-academy/src/f${i}.jsx` }));
+  const first = await serviceStatus(t, { server: SERVER_SHA, routes: {
+    [MAIN_PATH]: mainCommit(),
+    [COMPARE]: { body: { status: 'ahead', ahead_by: 400, files: site } },
+  } });
+  assert.equal(first.body.serverDeploy.verdict, 'unknown');
+  assert.equal(first.body.serverDeploy.reason, 'compare_incomplete');
+
+  t.mock.restoreAll();
+  const withServer = [...site.slice(1), { filename: 'backend/server.js' }];
+  const second = await serviceStatus(t, { server: SERVER_SHA, routes: {
+    [MAIN_PATH]: mainCommit(),
+    [COMPARE]: { body: { status: 'ahead', ahead_by: 400, files: withServer } },
+  } });
+  assert.equal(second.body.serverDeploy.verdict, 'likely_needed');
+  assert.equal(second.body.serverDeploy.listComplete, false);
+});
+
+test('service status: a server commit main does not contain, or GitHub does not know, is unknown', async (t) => {
+  for (const [answer, reason] of [
+    [{ body: { status: 'diverged', ahead_by: 1, behind_by: 2, files: [] } }, 'server_commit_not_on_main'],
+    [{ body: { status: 'behind', ahead_by: 0, behind_by: 1, files: [] } }, 'server_commit_not_on_main'],
+    [{ status: 404 }, 'server_commit_not_found'],
+  ]) {
+    t.mock.restoreAll();
+    const { body } = await serviceStatus(t, { server: SERVER_SHA, routes: { [MAIN_PATH]: mainCommit(), [COMPARE]: answer } });
+    assert.deepEqual(body.serverDeploy, { verdict: 'unknown', reason }, reason);
+  }
+});
+
+test('service status: a missing or malformed server commit is unknown, and nothing is compared', async (t) => {
+  for (const server of [undefined, '', 'not-a-commit', 'abc12']) {
+    t.mock.restoreAll();
+    const { body, calls } = await serviceStatus(t, { server, routes: { [MAIN_PATH]: mainCommit() } });
+    assert.equal(body.server.commit, null, String(server));
+    assert.deepEqual(body.serverDeploy, { verdict: 'unknown', reason: 'server_commit_unknown' });
+    assert.equal(body.main.status, 'ok', 'main is still shown');
+    assert.deepEqual(calls, [MAIN_PATH]);
+  }
+});
+
+test('service status: GitHub failing makes main and the deploy question unknown; the database check still answers', async (t) => {
+  for (const [answer, reason] of [
+    [new TypeError('fetch failed'), 'github_unreachable'],
+    [{ status: 403, headers: { 'x-ratelimit-remaining': '0' }, body: { message: 'API rate limit exceeded for 1.2.3.4' } }, 'github_rate_limited'],
+    [{ status: 500, body: { message: 'internal detail that must not be passed on' } }, 'github_http_500'],
+    [{ body: { sha: 'not a sha' } }, 'github_bad_answer'],
+  ]) {
+    t.mock.restoreAll();
+    const { body } = await serviceStatus(t, { server: SERVER_SHA, routes: { [MAIN_PATH]: answer } });
+    assert.deepEqual(body.main, { status: 'unknown', reason }, reason);
+    assert.deepEqual(body.serverDeploy, { verdict: 'unknown', reason }, reason);
+    assert.equal(body.database.status, 'ok');
+    const text = JSON.stringify(body);
+    assert.ok(!text.includes('1.2.3.4') && !text.includes('internal detail'), "GitHub's own text is never passed on");
+  }
+});
+
+test('service status: GitHub answers are kept for a while, so repeated checks do not call it again', async (t) => {
+  resetServiceStatusCache();
+  runningCommit(t, SERVER_SHA);
+  const calls = fakeGitHub(t, {
+    [MAIN_PATH]: mainCommit(),
+    [COMPARE]: { body: { status: 'ahead', ahead_by: 1, files: [{ filename: 'backend/app.js' }] } },
+  });
+  const cookie = await adminCookie();
+  for (let i = 0; i < 3; i++) assert.equal((await getServiceStatus(cookie)).body.serverDeploy.verdict, 'likely_needed');
+  assert.deepEqual(calls, [MAIN_PATH, COMPARE], 'one call per GitHub path for three checks');
+
+  resetServiceStatusCache();
+  await getServiceStatus(cookie);
+  assert.equal(calls.length, 4, 'asked again once the kept answers are gone');
+});
+
+test('service status: a failed database ping is reported as an error, and the rest still answers', async (t) => {
+  resetServiceStatusCache();
+  runningCommit(t, MAIN_SHA);
+  fakeGitHub(t, { [MAIN_PATH]: mainCommit() });
+  const Admin = Object.getPrototypeOf(mongoose.connection.db.admin());
+  t.mock.method(Admin, 'ping', async () => { throw new Error('simulated outage'); });
+  const res = await getServiceStatus(await adminCookie());
+  assert.equal(res.status, 200);
+  assert.equal(res.body.database.status, 'error');
+  assert.equal(res.body.database.reason, 'ping_failed');
+  assert.equal(res.body.database.latencyMs, undefined);
+  assert.deepEqual(res.body.serverDeploy, { verdict: 'up_to_date' });
+});
+
+test('service status: needs an MFA session from the allowlist and audit:read; nothing is asked of GitHub otherwise', async (t) => {
+  resetServiceStatusCache();
+  runningCommit(t, MAIN_SHA);
+  const calls = fakeGitHub(t, { [MAIN_PATH]: mainCommit() });
+
+  assert.equal((await getServiceStatus(null)).status, 401);
+  assert.equal((await getServiceStatus(await adminCookie('admin', { mfaVerified: false }))).status, 403);
+  assert.equal((await getServiceStatus(await adminCookie(), { ip: OTHER_IP })).status, 403);
+  const editor = await getServiceStatus(await adminCookie('editor'));
+  assert.equal(editor.status, 403);
+  assert.deepEqual(editor.body.required, ['audit:read']);
+  assert.deepEqual(calls, [], 'a refused request never reaches GitHub');
+
+  for (const role of ['viewer', 'admin', 'super-admin']) {
+    assert.equal((await getServiceStatus(await adminCookie(role))).status, 200, role);
+  }
 });

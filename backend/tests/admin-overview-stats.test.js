@@ -1,5 +1,6 @@
 import { test, before, beforeEach, after } from 'node:test';
 import assert from 'node:assert/strict';
+import mongoose from 'mongoose';
 import request from 'supertest';
 import { setupTestDb, clearTestDb, teardownTestDb } from './helpers/db.js';
 
@@ -166,6 +167,54 @@ test('booking payments: only fully recorded paid bookings, one total per currenc
   assert.ok(thisMonth.count === 10 || p.paidByMonth.at(-2).count === 10, 'all ten were paid three days ago');
 });
 
+// Figures shown together must be read together. This runs every Enrollment
+// and TrialRequest read one at a time and, after each, adds a paid booking
+// with full details, an awaiting-payment booking with an agreed amount and a
+// new trial, so no two reads see the same data. Only figures that come from
+// one read still add up.
+function changeDataBetweenReads(t) {
+  let previous = Promise.resolve();
+  const addRecords = async () => {
+    const now = new Date();
+    await models.Enrollment.collection.insertMany([
+      { name: 'Mid', email: email('mid'), status: 'paid', agreedAmount: 10, currency: 'EUR', paidAt: now, createdAt: now, updatedAt: now },
+      { name: 'Mid', email: email('mid'), status: 'awaiting_payment', agreedAmount: 20, currency: 'USD', createdAt: now, updatedAt: now },
+    ]);
+    await models.TrialRequest.collection.insertOne({ name: 'Mid', email: email('mid'), status: 'new', createdAt: now, updatedAt: now });
+  };
+  for (const [proto, modelOf] of [[mongoose.Query.prototype, (q) => q.model], [mongoose.Aggregate.prototype, (a) => a._model]]) {
+    const exec = proto.exec;
+    t.mock.method(proto, 'exec', function oneAtATime(...args) {
+      if (!['Enrollment', 'TrialRequest'].includes(modelOf(this)?.modelName)) return exec.apply(this, args);
+      const run = previous.then(() => exec.apply(this, args)).then(async (result) => { await addRecords(); return result; });
+      previous = run.catch(() => {});
+      return run;
+    });
+  }
+}
+
+test('figures shown together still add up when bookings and trials change between reads', async (t) => {
+  await seedAll();
+  const cookie = await adminCookie();
+  changeDataBetweenReads(t);
+  const { body } = await getStats(cookie);
+  const s = body.sections;
+  const sum = (byStatus) => Object.values(byStatus).reduce((n, v) => n + v, 0);
+  const counted = (rows) => rows.reduce((n, r) => n + r.count, 0);
+
+  assert.ok((await models.Enrollment.collection.countDocuments()) > 55, 'records really were added between reads');
+  assert.equal(s.bookings.status, 'ok');
+  assert.equal(s.bookings.total, sum(s.bookings.byStatus), 'bookings: the total equals its parts');
+  assert.equal(s.trials.total, sum(s.trials.byStatus), 'trials: the total equals its parts');
+  const p = s.bookingPayments;
+  assert.equal(p.status, 'ok');
+  assert.equal(p.paidMissingDetails, 2, 'every added paid booking has its details; only the two seeded ones lack them');
+  assert.deepEqual(p.paidByCurrency.filter((r) => r.currency !== 'EUR'),
+    [{ currency: 'EGP', count: 2, amount: 3000 }, { currency: 'USD', count: 2, amount: 160 }], 'the added paid bookings are all EUR');
+  assert.equal(p.awaitingPayment.count - counted(p.awaitingPayment.agreedByCurrency), 2,
+    'awaiting payment: only the two seeded bookings have no agreed amount');
+});
+
 test('monthly counts use the admin\'s time zone', async () => {
   const now = new Date();
   // Late on the last day of the previous UTC month: already the next day,
@@ -225,8 +274,8 @@ test('a viewer (read-only on users, courses, payments and bookings) gets every s
 
 test('one section failing is reported as an error; the others still load', async () => {
   await seedAll();
-  const original = models.TrialRequest.countDocuments;
-  models.TrialRequest.countDocuments = () => Promise.reject(new Error('simulated outage'));
+  const original = models.TrialRequest.aggregate;
+  models.TrialRequest.aggregate = () => Promise.reject(new Error('simulated outage'));
   try {
     const res = await getStats(await adminCookie());
     assert.equal(res.status, 200);
@@ -234,7 +283,7 @@ test('one section failing is reported as an error; the others still load', async
     assert.equal(res.body.sections.users.total, 60);
     assert.equal(res.body.sections.bookings.total, 55);
   } finally {
-    models.TrialRequest.countDocuments = original;
+    models.TrialRequest.aggregate = original;
   }
 });
 

@@ -25,12 +25,8 @@ const MANUAL_PAYMENT_STATUSES = ManualPayment.schema.path('status').enumValues;
 // with a price but no recorded payment is not money received.
 const PAID_BOOKING_STATUSES = ['paid', 'enrolled'];
 const CURRENCY_PATTERN = /^[A-Za-z]{3}$/;
-const RECORDED_PAYMENT = {
-  status: { $in: PAID_BOOKING_STATUSES },
-  agreedAmount: { $type: 'number', $gte: 0 },
-  currency: { $regex: CURRENCY_PATTERN },
-  paidAt: { $type: 'date' },
-};
+const HAS_AMOUNT = { agreedAmount: { $type: 'number', $gte: 0 }, currency: { $regex: CURRENCY_PATTERN } };
+const RECORDED_PAYMENT = { status: { $in: PAID_BOOKING_STATUSES }, ...HAS_AMOUNT, paidAt: { $type: 'date' } };
 
 const USER_MONTHS = 7;
 const BOOKING_MONTHS = 6;
@@ -72,29 +68,30 @@ async function countByMonth(Model, field, months, timeZone, extraMatch = {}) {
   return months.map((month) => ({ month, count: byKey.get(month) ?? 0 }));
 }
 
-// { pending: 3, contacted: 1, ... } for every value in `statuses`, plus
-// `other` for any stored value outside them.
-async function countByStatus(Model, statuses, match = {}) {
-  const rows = await Model.aggregate([{ $match: match }, { $group: { _id: '$status', count: { $sum: 1 } } }]);
-  const out = Object.fromEntries(statuses.map((s) => [s, 0]));
-  out.other = 0;
+// { total, byStatus: { pending: 3, contacted: 1, ..., other: 0 } } for every
+// value in `statuses`, plus `other` for any stored value outside them. The
+// total is the sum of the same groups, so it always equals its parts.
+async function countByStatus(Model, statuses) {
+  const rows = await Model.aggregate([{ $group: { _id: '$status', count: { $sum: 1 } } }]);
+  const byStatus = Object.fromEntries(statuses.map((s) => [s, 0]));
+  byStatus.other = 0;
+  let total = 0;
   for (const r of rows) {
-    if (statuses.includes(r._id)) out[r._id] = r.count;
-    else out.other += r.count;
+    total += r.count;
+    if (statuses.includes(r._id)) byStatus[r._id] = r.count;
+    else byStatus.other += r.count;
   }
-  return out;
+  return { total, byStatus };
 }
 
 // Amounts per currency, never added across currencies. Rounded to cents to
 // hide floating-point noise from summing decimals.
-async function sumByCurrency(match) {
-  const rows = await Enrollment.aggregate([
-    { $match: match },
-    { $group: { _id: { $toUpper: '$currency' }, count: { $sum: 1 }, amount: { $sum: '$agreedAmount' } } },
-    { $sort: { _id: 1 } },
-  ]);
-  return rows.map((r) => ({ currency: r._id, count: r.count, amount: Math.round(r.amount * 100) / 100 }));
-}
+const BY_CURRENCY = [
+  { $group: { _id: { $toUpper: '$currency' }, count: { $sum: 1 }, amount: { $sum: '$agreedAmount' } } },
+  { $sort: { _id: 1 } },
+];
+const currencyRows = (rows) => rows.map((r) => ({ currency: r._id, count: r.count, amount: Math.round(r.amount * 100) / 100 }));
+const countOf = (facet) => facet[0]?.n ?? 0;
 
 async function usersSection(now, timeZone) {
   const [total, newByMonth] = await Promise.all([
@@ -119,39 +116,49 @@ async function subscriptionsSection(now) {
 }
 
 async function bookingsSection(now, timeZone) {
-  const [total, byStatus, newByMonth] = await Promise.all([
-    Enrollment.countDocuments({}),
+  const [counts, newByMonth] = await Promise.all([
     countByStatus(Enrollment, ENROLLMENT_STATUSES),
     countByMonth(Enrollment, 'createdAt', lastMonths(now, BOOKING_MONTHS, timeZone), timeZone),
   ]);
-  return { total, byStatus, newByMonth };
+  return { ...counts, newByMonth };
 }
 
-async function bookingPaymentsSection(now, timeZone) {
-  const [paidByCurrency, markedPaid, recorded, awaitingCount, awaitingByCurrency, paidByMonth] = await Promise.all([
-    sumByCurrency(RECORDED_PAYMENT),
-    Enrollment.countDocuments({ status: { $in: PAID_BOOKING_STATUSES } }),
-    Enrollment.countDocuments(RECORDED_PAYMENT),
-    Enrollment.countDocuments({ status: 'awaiting_payment' }),
-    sumByCurrency({ status: 'awaiting_payment', agreedAmount: { $type: 'number', $gte: 0 }, currency: { $regex: CURRENCY_PATTERN } }),
-    countByMonth(Enrollment, 'paidAt', lastMonths(now, BOOKING_MONTHS, timeZone), timeZone, RECORDED_PAYMENT),
+// Paid and awaiting-payment figures, from ONE pass over those bookings.
+// Figures shown together ("marked paid" and "paid with details", awaiting
+// payment and its agreed amounts) must come from the same read: separate
+// counts could each see a booking that changed in between differently, so
+// the parts would not add up and "marked paid without details" could even
+// go below zero. (countByStatus does the same for a total and its parts.)
+async function paymentFigures() {
+  const [{ paid, recorded, awaiting, awaitingAgreed }] = await Enrollment.aggregate([
+    { $match: { status: { $in: [...PAID_BOOKING_STATUSES, 'awaiting_payment'] } } },
+    { $facet: {
+      paid: [{ $match: { status: { $in: PAID_BOOKING_STATUSES } } }, { $count: 'n' }],
+      recorded: [{ $match: RECORDED_PAYMENT }, ...BY_CURRENCY],
+      awaiting: [{ $match: { status: 'awaiting_payment' } }, { $count: 'n' }],
+      awaitingAgreed: [{ $match: { status: 'awaiting_payment', ...HAS_AMOUNT } }, ...BY_CURRENCY],
+    } },
   ]);
+  const paidByCurrency = currencyRows(recorded);
   return {
     paidByCurrency,
     // Marked paid/enrolled but missing the amount, currency or payment date,
     // so not in paidByCurrency.
-    paidMissingDetails: markedPaid - recorded,
-    awaitingPayment: { count: awaitingCount, agreedByCurrency: awaitingByCurrency },
-    paidByMonth,
+    paidMissingDetails: countOf(paid) - paidByCurrency.reduce((n, r) => n + r.count, 0),
+    awaitingPayment: { count: countOf(awaiting), agreedByCurrency: currencyRows(awaitingAgreed) },
   };
 }
 
-async function trialsSection() {
-  const [total, byStatus] = await Promise.all([
-    TrialRequest.countDocuments({}),
-    countByStatus(TrialRequest, TRIAL_STATUSES),
+async function bookingPaymentsSection(now, timeZone) {
+  const [figures, paidByMonth] = await Promise.all([
+    paymentFigures(),
+    countByMonth(Enrollment, 'paidAt', lastMonths(now, BOOKING_MONTHS, timeZone), timeZone, RECORDED_PAYMENT),
   ]);
-  return { total, byStatus };
+  return { ...figures, paidByMonth };
+}
+
+async function trialsSection() {
+  return countByStatus(TrialRequest, TRIAL_STATUSES);
 }
 
 async function newsletterSection() {
@@ -162,11 +169,7 @@ async function newsletterSection() {
 // POST answers 410). Kept apart from booking payments: it is history, not
 // current revenue.
 async function legacyManualPaymentsSection() {
-  const [total, byStatus] = await Promise.all([
-    ManualPayment.countDocuments({}),
-    countByStatus(ManualPayment, MANUAL_PAYMENT_STATUSES),
-  ]);
-  return { total, byStatus };
+  return countByStatus(ManualPayment, MANUAL_PAYMENT_STATUSES);
 }
 
 // Every course, published or not, with its real module and lesson counts.

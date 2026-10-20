@@ -5,8 +5,13 @@
 // it asks. This browser's address has its own limit.
 //
 // Only GET requests to GitHub's public API for this public repository, with
-// no key, no cookies (credentials: 'omit') and no Referer: nothing about the
-// admin session leaves the browser. The rules match the server's check in
+// no body. The one header this code adds is Accept: no key, no token, no
+// Authorization. credentials: 'omit' sends no cookies or other session data,
+// and referrerPolicy: 'no-referrer' sends no Referer, so the admin page's
+// address stays here. The browser still adds its own standard headers to a
+// cross-site (CORS) request, such as Origin, User-Agent and Sec-Fetch-*.
+// Origin names only the public site's domain, not the admin session, MFA or
+// the page's path. The rules match the server's check in
 // backend/controllers/serviceStatusController.js: anything missing or failed
 // is "unknown" with the reason, never "no deploy needed".
 
@@ -45,6 +50,7 @@ async function github(path) {
   const timer = setTimeout(() => { timedOut = true; controller.abort(); }, TIMEOUT_MS);
   let value;
   try {
+    // Accept is the only header added here; the browser adds its own.
     const res = await fetch(`${GITHUB_API}${path}`, {
       method: 'GET',
       credentials: 'omit',

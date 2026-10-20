@@ -201,10 +201,12 @@ describe('withBrowserGitHub', () => {
     expect(gh.mock.calls.map(([url]) => url)).toEqual(['https://api.github.com/repos/samy37785-cmd/Alrahma/commits/main']);
   });
 
-  it('sends no cookies, no Referer and no header but Accept', async () => {
+  it("the app's request options: credentials omitted, no Referer, and no header added but Accept", async () => {
     const gh = fakeGitHub({ [MAIN_PATH]: mainCommit, [comparePath(OLD, MAIN)]: compare({ files: [] }) });
     await withBrowserGitHub(serverAnswer());
     expect(gh).toHaveBeenCalledTimes(2);
+    // What the app passes to fetch. The headers a browser adds on its own
+    // (Origin, User-Agent, Sec-Fetch-*) are not visible here.
     for (const [url, init] of gh.mock.calls) {
       expect(url.startsWith('https://api.github.com/repos/samy37785-cmd/Alrahma/')).toBe(true);
       expect(init).toMatchObject({ method: 'GET', credentials: 'omit', referrerPolicy: 'no-referrer' });

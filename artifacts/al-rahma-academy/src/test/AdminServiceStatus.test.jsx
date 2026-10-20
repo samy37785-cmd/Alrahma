@@ -207,7 +207,7 @@ describe('AdminServiceStatus: the browser asks GitHub when the server could not'
     expect(line('service-main')).not.toContain('this browser');
   });
 
-  it('success: main and the comparison come from the browser, without cookies, a Referer or any admin header', async () => {
+  it('success: main and the comparison come from the browser; the app adds only Accept, omits credentials and sends no Referer', async () => {
     const gh = fakeGitHub({
       [MAIN_PATH]: mainCommit,
       [comparePath(OLD, MAIN)]: ahead(['backend/controllers/a.js', 'backend/routes/b.js', 'artifacts/al-rahma-academy/src/c.jsx']),
@@ -225,6 +225,8 @@ describe('AdminServiceStatus: the browser asks GitHub when the server could not'
     expect(screen.queryByText('artifacts/al-rahma-academy/src/c.jsx')).not.toBeInTheDocument();
 
     expect(gh.mock.calls.map(([url]) => url)).toEqual([`${REPO_API}/commits/main`, `${REPO_API}/compare/${OLD}...${MAIN}`]);
+    // What the app passes to fetch. The headers a browser adds on its own
+    // (Origin, User-Agent, Sec-Fetch-*) are not visible here.
     for (const [, init] of gh.mock.calls) {
       expect(init.method).toBe('GET');
       expect(init.credentials).toBe('omit');

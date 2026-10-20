@@ -18,3 +18,5 @@ export const submitTrial         = (data)  => http.post('/trials', {
   return r.data;
 });
 export const getTrials           = ()      => adminHttp.get('/v1/admin/trials').then((r) => r.data);
+// new / contacted / scheduled. Needs enrollments:write; nobody is messaged.
+export const updateTrialStatus   = (id, status) => adminHttp.patch(`/v1/admin/trials/${id}/status`, { status }).then((r) => r.data);

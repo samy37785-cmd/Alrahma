@@ -1,5 +1,6 @@
 import { test, before, beforeEach, after } from 'node:test';
 import assert from 'node:assert/strict';
+import mongoose from 'mongoose';
 import app from '../app.js';
 import User from '../models/User.js';
 import AdminUser from '../models/AdminUser.js';
@@ -9,6 +10,8 @@ import Review from '../models/Review.js';
 import ContactMessage from '../models/ContactMessage.js';
 import Course from '../models/Course.js';
 import SystemAuditLog from '../models/SystemAuditLog.js';
+import TrialRequest from '../models/TrialRequest.js';
+import logger from '../config/logger.js';
 import { signAccessToken } from '../utils/adminAuthTokens.js';
 import { setupTestDb, clearTestDb, teardownTestDb } from './helpers/db.js';
 import { agentWithCsrf } from './helpers/csrf.js';
@@ -40,7 +43,7 @@ async function adminUserAgent(role = 'admin') {
   });
   const token = signAccessToken(admin._id, admin.role, true);
   const cookieHeader = `admin_at=${token}; csrf_token=${csrf['x-csrf-token']}`;
-  return { agent, csrf, cookieHeader };
+  return { agent, csrf, cookieHeader, admin };
 }
 
 // --------------------------------------------------------------------------
@@ -545,4 +548,317 @@ test('updateCourse: a successful save is audit-logged as course.update', async (
   assert.equal(res.status, 200);
   const entry = await SystemAuditLog.findOne({ action: 'course.update', resourceId: String(id) }).lean();
   assert.ok(entry, 'course.update audit entry');
+});
+
+// --------------------------------------------------------------------------
+// Trial request status
+// --------------------------------------------------------------------------
+// PATCH /api/v1/admin/trials/:id/status: an admin records how far a free-
+// trial lead has got (new / contacted / scheduled). Only the status changes,
+// only when an admin sets it, it is audit-logged without contact details,
+// and nobody is emailed or messaged.
+
+async function createTrials(...statuses) {
+  const old = new Date('2026-10-01T00:00:00.000Z');
+  const docs = statuses.map((status, i) => ({
+    name: `Lead ${i}`, email: `lead${i}@example.com`, phone: '+44 7700 900123', status, createdAt: old, updatedAt: old,
+  }));
+  const { insertedIds } = await TrialRequest.collection.insertMany(docs);
+  return Object.values(insertedIds);
+}
+
+const setStatus = (agent, headers, id, status) =>
+  agent.patch(`/api/v1/admin/trials/${id}/status`).set(headers).send(status === undefined ? {} : { status });
+
+test('updateTrialStatus: an admin moves a request through new, contacted, scheduled and back; each change is audit-logged with the statuses only', async () => {
+  const { agent, csrf, cookieHeader } = await adminUserAgent();
+  const headers = { ...csrf, Cookie: cookieHeader };
+  const [id] = await createTrials('new');
+
+  for (const status of ['contacted', 'scheduled', 'new']) {
+    const res = await setStatus(agent, headers, id, status);
+    assert.equal(res.status, 200, status);
+    assert.equal(res.body.status, status);
+    assert.equal((await TrialRequest.findById(id).lean()).status, status);
+  }
+
+  const entries = await SystemAuditLog.find({ action: 'trial.status_change', resourceId: String(id) }).sort({ createdAt: 1 }).lean();
+  assert.deepEqual(entries.map((e) => [e.before, e.after]), [
+    [{ status: 'new' }, { status: 'contacted' }],
+    [{ status: 'contacted' }, { status: 'scheduled' }],
+    [{ status: 'scheduled' }, { status: 'new' }],
+  ]);
+  assert.ok(entries.every((e) => e.resource === 'TrialRequest' && e.severity === 'info'));
+  const logged = JSON.stringify(entries);
+  assert.ok(!logged.includes('lead0@example.com') && !logged.includes('+44 7700'), 'no contact details in the audit log');
+});
+
+test('updateTrialStatus: setting the status it already has changes nothing and logs nothing', async () => {
+  const { agent, csrf, cookieHeader } = await adminUserAgent();
+  const headers = { ...csrf, Cookie: cookieHeader };
+  const [id] = await createTrials('contacted');
+  const before = await TrialRequest.findById(id).lean();
+
+  const res = await setStatus(agent, headers, id, 'contacted');
+  assert.equal(res.status, 200);
+  assert.equal(res.body.status, 'contacted');
+  const after = await TrialRequest.findById(id).lean();
+  assert.equal(after.updatedAt.getTime(), before.updatedAt.getTime());
+  assert.equal(await SystemAuditLog.countDocuments({ action: 'trial.status_change' }), 0);
+});
+
+test('updateTrialStatus: only the chosen request changes', async () => {
+  const { agent, csrf, cookieHeader } = await adminUserAgent();
+  const headers = { ...csrf, Cookie: cookieHeader };
+  const [a, b, c] = await createTrials('new', 'new', 'contacted');
+
+  assert.equal((await setStatus(agent, headers, b, 'scheduled')).status, 200);
+  const rows = await TrialRequest.find({ _id: { $in: [a, b, c] } }).lean();
+  const byId = Object.fromEntries(rows.map((r) => [String(r._id), r]));
+  assert.equal(byId[String(a)].status, 'new');
+  assert.equal(byId[String(b)].status, 'scheduled');
+  assert.equal(byId[String(c)].status, 'contacted');
+  assert.equal(byId[String(a)].updatedAt.toISOString(), '2026-10-01T00:00:00.000Z');
+  assert.equal(byId[String(c)].updatedAt.toISOString(), '2026-10-01T00:00:00.000Z');
+});
+
+test('updateTrialStatus: an editor (enrollments:write) may change it; a viewer (read only) gets 403 and nothing changes', async () => {
+  const [id] = await createTrials('new');
+
+  const editor = await adminUserAgent('editor');
+  const ok = await setStatus(editor.agent, { ...editor.csrf, Cookie: editor.cookieHeader }, id, 'contacted');
+  assert.equal(ok.status, 200);
+
+  const viewer = await adminUserAgent('viewer');
+  const denied = await setStatus(viewer.agent, { ...viewer.csrf, Cookie: viewer.cookieHeader }, id, 'scheduled');
+  assert.equal(denied.status, 403);
+  assert.deepEqual(denied.body.required, ['enrollments:write']);
+  assert.equal((await TrialRequest.findById(id).lean()).status, 'contacted');
+});
+
+test('updateTrialStatus: no session is 401; an MFA-unverified session is 403', async () => {
+  const [id] = await createTrials('new');
+  const { agent, csrf } = await agentWithCsrf(app);
+  const none = await setStatus(agent, { ...csrf, Cookie: `csrf_token=${csrf['x-csrf-token']}` }, id, 'contacted');
+  assert.equal(none.status, 401);
+
+  const admin = await AdminUser.create({
+    name: 'MFA admin', email: `mfa-${Date.now()}@example.com`, password: 'Sup3r-Str0ng-Pass!', role: 'admin', mfaEnabled: true,
+  });
+  const cookie = `admin_at=${signAccessToken(admin._id, admin.role, false)}; csrf_token=${csrf['x-csrf-token']}`;
+  const unverified = await setStatus(agent, { ...csrf, Cookie: cookie }, id, 'contacted');
+  assert.equal(unverified.status, 403);
+  assert.equal((await TrialRequest.findById(id).lean()).status, 'new');
+});
+
+test('updateTrialStatus: a bad id is 400, an unknown id 404, and any other status 422; nothing changes', async () => {
+  const { agent, csrf, cookieHeader } = await adminUserAgent();
+  const headers = { ...csrf, Cookie: cookieHeader };
+  const [id] = await createTrials('new');
+
+  assert.equal((await setStatus(agent, headers, 'not-an-id', 'contacted')).status, 400);
+  assert.equal((await setStatus(agent, headers, '64b7f0f0f0f0f0f0f0f0f0f0', 'contacted')).status, 404);
+  for (const status of ['pending', 'NEW', 'Contacted', '', 3, ['new'], { $ne: 'x' }, null, undefined]) {
+    const res = await setStatus(agent, headers, id, status);
+    assert.equal(res.status, 422, JSON.stringify(status));
+  }
+  assert.equal((await TrialRequest.findById(id).lean()).status, 'new');
+  assert.equal(await SystemAuditLog.countDocuments({ action: 'trial.status_change' }), 0);
+});
+
+test('updateTrialStatus: sends no email or message', async (t) => {
+  // These tests run with no email provider, so every sendMail() call logs
+  // "Skipped email". Submitting a request does (the positive control);
+  // changing its status must not.
+  const warn = t.mock.method(logger, 'warn');
+  const error = t.mock.method(logger, 'error');
+  const mailLogs = () => [...warn.mock.calls, ...error.mock.calls].filter((c) => /email/i.test(String(c.arguments[0]))).length;
+
+  const visitor = await agentWithCsrf(app);
+  const created = await visitor.agent.post('/api/trials').set(visitor.csrf).send({ name: 'Lead', email: 'lead@example.com' });
+  assert.equal(created.status, 201);
+  const afterSubmit = mailLogs();
+  assert.ok(afterSubmit >= 1, 'a submitted request does try to send email');
+
+  const { agent, csrf, cookieHeader } = await adminUserAgent();
+  for (const status of ['contacted', 'scheduled']) {
+    assert.equal((await setStatus(agent, { ...csrf, Cookie: cookieHeader }, created.body.trial._id, status)).status, 200);
+  }
+  assert.equal(mailLogs(), afterSubmit, 'no email attempted for a status change');
+});
+
+test('updateTrialStatus: works on requests from all three forms and leaves their phone and message as stored (with #261)', async () => {
+  // The quick form and the exit popup send `phone` now; a page still on the
+  // old bundle sends `whatsapp`, which the Mongo route stores as `phone`.
+  const forms = [
+    { formSource: 'trial_section', phone: '+44 7700 900123', message: 'Weekday evenings work best.' },
+    { source: 'hero-quick-trial', formSource: 'quick_trial', phone: '+20 100 000 0001' },
+    { source: 'exit-intent', formSource: 'exit_intent', whatsapp: '+1 555 0100' },
+  ];
+  const ids = [];
+  for (const [i, form] of forms.entries()) {
+    const visitor = await agentWithCsrf(app);
+    const res = await visitor.agent.post('/api/trials').set(visitor.csrf)
+      .set('X-Forwarded-For', `198.51.100.${i + 20}`)
+      .send({ name: `Lead ${i}`, email: `lead${i}@example.com`, ...form });
+    assert.equal(res.status, 201, form.formSource);
+    ids.push(res.body.trial._id);
+  }
+
+  const { agent, csrf, cookieHeader } = await adminUserAgent();
+  const headers = { ...csrf, Cookie: cookieHeader };
+  const expected = [['+44 7700 900123', 'Weekday evenings work best.'], ['+20 100 000 0001', undefined], ['+1 555 0100', undefined]];
+  for (const [i, id] of ids.entries()) {
+    const before = await TrialRequest.findById(id).lean();
+    const res = await setStatus(agent, headers, id, i === 0 ? 'scheduled' : 'contacted');
+    assert.equal(res.status, 200);
+    assert.equal(res.body.phone, expected[i][0], 'the response carries the phone, so the Trials tab keeps showing it');
+    assert.equal(res.body.message, expected[i][1]);
+    const { status, updatedAt, ...rest } = await TrialRequest.findById(id).lean();
+    const { status: oldStatus, updatedAt: oldUpdatedAt, ...restBefore } = before;
+    assert.deepEqual(rest, restBefore, 'nothing but the status (and updatedAt) changes');
+    assert.equal(oldStatus, 'new');
+    assert.notEqual(status, oldStatus);
+    assert.ok(updatedAt >= oldUpdatedAt);
+  }
+
+  const list = await agent.get('/api/v1/admin/trials').set(headers);
+  assert.equal(list.status, 200);
+  const byId = Object.fromEntries(list.body.map((t) => [t._id, t]));
+  assert.deepEqual(ids.map((id) => [byId[id].phone, byId[id].status]), [
+    ['+44 7700 900123', 'scheduled'], ['+20 100 000 0001', 'contacted'], ['+1 555 0100', 'contacted'],
+  ]);
+});
+
+// ── Two or more admins changing the same request at once ─────────────────
+// The reply to each PATCH must show the status that PATCH set, taken from
+// its own atomic update; a read after the update could already show another
+// admin's change. holdFirstTrialUpdate() pauses the first PATCH right after
+// its database update (before its reply and audit entry) so the second
+// PATCH can run to the end in that gap: the interleaving where a read after
+// the update returned the second admin's status.
+function holdFirstTrialUpdate(t) {
+  let applied;
+  let release;
+  const updateApplied = new Promise((resolve) => { applied = resolve; });
+  const released = new Promise((resolve) => { release = resolve; });
+  const exec = mongoose.Query.prototype.exec;
+  let held = false;
+  t.mock.method(mongoose.Query.prototype, 'exec', async function holdOnce(...args) {
+    const result = await exec.apply(this, args);
+    if (!held && this.model?.modelName === 'TrialRequest' && this.op === 'findOneAndUpdate') {
+      held = true;
+      applied();
+      await released;
+    }
+    return result;
+  });
+  return { updateApplied, release };
+}
+
+const headersOf = ({ csrf, cookieHeader }) => ({ ...csrf, Cookie: cookieHeader });
+const statusEntries = (id) => SystemAuditLog.find({ action: 'trial.status_change', resourceId: String(id) }).lean();
+
+test('updateTrialStatus, two admins at once with different statuses: each reply keeps its own status; the database and audit log follow the order of the updates', async (t) => {
+  const [id] = await createTrials('new');
+  const first = await adminUserAgent();
+  const second = await adminUserAgent();
+  const gate = holdFirstTrialUpdate(t);
+
+  const firstReply = setStatus(first.agent, headersOf(first), id, 'contacted').then((res) => res);
+  await gate.updateApplied; // new -> contacted is in the database; the first reply is on hold
+  const secondRes = await setStatus(second.agent, headersOf(second), id, 'scheduled');
+  gate.release();
+  const firstRes = await firstReply;
+
+  assert.equal(firstRes.status, 200);
+  assert.equal(secondRes.status, 200);
+  assert.equal(firstRes.body.status, 'contacted', "the first reply does not take the second admin's status");
+  assert.equal(secondRes.body.status, 'scheduled');
+  assert.ok(new Date(firstRes.body.updatedAt) <= new Date(secondRes.body.updatedAt));
+
+  const stored = await TrialRequest.findById(id).lean();
+  assert.equal(stored.status, 'scheduled', 'the later update wins');
+  assert.equal(stored.updatedAt.toISOString(), secondRes.body.updatedAt, "the second reply is exactly what the second update wrote");
+  assert.equal(stored.phone, '+44 7700 900123');
+
+  const entries = await statusEntries(id);
+  assert.equal(entries.length, 2);
+  const byAdmin = Object.fromEntries(entries.map((e) => [String(e.adminId), [e.before, e.after]]));
+  assert.deepEqual(byAdmin[String(first.admin._id)], [{ status: 'new' }, { status: 'contacted' }]);
+  assert.deepEqual(byAdmin[String(second.admin._id)], [{ status: 'contacted' }, { status: 'scheduled' }]);
+});
+
+test('updateTrialStatus, two admins at once with the same status: one write and one audit entry; both replies show it', async (t) => {
+  const [id] = await createTrials('new');
+  const first = await adminUserAgent();
+  const second = await adminUserAgent();
+  const gate = holdFirstTrialUpdate(t);
+
+  const firstReply = setStatus(first.agent, headersOf(first), id, 'contacted').then((res) => res);
+  await gate.updateApplied;
+  const secondRes = await setStatus(second.agent, headersOf(second), id, 'contacted');
+  gate.release();
+  const firstRes = await firstReply;
+
+  assert.deepEqual([firstRes.status, secondRes.status], [200, 200]);
+  assert.deepEqual([firstRes.body.status, secondRes.body.status], ['contacted', 'contacted']);
+  const stored = await TrialRequest.findById(id).lean();
+  assert.equal(stored.status, 'contacted');
+  assert.equal(stored.updatedAt.toISOString(), firstRes.body.updatedAt, 'only the first PATCH wrote');
+  assert.equal(secondRes.body.updatedAt, firstRes.body.updatedAt);
+
+  const entries = await statusEntries(id);
+  assert.equal(entries.length, 1);
+  assert.equal(String(entries[0].adminId), String(first.admin._id));
+  assert.deepEqual([entries[0].before, entries[0].after], [{ status: 'new' }, { status: 'contacted' }]);
+});
+
+test('updateTrialStatus, eight admins at once (no control): every reply has the status its own PATCH asked for, and the audit log is one unbroken chain', async () => {
+  const [id] = await createTrials('new');
+  const wanted = ['contacted', 'scheduled', 'new', 'scheduled', 'contacted', 'new', 'contacted', 'scheduled'];
+  const admins = await Promise.all(wanted.map(() => adminUserAgent()));
+
+  const replies = await Promise.all(wanted.map((status, i) => setStatus(admins[i].agent, headersOf(admins[i]), id, status)));
+  replies.forEach((res, i) => {
+    assert.equal(res.status, 200, `reply ${i}`);
+    assert.equal(res.body.status, wanted[i], `reply ${i} has its own status`);
+  });
+
+  const final = (await TrialRequest.findById(id).lean()).status;
+  const entries = await statusEntries(id);
+  const asked = new Map(admins.map((a, i) => [String(a.admin._id), wanted[i]]));
+  for (const e of entries) {
+    assert.notEqual(e.before.status, e.after.status, 'an entry only for a real change');
+    assert.equal(e.after.status, asked.get(String(e.adminId)), 'each entry records what its own admin asked for');
+  }
+  // Each write starts from the status the previous write left. So, per
+  // status, the entries leaving it minus the entries reaching it are +1 for
+  // the start ('new') and -1 for the final status (0 when they are the same).
+  for (const s of ['new', 'contacted', 'scheduled']) {
+    const leaving = entries.filter((e) => e.before.status === s).length;
+    const reaching = entries.filter((e) => e.after.status === s).length;
+    assert.equal(leaving - reaching, (s === 'new' ? 1 : 0) - (s === final ? 1 : 0), `chain at ${s}`);
+  }
+});
+
+test('updateTrialStatus: an old request stored without status or updatedAt can be changed; setting it again changes nothing', async () => {
+  const { insertedId: id } = await TrialRequest.collection.insertOne({ name: 'Legacy', email: 'legacy@example.com' });
+  const { agent, csrf, cookieHeader } = await adminUserAgent();
+  const headers = { ...csrf, Cookie: cookieHeader };
+
+  const res = await setStatus(agent, headers, id, 'contacted');
+  assert.equal(res.status, 200);
+  assert.equal(res.body.status, 'contacted');
+  const stored = await TrialRequest.collection.findOne({ _id: id });
+  assert.equal(stored.status, 'contacted');
+  assert.equal(stored.updatedAt.toISOString(), res.body.updatedAt);
+  assert.equal(stored.createdAt, undefined, 'nothing else is added');
+  const entries = await statusEntries(id);
+  assert.deepEqual(entries.map((e) => [e.before, e.after]), [[{ status: null }, { status: 'contacted' }]]);
+
+  const again = await setStatus(agent, headers, id, 'contacted');
+  assert.equal(again.status, 200);
+  assert.equal((await TrialRequest.collection.findOne({ _id: id })).updatedAt.toISOString(), res.body.updatedAt);
+  assert.equal((await statusEntries(id)).length, 1);
 });

@@ -1,10 +1,36 @@
 import { useState } from 'react';
+import { updateTrialStatus } from '../../../api/contentApi';
 
 // "instagram / social / oct_reel" from the request's campaign tags, if any.
 const campaignOf = (t) => [t.utm?.source, t.utm?.medium, t.utm?.campaign].filter(Boolean).join(' / ');
 
-export default function AdminTrialsTab({ trials }) {
+// The follow-up stages an admin records by hand. Changing one only updates
+// the request: the visitor is never emailed or messaged.
+const TRIAL_STATUSES = [
+  { value: 'new', label: 'New' },
+  { value: 'contacted', label: 'Contacted' },
+  { value: 'scheduled', label: 'Scheduled' },
+];
+
+export default function AdminTrialsTab({ trials, onTrialsChange, onError }) {
   const [trialSearch, setTrialSearch] = useState('');
+  const [savingId, setSavingId] = useState(null);
+
+  const changeStatus = async (trial, status) => {
+    if (status === trial.status) return;
+    setSavingId(trial._id);
+    onError?.('');
+    try {
+      const updated = await updateTrialStatus(trial._id, status);
+      onTrialsChange((prev) => prev.map((t) => (t._id === trial._id ? { ...t, ...updated } : t)));
+    } catch (err) {
+      onError?.(err.response?.status === 403
+        ? 'You do not have permission to change a trial request’s status.'
+        : (err.response?.data?.message || 'Could not change the status. Nothing was changed.'));
+    } finally {
+      setSavingId(null);
+    }
+  };
 
   const filtered = trials.filter((t) =>
     !trialSearch ||
@@ -44,7 +70,21 @@ export default function AdminTrialsTab({ trials }) {
                 <td>{t.course || '—'}</td>
                 <td>{t.heardFrom ? t.heardFrom.replace(/_/g, ' ') : '—'}</td>
                 <td>{campaignOf(t) || '—'}</td>
-                <td><span className="admin__badge">{t.status}</span></td>
+                <td>
+                  {onTrialsChange ? (
+                    <select
+                      aria-label={`Status of ${t.name}'s request`}
+                      value={t.status}
+                      disabled={savingId === t._id}
+                      onChange={(e) => changeStatus(t, e.target.value)}
+                    >
+                      {TRIAL_STATUSES.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+                      {!TRIAL_STATUSES.some((s) => s.value === t.status) && <option value={t.status}>{t.status}</option>}
+                    </select>
+                  ) : (
+                    <span className="admin__badge">{t.status}</span>
+                  )}
+                </td>
                 <td>{new Date(t.createdAt).toLocaleDateString()}</td>
               </tr>
             ))}

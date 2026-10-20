@@ -102,6 +102,12 @@ export default function AdminDashboard() {
     const next = typeof updater === 'function' ? updater(prev) : updater;
     return old?.reviews !== undefined ? { ...old, reviews: next } : next;
   });
+  // A status change in the Trials tab updates the loaded list in place, and
+  // refetches the Overview's server-side counts (which count trials by status).
+  const setTrials   = (updater) => {
+    queryClient.setQueryData(['admin', 'trials'], (old) => (typeof updater === 'function' ? updater(old ?? []) : updater));
+    queryClient.invalidateQueries({ queryKey: ['admin', 'overview'] });
+  };
 
   const loadAll = () => {
     queryClient.invalidateQueries({ queryKey: ['admin'] });
@@ -315,7 +321,7 @@ export default function AdminDashboard() {
               Trial Requests ({trials.length})
             </h2>
           </div>
-          <AdminTrialsTab trials={trials} />
+          <AdminTrialsTab trials={trials} onTrialsChange={setTrials} onError={setError} />
         </div>
       </div>
 

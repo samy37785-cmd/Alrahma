@@ -53,3 +53,24 @@ test('the same admin from the allowed address is served', async () => {
     assert.equal(res.status, 200, `${path} from ${ALLOWED_IP} expected 200, got ${res.status}`);
   }
 });
+
+// Changing a trial request's status (PATCH .../trials/:id/status) sits behind
+// the same allowlist. A real CSRF token is sent, so the only difference
+// between the two calls is the address.
+test('changing a trial status is refused outside the allowlist and allowed from it', async () => {
+  const { agentWithCsrf } = await import('./helpers/csrf.js');
+  const { default: TrialRequest } = await import('../models/TrialRequest.js');
+  const trial = await TrialRequest.create({ name: 'Lead', email: 'lead@example.com' });
+  const { agent, csrf } = await agentWithCsrf(app);
+  const cookie = `${await verifiedAdminCookie()}; csrf_token=${csrf['x-csrf-token']}`;
+  const patch = (ip) => agent.patch(`/api/v1/admin/trials/${trial._id}/status`)
+    .set({ ...csrf, Cookie: cookie }).set('X-Forwarded-For', ip).send({ status: 'contacted' });
+
+  const refused = await patch(OTHER_IP);
+  assert.equal(refused.status, 403);
+  assert.equal((await TrialRequest.findById(trial._id).lean()).status, 'new');
+
+  const allowed = await patch(ALLOWED_IP);
+  assert.equal(allowed.status, 200);
+  assert.equal((await TrialRequest.findById(trial._id).lean()).status, 'contacted');
+});

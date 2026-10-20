@@ -4,8 +4,11 @@ import { TAFASEER } from '../../../data/quranLangs';
 
 const ALLOWED_TAGS = new Set(['p','br','strong','em','b','i','u','span','div','sup','sub','ul','ol','li','blockquote','h3','h4']);
 
+// Parsed in a separate document with no window, where no element loads and no on* attribute
+// is ever compiled. In a <div> of this page's document, an <img src=x onerror=…> removed
+// below had already started loading, and its handler ran when the load failed.
 function sanitizeHtml(html) {
-  const root = document.createElement('div');
+  const root = document.implementation.createHTMLDocument('').createElement('div');
   root.innerHTML = html;
   (function clean(node) {
     [...node.childNodes].forEach((child) => {

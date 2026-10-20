@@ -98,7 +98,10 @@ describe('protected files are byte-identical to origin/main (3b44029)', () => {
       'src/components/features/quran/QuranTopBar.jsx': '5b373ad4e5658fe48e8b808f60786db8e9c873098649710e4d2fe3c1aeddb5de',
       'src/components/features/quran/QuranVerseList.jsx': '703d33e404fd64529e576eeb646de6cca1af92a4a427dda2e63c176967a1e69d',
       'src/components/features/quran/ReadingModeSwitch.jsx': 'bb24d879da4f6a10043cb3af79de48fef6bf5e37745568ab0f0e7f36210438d6',
-      'src/components/features/quran/TafsirPanel.jsx': '484e1b56ef53346c0795616832a0415021f6622d80ceebb4fa183739eff8083b',
+      // Tafsir sanitizer PR: sanitizeHtml parses in a document with no window
+      // (document.implementation.createHTMLDocument) instead of a <div> of the page's document,
+      // plus its comment. Same tags, same attribute removal; see tafsirPanelSanitizer.test.jsx.
+      'src/components/features/quran/TafsirPanel.jsx': 'a99a88a2fee0ab46b7d8dfeedef1449320c3407b8b15f625f74201600fa8d11f',
       'src/components/features/quran/TafsirPicker.jsx': '510811214d452679df98550040b830cf80cf76e51e2b0000542a142855237e6a',
       'src/components/ui/VerseCardModal.jsx': '8bbf6f558ffb6d3394a67e1d83209588508d298e88a84ffdf2899a38b25e1ce4',
       'src/data/quranLangs.js': '92b6cffe0b6f1d777776acddc52c37e1876e0564cfcf6f994a0c2217247792ad',

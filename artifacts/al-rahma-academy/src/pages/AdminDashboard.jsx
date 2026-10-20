@@ -1,15 +1,15 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import {
   LayoutDashboard, Users, BookOpen, CreditCard, Target,
-  Mail, Settings, TrendingUp, BarChart3, Activity, CheckCircle,
-  RefreshCw, Download, CalendarDays, Star, AlertCircle, CalendarCheck,
+  Mail, Settings,
+  RefreshCw, Download, CalendarDays, Star, CalendarCheck,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getCourses } from '../api/courseApi';
 import { getManualPayments } from '../api/paymentApi';
-import { getUsers } from '../api/adminApi';
+import { getUsers, getOverviewStats } from '../api/adminApi';
 import { getTrials, getSubscribers } from '../api/contentApi';
 import { getEnrollments } from '../api/enrollmentApi';
 import { getAdminReviews } from '../api/reviewApi';
@@ -23,134 +23,7 @@ import AdminClassesTab   from '../components/features/admin/AdminClassesTab';
 import AdminReviewsTab   from '../components/features/admin/AdminReviewsTab';
 import AdminProgressModal from '../components/features/admin/AdminProgressModal';
 import DashboardLayout    from '../components/layout/DashboardLayout';
-import { DsBarChart, DsAreaChart, DsChartEmpty } from '../components/ui/DsChart';
-
-const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-
-function buildMonthBars(items, months, valueKey, filterFn) {
-  const now = new Date();
-  return Array.from({ length: months }, (_, i) => {
-    const d = new Date(now.getFullYear(), now.getMonth() - (months - 1 - i), 1);
-    const count = items.filter((item) => {
-      const pd = new Date(item[valueKey] || item.date || item.createdAt);
-      return pd.getFullYear() === d.getFullYear()
-        && pd.getMonth() === d.getMonth()
-        && (filterFn ? filterFn(item) : true);
-    }).length;
-    return { label: MONTHS[d.getMonth()], Payments: count, Users: count };
-  });
-}
-
-function RevenueChart({ pays }) {
-  const data = useMemo(() => buildMonthBars(
-    pays, 6, 'createdAt', (p) => p.status === 'approved', null
-  ).map((d) => ({ label: d.label, Payments: d.Payments })), [pays]);
-
-  const total = data.reduce((s, d) => s + d.Payments, 0);
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      {total === 0
-        ? <DsChartEmpty height={120} message="No approved payments yet" />
-        : <DsBarChart
-            data={data}
-            bars={[{ key: 'Payments', label: 'Approved Payments', color: '#0b6e4f' }]}
-            height={140}
-            showGrid
-          />
-      }
-      <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
-        Approved payments last 6 months · {total} total
-      </div>
-    </div>
-  );
-}
-
-function UserGrowthChart({ users }) {
-  const data = useMemo(() => buildMonthBars(
-    users, 7, 'createdAt', null, null
-  ).map((d) => ({ label: d.label, Users: d.Users })), [users]);
-
-  const total = data.reduce((s, d) => s + d.Users, 0);
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      {total === 0
-        ? <DsChartEmpty height={110} message="No registrations in this period" />
-        : <DsAreaChart
-            data={data}
-            areas={[{ key: 'Users', label: 'New Users', color: '#2176c7' }]}
-            height={130}
-            showGrid
-          />
-      }
-      <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
-        New registrations · {total} last 7 months
-      </div>
-    </div>
-  );
-}
-
-function FeedIcon({ type }) {
-  if (type === 'user')    return <Users size={14} aria-hidden="true" />;
-  if (type === 'payment') return <CreditCard size={14} aria-hidden="true" />;
-  return <Target size={14} aria-hidden="true" />;
-}
-
-function ActivityFeed({ users, pays, trials }) {
-  const events = [
-    ...users.slice(0, 5).map((u) => ({
-      id: u._id, type: 'user',
-      title: `${u.name} registered`,
-      desc: u.email,
-      time: u.createdAt,
-      color: 'ds-badge--blue',
-    })),
-    ...pays.filter((p) => p.status === 'pending').slice(0, 4).map((p) => ({
-      id: p._id, type: 'payment',
-      title: `Payment pending — ${p.plan || ''}`,
-      desc: `${p.name || p.userEmail || ''}`,
-      time: p.createdAt || p.date,
-      color: 'ds-badge--yellow',
-    })),
-    ...trials.slice(0, 3).map((t) => ({
-      id: t._id, type: 'trial',
-      title: `Trial request — ${t.courseName || ''}`,
-      desc: t.name || t.email || '',
-      time: t.createdAt || t.date,
-      color: 'ds-badge--purple',
-    })),
-  ].sort((a, b) => new Date(b.time) - new Date(a.time)).slice(0, 10);
-
-  if (events.length === 0) {
-    return (
-      <div className="ds-empty" style={{ padding: '20px 0' }}>
-        <div className="ds-empty__icon" style={{ width: 40, height: 40, fontSize: '1rem' }}>📋</div>
-        <div className="ds-empty__title" style={{ fontSize: '0.82rem' }}>No recent activity</div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="ds-timeline">
-      {events.map((ev) => (
-        <div key={ev.id + ev.type} className="ds-timeline__item">
-          <div className="ds-timeline__left">
-            <div className="ds-timeline__dot"><FeedIcon type={ev.type} /></div>
-            <div className="ds-timeline__line" />
-          </div>
-          <div className="ds-timeline__body">
-            <div className="ds-timeline__title">{ev.title}</div>
-            <div className="ds-timeline__desc">{ev.desc}</div>
-            {ev.time && (
-              <div className="ds-timeline__time">
-                {new Date(ev.time).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
-              </div>
-            )}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
+import AdminOverviewPanel from '../components/features/admin/AdminOverviewPanel';
 
 const TABS = [
   { key: 'overview',    label: 'Overview',    Icon: LayoutDashboard },
@@ -179,6 +52,10 @@ export default function AdminDashboard() {
   const { data: usersRes, isLoading: l5, isError: e5 }         = useQuery({ queryKey: ['admin', 'users'],       queryFn: getUsers,                            staleTime: 60000  });
   const { data: reviewsRes, isLoading: l7, isError: e6 }       = useQuery({ queryKey: ['admin', 'reviews'],     queryFn: getAdminReviews,                     staleTime: 60000  });
   const { data: bookingsRes, isLoading: l10, isError: e9 }         = useQuery({ queryKey: ['admin', 'bookings'],  queryFn: getEnrollments,                      staleTime: 30000  });
+  // The Overview tab's figures come from their own count on the server, over
+  // every record, not from the lists above (users and bookings hold only the
+  // newest 50). The panel shows its own message if this fails.
+  const { data: overview, isLoading: l11, isError: e10, error: overviewError } = useQuery({ queryKey: ['admin', 'overview'], queryFn: getOverviewStats, staleTime: 30000 });
 
   // Surfaces a failed data load (most commonly a 403 for an AdminUser role
   // that lacks the relevant RBAC permission — e.g. 'editor' lacks
@@ -237,18 +114,16 @@ export default function AdminDashboard() {
     setError('');
   };
 
-  /* KPIs - Stage 2C Final Corrective (see docs/user-admin-auth-contract.md):
-     no account-role concept exists any more, so these are derived from
-     real product fields every user account actually has (subscription
-     status), not from a legacy `role` field that could say anything. */
-  const activeSubscribers = users.filter((u) => u.subscription?.status === 'active');
   const pendingPayments   = manualPays.filter((p) => p.status === 'pending');
 
-  /* Tab badge counts */
+  /* Tab badge counts. Bookings use the server's count over every booking
+     once it has loaded, since the list holds only the newest 50. A trial
+     request is new until someone contacts it. */
+  const overviewBookings = !e10 ? overview?.sections?.bookings : undefined;
   const tabBadge = (key) => {
-    if (key === 'bookings')  return bookings.filter((b) => b.status === 'pending').length;
+    if (key === 'bookings')  return overviewBookings?.status === 'ok' ? overviewBookings.byStatus.pending : bookings.filter((b) => b.status === 'pending').length;
     if (key === 'payments')  return pendingPayments.length;
-    if (key === 'trials')    return trials.filter((t) => t.status === 'pending').length;
+    if (key === 'trials')    return trials.filter((t) => t.status === 'new').length;
     return 0;
   };
 
@@ -282,7 +157,7 @@ export default function AdminDashboard() {
           <div className="ds-page-hd__eyebrow"><Settings size={12} aria-hidden="true" /> Admin Console</div>
           <h1 className="ds-page-hd__title">Platform Overview</h1>
           <p className="ds-page-hd__sub">
-            {usersTotal} total users · {activeSubscribers.length} active subscribers · {pendingPayments.length} pending payments
+            Overview figures are counted on the server over all records; each card says what it counts.
           </p>
         </div>
         <div className="ds-page-hd__actions">
@@ -363,194 +238,7 @@ export default function AdminDashboard() {
 
       {/* ── OVERVIEW TAB ─────────────────────────────────────────── */}
       <div id="tabpanel-overview" role="tabpanel" aria-labelledby="tab-overview" hidden={activeTab !== 'overview'}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-
-          {/* KPI cards */}
-          <div className="ds-stats" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(175px, 1fr))' }}>
-            <div className="ds-stat">
-              <div className="ds-stat__top">
-                <div className="ds-stat__icon ds-stat__icon--blue">
-                  <Users size={18} aria-hidden="true" />
-                </div>
-              </div>
-              <div className="ds-stat__value">{usersTotal}</div>
-              <div className="ds-stat__label">Total Users</div>
-              <div className="ds-stat__sub">{activeSubscribers.length} active subscribers</div>
-            </div>
-
-            <div className="ds-stat">
-              <div className="ds-stat__top">
-                <div className="ds-stat__icon ds-stat__icon--green">
-                  <CheckCircle size={18} aria-hidden="true" />
-                </div>
-                <span className="ds-stat__trend ds-stat__trend--up">Active</span>
-              </div>
-              <div className="ds-stat__value">{activeSubscribers.length}</div>
-              <div className="ds-stat__label">Active Subscribers</div>
-              <div className="ds-stat__sub">
-                {usersTotal > 0 ? Math.round((activeSubscribers.length / usersTotal) * 100) : 0}% of all users
-              </div>
-            </div>
-
-            <div className="ds-stat">
-              <div className="ds-stat__top">
-                <div className="ds-stat__icon ds-stat__icon--gold">
-                  <CreditCard size={18} aria-hidden="true" />
-                </div>
-                {pendingPayments.length > 0 && (
-                  <span className="ds-stat__trend ds-stat__trend--down">{pendingPayments.length} pending</span>
-                )}
-              </div>
-              <div className="ds-stat__value">{manualPaysTotal}</div>
-              <div className="ds-stat__label">Payments</div>
-              <div className="ds-stat__sub">{pendingPayments.length} need review</div>
-            </div>
-
-            <div className="ds-stat">
-              <div className="ds-stat__top">
-                <div className="ds-stat__icon ds-stat__icon--purple">
-                  <Target size={18} aria-hidden="true" />
-                </div>
-              </div>
-              <div className="ds-stat__value">{trials.length}</div>
-              <div className="ds-stat__label">Trial Requests</div>
-              <div className="ds-stat__sub">{trials.filter((t) => t.status === 'pending').length} awaiting review</div>
-            </div>
-
-            <div className="ds-stat">
-              <div className="ds-stat__top">
-                <div className="ds-stat__icon ds-stat__icon--red">
-                  <AlertCircle size={18} aria-hidden="true" />
-                </div>
-              </div>
-              <div className="ds-stat__value">{pendingPayments.length}</div>
-              <div className="ds-stat__label">Pending Payments</div>
-              <div className="ds-stat__sub">Awaiting admin review</div>
-            </div>
-
-            <div className="ds-stat">
-              <div className="ds-stat__top">
-                <div className="ds-stat__icon ds-stat__icon--blue">
-                  <Mail size={18} aria-hidden="true" />
-                </div>
-              </div>
-              <div className="ds-stat__value">{subscribers.length}</div>
-              <div className="ds-stat__label">Newsletter</div>
-              <div className="ds-stat__sub">Subscribers</div>
-            </div>
-          </div>
-
-          {/* Charts + Activity */}
-          <div className="ds-grid ds-grid-main-side">
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-
-              {/* Revenue trend */}
-              <div className="ds-card">
-                <div className="ds-card__hd">
-                  <span className="ds-card__title">
-                    <span className="ds-card__title-icon"><CreditCard size={14} aria-hidden="true" /></span> Payment Approvals — Last 6 Months
-                  </span>
-                </div>
-                <div className="ds-card__body">
-                  <RevenueChart pays={manualPays} />
-                </div>
-              </div>
-
-              {/* User growth */}
-              <div className="ds-card">
-                <div className="ds-card__hd">
-                  <span className="ds-card__title">
-                    <span className="ds-card__title-icon"><TrendingUp size={14} aria-hidden="true" /></span> User Registrations — Last 7 Months
-                  </span>
-                </div>
-                <div className="ds-card__body">
-                  <UserGrowthChart users={users} />
-                </div>
-              </div>
-
-              {/* Course stats */}
-              <div className="ds-card">
-                <div className="ds-card__hd">
-                  <span className="ds-card__title">
-                    <span className="ds-card__title-icon"><BookOpen size={14} aria-hidden="true" /></span> Course Catalogue ({courses.length})
-                  </span>
-                  <button className="ds-card__link" style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-brand)' }} onClick={() => setActiveTab('courses')}>
-                    Manage →
-                  </button>
-                </div>
-                <div className="ds-card__body">
-                  {courses.length === 0 ? (
-                    <div className="ds-empty" style={{ padding: '20px 0' }}>
-                      <div className="ds-empty__icon" style={{ width: 40, height: 40, fontSize: '1rem' }}>📚</div>
-                      <div className="ds-empty__title" style={{ fontSize: '0.82rem' }}>No courses yet</div>
-                    </div>
-                  ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      {courses.map((c) => (
-                        <div key={c._id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                          <span style={{ fontSize: '1.1rem', flexShrink: 0 }}>{c.icon || '📘'}</span>
-                          <div style={{ flex: 1 }}>
-                            <div style={{ fontWeight: 600, fontSize: '0.855rem', color: 'var(--text-primary)' }}>{c.title}</div>
-                            <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
-                              {c.modules?.reduce((a, m) => a + (m.lessons?.length || 0), 0) || 0} lessons
-                            </div>
-                          </div>
-                          <span className="ds-badge ds-badge--gray">{c.level || 'All'}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Right sidebar */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-
-              {/* Recent activity */}
-              <div className="ds-card">
-                <div className="ds-card__hd">
-                  <span className="ds-card__title">
-                    <span className="ds-card__title-icon"><Activity size={14} aria-hidden="true" /></span> Recent Activity
-                  </span>
-                </div>
-                <div className="ds-card__body">
-                  <ActivityFeed users={users} pays={manualPays} trials={trials} />
-                </div>
-              </div>
-
-              {/* Quick actions */}
-              <div className="ds-card">
-                <div className="ds-card__hd">
-                  <span className="ds-card__title">
-                    <span className="ds-card__title-icon"><BarChart3 size={14} aria-hidden="true" /></span> Quick Actions
-                  </span>
-                </div>
-                <div className="ds-card__body">
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                    {[
-                      { Icon: CreditCard, label: `Review Payments (${pendingPayments.length})`, tab: 'payments', badge: pendingPayments.length > 0 },
-                      { Icon: Target,     label: `Trial Requests (${trials.length})`, tab: 'trials' },
-                      { Icon: Users,      label: 'Manage Users', tab: 'users' },
-                      { Icon: BookOpen,   label: 'Manage Courses', tab: 'courses' },
-                    ].map((a) => (
-                      <button
-                        key={a.tab}
-                        className="ds-quick-action"
-                        onClick={() => setActiveTab(a.tab)}
-                        style={{ width: '100%' }}
-                      >
-                        <span className="ds-quick-action__icon"><a.Icon size={15} aria-hidden="true" /></span>
-                        <span className="ds-quick-action__label">{a.label}</span>
-                        {a.badge && <span className="ds-badge ds-badge--red" style={{ marginLeft: 'auto', fontSize: '0.62rem' }} aria-label="Needs attention">!</span>}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <AdminOverviewPanel stats={overview} isLoading={l11} error={e10 ? overviewError : null} onNavigate={setActiveTab} />
       </div>
 
       {/* ── USERS TAB ──────────────────────────────────────────────── */}

@@ -18,3 +18,9 @@ import adminHttp from './adminHttp';
 //     field back.
 export const getUsers               = ()                  => adminHttp.get('/v1/admin/users').then((r) => r.data);
 export const updateUserSubscription = (id, data)          => adminHttp.patch(`/v1/admin/users/${id}/subscription`, data).then((r) => r.data);
+
+// The Overview tab's figures, counted on the server over every record. The
+// browser's time zone decides which calendar month a date falls in.
+export const getOverviewStats = () => adminHttp.get('/v1/admin/stats/overview', {
+  params: { tz: Intl.DateTimeFormat().resolvedOptions().timeZone },
+}).then((r) => r.data);

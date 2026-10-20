@@ -25,6 +25,7 @@ import systemRoutes       from './systemRoutes.js';
 import invoicesRoutes     from './invoicesRoutes.js';
 import trialsRoutes       from './trialsRoutes.js';
 import newsletterRoutes   from './newsletterRoutes.js';
+import statsRoutes        from './statsRoutes.js';
 import {
   coursesRouter as supabaseCoursesRoutes,
   liveClassesRouter as supabaseLiveClassesRoutes,
@@ -129,5 +130,8 @@ router.use('/invoices',     isSupabaseBackend() ? supabaseInvoicesAdminRoutes : 
 const notFound = (_req, res) => res.status(404).json({ message: 'Not found' });
 router.use('/trials',       isSupabaseBackend() ? notFound : trialsRoutes);
 router.use('/newsletter',   isSupabaseBackend() ? notFound : newsletterRoutes);
+// The Overview tab's figures, counted in MongoDB over all records. Mongo
+// only, like the two routes above.
+router.use('/stats',        isSupabaseBackend() ? notFound : statsRoutes);
 
 export default router;

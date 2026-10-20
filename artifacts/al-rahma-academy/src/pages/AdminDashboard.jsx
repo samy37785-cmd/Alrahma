@@ -24,6 +24,7 @@ import AdminReviewsTab   from '../components/features/admin/AdminReviewsTab';
 import AdminProgressModal from '../components/features/admin/AdminProgressModal';
 import DashboardLayout    from '../components/layout/DashboardLayout';
 import AdminOverviewPanel from '../components/features/admin/AdminOverviewPanel';
+import AdminServiceStatus from '../components/features/admin/AdminServiceStatus';
 
 const TABS = [
   { key: 'overview',    label: 'Overview',    Icon: LayoutDashboard },
@@ -239,6 +240,7 @@ export default function AdminDashboard() {
       {/* ── OVERVIEW TAB ─────────────────────────────────────────── */}
       <div id="tabpanel-overview" role="tabpanel" aria-labelledby="tab-overview" hidden={activeTab !== 'overview'}>
         <AdminOverviewPanel stats={overview} isLoading={l11} error={e10 ? overviewError : null} onNavigate={setActiveTab} />
+        <AdminServiceStatus />
       </div>
 
       {/* ── USERS TAB ──────────────────────────────────────────────── */}

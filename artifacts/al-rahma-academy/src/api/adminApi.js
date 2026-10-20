@@ -24,3 +24,7 @@ export const updateUserSubscription = (id, data)          => adminHttp.patch(`/v
 export const getOverviewStats = () => adminHttp.get('/v1/admin/stats/overview', {
   params: { tz: Intl.DateTimeFormat().resolvedOptions().timeZone },
 }).then((r) => r.data);
+
+// The Service status card: the server's commit, a database ping and main on
+// GitHub, checked only when an admin asks.
+export const getServiceStatus = () => adminHttp.get('/v1/admin/stats/service-status').then((r) => r.data);

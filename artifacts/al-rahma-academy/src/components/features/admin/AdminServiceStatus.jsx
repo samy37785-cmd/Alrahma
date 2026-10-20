@@ -2,13 +2,16 @@ import { useQuery } from '@tanstack/react-query';
 import { Activity, Database, GitBranch, Globe, RefreshCw, Server } from 'lucide-react';
 import { getServiceStatus } from '../../../api/adminApi';
 import { BUILD_COMMIT } from '../../../utils/buildInfo';
+import { withBrowserGitHub } from '../../../utils/githubDeployCheck';
 
 // The Overview tab's Service status card. It checks only when the admin
 // presses the button, and each answer is a snapshot of that moment. Facts
 // come from GET /v1/admin/stats/service-status (the server's own commit, a
 // database ping, main on GitHub's public API) and from the commit this
-// website was built from. Anything missing or failed reads "Unknown" with
-// the reason, never "no deploy needed".
+// website was built from. When the server could not ask GitHub (Render's
+// shared addresses often use up GitHub's limit for requests without a key),
+// this browser asks GitHub itself (utils/githubDeployCheck.js). Anything
+// missing or failed reads "Unknown" with the reason, never "no deploy needed".
 
 const short = (sha) => sha.slice(0, 7);
 const clock = (iso) => new Date(iso).toLocaleTimeString('en-GB');
@@ -79,6 +82,11 @@ function databaseValue(db) {
   return <><strong>Did not answer</strong> ({db.reason === 'not_connected' ? 'not connected' : 'the ping failed'}) at {clock(db.checkedAt)}.</>;
 }
 
+function githubNote(github) {
+  if (github?.source !== 'browser') return "From GitHub's public API, without a key. Answers are kept for up to 5 minutes.";
+  return `The server could not ask GitHub (${reasonText(github.serverReason)}), so this browser asked GitHub's public API itself, without a key and without your session. Answers are kept for up to 5 minutes.`;
+}
+
 function requestError(error) {
   const status = error?.response?.status;
   if (status === 403) return 'No permission to view this (it needs the audit:read permission).';
@@ -91,7 +99,7 @@ export default function AdminServiceStatus() {
   // console's Refresh does not re-run it.
   const { data, error, isFetching, refetch } = useQuery({
     queryKey: ['admin', 'service-status'],
-    queryFn: () => getServiceStatus(),
+    queryFn: async () => withBrowserGitHub(await getServiceStatus()),
     enabled: false,
     retry: false,
     gcTime: 0,
@@ -141,11 +149,11 @@ export default function AdminServiceStatus() {
               value={data.main.status === 'ok'
                 ? <>{short(data.main.commit)}{data.main.committedAt ? `, committed ${dateTime(data.main.committedAt)}` : ''}.</>
                 : <Unknown reason={data.main.reason} />}
-              note="From GitHub's public API, without a key. Answers are kept for up to 5 minutes."
+              note={githubNote(data.github)}
             />
             <Row
               testId="service-deploy" Icon={Server} label="Does the server need a deploy?" value={deployValue(data.serverDeploy)}
-              note="Compares the server's commit with main and looks for changed files under backend/ (its tests excluded, as they never run on Render). Changes made on Render itself, such as environment variables, are not visible here."
+              note={`Compares the server's commit with main${data.github?.source === 'browser' ? ' (asked by this browser)' : ''} and looks for changed files under backend/ (its tests excluded, as they never run on Render). Changes made on Render itself, such as environment variables, are not visible here.`}
             />
             <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
               Not shown here: failed builds, deploy logs, a deploy in progress, or settings on Vercel or Render. Those need the platforms&apos; dashboards.

@@ -5,6 +5,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 // The Overview tab's Service status card: checked only when the admin asks,
 // every line a snapshot of that moment, and "Unknown" with the reason
 // whenever a fact is missing or a source failed (never "no deploy needed").
+// When the server could not ask GitHub, the browser asks GitHub itself.
+// GitHub is a stand-in here: no test reaches the network.
 
 const build = vi.hoisted(() => ({ commit: null }));
 vi.mock('../utils/buildInfo', () => ({ get BUILD_COMMIT() { return build.commit; } }));
@@ -12,6 +14,7 @@ vi.mock('../api/adminApi', () => ({ getServiceStatus: vi.fn() }));
 
 import { getServiceStatus } from '../api/adminApi';
 import AdminServiceStatus from '../components/features/admin/AdminServiceStatus';
+import { resetGitHubCache } from '../utils/githubDeployCheck';
 
 const MAIN = '9be0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8';
 const OLD = '0af5fa7c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a';
@@ -35,10 +38,45 @@ const check = async (label = 'Check now') => {
 };
 const line = (id) => screen.getByTestId(id).textContent;
 
+// A stand-in for GitHub's API, answering by path. Every other host fails
+// the test. A route is { status, body, headers } or an Error to throw.
+const REPO_API = 'https://api.github.com/repos/samy37785-cmd/Alrahma';
+function fakeGitHub(routes = {}) {
+  const fetchMock = vi.fn(async (url) => {
+    const u = new URL(url);
+    if (u.origin !== 'https://api.github.com') throw new Error(`unexpected request to ${u.origin}`);
+    const route = routes[u.pathname];
+    if (route instanceof Error) throw route;
+    const { status: code = 200, body = {}, headers = {} } = route ?? { status: 404 };
+    return {
+      ok: code >= 200 && code < 300,
+      status: code,
+      headers: { get: (name) => headers[name.toLowerCase()] ?? null },
+      json: async () => body,
+    };
+  });
+  vi.stubGlobal('fetch', fetchMock);
+  return fetchMock;
+}
+const MAIN_PATH = '/repos/samy37785-cmd/Alrahma/commits/main';
+const comparePath = (from, to) => `/repos/samy37785-cmd/Alrahma/compare/${from}...${to}`;
+const mainCommit = { body: { sha: MAIN, commit: { committer: { date: '2026-10-20T15:39:30Z' } } } };
+const ahead = (files, aheadBy = 3) => ({ body: { status: 'ahead', ahead_by: aheadBy, files: files.map((filename) => ({ filename })) } });
+const RATE_LIMITED = { status: 403, body: { message: 'API rate limit exceeded' }, headers: { 'x-ratelimit-remaining': '0' } };
+// The server's answer when its own request to GitHub failed.
+const serverGitHubFailed = (reason = 'github_rate_limited', server = OLD) => status({
+  server: { commit: server },
+  main: { status: 'unknown', reason },
+  serverDeploy: { verdict: 'unknown', reason },
+});
+
 describe('AdminServiceStatus', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.unstubAllGlobals();
+    resetGitHubCache();
     build.commit = MAIN;
+    fakeGitHub();
   });
 
   it('checks nothing until asked, and the console Refresh does not run it', async () => {
@@ -93,16 +131,15 @@ describe('AdminServiceStatus', () => {
 
   it.each([
     ['server_commit_unknown', 'the server did not report which commit it runs'],
-    ['github_rate_limited', "GitHub's limit for requests without a key was reached"],
     ['compare_incomplete', "GitHub's list of changed files may be cut short"],
     ['server_commit_not_on_main', 'the server runs a commit that is not part of main'],
-    ['github_http_502', 'GitHub answered with an error (HTTP 502)'],
-  ])('an unknown answer (%s) says Unknown and why, never "not needed"', async (reason, text) => {
-    getServiceStatus.mockResolvedValue(status({ serverDeploy: { verdict: 'unknown', reason } }));
+  ])('an unknown answer GitHub itself gave (%s) says Unknown and why, never "not needed", and is not asked again', async (reason, text) => {
+    getServiceStatus.mockResolvedValue(status({ server: { commit: OLD }, serverDeploy: { verdict: 'unknown', reason } }));
     renderCard();
     await check();
     expect(line('service-deploy')).toContain(`Unknown: ${text}`);
     expect(line('service-deploy')).not.toMatch(/not needed|Up to date/);
+    expect(fetch).not.toHaveBeenCalled();
   });
 
   it('the website line: unknown build, a build behind main, and main unknown', async () => {
@@ -116,6 +153,8 @@ describe('AdminServiceStatus', () => {
     await check('Check again');
     expect(line('service-website')).toContain('Built from 0af5fa7; main is at 9be0c1d. Vercel may still be deploying, or its deploy failed');
 
+    // GitHub failed for the server and for this browser.
+    fakeGitHub({ [MAIN_PATH]: new TypeError('Failed to fetch') });
     getServiceStatus.mockResolvedValue(status({ main: { status: 'unknown', reason: 'github_unreachable' }, serverDeploy: { verdict: 'unknown', reason: 'github_unreachable' } }));
     await check('Check again');
     expect(line('service-website')).toContain('Compared with main: Unknown: GitHub could not be reached.');
@@ -147,5 +186,118 @@ describe('AdminServiceStatus', () => {
       expect(screen.queryByTestId('service-deploy')).not.toBeInTheDocument();
       getServiceStatus.mockResolvedValue(status());
     }
+  });
+});
+
+describe('AdminServiceStatus: the browser asks GitHub when the server could not', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.unstubAllGlobals();
+    resetGitHubCache();
+    build.commit = MAIN;
+  });
+
+  it("the server's GitHub answer worked: the browser does not ask GitHub", async () => {
+    const gh = fakeGitHub({ [MAIN_PATH]: mainCommit });
+    getServiceStatus.mockResolvedValue(status());
+    renderCard();
+    await check();
+    expect(gh).not.toHaveBeenCalled();
+    expect(line('service-main')).toContain("From GitHub's public API, without a key.");
+    expect(line('service-main')).not.toContain('this browser');
+  });
+
+  it('success: main and the comparison come from the browser; the app adds only Accept, omits credentials and sends no Referer', async () => {
+    const gh = fakeGitHub({
+      [MAIN_PATH]: mainCommit,
+      [comparePath(OLD, MAIN)]: ahead(['backend/controllers/a.js', 'backend/routes/b.js', 'artifacts/al-rahma-academy/src/c.jsx']),
+    });
+    getServiceStatus.mockResolvedValue(serverGitHubFailed('github_rate_limited'));
+    renderCard();
+    await check();
+
+    expect(line('service-main')).toContain('9be0c1d, committed');
+    expect(line('service-main')).toContain("The server could not ask GitHub (GitHub's limit for requests without a key was reached; try again in a while), so this browser asked GitHub's public API itself, without a key and without your session.");
+    expect(line('service-website')).toContain('Built from 9be0c1d, the latest commit on main.');
+    expect(line('service-deploy')).toContain('Probably needs a Manual Deploy: 2 server files changed in the 3 commits since the one it runs.');
+    expect(line('service-deploy')).toContain('(asked by this browser)');
+    expect(screen.getByText('backend/controllers/a.js')).toBeInTheDocument();
+    expect(screen.queryByText('artifacts/al-rahma-academy/src/c.jsx')).not.toBeInTheDocument();
+
+    expect(gh.mock.calls.map(([url]) => url)).toEqual([`${REPO_API}/commits/main`, `${REPO_API}/compare/${OLD}...${MAIN}`]);
+    // What the app passes to fetch. The headers a browser adds on its own
+    // (Origin, User-Agent, Sec-Fetch-*) are not visible here.
+    for (const [, init] of gh.mock.calls) {
+      expect(init.method).toBe('GET');
+      expect(init.credentials).toBe('omit');
+      expect(init.referrerPolicy).toBe('no-referrer');
+      expect(init.headers).toEqual({ Accept: 'application/vnd.github+json' });
+      expect(init.body).toBeUndefined();
+    }
+  });
+
+  it('a website-only change: no server file changed, probably not needed, not proof', async () => {
+    fakeGitHub({
+      [MAIN_PATH]: mainCommit,
+      [comparePath(OLD, MAIN)]: ahead(['artifacts/al-rahma-academy/src/a.jsx', 'docs/b.md', 'backend/tests/c.test.js'], 2),
+    });
+    getServiceStatus.mockResolvedValue(serverGitHubFailed('github_rate_limited'));
+    renderCard();
+    await check();
+    expect(line('service-deploy')).toContain('No server file changed in the 2 commits since the one it runs, so a deploy is probably not needed. This is not proof.');
+  });
+
+  it("GitHub's limit is reached for the browser too: Unknown with the reason, never up to date", async () => {
+    const gh = fakeGitHub({ [MAIN_PATH]: RATE_LIMITED });
+    // The server runs main's commit: only GitHub could have said so.
+    getServiceStatus.mockResolvedValue(serverGitHubFailed('github_rate_limited', MAIN));
+    renderCard();
+    await check();
+    expect(line('service-main')).toContain("Unknown: GitHub's limit for requests without a key was reached; try again in a while.");
+    expect(line('service-website')).toContain('Compared with main: Unknown');
+    expect(line('service-deploy')).toContain("Unknown: GitHub's limit for requests without a key was reached");
+    expect(line('service-deploy')).not.toMatch(/Up to date|not needed/);
+    expect(gh).toHaveBeenCalledTimes(1);
+  });
+
+  it('a network failure in the browser: Unknown, GitHub could not be reached', async () => {
+    fakeGitHub({ [MAIN_PATH]: new TypeError('Failed to fetch') });
+    getServiceStatus.mockResolvedValue(serverGitHubFailed('github_timeout'));
+    renderCard();
+    await check();
+    expect(line('service-main')).toContain('Unknown: GitHub could not be reached.');
+    expect(line('service-main')).toContain('The server could not ask GitHub (GitHub did not answer in time)');
+    expect(line('service-deploy')).toContain('Unknown: GitHub could not be reached.');
+    expect(line('service-deploy')).not.toMatch(/Up to date|not needed/);
+  });
+
+  it('an HTTP error from GitHub in the browser says which one', async () => {
+    fakeGitHub({ [MAIN_PATH]: { status: 502 } });
+    getServiceStatus.mockResolvedValue(serverGitHubFailed('github_http_502'));
+    renderCard();
+    await check();
+    expect(line('service-deploy')).toContain('Unknown: GitHub answered with an error (HTTP 502).');
+    expect(line('service-main')).toContain('The server could not ask GitHub (GitHub answered with an error (HTTP 502))');
+  });
+
+  it("only the server's comparison failed: the browser compares, using main from the server", async () => {
+    const gh = fakeGitHub({ [comparePath(OLD, MAIN)]: ahead(['backend/server.js'], 1) });
+    getServiceStatus.mockResolvedValue(status({ server: { commit: OLD }, serverDeploy: { verdict: 'unknown', reason: 'github_rate_limited' } }));
+    renderCard();
+    await check();
+    expect(gh.mock.calls.map(([url]) => url)).toEqual([`${REPO_API}/compare/${OLD}...${MAIN}`]);
+    expect(line('service-deploy')).toContain('Probably needs a Manual Deploy: 1 server file changed in the 1 commit since the one it runs.');
+  });
+
+  it('pressing Check again within 5 minutes does not ask GitHub again', async () => {
+    const gh = fakeGitHub({ [MAIN_PATH]: mainCommit, [comparePath(OLD, MAIN)]: ahead(['backend/server.js']) });
+    getServiceStatus.mockResolvedValue(serverGitHubFailed('github_rate_limited'));
+    renderCard();
+    await check();
+    await check('Check again');
+    await check('Check again');
+    expect(getServiceStatus).toHaveBeenCalledTimes(3);
+    expect(gh).toHaveBeenCalledTimes(2);
+    expect(line('service-deploy')).toContain('Probably needs a Manual Deploy');
   });
 });

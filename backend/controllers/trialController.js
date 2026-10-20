@@ -87,20 +87,30 @@ export const updateTrialStatus = asyncHandler(async (req, res) => {
     return res.status(422).json({ message: `status must be one of: ${TRIAL_STATUSES.join(', ')}` });
   }
 
-  // Writes only when the status really changes, and returns the previous
-  // value from the same atomic update, so the audit entry is exact even if
-  // two admins change it at once.
-  const previous = await TrialRequest.findOneAndUpdate(
-    { _id: id, status: { $ne: status } },
-    { $set: { status } },
-    { new: false, projection: { status: 1 } },
+  // ONE atomic update sets the status and returns the request as it was
+  // just before. The reply and the audit entry are both built from that
+  // result alone, never from a later read, which could already show another
+  // admin's change to the same request. It is a pipeline update so that
+  // `updatedAt` moves only when the status really changes (Mongoose's own
+  // timestamps are off for it, as they would always move it).
+  const changedAt = new Date();
+  const before = await TrialRequest.findOneAndUpdate(
+    { _id: id },
+    [{
+      $set: {
+        updatedAt: { $cond: [{ $eq: ['$status', { $literal: status }] }, '$updatedAt', changedAt] },
+        status: { $literal: status },
+      },
+    }],
+    { new: false, timestamps: false },
   ).lean();
+  if (!before) return res.status(404).json({ message: 'Trial request not found' });
 
-  const trial = await TrialRequest.findById(id).lean();
-  if (!trial) return res.status(404).json({ message: 'Trial request not found' });
+  // It already had this status: nothing changed and nothing is logged.
+  if (before.status === status) return res.json(before);
 
-  if (previous) {
-    await auditFromReq(req, 'trial.status_change', 'TrialRequest', trial._id, { status: previous.status ?? null }, { status });
-  }
-  return res.json(trial);
+  await auditFromReq(req, 'trial.status_change', 'TrialRequest', before._id, { status: before.status ?? null }, { status });
+  // The update wrote only these two fields, so this is the request exactly
+  // as this PATCH left it.
+  return res.json({ ...before, status, updatedAt: changedAt });
 });

@@ -1,5 +1,6 @@
 import { test, before, beforeEach, after } from 'node:test';
 import assert from 'node:assert/strict';
+import mongoose from 'mongoose';
 import app from '../app.js';
 import User from '../models/User.js';
 import AdminUser from '../models/AdminUser.js';
@@ -42,7 +43,7 @@ async function adminUserAgent(role = 'admin') {
   });
   const token = signAccessToken(admin._id, admin.role, true);
   const cookieHeader = `admin_at=${token}; csrf_token=${csrf['x-csrf-token']}`;
-  return { agent, csrf, cookieHeader };
+  return { agent, csrf, cookieHeader, admin };
 }
 
 // --------------------------------------------------------------------------
@@ -727,4 +728,137 @@ test('updateTrialStatus: works on requests from all three forms and leaves their
   assert.deepEqual(ids.map((id) => [byId[id].phone, byId[id].status]), [
     ['+44 7700 900123', 'scheduled'], ['+20 100 000 0001', 'contacted'], ['+1 555 0100', 'contacted'],
   ]);
+});
+
+// ── Two or more admins changing the same request at once ─────────────────
+// The reply to each PATCH must show the status that PATCH set, taken from
+// its own atomic update; a read after the update could already show another
+// admin's change. holdFirstTrialUpdate() pauses the first PATCH right after
+// its database update (before its reply and audit entry) so the second
+// PATCH can run to the end in that gap: the interleaving where a read after
+// the update returned the second admin's status.
+function holdFirstTrialUpdate(t) {
+  let applied;
+  let release;
+  const updateApplied = new Promise((resolve) => { applied = resolve; });
+  const released = new Promise((resolve) => { release = resolve; });
+  const exec = mongoose.Query.prototype.exec;
+  let held = false;
+  t.mock.method(mongoose.Query.prototype, 'exec', async function holdOnce(...args) {
+    const result = await exec.apply(this, args);
+    if (!held && this.model?.modelName === 'TrialRequest' && this.op === 'findOneAndUpdate') {
+      held = true;
+      applied();
+      await released;
+    }
+    return result;
+  });
+  return { updateApplied, release };
+}
+
+const headersOf = ({ csrf, cookieHeader }) => ({ ...csrf, Cookie: cookieHeader });
+const statusEntries = (id) => SystemAuditLog.find({ action: 'trial.status_change', resourceId: String(id) }).lean();
+
+test('updateTrialStatus, two admins at once with different statuses: each reply keeps its own status; the database and audit log follow the order of the updates', async (t) => {
+  const [id] = await createTrials('new');
+  const first = await adminUserAgent();
+  const second = await adminUserAgent();
+  const gate = holdFirstTrialUpdate(t);
+
+  const firstReply = setStatus(first.agent, headersOf(first), id, 'contacted').then((res) => res);
+  await gate.updateApplied; // new -> contacted is in the database; the first reply is on hold
+  const secondRes = await setStatus(second.agent, headersOf(second), id, 'scheduled');
+  gate.release();
+  const firstRes = await firstReply;
+
+  assert.equal(firstRes.status, 200);
+  assert.equal(secondRes.status, 200);
+  assert.equal(firstRes.body.status, 'contacted', "the first reply does not take the second admin's status");
+  assert.equal(secondRes.body.status, 'scheduled');
+  assert.ok(new Date(firstRes.body.updatedAt) <= new Date(secondRes.body.updatedAt));
+
+  const stored = await TrialRequest.findById(id).lean();
+  assert.equal(stored.status, 'scheduled', 'the later update wins');
+  assert.equal(stored.updatedAt.toISOString(), secondRes.body.updatedAt, "the second reply is exactly what the second update wrote");
+  assert.equal(stored.phone, '+44 7700 900123');
+
+  const entries = await statusEntries(id);
+  assert.equal(entries.length, 2);
+  const byAdmin = Object.fromEntries(entries.map((e) => [String(e.adminId), [e.before, e.after]]));
+  assert.deepEqual(byAdmin[String(first.admin._id)], [{ status: 'new' }, { status: 'contacted' }]);
+  assert.deepEqual(byAdmin[String(second.admin._id)], [{ status: 'contacted' }, { status: 'scheduled' }]);
+});
+
+test('updateTrialStatus, two admins at once with the same status: one write and one audit entry; both replies show it', async (t) => {
+  const [id] = await createTrials('new');
+  const first = await adminUserAgent();
+  const second = await adminUserAgent();
+  const gate = holdFirstTrialUpdate(t);
+
+  const firstReply = setStatus(first.agent, headersOf(first), id, 'contacted').then((res) => res);
+  await gate.updateApplied;
+  const secondRes = await setStatus(second.agent, headersOf(second), id, 'contacted');
+  gate.release();
+  const firstRes = await firstReply;
+
+  assert.deepEqual([firstRes.status, secondRes.status], [200, 200]);
+  assert.deepEqual([firstRes.body.status, secondRes.body.status], ['contacted', 'contacted']);
+  const stored = await TrialRequest.findById(id).lean();
+  assert.equal(stored.status, 'contacted');
+  assert.equal(stored.updatedAt.toISOString(), firstRes.body.updatedAt, 'only the first PATCH wrote');
+  assert.equal(secondRes.body.updatedAt, firstRes.body.updatedAt);
+
+  const entries = await statusEntries(id);
+  assert.equal(entries.length, 1);
+  assert.equal(String(entries[0].adminId), String(first.admin._id));
+  assert.deepEqual([entries[0].before, entries[0].after], [{ status: 'new' }, { status: 'contacted' }]);
+});
+
+test('updateTrialStatus, eight admins at once (no control): every reply has the status its own PATCH asked for, and the audit log is one unbroken chain', async () => {
+  const [id] = await createTrials('new');
+  const wanted = ['contacted', 'scheduled', 'new', 'scheduled', 'contacted', 'new', 'contacted', 'scheduled'];
+  const admins = await Promise.all(wanted.map(() => adminUserAgent()));
+
+  const replies = await Promise.all(wanted.map((status, i) => setStatus(admins[i].agent, headersOf(admins[i]), id, status)));
+  replies.forEach((res, i) => {
+    assert.equal(res.status, 200, `reply ${i}`);
+    assert.equal(res.body.status, wanted[i], `reply ${i} has its own status`);
+  });
+
+  const final = (await TrialRequest.findById(id).lean()).status;
+  const entries = await statusEntries(id);
+  const asked = new Map(admins.map((a, i) => [String(a.admin._id), wanted[i]]));
+  for (const e of entries) {
+    assert.notEqual(e.before.status, e.after.status, 'an entry only for a real change');
+    assert.equal(e.after.status, asked.get(String(e.adminId)), 'each entry records what its own admin asked for');
+  }
+  // Each write starts from the status the previous write left. So, per
+  // status, the entries leaving it minus the entries reaching it are +1 for
+  // the start ('new') and -1 for the final status (0 when they are the same).
+  for (const s of ['new', 'contacted', 'scheduled']) {
+    const leaving = entries.filter((e) => e.before.status === s).length;
+    const reaching = entries.filter((e) => e.after.status === s).length;
+    assert.equal(leaving - reaching, (s === 'new' ? 1 : 0) - (s === final ? 1 : 0), `chain at ${s}`);
+  }
+});
+
+test('updateTrialStatus: an old request stored without status or updatedAt can be changed; setting it again changes nothing', async () => {
+  const { insertedId: id } = await TrialRequest.collection.insertOne({ name: 'Legacy', email: 'legacy@example.com' });
+  const { agent, csrf, cookieHeader } = await adminUserAgent();
+  const headers = { ...csrf, Cookie: cookieHeader };
+
+  const res = await setStatus(agent, headers, id, 'contacted');
+  assert.equal(res.status, 200);
+  assert.equal(res.body.status, 'contacted');
+  const stored = await TrialRequest.collection.findOne({ _id: id });
+  assert.equal(stored.status, 'contacted');
+  assert.equal(stored.updatedAt.toISOString(), res.body.updatedAt);
+  assert.equal(stored.createdAt, undefined, 'nothing else is added');
+  const entries = await statusEntries(id);
+  assert.deepEqual(entries.map((e) => [e.before, e.after]), [[{ status: null }, { status: 'contacted' }]]);
+
+  const again = await setStatus(agent, headers, id, 'contacted');
+  assert.equal(again.status, 200);
+  assert.equal((await TrialRequest.collection.findOne({ _id: id })).updatedAt.toISOString(), res.body.updatedAt);
+  assert.equal((await statusEntries(id)).length, 1);
 });

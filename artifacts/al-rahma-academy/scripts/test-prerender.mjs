@@ -3,9 +3,12 @@
 // rather than skip, when the build is missing, partial or stale
 // (src/test/utils/builtDist.js). src/test/prerenderTestFiles.test.js keeps
 // this list equal to the set of test files that read dist/public.
-import { spawnSync } from 'node:child_process';
-import { dirname, join } from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+//
+// Every listed file must pass at least one test, and any skipped test fails
+// the run (scripts/vitestReport.mjs): a dist block that still skips here, such
+// as one gated on a page that was not prerendered, would otherwise pass unseen.
+import { pathToFileURL } from 'node:url';
+import { finish, runVitest } from './vitestReport.mjs';
 
 export const PRERENDER_TEST_FILES = [
   'src/test/frenchP2ContentMetadata.test.jsx',
@@ -22,12 +25,6 @@ export const PRERENDER_TEST_FILES = [
 ];
 
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {
-  const appRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
-  const result = spawnSync('npx', ['vitest', 'run', ...PRERENDER_TEST_FILES, ...process.argv.slice(2)], {
-    cwd: appRoot,
-    stdio: 'inherit',
-    shell: process.platform === 'win32',
-    env: { ...process.env, REQUIRE_PRERENDER_DIST: '1' },
-  });
-  process.exit(result.status ?? 1);
+  const run = runVitest(PRERENDER_TEST_FILES, { args: process.argv.slice(2), env: { REQUIRE_PRERENDER_DIST: '1' } });
+  process.exit(finish('test:prerender', run, { expectFiles: PRERENDER_TEST_FILES }));
 }

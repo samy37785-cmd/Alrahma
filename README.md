@@ -35,10 +35,16 @@ There is **no in-app online payment** anywhere in the customer-facing frontend: 
 | `cd backend && npm run test:migration` | **Every** Stage 2J-B migration test file (`backend/scripts/migration/**/*.test.mjs`) | Docker (spins up disposable, throwaway Mongo/Postgres containers per test file; nothing external, nothing persistent) |
 | `cd backend && npm run test:all` | Lint + `npm test` + `npm run test:migration`, in order | Docker |
 | `cd lib/db && npm run test:db` | Full RLS/ACL/schema/upgrade-scenario suite against a disposable Postgres | Docker |
-| `cd artifacts/al-rahma-academy && npx vitest run` | Frontend unit/component tests (tests that read the built site skip themselves here) | — |
-| `cd artifacts/al-rahma-academy && pnpm run test:prerender` | The tests that read the built site (`dist/public`); fails if the build is missing, unfinished or older than the current sources | `pnpm run build` first (Playwright Chromium for the prerender) |
+| `cd artifacts/al-rahma-academy && npx vitest run` | Frontend unit/component tests (tests that read the built site or need a browser skip themselves here) | — |
+| `cd artifacts/al-rahma-academy && pnpm run test:unit` | The same run as CI does it: fails on a skipped test outside the files the two post-build steps run | — |
+| `cd artifacts/al-rahma-academy && pnpm run test:prerender` | The tests that read the built site (`dist/public`); fails if the build is missing, unfinished or older than the current sources, or if any test skips | `pnpm run build` first (Playwright Chromium for the prerender) |
+| `cd artifacts/al-rahma-academy && pnpm run test:layout` | Every real-browser layout test (`src/test/*.layout.test.js`); fails on a missing browser, a stale build or any skip | `pnpm run build` and Playwright Chromium |
+| `node scripts/ci/run-api-tests.mjs` | The Vercel Function tests (`api/**/*.test.mjs`: admin proxy signing, path guard, rewrites) | Backend `npm ci` (one test imports the backend's verifier) |
+| `node scripts/ci/check-test-inventory.mjs` | Checks that every test file in the repo is run by a CI step or listed as not run, with the reason | — |
 
-**`npm test` in `backend/` never runs the migration suite** — its glob (`tests/**/*.test.js`) and the migration suite's file extension/location (`scripts/migration/**/*.test.mjs`) are structurally disjoint. Run `npm run test:migration` (or `test:all`) explicitly to exercise the migration tooling; CI (`.github/workflows/stage2jb-migration-ci.yml`) runs all of the above on every PR into `main`.
+Unit tests cannot reach the internet: `src/test/setup.js` refuses every connection to a host other than this machine.
+
+**`npm test` in `backend/` never runs the migration suite** — its glob (`tests/**/*.test.js`) and the migration suite's file extension/location (`scripts/migration/**/*.test.mjs`) are structurally disjoint. Run `npm run test:migration` (or `test:all`) explicitly to exercise the migration tooling; CI (`.github/workflows/ci.yml`) runs all of the above on every PR into `main` and on every push to `main`.
 
 ## Deployment
 

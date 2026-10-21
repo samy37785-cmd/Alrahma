@@ -14,6 +14,7 @@
 // Each file below already manages its own disposable Docker
 // Mongo/Postgres/GoTrue-stub containers and verifies their own cleanup;
 // this script only sequences them and aggregates the final exit code.
+import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { runSuite } from './lib/test-summary.mjs';
@@ -63,6 +64,26 @@ const TEST_FILES = [
   // The first-Super-Admin recovery tool (an invite that expired unused), on its own real stack.
   '../ops/recover-first-super-admin.real-gotrue.test.mjs',
 ];
+
+// The order above is chosen by hand, so the list is too. A *.test.mjs file
+// under scripts/migration/ or scripts/ops/ that is not in it would never run
+// anywhere, so the suite refuses to start until the list and the disk agree.
+function findTestFiles(dir) {
+  return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) return entry.name === 'node_modules' ? [] : findTestFiles(full);
+    return entry.name.endsWith('.test.mjs') ? [path.relative(__dirname, full).split(path.sep).join('/')] : [];
+  });
+}
+const onDisk = [...findTestFiles(__dirname), ...findTestFiles(path.join(__dirname, '..', 'ops'))];
+const unlisted = onDisk.filter((rel) => !TEST_FILES.includes(rel));
+const missing = TEST_FILES.filter((rel) => !onDisk.includes(rel));
+if (unlisted.length || missing.length) {
+  for (const rel of unlisted) console.error(`[test:migration] ${rel} is a test file that TEST_FILES does not list, so it would never run`);
+  for (const rel of missing) console.error(`[test:migration] TEST_FILES lists ${rel}, which does not exist`);
+  console.error('[test:migration] update TEST_FILES in scripts/migration/run-all-tests.mjs');
+  process.exit(1);
+}
 
 // A file passes only when it exits 0, prints its "<passed>/<total> passed."
 // line, ran at least one test and passed all of them (lib/test-summary.mjs).

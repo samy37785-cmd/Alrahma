@@ -142,6 +142,8 @@ async function main() {
     console.log('\n=== CLEANUP ===');
     await runCommand('docker', ['rm', '-f', '-v', PG_NAME]).catch(() => {});
     const left = await runCommand('docker', ['ps', '-a', '--filter', `name=^${PG_NAME}$`, '--format', '{{.Names}}']);
+    // Deliberate: a container left behind fails the run even when the tests passed.
+    // eslint-disable-next-line no-unsafe-finally
     if (left.code !== 0 || left.stdout.trim()) throw new Error('cleanup could not verify the disposable Postgres container is absent');
     console.log('cleanup verified: all test containers absent.');
   }

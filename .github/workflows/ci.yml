@@ -1,0 +1,202 @@
+name: CI
+
+# Runs on every pull request into main and on every push to main (each merge).
+# The job's name, "Full verification", is the status check to require on main.
+#
+# What this workflow does NOT do, by construction:
+#   - It references no repository secret, environment secret or credential of
+#     any kind: there is no `secrets:` usage below. Every database is a
+#     disposable Docker container that the tests create and remove inside this
+#     job; the backend tests get generated, test-only keys.
+#   - It never touches Atlas, Supabase (project difzynyphojgisrfvrkd), Render or
+#     Vercel: nothing here has their credentials. No MIGRATION_MONGO_URI,
+#     MIGRATION_DB_URL, SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY is set below;
+#     each migration test sets its own localhost value and the tooling asserts a
+#     localhost host before connecting. `production-import-orchestrator.mjs
+#     --execute` only ever runs against the tests' own disposable containers.
+#   - The frontend unit tests cannot reach the internet
+#     (artifacts/al-rahma-academy/src/test/utils/blockNetwork.js).
+#
+# Which test file runs where: the "Test inventory" step fails unless every test
+# file in the repository is run by a step below or is listed in
+# scripts/ci/check-test-inventory.mjs as not run, with the reason.
+#
+# No step may pass by skipping: the backend runners fail a file that skips a
+# test or runs none; in the frontend, only the tests that need the build or a
+# browser may skip before the build, and the two steps after it fail on any skip.
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  # A new push to a pull request replaces its older run; every commit on main is verified.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  CI: 'true'
+
+jobs:
+  verify:
+    name: Full verification
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout (full history, for git diff --check against main)
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+
+      # pnpm 10, the version that wrote pnpm-lock.yaml and that Vercel builds
+      # with (root package.json "packageManager"). pnpm 9 cannot read this
+      # lockfile's overrides under --frozen-lockfile
+      # (ERR_PNPM_LOCKFILE_CONFIG_MISMATCH), and regenerating the lockfile with
+      # pnpm 9 once dropped the overrides and broke the Vercel build (ba1ed6a).
+      - name: Set up pnpm
+        uses: pnpm/action-setup@a15d269cd4658e1107c09f1fabf4cbd7bd1f308a # v4.4.0
+        with:
+          version: 10.34.5
+
+      # The pnpm store cache is keyed on pnpm-lock.yaml and only speeds up
+      # downloads; --frozen-lockfile installs exactly what the lockfile says.
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22'
+          cache: pnpm
+
+      - name: Install workspace dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Verify pnpm-lock.yaml is untouched by the frozen install and still carries the workspace overrides
+        run: |
+          git diff --exit-code -- pnpm-lock.yaml
+          grep -q '^overrides:' pnpm-lock.yaml
+
+      # backend/ is its own npm package (backend/package-lock.json), not a
+      # member of the pnpm workspace, so the install above does not cover it.
+      # `npm ci` fails if the lockfile and package.json disagree.
+      - name: Backend npm ci (backend/package-lock.json -- a separate npm package, not part of the pnpm workspace)
+        working-directory: backend
+        run: npm ci
+
+      - name: Test inventory (every test file is run below, or listed as not run with the reason)
+        run: node scripts/ci/check-test-inventory.mjs
+
+      - name: git diff --check (no trailing whitespace / unresolved conflict markers vs. main)
+        if: github.event_name == 'pull_request'
+        run: |
+          git fetch origin main --depth=1 || git fetch origin main
+          git diff --check origin/main...HEAD
+
+      # Pass 1 is a hard fail on the shapes of real secrets: AWS keys, private
+      # keys, JWTs, API keys (sk-, Stripe, Resend, GitHub, Google), and
+      # connection strings that carry a password (Supabase Postgres, Atlas).
+      # Pass 2 catches a non-JWT value assigned to SUPABASE_SERVICE_ROLE_KEY,
+      # but ignores lines that say they are test placeholders ("fake", "test").
+      - name: Secret scan on the diff vs. main
+        if: github.event_name == 'pull_request'
+        run: |
+          git fetch origin main --depth=1 || git fetch origin main
+          git diff origin/main...HEAD > /tmp/pr.diff
+          if grep -inE \
+            "AKIA[0-9A-Z]{16}|BEGIN (RSA|EC|OPENSSH|PGP) PRIVATE KEY|eyJhbGciOi[A-Za-z0-9_.-]{20,}|sk-[a-zA-Z0-9]{20,}|(sk|rk)_(live|test)_[0-9a-zA-Z]{20,}|whsec_[0-9a-zA-Z]{20,}|re_[0-9A-Za-z]{8,}_[0-9A-Za-z]{16,}|gh[pousr]_[0-9A-Za-z]{36}|github_pat_[0-9A-Za-z_]{40,}|AIza[0-9A-Za-z_-]{35}|postgres(ql)?://[^ '\"]+:[^ '\"@]+@[^ '\"]*supabase|mongodb\+srv://[^ '\"/:@]+:[^ '\"@]+@" \
+            /tmp/pr.diff; then
+            echo "::error::Potential secret detected in the diff -- failing the build."
+            exit 1
+          fi
+          if grep -inE "SUPABASE_SERVICE_ROLE_KEY[[:space:]]*[:=][[:space:]]*['\"][^'\"]" /tmp/pr.diff \
+            | grep -viE "fake|test|mock|dummy|placeholder|example|not-a-real"; then
+            echo "::error::Potential secret detected in the diff -- failing the build."
+            exit 1
+          fi
+          echo "Secret scan: clean."
+
+      # .js and .mjs (backend/eslint.config.js). Errors fail; warnings are reported.
+      - name: Backend lint
+        working-directory: backend
+        run: npm run lint
+
+      # scripts/run-backend-tests.mjs finds every backend/tests/**/*.test.{js,mjs}
+      # itself, fails unless the file count matches its inventory, and runs each
+      # non-contract file with generated test-only secrets and an in-memory
+      # MongoDB. Each file must exit 0, run at least one test and skip none.
+      - name: Backend tests (every non-contract backend/tests file; inventory and no-skip enforced)
+        working-directory: backend
+        run: npm test
+
+      # The Supabase contract files skip themselves without a database, so each
+      # runs through its gate script, which starts a disposable Docker Postgres
+      # with the repo schema. Same rules: >0 tests, none skipped.
+      - name: Backend contract gates (disposable Docker Postgres, no real credentials)
+        working-directory: backend
+        run: npm run test:contract
+
+      # scripts/migration/run-all-tests.mjs refuses to start unless its list
+      # matches every *.test.mjs under scripts/migration/ and scripts/ops/.
+      - name: Migration targeted tests (disposable Docker Mongo/Postgres only, no real credentials)
+        working-directory: backend
+        run: npm run test:migration
+
+      - name: lib/db tests (checksum self-test; full suite on a disposable Docker Postgres)
+        working-directory: lib/db
+        run: |
+          npm run check:published-migrations:selftest
+          npm run test:db
+
+      - name: Vercel Function tests (api/ -- admin proxy signing, path guard, rewrites)
+        run: node scripts/ci/run-api-tests.mjs
+
+      # Before any build and without a browser. The tests that read the built
+      # site and the real-browser layout tests skip here (they run after the
+      # build, below); a skip in any other file fails this step
+      # (artifacts/al-rahma-academy/scripts/test-unit.mjs).
+      - name: Frontend unit tests
+        working-directory: artifacts/al-rahma-academy
+        run: pnpm run test:unit
+
+      # --with-deps also installs the OS libraries Chromium needs, since the
+      # runner image does not guarantee them. The build's postbuild
+      # (scripts/prerender.mjs) and the layout tests use this browser.
+      - name: Install Playwright Chromium (for prerender postbuild and the layout tests)
+        working-directory: artifacts/al-rahma-academy
+        run: npx playwright install --with-deps chromium
+
+      - name: Root typecheck + build
+        run: pnpm run build
+
+      # Every test that reads dist/public (the list in scripts/test-prerender.mjs,
+      # kept complete by src/test/prerenderTestFiles.test.js), with
+      # REQUIRE_PRERENDER_DIST=1: a missing, unfinished or stale build fails
+      # (scripts/buildFingerprint.mjs), and so does any skipped test.
+      - name: Prerender output verification (post-build, requires dist/)
+        working-directory: artifacts/al-rahma-academy
+        run: pnpm run test:prerender --reporter=verbose
+
+      # Every src/test/*.layout.test.js, found by scripts/test-layout.mjs rather
+      # than listed here. REQUIRE_CHROMIUM=1 turns a missing browser into a
+      # failure, a stale or missing build fails before any test, and any skipped
+      # test fails the step. Waves 3-5 test the built site from the step above.
+      - name: Real-browser layout tests (requires Chromium and the build)
+        working-directory: artifacts/al-rahma-academy
+        run: pnpm run test:layout --reporter=verbose
+
+      # The build regenerates public/sitemap.xml, and the tests write only to
+      # ignored or temporary paths. A tracked file the build changed (a sitemap
+      # not regenerated after a route change) or a stray file fails here.
+      - name: The build and the tests left the checkout unchanged
+        run: |
+          git status --porcelain --untracked-files=all > /tmp/changed.txt
+          if [ -s /tmp/changed.txt ]; then
+            cat /tmp/changed.txt
+            git diff --stat
+            echo "::error::The build or a test changed or created files in the checkout (listed above)."
+            exit 1
+          fi
+          echo "Checkout unchanged."

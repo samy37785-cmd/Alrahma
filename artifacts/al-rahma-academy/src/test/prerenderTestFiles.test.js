@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { PRERENDER_TEST_FILES } from '../../scripts/test-prerender.mjs';
+import { isLayoutTestFile } from '../../scripts/test-layout.mjs';
 
 // Every test that reads the built site (dist/public) must (a) gate on a fresh,
 // finished build through utils/builtDist.js, never a bare existsSync, and
@@ -13,9 +14,9 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const appRoot = path.resolve(__dirname, '../..');
 const testDir = path.join(appRoot, 'src', 'test');
 
-// The real-browser layout tests have their own post-build CI step and their
-// own dist check.
-const isLayoutTest = (rel) => rel.endsWith('.layout.test.js');
+// The real-browser layout tests have their own post-build CI step
+// (scripts/test-layout.mjs, which finds them by name) and their own dist check.
+const isLayoutTest = (rel) => isLayoutTestFile(path.basename(rel));
 const READS_DIST = /['"`][^'"`\n]*dist\/public|['"]dist['"]\s*,\s*['"]public['"]/;
 const USES_GATE = /from '\.\/utils\/builtDist'/;
 

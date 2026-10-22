@@ -1527,11 +1527,15 @@ describe.skipIf(!distExists)('Prerender output (dist/public) — real files on d
   });
 });
 
-describe.skipIf(distExists)('Prerender output — dist/public not present (expected before a real build)', () => {
-  it('is explicitly skipped here, not silently treated as a pass', () => {
-    expect(distExists).toBe(false);
+// Registered only before a build, so the post-build step (which fails on any
+// skipped test, scripts/vitestReport.mjs) does not count it as a skip.
+if (!distExists) {
+  describe('Prerender output — dist/public not present (expected before a real build)', () => {
+    it('is explicitly skipped here, not silently treated as a pass', () => {
+      expect(distExists).toBe(false);
+    });
   });
-});
+}
 
 // Same "skip before build, run after" rule as the primary describe block
 // above — this reads real files too, so it needs dist/public to exist

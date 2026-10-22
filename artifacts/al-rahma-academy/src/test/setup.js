@@ -1,4 +1,5 @@
 import '@testing-library/jest-dom';
+import { blockNetwork } from './utils/blockNetwork';
 import { registerTranslations } from '../i18n';
 import en from '../i18n/en.js';
 import ar from '../i18n/ar.js';
@@ -13,6 +14,9 @@ import itExperience from '../i18n/experience/it.js';
 import esExperience from '../i18n/experience/es.js';
 import deExperience from '../i18n/experience/de.js';
 import frExperience from '../i18n/experience/fr.js';
+
+// No test may reach a real server (see utils/blockNetwork.js).
+blockNetwork();
 
 // The app loads one dictionary (and its interface copy) per page load
 // (main.jsx); tests render any language synchronously, so all six are

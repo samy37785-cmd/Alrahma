@@ -5,7 +5,9 @@ export default [
   { ignores: ['node_modules', 'logs'] },
 
   {
-    files: ['**/*.js'],
+    // .mjs too: the test runners and the migration tooling are .mjs, and a
+    // file no config object matches is only parsed, never checked by a rule.
+    files: ['**/*.js', '**/*.mjs'],
     ...js.configs.recommended,
     languageOptions: {
       ecmaVersion: 2022,

@@ -13,11 +13,6 @@ export const courses = [
     points: ['All Tajweed rules (Hafs & Warsh)', 'Live correction by certified teacher', 'Audio & video practice materials'],
     resources: [
       {
-        type: 'youtube',
-        label: 'Watch the course on YouTube',
-        url: 'https://youtube.com/playlist?list=PLRpvHZq8NeLacnKt2FKtlTSRLWoFOpBGA',
-      },
-      {
         type: 'pdf',
         label: 'Read the Tajweed book (PDF)',
         url: 'https://www.islam.gov.bh/wp-content/uploads/2022/03/omdah12.pdf',

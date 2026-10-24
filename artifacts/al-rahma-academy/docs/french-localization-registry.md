@@ -223,6 +223,7 @@ Translated faithfully from the English source under the policy above. Status: `f
 | 5 | Privacy policy GA4 section, cookie banner (`owner-review-recommended`) | 1C `/academy/privacy`, every page | `pages/Privacy.jsx` `ANALYTICS_PRIVACY_COPY.fr`, `analytics/consentCopy.js` `fr` |
 | 6 | Terms and refund policy fidelity fixes (`owner-review-recommended`) | 1C `/academy/terms`, `/academy/refund-policy` | `pages/TermsOfService.jsx` `translated.fr`, `pages/RefundPolicy.jsx` `fr` |
 | 7 | Teacher bios and credential labels | 1C teachers, profiles | `data/marketing/teachers.js` `fr` |
+| 8 | YouTube API Services disclosure: privacy section and terms §13 (`owner-review-recommended`; added 2026-10-24 in every locale; the English is the owner-approved wording) | 1C `/academy/privacy`, `/academy/terms` | `pages/Privacy.jsx` `YOUTUBE_API_PRIVACY_COPY.fr`, `pages/TermsOfService.jsx` `translated.fr.youtube` |
 
 ## Owner decisions applied in Batch 1A (PR #130)
 

@@ -44,11 +44,23 @@ describe('EN/AR/FR are unchanged (SHA-256 baselines from origin/main)', () => {
     expect(Object.keys(ANALYTICS_PRIVACY_COPY).sort()).toEqual(['ar', 'en', 'fr', 'it']);
   });
 
-  it('the rendered en/ar/fr privacy pages are unchanged', async () => {
+  // Since 2026-10-24 the page also has the YouTube API Services section and a
+  // new "last updated" date (youtubeApiLegalDisclosures.test.jsx). Without
+  // those two, the text must still hash to the origin/main baseline.
+  it('the rendered en/ar/fr privacy pages are unchanged apart from the YouTube API section and its date', async () => {
     const B = { en: 'cdec5c1cbfe8c19fe80fba64c8b4207f13dffc8bdac77fb93f296f023e37e288', ar: 'c7e1d46fda3a6b6d871a226aaf86a74abcbb2ff02f293006625014166baee8e2', fr: 'a0c67841f5075cfa64d840b07acb3ad905dad24fb8e459f0f51188d94bd97a84' };
+    const UPDATED = {
+      en: ['Last updated: October 2026', 'Last updated: June 2026'],
+      ar: ['آخر تحديث: أكتوبر 2026', 'آخر تحديث: يونيو 2026'],
+      fr: ['Dernière mise à jour : octobre 2026', 'Dernière mise à jour : juin 2026'],
+    };
     for (const [l, p] of [['en', '/academy/privacy'], ['ar', '/ar/academy/privacy'], ['fr', '/fr/academy/privacy']]) {
       const { text } = await render(p);
-      expect(sha(text), l).toBe(B[l]);
+      const youtube = document.querySelector('#youtube-api-services')?.textContent ?? '';
+      const [now, before] = UPDATED[l];
+      expect(youtube, l).not.toBe('');
+      expect(text, l).toContain(now);
+      expect(sha(text.replace(youtube, '').replace(now, before)), l).toBe(B[l]);
       cleanup();
     }
   });

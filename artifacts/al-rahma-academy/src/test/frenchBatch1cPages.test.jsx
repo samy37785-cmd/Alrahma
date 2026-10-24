@@ -26,16 +26,17 @@ useFullPageEnvironment();
 beforeEach(() => submitEnrollment.mockReset());
 
 // Identical in English and French by nature: the brand, people's names and
-// their initials, language codes and autonyms, plan names, contact values,
+// their initials, language codes and autonyms, plan names, contact values and URLs,
 // operational placeholders, the words "Contact"/"Services"/"Hifz"/"Tafsir"
 // that French spells the same, and the values the test itself typed.
 const SAME_IN_FRENCH = new Set([
   'AL-RAHMA', 'ACADEMY', 'AL-Rahma', 'Academy.', 'Copyright ©', 'Adhkar', 'FAQ', 'Blog', 'Contact', 'Ctrl K',
   'Facebook', 'Instagram', 'YouTube', 'TikTok', 'Snapchat', 'WhatsApp',
   'alrahmaacademy038@gmail.com', '+20 103 955 3264', 'name@example.com', '+44 7700 900000',
+  'https://policies.google.com/privacy', 'https://myaccount.google.com/permissions', 'https://www.youtube.com/t/terms',
   'EN', 'AR', 'IT', 'ES', 'DE', 'FR', '🇬🇧 EN', '🇮🇹 IT', '🇫🇷 FR', '🇩🇪 DE', '🇪🇸 ES',
   'English', 'Italiano', 'Français', 'Deutsch', 'Español',
-  '🏅 Al-Azhar', 'Hifz', 'Tafsir', 'Noorani', 'Huffaz', '1. Services', '13. Contact',
+  '🏅 Al-Azhar', 'Hifz', 'Tafsir', 'Noorani', 'Huffaz', '1. Services', '14. Contact',
   'Canada', 'France', 'Qatar',
   'Test Student', 'student@example.com', 'Cairo', 'BK-TEST-0001',
 ]);

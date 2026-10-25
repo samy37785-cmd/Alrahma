@@ -4,8 +4,6 @@ import QuranAudioPlayer from '../../ui/QuranAudioPlayer';
 import BrandLockup from '../../ui/BrandLockup';
 import { pickA11yLabels } from '../../../i18n/a11yLabels';
 
-const DEMO_VIDEO_ID = import.meta.env.VITE_DEMO_VIDEO_ID || 'dQw4w9WgXcQ';
-
 // The badge1/2/3 translation strings already contain a leading "✓ " (used
 // elsewhere as plain inline text) — this list renders its own styled
 // checkmark badge, so the string's own checkmark must be stripped to avoid
@@ -176,13 +174,11 @@ export default function Hero({ onTrialClick }) {
             >
               ✕
             </button>
-            <iframe
-              src={`https://www.youtube.com/embed/${DEMO_VIDEO_ID}?autoplay=1&rel=0`}
-              title={a11y.lessonDemo}
-              allow="autoplay; encrypted-media"
-              allowFullScreen
-              className="hero__video-iframe"
-            />
+            {/* The video slot stays, but holds no video. It used to embed a
+                placeholder YouTube ID (a music video, not a lesson), so the
+                frame is now empty until the academy has its own lesson
+                recording. Nothing is loaded from YouTube. */}
+            <div className="hero__video-iframe" style={{ background: '#000' }} aria-hidden="true" />
           </div>
         </div>
       )}

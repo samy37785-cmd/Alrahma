@@ -18,6 +18,9 @@
 // French Localization Batch 1E adds `fr`, translated from the English shell
 // only, with the house glossary term "tajwid". Italian (below) was added in
 // its own wave; es/de stay genuinely absent.
+//
+// `trialCta` (2026-10-28) is the Verse of the Day page's trial strip, copied
+// word for word in each language, so the two tools ask the same thing.
 export const TAJWEED_CHECKER_TEXT = {
   en: {
     seo: {
@@ -44,6 +47,11 @@ export const TAJWEED_CHECKER_TEXT = {
       excellent: 'Excellent! Your recitation matches well.',
       good: 'Good effort! Try again for better accuracy.',
       keepPractising: 'Keep practising — listen carefully and try again.',
+    },
+    trialCta: {
+      text: 'Want to learn to recite verses like this with a certified Al-Azhar tutor?',
+      button: 'Book a Free Trial Lesson →',
+      note: 'No credit card · Cancel anytime',
     },
   },
   ar: {
@@ -72,6 +80,11 @@ export const TAJWEED_CHECKER_TEXT = {
       good: 'جيد! حاول مرة أخرى لمزيد من الدقة.',
       keepPractising: 'واصل التدريب — استمع للمثال وكرر.',
     },
+    trialCta: {
+      text: 'هل تريد تعلّم تلاوة آيات كهذه مع معلم معتمد من الأزهر؟',
+      button: 'ابدأ درساً تجريبياً مجانياً ←',
+      note: 'لا حاجة لبطاقة ائتمان · ألغِ في أي وقت',
+    },
   },
   fr: {
     seo: {
@@ -98,6 +111,11 @@ export const TAJWEED_CHECKER_TEXT = {
       excellent: 'Excellent ! Votre récitation correspond bien.',
       good: 'Bon effort ! Réessayez pour plus de précision.',
       keepPractising: "Continuez à vous entraîner — écoutez attentivement et réessayez.",
+    },
+    trialCta: {
+      text: 'Voulez-vous apprendre à réciter des versets comme celui-ci avec un professeur certifié d’Al-Azhar ?',
+      button: 'Réserver un cours d’essai gratuit →',
+      note: 'Sans carte bancaire · Annulez à tout moment',
     },
   },
   // Italian Tajweed Checker Content + SEO Publication: translated from the
@@ -132,6 +150,11 @@ export const TAJWEED_CHECKER_TEXT = {
       excellent: 'Ottimo! La tua recitazione corrisponde bene.',
       good: 'Buon lavoro! Riprova per una maggiore precisione.',
       keepPractising: 'Continua a esercitarti — ascolta con attenzione e riprova.',
+    },
+    trialCta: {
+      text: 'Vuoi imparare a recitare versetti come questo con un insegnante certificato di Al-Azhar?',
+      button: 'Prenota una lezione di prova gratuita →',
+      note: 'Nessuna carta di credito · Annulla quando vuoi',
     },
   },
 };

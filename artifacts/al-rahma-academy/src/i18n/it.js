@@ -53,7 +53,7 @@ const it = {
     "cta1": "Prenota una prova gratuita",
     "cta2": "📚 Esplora i corsi",
     "cta3": "Sfoglia i corsi",
-    "badge1": "✓ Una lezione di prova gratuita — senza carta",
+    "badge1": "✓ Una lezione di prova gratuita online su Zoom — senza carta",
     "badge2": "✓ Insegnanti certificati Ijazah con catena verificata",
     "badge3": "✓ Insegnanti donne disponibili · orari 24/7",
     // Italian Batch 0 — Religious Source-Language Policy Alignment: this
@@ -841,6 +841,7 @@ const it = {
     "step4": {
       "title": "Scegli il tuo piano",
       "sub": "Tutti i piani includono lezioni individuali con l'insegnante scelto. Annulla quando vuoi.",
+      "noPayment": "Questa è una richiesta di prenotazione, non un pagamento. Ora non paghi nulla — ti contatteremo per concordare gli orari delle lezioni.",
       "perMo": "/mese",
       "selected": "✓ Selezionato",
       "summaryTitle": "Riepilogo iscrizione",

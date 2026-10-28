@@ -78,7 +78,9 @@ describe('EN/AR/FR and the consent logic are unchanged (baselines from origin/ma
     expect(shaFile('analytics/consent.js')).toBe('97f0b469a3a0d6fe581f880356635b2bc31b88102f6a1ff74eb55407d6a060e8');
     // ga.js changed once since: audit item 8 added the validated heard_from
     // parameter to trial_submitted (previous hash d34a54d8…). Consent logic untouched.
-    expect(shaFile('analytics/ga.js')).toBe('eb895f82c94d474efe377abd6207ce5d78ea31fd57f6ebde41580b3d06fcb26a');
+    // And again (2026-10-28): the admin console sends nothing (isAdminPath,
+    // previous hash eb895f82…). Consent logic untouched.
+    expect(shaFile('analytics/ga.js')).toBe('15ec7c612c9a440eef8b8cf8893cf5be4799cea71ecd365d0f27a9739c780820');
     expect(shaFile('components/ui/ConsentBanner.jsx')).toBe('82c815698a2d8dd4813dee0a6e1f6b393516cd98f16201dbe1eb06fe3218842e');
     expect(shaFile('components/ui/CookieSettingsButton.jsx')).toBe('f96f838510f7e43430b594d45d0bc019778dedc3647049338531e5fbcd0b8437');
     expect(shaFile('components/ui/Analytics.jsx')).toBe('9a48482be0bb3d4e67f7572279ade41cabd8330d5b62565cb86126e48951e8d7');

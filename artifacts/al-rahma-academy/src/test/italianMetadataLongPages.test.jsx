@@ -45,6 +45,8 @@ const keyOf = (r) => r.slice(1).replace(/^it\/$/, 'it/'); // '/it/' -> 'it/', '/
 // origin/main (165b9be) production raw-prerender facts, captured twice and identical.
 // mainText = SHA-256 of #main-content's textContent in the raw HTML.
 // 2026-10-15: enroll hreflang updated for the en/ar Enroll pages (#234): + en, ar; x-default is now /enroll.
+// 2026-10-28: en/, ar/, fr/, it/ mainText updated for the hero badge's "online on Zoom": production
+// raw HTML (dcc0215) reproduced the previous hashes, and swapping only that badge gives these.
 const BASE = {
   "en/": {
     "title": "Learn the Quran Online | AL-Rahma Academy",
@@ -62,7 +64,7 @@ const BASE = {
       "x-default=https://al-rahmaacademy.com/"
     ],
     "description": "One-to-one online Quran, Tajweed and Arabic lessons with Al-Azhar certified tutors, trusted by 1,500+ students in 10 countries. One free trial lesson — no payment needed.",
-    "mainText": "ae19ef9799b3c2653edc85bf0c962c156686738cdb3b4c30ebec3be690d0d526"
+    "mainText": "82fc222430166030877fcdff4400ce68b1ec3657b04f1cfebf55b2bb24f66669"
   },
   "en/academy/about": {
     "title": "About us | AL-Rahma Academy",
@@ -116,7 +118,7 @@ const BASE = {
       "x-default=https://al-rahmaacademy.com/"
     ],
     "description": "دروس فردية مباشرة أونلاين في القرآن الكريم والتجويد واللغة العربية مع معلمين معتمدين من الأزهر، موثوق بنا من 1,500+ طالب في 10 دولة. حصة تجريبية مجانية واحدة — بدون أي دفع.",
-    "mainText": "dcc1c54ae92b83d3cf013c8b835fc97e0500164c7afe5e822aa1404efb74dfbd"
+    "mainText": "b186822d2b1b7d6a2a106e368a6a0a038b0270fda9c3c0981f3f8f200504b44d"
   },
   "ar/academy/about": {
     "title": "من نحن | AL-Rahma Academy",
@@ -170,7 +172,7 @@ const BASE = {
       "x-default=https://al-rahmaacademy.com/"
     ],
     "description": "Cours particuliers de Coran, de tajwid et d'arabe en ligne avec des enseignants certifiés Al-Azhar. Une leçon d'essai gratuite, sans paiement.",
-    "mainText": "03663f247eab8f3ef053524e4c25b1a291867fba3b5e23ae7ed3ddaae205a063"
+    "mainText": "be977e466ca528397c12a3193dcca32752142743439ee69afcd2c69d1dca23aa"
   },
   "fr/academy/about": {
     "title": "À propos | AL-Rahma Academy",
@@ -242,7 +244,7 @@ const BASE = {
       "x-default=https://al-rahmaacademy.com/"
     ],
     "description": "Lezioni individuali online di Corano, Tajweed e arabo con insegnanti certificati di Al-Azhar, di cui si fidano 1,500+ studenti in 10 paesi. Una lezione di prova gratuita — senza alcun pagamento.",
-    "mainText": "ba001f59f4dd162a530f7872b770fe21c04d21bf7df02323ac1385b48f94f29d"
+    "mainText": "6fe04c969d775a3b822c93066bdb57107e8e78a159638b983cbd963c2976ad5e"
   },
   "it/academy/about": {
     "title": "Chi siamo | AL-Rahma Academy",
@@ -307,8 +309,10 @@ const BASE = {
 // "Supporto online…" (that one swap reproduces the previous hash, 44c2be0d…).
 // /it/ updated again by audit item 8: the trial form gained the optional
 // "Come ci hai conosciuto?" question (previous hash 267ce8ad…).
+// /it/ updated again (2026-10-28): the hero badge now says "online su Zoom"; swapping
+// that one badge back reproduces the previous hash, f5b32e59….
 const MOUNTED_TEXT = {
-  "/it/": "f5b32e596ea9e6bd5786361346e8117994f8c7ab0320098abb2cf3052f3461f0",
+  "/it/": "15a6e77f84d42c36a347e9359b224e50d4ecf5df585852f5ac6e6eb042fffe3a",
   "/it/academy/about": "f58105bdb93dc300c167773dc8f4a57946f2a9676a3b0357920798ba23574f1a",
   "/it/enroll": "ce332116a6206ef49917d6e81ba3831f980ea73b8ad7fd5cf521043ab8367283",
   "/it/academy/teachers": "cbe05d1a5135993cd1378dc9b3c5c69efab8329ad3ff9270413e901805b402e5"

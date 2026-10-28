@@ -53,7 +53,7 @@ const en = {
     "cta1": "Book a Free Trial",
     "cta2": "📚 Explore Courses",
     "cta3": "Browse Courses",
-    "badge1": "✓ One free trial lesson — no card needed",
+    "badge1": "✓ One free online trial lesson on Zoom — no card needed",
     "badge2": "✓ Ijazah-certified tutors with verified chain",
     "badge3": "✓ Female tutors available · 24/7 scheduling",
     "verseQuote": "\"Read in the name of your Lord who created.\"",
@@ -833,6 +833,7 @@ const en = {
     "step4": {
       "title": "Choose your plan",
       "sub": "All plans include one-to-one lessons with your chosen tutor. Cancel anytime.",
+      "noPayment": "This is a booking request, not a payment. Nothing is charged now — we'll contact you to arrange your lesson times.",
       "perMo": "/mo",
       "selected": "✓ Selected",
       "summaryTitle": "Your enrollment summary",

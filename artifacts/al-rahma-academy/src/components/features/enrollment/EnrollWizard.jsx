@@ -312,6 +312,7 @@ export function Step4({ form, set, onSubmitBooking, submitting }) {
     <div className="enroll__form">
       <h2 className="enroll__step-title">{s.title}</h2>
       <p className="enroll__step-sub">{s.sub}</p>
+      <p className="enroll__step-note">{s.noPayment}</p>
 
       <div className="enroll__plan-grid">
         {plans.map((plan, i) => {

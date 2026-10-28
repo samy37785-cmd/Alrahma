@@ -16,7 +16,6 @@ export const getUserCourseProgress = (userId)        => http.get(`/progress/user
 
 // --- Hifz (memorisation) ---
 export const getMyHifz       = ()                    => http.get('/hifz').then((r) => r.data);
-export const markHifz        = (chapterId, data)     => http.put(`/hifz/${chapterId}`, data).then((r) => r.data);
 export const getUserHifzReport = (userId)            => http.get(`/hifz/user/${userId}`).then((r) => r.data);
 
 // --- Certificates (student reads + admin listing stay on the legacy public

@@ -53,7 +53,7 @@ const es = {
     "cta1": "Reserva una prueba gratuita",
     "cta2": "📚 Explorar cursos",
     "cta3": "Explorar cursos",
-    "badge1": "✓ Una clase de prueba gratuita — sin tarjeta",
+    "badge1": "✓ Una clase de prueba gratuita online por Zoom — sin tarjeta",
     "badge2": "✓ Tutores certificados en iyaza con cadena verificada",
     "badge3": "✓ Profesoras disponibles · horarios 24/7",
     "verseQuote": "\"Lee en el nombre de tu Señor que creó.\"",
@@ -833,6 +833,7 @@ const es = {
     "step4": {
       "title": "Elige tu plan",
       "sub": "Todos los planes incluyen clases individuales con tu profesor. Cancela cuando quieras.",
+      "noPayment": "Esto es una solicitud de reserva, no un pago. No se cobra nada ahora — te contactaremos para acordar el horario de las clases.",
       "perMo": "/mes",
       "selected": "✓ Seleccionado",
       "summaryTitle": "Resumen de inscripción",

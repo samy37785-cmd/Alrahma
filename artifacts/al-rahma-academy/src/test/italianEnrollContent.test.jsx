@@ -79,10 +79,12 @@ const SOURCE_TERMS = new Set([
 
 describe('EN/AR/FR and data are unchanged (SHA-256 baselines from origin/main)', () => {
   it('t.enroll, t.pricing, PLAN_TEXT and the Enroll SEO text for en/ar/fr', () => {
+    // enroll_* updated (2026-10-28) for the step 4 "booking request, not a
+    // payment" note: deleting enroll.step4.noPayment reproduces the previous hashes.
     const B = {
-      enroll_en: 'ea90e0973acb85fdbc0c940ba05d8c77634b23c75b7f9abb6daa72f7711088fb',
-      enroll_ar: '7a981317ef37f5130fad3296af92c0d15215c32dbdf1bf42f817c1397b50534f',
-      enroll_fr: '8d12ed33635670abdc0b67751dfc8c87ccc71c5bc64deac20e90415526ec0343',
+      enroll_en: '01a19088bf574230db4d0b4056935036a595d5fd53ef0aa5bc14531ba0b081d4',
+      enroll_ar: '7a5e767d74ce3d412e9bb0997d38c33066f4325acdcb83bdf8fcd1deac1a816f',
+      enroll_fr: 'dbab6f5ef80c35b93c55bf614f8ce350b503684ec71896a40bb8dcaaf29d1404',
       pricing_en: 'cc44f50aeac6a50fd3aa46616ead76dfb19884aba55751f86c8e96f798c93cbf',
       pricing_ar: '50e9eb1d15446fff58eb2fa82ff1a5e8792aa463832abd9a04a9d84a5b8bd763',
       pricing_fr: '2d850101e43bd7b934a57be160e2489169574f75c27beb99ebf1d20af1842244',

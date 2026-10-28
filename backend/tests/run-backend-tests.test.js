@@ -32,12 +32,12 @@ test('checkInventory: the exact file count and the contract gate map are both re
     'tests/contract/supabase-auth-booking-contract-gate.contract.test.js',
     'tests/contract/supabase-auth-lifecycle-contract-gate.contract.test.js',
   ];
-  const hermetic = Array.from({ length: 77 }, (_, i) => `tests/file-${i}.test.js`);
+  const hermetic = Array.from({ length: 78 }, (_, i) => `tests/file-${i}.test.js`);
   const split = checkInventory([...hermetic, ...contract]);
-  assert.equal(split.hermetic.length, 77);
+  assert.equal(split.hermetic.length, 78);
   assert.deepEqual(split.contract.sort(), [...contract].sort());
 
-  assert.throws(() => checkInventory([...hermetic.slice(1), ...contract]), /found 81 test files, the inventory expects 82/);
+  assert.throws(() => checkInventory([...hermetic.slice(1), ...contract]), /found 82 test files, the inventory expects 83/);
   assert.throws(
     () => checkInventory([...hermetic.slice(1), ...contract, 'tests/contract/new-gate.contract.test.js']),
     /new-gate\.contract\.test\.js is a contract file with no gate/

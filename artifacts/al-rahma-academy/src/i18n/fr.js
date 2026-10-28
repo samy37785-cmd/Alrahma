@@ -53,7 +53,7 @@ const fr = {
     "cta1": "Réserver un essai gratuit",
     "cta2": "📚 Découvrir les cours",
     "cta3": "Parcourir les cours",
-    "badge1": "✓ Une leçon d’essai gratuite — sans carte bancaire",
+    "badge1": "✓ Une leçon d’essai gratuite en ligne sur Zoom — sans carte bancaire",
     "badge2": "✓ Enseignants titulaires d’une ijaza avec chaîne vérifiée",
     "badge3": "✓ Enseignantes disponibles · horaires 24 h/24, 7 j/7",
     "verseQuote": "\"Lis au nom de ton Seigneur qui a créé.\"",
@@ -835,6 +835,7 @@ const fr = {
     "step4": {
       "title": "Choisissez votre formule",
       "sub": "Toutes les formules comprennent des cours individuels avec l’enseignant de votre choix. Résiliez à tout moment.",
+      "noPayment": "Ceci est une demande de réservation, pas un paiement. Rien n’est débité maintenant — nous vous contacterons pour fixer les horaires des cours.",
       "perMo": "/mois",
       "selected": "✓ Sélectionnée",
       "summaryTitle": "Résumé de l'inscription",

@@ -60,6 +60,10 @@ const RECOMMENDED = [
   // so ipWhitelist.js falls back to plain req.ip — the same behavior the
   // admin API has always had. See docs/admin-proxy-signing-runbook.md.
   'ADMIN_PROXY_SIGNING_SECRET',
+  // Unset = publicProxySignature.js never sets req.trustedClientIp, so the
+  // trial/booking limiters key on req.ip (Vercel's shared address) as before.
+  // See docs/public-proxy-signing-runbook.md.
+  'PUBLIC_PROXY_SIGNING_SECRET',
 ];
 
 // Stage 2E: only required when DATA_BACKEND=supabase (the default,

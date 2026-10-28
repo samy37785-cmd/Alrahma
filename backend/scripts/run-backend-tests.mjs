@@ -40,7 +40,7 @@ const BACKEND_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), 
 const TESTS_DIR = path.join(BACKEND_ROOT, 'tests');
 
 // --- inventory: update deliberately when a test file is added/removed ---
-const EXPECTED_TOTAL_FILES = 83; // +1 (2026-10-28): hifz-write-closed
+const EXPECTED_TOTAL_FILES = 84; // +1 (2026-10-28): hifz-write-closed; +1 (2026-10-28): public-proxy-signature
 // Contract file -> the gate script that provisions its dependencies.
 const CONTRACT_GATES = {
   'tests/contract/supabase-adapter.contract.test.js': 'scripts/test-supabase-contract.mjs',
@@ -119,7 +119,7 @@ export function verdict(code, summary) {
 function hermeticEnv() {
   const env = {};
   for (const [k, v] of Object.entries(process.env)) {
-    if (/^(SUPABASE_|MIGRATION_|STRIPE_|PAYPAL_|SMTP_|ADMIN_|JWT_)/.test(k) || ['DATA_BACKEND', 'MONGO_URI', 'CRON_SECRET'].includes(k)) continue;
+    if (/^(SUPABASE_|MIGRATION_|STRIPE_|PAYPAL_|SMTP_|ADMIN_|PUBLIC_PROXY_|JWT_)/.test(k) || ['DATA_BACKEND', 'MONGO_URI', 'CRON_SECRET'].includes(k)) continue;
     env[k] = v;
   }
   return {

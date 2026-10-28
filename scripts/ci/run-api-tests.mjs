@@ -6,9 +6,10 @@
 // Finds every api/**/*.test.mjs itself, runs each in its own `node --test`
 // process, and applies the backend runner's rules
 // (backend/scripts/run-backend-tests.mjs): each file must exit 0, run at least
-// one test and skip none. ADMIN_PROXY_SIGNING_SECRET is removed from the
-// environment, so a value in a developer's shell cannot change a result; the
-// tests set their own test-only secrets.
+// one test and skip none. ADMIN_PROXY_SIGNING_SECRET and
+// PUBLIC_PROXY_SIGNING_SECRET are removed from the environment, so a value in
+// a developer's shell cannot change a result; the tests set their own
+// test-only secrets.
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -41,6 +42,7 @@ async function main() {
   if (!files.length) throw new Error('no api/**/*.test.mjs file found');
   const env = { ...process.env };
   delete env.ADMIN_PROXY_SIGNING_SECRET;
+  delete env.PUBLIC_PROXY_SIGNING_SECRET;
   let failed = 0;
   let passed = 0;
   for (const file of files) {

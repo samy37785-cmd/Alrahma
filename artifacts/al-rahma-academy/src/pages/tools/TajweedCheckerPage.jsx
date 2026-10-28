@@ -1,5 +1,6 @@
 import '../../styles/islamic-tools.css';
 import { useState, useRef, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import Header from '../../components/layout/Header';
 import Footer from '../../components/layout/Footer';
 import Breadcrumbs from '../../components/ui/Breadcrumbs';
@@ -250,6 +251,13 @@ export default function TajweedCheckerPage() {
               {t.errors.noSpeechBanner}
             </p>
           )}
+
+          {/* Trial strip, same as the Verse of the Day page */}
+          <div className="votd-enroll-cta" style={{ marginTop: 40 }}>
+            <p className="votd-enroll-cta__text">{t.trialCta.text}</p>
+            <Link to="/enroll" className="btn btn--gold">{t.trialCta.button}</Link>
+            <span className="votd-enroll-cta__note">{t.trialCta.note}</span>
+          </div>
         </section>
       </main>
       <Footer />

@@ -53,7 +53,7 @@ const de = {
     "cta1": "Kostenlose Probestunde buchen",
     "cta2": "📚 Kurse entdecken",
     "cta3": "Kurse entdecken",
-    "badge1": "✓ Eine kostenlose Probestunde — keine Karte erforderlich",
+    "badge1": "✓ Eine kostenlose Online-Probestunde über Zoom — keine Karte erforderlich",
     "badge2": "✓ Ijazah-zertifizierte Lehrkräfte mit geprüfter Überlieferungskette",
     "badge3": "✓ Lehrerinnen verfügbar · Terminplanung rund um die Uhr",
     "verseQuote": "\"Lies im Namen deines Herrn, der erschaffen hat.\"",
@@ -833,6 +833,7 @@ const de = {
     "step4": {
       "title": "Wähle deinen Plan",
       "sub": "Alle Pläne beinhalten Einzelunterricht mit deiner gewählten Lehrkraft. Jederzeit kündbar.",
+      "noPayment": "Dies ist eine Buchungsanfrage, keine Zahlung. Jetzt wird nichts berechnet — wir melden uns, um die Unterrichtszeiten abzustimmen.",
       "perMo": "/Mo.",
       "selected": "✓ Ausgewählt",
       "summaryTitle": "Deine Anmeldeübersicht",

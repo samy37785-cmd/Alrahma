@@ -367,7 +367,8 @@ describe('Scope guard: prerendered HTML, /enroll and Italian metadata are unchan
   // /enroll or the Italian SEO updates these hashes in the same diff.
   it.each(Object.entries({
     'src/pages/Enroll.jsx': 'adc6fe07e46e5f21edcf21419f3940946655eb12eb7fed1ad9bab9fac675547d',
-    'src/components/features/enrollment/EnrollWizard.jsx': '2fe22bae0e8a3e950a48bb891cd8a18efa3afb28775ed06d8272b5941c286402',
+    // 2026-10-28: + the step 4 "booking request, not a payment" note (one line; previous hash 2fe22bae…).
+    'src/components/features/enrollment/EnrollWizard.jsx': '92158c20a97dd7888b629fe1da5f66957d5af6de029fd8cd92c1caf8fe588cb4',
     'src/i18n/enroll/seo.js': 'b420a7d60d860877fc451434f54aa7c558a67b7d223ec81ea1b3a5f38da5aa35',
     'src/i18n/enroll/countries.js': '341fe3dfef149848fbfcaf6a87723818976b6d6b9e137f1470e059e7ac68676c',
     'src/i18n/itMetaDescriptions.js': 'bf226934a1f3f5180b6206357747df46499db592bf554c8a6b3cd81ff63c3a69',

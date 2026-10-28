@@ -8,7 +8,7 @@ import { agentWithCsrf } from './helpers/csrf.js';
 // WhatsApp-required + mass-assignment coverage for POST /api/enrollments
 // (controllers/enrollmentController.js), split out of enrollment-booking
 // .test.js into its own file/process so its 4 public POSTs get their own
-// fresh enrollmentLimiter budget (max 5 / 15 min, shared per test-process —
+// fresh enrollmentLimiter budget (RATE_LIMITS.enrollment / 15 min, shared per test-process —
 // see backend/config/rateLimit.js) instead of sharing one with that file's
 // own public-POST tests.
 

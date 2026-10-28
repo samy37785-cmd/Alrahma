@@ -58,7 +58,7 @@ const { default: mongoTrialRoutes } = await import('../routes/trialRoutes.js');
 const { default: supabaseTrialRoutes } = await import('../data/supabase/routes/trialRoutes.js');
 const { createTrial: mongoCreateTrial } = await import('../controllers/trialController.js');
 const { createTrial: supabaseCreateTrial } = await import('../data/supabase/trialController.js');
-const { trialLimiter } = await import('../config/rateLimit.js');
+const { trialLimiter, RATE_LIMITS } = await import('../config/rateLimit.js');
 const {
   trialValidation, rejectInvalidTrial, isSingleBareAddress, pickTrialSource,
   TRIAL_LIMITS, INVALID_TRIAL_MESSAGE, MISSING_TRIAL_MESSAGE,
@@ -540,45 +540,49 @@ test('route: subjects are fixed and never include submitted data', async () => {
 
 // ── Rate limit on both paths ───────────────────────────────────────────────
 
-test('mongo route: the 6th request from one client in the window gets 429', async () => {
+// One past the budget: every request inside it gets `inside`, the next 429.
+const PAST_BUDGET = RATE_LIMITS.trial + 1;
+const budgetThen429 = (inside) => [...Array(RATE_LIMITS.trial).fill(inside), 429];
+
+test('mongo route: the request after the budget from one client in the window gets 429', async () => {
   const client = '203.0.113.10';
   const statuses = [];
-  for (let i = 0; i < 6; i++) {
+  for (let i = 0; i < PAST_BUDGET; i++) {
     statuses.push((await postMongo({ ...VALID, email: `limit${i}@example.com` }, { client })).status);
   }
-  assert.deepEqual(statuses, [201, 201, 201, 201, 201, 429]);
-  assert.equal(await TrialRequest.countDocuments(), 5);
+  assert.deepEqual(statuses, budgetThen429(201));
+  assert.equal(await TrialRequest.countDocuments(), RATE_LIMITS.trial);
 });
 
-test('supabase route: the 6th request from one client in the window gets 429', async () => {
+test('supabase route: the request after the budget from one client in the window gets 429', async () => {
   const client = '203.0.113.20';
   const statuses = [];
-  for (let i = 0; i < 6; i++) {
+  for (let i = 0; i < PAST_BUDGET; i++) {
     statuses.push((await postSupabase({ ...VALID, email: `limit${i}@example.com` }, { client })).status);
   }
-  assert.deepEqual(statuses, [201, 201, 201, 201, 201, 429]);
-  assert.equal(supabaseInserts.length, 5);
+  assert.deepEqual(statuses, budgetThen429(201));
+  assert.equal(supabaseInserts.length, RATE_LIMITS.trial);
 });
 
 test('limiter keys on the proxy-appended address, not client-supplied entries to its left', async () => {
   const client = '203.0.113.30';
   const statuses = [];
-  for (let i = 0; i < 6; i++) {
+  for (let i = 0; i < PAST_BUDGET; i++) {
     statuses.push((await postSupabase(
       { ...VALID, email: `spoof${i}@example.com` },
       { client: `192.0.2.${i + 1}, ${client}` },
     )).status);
   }
-  assert.equal(statuses[5], 429);
+  assert.equal(statuses[RATE_LIMITS.trial], 429);
 });
 
 test('invalid submissions also count toward the limit', async () => {
   const client = '203.0.113.40';
   const statuses = [];
-  for (let i = 0; i < 6; i++) {
+  for (let i = 0; i < PAST_BUDGET; i++) {
     statuses.push((await postSupabase({ ...VALID, email: 'a@example.com,b@example.com' }, { client })).status);
   }
-  assert.deepEqual(statuses, [400, 400, 400, 400, 400, 429]);
+  assert.deepEqual(statuses, budgetThen429(400));
 });
 
 // ── Mongo / Supabase parity ────────────────────────────────────────────────

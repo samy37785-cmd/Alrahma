@@ -95,14 +95,14 @@ test('POST /api/enrollments retries bookingRef generation on a simulated unique-
 // lives in enrollment-booking-validation.test.js, not here — split into its
 // own file (its own `node --test` child process, its own fresh
 // enrollmentLimiter budget) so this file's + that file's public-POST counts
-// each independently stay within enrollmentLimiter's 5-per-15-min window
+// each independently stay within enrollmentLimiter's RATE_LIMITS.enrollment-per-15-min window
 // instead of sharing one budget across both.
 
 // The remaining tests exercise the admin CRUD endpoint, not the public
 // booking-creation endpoint itself (already covered above), so they create
 // their fixture directly via the model — same convention as
 // admin-v1-payments.test.js's makePendingPayment(). This also avoids
-// tripping enrollmentLimiter (max 5 / 15 min, shared across a test file's
+// tripping enrollmentLimiter (RATE_LIMITS.enrollment / 15 min, shared across a test file's
 // single loopback IP), which is only meant to guard the public endpoint.
 async function makeBooking(overrides = {}) {
   return Enrollment.create({ ...BOOKING_PAYLOAD, bookingRef: `AR-TEST-${Date.now()}${Math.random()}`, ...overrides });

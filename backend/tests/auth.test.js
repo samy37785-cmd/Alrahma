@@ -11,7 +11,7 @@ import { agentWithCsrf } from './helpers/csrf.js';
 // entirely untested (see the discovery-audit report: "Login/register/reset/
 // refresh... have no test coverage").
 //
-// authLimiter caps /api/auth/* at 20 requests per 15 min per IP, shared
+// authLimiter caps /api/auth/* at RATE_LIMITS.auth requests per 15 min per IP, shared
 // across every test in this file/process — kept deliberately economical
 // rather than mocking the limiter away, since testing against the real
 // limiter is the point.

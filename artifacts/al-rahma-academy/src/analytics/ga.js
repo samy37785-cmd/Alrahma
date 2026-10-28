@@ -19,6 +19,8 @@ import { HEARD_FROM, TRIAL_FORM_VALUES, trialFormFor } from '../utils/trialSourc
 //  - Only the events and parameters in EVENT_PARAMS are ever sent, and each
 //    value is validated against a strict pattern, so a caller cannot leak a
 //    name, email, phone number or form value by accident.
+//  - The admin console (/admin, /admin/login, with or without a language
+//    prefix) sends nothing at all: see isAdminPath().
 
 export const GA_SCRIPT_ID = 'alrahma-ga4';
 const MEASUREMENT_ID_RE = /^G-[A-Z0-9]{4,20}$/;
@@ -66,6 +68,16 @@ export function getMeasurementId() {
 
 export function currentSiteLang() {
   return langFromPath(window.location.pathname).lang || 'en';
+}
+
+// The admin console is the academy's own staff, not visitors: its page views
+// would inflate the traffic numbers, and a WhatsApp link clicked there (staff
+// replying to a lead) would count as a visitor contacting the academy.
+const ADMIN_PATH_RE = /^\/admin(?:\/|$)/;
+
+export function isAdminPath(pathname) {
+  const { basename } = langFromPath(pathname);
+  return ADMIN_PATH_RE.test(pathname.slice(basename.length));
 }
 
 function campaignQuery() {
@@ -174,6 +186,11 @@ function send(eventName, params) {
 export function trackPageView() {
   if (!ensureActive()) return;
   const path = window.location.pathname;
+  if (isAdminPath(path)) {
+    // Forget the last page so the public page after the console counts again.
+    lastPagePath = null;
+    return;
+  }
   if (path === lastPagePath) return;
   lastPagePath = path;
   const location = cleanLocation();
@@ -182,7 +199,7 @@ export function trackPageView() {
 }
 
 export function trackEvent(eventName, params = {}) {
-  if (!ensureActive()) return;
+  if (!ensureActive() || isAdminPath(window.location.pathname)) return;
   // Keep page_view first for this page even when the event fires earlier.
   trackPageView();
   send(eventName, {

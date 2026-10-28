@@ -10,7 +10,7 @@ import { setupTestDb, clearTestDb, teardownTestDb } from './helpers/db.js';
 import { agentWithCsrf } from './helpers/csrf.js';
 
 // Separate file from auth.test.js so this has its own authLimiter budget
-// (20 req/15min, shared per process) rather than competing with the
+// (RATE_LIMITS.auth req/15min, shared per process) rather than competing with the
 // register/login/logout coverage there.
 //
 // forgotPassword only ever emails the raw reset token (SMTP is disabled in

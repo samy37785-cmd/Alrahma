@@ -80,20 +80,37 @@ function limiter({ max, message, prefix }) {
   });
 }
 
+// Requests per 15-minute window per req.ip.
+//
+// Through the site's own domain, every /api/* call arrives via Vercel's
+// external rewrite, so req.ip is Vercel's outbound address, not the
+// visitor's: all visitors in a region share ONE budget (checked 2026-10-28:
+// the domain and a direct Render call count in different buckets). With
+// trial and enrollment at 5, the 6th visitor in any 15 minutes was refused.
+// Until the client IP can be trusted (a signed hop, like the admin proxy),
+// these budgets are sized for all visitors together; a direct caller to
+// Render gets the same, larger budget for themselves.
+export const RATE_LIMITS = Object.freeze({
+  api: 300,
+  auth: 100,
+  enrollment: 30,
+  trial: 30,
+});
+
 export const apiLimiter = limiter({
-  max: 300,
+  max: RATE_LIMITS.api,
   message: 'Too many requests — please try again later.',
   prefix: 'rl:api:',
 });
 
 export const authLimiter = limiter({
-  max: 20,
+  max: RATE_LIMITS.auth,
   message: 'Too many attempts — please try again later.',
   prefix: 'rl:auth:',
 });
 
 export const enrollmentLimiter = limiter({
-  max: 5,
+  max: RATE_LIMITS.enrollment,
   message: 'Too many enrollment requests — please try again later.',
   prefix: 'rl:enrollment:',
 });
@@ -107,17 +124,17 @@ export const enrollmentLimiter = limiter({
 // Limits of this protection (same as every limiter in this file):
 // - Without REDIS_URL the counters live in each process's memory. With N
 //   backend instances (e.g. Render scaled to >1, or overlapping instances
-//   during a deploy) one client can get up to 5 × N accepted requests per
+//   during a deploy) one client can get up to max × N accepted requests per
 //   window, and every restart/deploy resets the counters.
 // - With REDIS_URL (startup log "Rate limiting: Redis store enabled") the
-//   budget is one global 5 per window across all instances.
+//   budget is one global max per window across all instances.
 // - passOnStoreError: if the store fails, requests pass unlimited (fail
 //   open) rather than 500ing — see limiter() above.
 // - It is per client IP: it slows a single source, it does not stop a
 //   distributed one; validation (one bare address, fixed subject) is what
 //   keeps each accepted request harmless.
 export const trialLimiter = limiter({
-  max: 5,
+  max: RATE_LIMITS.trial,
   message: 'Too many trial requests — please try again later.',
   prefix: 'rl:trial:',
 });

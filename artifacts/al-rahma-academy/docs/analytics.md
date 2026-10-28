@@ -15,6 +15,7 @@
 - Nothing from Google is loaded or sent until the visitor clicks **Accept analytics** in the banner (`src/components/ui/ConsentBanner.jsx`). The choice is stored in `localStorage` under `alrahma.analyticsConsent.v1`.
 - **Cookie settings** (Footer, Privacy page) re-opens the banner. Choosing **Reject** after accepting sets GA's `ga-disable-<ID>` flag and deletes the `_ga` / `_ga_*` cookies.
 - The GA tag is injected once (`#alrahma-ga4`). Google signals and ad personalisation are off, and ad consent types are `denied`.
+- The admin console (`/admin`, `/admin/login`, with or without a language prefix) sends nothing: no `page_view` and no event. Staff visits would inflate the traffic, and a WhatsApp link clicked there is staff replying to a lead, not a visitor contact. The next public page after the console is counted again.
 - Only the events and parameters listed in `EVENT_PARAMS` (`src/analytics/ga.js`) can be sent. Every value is pattern-checked:
 
 | Event | Parameters |

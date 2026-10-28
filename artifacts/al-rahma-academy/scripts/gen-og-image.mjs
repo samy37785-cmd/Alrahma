@@ -16,7 +16,12 @@ const root = path.resolve(here, '..');
 const require = createRequire(pathToFileURL(path.join(root, 'package.json')));
 const font = (pkg, file) => readFileSync(require.resolve(`@fontsource/${pkg}/files/${file}`)).toString('base64');
 
-const svg = readFileSync(path.join(root, 'public/og-cover.svg'), 'utf8');
+// The SVG points at public/ files (the logo) by relative path; a page set from a string has no base URL,
+// so each one is inlined as a data URI before rendering.
+const svg = readFileSync(path.join(root, 'public/og-cover.svg'), 'utf8').replace(
+  /href="([\w/-]+\.png)"/g,
+  (_, file) => `href="data:image/png;base64,${readFileSync(path.join(root, 'public', file)).toString('base64')}"`,
+);
 const css = `
 @font-face{font-family:Cinzel;font-weight:700;src:url(data:font/woff2;base64,${font('cinzel', 'cinzel-latin-700-normal.woff2')}) format('woff2')}
 @font-face{font-family:Cairo;font-weight:700;src:url(data:font/woff2;base64,${font('cairo', 'cairo-arabic-700-normal.woff2')}) format('woff2')}

@@ -45,6 +45,7 @@ import referralRoutes from './routes/referralRoutes.js';
 import { notFound, errorHandler } from './middleware/errorHandler.js';
 import { sanitizeMongo } from './middleware/sanitizeMongo.js';
 import { requestLogger } from './middleware/requestLogger.js';
+import { publicProxySignature } from './middleware/publicProxySignature.js';
 import { correlationId } from './middleware/correlationId.js';
 import { issueCsrfToken, verifyCsrfToken } from './middleware/csrf.js';
 import logger from './config/logger.js';
@@ -131,12 +132,15 @@ app.use(
 app.use('/api/payments/stripe/webhook', express.raw({ type: 'application/json' }));
 
 app.use(correlationId);   // assign x-request-id to every request (tracing)
-// verify: captures the exact raw bytes alongside the parsed body. Currently
-// only consumed by adminProxySignature.js (the signed Vercel-admin-proxy
-// verifier needs to hash the identical bytes Vercel signed) — a cheap,
+// verify: captures the exact raw bytes alongside the parsed body. Consumed
+// only by the two signed-proxy verifiers (adminProxySignature.js and
+// publicProxySignature.js hash the identical bytes Vercel signed) — a cheap,
 // purely additive capture that changes nothing for every other route.
 app.use(express.json({ limit: '100kb', verify: (req, _res, buf) => { req.rawBody = buf; } }));
 app.use(express.urlencoded({ extended: true, limit: '100kb' }));
+// Before every limiter: a valid signature from the trial/booking form proxy
+// sets req.trustedClientIp, so those limiters count each visitor on their own.
+app.use(publicProxySignature);
 app.use(cookieParser()); // parses the httpOnly auth cookie into req.cookies
 app.use(sanitizeMongo);   // strip $-operators / dotted keys from input (NoSQL-injection guard)
 app.use(issueCsrfToken);  // attach readable CSRF cookie so the SPA can echo it back

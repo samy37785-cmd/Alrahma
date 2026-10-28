@@ -64,8 +64,11 @@ function limiter({ max, message, prefix }) {
     standardHeaders: true,
     legacyHeaders: false,
     message: { message },
+    // req.trustedClientIp is set only by a valid form-proxy signature
+    // (middleware/publicProxySignature.js): the visitor's own IP, where
+    // req.ip would be Vercel's shared outbound address.
     keyGenerator(req) {
-      const ip = req.ip || req.socket?.remoteAddress || 'unknown';
+      const ip = req.trustedClientIp || req.ip || req.socket?.remoteAddress || 'unknown';
       return ip.startsWith('::ffff:') ? ip.slice(7) : ip;
     },
     validate: { keyGeneratorIpFallback: false },
@@ -80,16 +83,18 @@ function limiter({ max, message, prefix }) {
   });
 }
 
-// Requests per 15-minute window per req.ip.
+// Requests per 15-minute window per key (see keyGenerator above).
 //
 // Through the site's own domain, every /api/* call arrives via Vercel's
 // external rewrite, so req.ip is Vercel's outbound address, not the
 // visitor's: all visitors in a region share ONE budget (checked 2026-10-28:
 // the domain and a direct Render call count in different buckets). With
 // trial and enrollment at 5, the 6th visitor in any 15 minutes was refused.
-// Until the client IP can be trusted (a signed hop, like the admin proxy),
-// these budgets are sized for all visitors together; a direct caller to
-// Render gets the same, larger budget for themselves.
+// The trial and booking forms now go through a signed hop that keys them per
+// visitor, but only once PUBLIC_PROXY_SIGNING_SECRET is set on both sides
+// (docs/public-proxy-signing-runbook.md); login and everything else still
+// share Vercel's address. So these budgets stay sized for all visitors
+// together; a direct caller to Render gets the same budget for themselves.
 export const RATE_LIMITS = Object.freeze({
   api: 300,
   auth: 100,

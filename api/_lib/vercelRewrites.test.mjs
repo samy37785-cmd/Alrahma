@@ -90,9 +90,9 @@ function findAdminSubpathRewrite(rewrites) {
   return rule;
 }
 
-test('vercel.json declares exactly four rewrite rules (admin bare, admin subpath, general Render, SPA)', () => {
+test('vercel.json declares exactly six rewrite rules (admin bare, admin subpath, trials form, enrollments form, general Render, SPA)', () => {
   const rewrites = loadRewrites();
-  assert.equal(rewrites.length, 4, 'rule count changed -- update this test deliberately if that was intended');
+  assert.equal(rewrites.length, 6, 'rule count changed -- update this test deliberately if that was intended');
 });
 
 test('no rewrite rule is a literal circular self-rewrite (source and destination identical)', () => {
@@ -189,6 +189,39 @@ test('the external rewrite exclusion is prefix-exact, not a loose substring matc
 
   assert.equal(matcher.test('/api/v1/adminfoo'), true);
   assert.equal(matcher.test('/api/v1/administrator/x'), true);
+});
+
+// The two public form endpoints go through their signing Functions (see
+// docs/public-proxy-signing-runbook.md). Exact-literal sources, the form
+// already proven live for the bare /api/v1/admin rule, each with a fixed
+// destination and no query, so nothing in the request chooses the target.
+const FORM_REWRITES = [
+  ['/api/trials', '/api/v1/trials-proxy'],
+  ['/api/enrollments', '/api/v1/enrollments-proxy'],
+];
+
+test('each public form path has one exact-literal rewrite to its own Function, listed before the general Render rule', () => {
+  const rewrites = loadRewrites();
+  const renderIndex = rewrites.indexOf(findRenderExternalRewrite(rewrites));
+  for (const [source, destination] of FORM_REWRITES) {
+    const matching = rewrites.filter((r) => r.source === source);
+    assert.equal(matching.length, 1, `expected exactly one rule for ${source}`);
+    assert.equal(matching[0].destination, destination);
+    assert.ok(rewrites.indexOf(matching[0]) < renderIndex, `${source} must be listed before the general Render rewrite`);
+  }
+});
+
+// Deliberately NOT excluded from the general rule (unlike v1/admin): the
+// first matching rule wins, so order alone routes the two exact paths, and
+// if an exact-literal rule ever stopped matching, a form request would still
+// reach Render the old way instead of getting a 404 - a lost lead.
+test('the general external rewrite is unchanged and still covers the form paths and their subpaths', () => {
+  const rule = findRenderExternalRewrite(loadRewrites());
+  assert.equal(rule.source, '/api/:path((?!v1/admin(?:$|/)).*)');
+  const matcher = compileNamedCustomRegexSource(rule.source);
+  for (const p of ['/api/trials', '/api/enrollments', '/api/enrollments/mine', '/api/trials/x', '/api/csrf']) {
+    assert.equal(matcher.test(p), true, p);
+  }
 });
 
 test('the Render destination host/path template is unchanged by this fix', () => {

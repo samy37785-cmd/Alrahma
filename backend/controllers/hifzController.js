@@ -13,43 +13,10 @@ export const getMyHifz = asyncHandler(async (req, res) => {
   res.json({ progress, totalMemorized, surahsCompleted });
 });
 
-// @desc  Mark (or unmark) a verse range as memorized for a surah.
-// @route PUT /api/hifz/:chapterId
-// @body  { chapterName, totalVerses, from, to, memorized: true|false }
-// @access Private
-export const markMemorized = asyncHandler(async (req, res) => {
-  const chapterId = Number(req.params.chapterId);
-  if (!chapterId || chapterId < 1 || chapterId > 114) {
-    res.status(400);
-    throw new Error('Invalid surah number');
-  }
-  const { chapterName = '', totalVerses = 0, from, to, memorized = true } = req.body;
-  const start = Number(from);
-  const end   = Number(to);
-  if (!start || !end || start > end) {
-    res.status(400);
-    throw new Error('Invalid verse range');
-  }
-
-  const range = [];
-  for (let v = start; v <= end; v++) range.push(v);
-
-  const doc =
-    (await HifzProgress.findOne({ user: req.user._id, chapterId })) ||
-    new HifzProgress({ user: req.user._id, chapterId });
-
-  const current = new Set(doc.memorizedVerses);
-  if (memorized) range.forEach((v) => current.add(v));
-  else           range.forEach((v) => current.delete(v));
-
-  doc.memorizedVerses = [...current].sort((a, b) => a - b);
-  doc.chapterName     = chapterName || doc.chapterName;
-  if (totalVerses) doc.totalVerses = totalVerses;
-  doc.lastRevised     = new Date();
-  await doc.save();
-
-  res.json(doc);
-});
+// The write handler (PUT /api/hifz/:chapterId, mark a verse range memorized)
+// was removed with its route: no page called it, and it built the whole
+// requested range in memory, so one request from any signed-in account
+// (from=1, to=1e9) could stall the server.
 
 // @desc  Admin/teacher: view a specific student's memorization progress.
 // @route None. Its only route, GET /api/hifz/user/:userId, let a regular

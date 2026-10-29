@@ -14,7 +14,7 @@ import { computeSignature, hashBody } from './adminProxySigning.js';
  * raw Render host forge X-Forwarded-For).
  *
  * Same canonical string and HMAC as the admin proxy (computeSignature), with
- * its own headers and its own secret, PUBLIC_PROXY_SIGNING_SECRET: never
+ * its own headers and its own secret, FORM_PROXY_SIGNING_SECRET: never
  * ADMIN_PROXY_SIGNING_SECRET, so neither proxy's signature is accepted by the
  * other. The Vercel half is api/_lib/publicProxySigning.mjs; change both
  * together.
@@ -34,7 +34,7 @@ export const PUBLIC_MAX_SKEW_MS = 120_000;
 const HEX_SECRET_RE = /^[0-9a-fA-F]{32,}$/;
 
 function getPublicSigningSecret() {
-  const hex = process.env.PUBLIC_PROXY_SIGNING_SECRET;
+  const hex = process.env.FORM_PROXY_SIGNING_SECRET;
   return hex && HEX_SECRET_RE.test(hex) ? Buffer.from(hex, 'hex') : null;
 }
 

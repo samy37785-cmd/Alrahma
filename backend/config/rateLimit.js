@@ -91,7 +91,7 @@ function limiter({ max, message, prefix }) {
 // the domain and a direct Render call count in different buckets). With
 // trial and enrollment at 5, the 6th visitor in any 15 minutes was refused.
 // The trial and booking forms now go through a signed hop that keys them per
-// visitor, but only once PUBLIC_PROXY_SIGNING_SECRET is set on both sides
+// visitor, but only once FORM_PROXY_SIGNING_SECRET is set on both sides
 // (docs/public-proxy-signing-runbook.md); login and everything else still
 // share Vercel's address. So these budgets stay sized for all visitors
 // together; a direct caller to Render gets the same budget for themselves.

@@ -26,11 +26,11 @@ const SECRET_HEX = crypto.randomBytes(32).toString('hex'); // test-only
 const BODY = '{}';
 
 before(async () => {
-  process.env.PUBLIC_PROXY_SIGNING_SECRET = SECRET_HEX;
+  process.env.FORM_PROXY_SIGNING_SECRET = SECRET_HEX;
   await setupTestDb();
 }, { timeout: 60_000 });
 after(async () => {
-  delete process.env.PUBLIC_PROXY_SIGNING_SECRET;
+  delete process.env.FORM_PROXY_SIGNING_SECRET;
   await teardownTestDb();
 });
 
@@ -123,8 +123,8 @@ test('the admin proxy\'s headers are not accepted as a public signature', async 
 
 test('without the secret nothing is trusted, even a correctly signed request, and nothing is logged', async (t) => {
   const warn = t.mock.method(logger, 'warn', () => {});
-  const saved = process.env.PUBLIC_PROXY_SIGNING_SECRET;
-  delete process.env.PUBLIC_PROXY_SIGNING_SECRET;
+  const saved = process.env.FORM_PROXY_SIGNING_SECRET;
+  delete process.env.FORM_PROXY_SIGNING_SECRET;
   try {
     const vercel = '198.51.100.61';
     const first = await postTrial({ vercel, headers: signFor('203.0.113.31') });
@@ -132,18 +132,18 @@ test('without the secret nothing is trusted, even a correctly signed request, an
     assert.equal(second.remaining, first.remaining - 1);
     assert.equal(warn.mock.calls.filter((c) => c.arguments[0] === 'Public proxy signature verification failed').length, 0);
   } finally {
-    process.env.PUBLIC_PROXY_SIGNING_SECRET = saved;
+    process.env.FORM_PROXY_SIGNING_SECRET = saved;
   }
 });
 
 test('verifyPublicProxySignature: a malformed secret counts as unset', () => {
-  const saved = process.env.PUBLIC_PROXY_SIGNING_SECRET;
-  process.env.PUBLIC_PROXY_SIGNING_SECRET = 'not-hex';
+  const saved = process.env.FORM_PROXY_SIGNING_SECRET;
+  process.env.FORM_PROXY_SIGNING_SECRET = 'not-hex';
   try {
     const result = verifyPublicProxySignature({ headers: signFor('203.0.113.40'), method: 'POST', path: '/api/trials', rawBody: Buffer.from(BODY) });
     assert.deepEqual(result, { ok: false, reason: 'secret_unavailable' });
   } finally {
-    process.env.PUBLIC_PROXY_SIGNING_SECRET = saved;
+    process.env.FORM_PROXY_SIGNING_SECRET = saved;
   }
 });
 

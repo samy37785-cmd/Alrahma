@@ -50,14 +50,14 @@ async function withFetch(responseFactory, fn) {
 }
 
 async function withSecret(value, fn) {
-  const prev = process.env.PUBLIC_PROXY_SIGNING_SECRET;
-  if (value === undefined) delete process.env.PUBLIC_PROXY_SIGNING_SECRET;
-  else process.env.PUBLIC_PROXY_SIGNING_SECRET = value;
+  const prev = process.env.FORM_PROXY_SIGNING_SECRET;
+  if (value === undefined) delete process.env.FORM_PROXY_SIGNING_SECRET;
+  else process.env.FORM_PROXY_SIGNING_SECRET = value;
   try {
     return await fn();
   } finally {
-    if (prev === undefined) delete process.env.PUBLIC_PROXY_SIGNING_SECRET;
-    else process.env.PUBLIC_PROXY_SIGNING_SECRET = prev;
+    if (prev === undefined) delete process.env.FORM_PROXY_SIGNING_SECRET;
+    else process.env.FORM_PROXY_SIGNING_SECRET = prev;
   }
 }
 

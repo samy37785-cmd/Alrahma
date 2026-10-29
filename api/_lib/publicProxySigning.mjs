@@ -12,7 +12,7 @@ import { computeSignature, hashBody, isValidSigningSecret } from './adminProxySi
  * without widening `trust proxy`.
  *
  * Same canonical string and HMAC as the admin proxy (computeSignature), but
- * its own headers and its own secret, PUBLIC_PROXY_SIGNING_SECRET — never
+ * its own headers and its own secret, FORM_PROXY_SIGNING_SECRET — never
  * the admin one, so neither can stand in for the other. The backend half is
  * backend/config/publicProxySigning.js; change both together.
  */

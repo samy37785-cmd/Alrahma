@@ -63,7 +63,7 @@ const RECOMMENDED = [
   // Unset = publicProxySignature.js never sets req.trustedClientIp, so the
   // trial/booking limiters key on req.ip (Vercel's shared address) as before.
   // See docs/public-proxy-signing-runbook.md.
-  'PUBLIC_PROXY_SIGNING_SECRET',
+  'FORM_PROXY_SIGNING_SECRET',
 ];
 
 // Stage 2E: only required when DATA_BACKEND=supabase (the default,

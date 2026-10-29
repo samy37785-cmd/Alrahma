@@ -23,7 +23,7 @@ Browser → al-rahmaacademy.com/api/trials            (or /api/enrollments)
               - fixed target path; the request's query string is dropped
               - client IP = first entry of Vercel's edge-set x-forwarded-for
               - HMAC-SHA256 over { method, path, '', clientIp, timestamp,
-                bodyHash } with PUBLIC_PROXY_SIGNING_SECRET
+                bodyHash } with FORM_PROXY_SIGNING_SECRET
                 (no secret = forwarded unsigned, exactly like before)
         → academy-backend-cxso.onrender.com/api/trials
               - middleware/publicProxySignature.js verifies; only a valid
@@ -42,12 +42,14 @@ A failed check never blocks a request. A forged signature, a stale one (more tha
 
 The secret is never shared with anyone, including Claude.
 
+The variable is named `FORM_PROXY_SIGNING_SECRET`. It was first called `PUBLIC_PROXY_SIGNING_SECRET`, but Vercel treats a `PUBLIC_` prefix as a public framework variable and refuses to store it as a secret ("cannot use visibility: secret"). Keep any new name free of `PUBLIC_`, `VITE_` and `NEXT_PUBLIC_`.
+
 1. **Generate one new value** on your own computer. Do not reuse `ADMIN_PROXY_SIGNING_SECRET`.
    ```
    node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
    ```
-2. **Render** → service `academy-backend` → Environment → add `PUBLIC_PROXY_SIGNING_SECRET` = that value → Save. Then **Manual Deploy** of the merge commit, if it isn't deployed yet.
-3. **Vercel** → Project → Settings → Environment Variables → add `PUBLIC_PROXY_SIGNING_SECRET` = the same value, **Production**. Then **Redeploy** the current Production deployment, because a new variable only applies to new deployments.
+2. **Render** → service `academy-backend` → Environment → add `FORM_PROXY_SIGNING_SECRET` = that value → Save. Then **Manual Deploy** of the merge commit, if it isn't deployed yet.
+3. **Vercel** → Project → Settings → Environment Variables → add `FORM_PROXY_SIGNING_SECRET` = the same value, **Production**. Then **Redeploy** the current Production deployment, because a new variable only applies to new deployments.
 
 Either order is safe:
 - Render without Vercel: nothing is signed yet.

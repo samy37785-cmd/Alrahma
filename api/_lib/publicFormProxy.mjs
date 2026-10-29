@@ -53,7 +53,7 @@ export async function forwardPublicForm(req, res, targetPath) {
   const method = req.method || 'GET';
   const forwardHeaders = buildForwardHeaders(req);
   const signed = buildPublicSignedHeaders({
-    secretHex: process.env.PUBLIC_PROXY_SIGNING_SECRET,
+    secretHex: process.env.FORM_PROXY_SIGNING_SECRET,
     method,
     path: targetPath,
     query: '',

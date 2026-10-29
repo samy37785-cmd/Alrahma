@@ -119,7 +119,7 @@ export function verdict(code, summary) {
 function hermeticEnv() {
   const env = {};
   for (const [k, v] of Object.entries(process.env)) {
-    if (/^(SUPABASE_|MIGRATION_|STRIPE_|PAYPAL_|SMTP_|ADMIN_|PUBLIC_PROXY_|JWT_)/.test(k) || ['DATA_BACKEND', 'MONGO_URI', 'CRON_SECRET'].includes(k)) continue;
+    if (/^(SUPABASE_|MIGRATION_|STRIPE_|PAYPAL_|SMTP_|ADMIN_|FORM_PROXY_|JWT_)/.test(k) || ['DATA_BACKEND', 'MONGO_URI', 'CRON_SECRET'].includes(k)) continue;
     env[k] = v;
   }
   return {

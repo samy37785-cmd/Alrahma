@@ -41,8 +41,12 @@ async function issueRefreshToken(adminId, family, req) {
 }
 
 // ── Validation chains ────────────────────────────────────────────────────────
+// No .normalizeEmail(): it strips dots and +tags from Gmail addresses, while
+// scripts/createAdminUser.js stores the address only trimmed and lowercased,
+// so an admin like first.last@gmail.com could never log in. Same rule as the
+// customer login in authController.js.
 export const loginValidation = [
-  body('email').isEmail().normalizeEmail().withMessage('Valid email required'),
+  body('email').isString().trim().toLowerCase().isEmail().withMessage('Valid email required'),
   body('password').isString().notEmpty().withMessage('Password required'),
 ];
 
@@ -64,8 +68,17 @@ export async function login(req, res) {
 
   const { email, password } = req.body;
 
-  // Always select password (excluded by default)
-  const admin = await AdminUser.findOne({ email }).select('+password');
+  // Always select password (excluded by default). Admins created through
+  // the admin console before this change were stored with .normalizeEmail()
+  // applied (Gmail dots/+tags removed), so that form is tried second.
+  let admin = await AdminUser.findOne({ email }).select('+password');
+  if (!admin) {
+    const legacy = { body: { email } };
+    await body('email').normalizeEmail().run(legacy);
+    if (legacy.body.email && legacy.body.email !== email) {
+      admin = await AdminUser.findOne({ email: legacy.body.email }).select('+password');
+    }
+  }
   if (!admin || !admin.isActive) {
     return res.status(401).json({ message: 'Invalid credentials' });
   }
@@ -323,6 +336,16 @@ export async function verifyMfaLogin(req, res) {
   });
 }
 
+async function rejectRefreshReuse(res, family) {
+  await RefreshToken.updateMany({ family }, { revoked: true });
+  res.clearCookie(ACCESS_TOKEN_COOKIE,  { path: '/api/v1/admin' });
+  res.clearCookie(REFRESH_TOKEN_COOKIE, { path: '/api/v1/admin/auth/refresh' });
+  return res.status(401).json({
+    message: 'Refresh token reuse detected. All sessions for this device have been revoked.',
+    code:    'TOKEN_REUSE',
+  });
+}
+
 // ── POST /api/v1/admin/auth/refresh ─────────────────────────────────────────
 /**
  * Rotates the refresh token.
@@ -342,13 +365,7 @@ export async function refreshTokens(req, res) {
 
   // Reuse detection: token was already rotated — revoke entire family
   if (stored.usedAt || stored.revoked) {
-    await RefreshToken.updateMany({ family: stored.family }, { revoked: true });
-    res.clearCookie(ACCESS_TOKEN_COOKIE,  { path: '/api/v1/admin' });
-    res.clearCookie(REFRESH_TOKEN_COOKIE, { path: '/api/v1/admin/auth/refresh' });
-    return res.status(401).json({
-      message: 'Refresh token reuse detected. All sessions for this device have been revoked.',
-      code:    'TOKEN_REUSE',
-    });
+    return rejectRefreshReuse(res, stored.family);
   }
 
   if (stored.expiresAt < new Date()) {
@@ -360,9 +377,18 @@ export async function refreshTokens(req, res) {
     return res.status(401).json({ message: 'Account not found or deactivated' });
   }
 
-  // Mark old token as used (one-time rotation)
-  stored.usedAt = new Date();
-  await stored.save();
+  // Mark old token as used (one-time rotation) in ONE conditional update.
+  // A read-then-save let concurrent refreshes with the same token all pass
+  // the usedAt check above before any of them saved, so a stolen token
+  // replayed in parallel with the real client was never detected. Only one
+  // request can win this update; every other one is reuse.
+  const claimed = await RefreshToken.findOneAndUpdate(
+    { _id: stored._id, usedAt: null, revoked: false },
+    { usedAt: new Date() },
+  );
+  if (!claimed) {
+    return rejectRefreshReuse(res, stored.family);
+  }
 
   // Issue new token pair in the same family
   const accessToken = signAccessToken(admin._id, admin.role, true);

@@ -1,7 +1,7 @@
 ﻿import { Router } from 'express';
 import { asyncHandler } from '../../../utils/asyncHandler.js';
 import { loginLimiter, mfaLimiter, refreshLimiter } from '../../../config/adminRateLimits.js';
-import { verifyAccessToken } from '../../../middleware/adminAuth.js';
+import { identifyAdminForLogout } from '../../../middleware/adminAuth.js';
 import {
   login,           loginValidation,
   setupMfa,
@@ -28,7 +28,8 @@ router.post('/mfa/verify',  mfaLimiter,     mfaTokenValidation, asyncHandler(ver
 // Token rotation (access token expired → use refresh token)
 router.post('/refresh',     refreshLimiter,                     asyncHandler(refreshTokens));
 
-// Logout (revokes refresh token family)
-router.post('/logout',      verifyAccessToken,                  asyncHandler(logout));
+// Logout (revokes refresh token family). Works after the access token has
+// expired too: see identifyAdminForLogout.
+router.post('/logout',      identifyAdminForLogout,             asyncHandler(logout));
 
 export default router;

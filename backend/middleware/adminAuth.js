@@ -122,3 +122,39 @@ export const verifyAccessToken = asyncHandler(async function verifyAccessToken(r
   }
   next();
 });
+
+// How long after its expiry an access token still identifies the admin for
+// logout: the refresh token's own lifetime (refreshCookieOptions), since a
+// session can be resumed for that long.
+const LOGOUT_GRACE_SECONDS = 7 * 24 * 60 * 60;
+
+/**
+ * For POST /auth/logout only. Logout has to work after the 15-minute access
+ * token has expired: the refresh cookie is path-scoped to /auth/refresh, so
+ * the access token is the only thing that names the admin on this request,
+ * and verifyAccessToken would answer 401 and leave the 7-day refresh family
+ * alive. A token with a valid signature is therefore accepted here even
+ * when expired (within LOGOUT_GRACE_SECONDS), because logging out only ever
+ * takes access away. Never rejects: with no usable token, logout still
+ * clears the cookies.
+ */
+export const identifyAdminForLogout = asyncHandler(async function identifyAdminForLogout(req, res, next) {
+  const token = req.cookies?.[ACCESS_TOKEN_COOKIE];
+  if (token) {
+    let decoded = null;
+    try {
+      decoded = jwt.verify(token, process.env.ADMIN_JWT_ACCESS_SECRET, { algorithms: ['HS256'], ignoreExpiration: true });
+    } catch {
+      decoded = null;
+    }
+    const expiredTooLongAgo = decoded?.exp && Date.now() / 1000 - decoded.exp > LOGOUT_GRACE_SECONDS;
+    if (decoded && !decoded.stage && !expiredTooLongAgo) {
+      const loaded = await loadAdminForBackend(decoded.id);
+      if (loaded) {
+        req.adminUser = loaded.admin;
+        req.adminId   = isSupabaseBackend() ? loaded.admin.id : loaded.admin._id;
+      }
+    }
+  }
+  next();
+});

@@ -3,6 +3,7 @@ import User from '../models/User.js';
 import { sendMail } from '../config/mailer.js';
 import { liveClassScheduledEmail } from '../config/emailTemplates.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
+import { isHttpUrl } from '../utils/httpUrl.js';
 
 // Populates teacher/student names for the API response.
 const POPULATE = [
@@ -51,6 +52,10 @@ export const createClass = asyncHandler(async (req, res) => {
   if (Number.isNaN(when.getTime())) {
     res.status(400);
     throw new Error('startsAt is not a valid date');
+  }
+  if (meetingUrl && !isHttpUrl(meetingUrl)) {
+    res.status(400);
+    throw new Error('meetingUrl must be an http(s) link');
   }
 
   // A teacher can only schedule for a student assigned to them.
@@ -106,7 +111,10 @@ export const updateClass = asyncHandler(async (req, res) => {
 
   if (title != null)       liveClass.title = title;
   if (durationMin != null) liveClass.durationMin = durationMin;
-  if (meetingUrl != null)  liveClass.meetingUrl = meetingUrl;
+  if (meetingUrl != null) {
+    if (meetingUrl !== '' && !isHttpUrl(meetingUrl)) { res.status(400); throw new Error('meetingUrl must be an http(s) link'); }
+    liveClass.meetingUrl = meetingUrl;
+  }
   if (notes != null)       liveClass.notes = notes;
   if (status != null)      liveClass.status = status;
   if (startsAt != null) {

@@ -21,8 +21,12 @@ export async function getSystemStatus(req, res) {
 }
 
 // ── POST /api/v1/admin/system/maintenance ────────────────────────────────────
+// isBoolean() accepts true/false/'true'/'false'/1/0/'1'/'0'; toBoolean(true)
+// turns every accepted form into a real boolean, so the stored flag, the
+// response and the audit action always agree ('1' used to be stored as '1',
+// which the guards read as off, while the response said "enabled").
 export const toggleMaintenanceModeValidation = [
-  body('enable').isBoolean().withMessage('enable must be a boolean'),
+  body('enable').isBoolean().withMessage('enable must be a boolean').toBoolean(true),
 ];
 
 export async function toggleMaintenanceMode(req, res) {
@@ -54,7 +58,7 @@ export async function toggleMaintenanceMode(req, res) {
 
 // ── POST /api/v1/admin/system/financial-freeze ───────────────────────────────
 export const toggleFinancialFreezeValidation = [
-  body('enable').isBoolean().withMessage('enable must be a boolean'),
+  body('enable').isBoolean().withMessage('enable must be a boolean').toBoolean(true),
 ];
 
 export async function toggleFinancialFreeze(req, res) {
@@ -177,7 +181,9 @@ export async function listAdmins(req, res) {
 // ── POST /api/v1/admin/system/admins ─────────────────────────────────────────
 export const createAdminValidation = [
   body('name').isString().trim().notEmpty().withMessage('Name required'),
-  body('email').isEmail().normalizeEmail().withMessage('Valid email required'),
+  // Trimmed and lowercased only, like scripts/createAdminUser.js and the
+  // admin login: .normalizeEmail() would strip Gmail dots/+tags here.
+  body('email').isString().trim().toLowerCase().isEmail().withMessage('Valid email required'),
   body('password')
     .isString()
     .isLength({ min: 12, max: 72 })

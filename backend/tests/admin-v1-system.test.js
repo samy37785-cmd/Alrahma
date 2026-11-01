@@ -456,3 +456,22 @@ test('createAdmin: is forbidden for admin/editor/viewer roles, and unauthenticat
     .send({ name: 'X', email: `unauth-${Date.now()}@example.com`, password: 'Br4nd-New-Str0ng-Pass!' });
   assert.equal(unauth.status, 401);
 });
+
+test('toggles: every accepted form of "enable" is stored, reported and audited the same way', async () => {
+  const { agent, csrf, cookieHeader } = await adminAgent('super-admin');
+  const cases = [
+    ['maintenance', 'maintenanceMode', 'system.maintenance_enabled', 'system.maintenance_disabled'],
+    ['financial-freeze', 'financialsFrozen', 'system.financials_frozen', 'system.financials_unfrozen'],
+  ];
+  for (const [path, field, onAction, offAction] of cases) {
+    for (const [enable, want] of [[1, true], ['1', true], ['true', true], [0, false], ['0', false], ['false', false]]) {
+      const res = await agent.post(`/api/v1/admin/system/${path}`).set({ ...csrf, Cookie: cookieHeader }).send({ enable });
+      assert.equal(res.status, 200, `${path} ${JSON.stringify(enable)}`);
+      assert.equal(res.body[field], want, `${path} ${JSON.stringify(enable)} response`);
+      const status = await agent.get('/api/v1/admin/system/status').set({ ...csrf, Cookie: cookieHeader });
+      assert.equal(status.body[field], want, `${path} ${JSON.stringify(enable)} stored`);
+      const last = await SystemAuditLog.findOne({ action: { $in: [onAction, offAction] } }).sort({ createdAt: -1, _id: -1 }).lean();
+      assert.equal(last.action, want ? onAction : offAction, `${path} ${JSON.stringify(enable)} audit`);
+    }
+  }
+});

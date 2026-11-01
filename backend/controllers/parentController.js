@@ -1,30 +1,8 @@
 ﻿import User from '../models/User.js';
 import StudentRecord from '../models/StudentRecord.js';
 import HifzProgress from '../models/HifzProgress.js';
-import CourseProgress from '../models/CourseProgress.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
-
-async function courseReport(studentId) {
-  const rows = await CourseProgress.find({ user: studentId })
-    .populate('course', 'title icon resources')
-    .sort({ lastActivity: -1 })
-    .lean();
-  return rows
-    .filter((r) => r.course)
-    .map((r) => {
-      const total = r.course.resources?.length || 0;
-      const done  = r.completed.length;
-      return {
-        courseId: r.course._id,
-        title:    r.course.title,
-        icon:     r.course.icon,
-        total,
-        done,
-        percent:  total ? Math.round((done / total) * 100) : 0,
-        lastActivity: r.lastActivity,
-      };
-    });
-}
+import { courseReport } from '../utils/courseProgressReport.js';
 
 // @desc  Parent: link to a child (student) using the code the student shared.
 // @route POST /api/parent/link

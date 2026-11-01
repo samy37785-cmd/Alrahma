@@ -185,3 +185,27 @@ test('no admin class management is added: /api/v1/admin/live-classes still answe
   assert.ok(!JSON.stringify(list.body).includes('C1 TeacherOne'));
   await assertUnchanged(s);
 });
+
+test('a teacher cannot give a class a non-http(s) meeting link, and the email escapes names and titles', async () => {
+  const s = await seed();
+  const { agent, csrf } = await loginAs(s.t1);
+  for (const meetingUrl of ['javascript:alert(1)', 'data:text/html,hi', 'not a url']) {
+    const create = await agent.post('/api/classes').set(csrf).send({ student: s.s1._id, title: 'Bad link', startsAt: inDays(3), meetingUrl });
+    assert.equal(create.status, 400, meetingUrl);
+    const patch = await agent.patch(`/api/classes/${s.c1._id}`).set(csrf).send({ meetingUrl });
+    assert.equal(patch.status, 400, meetingUrl);
+  }
+  assert.equal(sent.length, 0, 'no email for a refused class');
+
+  const ok = await agent.post('/api/classes').set(csrf).send({
+    student: s.s1._id,
+    title: '<a href="https://phish.example">Login again</a>',
+    startsAt: inDays(3),
+    meetingUrl: 'https://meet.example/abc',
+  });
+  assert.equal(ok.status, 201);
+  assert.equal(sent.length, 1);
+  assert.ok(!sent[0].html.includes('<a href="https://phish.example">'), 'the title is shown as text, not markup');
+  assert.ok(sent[0].html.includes('&lt;a href=&quot;https://phish.example&quot;&gt;'));
+  assert.ok(sent[0].html.includes('href="https://meet.example/abc"'));
+});

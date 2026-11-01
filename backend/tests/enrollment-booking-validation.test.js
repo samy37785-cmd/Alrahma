@@ -74,3 +74,19 @@ test('POST /api/enrollments: mass-assignment fix — a forged status/bookingRef/
   assert.equal(saved.paymentMethodExternal, undefined, 'paymentMethodExternal must never be settable from the public endpoint');
   assert.equal(saved.adminNote, '', 'adminNote must never be settable from the public endpoint');
 });
+
+test('POST /api/enrollments rejects an email field that is not exactly one bare address', async () => {
+  const { agent, csrf } = await agentWithCsrf(app);
+  // Each of these would make Nodemailer send the student confirmation to
+  // addresses the visitor chose, or is simply not an address.
+  for (const email of [
+    'a@victim1.example, b@victim2.example',
+    'a@victim1.example;b@victim2.example',
+    'Someone <a@victim1.example>',
+    'not-an-email',
+  ]) {
+    const res = await agent.post('/api/enrollments').set(csrf).send({ ...BOOKING_PAYLOAD, email });
+    assert.equal(res.status, 400, `expected 400 for ${JSON.stringify(email)}`);
+  }
+  assert.equal(await Enrollment.countDocuments(), 0);
+});

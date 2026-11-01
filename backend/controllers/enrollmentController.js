@@ -3,7 +3,7 @@ import Enrollment from '../models/Enrollment.js';
 import { sendMail, ADMIN_EMAIL } from '../config/mailer.js';
 import { enrollmentAdminEmail, enrollmentStudentEmail } from '../config/emailTemplates.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
-import { pickPublicBookingFields, normalizeWhatsapp } from '../utils/enrollmentValidation.js';
+import { pickPublicBookingFields, normalizeWhatsapp, normalizeBookingEmail } from '../utils/enrollmentValidation.js';
 import { toClientEnrollment } from '../utils/clientViews.js';
 import logger from '../config/logger.js';
 import { isEmailVerified } from '../utils/emailVerification.js';
@@ -45,6 +45,12 @@ export const createEnrollment = asyncHandler(async (req, res) => {
     res.status(400);
     throw new Error('Name and email are required');
   }
+  const email = normalizeBookingEmail(data.email);
+  if (!email) {
+    res.status(400);
+    throw new Error('Please enter one valid email address');
+  }
+  data.email = email;
 
   const whatsapp = normalizeWhatsapp(data.whatsapp);
   if (!whatsapp) {
@@ -69,7 +75,7 @@ export const createEnrollment = asyncHandler(async (req, res) => {
   // does not roll back the enrollment (it's already saved to the DB).
   try {
     await sendMail({
-      to: data.email,
+      to: { name: '', address: data.email },
       subject: 'Your booking request — AL-Rahma Academy',
       html: enrollmentStudentEmail({ name: data.name, teacherName: data.teacherName, plan: data.plan, bookingRef: enrollment.bookingRef }),
     });

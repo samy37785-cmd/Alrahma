@@ -1,4 +1,5 @@
 import { escapeHtml } from '../utils/escapeHtml.js';
+import { isHttpUrl } from '../utils/httpUrl.js';
 
 const base = (content) => `
 <!DOCTYPE html>
@@ -132,12 +133,12 @@ export function manualPaymentAdminEmail({ name, email, plan, method, amount, cur
     <h2 style="margin:0 0 8px;color:#0b6e4f;">New Manual Payment Request 💰</h2>
     <p style="margin:0 0 20px;color:#555;font-size:14px;">A student has submitted a manual payment that needs your review.</p>
     <table cellpadding="0" cellspacing="0" width="100%">
-      ${row('Name', name)}
-      ${row('Email', `<a href="mailto:${email}" style="color:#0b6e4f;">${email}</a>`)}
-      ${row('Plan', plan)}
-      ${row('Amount', `${currency} ${amount}`)}
-      ${row('Method', method)}
-      ${row('Reference', reference || 'Not provided')}
+      ${row('Name', escapeHtml(name))}
+      ${row('Email', `<a href="${mailtoHref(email)}" style="color:#0b6e4f;">${escapeHtml(email)}</a>`)}
+      ${row('Plan', escapeHtml(plan))}
+      ${row('Amount', `${escapeHtml(currency)} ${escapeHtml(amount)}`)}
+      ${row('Method', escapeHtml(method))}
+      ${row('Reference', escapeHtml(reference || 'Not provided'))}
     </table>
     <div style="margin-top:24px;">
       <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}/admin" style="background:#0b6e4f;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-size:14px;display:inline-block;">Review in Dashboard</a>
@@ -150,7 +151,7 @@ export function manualPaymentApprovedEmail({ name, plan }) {
   return base(`
     <h2 style="margin:0 0 8px;color:#0b6e4f;">Payment Approved! 🎉</h2>
     <p style="color:#555;font-size:15px;line-height:1.7;">
-      Congratulations <strong>${name}</strong>! Your payment for the <strong>${plan}</strong> plan has been verified and your account is now active.
+      Congratulations <strong>${escapeHtml(name)}</strong>! Your payment for the <strong>${escapeHtml(plan)}</strong> plan has been verified and your account is now active.
     </p>
     <p style="color:#555;font-size:15px;line-height:1.7;">
       You can view your invoice in your billing section. A teacher will reach out to schedule your first session.
@@ -164,13 +165,13 @@ export function manualPaymentApprovedEmail({ name, plan }) {
 // ── Student: certificate issued ───────────────────────────────────────────
 export function certificateIssuedEmail({ name, title, number }) {
   return base(`
-    <h2 style="margin:0 0 8px;color:#0b6e4f;">Mabrouk, ${name}! 🎓</h2>
+    <h2 style="margin:0 0 8px;color:#0b6e4f;">Mabrouk, ${escapeHtml(name)}! 🎓</h2>
     <p style="color:#555;font-size:15px;line-height:1.7;">
       You have been awarded a certificate from AL-Rahma Academy:
     </p>
     <div style="background:#f0f8f4;border:1px solid #bfe0cf;border-radius:8px;padding:18px 20px;margin:8px 0 4px;">
-      <p style="margin:0;color:#0b6e4f;font-size:17px;font-weight:bold;">${title}</p>
-      <p style="margin:6px 0 0;color:#888;font-size:13px;">Certificate No. ${number}</p>
+      <p style="margin:0;color:#0b6e4f;font-size:17px;font-weight:bold;">${escapeHtml(title)}</p>
+      <p style="margin:6px 0 0;color:#888;font-size:13px;">Certificate No. ${escapeHtml(number)}</p>
     </div>
     <p style="color:#555;font-size:15px;line-height:1.7;margin-top:16px;">
       You can view and print your certificate from your account.
@@ -191,14 +192,14 @@ export function liveClassScheduledEmail({ studentName, teacherName, title, start
   return base(`
     <h2 style="margin:0 0 8px;color:#0b6e4f;">Your live class is scheduled 📅</h2>
     <p style="color:#555;font-size:15px;line-height:1.7;">
-      As-salamu alaykum <strong>${studentName}</strong>, ${teacherName ? `<strong>${teacherName}</strong> has` : 'we have'} scheduled a live class for you:
+      As-salamu alaykum <strong>${escapeHtml(studentName)}</strong>, ${teacherName ? `<strong>${escapeHtml(teacherName)}</strong> has` : 'we have'} scheduled a live class for you:
     </p>
     <div style="background:#f0f8f4;border:1px solid #bfe0cf;border-radius:8px;padding:16px 20px;margin:8px 0;">
-      <p style="margin:0;color:#0b6e4f;font-size:16px;font-weight:bold;">${title}</p>
+      <p style="margin:0;color:#0b6e4f;font-size:16px;font-weight:bold;">${escapeHtml(title)}</p>
       <p style="margin:6px 0 0;color:#555;font-size:14px;">🕒 ${when}</p>
     </div>
     <p style="color:#888;font-size:13px;">The time above is shown in UTC — check the exact time in your local timezone on your dashboard.</p>
-    ${meetingUrl ? `<div style="margin-top:20px;"><a href="${meetingUrl}" style="background:#0b6e4f;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-size:14px;display:inline-block;">Join the Class</a></div>` : ''}
+    ${isHttpUrl(meetingUrl) ? `<div style="margin-top:20px;"><a href="${escapeHtml(meetingUrl.trim())}" style="background:#0b6e4f;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-size:14px;display:inline-block;">Join the Class</a></div>` : ''}
   `);
 }
 
@@ -211,7 +212,7 @@ export function subscriptionRenewalReminderEmail({ name, plan, validUntil, daysL
   return base(`
     <h2 style="margin:0 0 8px;color:#0b6e4f;">Your subscription is renewing soon 🔔</h2>
     <p style="color:#555;font-size:15px;line-height:1.7;">
-      As-salamu alaykum <strong>${name}</strong>, your <strong>${plan || 'subscription'}</strong> plan ${lead}.
+      As-salamu alaykum <strong>${escapeHtml(name)}</strong>, your <strong>${escapeHtml(plan || 'subscription')}</strong> plan ${lead}.
     </p>
     <p style="color:#555;font-size:15px;line-height:1.7;">
       ${autoRenew
@@ -230,9 +231,9 @@ export function manualPaymentRejectedEmail({ name, adminNote }) {
   return base(`
     <h2 style="margin:0 0 8px;color:#c0392b;">Payment Could Not Be Verified</h2>
     <p style="color:#555;font-size:15px;line-height:1.7;">
-      Dear <strong>${name}</strong>, unfortunately we were unable to verify your recent payment.
+      Dear <strong>${escapeHtml(name)}</strong>, unfortunately we were unable to verify your recent payment.
     </p>
-    ${adminNote ? `<p style="background:#fef9e7;padding:12px 16px;border-left:4px solid #f39c12;color:#555;font-size:14px;border-radius:4px;">Note from our team: ${adminNote}</p>` : ''}
+    ${adminNote ? `<p style="background:#fef9e7;padding:12px 16px;border-left:4px solid #f39c12;color:#555;font-size:14px;border-radius:4px;">Note from our team: ${escapeHtml(adminNote)}</p>` : ''}
     <p style="color:#555;font-size:15px;line-height:1.7;">
       Please contact us so we can resolve this as quickly as possible.
     </p>

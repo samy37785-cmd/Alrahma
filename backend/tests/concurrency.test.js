@@ -111,3 +111,25 @@ test('deleteCourseCascade: returns null (no-op) for a course id that does not ex
   const result = await deleteCourseCascade('000000000000000000000000');
   assert.equal(result, null);
 });
+
+test('addToWishlist: adding the same course again, or several times at once, keeps a single entry', async () => {
+  const { addToWishlist } = await import('../controllers/wishlistController.js');
+  const student = await makeStudent('wishlist-dup@example.com');
+  const course = await Course.create({ title: 'Hifz Basics', description: 'x' });
+  const call = () => new Promise((resolve, reject) => {
+    const res = { statusCode: 200, status(c) { this.statusCode = c; return this; }, json(b) { resolve({ status: this.statusCode, body: b }); return this; } };
+    addToWishlist({ body: { courseId: String(course._id) }, user: student }, res, reject);
+  });
+
+  await call();
+  await call();
+  await Promise.all([call(), call(), call()]);
+  const wishlist = await Wishlist.findOne({ user: student._id }).lean();
+  assert.equal(wishlist.courses.length, 1);
+
+  const bad = await new Promise((resolve, reject) => {
+    const res = { statusCode: 200, status(c) { this.statusCode = c; return this; }, json(b) { resolve({ status: this.statusCode, body: b }); return this; } };
+    addToWishlist({ body: { courseId: 'not-an-id' }, user: student }, res, reject);
+  });
+  assert.equal(bad.status, 400);
+});

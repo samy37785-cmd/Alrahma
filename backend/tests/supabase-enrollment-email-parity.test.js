@@ -38,6 +38,10 @@ const BOOKING_PAYLOAD = {
   plan: 'Huffaz',
 };
 
+// The student confirmation is addressed as an object so Nodemailer never
+// re-parses the address as a list (same as the trial form).
+const STUDENT_RECIPIENT = { name: '', address: BOOKING_PAYLOAD.email };
+
 async function loadSupabaseControllerWithMocks(t, { rpcImpl, sendMailImpl, adminEmail = 'admin@example.com' }) {
   t.mock.module('../data/supabase/client.js', {
     namedExports: {
@@ -77,7 +81,7 @@ test('supabase createEnrollment: sends both booking emails only after the RPC su
   assert.equal(adminCall.to, 'admin@example.com');
   assert.match(adminCall.subject, /New Booking Request/);
   assert.ok(adminCall.html.includes('AR-20260101-TEST'));
-  assert.equal(studentCall.to, BOOKING_PAYLOAD.email);
+  assert.deepEqual(studentCall.to, STUDENT_RECIPIENT);
   assert.match(studentCall.subject, /booking request/i);
   assert.ok(studentCall.html.includes('AR-20260101-TEST'));
 });
@@ -88,7 +92,7 @@ test('supabase createEnrollment: a failed student-confirmation email does not fa
     rpcImpl: async () => ({ rows: [{ ref: 'AR-20260102-FAIL' }] }),
     sendMailImpl: async (args) => {
       sendMailCalls.push(args);
-      if (args.to === BOOKING_PAYLOAD.email) throw new Error('SMTP down');
+      if (args.to?.address === BOOKING_PAYLOAD.email) throw new Error('SMTP down');
     },
   });
 
@@ -130,7 +134,7 @@ test('supabase createEnrollment: no admin email is attempted when ADMIN_EMAIL() 
 
   assert.equal(res.statusCode, 201);
   assert.equal(sendMailCalls.length, 1, 'only the student confirmation should be attempted');
-  assert.equal(sendMailCalls[0].to, BOOKING_PAYLOAD.email);
+  assert.deepEqual(sendMailCalls[0].to, STUDENT_RECIPIENT);
 });
 
 // ── Regression guard: the Mongo path's own email behavior is unchanged ─────
@@ -157,5 +161,5 @@ test('mongo createEnrollment: still sends both booking emails exactly as before 
   assert.equal(res.body.bookingRef, 'AR-20260104-MONGO');
   assert.equal(sendMailCalls.length, 2);
   assert.equal(sendMailCalls[0].to, 'admin@example.com');
-  assert.equal(sendMailCalls[1].to, BOOKING_PAYLOAD.email);
+  assert.deepEqual(sendMailCalls[1].to, STUDENT_RECIPIENT);
 });

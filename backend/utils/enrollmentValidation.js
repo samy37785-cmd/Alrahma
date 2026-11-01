@@ -4,6 +4,7 @@
 // both the Mongo admin route (routes/v1/admin/enrollmentsRoutes.js) and the
 // Supabase admin route (data/supabase/admin/enrollmentsAdminController.js)
 // so the two backends enforce identical rules.
+import { isSingleBareAddress } from './trialValidation.js';
 
 // Fields a guest submitting a booking request may set. Deliberately
 // excludes bookingRef/status/agreedAmount/currency/paymentMethodExternal/
@@ -37,6 +38,19 @@ export function normalizeWhatsapp(raw) {
   if (typeof raw !== 'string') return null;
   const stripped = raw.trim().replace(/[\s\-().]/g, '');
   return WHATSAPP_DIGITS_RE.test(stripped) ? stripped : null;
+}
+
+// The booking email becomes the student confirmation's recipient, so it
+// must be exactly ONE bare address, same rule as the trial form
+// (utils/trialValidation.js): a string like "a@x.com, b@y.com" would
+// otherwise be read by Nodemailer as a recipient list, letting anyone send
+// the academy's confirmation email to any addresses they choose.
+const BASIC_EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+export function normalizeBookingEmail(raw) {
+  if (typeof raw !== 'string') return null;
+  const email = raw.trim();
+  return isSingleBareAddress(email) && BASIC_EMAIL_RE.test(email) ? email : null;
 }
 
 export const ENROLLMENT_STATUSES = ['pending', 'contacted', 'awaiting_payment', 'paid', 'enrolled', 'cancelled'];

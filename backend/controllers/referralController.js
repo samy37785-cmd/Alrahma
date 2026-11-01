@@ -71,8 +71,14 @@ export const trackReferral = asyncHandler(async (req, res) => {
     return res.status(400).json({ message: 'Self-referral is not allowed' });
   }
 
-  const existing = await Referral.findOne({ referrer: referrer._id, referee: refereeId }).lean();
-  if (existing) return res.json(existing);
+  // One account is credited to one referrer only: the first code it used
+  // wins. Checking just the (referrer, referee) pair let the same account
+  // be tracked under any number of codes, each converting into a reward.
+  const existing = await Referral.findOne({ referee: refereeId }).lean();
+  if (existing) {
+    if (existing.referrer.toString() === referrer._id.toString()) return res.json(existing);
+    return res.status(409).json({ message: 'This account has already been referred' });
+  }
 
   const referral = await Referral.create({ referrer: referrer._id, referee: refereeId, code });
   res.status(201).json(referral);

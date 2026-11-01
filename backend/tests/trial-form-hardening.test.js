@@ -769,3 +769,20 @@ test('mongo route: an unknown or malformed source never blocks the request', asy
   assert.equal(stored.utm?.source, undefined);
   assert.match(sent.find((m) => m.to === 'admin-inbox@example.test').text, /Heard from: -/);
 });
+
+test('student-facing email templates escape names, plans, titles and notes', async () => {
+  const t = await import('../config/emailTemplates.js');
+  const evil = '<img src=x onerror=alert(1)>';
+  const html = [
+    t.manualPaymentAdminEmail({ name: evil, email: 'a@example.com', plan: evil, method: evil, amount: evil, currency: evil, reference: evil }),
+    t.manualPaymentApprovedEmail({ name: evil, plan: evil }),
+    t.manualPaymentRejectedEmail({ name: evil, adminNote: evil }),
+    t.certificateIssuedEmail({ name: evil, title: evil, number: evil }),
+    t.liveClassScheduledEmail({ studentName: evil, teacherName: evil, title: evil, startsAt: new Date(), meetingUrl: 'javascript:alert(1)' }),
+    t.subscriptionRenewalReminderEmail({ name: evil, plan: evil, validUntil: new Date(), daysLeft: 3, autoRenew: false }),
+  ];
+  for (const h of html) {
+    assert.ok(!h.includes('<img'), 'no raw markup from a value reaches the email');
+    assert.ok(!h.includes('javascript:'), 'no javascript: link reaches the email');
+  }
+});

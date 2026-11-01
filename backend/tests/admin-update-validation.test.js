@@ -862,3 +862,22 @@ test('updateTrialStatus: an old request stored without status or updatedAt can b
   assert.equal((await TrialRequest.collection.findOne({ _id: id })).updatedAt.toISOString(), res.body.updatedAt);
   assert.equal((await statusEntries(id)).length, 1);
 });
+
+test('admin login validation keeps Gmail dots and +tags (only trims and lowercases), so it matches the stored address', async () => {
+  const { loginValidation } = await import('../controllers/adminAuthController.js');
+  const req = { body: { email: '  First.Last+ops@Gmail.com ', password: 'x' } };
+  for (const chain of loginValidation) await chain.run(req);
+  assert.equal(req.body.email, 'first.last+ops@gmail.com');
+});
+
+test('admin login finds an admin stored with Gmail dots, and one stored by the old console in normalized form', async () => {
+  const password = 'Sup3r-Str0ng-Admin-Pass!';
+  await AdminUser.create({ name: 'Dotted', email: 'first.last@gmail.com', password, role: 'admin' });
+  await AdminUser.create({ name: 'Legacy', email: 'oldadmin@gmail.com', password, role: 'admin' });
+  for (const email of ['First.Last@gmail.com', 'old.admin@gmail.com']) {
+    const { agent, csrf } = await agentWithCsrf(app);
+    const res = await agent.post('/api/v1/admin/auth/login').set(csrf).send({ email, password });
+    assert.equal(res.status, 200, email);
+    assert.equal(res.body.stage, 'mfa_setup', email);
+  }
+});

@@ -2,9 +2,11 @@ import { test, before, beforeEach, after } from 'node:test';
 import assert from 'node:assert/strict';
 import speakeasy from 'speakeasy';
 import request from 'supertest';
+import jwt from 'jsonwebtoken';
 import app from '../app.js';
 import AdminUser from '../models/AdminUser.js';
 import RefreshToken from '../models/RefreshToken.js';
+import { hashToken } from '../utils/hashToken.js';
 import { setupTestDb, clearTestDb, teardownTestDb } from './helpers/db.js';
 import { agentWithCsrf } from './helpers/csrf.js';
 
@@ -172,4 +174,86 @@ test('logout revokes the refresh token family', async () => {
   const tokens = await RefreshToken.find({ adminId: admin._id });
   assert.ok(tokens.length >= 1);
   assert.ok(tokens.every((t) => t.revoked === true));
+});
+
+// The refresh cookie is path-scoped to /auth/refresh, so on /logout the
+// access token is all that names the admin. Logout must still revoke the
+// family after that 15-minute token has expired (no /login here: this
+// file's login budget is already spent by the tests above).
+test('logout after the access token has expired still revokes the refresh tokens and clears the cookies', async () => {
+  const admin = await makeAdmin();
+  await RefreshToken.create({
+    tokenHash: 'expired-session-token-hash',
+    adminId: admin._id,
+    family: 'expired-session-family',
+    expiresAt: new Date(Date.now() + 6 * 24 * 60 * 60 * 1000),
+  });
+  const expiredAccess = jwt.sign(
+    { id: String(admin._id), role: 'admin', mfaVerified: true, exp: Math.floor(Date.now() / 1000) - 60 * 60 },
+    process.env.ADMIN_JWT_ACCESS_SECRET,
+  );
+
+  const { csrf } = await agentWithCsrf(app);
+  const res = await request(app)
+    .post('/api/v1/admin/auth/logout')
+    .set({ ...csrf, Cookie: `admin_at=${expiredAccess}; csrf_token=${csrf['x-csrf-token']}` })
+    .send();
+  assert.equal(res.status, 200);
+  const cleared = (res.headers['set-cookie'] || []).map(String);
+  assert.ok(cleared.some((c) => c.startsWith('admin_at=;')), 'the access cookie is cleared');
+  assert.ok(cleared.some((c) => c.startsWith('admin_rt=;')), 'the refresh cookie is cleared');
+
+  const tokens = await RefreshToken.find({ adminId: admin._id });
+  assert.ok(tokens.length >= 1);
+  assert.ok(tokens.every((t) => t.revoked === true), 'the 7-day refresh family must not survive the logout');
+});
+
+test('logout with a forged or long-expired access token revokes nothing but still answers 200', async () => {
+  const admin = await makeAdmin();
+  await RefreshToken.create({
+    tokenHash: 'untouched-token-hash',
+    adminId: admin._id,
+    family: 'untouched-family',
+    expiresAt: new Date(Date.now() + 6 * 24 * 60 * 60 * 1000),
+  });
+  const forged = jwt.sign({ id: String(admin._id), role: 'admin', mfaVerified: true }, 'not-the-real-secret', { expiresIn: '15m' });
+  const ancient = jwt.sign(
+    { id: String(admin._id), role: 'admin', mfaVerified: true, exp: Math.floor(Date.now() / 1000) - 8 * 24 * 60 * 60 },
+    process.env.ADMIN_JWT_ACCESS_SECRET,
+  );
+
+  const { csrf } = await agentWithCsrf(app);
+  for (const token of [forged, ancient]) {
+    const res = await request(app)
+      .post('/api/v1/admin/auth/logout')
+      .set({ ...csrf, Cookie: `admin_at=${token}; csrf_token=${csrf['x-csrf-token']}` })
+      .send();
+    assert.equal(res.status, 200);
+  }
+  const tokens = await RefreshToken.find({ adminId: admin._id });
+  assert.ok(tokens.every((t) => t.revoked === false), 'a token that does not prove the admin must not log them out everywhere');
+});
+
+test('two refreshes with the same token at the same moment: only one wins, the other is treated as reuse', async () => {
+  const admin = await makeAdmin();
+  const raw = 'parallel-replay-raw-refresh-token';
+  await RefreshToken.create({
+    tokenHash: hashToken(raw),
+    adminId: admin._id,
+    family: 'parallel-family',
+    expiresAt: new Date(Date.now() + 6 * 24 * 60 * 60 * 1000),
+  });
+
+  const { csrf } = await agentWithCsrf(app);
+  const send = () => request(app)
+    .post('/api/v1/admin/auth/refresh')
+    .set({ ...csrf, Cookie: `admin_rt=${raw}; csrf_token=${csrf['x-csrf-token']}` })
+    .send();
+  const results = await Promise.all([send(), send(), send()]);
+  const statuses = results.map((r) => r.status).sort();
+  assert.deepEqual(statuses, [200, 401, 401], 'exactly one parallel refresh may rotate the token');
+  assert.ok(results.filter((r) => r.status === 401).every((r) => r.body.code === 'TOKEN_REUSE'));
+
+  const family = await RefreshToken.find({ family: 'parallel-family' });
+  assert.ok(family.every((t) => t.revoked === true), 'a parallel replay revokes the whole family');
 });

@@ -237,3 +237,29 @@ test('T6: StudentRecord aggregation in getMyStudents is a covered index query (z
     assert.equal(new Date(r.lastRecordDate).toISOString(), new Date(2026, 0, 3).toISOString());
   }
 });
+
+test('getStudentDetail: course progress counts module lessons as well as resources (no 350%, no stuck 0%)', async () => {
+  const { default: Course } = await import('../models/Course.js');
+  const { default: CourseProgress } = await import('../models/CourseProgress.js');
+  const { agent, teacher } = await makeTeacherAgent();
+  const student = await User.create({ name: 'Lesson Student', email: `lesson-student-${Date.now()}@example.com`, password: PASSWORD, role: 'student', teacher: teacher._id });
+
+  const mixed = await Course.create({
+    title: 'Mixed', description: 'x',
+    resources: [{ label: 'R1', url: 'https://example.com/1' }, { label: 'R2', url: 'https://example.com/2' }],
+    modules: [{ title: 'M1', lessons: [1, 2, 3, 4, 5].map((n) => ({ title: `L${n}` })) }],
+  });
+  const lessonsOnly = await Course.create({
+    title: 'Lessons only', description: 'x',
+    modules: [{ title: 'M1', lessons: [{ title: 'A' }, { title: 'B' }] }],
+  });
+  const mixedLessons = mixed.modules[0].lessons.map((l) => `lesson:${l._id}`);
+  await CourseProgress.create({ user: student._id, course: mixed._id, completed: [String(mixed.resources[0]._id), String(mixed.resources[1]._id), ...mixedLessons] });
+  await CourseProgress.create({ user: student._id, course: lessonsOnly._id, completed: [`lesson:${lessonsOnly.modules[0].lessons[0]._id}`] });
+
+  const res = await agent.get(`/api/teacher/students/${student._id}`);
+  assert.equal(res.status, 200);
+  const byTitle = Object.fromEntries(res.body.courses.map((c) => [c.title, c]));
+  assert.deepEqual([byTitle.Mixed.done, byTitle.Mixed.total, byTitle.Mixed.percent], [7, 7, 100]);
+  assert.deepEqual([byTitle['Lessons only'].done, byTitle['Lessons only'].total, byTitle['Lessons only'].percent], [1, 2, 50]);
+});

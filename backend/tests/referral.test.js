@@ -218,3 +218,20 @@ test('legacy PATCH /api/referrals/:id/convert no longer exists (404)', async () 
   const res = await agent.patch(`/api/referrals/${referral._id}/convert`).set(csrf).send({});
   assert.equal(res.status, 404);
 });
+
+test('trackReferral: an account already referred by one code cannot be credited to another referrer (409)', async () => {
+  const first = await User.create({ name: 'First Referrer', email: 'first-referrer@example.com', password: PASSWORD });
+  const second = await User.create({ name: 'Second Referrer', email: 'second-referrer@example.com', password: PASSWORD });
+  const referee = await User.create({ name: 'One Referee', email: 'one-referee@example.com', password: PASSWORD });
+
+  const a = makeRes();
+  await trackReferral({ body: { code: first.referralCode }, user: referee }, a);
+  assert.equal(a.statusCode, 201);
+  const b = makeRes();
+  await trackReferral({ body: { code: second.referralCode }, user: referee }, b);
+  assert.equal(b.statusCode, 409);
+
+  assert.equal(await Referral.countDocuments({ referee: referee._id }), 1);
+  const kept = await Referral.findOne({ referee: referee._id }).lean();
+  assert.equal(String(kept.referrer), String(first._id), 'the first code used keeps the credit');
+});

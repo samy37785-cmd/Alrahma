@@ -366,9 +366,11 @@ describe('Scope guard: prerendered HTML, /enroll and Italian metadata are unchan
   // Pinned at origin/main 78883d6. A later PR that deliberately changes
   // /enroll or the Italian SEO updates these hashes in the same diff.
   it.each(Object.entries({
-    'src/pages/Enroll.jsx': 'adc6fe07e46e5f21edcf21419f3940946655eb12eb7fed1ad9bab9fac675547d',
+    // 2026-11-06: + error role="alert" and the step-change scroll/focus (previous hash adc6fe07…).
+    'src/pages/Enroll.jsx': 'bd4850a8e3e2839a442022d8d722d07ad8dfa73a71b2ea6fadec0d63f17f104d',
     // 2026-10-28: + the step 4 "booking request, not a payment" note (one line; previous hash 2fe22bae…).
-    'src/components/features/enrollment/EnrollWizard.jsx': '92158c20a97dd7888b629fe1da5f66957d5af6de029fd8cd92c1caf8fe588cb4',
+    // 2026-11-06: + field labels, autocomplete, type="tel", aria-pressed and aria-current (previous hash 92158c20…).
+    'src/components/features/enrollment/EnrollWizard.jsx': '9c24c7852cd3902a9e69b12c1af0e300a0e809d14812bc518afb77a364d8cd27',
     'src/i18n/enroll/seo.js': 'b420a7d60d860877fc451434f54aa7c558a67b7d223ec81ea1b3a5f38da5aa35',
     'src/i18n/enroll/countries.js': '341fe3dfef149848fbfcaf6a87723818976b6d6b9e137f1470e059e7ac68676c',
     'src/i18n/itMetaDescriptions.js': 'bf226934a1f3f5180b6206357747df46499db592bf554c8a6b3cd81ff63c3a69',

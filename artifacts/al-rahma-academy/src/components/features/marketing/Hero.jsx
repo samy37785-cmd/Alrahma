@@ -28,6 +28,13 @@ const stripLeadingCheck = (str) => (str || '').replace(/^✓\s*/, '');
 // marks the Al-Azhar claim itself as placeholder/fabricated (see the
 // Unknown Evidence Register).
 
+// The "Watch a live lesson" button opened a window with no video in it (the
+// placeholder YouTube embed was removed, and the academy has no recording of
+// its own yet). The owner chose on 2026-11-06 to hide the button until a real
+// lesson recording exists. The window below stays in place as the slot for it:
+// put the recording in .hero__video-iframe and set this to true.
+const HAS_LESSON_VIDEO = false;
+
 export default function Hero({ onTrialClick }) {
   const { t, lang } = useLang();
   const a11y = pickA11yLabels(lang);
@@ -84,15 +91,17 @@ export default function Hero({ onTrialClick }) {
             >
               {h.cta1}
             </button>
-            <button
-              type="button"
-              className="btn btn--ghost-white hero__watch-btn"
-              onClick={() => setVideoOpen(true)}
-              aria-haspopup="dialog"
-            >
-              <span className="hero__play-icon" aria-hidden="true">▶</span>
-              {h.watchDemo}
-            </button>
+            {HAS_LESSON_VIDEO && (
+              <button
+                type="button"
+                className="btn btn--ghost-white hero__watch-btn"
+                onClick={() => setVideoOpen(true)}
+                aria-haspopup="dialog"
+              >
+                <span className="hero__play-icon" aria-hidden="true">▶</span>
+                {h.watchDemo}
+              </button>
+            )}
           </div>
 
           {/* Micro-copy: kill conversion objections instantly */}

@@ -5,11 +5,20 @@ import { useLang } from '../../context/LangContext';
 import { getExperienceText } from '../../i18n/experience';
 import TrialWhatsappButton from './TrialWhatsappButton';
 import { HEARD_FROM } from '../../utils/trialSource';
+import '../../styles/quick-trial.css';
 
-export default function QuickTrialModal({ open, onClose }) {
+export default function QuickTrialModal({ open, onClose, context = null }) {
   const { lang, t } = useLang();
   const copy = getExperienceText(lang).quickTrial;
   const heard = t.trial.heardFrom;
+  // What the visitor picked on the button that opened the form (a tutor, a
+  // plan, a quiz course): shown under the title in the visitor's language
+  // (`label`) and sent with the request in English for the team (`name`).
+  const picked = [
+    context?.teacher && [t.enroll.step4.summaryTeacher, context.teacher.label || context.teacher.name],
+    context?.plan && [t.enroll.step4.summaryPlan, context.plan.label || context.plan.name],
+    context?.course && [t.trial.fields.course, context.course],
+  ].filter(Boolean);
   const [form, setForm] = useState({ name: '', email: '', whatsapp: '', heardFrom: '' });
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
@@ -43,7 +52,19 @@ export default function QuickTrialModal({ open, onClose }) {
     try {
       // The WhatsApp field is the visitor's phone; the server stores `phone`.
       const { whatsapp, ...rest } = form;
-      await submitTrial({ ...rest, phone: whatsapp, source: 'hero-quick-trial' });
+      // The tutor and plan go in the existing free-text message field, in
+      // English for the team; the course uses the existing course field.
+      const message = [
+        context?.teacher?.name && `Preferred tutor: ${context.teacher.name}`,
+        context?.plan && `Plan of interest: ${context.plan.name}`,
+      ].filter(Boolean).join('\n');
+      await submitTrial({
+        ...rest,
+        phone: whatsapp,
+        source: 'hero-quick-trial',
+        ...(message ? { message } : {}),
+        ...(context?.course ? { course: context.course } : {}),
+      });
       setDone(true);
     } catch {
       setError(copy.submitError);
@@ -85,6 +106,13 @@ export default function QuickTrialModal({ open, onClose }) {
               <span className="qtm__badge" aria-hidden="true">🎓</span>
               <h2 className="qtm__title">{copy.title}</h2>
               <p className="qtm__sub">{copy.subtitle}</p>
+              {picked.length > 0 && (
+                <ul className="qtm__picked">
+                  {picked.map(([label, value]) => (
+                    <li key={label}><span>{label}:</span> {value}</li>
+                  ))}
+                </ul>
+              )}
             </div>
 
             <form className="qtm__form" onSubmit={handleSubmit} noValidate>

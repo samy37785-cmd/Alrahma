@@ -103,11 +103,14 @@ describe('Home.jsx source: no new isAr ternary, UI/Trial logic untouched', () =>
     for (const tag of [
       '<Hero', '<TrustBar', '<LevelQuiz', '<Courses', '<Features', '<Steps', '<Tutors',
       '<IsnadChain', '<TrustBadges', '<Pricing', '<JoinCTA', '<FAQ', '<Trial', '<Newsletter',
-      '<Footer', '<WhatsappFab', '<QuickTrialModal', '<ExitIntentPopup',
+      '<Footer', '<WhatsappFab', '<ExitIntentPopup',
     ]) {
       expect(homeSrc, tag).toContain(tag);
     }
-    expect(homeSrc).toMatch(/trialOpen/);
+    // 2026-11-06: the quick-trial modal moved to the site-wide
+    // QuickTrialProvider (one trial form for every button); Home opens it.
+    expect(homeSrc).toMatch(/<QuickTrialProvider>/);
+    expect(homeSrc).toMatch(/openQuickTrial\(\)/);
     expect(homeSrc).toMatch(/onTrialClick/);
   });
 

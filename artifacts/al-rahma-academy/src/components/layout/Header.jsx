@@ -27,6 +27,7 @@ import { getUnreadCount } from "../../api/messageApi";
 import { NavDropdown, ICON_SIZE } from "./NavDropdown";
 import { useDropdown } from "../../hooks/useDropdown";
 import { useFocusTrap } from "../../hooks/useFocusTrap";
+import { useQuickTrial, opensInPlace } from "../../context/QuickTrialContext";
 
 const FLAG = { en: "🇬🇧", ar: "🇪🇬", it: "🇮🇹", es: "🇪🇸", de: "🇩🇪", fr: "🇫🇷" };
 
@@ -47,6 +48,7 @@ export default function Header() {
   const copy = experience.header;
   const { dark, toggle: toggleDark } = useTheme();
   const location = useLocation();
+  const quickTrial = useQuickTrial();
   const navigate = useNavigate();
   const n = t.nav;
 
@@ -251,7 +253,21 @@ export default function Header() {
             <NavDropdown state={tools}     label={n.tools}     items={TOOLS_ITEMS}     hubTo={localizedTo("/tools")}     isActive={isActive} closeAll={closeAll} viewAllLabel={n.viewAll} allLabel={n.allLabel} wide />
             <NavDropdown state={resources} label={n.resources} items={RESOURCES_ITEMS} hubTo={localizedTo("/resources")} isActive={isActive} closeAll={closeAll} viewAllLabel={n.viewAll} allLabel={n.allLabel} />
             <NavDropdown state={academy}   label={n.academy}   items={ACADEMY_ITEMS}   hubTo={localizedTo("/academy")}   isActive={isActive} closeAll={closeAll} viewAllLabel={n.viewAll} allLabel={n.allLabel} />
-            <Link to={localizedTo("/enroll")} className="nav__cta" onClick={closeAll}>{n.trial}</Link>
+            <Link
+              to={localizedTo("/enroll")}
+              className="nav__cta"
+              onClick={(e) => {
+                closeAll();
+                // The short trial form, not the four-step wizard (owner,
+                // 2026-11-06); on /enroll itself the link stays a link.
+                if (quickTrial && opensInPlace(e) && !/\/enroll$/.test(location.pathname)) {
+                  e.preventDefault();
+                  quickTrial.openQuickTrial();
+                }
+              }}
+            >
+              {n.trial}
+            </Link>
 
             {/* ── Mobile-only: search / command palette trigger ── */}
             <button

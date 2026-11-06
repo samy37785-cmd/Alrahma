@@ -42,7 +42,8 @@
   font-size: var(--text-hero, clamp(2.6rem, 5.5vw, 3.8rem));
 }
 .hero__highlight {
-  color: var(--gold);
+  /* Large text: amber-300 is about 4:1 here; --gold was 2.7:1. */
+  color: var(--p-amber-300);
   position: relative;
   font-style: italic;
   font-weight: 600;
@@ -61,7 +62,7 @@
   border-radius: 999px;
   padding: 6px 16px;
   font-size: .78rem; font-weight: 600;
-  color: var(--gold);
+  color: var(--gold-on-dark);
   letter-spacing: 2px;
   text-transform: uppercase;
   margin-bottom: 22px;
@@ -135,7 +136,7 @@
 .hero__badge-check {
   display: inline-flex; align-items: center; justify-content: center;
   width: 18px; height: 18px; border-radius: 50%;
-  background: rgba(212,175,55,.25); color: var(--gold);
+  background: rgba(212,175,55,.25); color: var(--gold-on-dark);
   font-size: .7rem; font-weight: 800; flex-shrink: 0;
   margin-right: 6px;
 }
@@ -180,7 +181,7 @@
 }
 .hero__pill-icon svg { width: 18px; height: 18px; }
 .hero__pill strong { display: block; color: #fff; font-size: .95rem; }
-.hero__pill span   { display: block; color: rgba(255,255,255,.6); font-size: .75rem; }
+.hero__pill span   { display: block; color: rgba(255,255,255,.85); font-size: .75rem; }
 
 /* Verse */
 .hero__verse {
@@ -200,7 +201,7 @@
   opacity: .45; line-height: 1;
 }
 .hero__verse p { font-style: italic; color: #e8f0ec; font-size: .85rem; margin: 0 0 4px; line-height: 1.5; position: relative; }
-.hero__verse small { color: var(--gold); font-size: .75rem; font-weight: 600; }
+.hero__verse small { color: var(--gold-on-dark); font-size: .75rem; font-weight: 600; }
 
 /* Features — asymmetric bento grid: the first (Free Trial) card is a wide,
    left-aligned highlighted tile; the rest are compact tiles in the remaining
@@ -345,7 +346,7 @@
 }
 .course-row__badges { display: flex; gap: 8px; }
 .course-row__badge {
-  font-size: .72rem; font-weight: 600; color: var(--muted);
+  font-size: .75rem; font-weight: 600; color: var(--muted);
   background: var(--cream); border: 1px solid var(--line);
   padding: 3px 10px; border-radius: 999px;
 }
@@ -494,14 +495,14 @@
   font-family: var(--serif); margin: 0; transition: color .2s;
 }
 .tc3__card:hover .tc3__name-ar { color: var(--green); }
-.tc3__name-en { font-size: .74rem; color: var(--muted); margin: 1px 0 0; }
+.tc3__name-en { font-size: .8rem; color: var(--muted); margin: 1px 0 0; }
 .tc3__role { font-size: .78rem; color: var(--green); font-weight: 700; margin: 6px 0 10px; }
 
 /* Specialty tags */
 .tc3__tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
 .tc3__tag {
   background: var(--green-light); color: var(--green-deep);
-  font-size: .68rem; font-weight: 600; padding: 3px 10px;
+  font-size: .75rem; font-weight: 600; padding: 3px 10px;
   border-radius: 999px; border: 1px solid rgba(11,110,79,.14);
 }
 
@@ -509,10 +510,10 @@
 .tc3__meta { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 14px; }
 .tc3__meta-item {
   display: inline-flex; align-items: center; gap: 4px;
-  font-size: .74rem; font-weight: 600; color: var(--ink); opacity: .8;
+  font-size: .8rem; font-weight: 600; color: var(--ink); opacity: .85;
 }
 .tc3__meta-item svg { width: 13px; height: 13px; flex-shrink: 0; }
-.tc3__meta-item--muted { opacity: .55; font-weight: 500; }
+.tc3__meta-item--muted { opacity: .75; font-weight: 500; }
 
 /* CTA row — one clear primary action, one de-emphasized link */
 .tc3__actions { display: flex; align-items: center; gap: 14px; margin-top: auto; }
@@ -584,6 +585,9 @@
 .join-cta__ring--1 { width: 600px; height: 600px; top: -200px; right: -150px; }
 .join-cta__ring--2 { width: 400px; height: 400px; bottom: -180px; left: -100px; }
 .join-cta__inner { position: relative; z-index: 2; }
+/* JoinCTA.jsx colors its eyebrow inline with var(--gold); on this dark green
+   that read at 2.5:1, so the section takes the readable gold instead. */
+.join-cta__inner { --gold: var(--gold-on-dark); }
 .join-cta h2 { color: #fff; margin-bottom: 16px; }
 .join-cta__sub { color: #cde5d8; max-width: 560px; margin: 0 auto 32px; font-size: 1.05rem; line-height: 1.7; }
 .join-cta__stats {
@@ -647,7 +651,7 @@
 .plan--featured:hover { transform: translateY(-20px); }
 .plan__tag {
   position: absolute; top: 18px; right: 18px;
-  background: var(--gold); color: #3a2e05; font-size: .68rem; font-weight: 700;
+  background: var(--gold); color: var(--color-accent-text); font-size: .72rem; font-weight: 700;
   padding: 5px 13px; border-radius: 999px; text-transform: uppercase; letter-spacing: .06em; z-index: 2;
   box-shadow: 0 3px 10px rgba(212,175,55,.4);
 }
@@ -709,11 +713,11 @@
 .trial { padding: 90px 0; background: var(--islamic-pattern) repeat 0 0 / 56px 56px, linear-gradient(160deg, var(--green-deep), var(--green)); color: #eef6f1; }
 .trial__inner { display: grid; grid-template-columns: 1fr 1fr; gap: 50px; align-items: start; }
 .trial h2 { color: #fff; }
-.trial .eyebrow { color: var(--gold); }
+.trial .eyebrow { color: var(--gold-on-dark); }
 .trial__text p { color: #d6e6df; margin: 14px 0; }
 .trial__list { margin: 18px 0; display: grid; gap: 8px; color: #cfe3da; }
 .trial__whats { font-size: .95rem; }
-.trial__whats a { color: var(--gold); font-weight: 600; }
+.trial__whats a { color: var(--gold-on-dark); font-weight: 600; }
 .trial__form {
   background: #fff; border-radius: 18px; padding: 32px; box-shadow: var(--shadow-lg);
   color: var(--ink);
@@ -751,7 +755,7 @@
 }
 .newsletter__offer-badge {
   display: inline-block;
-  background: var(--color-accent); color: #fff;
+  background: var(--color-accent); color: var(--color-accent-text);
   font-size: .72rem; font-weight: 800; letter-spacing: .1em;
   text-transform: uppercase; padding: 4px 14px; border-radius: 999px;
   margin-bottom: 14px;
@@ -794,7 +798,7 @@
 .newsletter__input:focus { outline: none; border-color: var(--color-accent); background: rgba(255,255,255,.12); }
 .newsletter__submit { width: 100%; justify-content: center; }
 .newsletter__privacy {
-  font-size: .78rem; color: rgba(255,255,255,.45); text-align: center; margin: 0;
+  font-size: .78rem; color: rgba(255,255,255,.8); text-align: center; margin: 0;
 }
 .newsletter__error { font-size: .85rem; color: #f87171; margin: 0; }
 
@@ -870,11 +874,11 @@
   cursor: pointer;
 }
 .hero__scroll-cue span {
-  font-size: .6rem;
+  font-size: .68rem;
   font-weight: 700;
   letter-spacing: 2.5px;
   text-transform: uppercase;
-  color: rgba(255,255,255,.45);
+  color: rgba(255,255,255,.85);
 }
 .hero__scroll-icon {
   width: 20px; height: 28px;
@@ -1191,7 +1195,7 @@ html.dark .section-head { --section-eyebrow-ink: var(--text-accent-dark); }
   line-height: 1;
 }
 .trust-bar__flag-name {
-  font-size: 0.6rem;
+  font-size: 0.72rem;
   color: var(--text-secondary, #6b8a80);
   font-weight: 600;
   white-space: nowrap;
@@ -1414,7 +1418,9 @@ html.dark .section-head { --section-eyebrow-ink: var(--text-accent-dark); }
   position: relative;
   z-index: 1;
 }
-.lq__eyebrow { margin-bottom: 6px; }
+/* Same amber-700 as .section-head eyebrows (the global gold is 2.8:1 on this cream). */
+.lq__eyebrow { margin-bottom: 6px; color: var(--p-amber-700); }
+html.dark .lq__eyebrow { color: var(--text-accent-dark); }
 .lq__heading {
   font-size: clamp(1.4rem, 3vw, 1.9rem);
   font-weight: 800;
@@ -1596,7 +1602,7 @@ html.dark .section-head { --section-eyebrow-ink: var(--text-accent-dark); }
 }
 .isnad .container { position: relative; z-index: 1; }
 .isnad__head { text-align: center; margin-bottom: 52px; }
-.isnad__head .eyebrow { color: var(--gold); }
+.isnad__head .eyebrow { color: var(--gold-on-dark); }
 .isnad__head h2 {
   color: #fff;
   font-size: clamp(1.55rem, 3.2vw, 2.2rem);
@@ -1659,8 +1665,8 @@ html.dark .section-head { --section-eyebrow-ink: var(--text-accent-dark); }
   margin-bottom: 4px;
 }
 .isnad__node-detail {
-  font-size: .68rem;
-  color: rgba(255,255,255,.55);
+  font-size: .75rem;
+  color: rgba(255,255,255,.8);
   line-height: 1.4;
 }
 
@@ -1697,7 +1703,7 @@ html.dark .section-head { --section-eyebrow-ink: var(--text-accent-dark); }
 .isnad__cite {
   display: block;
   font-size: .8rem;
-  color: var(--gold);
+  color: var(--gold-on-dark);
   font-style: normal;
   font-weight: 600;
   margin-bottom: 28px;
@@ -1744,10 +1750,9 @@ html.dark .section-head { --section-eyebrow-ink: var(--text-accent-dark); }
   align-items: center;
   gap: 8px;
   font-size: .88rem;
-  color: var(--gold);
+  color: var(--gold-on-dark);
   font-weight: 600;
   margin-bottom: 28px;
-  opacity: .9;
 }
 .join-cta__promise-icon { display: flex; width: 16px; height: 16px; flex-shrink: 0; }
 .join-cta__promise-icon svg { width: 100%; height: 100%; }

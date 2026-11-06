@@ -16,6 +16,7 @@ describe('useModalA11y', () => {
   afterEach(() => {
     vi.useRealTimers();
     document.body.style.overflow = '';
+    document.documentElement.style.overflow = '';
   });
 
   it('does nothing while closed: no keydown listener, no focus, no scroll lock', () => {
@@ -57,6 +58,58 @@ describe('useModalA11y', () => {
     expect(document.body.style.overflow).toBe('hidden');
     unmount();
     expect(document.body.style.overflow).toBe('');
+  });
+
+  it('locks the page (html) too, since html carries overflow-x: clip, and restores it', () => {
+    const onClose = vi.fn();
+    const { rerender } = renderHook(({ open }) => useModalA11y(open, onClose), {
+      initialProps: { open: true },
+    });
+    expect(document.documentElement.style.overflow).toBe('hidden');
+
+    rerender({ open: false });
+    expect(document.documentElement.style.overflow).toBe('');
+    expect(document.documentElement.style.scrollbarGutter).toBe('');
+  });
+
+  it('keeps Tab and Shift+Tab inside the dialog', () => {
+    const dialog = document.createElement('div');
+    dialog.setAttribute('role', 'dialog');
+    const [first, middle, last] = ['a', 'b', 'c'].map((name) => {
+      const b = document.createElement('button');
+      b.textContent = name;
+      dialog.appendChild(b);
+      return b;
+    });
+    const outside = document.createElement('button');
+    document.body.append(dialog, outside);
+
+    const { result } = renderHook(() => useModalA11y(true, vi.fn()));
+    act(() => { result.current.current = first; });
+
+    const tab = (shiftKey = false) => {
+      const ev = new KeyboardEvent('keydown', { key: 'Tab', shiftKey, bubbles: true, cancelable: true });
+      document.activeElement.dispatchEvent(ev);
+      return ev.defaultPrevented;
+    };
+
+    last.focus();
+    expect(tab()).toBe(true);
+    expect(document.activeElement).toBe(first);
+
+    first.focus();
+    expect(tab(true)).toBe(true);
+    expect(document.activeElement).toBe(last);
+
+    middle.focus();
+    expect(tab()).toBe(false); // the browser moves focus on its own inside the dialog
+
+    outside.focus();
+    expect(tab()).toBe(true);
+    expect(document.activeElement).toBe(first);
+
+    dialog.remove();
+    outside.remove();
   });
 
   it('moves focus to the returned ref shortly after opening', async () => {

@@ -49,7 +49,13 @@ html.dark .enroll__header .eyebrow { color: var(--gold); }
   box-shadow: var(--shadow-md); border: 1px solid var(--line);
 }
 
+/* Each new step scrolls the card to the top; keep it clear of the sticky header. */
+.enroll__card { scroll-margin-top: 88px; }
+
 .enroll__step-title { font-size: 1.4rem; font-weight: 800; color: var(--green-deep); margin-bottom: 6px; }
+/* The title takes focus on a step change so screen readers announce it;
+   a mouse or touch user gets no ring on a heading they cannot act on. */
+.enroll__step-title:focus:not(:focus-visible) { outline: none; }
 .enroll__step-sub { color: var(--muted); font-size: .93rem; margin-bottom: 24px; }
 /* Step 4: says plainly that confirming sends a request, not a payment. */
 .enroll__step-note {
@@ -107,8 +113,12 @@ html.dark .enroll__header .eyebrow { color: var(--gold); }
 
 /* Teacher grid in step 3 */
 .enroll__teacher-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+/* A grid, not flex: the language tags take their own full-width row under
+   the name. As a fourth flex item they squeezed the name column to zero
+   width, so names broke one word per line. */
 .enroll__tcard {
-  display: flex; align-items: center; gap: 14px; padding: 16px;
+  display: grid; grid-template-columns: 52px minmax(0, 1fr) auto;
+  align-items: center; column-gap: 14px; row-gap: 10px; padding: 16px;
   border-radius: var(--radius); border: 2px solid var(--line);
   background: #fff; cursor: pointer; text-align: start; font-family: inherit;
   transition: all .2s; position: relative;
@@ -343,6 +353,9 @@ html.dark .enroll__header .eyebrow { color: var(--gold); }
   .enroll__subject-grid { grid-template-columns: repeat(2, 1fr); }
   .enroll__time-grid { grid-template-columns: repeat(2, 1fr); }
   .enroll__teacher-grid { grid-template-columns: 1fr; }
+  /* Phone: rating and badge move under the name so the name keeps the width. */
+  .enroll__tcard { grid-template-columns: 52px minmax(0, 1fr); }
+  .enroll__tcard-meta { grid-column: 2; flex-direction: row; flex-wrap: wrap; align-items: center; gap: 8px; }
   .enroll__plan-grid { grid-template-columns: 1fr; }
   .enroll__step-label { display: none; }
 }

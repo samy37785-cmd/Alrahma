@@ -73,6 +73,25 @@ export default function Enroll() {
     trackEvent('enroll_step_view', { step });
   }, [step]);
 
+  // A new step starts at its own title. On a phone, Continue sits far below
+  // the top of the card, so without this the visitor landed under the new
+  // step's fields and could press Continue again on a step they never saw.
+  // Focus moves to the title so screen readers announce the new step.
+  const cardRef = useRef(null);
+  const firstScrollRender = useRef(true);
+  useEffect(() => {
+    if (firstScrollRender.current) { firstScrollRender.current = false; return; }
+    const card = cardRef.current;
+    if (!card) return;
+    const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    card.scrollIntoView?.({ block: 'start', behavior: reduce ? 'auto' : 'smooth' });
+    const title = card.querySelector('h2');
+    if (title) {
+      title.setAttribute('tabindex', '-1');
+      title.focus({ preventScroll: true });
+    }
+  }, [step]);
+
   const set = (key, valOrFn) =>
     setForm((prev) => ({
       ...prev,
@@ -170,13 +189,13 @@ export default function Enroll() {
 
               <Progress step={step} />
 
-              <div className="enroll__card">
+              <div className="enroll__card" ref={cardRef}>
                 {step === 1 && <Step1 form={form} set={set} />}
                 {step === 2 && <Step2 form={form} set={set} />}
                 {step === 3 && <Step3 form={form} set={set} />}
                 {step === 4 && <Step4 form={form} set={set} onSubmitBooking={handleSubmitBooking} submitting={loading} />}
 
-                {error && <p className="enroll__error">{error}</p>}
+                {error && <p className="enroll__error" role="alert">{error}</p>}
 
                 <div className="enroll__nav">
                   {step > 1 && (

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join, relative, extname } from 'node:path';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { LangProvider } from '../context/LangContext';
 import Hero from '../components/features/marketing/Hero';
@@ -14,6 +14,10 @@ import Hero from '../components/features/marketing/Hero';
 // stays as it is: the button and the window remain, and the window holds no
 // video. The unused YouTube playlist link in the marketing course data went
 // with it.
+//
+// On 2026-11-06 the owner chose to hide the button as well, because a window
+// with nothing in it looked broken. The window's markup stays in Hero.jsx as
+// the slot for a real lesson recording (HAS_LESSON_VIDEO).
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const srcRoot = join(__dirname, '..');
@@ -43,18 +47,20 @@ function renderHero() {
 }
 
 describe('the hero lesson window holds no video', () => {
-  it('keeps the button and the window, and the window embeds nothing', () => {
+  it('hides the button while there is no lesson video, and embeds nothing', () => {
     const { container } = renderHero();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Watch a live lesson' }));
-
-    const dialog = screen.getByRole('dialog', { name: 'Live lesson demo' });
-    expect(dialog.querySelector('.hero__video-iframe')).not.toBeNull();
+    expect(screen.queryByRole('button', { name: 'Watch a live lesson' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Book a Free Trial' })).toBeInTheDocument();
+    expect(screen.queryByRole('dialog')).toBeNull();
     expect(container.querySelector('iframe, video')).toBeNull();
     expect(container.innerHTML).not.toMatch(/youtube/i);
+  });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Close video' }));
-    expect(screen.queryByRole('dialog')).toBeNull();
+  it('keeps the empty window in Hero.jsx as the slot for a real recording', () => {
+    const source = readFileSync(join(srcRoot, 'components/features/marketing/Hero.jsx'), 'utf8');
+    expect(source).toMatch(/const HAS_LESSON_VIDEO = false;/);
+    expect(source).toMatch(/className="hero__video-iframe"/);
   });
 
   it('no source file under src mentions the placeholder video, its env variable or the removed playlist', () => {

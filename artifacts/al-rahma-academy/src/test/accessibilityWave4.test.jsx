@@ -124,8 +124,9 @@ describe('protected files are byte-identical to origin/main (3b44029)', () => {
       // 2026-11-06 readability pass: --gold-on-dark and a lighter --grad-gold (previous hash fd07c812…).
       'src/styles/tokens.css': 'b32a2a69b624c1c489af0814831bec03deb2f5448a73c6485baf2222a428245c',
       'src/styles/global.css': '0e5681ec63222eedac4354b9210543ed13160722c74d781bb69dc739417d52fe',
-      // 2026-11-06 readability pass: trial trust row, join-cta text, modal input border (previous hash 11bd7120…).
-      'src/styles/components.css': '77756ea93f17d73db3aed807ffba3b8728b55022a5a11649c17b02b53f29a338',
+      // 2026-11-06: #278 (quick-trial modal scroll, 44px close) and the readability pass
+      // (trial trust row, join-cta text, modal input border); previous hash 11bd7120….
+      'src/styles/components.css': 'afc98eaf119dce510ac1bd22ee6e743f265244e79623ad973e824ebeab9f31db',
       'src/styles/dark.css': 'e1cb10418eaa0c112a39e5df6e91464818b3512706661a202bf0e680445a664f',
       'src/styles/pages.css': '184fd45afd5b06f465c3ae83d8199c8f3509aaa4e0d1d0ac9e8857ea27ab16a2',
       // 2026-11-06 readability pass: gold on dark, faint white text, small sizes (previous hash 60fca53b…).

@@ -49,7 +49,7 @@ export function Progress({ step }) {
   return (
     <div className="enroll__progress">
       {STEPS.map((s, i) => (
-        <div key={s.n} className={`enroll__step-item${step >= s.n ? ' done' : ''}${step === s.n ? ' active' : ''}`}>
+        <div key={s.n} className={`enroll__step-item${step >= s.n ? ' done' : ''}${step === s.n ? ' active' : ''}`} aria-current={step === s.n ? 'step' : undefined}>
           <div className="enroll__step-circle">
             {step > s.n ? '✓' : s.icon}
           </div>
@@ -75,12 +75,12 @@ export function Step1({ form, set }) {
 
       <div className="enroll__row">
         <div className="field">
-          <label>{s.fullName}</label>
-          <input value={form.name} onChange={(e) => set('name', e.target.value)} placeholder={s.placeholderName} />
+          <label htmlFor="enroll-name">{s.fullName}</label>
+          <input id="enroll-name" autoComplete="name" value={form.name} onChange={(e) => set('name', e.target.value)} placeholder={s.placeholderName} />
         </div>
         <div className="field">
           <label htmlFor="enroll-email">{s.email}</label>
-          <input id="enroll-email" type="email" value={form.email} onChange={(e) => set('email', e.target.value)} placeholder="name@example.com" />
+          <input id="enroll-email" type="email" autoComplete="email" value={form.email} onChange={(e) => set('email', e.target.value)} placeholder="name@example.com" />
         </div>
       </div>
 
@@ -99,6 +99,8 @@ export function Step1({ form, set }) {
               wins over that class-based rule without touching rtl.css. */}
           <input
             id="enroll-whatsapp"
+            type="tel"
+            autoComplete="tel"
             dir="ltr"
             style={{ direction: 'ltr', textAlign: 'left' }}
             value={form.whatsapp}
@@ -116,13 +118,13 @@ export function Step1({ form, set }) {
       </div>
 
       <div className="field">
-        <label>{s.city}</label>
-        <input value={form.city} onChange={(e) => set('city', e.target.value)} placeholder={s.placeholderCity} />
+        <label htmlFor="enroll-city">{s.city}</label>
+        <input id="enroll-city" autoComplete="address-level2" value={form.city} onChange={(e) => set('city', e.target.value)} placeholder={s.placeholderCity} />
       </div>
 
       <div className="field">
-        <label>{s.timezone}</label>
-        <input value={form.timezone} readOnly className="field__readonly" />
+        <label htmlFor="enroll-timezone">{s.timezone}</label>
+        <input id="enroll-timezone" value={form.timezone} readOnly className="field__readonly" />
       </div>
 
       <div className="field">
@@ -133,6 +135,7 @@ export function Step1({ form, set }) {
               key={slot.id}
               type="button"
               className={`enroll__time-btn${form.times.includes(slot.id) ? ' selected' : ''}`}
+              aria-pressed={form.times.includes(slot.id)}
               onClick={() => toggle(slot.id)}
             >
               <strong>{s.slots[slot.key]}</strong>
@@ -165,6 +168,7 @@ export function Step2({ form, set }) {
               key={subj.id}
               type="button"
               className={`enroll__subject-btn${form.subjects.includes(subj.id) ? ' selected' : ''}`}
+              aria-pressed={form.subjects.includes(subj.id)}
               onClick={() => toggleSubject(subj.id)}
             >
               <span className="enroll__subject-icon">{subj.icon}</span>
@@ -182,6 +186,7 @@ export function Step2({ form, set }) {
               key={l.code}
               type="button"
               className={`enroll__lang-btn${form.lang === l.code ? ' selected' : ''}`}
+              aria-pressed={form.lang === l.code}
               onClick={() => set('lang', l.code)}
             >
               <span>{l.flag}</span>
@@ -193,16 +198,16 @@ export function Step2({ form, set }) {
 
       <div className="enroll__row">
         <div className="field">
-          <label>{s.level}</label>
-          <select value={form.level} onChange={(e) => set('level', e.target.value)}>
+          <label htmlFor="enroll-level">{s.level}</label>
+          <select id="enroll-level" value={form.level} onChange={(e) => set('level', e.target.value)}>
             <option value="beginner">{s.levelBeginner}</option>
             <option value="intermediate">{s.levelIntermediate}</option>
             <option value="advanced">{s.levelAdvanced}</option>
           </select>
         </div>
         <div className="field">
-          <label>{s.ageGroup}</label>
-          <select value={form.ageGroup} onChange={(e) => set('ageGroup', e.target.value)}>
+          <label htmlFor="enroll-age">{s.ageGroup}</label>
+          <select id="enroll-age" value={form.ageGroup} onChange={(e) => set('ageGroup', e.target.value)}>
             <option value="child">{s.ageChild}</option>
             <option value="teen">{s.ageTeen}</option>
             <option value="adult">{s.ageAdult}</option>
@@ -222,6 +227,7 @@ export function Step2({ form, set }) {
               key={opt.v}
               type="button"
               className={`enroll__pref-btn${form.genderPref === opt.v ? ' selected' : ''}`}
+              aria-pressed={form.genderPref === opt.v}
               onClick={() => set('genderPref', opt.v)}
             >
               {opt.label}
@@ -263,6 +269,7 @@ export function Step3({ form, set }) {
               key={t.id}
               type="button"
               className={`enroll__tcard${selected ? ' selected' : ''}`}
+              aria-pressed={selected}
               onClick={() => { set('teacherId', t.id); set('teacherName', t.nameEn); }}
             >
               {selected && <span className="enroll__tcard-check">✓</span>}
@@ -322,6 +329,7 @@ export function Step4({ form, set, onSubmitBooking, submitting }) {
             key={plan.name}
             type="button"
             className={`enroll__plan-card${form.plan?.name === plan.name ? ' selected' : ''}${plan.featured ? ' featured' : ''}`}
+            aria-pressed={form.plan?.name === plan.name}
             onClick={() => set('plan', plan)}
           >
             {plan.tag && <span className="enroll__plan-tag">{plan.tag === 'Most popular' ? t.pricing.mostPopular : plan.tag}</span>}

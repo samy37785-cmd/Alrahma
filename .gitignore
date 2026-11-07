@@ -53,6 +53,10 @@ lib/db/test/.run-logs/
 # sessions). May contain session-derived data — never tracked.
 /.playwright-mcp/
 
+# graphify knowledge-graph output (`/graphify .` writes the graph, report
+# and HTML view here). Local analysis output, rebuilt on demand.
+/graphify-out/
+
 # misc
 /.sass-cache
 /connect.lock

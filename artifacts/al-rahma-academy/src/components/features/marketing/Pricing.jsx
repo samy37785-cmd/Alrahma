@@ -6,6 +6,7 @@ import { useLang, withLanguage } from '../../../context/LangContext';
 import { plans } from '../../../data';
 import { PLAN_TEXT, pick } from '../../../i18n/content';
 import { pickA11yLabels } from '../../../i18n/a11yLabels';
+import { useQuickTrial } from '../../../context/QuickTrialContext';
 
 // Currency config: code, symbol, rate from EUR, display label
 const CURRENCIES = [
@@ -64,6 +65,7 @@ const PLAN_ICONS = [
 
 export default function Pricing() {
   const navigate = useNavigate();
+  const quickTrial = useQuickTrial();
   const [currencyCode, setCurrencyCode] = useState('EUR');
   const { t, lang } = useLang();
   const p = t.pricing;
@@ -155,7 +157,10 @@ export default function Pricing() {
                 <button
                   type="button"
                   className={`btn btn--block ${plan.featured ? 'btn--gold' : 'btn--green'}`}
-                  onClick={() => navigate(withLanguage(`/enroll?plan=${encodeURIComponent(plan.name)}`, lang))}
+                  onClick={() => (quickTrial
+                    // The short trial form with this plan noted (owner, 2026-11-06).
+                    ? quickTrial.openQuickTrial({ plan: { name: plan.name, label: pt.name } })
+                    : navigate(withLanguage(`/enroll?plan=${encodeURIComponent(plan.name)}`, lang)))}
                 >
                   {p.getStarted}
                 </button>

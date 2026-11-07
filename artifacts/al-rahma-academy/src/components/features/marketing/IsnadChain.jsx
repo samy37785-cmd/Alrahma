@@ -4,11 +4,13 @@ import { useLang } from '../../../context/LangContext';
 import { ISNAD_CHAIN_NODES } from '../../../data/home/isnadChain';
 import { ISNAD_CHAIN_TEXT } from '../../../i18n/home/isnadChain';
 import { pickA11yLabels } from '../../../i18n/a11yLabels';
+import { useQuickTrial, opensInPlace } from '../../../context/QuickTrialContext';
 
 export default function IsnadChain() {
   const { lang } = useLang();
   const t = ISNAD_CHAIN_TEXT[lang] || ISNAD_CHAIN_TEXT.en;
   const a11y = pickA11yLabels(lang);
+  const quickTrial = useQuickTrial();
 
   return (
     <section className="isnad" aria-label={a11y.isnadSection}>
@@ -48,7 +50,17 @@ export default function IsnadChain() {
           <blockquote className="isnad__quote">{t.quote}</blockquote>
           <cite className="isnad__cite">{t.citation}</cite>
           <div className="isnad__cta-row">
-            <Link to="/enroll" className="btn btn--gold">
+            <Link
+              to="/enroll"
+              className="btn btn--gold"
+              onClick={(e) => {
+                // The short trial form; new-tab clicks still follow the link.
+                if (quickTrial && opensInPlace(e)) {
+                  e.preventDefault();
+                  quickTrial.openQuickTrial();
+                }
+              }}
+            >
               {t.ctaGift}
             </Link>
             <Link to="/academy/teachers" className="btn btn--ghost">

@@ -1,0 +1,12 @@
+/* What the visitor picked before opening the quick-trial form (a tutor, a plan
+   or a quiz course), under the form's subtitle. The rest of .qtm lives in
+   components.css. */
+.qtm__picked {
+  list-style: none; margin: 12px 0 0; padding: 10px 14px;
+  display: flex; flex-direction: column; gap: 4px;
+  border-radius: 10px;
+  background: var(--color-primary-surface, #e9f5ef);
+  font-size: .88rem; color: var(--text-primary); text-align: start;
+}
+.qtm__picked span { font-weight: 600; }
+html.dark .qtm__picked { background: var(--bg-page); }

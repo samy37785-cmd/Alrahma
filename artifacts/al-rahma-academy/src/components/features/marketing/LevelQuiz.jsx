@@ -4,9 +4,11 @@ import { useLang } from '../../../context/LangContext';
 import { LEVEL_QUIZ_STEPS, LEVEL_QUIZ_RECOMMENDATIONS } from '../../../data/home/levelQuiz';
 import { LEVEL_QUIZ_TEXT } from '../../../i18n/home/levelQuiz';
 import { pickA11yLabels } from '../../../i18n/a11yLabels';
+import { useQuickTrial } from '../../../context/QuickTrialContext';
 
 export default function LevelQuiz() {
   const navigate = useNavigate();
+  const quickTrial = useQuickTrial();
   const { lang } = useLang();
   const t = LEVEL_QUIZ_TEXT[lang] || LEVEL_QUIZ_TEXT.en;
   const a11y = pickA11yLabels(lang);
@@ -87,7 +89,11 @@ export default function LevelQuiz() {
                 <button
                   type="button"
                   className="btn btn--gold btn--lg"
-                  onClick={() => navigate('/enroll')}
+                  onClick={() => (quickTrial
+                    // The short trial form with the recommended course filled in,
+                    // so the quiz answer is not lost (owner, 2026-11-06).
+                    ? quickTrial.openQuickTrial({ course: rec.title })
+                    : navigate('/enroll'))}
                 >
                   {t.startTrialBtn}
                 </button>

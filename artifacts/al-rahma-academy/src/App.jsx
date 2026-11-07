@@ -8,6 +8,7 @@ import { PRAYER_CITIES, prayerCityRoute } from './data/prayerCities';
 import { getExperienceText } from './i18n/experience';
 import { ThemeProvider } from './context/ThemeContext';
 import { QueryProvider } from './context/QueryProvider';
+import { QuickTrialProvider } from './context/QuickTrialContext';
 import ProtectedRoute from './components/ui/ProtectedRoute';
 import AdminSessionGate from './components/ui/AdminSessionGate';
 import ScrollToTop from './components/ui/ScrollToTop';
@@ -147,6 +148,7 @@ export default function App({ basename = '' }) {
     <LangProvider>
     <AuthProvider>
     <AdminAuthProvider>
+    <QuickTrialProvider>
         <ScrollToTop />
         <RoutePrefetcher />
         <Analytics />
@@ -279,6 +281,7 @@ export default function App({ basename = '' }) {
           <Route path="*" element={<NotFound />} />
         </Routes>
         </Suspense>
+    </QuickTrialProvider>
     </AdminAuthProvider>
     </AuthProvider>
     </LangProvider>

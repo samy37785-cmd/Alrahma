@@ -1,6 +1,6 @@
-import { useState } from 'react';
 import '../styles/trust-engage.css';
 import { TrialProvider } from '../context/TrialContext';
+import { QuickTrialProvider, useQuickTrial } from '../context/QuickTrialContext';
 import { useLang } from '../context/LangContext';
 import useSEO from '../hooks/useSEO';
 import { buildFaqPageSchema } from '../utils/schema';
@@ -23,12 +23,17 @@ import TrustBadges from '../components/features/marketing/TrustBadges';
 import Footer from '../components/layout/Footer';
 import DeferredSection from '../components/ui/DeferredSection';
 import WhatsappFab from '../components/ui/WhatsappFab';
-import QuickTrialModal from '../components/ui/QuickTrialModal';
 import ExitIntentPopup from '../components/ui/ExitIntentPopup';
 import { pickHomeSeo } from '../i18n/home/seo';
 
+// App.jsx provides the site-wide quick-trial form; a Home rendered on its own
+// (tests) brings its own, so the hero button always has a form to open.
 export default function Home() {
-  const [trialOpen, setTrialOpen] = useState(false);
+  return useQuickTrial() ? <HomePage /> : <QuickTrialProvider><HomePage /></QuickTrialProvider>;
+}
+
+function HomePage() {
+  const { openQuickTrial } = useQuickTrial();
   const { t, lang } = useLang();
   const seo = pickHomeSeo(lang);
   useSEO({
@@ -44,7 +49,7 @@ export default function Home() {
       <TopBar />
       <Header />
       <main id="main-content">
-        <Hero onTrialClick={() => setTrialOpen(true)} />
+        <Hero onTrialClick={() => openQuickTrial()} />
         <TrustBar />
         <LevelQuiz />
         {/* Below-the-fold: deferred until they're about to scroll into view
@@ -57,7 +62,7 @@ export default function Home() {
         <DeferredSection><IsnadChain /></DeferredSection>
         <DeferredSection><TrustBadges /></DeferredSection>
         <DeferredSection><Pricing /></DeferredSection>
-        <DeferredSection><JoinCTA onTrialClick={() => setTrialOpen(true)} /></DeferredSection>
+        <DeferredSection><JoinCTA onTrialClick={() => openQuickTrial()} /></DeferredSection>
         <DeferredSection><FAQ /></DeferredSection>
         <DeferredSection><Trial /></DeferredSection>
         <DeferredSection><Newsletter /></DeferredSection>
@@ -65,8 +70,7 @@ export default function Home() {
       <Footer />
       <WhatsappFab />
 
-      {/* Conversion layer */}
-      <QuickTrialModal open={trialOpen} onClose={() => setTrialOpen(false)} />
+      {/* Conversion layer (the quick-trial form itself: QuickTrialProvider) */}
       <ExitIntentPopup />
     </TrialProvider>
   );

@@ -5,6 +5,7 @@ import { TEACHERS } from '../../../data';
 import { useLang, withLanguage } from '../../../context/LangContext';
 import { pickLeakedString } from '../../../i18n/home/leakedStrings';
 import { pickA11yLabels } from '../../../i18n/a11yLabels';
+import { useQuickTrial } from '../../../context/QuickTrialContext';
 
 /* Inline SVG icons — Lucide-style, consistent with the rest of the homepage. */
 const STAR_ICON = (
@@ -134,8 +135,25 @@ function ReviewsPill({ teacher, size = 'md' }) {
   );
 }
 
-function TutorCard({ t: teacher }) {
+// "Enroll" on a tutor opens the short trial form with that tutor noted
+// (owner, 2026-11-06); without the form's provider it keeps the old /enroll link.
+function useEnrollWith() {
   const navigate = useNavigate();
+  const { lang } = useLang();
+  const quickTrial = useQuickTrial();
+  return (teacher) => {
+    if (!quickTrial) {
+      navigate(withLanguage(`/enroll?teacher=${teacher.id}`, lang));
+      return;
+    }
+    quickTrial.openQuickTrial({
+      teacher: { id: teacher.id, name: teacher.nameEn, label: lang === 'ar' ? teacher.nameAr : teacher.nameEn },
+    });
+  };
+}
+
+function TutorCard({ t: teacher }) {
+  const enrollWith = useEnrollWith();
   const { lang, t: i18n } = useLang();
   const tp = i18n.tp;
   const ut = i18n.tutors;
@@ -186,7 +204,7 @@ function TutorCard({ t: teacher }) {
           <button
             type="button"
             className="tc3__cta"
-            onClick={() => navigate(withLanguage(`/enroll?teacher=${teacher.id}`, lang))}
+            onClick={() => enrollWith(teacher)}
           >
             {ut.enroll}
           </button>
@@ -209,7 +227,7 @@ function useSpotlightTeacher(teachers) {
 }
 
 function SpotlightCard({ teacher }) {
-  const navigate = useNavigate();
+  const enrollWith = useEnrollWith();
   const { lang, t: i18n } = useLang();
   const tp = i18n.tp;
   const ut = i18n.tutors;
@@ -255,7 +273,7 @@ function SpotlightCard({ teacher }) {
             <button
               type="button"
               className="tc3__cta"
-              onClick={() => navigate(withLanguage(`/enroll?teacher=${teacher.id}`, lang))}
+              onClick={() => enrollWith(teacher)}
             >
               {ut.enroll}
             </button>

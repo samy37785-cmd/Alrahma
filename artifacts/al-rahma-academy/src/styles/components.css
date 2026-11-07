@@ -1088,7 +1088,9 @@
 .qtm__optional { font-weight: 400; color: var(--text-secondary); }
 .qtm__field input,
 .qtm__field select {
-  border: 1.5px solid var(--border-default, #ddd);
+  /* neutral-400: 3.1:1 against the white panel, so the field edge is visible
+     (the default border was 1.3:1). */
+  border: 1.5px solid var(--p-neutral-400, #9a9085);
   border-radius: 10px;
   padding: 11px 14px;
   font-size: .95rem;
@@ -1435,7 +1437,9 @@
    docs/trust-marketing-remediation.md. */
 .trial__trust-row {
   display: flex; flex-wrap: wrap; gap: 14px;
-  font-size: .8rem; color: var(--text-secondary);
+  /* On the trial section's dark green: --text-secondary (a grey meant for
+     light surfaces) read at 1.9:1 there. */
+  font-size: .8rem; color: #d6e6df;
   margin: 18px 0;
 }
 .trial__trust-row span { display: flex; align-items: center; gap: 5px; }
@@ -1451,7 +1455,7 @@
 
 .join-cta__secondary {
   display: inline-block; margin-top: 12px;
-  font-size: .88rem; color: rgba(255,255,255,.65);
+  font-size: .88rem; color: rgba(255,255,255,.88);
   text-decoration: underline; transition: color .15s;
 }
 .join-cta__secondary:hover { color: #fff; }
@@ -1459,7 +1463,7 @@
 .join-cta__guarantee {
   display: inline-flex; align-items: center; gap: 8px;
   margin-top: 20px;
-  font-size: .78rem; color: rgba(255,255,255,.55);
+  font-size: .78rem; color: rgba(255,255,255,.85);
   background: rgba(255,255,255,.07);
   border: 1px solid rgba(255,255,255,.12);
   border-radius: 999px;

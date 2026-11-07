@@ -121,13 +121,16 @@ describe('protected files are byte-identical to origin/main (3b44029)', () => {
       'src/i18n/quran/kbdSidePanel.js': 'd2a2d708f85d4141ccfeb5736118dd96a38f67da7bc59640a1f18dd5750680f3',
       'src/i18n/quran/verseCardModal.js': 'b389bf8d90b0f61d8593c2703da2433f148dd2528df4bd34b5ed182a4dc40146',
       'src/pages/Quran.jsx': '2818cdfd006357115f6f2e0441eefcd47e1fdf5f5a87ffec80c5828136ef6ace',
-      'src/styles/tokens.css': 'fd07c812033b0421157b3d67ab3e8e1e9fb00d87adbf4123e73d4cb10fd3a4a7',
+      // 2026-11-06 readability pass: --gold-on-dark and a lighter --grad-gold (previous hash fd07c812…).
+      'src/styles/tokens.css': 'b32a2a69b624c1c489af0814831bec03deb2f5448a73c6485baf2222a428245c',
       'src/styles/global.css': '0e5681ec63222eedac4354b9210543ed13160722c74d781bb69dc739417d52fe',
-      // 2026-11-06: the quick-trial modal scrolls on short screens and its close button is 44px (previous hash 11bd7120…).
-      'src/styles/components.css': '95a1a7d0417601d2eda353c558ada3cb0a7cf7b744576b2d8fd861705df6b4ce',
+      // 2026-11-06: #278 (quick-trial modal scroll, 44px close) and the readability pass
+      // (trial trust row, join-cta text, modal input border); previous hash 11bd7120….
+      'src/styles/components.css': 'afc98eaf119dce510ac1bd22ee6e743f265244e79623ad973e824ebeab9f31db',
       'src/styles/dark.css': 'e1cb10418eaa0c112a39e5df6e91464818b3512706661a202bf0e680445a664f',
       'src/styles/pages.css': '184fd45afd5b06f465c3ae83d8199c8f3509aaa4e0d1d0ac9e8857ea27ab16a2',
-      'src/styles/layout/home.css': '60fca53b34ce2e8c7c1101125558944c2c97359d673e40e4786635d1a3c864c5',
+      // 2026-11-06 readability pass: gold on dark, faint white text, small sizes (previous hash 60fca53b…).
+      'src/styles/layout/home.css': '4c0a01e31d798cedc12fb15ecfa68a024342c87bd34e79786d0e48f94804dde7',
       'src/styles/layout/header.css': '237c8e28e3c270351157923349973802986f0a2b9fba3dd8bf9ea9ab40d89f4e', // 2026-10-14: button.nav__mobile-login-link (Italian login button)
     };
     expect(Object.fromEntries(Object.keys(BASELINE).map((f) => [f, sha(f)]))).toEqual(BASELINE);

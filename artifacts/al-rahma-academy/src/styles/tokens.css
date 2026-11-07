@@ -323,6 +323,10 @@
   --gold:        var(--p-amber-500);
   --gold-dark:   var(--p-amber-600);
   --gold-light:  var(--p-amber-50);
+  /* Small gold text on the dark green sections (hero, trial, Isnad, join,
+     newsletter): 7:1 on green-800, 4.6:1 on green-500. --gold itself is
+     about 2-3:1 there (2026-11-06 site critique). */
+  --gold-on-dark: #f5d9a3;
   --lapis:       var(--p-lapis-500);
   --lapis-light: var(--p-lapis-50);
   --cream:       var(--p-neutral-50);
@@ -336,7 +340,9 @@
 
   /* Gradients */
   --grad-green: linear-gradient(135deg, var(--p-green-500) 0%, var(--p-green-600) 100%);
-  --grad-gold:  linear-gradient(135deg, var(--p-amber-400) 0%, var(--p-amber-600) 100%);
+  /* amber-300 to amber-500: the dark #3a2000 button text is 4.9:1 at the darker
+     end (it was 3.4:1 on amber-600). */
+  --grad-gold:  linear-gradient(135deg, var(--p-amber-300) 0%, var(--p-amber-500) 100%);
   --grad-lapis: linear-gradient(135deg, var(--p-lapis-500) 0%, var(--p-lapis-700) 100%);
   --grad-hero:  linear-gradient(145deg, var(--p-green-800) 0%, var(--p-green-500) 55%, #158a61 100%);
   --grad-card-1: linear-gradient(135deg, #0b6e4f, #1a9e72);

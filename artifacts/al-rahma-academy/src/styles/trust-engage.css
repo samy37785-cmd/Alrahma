@@ -415,10 +415,11 @@
 
 /* ── Plan inline elements ──────────────────────────────────────────── */
 .plan__refund-inline {
-  font-size: 0.75rem; color: #16a34a;
+  font-size: 0.75rem; color: var(--p-green-600); /* 9.9:1; #16a34a was 3.1:1 */
   text-align: center; margin: 6px 0 0;
   font-weight: 600;
 }
+html.dark .plan__refund-inline { color: var(--p-green-300); }
 /* Footer support hours */
 .footer__support-hours {
   display: flex; align-items: center; gap: 8px;
@@ -427,7 +428,7 @@
 .footer__response-badge {
   display: inline-block; padding: 2px 7px; border-radius: 999px;
   background: rgba(22,163,74,.25); border: 1px solid rgba(134,239,172,.3);
-  color: #86efac; font-size: 0.65rem; font-weight: 700;
+  color: #86efac; font-size: 0.72rem; font-weight: 700;
   white-space: nowrap;
 }
 
